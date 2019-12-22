@@ -19,7 +19,9 @@
   "suffix": ".bs.js",
   "bs-dependencies": [
     "rationale",
-    "bs-mocha"
+    "bs-mocha",
+    "@glennsl/bs-json",
+    "reason-future"
   ],
   "warnings": {
     "error" : "+101"

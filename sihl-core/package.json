@@ -18,7 +18,11 @@
     "bs-platform": "^6.2.1"
   },
   "dependencies": {
+    "@glennsl/bs-json": "^5.0.1",
+    "bcrypt": "^3.0.7",
     "bs-mocha": "^1.0.0",
-    "rationale": "^0.2.0"
+    "rationale": "^0.2.0",
+    "reason-future": "^2.5.0",
+    "uuid": "^3.3.3"
   }
 }
