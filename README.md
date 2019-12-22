@@ -14,7 +14,15 @@ A component is a library with a strong focus solving one particular problem. It 
 
 ### App
 
-An app is a set of HTTP routes, migrations, repositories and business logic that solve one particular business problem. An app might use several components as well as other apps. Apps will be loaded by Sihl. *Examples: User management, Health monitoring, Email management*.
+An app is a set of
+
+* HTTP routes
+* migrations
+* repositories
+* business logic
+* ReasonReact components
+
+that solves one particular business problem. An app might use several components as well as other apps. Apps will be loaded by Sihl. *Examples: User management, Health monitoring, Email management*.
 
 ### Project
 
@@ -42,15 +50,25 @@ The HTTP routes are HTTP server agnostic, we provide adapters for ExpressJS.
 
 The security component comprises of JS bindings to JWT, BCrypt and Base64 libraries.
 
-### Authorization & Permissions
-
 ### Scheduler
+
+This is a simple scheduler that makes use of the NodeJS event loop.
 
 ### Logging
 
+The logger is non-blocking and supports multiple levels and multiple logging targets.
+
 ### Query Language
 
-### Migrations & Seeding
+The query language is a subset of Postgrest's http://postgrest.org/en/v5.2/api.html query language. We provide adapters for various SQL backends. It has to run in the browser as well as on the server.
+
+### Migration
+
+The migration component is used to discover migrations and to apply them in the correct order. This component is a set of high level FS and DB tools. We provide adapters for SQL databases.
+
+### Seeding
+
+The seeding component can clean up existing tables and read in data from the filesystem to get the project into a certain state.
 
 ### Serialization & Deserialization
 
@@ -60,6 +78,25 @@ We use decco: https://github.com/reasonml-labs/decco
 
 ### Emails
 
+* send custom emails
+* send bulk emails
+* monitor emails sending
+* expose controls through the admin UI
+
 ### Health
 
+* monitor the performance of the HTTP routes of all the other apps
+* monitor the health of all other apps
+* notify through customized notification channels
+* display metrics through the admin UI
+
 ### Users
+
+* register, login, create, edit, active, deactivate users
+* recover passwords
+* expose user management through admin UI
+
+### Authorization
+
+* keep track of assigned roles and permissions
+* answer: is `subject` allowed to `predicated` on `object`?
