@@ -1,0 +1,22 @@
+{
+  "name": "sihl-core",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "bsb -make-world",
+    "start": "bsb -make-world -w",
+    "clean": "bsb -clean-world"
+  },
+  "keywords": [
+    "BuckleScript",
+    "ReasonML",
+    "Sihl"
+  ],
+  "author": "Josef Erben josef@oxidizing.io",
+  "license": "MIT",
+  "devDependencies": {
+    "bs-platform": "^6.2.1"
+  },
+  "dependencies": {
+    "rationale": "^0.2.0"
+  }
+}
