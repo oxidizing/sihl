@@ -4,7 +4,8 @@
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
-    "clean": "bsb -clean-world"
+    "clean": "bsb -clean-world",
+    "test": "SIHL_TEST=true mocha --recursive test/**/*.js"
   },
   "keywords": [
     "BuckleScript",
@@ -17,6 +18,7 @@
     "bs-platform": "^6.2.1"
   },
   "dependencies": {
+    "bs-mocha": "^1.0.0",
     "rationale": "^0.2.0"
   }
 }
