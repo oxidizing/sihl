@@ -4,7 +4,7 @@ Sihl is a set of tools for building web applications in ReasonML. This repositor
 
 ## Goal
 
-The goal is a workflow and a set of tools to build safe web applications quickly with long-term maintainability in mind in ReasonML.
+The goal is a workflow and a set of tools to build safe web applications quickly with long-term maintainability in mind in ReasonML. The [design goals](DESIGN_GOALS.md) are listed separately.
 
 ## Concepts
 
