@@ -1,0 +1,45 @@
+Arguments: 
+  /home/josef/.nvm/versions/node/v10.16.3/bin/node /usr/bin/yarn
+
+PATH: 
+  /home/josef/.pyenv/versions/3.7.2/bin:/home/josef/.opam/4.06.1/bin:/home/josef/bin:/usr/local/bin:/home/josef/.opam/4.06.1/bin:/home/josef/.ebcli-virtual-env/executables:/home/josef/.pyenv/versions/3.7.2/bin:/home/josef/.opam/4.06.1/bin:/home/josef/.nvm/versions/node/v10.16.3/bin:/home/josef/bin:/usr/local/bin:/home/josef/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/lib/jvm/default/bin:/opt/mpich/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/home/josef/.local/bin:/home/josef/.emacs.d/bin:/home/josef/.cargo/bin:/home/josef/go/bin:/home/josef/.local/bin:/home/josef/.emacs.d/bin:/home/josef/.cargo/bin:/home/josef/go/bin
+
+Yarn version: 
+  1.21.1
+
+Node version: 
+  10.16.3
+
+Platform: 
+  linux x64
+
+Trace: 
+  Error: self signed certificate
+      at TLSSocket.onConnectSecure (_tls_wrap.js:1058:34)
+      at TLSSocket.emit (events.js:198:13)
+      at TLSSocket._finishInit (_tls_wrap.js:636:8)
+
+npm manifest: 
+  {
+    "name": "sihl-users",
+    "version": "0.1.0",
+    "scripts": {
+      "build": "bsb -make-world",
+      "start": "bsb -make-world -w",
+      "clean": "bsb -clean-world"
+    },
+    "keywords": [
+      "BuckleScript"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+      "bs-platform": "^6.2.1"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
