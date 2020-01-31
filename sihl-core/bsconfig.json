@@ -18,6 +18,8 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
+    "decco",
+    "tablecloth-bucklescript",
     "rationale",
     "bs-mocha",
     "@glennsl/bs-json",
@@ -26,6 +28,7 @@
   "warnings": {
     "error" : "+101"
   },
+  "ppx-flags": [ "decco/ppx" ],
   "namespace": true,
   "refmt": 3
 }

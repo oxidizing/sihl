@@ -11,8 +11,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "bs-express": "^1.0.1",
+    "decco": "^1.1.1",
+    "reason-future": "^2.5.0",
+    "sihl-core": "link:/../sihl-core",
+    "tablecloth-bucklescript": "^0.0.6"
+  },
   "devDependencies": {
-    "bs-platform": "^6.2.1",
-    "sihl-core": "*"
+    "bs-platform": "^6.2.1"
   }
 }

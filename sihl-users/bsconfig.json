@@ -11,11 +11,16 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
-    "sihl-core"
+    "tablecloth-bucklescript",
+    "reason-future",
+    "sihl-core",
+    "bs-express",
+    "decco"
   ],
   "warnings": {
     "error" : "+101"
   },
+  "ppx-flags": [ "decco/ppx" ],
   "namespace": true,
   "refmt": 3
 }

@@ -169,6 +169,11 @@ decamelize@^1.2.0:
   resolved "https://registry.yarnpkg.com/decamelize/-/decamelize-1.2.0.tgz#f6534d15148269b20352e7bee26f501f9a191290"
   integrity sha1-9lNNFRSCabIDUue+4m9QH5oZEpA=
 
+decco@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/decco/-/decco-1.1.1.tgz#69e252c3bdf1b6f4f10dd115ba44f25908d0033c"
+  integrity sha512-hif221MrEzLcjguORCYml7CAfCwWap6HuRI4x0G9TSLRoJkkDKc/Qx01JleOzMubOWFK4dbJNmKXR4+S/r3obw==
+
 deep-extend@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/deep-extend/-/deep-extend-0.6.0.tgz#c4fa7c95404a17a9c3e8ca7e1537312b736330ac"
@@ -883,6 +888,11 @@ supports-color@^5.3.0:
   integrity sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==
   dependencies:
     has-flag "^3.0.0"
+
+tablecloth-bucklescript@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/tablecloth-bucklescript/-/tablecloth-bucklescript-0.0.6.tgz#92b27c4e46ceec47008728367eccd7d5016b3914"
+  integrity sha512-rfwtTya+tfPByxsfH0i1GACppzv098wKNGa4YEG9t9m+hpj0T/qpyjA1iOngN9w1iBJaIs4pSUNEAgLf7jWAmw==
 
 tar@^4:
   version "4.4.13"
