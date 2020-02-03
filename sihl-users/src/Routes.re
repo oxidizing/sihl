@@ -1,7 +1,7 @@
-let register: ExpressHttp.Http.Handler.t =
+let register: Http.Http.Handler.t =
   request =>
     Future.value(
-      ExpressHttp.Response.make(
+      Http.Response.make(
         ~bodyJson=
           "All good"
           |> Sihl.Core.Http.Message.make
@@ -10,10 +10,10 @@ let register: ExpressHttp.Http.Handler.t =
       ),
     );
 
-let login: ExpressHttp.Http.Handler.t =
+let login: Http.Http.Handler.t =
   request =>
     Future.value(
-      ExpressHttp.Response.make(
+      Http.Response.make(
         ~bodyJson=
           "All good"
           |> Sihl.Core.Http.Message.make
