@@ -4,7 +4,8 @@
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
-    "clean": "bsb -clean-world"
+    "clean": "bsb -clean-world",
+    "start:server": "node src/Main.bs.js"
   },
   "keywords": [
     "BuckleScript"
@@ -13,6 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "bs-express": "^1.0.1",
+    "compression": "^1.7.4",
     "decco": "^1.1.1",
     "reason-future": "^2.5.0",
     "sihl-core": "link:/../sihl-core",

@@ -93,7 +93,7 @@ module Response: Sihl.Core.Http.RESPONSE = {
 
 module Http = Sihl.Core.Http.MakeHttp(Request, Response);
 
-module ExpressAdapter = {
+module Adapter = {
   type expressConfig = {
     limitMb: float,
     compression: bool,
@@ -171,7 +171,7 @@ module ExpressAdapter = {
   [@bs.module]
   external compressionMiddleware: unit => Express.Middleware.t = "compression";
 
-  let newApp = ({limitMb, compression, hidePoweredBy, urlEncoded}) => {
+  let makeApp = ({limitMb, compression, hidePoweredBy, urlEncoded}) => {
     let app = Express.express();
     Express.App.use(
       app,
@@ -192,7 +192,7 @@ module ExpressAdapter = {
     app;
   };
 
-  let mountRoutes = (app, routes: list(Http.Route.t)) => {
+  let mountRoutes = (routes: list(Http.Route.t), app) => {
     let _ =
       Tablecloth.List.map(
         ~f=
@@ -220,7 +220,7 @@ module ExpressAdapter = {
     app;
   };
 
-  let startApp = (app, ~port) => {
+  let startApp = (~port, app) => {
     let onListen = e =>
       switch (e) {
       | exception (Js.Exn.Error(e)) =>
