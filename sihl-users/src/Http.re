@@ -93,7 +93,7 @@ module Response: Sihl.Core.Http.RESPONSE = {
 
 module Http = Sihl.Core.Http.MakeHttp(Request, Response);
 
-module Adapter = {
+module Adapter: Http.ADAPTER = {
   type expressConfig = {
     limitMb: float,
     compression: bool,
@@ -234,5 +234,20 @@ module Adapter = {
       };
 
     Express.App.listen(app, ~port, ~onListen, ());
+  };
+
+  let startServer = (~port, routes) => {
+    let _ =
+      appConfig(
+        ~limitMb=10.0,
+        ~compression=true,
+        ~hidePoweredBy=true,
+        ~urlEncoded=true,
+        (),
+      )
+      |> makeApp
+      |> mountRoutes(routes)
+      |> startApp(~port);
+    Belt.Result.Ok();
   };
 };

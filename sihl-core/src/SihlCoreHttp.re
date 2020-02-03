@@ -61,4 +61,8 @@ module MakeHttp = (Request: REQUEST, Response: RESPONSE) => {
   module MiddleWare = {
     type t = Handler.t => Handler.t;
   };
+  module type ADAPTER = {
+    let startServer:
+      (~port: int, list(Route.t)) => Belt.Result.t(unit, string);
+  };
 };

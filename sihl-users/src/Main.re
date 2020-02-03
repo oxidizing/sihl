@@ -10,17 +10,7 @@ module Settings = {
 module App = {
   let start = () => {
     Sihl.Core.Log.info("Starting app " ++ Settings.name, ());
-    let _ =
-      Http.Adapter.appConfig(
-        ~limitMb=10.0,
-        ~compression=true,
-        ~hidePoweredBy=true,
-        ~urlEncoded=true,
-        (),
-      )
-      |> Http.Adapter.makeApp
-      |> Http.Adapter.mountRoutes(Settings.routes)
-      |> Http.Adapter.startApp(~port=3000);
+    let _ = Http.Adapter.startServer(~port=3000, Settings.routes);
     Sihl.Core.Log.info("App started on port 3000", ());
     ();
   };
