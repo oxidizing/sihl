@@ -5,6 +5,7 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
+    "clean:local": "bsb -clean",
     "start:server": "node src/Main.bs.js"
   },
   "keywords": [
@@ -22,5 +23,11 @@
   },
   "devDependencies": {
     "bs-platform": "^6.2.1"
+  },
+  "resolutions": {
+    "bytes": "3.1.0",
+    "http-errors": "1.7.2",
+    "ms": "2.0.0",
+    "inherits": "2.0.3"
   }
 }

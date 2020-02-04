@@ -17,12 +17,6 @@
   "devDependencies": {
     "bs-platform": "^6.2.1"
   },
-  "peerDependencies": {
-    "bs-platform": "^6.2.1",
-    "decco": "^1.1.1",
-    "reason-future": "^2.5.0",
-    "tablecloth-bucklescript": "^0.0.6"
-  },
   "dependencies": {
     "@glennsl/bs-json": "^5.0.2",
     "bcrypt": "^3.0.7",
