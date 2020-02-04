@@ -14,7 +14,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "bs-express": "^1.0.1",
     "compression": "^1.7.4",
     "decco": "^1.1.1",
     "reason-future": "^2.5.0",

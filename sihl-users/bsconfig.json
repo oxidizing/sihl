@@ -16,7 +16,6 @@
     "tablecloth-bucklescript",
     "reason-future",
     "sihl-core",
-    "bs-express",
     "decco"
   ],
   "warnings": {

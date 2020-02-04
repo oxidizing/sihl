@@ -18,6 +18,7 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
+    "bs-express",
     "decco",
     "tablecloth-bucklescript",
     "rationale",

@@ -18,6 +18,7 @@
     "bs-platform": "^6.2.1"
   },
   "dependencies": {
+    "bs-express": "^1.0.1",
     "@glennsl/bs-json": "^5.0.2",
     "bcrypt": "^3.0.7",
     "bs-mocha": "^1.0.0",

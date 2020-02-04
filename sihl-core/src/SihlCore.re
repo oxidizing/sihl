@@ -1,7 +1,10 @@
-module Log = SihlCoreLog;
 module Base64 = SihlCoreBase64;
 module Uuid = SihlCoreUuid;
-module Error = SihlCoreError;
-module Mysql = SihlCoreMysql;
-module Http = SihlCoreHttp;
 module Jwt = SihlCoreJwt;
+
+module Error = SihlCoreError;
+module Log = SihlCoreLog;
+
+module Mysql = SihlCoreMysql;
+
+module Http = SihlCoreHttpExpress;

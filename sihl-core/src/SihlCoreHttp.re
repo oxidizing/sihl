@@ -39,13 +39,6 @@ module type RESPONSE = {
   let errorToResponse: SihlCoreError.t => t;
 };
 
-module Message = {
-  [@decco]
-  type t = {message: string};
-  let encode = t_encode;
-  let make = message => {message: message};
-};
-
 module MakeHttp = (Request: REQUEST, Response: RESPONSE) => {
   module Handler = {
     type t = Request.t => Future.t(Response.t);

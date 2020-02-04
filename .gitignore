@@ -9,3 +9,4 @@ npm-debug.log
 dist
 !dist/assets
 .cache
+yarn-error.log

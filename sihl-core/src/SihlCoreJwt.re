@@ -36,7 +36,7 @@ module Signed = {
 [@bs.module "jsonwebtoken"]
 external sign: (Js.Json.t, string) => string = "sign";
 let sign: (Plain.t, string) => Signed.t =
-  (token, secret) => sign(Plain.encode(token), secret);
+  (token, secret) => token->Plain.encode->sign(secret);
 
 [@bs.module "jsonwebtoken"]
 external verify: (string, string) => Js.Json.t = "verify";

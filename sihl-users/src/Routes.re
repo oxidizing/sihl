@@ -1,7 +1,7 @@
-let register: Http.Http.Handler.t =
+let register: Sihl.Core.Http.Handler.t =
   request =>
     Future.value(
-      Http.Response.make(
+      Sihl.Core.Http.Response.make(
         ~bodyJson=
           "All good"
           |> Sihl.Core.Http.Message.make
@@ -10,10 +10,10 @@ let register: Http.Http.Handler.t =
       ),
     );
 
-let login: Http.Http.Handler.t =
+let login: Sihl.Core.Http.Handler.t =
   request =>
     Future.value(
-      Http.Response.make(
+      Sihl.Core.Http.Response.make(
         ~bodyJson=
           "All good"
           |> Sihl.Core.Http.Message.make
@@ -22,12 +22,12 @@ let login: Http.Http.Handler.t =
       ),
     );
 
-let auth: Http.Http.Middleware.t =
+let auth: Sihl.Core.Http.Middleware.t =
   (handler, request) => {
     open Tablecloth;
     let isValidToken =
       request
-      |> Http.Request.authToken
+      |> Sihl.Core.Http.Request.authToken
       |> Option.map(
            ~f=Sihl.Core.Jwt.isVerifyableToken(~secret=Config.jwtSecret),
          )
@@ -35,7 +35,7 @@ let auth: Http.Http.Middleware.t =
     isValidToken
       ? handler(request)
       : Future.value(
-          Http.Response.errorToResponse(
+          Sihl.Core.Http.Response.errorToResponse(
             `AuthenticationError("Not authenticated"),
           ),
         );

@@ -1,4 +1,11 @@
-module Request: Sihl.Core.Http.REQUEST = {
+module Message = {
+  [@decco]
+  type t = {message: string};
+  let encode = t_encode;
+  let make = message => {message: message};
+};
+
+module Request: SihlCoreHttp.REQUEST = {
   type t = Express.Request.t;
 
   let params = r => r |> Express.Request.params;
@@ -19,7 +26,7 @@ module Request: Sihl.Core.Http.REQUEST = {
   };
 };
 
-module Response: Sihl.Core.Http.RESPONSE = {
+module Response: SihlCoreHttp.RESPONSE = {
   type t = {
     header: Js.Dict.t(string),
     bodyJson: option(Js.Json.t),
@@ -45,8 +52,8 @@ module Response: Sihl.Core.Http.RESPONSE = {
   };
 
   let errorToResponse = error => {
-    module Message = Sihl.Core.Http.Message;
-    Sihl.Core.Log.error(Sihl.Core.Error.message(error), ());
+    module Message = Message;
+    SihlCoreLog.error(SihlCoreError.message(error), ());
     switch (error) {
     | `ForbiddenError(message) =>
       make(
@@ -91,9 +98,9 @@ module Response: Sihl.Core.Http.RESPONSE = {
   };
 };
 
-module Http = Sihl.Core.Http.MakeHttp(Request, Response);
+include SihlCoreHttp.MakeHttp(Request, Response);
 
-module Adapter: Http.ADAPTER = {
+module Adapter: ADAPTER = {
   type expressConfig = {
     limitMb: float,
     compression: bool,
@@ -103,7 +110,7 @@ module Adapter: Http.ADAPTER = {
 
   let makeExpressResponse =
       (internal: Response.t, external_: Express.Response.t) => {
-    open Sihl.Core.Http;
+    open SihlCoreHttp;
     open Tablecloth;
     let prepared =
       external_
@@ -126,7 +133,7 @@ module Adapter: Http.ADAPTER = {
       Express.Response.sendFile(filepath, (), prepared)
     | _ =>
       Express.Response.sendJson(
-        Sihl.Core.Http.Message.encode({message: "No body provided"}),
+        Message.encode(Message.{message: "No body provided"}),
         prepared,
       )
     };
@@ -138,7 +145,7 @@ module Adapter: Http.ADAPTER = {
       (
         req: Request.t,
         externalResponse: Express.Response.t,
-        handler: Http.Handler.t,
+        handler: Handler.t,
       ) => {
     req
     ->handler
@@ -192,13 +199,13 @@ module Adapter: Http.ADAPTER = {
     app;
   };
 
-  let mountRoutes = (routes: list(Http.Route.t), app) => {
+  let mountRoutes = (routes: list(Route.t), app) => {
     let _ =
       Tablecloth.List.map(
         ~f=
           r =>
-            switch ((r: Http.Route.t)) {
-            | (Http.Route.GET, path, handler) =>
+            switch ((r: Route.t)) {
+            | (Route.GET, path, handler) =>
               Express.App.get(
                 app,
                 ~path,
@@ -206,7 +213,7 @@ module Adapter: Http.ADAPTER = {
                   toPromise(makeRequest(req), res, handler)
                 ),
               )
-            | (Http.Route.POST, path, handler) =>
+            | (Route.POST, path, handler) =>
               Express.App.post(
                 app,
                 ~path,
@@ -226,11 +233,11 @@ module Adapter: Http.ADAPTER = {
       | exception (Js.Exn.Error(e)) =>
         switch (Js.Exn.message(e)) {
         | Some(message) =>
-          Sihl.Core.Log.error("Error in express: " ++ message, ())
-        | None => Sihl.Core.Log.error("Error in express", ())
+          SihlCoreLog.error("Error in express: " ++ message, ())
+        | None => SihlCoreLog.error("Error in express", ())
         };
         Node.Process.exit(1);
-      | _ => Sihl.Core.Log.info("Listening at port 3000", ())
+      | _ => SihlCoreLog.info("Listening at port 3000", ())
       };
 
     Express.App.listen(app, ~port, ~onListen, ());
