@@ -58,6 +58,54 @@ let login: Sihl.Core.Http.Handler.t =
       ),
     );
 
+let requestPasswordReset: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
+let resetPassword: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
+let updatePassword: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
+let setPassword: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
 let auth: Sihl.Core.Http.Middleware.t =
   (handler, request) => {
     open Tablecloth;

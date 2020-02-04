@@ -1,16 +1,20 @@
 module Settings = {
+  open Sihl.Core.Http;
   let name = "User Management App";
   let root = "users";
   let routes = [
-    Sihl.Core.Http.Route.get("/", Routes.users |> Routes.auth),
-    Sihl.Core.Http.Route.get("/:id", Routes.user |> Routes.auth),
-    Sihl.Core.Http.Route.get("/me", Routes.myUser |> Routes.auth),
-    Sihl.Core.Http.Route.post("/register", Routes.register),
-    Sihl.Core.Http.Route.get("/login", Routes.login),
-    // Route.post("/request-password-reset", Routes.requestPasswordReset),
-    // Route.post("/reset-password", Routes.resetPassword),
-    // Route.post("/update-password", Routes.updatePassword),
-    // Route.post("/set-password", Routes.setPassword),
+    Route.post("/register/", Routes.register),
+    Route.get("/login/", Routes.login),
+    Route.get("/", Routes.users |> Routes.auth),
+    Route.get("/:id/", Routes.user |> Routes.auth),
+    Route.get("/me/", Routes.myUser |> Routes.auth),
+    Route.post(
+      "/request-password-reset/",
+      Routes.requestPasswordReset |> Routes.auth,
+    ),
+    Route.post("/reset-password/", Routes.resetPassword |> Routes.auth),
+    Route.post("/update-password/", Routes.updatePassword |> Routes.auth),
+    Route.post("/set-password/", Routes.setPassword |> Routes.auth),
   ];
 };
 
