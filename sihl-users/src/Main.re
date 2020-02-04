@@ -5,9 +5,9 @@ module Settings = {
   let routes = [
     Route.post("/register/", Routes.register),
     Route.get("/login/", Routes.login),
-    Route.get("/", Routes.users |> Routes.auth),
-    Route.get("/:id/", Routes.user |> Routes.auth),
-    Route.get("/me/", Routes.myUser |> Routes.auth),
+    Route.get("/", Routes.getUsers |> Routes.auth),
+    Route.get("/:id/", Routes.getUser |> Routes.auth),
+    Route.get("/me/", Routes.getMyUser |> Routes.auth),
     Route.post(
       "/request-password-reset/",
       Routes.requestPasswordReset |> Routes.auth,

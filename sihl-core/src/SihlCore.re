@@ -5,6 +5,7 @@ module Jwt = SihlCoreJwt;
 module Error = SihlCoreError;
 module Log = SihlCoreLog;
 
+module Db = SihlCoreDb;
 module Mysql = SihlCoreMysql;
 
-module Http = SihlCoreHttpExpress;
+module Http = SihlCoreHttp;
