@@ -4,3 +4,4 @@ module Uuid = SihlCoreUuid;
 module Error = SihlCoreError;
 module Mysql = SihlCoreMysql;
 module Http = SihlCoreHttp;
+module Jwt = SihlCoreJwt;

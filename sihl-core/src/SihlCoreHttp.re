@@ -15,6 +15,7 @@ module type REQUEST = {
   let path: t => list(string);
   let originalUrl: t => string;
   let jsonBody: t => option(Js.Json.t);
+  let authToken: t => option(string);
 };
 
 module type RESPONSE = {
@@ -35,6 +36,7 @@ module type RESPONSE = {
   let bodyJson: t => option(Js.Json.t);
   let bodyBuffer: t => option(Node.Buffer.t);
   let bodyFile: t => option(string);
+  let errorToResponse: SihlCoreError.t => t;
 };
 
 module Message = {
@@ -58,7 +60,7 @@ module MakeHttp = (Request: REQUEST, Response: RESPONSE) => {
     let get = (path, handler: Handler.t) => (GET, path, handler);
     let handler = ((_, _, handler)) => handler;
   };
-  module MiddleWare = {
+  module Middleware = {
     type t = Handler.t => Handler.t;
   };
   module type ADAPTER = {

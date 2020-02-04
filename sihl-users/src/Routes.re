@@ -21,3 +21,22 @@ let login: Http.Http.Handler.t =
         (),
       ),
     );
+
+let auth: Http.Http.Middleware.t =
+  (handler, request) => {
+    open Tablecloth;
+    let isValidToken =
+      request
+      |> Http.Request.authToken
+      |> Option.map(
+           ~f=Sihl.Core.Jwt.isVerifyableToken(~secret=Config.jwtSecret),
+         )
+      |> Option.withDefault(~default=false);
+    isValidToken
+      ? handler(request)
+      : Future.value(
+          Http.Response.errorToResponse(
+            `AuthenticationError("Not authenticated"),
+          ),
+        );
+  };

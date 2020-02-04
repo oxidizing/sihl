@@ -9,12 +9,12 @@ module Request: Sihl.Core.Http.REQUEST = {
   let originalUrl = r => r |> Express.Request.originalUrl;
   let jsonBody = r => r |> Express.Request.bodyJSON;
 
-  let authToken = header => {
+  let authToken = request => {
     Tablecloth.(
-      header
-      |> StrDict.get(~key="authorization")
+      request
+      |> header("authorization")
       |> Option.map(~f=String.split(~on=" "))
-      |> Option.map(~f=List.get_at(~index=1))
+      |> Option.andThen(~f=List.get_at(~index=1))
     );
   };
 };
@@ -44,7 +44,7 @@ module Response: Sihl.Core.Http.RESPONSE = {
     };
   };
 
-  let errorToHttpResponse = error => {
+  let errorToResponse = error => {
     module Message = Sihl.Core.Http.Message;
     Sihl.Core.Log.error(Sihl.Core.Error.message(error), ());
     switch (error) {
