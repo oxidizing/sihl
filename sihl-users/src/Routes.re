@@ -1,5 +1,41 @@
+let users: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
+let user: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
+let myUser: Sihl.Core.Http.Handler.t =
+  _ =>
+    Future.value(
+      Sihl.Core.Http.Response.make(
+        ~bodyJson=
+          "All good"
+          |> Sihl.Core.Http.Message.make
+          |> Sihl.Core.Http.Message.encode,
+        (),
+      ),
+    );
+
 let register: Sihl.Core.Http.Handler.t =
-  request =>
+  _ =>
     Future.value(
       Sihl.Core.Http.Response.make(
         ~bodyJson=
@@ -11,7 +47,7 @@ let register: Sihl.Core.Http.Handler.t =
     );
 
 let login: Sihl.Core.Http.Handler.t =
-  request =>
+  _ =>
     Future.value(
       Sihl.Core.Http.Response.make(
         ~bodyJson=
