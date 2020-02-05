@@ -17,3 +17,16 @@ let message = error => {
   | `ServerError(value) => value
   };
 };
+
+let catchAsResult = (f, error) =>
+  switch (f()) {
+  | value => Belt.Result.Ok(value)
+  | exception _ => Belt.Result.Error(error)
+  };
+
+let optionAsResult = (error, optn) => {
+  switch (optn) {
+  | Some(value) => Belt.Result.Ok(value)
+  | None => Belt.Result.Error(error)
+  };
+};
