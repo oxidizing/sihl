@@ -12,7 +12,8 @@ let getUsers: Sihl.Core.Http.Handler.t =
 let getUser: Sihl.Core.Http.Handler.t =
   request => {
     let connection = Sihl.Core.Db.ConnectionPool.getConnection();
-    Repository.User.get(connection)
+    Future.value(Sihl.Core.Http.Request.param("userId", request))
+    >>= (userId => Repository.User.get(connection, ~userId))
     <$> Model.User.encode
     |> Sihl.Core.Http.respond;
   };
