@@ -1,9 +1,15 @@
 module User = {
   [@decco]
   type t = {
-    username: string,
+    id: string,
     email: string,
+    username: string,
     password: string,
+    givenName: string,
+    familyName: string,
+    phone: option(string),
+    created: string,
+    updated: string,
   };
 
   let encode = t_encode;

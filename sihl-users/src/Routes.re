@@ -108,9 +108,7 @@ let auth: Sihl.Core.Http.Middleware.t =
     let isValidToken =
       request
       |> Sihl.Core.Http.Request.authToken
-      |> Option.map(
-           ~f=Sihl.Core.Jwt.isVerifyableToken(~secret=Config.jwtSecret),
-         )
+      |> Option.map(~f=Sihl.Core.Jwt.isVerifyableToken(~secret="ABC"))
       |> Option.withDefault(~default=false);
     isValidToken
       ? handler(request)

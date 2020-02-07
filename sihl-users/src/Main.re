@@ -1,30 +1,43 @@
 module Settings = {
-  open Sihl.Core.Http;
-  let name = "User Management App";
-  let root = "users";
-  let routes = [
-    Route.post("/register/", Routes.register),
-    Route.get("/login/", Routes.login),
-    Route.get("/", Routes.getUsers |> Routes.auth),
-    Route.get("/:id/", Routes.getUser |> Routes.auth),
-    Route.get("/me/", Routes.getMyUser |> Routes.auth),
-    Route.post(
-      "/request-password-reset/",
-      Routes.requestPasswordReset |> Routes.auth,
-    ),
-    Route.post("/reset-password/", Routes.resetPassword |> Routes.auth),
-    Route.post("/update-password/", Routes.updatePassword |> Routes.auth),
-    Route.post("/set-password/", Routes.setPassword |> Routes.auth),
-  ];
+  [@decco]
+  type t = {
+    [@decco.key "DB_USER"]
+    dbUser: string,
+    [@decco.key "DB_HOST"]
+    dbHost: string,
+    [@decco.key "DB_NAME"]
+    dbName: string,
+    [@decco.key "DB_PASSWORD"]
+    dbPassword: string,
+    [@decco.key "DB_CONNECTION_LIMIT"] [@decco.default 8]
+    connectionLimit: int,
+  };
+
+  let encode = t_encode;
+  let decode = t_decode;
 };
 
-module App = {
-  let start = () => {
-    Sihl.Core.Log.info("Starting app " ++ Settings.name, ());
-    let _ = Sihl.Core.Http.Adapter.startServer(~port=3000, Settings.routes);
+module Database = {
+  let pool = (config: Settings.t) =>
+    Sihl.Core.Mysql.pool({
+      "user": config.dbUser,
+      "host": config.dbHost,
+      "database": config.dbName,
+      "password": config.dbPassword,
+      "port": 3306,
+      "waitForConnections": true,
+      "connectionLimit": 8,
+      "queueLimit": 300,
+    });
+};
+
+module Server = {
+  let start = config => {
+    Sihl.Core.Log.info("Starting app " ++ App.Settings.name, ());
+    let _ = Sihl.Core.Http.Adapter.startServer(~port=3000, App.Http.routes);
     Sihl.Core.Log.info("App started on port 3000", ());
     ();
   };
 };
 
-App.start();
+Server.start();

@@ -5,7 +5,6 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "clean:local": "bsb -clean",
     "start:server": "node src/Main.bs.js"
   },
   "keywords": [

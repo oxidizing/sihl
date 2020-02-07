@@ -8,3 +8,5 @@ module ConnectionPool = {
 
   let getConnection = () => Connection.make();
 };
+
+module type MIGRATION = {};

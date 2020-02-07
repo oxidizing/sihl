@@ -1,4 +1,5 @@
 open Belt.Result;
+
 module User: {
   let getAll:
     Sihl.Core.Db.Connection.t =>
