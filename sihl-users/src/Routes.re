@@ -1,22 +1,27 @@
 let (<$>) = Future.(<$>);
 let (>>=) = Future.(>>=);
 
-let getUsers: Sihl.Core.Http.Handler.t =
-  _ => {
-    let connection = Sihl.Core.Db.ConnectionPool.getConnection();
-    Repository.User.getAll(connection)
-    <$> Model.Users.encode
-    |> Sihl.Core.Http.respond;
-  };
+let getUsers = (pool, _) => {
+  pool
+  |> Sihl.Core.Db.Pool.connect
+  >>= Repository.User.GetAll.query
+  <$> Model.Users.encode
+  |> Sihl.Core.Http.respond;
+};
 
-let getUser: Sihl.Core.Http.Handler.t =
-  request => {
-    let connection = Sihl.Core.Db.ConnectionPool.getConnection();
-    Future.value(Sihl.Core.Http.Request.param("userId", request))
-    >>= (userId => Repository.User.get(connection, ~userId))
-    <$> Model.User.encode
-    |> Sihl.Core.Http.respond;
-  };
+let getUser = (pool, request) => {
+  Future.mapOk2(
+    Future.value(Sihl.Core.Http.Request.param("userId", request)),
+    pool |> Sihl.Core.Db.Pool.connect,
+    (userId, connection) =>
+    (userId, connection)
+  )
+  >>= (
+    ((userId, connection)) => Repository.User.Get.query(connection, ~userId)
+  )
+  <$> Model.User.encode
+  |> Sihl.Core.Http.respond;
+};
 
 let getMyUser: Sihl.Core.Http.Handler.t =
   _ =>

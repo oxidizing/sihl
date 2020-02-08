@@ -1,6 +1,7 @@
 module Settings = {
   let name = "User Management App";
   let prefix = "users";
+  let minPasswordLength = 8;
 };
 
 module Database = {
@@ -27,11 +28,11 @@ CREATE TABLE IF NOT EXISTS $(prefix)_users (
 
 module Http = {
   open Sihl.Core.Http;
-  let routes = [
+  let routes = pool => [
     Route.post("/register/", Routes.register),
     Route.get("/login/", Routes.login),
-    Route.get("/", Routes.getUsers |> Routes.auth),
-    Route.get("/:id/", Routes.getUser |> Routes.auth),
+    Route.get("/", Routes.getUsers(pool) |> Routes.auth),
+    Route.get("/:id/", Routes.getUser(pool) |> Routes.auth),
     Route.get("/me/", Routes.getMyUser |> Routes.auth),
     Route.post(
       "/request-password-reset/",

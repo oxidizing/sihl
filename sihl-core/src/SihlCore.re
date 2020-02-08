@@ -6,6 +6,6 @@ module Error = SihlCoreError;
 module Log = SihlCoreLog;
 
 module Db = SihlCoreDb;
-module Mysql = SihlCoreMysql;
 
 module Http = SihlCoreHttp;
+module Config = SihlCoreConfig;

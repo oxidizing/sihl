@@ -10,7 +10,7 @@ module type REQUEST = {
   type t;
 
   let params: t => Js.Dict.t(Js.Json.t);
-  let param: (string, t) => Belt.Result.t(string, string);
+  let param: (string, t) => Belt.Result.t(string, SihlCoreError.t);
   let header: (string, t) => option(string);
   let path: t => list(string);
   let originalUrl: t => string;
@@ -75,11 +75,13 @@ module Request: REQUEST = {
   let params = r => r |> Express.Request.params;
   let param = (key, r) => {
     Js.Dict.get(params(r), key)
-    |> SihlCoreError.optionAsResult("Parameter " ++ key ++ " not found")
+    |> SihlCoreError.optionAsResult(
+         `ClientError("Parameter " ++ key ++ " not found"),
+       )
     |> Tablecloth.Result.andThen(~f=p =>
          SihlCoreError.catchAsResult(
            _ => Json.Decode.string(p),
-           "Invalid request param provided " ++ key,
+           `ClientError("Invalid request param provided " ++ key),
          )
        );
   };
@@ -333,13 +335,15 @@ module Adapter: ADAPTER = {
 };
 
 let respond:
-  Future.t(Belt.Result.t(Js.Json.t, string)) => Future.t(Response.t) =
+  Future.t(Belt.Result.t(Js.Json.t, SihlCoreError.t)) =>
+  Future.t(Response.t) =
   json =>
     json
     ->Future.map(json =>
         switch (json) {
         | Belt.Result.Ok(json) => json
-        | Belt.Result.Error(error) => error |> Message.make |> Message.encode
+        | Belt.Result.Error(error) =>
+          error |> SihlCoreError.message |> Message.make |> Message.encode
         }
       )
     ->Future.map(bodyJson => Response.make(~bodyJson, ()));

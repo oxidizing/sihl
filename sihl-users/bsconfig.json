@@ -13,6 +13,7 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
+    "@glennsl/bs-json",
     "tablecloth-bucklescript",
     "reason-future",
     "sihl-core",

@@ -30,3 +30,19 @@ let optionAsResult = (error, optn) => {
   | None => Belt.Result.Error(error)
   };
 };
+
+let decodeToServerError = res =>
+  switch (res) {
+  | Belt.Result.Ok(_) as result => result
+  | Belt.Result.Error({Decco.path, Decco.message, Decco.value}) =>
+    Belt.Result.Error(
+      `ServerError(
+        "Failed to decode at "
+        ++ path
+        ++ ", "
+        ++ message
+        ++ ", got "
+        ++ Js.Json.stringify(value),
+      ),
+    )
+  };
