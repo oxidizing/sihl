@@ -46,3 +46,8 @@ let decodeToServerError = res =>
       ),
     )
   };
+
+let flatten = errors =>
+  Belt.List.reduce(errors, Belt.Result.Ok(), (acc, err) =>
+    Belt.Result.flatMap(acc, _ => err)
+  );

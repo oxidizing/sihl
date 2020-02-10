@@ -2,26 +2,28 @@ open Belt.Result;
 
 // TODO move to sihl-core
 module RepoResult = {
-  [@decco]
-  type metaData = {
-    [@decco.key "FOUND_ROWS()"]
-    totalCount: int,
+  module MetaData = {
+    [@decco]
+    type t = {
+      [@decco.key "FOUND_ROWS()"]
+      totalCount: int,
+    };
+
+    let decode = t_decode;
   };
-  type result('a) = ('a, metaData);
+  type result('a) = ('a, MetaData.t);
   type t('a) = result('a);
 
   let create = (value, metaData) => (value, metaData);
   let createWithTotal = (value, totalCount) => (
     value,
-    {totalCount: totalCount},
+    MetaData.{totalCount: totalCount},
   );
-  let total = ((_, {totalCount})) => totalCount;
+  let total = ((_, MetaData.{totalCount})) => totalCount;
   let metaData = ((_, metaData)) => metaData;
   let value = ((value, _)) => value;
 
   let foundRowsQuery = "SELECT FOUND_ROWS();";
-
-  let decodeMetaData = metaData_decode;
 };
 
 let getOne = (~connection, ~stmt, ~values=?, ~decode, ()) => {
@@ -76,7 +78,7 @@ let getMany = (~connection, ~stmt, ~values=?, ~decode, ()) => {
               switch (result) {
               | ([row], _) =>
                 row
-                |> RepoResult.decodeMetaData
+                |> RepoResult.MetaData.decode
                 |> Sihl.Core.Error.decodeToServerError
                 |> Future.value
               | _ =>
@@ -96,9 +98,23 @@ let getMany = (~connection, ~stmt, ~values=?, ~decode, ()) => {
     );
 };
 
-let (<$>) = Future.(<$>);
+let execute = (~connection, ~stmt) =>
+  Future.value(
+    Belt.Result.Error(`ServerError("Repository.execute() Not implemented")),
+  );
 
 module User = {
+  let (<$>) = Future.(<$>);
+  module Clean = {
+    let stmt = "
+TRUNCATE TABLE users;
+";
+    let run:
+      Sihl.Core.Db.Connection.t =>
+      Future.t(Belt.Result.t(unit, Sihl.Core.Error.t)) =
+      connection => execute(~connection, ~stmt);
+  };
+
   module GetAll = {
     let stmt = "
 SELECT

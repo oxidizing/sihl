@@ -5,6 +5,7 @@ module Settings = {
 };
 
 module Database = {
+  let clean = [Repository.User.Clean.run];
   let migrations = prefix => [
     {j|
 CREATE TABLE IF NOT EXISTS $(prefix)_users (
