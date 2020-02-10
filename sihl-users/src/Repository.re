@@ -1,5 +1,6 @@
 open Belt.Result;
 
+// TODO move to sihl-core
 module RepoResult = {
   [@decco]
   type metaData = {

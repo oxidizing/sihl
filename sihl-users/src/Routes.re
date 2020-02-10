@@ -1,6 +1,7 @@
 let (<$>) = Future.(<$>);
 let (>>=) = Future.(>>=);
 
+// TODO this should get a db handle instead of a pool
 let getUsers = (pool, _) => {
   pool
   |> Sihl.Core.Db.Pool.connect
@@ -9,6 +10,7 @@ let getUsers = (pool, _) => {
   |> Sihl.Core.Http.respond;
 };
 
+// TODO this should get a db handle instead of a pool
 let getUser = (pool, request) => {
   Future.mapOk2(
     Future.value(Sihl.Core.Http.Request.param("userId", request)),

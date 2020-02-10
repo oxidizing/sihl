@@ -5,7 +5,8 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "start:server": "node src/Main.bs.js"
+    "start:server": "node src/Main.bs.js",
+    "test": "jest"
   },
   "keywords": [
     "BuckleScript"
@@ -20,7 +21,8 @@
     "tablecloth-bucklescript": "^0.0.6"
   },
   "devDependencies": {
-    "bs-platform": "^6.2.1"
+    "bs-platform": "^6.2.1",
+    "@glennsl/bs-jest": "0.4.9"
   },
   "resolutions": {
     "bytes": "3.1.0",

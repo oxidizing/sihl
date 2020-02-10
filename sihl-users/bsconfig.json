@@ -5,6 +5,11 @@
     {
       "dir" : "src",
       "subdirs" : true
+    },
+    {
+      "dir": "__tests__",
+      "subdirs": true,
+      "type": "dev"
     }
   ],
   "package-specs": {
@@ -19,6 +24,7 @@
     "sihl-core",
     "decco"
   ],
+  "bs-dev-dependencies": ["@glennsl/bs-jest"],
   "warnings": {
     "error" : "+101"
   },

@@ -15,7 +15,6 @@ module Database = {
 module Server = {
   let start = config => {
     Sihl.Core.Log.info("Starting app " ++ App.Settings.name, ());
-    Sihl.Core.Log.info("Reading configuration", ());
     let _ =
       Sihl.Core.Config.Db.read()
       |> Tablecloth.Result.map(Database.pool)
