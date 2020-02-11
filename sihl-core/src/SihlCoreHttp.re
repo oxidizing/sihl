@@ -137,6 +137,15 @@ module Endpoint = {
     handler: request('body_in, 'params, 'query) => Js.Promise.t(response),
   };
 
+  type dbEndpointConfig('body_in, 'params, 'query) = {
+    database: SihlCoreDb.Database.t,
+    path: string,
+    verb,
+    handler:
+      (SihlCoreDb.Connection.t, request('body_in, 'params, 'query)) =>
+      Js.Promise.t(response),
+  };
+
   type jsonEndpointConfig('body_in, 'params, 'query, 'body_out) = {
     path: string,
     verb,
@@ -307,6 +316,22 @@ module Endpoint = {
       },
     );
   };
+
+  let dbEndpoint =
+      (~middleware=?, cfg: dbEndpointConfig('body_in, 'params, 'query))
+      : endpoint => {
+    endpoint(
+      ~middleware?,
+      {
+        path: cfg.path,
+        verb: cfg.verb,
+        handler: req => {
+          let%Async conn = SihlCoreDb.Database.connect(cfg.database);
+          cfg.handler(conn, req);
+        },
+      },
+    );
+  };
 };
 
 module Express = Express;
@@ -314,6 +339,7 @@ module Express = Express;
 type endpoint = Endpoint.endpoint;
 
 let endpoint = Endpoint.endpoint;
+let dbEndpoint = Endpoint.dbEndpoint;
 let jsonEndpoint = Endpoint.jsonEndpoint;
 
 type application = {

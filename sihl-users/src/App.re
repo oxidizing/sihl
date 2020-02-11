@@ -29,5 +29,8 @@ CREATE TABLE IF NOT EXISTS $(prefix)_users (
 
 module Http = {
   // TODO get connection and inject it into routes
-  let routes = pool => [Routes.getUser, Routes.getUsers];
+  let routes = database => [
+    Routes.getUser(database),
+    Routes.getUsers(database),
+  ];
 };

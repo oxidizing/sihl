@@ -15,33 +15,25 @@ module Database = {
     });
 };
 
-let getUsers =
-  Sihl.Core.Http.endpoint({
+let getUsers = database =>
+  Sihl.Core.Http.dbEndpoint({
+    database,
     verb: GET,
     path: "/",
-    handler: _req => {
-      let pool =
-        Sihl.Core.Error.Decco.stringifyDecoder(Sihl.Core.Config.Db.read, ())
-        ->Belt.Result.map(Database.pool)
-        ->Sihl.Core.Db.failIfError;
-      let%Async db = Sihl.Core.Db.Pool.connect(pool);
-      let%Async users = Repository.User.GetAll.query(db);
+    handler: (conn, _req) => {
+      let%Async users = Repository.User.GetAll.query(conn);
       let response = users |> Repository.RepoResult.rows |> Model.Users.encode;
       Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
     },
   });
 
-let getUser =
-  Sihl.Core.Http.endpoint({
+let getUser = database =>
+  Sihl.Core.Http.dbEndpoint({
+    database,
     verb: GET,
     path: "/:id/",
-    handler: _req => {
-      let pool =
-        Sihl.Core.Error.Decco.stringifyDecoder(Sihl.Core.Config.Db.read, ())
-        ->Belt.Result.map(Database.pool)
-        ->Sihl.Core.Db.failIfError;
-      let%Async db = Sihl.Core.Db.Pool.connect(pool);
-      let%Async users = Repository.User.Get.query(db, ~userId="TODO");
+    handler: (conn, _req) => {
+      let%Async users = Repository.User.Get.query(conn, ~userId="TODO");
       let response = users |> Model.User.encode;
       Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
     },

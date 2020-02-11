@@ -69,7 +69,7 @@ let fail = reason => raise(DatabaseException(reason));
 
 let pool = Mysql.pool;
 module Connection = Mysql.Connection;
-module Pool = Mysql.Pool;
+module Database = Mysql.Pool;
 
 // taken from caqti make use of GADT
 /* type field(_) = */
