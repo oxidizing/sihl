@@ -11,8 +11,8 @@ module RepoResult = {
 
     let decode = t_decode;
   };
-  type result('a) = ('a, MetaData.t);
-  type t('a) = result('a);
+
+  type t('a) = (list('a), MetaData.t);
 
   let create = (value, metaData) => (value, metaData);
   let createWithTotal = (value, totalCount) => (
@@ -70,20 +70,14 @@ let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
   };
 };
 
-let execute = (~connection, ~stmt) =>
-  Future.value(
-    Belt.Result.Error(`ServerError("Repository.execute() Not implemented")),
-  );
+let execute = (~connection, ~stmt) => Sihl.Core.Db.fail("Not implemented");
 
 module User = {
-  let (<$>) = Future.(<$>);
   module Clean = {
     let stmt = "
 TRUNCATE TABLE users;
 ";
-    let run:
-      Sihl.Core.Db.Connection.t =>
-      Future.t(Belt.Result.t(unit, Sihl.Core.Error.t)) =
+    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) =
       connection => execute(~connection, ~stmt);
   };
 
@@ -100,13 +94,15 @@ SELECT
   status
 FROM users;
 ";
-    let encode = value => [|value|] |> Json.Encode.stringArray;
+    [@decco]
+    type parameter = string;
+
+    let encode = parameter_encode;
+
     let query:
-      Sihl.Core.Db.Connection.t =>
-      Future.t(Belt.Result.t(list(Model.User.t), Sihl.Core.Error.t)) =
+      Sihl.Core.Db.Connection.t => Js.Promise.t(RepoResult.t(Model.User.t)) =
       connection =>
-        getMany(~connection, ~stmt, ~decode=Model.User.decode, ())
-        <$> RepoResult.value;
+        getMany(~connection, ~stmt, ~decode=Model.User.decode, ());
   };
 
   module Get = {
@@ -114,8 +110,7 @@ FROM users;
     let encode = () => ();
     let query:
       (Sihl.Core.Db.Connection.t, ~userId: string) =>
-      Future.t(Belt.Result.t(Model.User.t, Sihl.Core.Error.t)) =
-      (connection, ~userId) =>
-        Belt.Result.Error(`ClientError("Not found"))->Future.value;
+      Js.Promise.t(Model.User.t) =
+      (connection, ~userId) => Sihl.Core.Db.fail("Not implemented");
   };
 };
