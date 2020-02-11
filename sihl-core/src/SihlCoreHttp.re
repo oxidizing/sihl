@@ -1,349 +1,347 @@
-module Header = {
-  type t = Js.Dict.t(string);
-};
+module Endpoint = {
+  open SihlCoreAsync;
+  module Async = SihlCoreAsync;
 
-module Status = {
-  type t = int;
-};
-
-module type REQUEST = {
-  type t;
-
-  let params: t => Js.Dict.t(Js.Json.t);
-  let param: (string, t) => Belt.Result.t(string, SihlCoreError.t);
-  let header: (string, t) => option(string);
-  let path: t => list(string);
-  let originalUrl: t => string;
-  let jsonBody: t => option(Js.Json.t);
-  let authToken: t => option(string);
-};
-
-module type RESPONSE = {
-  type t;
-
-  let make:
-    (
-      ~header: Header.t=?,
-      ~status: Status.t=?,
-      ~bodyJson: Js.Json.t=?,
-      ~bodyBuffer: Node.Buffer.t=?,
-      ~bodyFile: string=?,
-      unit
-    ) =>
-    t;
-
-  let status: t => int;
-  let bodyJson: t => option(Js.Json.t);
-  let bodyBuffer: t => option(Node.Buffer.t);
-  let bodyFile: t => option(string);
-  let errorToResponse: SihlCoreError.t => t;
-};
-
-module MakeHttp = (Request: REQUEST, Response: RESPONSE) => {
-  module Handler = {
-    type t = Request.t => Future.t(Response.t);
-  };
-  module Route = {
-    type verb =
-      | GET
-      | POST;
-    type t = (verb, string, Handler.t);
-
-    let post = (path, handler: Handler.t) => (POST, path, handler);
-    let get = (path, handler: Handler.t) => (GET, path, handler);
-    let handler = ((_, _, handler)) => handler;
-  };
-  module Middleware = {
-    type t = Handler.t => Handler.t;
-  };
-  module type ADAPTER = {
-    let startServer:
-      (~port: int, list(Route.t)) => Belt.Result.t(unit, string);
-  };
-};
-
-module Message = {
-  [@decco]
-  type t = {message: string};
-  let encode = t_encode;
-  let make = message => {message: message};
-};
-
-module Request: REQUEST = {
-  type t = Express.Request.t;
-
-  let params = r => r |> Express.Request.params;
-  let param = (key, r) => {
-    Js.Dict.get(params(r), key)
-    |> SihlCoreError.optionAsResult(
-         `ClientError("Parameter " ++ key ++ " not found"),
-       )
-    |> Tablecloth.Result.andThen(~f=p =>
-         SihlCoreError.catchAsResult(
-           _ => Json.Decode.string(p),
-           `ClientError("Invalid request param provided " ++ key),
-         )
-       );
+  module Status = {
+    include Express.Response.StatusCode;
   };
 
-  let header = (key, r) => r |> Express.Request.get(key);
-  let path = r =>
-    r |> Express.Request.path |> Tablecloth.String.split(~on="/");
-  let originalUrl = r => r |> Express.Request.originalUrl;
-  let jsonBody = r => r |> Express.Request.bodyJSON;
-
-  let authToken = request => {
-    Tablecloth.(
-      request
-      |> header("authorization")
-      |> Option.map(~f=String.split(~on=" "))
-      |> Option.andThen(~f=List.get_at(~index=1))
-    );
-  };
-};
-
-module Response: RESPONSE = {
-  type t = {
-    header: Js.Dict.t(string),
-    bodyJson: option(Js.Json.t),
-    bodyBuffer: option(Node.Buffer.t),
-    bodyFile: option(string),
-    status: int,
+  type request('body, 'query, 'params) = {
+    req: Express.Request.t,
+    requireBody: Decco.decoder('body) => Js.Promise.t('body),
+    requireQuery: Decco.decoder('query) => Js.Promise.t('query),
+    requireParams: Decco.decoder('params) => Js.Promise.t('params),
+    requireHeader: string => Js.Promise.t(string),
   };
 
-  let status = r => r.status;
-  let bodyJson = r => r.bodyJson;
-  let bodyBuffer = r => r.bodyBuffer;
-  let bodyFile = r => r.bodyFile;
+  type response =
+    | BadRequest(string)
+    | NotFound(string)
+    | Unauthorized(string)
+    | OkString(string)
+    | OkJson(Js.Json.t)
+    | OkBuffer(Node.Buffer.t)
+    | StatusString(Status.t, string)
+    | StatusJson(Status.t, Js.Json.t)
+    | TemporaryRedirect(string)
+    | InternalServerError
+    | RespondRaw(Express.Response.t => Express.complete)
+    | RespondRawAsync(Express.Response.t => promise(Express.complete));
 
-  let make =
-      (~header=?, ~status=?, ~bodyJson=?, ~bodyBuffer=?, ~bodyFile=?, ()) => {
-    Tablecloth.{
-      header: header |> Option.withDefault(~default=Js.Dict.empty()),
-      bodyJson,
-      bodyBuffer,
-      bodyFile,
-      status: status |> Option.withDefault(~default=200),
+  exception HttpException(response);
+
+  let abort = res => {
+    raise(HttpException(res));
+  };
+
+  type verb =
+    | GET
+    | POST
+    | PUT
+    | DELETE;
+
+  type guard('a) = Express.Request.t => promise('a);
+
+  module ExpressTools = {
+    let queryJson = (req: Express.Request.t): Js.Json.t =>
+      Obj.magic(Express.Request.query(req));
+
+    [@bs.send] external appSet: (Express.App.t, string, 'a) => unit = "set";
+
+    [@bs.module]
+    external middlewareAsComplete:
+      (Express.Middleware.t, Express.Request.t, Express.Response.t) =>
+      Js.Promise.t(Express.complete) =
+      "./middlewareAsComplete.js";
+  };
+
+  let requireHeader: string => guard(string) =
+    (headerName, req) => {
+      let o = req |> Express.Request.get(headerName);
+      switch (o) {
+      | Some(h) => async(h)
+      | None => abort @@ BadRequest("Missing required header: " ++ headerName)
+      };
     };
-  };
 
-  let errorToResponse = error => {
-    module Message = Message;
-    SihlCoreLog.error(SihlCoreError.message(error), ());
-    switch (error) {
-    | `ForbiddenError(message) =>
-      make(
-        ~status=403,
-        ~bodyJson=message |> Message.make |> Message.encode,
-        (),
-      )
-    | `NotFoundError(message) =>
-      make(
-        ~status=404,
-        ~bodyJson=message |> Message.make |> Message.encode,
-        (),
-      )
-    | `AuthenticationError(message) =>
-      make(
-        ~status=401,
-        ~bodyJson=message |> Message.make |> Message.encode,
-        (),
-      )
-    | `ServerError(_) =>
-      make(
-        ~status=403,
-        ~bodyJson=
-          "An error occurred, our administrators have been notified."
-          |> Message.make
-          |> Message.encode,
-        (),
-      )
-    | `ClientError(message) =>
-      make(
-        ~status=400,
-        ~bodyJson=message |> Message.make |> Message.encode,
-        (),
-      )
-    | `AuthorizationError(message) =>
-      make(
-        ~status=403,
-        ~bodyJson=message |> Message.make |> Message.encode,
-        (),
-      )
+  let requireBody: Decco.decoder('body) => guard('body) =
+    (decoder, req) => {
+      // We resolve a promise first so that if the decoding
+      // fails, it will reject the promise instead of just
+      // throwing and requiring a try/catch.
+      let%Async _ = async();
+      switch (req |> Express.Request.bodyJSON) {
+      | Some(rawBodyJson) =>
+        switch (decoder(rawBodyJson)) {
+        | Error(e) =>
+          abort(
+            BadRequest(
+              "Could not decode expected body: location="
+              ++ e.path
+              ++ ", message="
+              ++ e.message,
+            ),
+          )
+        | Ok(v) => v->async
+        }
+      | None => abort @@ BadRequest("Body required")
+      };
     };
-  };
-};
 
-include MakeHttp(Request, Response);
-
-module Adapter: ADAPTER = {
-  type expressConfig = {
-    limitMb: float,
-    compression: bool,
-    hidePoweredBy: bool,
-    urlEncoded: bool,
-  };
-
-  let makeExpressResponse =
-      (internal: Response.t, external_: Express.Response.t) => {
-    open Tablecloth;
-    let prepared =
-      external_
-      |> Express.Response.status(
-           internal
-           |> Response.status
-           |> Express.Response.StatusCode.fromInt
-           |> Option.withDefault(
-                ~default=Express.Response.StatusCode.BadGateway,
-              ),
-         );
-    switch (
-      Response.bodyJson(internal),
-      Response.bodyBuffer(internal),
-      Response.bodyFile(internal),
-    ) {
-    | (Some(json), _, _) => Express.Response.sendJson(json, prepared)
-    | (_, Some(buffer), _) => Express.Response.sendBuffer(buffer, prepared)
-    | (_, _, Some(filepath)) =>
-      Express.Response.sendFile(filepath, (), prepared)
-    | _ =>
-      Express.Response.sendJson(
-        Message.encode(Message.{message: "No body provided"}),
-        prepared,
-      )
+  let requireParams: Decco.decoder('params) => guard('params) =
+    (decoder, req) => {
+      let paramsAsJson: Js.Json.t = Obj.magic(req |> Express.Request.params);
+      // We resolve a promise first so that if the decoding
+      // fails, it will reject the promise instead of just
+      // throwing and requiring a try/catch.
+      let%Async _ = async();
+      switch (decoder(paramsAsJson)) {
+      | Error(e) =>
+        abort @@
+        BadRequest(
+          "Could not decode expected params from the URL path: location="
+          ++ e.path
+          ++ ", message="
+          ++ e.message,
+        )
+      | Ok(v) => async @@ v
+      };
     };
-  };
 
-  external makeRequest: Express.Request.t => Request.t = "%identity";
-
-  let toPromise =
-      (
-        req: Request.t,
-        externalResponse: Express.Response.t,
-        handler: Handler.t,
-      ) => {
-    req
-    ->handler
-    ->Future.map(internal => makeExpressResponse(internal, externalResponse))
-    ->FutureJs.toPromise;
-  };
-
-  let mountStaticRoute = (app, routePath, localPath) => {
-    Express.App.useOnPath(
-      app,
-      ~path=routePath,
-      {
-        let options = Express.Static.defaultOptions();
-        Express.Static.make(localPath, options) |> Express.Static.asMiddleware;
-      },
-    );
-    app;
-  };
-
-  let appConfig =
-      (~limitMb=?, ~compression=?, ~hidePoweredBy=?, ~urlEncoded=?, ()) => {
-    Tablecloth.{
-      limitMb: limitMb |> Option.withDefault(~default=10.0),
-      compression: compression |> Option.withDefault(~default=true),
-      hidePoweredBy: hidePoweredBy |> Option.withDefault(~default=true),
-      urlEncoded: urlEncoded |> Option.withDefault(~default=true),
+  let requireQuery: Decco.decoder('query) => guard('query) =
+    (decoder, req) => {
+      // We resolve a promise first so that if the decoding
+      // fails, it will reject the promise instead of just
+      // throwing and requiring a try/catch.
+      let%Async _ = async();
+      switch (decoder(ExpressTools.queryJson(req))) {
+      | Error(e) =>
+        abort @@
+        BadRequest(
+          "Could not decode expected params from query string: location="
+          ++ e.path
+          ++ ", message="
+          ++ e.message,
+        )
+      | Ok(v) => async @@ v
+      };
     };
-  };
 
   [@bs.module]
-  external compressionMiddleware: unit => Express.Middleware.t = "compression";
+  external jsonParsingMiddleware: Express.Middleware.t =
+    "./json-parsing-middleware.js";
 
-  let makeApp = ({limitMb, compression, hidePoweredBy, urlEncoded}) => {
-    let app = Express.express();
-    Express.App.use(
-      app,
-      Express.Middleware.json(~limit=Express.ByteLimit.mb(limitMb), ()),
-    );
-    if (compression) {
-      Express.App.use(app, compressionMiddleware());
-    };
-    if (hidePoweredBy) {
-      Express.App.disable(app, ~name="x-powered-by");
-    };
-    if (urlEncoded) {
-      Express.App.use(
-        app,
-        Express.Middleware.urlencoded(~extended=true, ()),
-      );
-    };
-    app;
+  type endpointConfig('body_in, 'params, 'query) = {
+    path: string,
+    verb,
+    handler: request('body_in, 'params, 'query) => Js.Promise.t(response),
   };
 
-  let mountRoutes = (routes: list(Route.t), app) => {
-    let _ =
-      Tablecloth.List.map(
-        ~f=
-          r =>
-            switch ((r: Route.t)) {
-            | (Route.GET, path, handler) =>
-              Express.App.get(
-                app,
-                ~path,
-                Express.PromiseMiddleware.from((_, req, res) =>
-                  toPromise(makeRequest(req), res, handler)
-                ),
-              )
-            | (Route.POST, path, handler) =>
-              Express.App.post(
-                app,
-                ~path,
-                Express.PromiseMiddleware.from((_, req, res) => {
-                  toPromise(makeRequest(req), res, handler)
-                }),
-              )
-            },
-        routes,
-      );
-    app;
+  type jsonEndpointConfig('body_in, 'params, 'query, 'body_out) = {
+    path: string,
+    verb,
+    body_in_decode: Decco.decoder('body_in),
+    body_out_encode: Decco.encoder('body_out),
+    handler:
+      ('body_in, request('body_in, 'params, 'query)) =>
+      Js.Promise.t('body_out),
   };
 
-  let startApp = (~port, app) => {
-    let onListen = e =>
-      switch (e) {
-      | exception (Js.Exn.Error(e)) =>
-        switch (Js.Exn.message(e)) {
-        | Some(message) =>
-          SihlCoreLog.error("Error in express: " ++ message, ())
-        | None => SihlCoreLog.error("Error in express", ())
+  type endpoint = {
+    use: Express.App.t => unit,
+    useOnRouter: Express.Router.t => unit,
+  };
+
+  let _resToExpressRes = (res, handlerRes) =>
+    switch (handlerRes) {
+    | BadRequest(msg) =>
+      async @@
+      Express.Response.(res |> status(Status.BadRequest) |> sendString(msg))
+    | NotFound(msg) =>
+      async @@
+      Express.Response.(res |> status(Status.NotFound) |> sendString(msg))
+    | Unauthorized(msg) =>
+      async @@
+      Express.Response.(
+        res |> status(Status.Unauthorized) |> sendString(msg)
+      )
+    | OkString(msg) =>
+      async @@
+      Express.Response.(
+        res
+        |> status(Status.Ok)
+        |> setHeader("content-type", "text/plain; charset=utf-8")
+        |> sendString(msg)
+      )
+    | OkJson(js) =>
+      async @@ Express.Response.(res |> status(Status.Ok) |> sendJson(js))
+    | OkBuffer(buff) =>
+      async @@
+      Express.Response.(res |> status(Status.Ok) |> sendBuffer(buff))
+    | StatusString(stat, msg) =>
+      async @@
+      Express.Response.(
+        res
+        |> status(stat)
+        |> setHeader("content-type", "text/plain; charset=utf-8")
+        |> sendString(msg)
+      )
+    | InternalServerError =>
+      async @@
+      Express.Response.(
+        res |> sendStatus(Express.Response.StatusCode.InternalServerError)
+      )
+    | StatusJson(stat, js) =>
+      async @@ Express.Response.(res |> status(stat) |> sendJson(js))
+    | TemporaryRedirect(location) =>
+      async @@
+      Express.Response.(
+        res
+        |> setHeader("Location", location)
+        |> sendStatus(StatusCode.TemporaryRedirect)
+      )
+    | RespondRaw(fn) => async @@ fn(res)
+    | RespondRawAsync(fn) => fn(res)
+    };
+
+  let defaultMiddleware = [|
+    // By default we parse JSON bodies
+    jsonParsingMiddleware,
+  |];
+
+  let endpoint =
+      (~middleware=?, cfg: endpointConfig('body, 'params, 'query)): endpoint => {
+    let wrappedHandler = (_next, req, res) => {
+      let handleOCamlError =
+        [@bs.open]
+        (
+          fun
+          | HttpException(handlerResponse) => handlerResponse
+        );
+      let handleError = error => {
+        switch (handleOCamlError(error)) {
+        | Some(res) => res->async
+        | None =>
+          switch (Obj.magic(error)##stack) {
+          | Some(stack) => Js.log2("Unhandled internal server error", stack)
+          | None => Js.log2("Unhandled internal server error", error)
+          };
+          InternalServerError->async;
         };
-        Node.Process.exit(1);
-      | _ => SihlCoreLog.info("Listening at port 3000", ())
       };
 
-    Express.App.listen(app, ~port, ~onListen, ());
+      let request = {
+        req,
+        requireBody: a => requireBody(a, req),
+        requireQuery: a => requireQuery(a, req),
+        requireParams: a => requireParams(a, req),
+        requireHeader: a => requireHeader(a, req),
+      };
+
+      switch (cfg.handler(request)) {
+      | exception err =>
+        let%Async r = handleError(err);
+        _resToExpressRes(res, r);
+      | p =>
+        let%Async r = p->catchAsync(handleError);
+        _resToExpressRes(res, r);
+      };
+    };
+    let expressHandler = Express.PromiseMiddleware.from(wrappedHandler);
+
+    let verbFunction =
+      switch (cfg.verb) {
+      | GET => Express.App.getWithMany
+      | POST => Express.App.postWithMany
+      | PUT => Express.App.putWithMany
+      | DELETE => Express.App.deleteWithMany
+      };
+
+    let verbFunctionForRouter =
+      switch (cfg.verb) {
+      | GET => Express.Router.getWithMany
+      | POST => Express.Router.postWithMany
+      | PUT => Express.Router.putWithMany
+      | DELETE => Express.Router.deleteWithMany
+      };
+
+    {
+      use: app => {
+        app->verbFunction(
+          ~path=cfg.path,
+          Belt.Array.concat(
+            middleware->Belt.Option.getWithDefault(defaultMiddleware),
+            [|expressHandler|],
+          ),
+        );
+      },
+
+      useOnRouter: router => {
+        router->verbFunctionForRouter(
+          ~path=cfg.path,
+          Belt.Array.concat(
+            middleware->Belt.Option.getWithDefault(defaultMiddleware),
+            [|expressHandler|],
+          ),
+        );
+      },
+    };
   };
 
-  let startServer = (~port, routes) => {
-    let _ =
-      appConfig(
-        ~limitMb=10.0,
-        ~compression=true,
-        ~hidePoweredBy=true,
-        ~urlEncoded=true,
-        (),
+  let jsonEndpoint =
+      (
+        ~middleware=?,
+        cfg: jsonEndpointConfig('body_in, 'query, 'params, 'body_out),
       )
-      |> makeApp
-      |> mountRoutes(routes)
-      |> startApp(~port);
-    Belt.Result.Ok();
+      : endpoint => {
+    endpoint(
+      ~middleware?,
+      {
+        path: cfg.path,
+        verb: cfg.verb,
+        handler: req => {
+          let%Async body = req.requireBody(cfg.body_in_decode);
+          let%Async response = cfg.handler(body, req);
+          async(OkJson(cfg.body_out_encode(response)));
+        },
+      },
+    );
   };
 };
 
-let respond:
-  Future.t(Belt.Result.t(Js.Json.t, SihlCoreError.t)) =>
-  Future.t(Response.t) =
-  json =>
-    json
-    ->Future.map(json =>
-        switch (json) {
-        | Belt.Result.Ok(json) => json
-        | Belt.Result.Error(error) =>
-          error |> SihlCoreError.message |> Message.make |> Message.encode
-        }
-      )
-    ->Future.map(bodyJson => Response.make(~bodyJson, ()));
+module Express = Express;
+
+type endpoint = Endpoint.endpoint;
+
+let endpoint = Endpoint.endpoint;
+let jsonEndpoint = Endpoint.jsonEndpoint;
+
+type application = {
+  expressApp: Express.App.t,
+  router: Express.Router.t,
+};
+
+let application = (~port=?, endpoints: list(endpoint)) => {
+  let app = Express.App.make();
+  let router = Express.Router.make();
+  app->Express.App.useRouter(router);
+
+  endpoints->Belt.List.forEach(ep => {ep.useOnRouter(router)});
+
+  let defaultPort =
+    Node.Process.process##env
+    ->Js.Dict.get("PORT")
+    ->Belt.Option.map(a => Js.Float.fromString(a)->int_of_float)
+    ->Belt.Option.getWithDefault(3000);
+
+  let effectivePort = port->Belt.Option.getWithDefault(defaultPort);
+
+  app->Express.App.listen(
+    ~port=effectivePort,
+    ~onListen=_ => {Js.log2("Server listening on port", effectivePort)},
+    (),
+  )
+  |> ignore;
+
+  {expressApp: app, router};
+};

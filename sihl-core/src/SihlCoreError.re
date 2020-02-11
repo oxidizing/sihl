@@ -1,23 +1,3 @@
-type t = [
-  | `ClientError(string)
-  | `NotFoundError(string)
-  | `ForbiddenError(string)
-  | `AuthenticationError(string)
-  | `AuthorizationError(string)
-  | `ServerError(string)
-];
-
-let message = error => {
-  switch (error) {
-  | `ClientError(value) => value
-  | `NotFoundError(value) => value
-  | `ForbiddenError(value) => value
-  | `AuthenticationError(value) => value
-  | `AuthorizationError(value) => value
-  | `ServerError(value) => value
-  };
-};
-
 let catchAsResult = (f, error) =>
   switch (f()) {
   | value => Belt.Result.Ok(value)
@@ -31,23 +11,19 @@ let optionAsResult = (error, optn) => {
   };
 };
 
-let decodeToServerError = res =>
-  switch (res) {
-  | Belt.Result.Ok(_) as result => result
-  | Belt.Result.Error({Decco.path, Decco.message, Decco.value}) =>
-    Belt.Result.Error(
-      `ServerError(
-        "Failed to decode at "
-        ++ path
-        ++ ", "
-        ++ message
-        ++ ", got "
-        ++ Js.Json.stringify(value),
-      ),
-    )
-  };
+module Decco = {
+  let stringify = ({Decco.path, Decco.message, Decco.value}) =>
+    "Failed to decode at location="
+    ++ path
+    ++ ", message="
+    ++ message
+    ++ ", json="
+    ++ Js.Json.stringify(value);
 
-let flatten = errors =>
-  Belt.List.reduce(errors, Belt.Result.Ok(), (acc, err) =>
-    Belt.Result.flatMap(acc, _ => err)
-  );
+  let stringifyDecoder = (decoder, json) => {
+    switch (decoder(json)) {
+    | Belt.Result.Ok(_) as ok => ok
+    | Belt.Result.Error(error) => Belt.Result.Error(stringify(error))
+    };
+  };
+};

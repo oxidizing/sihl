@@ -1,6 +1,7 @@
 let flushBufferTimeoutMs = 50;
 
-let stdOutStrategy = toLog => toLog |> Rationale.RList.join("\n") |> Js.log;
+let stdOutStrategy = toLog =>
+  toLog |> Belt.List.toArray |> Js.Array.joinWith("\n") |> Js.log;
 
 let buffer = ref([]);
 let flushBufferTimer = ref(None);
@@ -14,7 +15,7 @@ let flushBuffer = (buffer, strategies) => {
 };
 
 let addStrategy = strategy =>
-  flushStrategies := Rationale.RList.append(strategy, flushStrategies^);
+  flushStrategies := Belt.List.add(flushStrategies^, strategy);
 
 // console.* methods are synchronous and they block the node event loop
 // We implement async logging by flushing a log buffer
@@ -51,7 +52,7 @@ let log = (level, content, ~path, ~id) => {
       date ++ " - " ++ level ++ id ++ path ++ " - " ++ content
     | _ => date ++ " - " ++ level ++ " - " ++ content
     };
-  buffer := Rationale.RList.append(toLog, buffer^);
+  buffer := Belt.List.add(buffer^, toLog);
   scheduleAsyncLog(flushBufferTimer);
 };
 

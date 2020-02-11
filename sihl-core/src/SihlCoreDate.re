@@ -5,8 +5,9 @@ let toISOString = Js.Date.toISOString;
 let today = () =>
   Js.Date.make()
   |> Js.Date.toISOString
-  |> Tablecloth.String.split(~on="T")
-  |> Tablecloth.List.head;
+  |> Js.String.split("T")
+  |> Belt.List.fromArray
+  |> Belt.List.head;
 let isValidDate: Js.Date.t => bool = [%raw
   {| function f(d) { return d instanceof Date && !isNaN(d); } |}
 ];

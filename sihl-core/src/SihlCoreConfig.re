@@ -1,11 +1,5 @@
 module Env = {
-  let get: unit => Js.Json.t = [%raw
-    {|
-function() {
-  return process.env;
-}
-|}
-  ];
+  let get: unit => Js.Json.t = [%raw {| function() { return process.env; } |}];
 };
 
 module Db = {

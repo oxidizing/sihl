@@ -1,7 +1,7 @@
+module Async = SihlCoreAsync;
+
 module Mysql = {
   let errorTransformer = err => `ServerError(Js.String.make(err));
-
-  let (>>=) = Future.(>>=);
 
   type connection_details = {
     .
@@ -18,15 +18,7 @@ module Mysql = {
   module QueryResult = {
     [@decco]
     type t = (list(Js.Json.t), Js.Json.t);
-    let make = (result, meta) => (result, meta);
-    let decode = t_decode;
-  };
-
-  module MutationResult = {
-    [@decco]
-    type t = Js.Json.t;
-    let make = result => result;
-    let decode = t_decode;
+    let decode = SihlCoreError.Decco.stringifyDecoder(t_decode);
   };
 
   module Connection = {
@@ -36,20 +28,11 @@ module Mysql = {
       "query";
     [@bs.send] external release: t => unit = "release";
 
-    let query = (~connection, ~stmt, ~values, ()) => {
-      let values =
-        Tablecloth.Option.withDefault(
-          ~default=Json.Encode.boolArray([||]),
-          values,
-        );
-      query_(connection, stmt, values)
-      ->FutureJs.fromPromise(errorTransformer)
-      ->Future.flatMapOk(value =>
-          value
-          |> QueryResult.decode
-          |> SihlCoreError.decodeToServerError
-          |> Future.value
-        );
+    let query = (~connection, ~stmt, ~parameters) => {
+      let parameters =
+        Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
+      let%Async result = query_(connection, stmt, parameters);
+      result |> QueryResult.decode |> Async.async;
     };
 
     let release: t => unit =
@@ -67,9 +50,7 @@ module Mysql = {
     type t;
     [@bs.send]
     external connect: t => Js.Promise.t(Connection.t) = "getConnection";
-    let connect:
-      t => Future.t(Belt.Result.t(Connection.t, [> SihlCoreError.t])) =
-      pool => FutureJs.fromPromise(connect(pool), errorTransformer);
+    let connect: t => Js.Promise.t(Connection.t) = pool => connect(pool);
   };
 
   [@bs.module "mysql2/promise"]
@@ -80,6 +61,7 @@ module Mysql = {
 module Connection = Mysql.Connection;
 module Pool = Mysql.Pool;
 
+// taken from caqti make use of GADT
 /* type field(_) = */
 /*   | Bool: field(bool) */
 /*   | Int: field(int) */

@@ -1,5 +1,3 @@
-let (<$>) = Rationale.Option.(<$>);
-
 module V4 = {
   [@bs.module] external ex_uuidv4: unit => string = "uuid/v4";
   let uuidv4 = ex_uuidv4;
@@ -10,6 +8,6 @@ module V4 = {
       ],
       uuid,
     )
-    <$> (_ => true)
-    |> Rationale.Option.default(false);
+    ->Belt.Option.map(_ => true)
+    ->Belt.Option.getWithDefault(false);
 };
