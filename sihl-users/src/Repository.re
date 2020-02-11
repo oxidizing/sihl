@@ -1,4 +1,4 @@
-open Belt.Result;
+module Async = Sihl.Core.Async;
 
 // TODO move to sihl-core
 module RepoResult = {
@@ -26,76 +26,48 @@ module RepoResult = {
   let foundRowsQuery = "SELECT FOUND_ROWS();";
 };
 
-let getOne = (~connection, ~stmt, ~values=?, ~decode, ()) => {
-  Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~values, ())
-  ->Future.flatMapOk(result =>
-      switch (result) {
-      | ([row], _) =>
-        row
-        |> decode
-        |> Tablecloth.Result.map(Tablecloth.Option.some)
-        |> Future.value
-      | ([], _) => Future.value(Belt.Result.Ok(None))
-      | _ =>
-        let values =
-          values
-          |> Tablecloth.Option.map(~f=Js.Json.stringify)
-          |> Tablecloth.Option.withDefault(~default="");
-        Future.value(
-          Belt.Result.Error(
-            `ServerError(
-              "Failed to parse DB response for statement "
-              ++ stmt
-              ++ " with values "
-              ++ values,
-            ),
-          ),
-        );
-      }
+let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
+  let%Async result =
+    Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~parameters);
+  let result = Sihl.Core.Db.failIfError(result);
+  switch (result) {
+  | ([row], _) =>
+    row
+    |> Sihl.Core.Error.Decco.stringifyDecoder(decode)
+    |> Sihl.Core.Db.failIfError
+  | ([], _) => Sihl.Core.Db.fail("No rows found in database")
+  | _ =>
+    Sihl.Core.Db.fail(
+      "Two or more rows found when we were expecting only one",
     )
-  ->Future.tapError(error =>
-      Sihl.Core.Log.error(Sihl.Core.Error.message(error), ())
-    );
+  };
 };
 
-let getMany = (~connection, ~stmt, ~values=?, ~decode, ()) => {
-  Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~values, ())
-  ->Future.flatMapOk(result =>
-      switch (result) {
-      | (rows, _) =>
-        let mainResult =
-          Tablecloth.List.map(~f=x => x |> decode, rows)
-          |> Tablecloth.Result.combine
-          |> Future.value;
-        mainResult->Future.flatMapOk(mainResult =>
-          Sihl.Core.Db.Mysql.Connection.query(
-            ~connection,
-            ~stmt=RepoResult.foundRowsQuery,
-            ~values=None,
-            (),
-          )
-          ->Future.flatMapOk(result =>
-              switch (result) {
-              | ([row], _) =>
-                row
-                |> RepoResult.MetaData.decode
-                |> Sihl.Core.Error.decodeToServerError
-                |> Future.value
-              | _ =>
-                Future.value(
-                  Belt.Result.Error(
-                    `ServerError("Could no fetch FOUND_ROWS()"),
-                  ),
-                )
-              }
-            )
-          ->Future.mapOk(RepoResult.create(mainResult))
-        );
-      }
-    )
-  ->Future.tapError(error =>
-      Sihl.Core.Log.error(Sihl.Core.Error.message(error), ())
-    );
+let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
+  let%Async result =
+    Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~parameters);
+  switch (Sihl.Core.Db.failIfError(result)) {
+  | (rows, _) =>
+    let result =
+      rows
+      ->Belt.List.map(Sihl.Core.Error.Decco.stringifyDecoder(decode))
+      ->Belt.List.map(Sihl.Core.Db.failIfError);
+    let%Async meta =
+      Sihl.Core.Db.Mysql.Connection.query(
+        ~connection,
+        ~stmt=RepoResult.foundRowsQuery,
+        ~parameters=None,
+      );
+    let meta =
+      switch (Sihl.Core.Db.failIfError(meta)) {
+      | ([row], _) =>
+        row
+        |> Sihl.Core.Error.Decco.stringifyDecoder(RepoResult.MetaData.decode)
+        |> Sihl.Core.Db.failIfError
+      | _ => Sihl.Core.Db.fail("Could not fetch FOUND_ROWS()")
+      };
+    Async.async @@ RepoResult.create(result, meta);
+  };
 };
 
 let execute = (~connection, ~stmt) =>
