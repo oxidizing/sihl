@@ -15,7 +15,7 @@ module Database = {
 };
 
 module Server = {
-  let start = config => {
+  let start = _config => {
     Sihl.Core.Log.info("Starting app " ++ App.Settings.name, ());
     let config =
       Sihl.Core.Config.Db.read()

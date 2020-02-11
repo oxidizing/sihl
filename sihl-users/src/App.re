@@ -28,6 +28,6 @@ CREATE TABLE IF NOT EXISTS $(prefix)_users (
 };
 
 module Http = {
-  open Sihl.Core.Http;
+  // TODO get connection and inject it into routes
   let routes = pool => [Routes.getUser, Routes.getUsers];
 };
