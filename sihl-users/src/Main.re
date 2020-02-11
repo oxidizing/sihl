@@ -1,3 +1,5 @@
+module Async = Sihl.Core.Async;
+
 module Database = {
   let pool = (config: Sihl.Core.Config.Db.t) =>
     Sihl.Core.Db.Mysql.pool({
@@ -15,13 +17,13 @@ module Database = {
 module Server = {
   let start = config => {
     Sihl.Core.Log.info("Starting app " ++ App.Settings.name, ());
-    let _ =
+    let config =
       Sihl.Core.Config.Db.read()
-      |> Tablecloth.Result.map(Database.pool)
-      |> Tablecloth.Result.map(App.Http.routes)
-      |> Tablecloth.Result.map(
-           Sihl.Core.Http.Adapter.startServer(~port=3000),
-         );
+      |> Sihl.Core.Error.Decco.stringifyResult
+      |> Sihl.Core.Error.failIfError;
+    let pool = config |> Database.pool;
+    let routes = pool |> App.Http.routes;
+    Sihl.Core.Http.application(~port=3000, routes) |> ignore;
     Sihl.Core.Log.info("App started on port 3000", ());
     ();
   };

@@ -1,5 +1,3 @@
-let (>>) = Tablecloth.(>>);
-
 module User = {
   [@decco]
   type t = {
@@ -15,7 +13,7 @@ module User = {
   };
 
   let encode = t_encode;
-  let decode = t_decode >> Sihl.Core.Error.decodeToServerError;
+  let decode = t_decode;
 };
 
 module Users = {

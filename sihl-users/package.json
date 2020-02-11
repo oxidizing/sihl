@@ -11,23 +11,16 @@
   "keywords": [
     "BuckleScript"
   ],
-  "author": "",
+  "author": "Josef Erben josef@oxidizing.io",
   "license": "MIT",
   "dependencies": {
     "compression": "^1.7.4",
     "decco": "^1.1.1",
-    "reason-future": "^2.5.0",
-    "sihl-core": "link:/../sihl-core",
-    "tablecloth-bucklescript": "^0.0.6"
+    "sihl-core": "0.0.1",
+    "bs-let": "^0.1.16"
   },
   "devDependencies": {
-    "bs-platform": "^6.2.1",
+    "bs-platform": "^7.1.0",
     "@glennsl/bs-jest": "0.4.9"
-  },
-  "resolutions": {
-    "bytes": "3.1.0",
-    "http-errors": "1.7.2",
-    "ms": "2.0.0",
-    "inherits": "2.0.3"
   }
 }

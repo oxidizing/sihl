@@ -1,8 +1,6 @@
 module Async = SihlCoreAsync;
 
 module Mysql = {
-  let errorTransformer = err => `ServerError(Js.String.make(err));
-
   type connection_details = {
     .
     "user": string,
@@ -58,6 +56,18 @@ module Mysql = {
   let pool = connection_details => pool(connection_details);
 };
 
+exception DatabaseException(string);
+
+let failIfError = result => {
+  switch (result) {
+  | Belt.Result.Ok(ok) => ok
+  | Belt.Result.Error(error) => raise(DatabaseException(error))
+  };
+};
+
+let fail = reason => raise(DatabaseException(reason));
+
+let pool = Mysql.pool;
 module Connection = Mysql.Connection;
 module Pool = Mysql.Pool;
 

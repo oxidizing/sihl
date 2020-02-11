@@ -29,18 +29,5 @@ CREATE TABLE IF NOT EXISTS $(prefix)_users (
 
 module Http = {
   open Sihl.Core.Http;
-  let routes = pool => [
-    Route.post("/register/", Routes.register),
-    Route.get("/login/", Routes.login),
-    Route.get("/", Routes.getUsers(pool) |> Routes.auth),
-    Route.get("/:id/", Routes.getUser(pool) |> Routes.auth),
-    Route.get("/me/", Routes.getMyUser |> Routes.auth),
-    Route.post(
-      "/request-password-reset/",
-      Routes.requestPasswordReset |> Routes.auth,
-    ),
-    Route.post("/reset-password/", Routes.resetPassword |> Routes.auth),
-    Route.post("/update-password/", Routes.updatePassword |> Routes.auth),
-    Route.post("/set-password/", Routes.setPassword |> Routes.auth),
-  ];
+  let routes = pool => [Routes.getUser, Routes.getUsers];
 };

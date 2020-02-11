@@ -14,14 +14,14 @@ module RepoResult = {
 
   type t('a) = (list('a), MetaData.t);
 
-  let create = (value, metaData) => (value, metaData);
+  let create = (rows, metaData) => (rows, metaData);
   let createWithTotal = (value, totalCount) => (
     value,
     MetaData.{totalCount: totalCount},
   );
   let total = ((_, MetaData.{totalCount})) => totalCount;
   let metaData = ((_, metaData)) => metaData;
-  let value = ((value, _)) => value;
+  let rows = ((rows, _)) => rows;
 
   let foundRowsQuery = "SELECT FOUND_ROWS();";
 };
@@ -35,6 +35,7 @@ let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
     row
     |> Sihl.Core.Error.Decco.stringifyDecoder(decode)
     |> Sihl.Core.Db.failIfError
+    |> Async.async
   | ([], _) => Sihl.Core.Db.fail("No rows found in database")
   | _ =>
     Sihl.Core.Db.fail(
@@ -94,10 +95,6 @@ SELECT
   status
 FROM users;
 ";
-    [@decco]
-    type parameter = string;
-
-    let encode = parameter_encode;
 
     let query:
       Sihl.Core.Db.Connection.t => Js.Promise.t(RepoResult.t(Model.User.t)) =
@@ -106,11 +103,33 @@ FROM users;
   };
 
   module Get = {
-    let stmt = "";
-    let encode = () => ();
+    let stmt = "SELECT
+  uuid_of(uuid) as uuid,
+  email,
+  password,
+  given_name,
+  family_name,
+  username,
+  phone,
+  status
+FROM users
+WHERE uuid = UNHEX(REPLACE(?, '-', ''));
+";
+
+    [@decco]
+    type parameters = string;
+    let encode = parameters_encode;
+
     let query:
       (Sihl.Core.Db.Connection.t, ~userId: string) =>
       Js.Promise.t(Model.User.t) =
-      (connection, ~userId) => Sihl.Core.Db.fail("Not implemented");
+      (connection, ~userId) =>
+        getOne(
+          ~connection,
+          ~stmt,
+          ~parameters=encode(userId),
+          ~decode=Model.User.decode,
+          (),
+        );
   };
 };
