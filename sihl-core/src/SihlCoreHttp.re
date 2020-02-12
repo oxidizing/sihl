@@ -146,36 +146,6 @@ module Endpoint = {
       Js.Promise.t(response),
   };
 
-  type queryEndpointConfig('body_in, 'params, 'query, 'body_out) = {
-    database: SihlCoreDb.Database.t,
-    path: string,
-    params_decode: Decco.decoder('params),
-    query_decode: Decco.decoder('query),
-    body_out_encode: Decco.encoder('body_out),
-    handler:
-      (
-        SihlCoreDb.Connection.t,
-        'params,
-        'query,
-        request('body_in, 'params, 'query)
-      ) =>
-      Js.Promise.t('body_out),
-  };
-
-  type commandEndpointConfig('body_in, 'params, 'query, 'body_out) = {
-    database: SihlCoreDb.Database.t,
-    path: string,
-    body_in_decode: Decco.decoder('body_in),
-    body_out_encode: Decco.encoder('body_out),
-    handler:
-      (
-        SihlCoreDb.Connection.t,
-        'body_in,
-        request('body_in, 'params, 'query)
-      ) =>
-      Js.Promise.t('body_out),
-  };
-
   type jsonEndpointConfig('body_in, 'params, 'query, 'body_out) = {
     path: string,
     verb,
@@ -362,49 +332,6 @@ module Endpoint = {
       },
     );
   };
-
-  let queryEndpoint =
-      (
-        ~middleware=?,
-        cfg: queryEndpointConfig('body_in, 'params, 'query, 'body_out),
-      )
-      : endpoint => {
-    endpoint(
-      ~middleware?,
-      {
-        path: cfg.path,
-        verb: GET,
-        handler: req => {
-          let%Async conn = SihlCoreDb.Database.connect(cfg.database);
-          let%Async params = req.requireParams(cfg.params_decode);
-          let%Async query = req.requireQuery(cfg.query_decode);
-          let%Async response = cfg.handler(conn, params, query, req);
-          async(OkJson(cfg.body_out_encode(response)));
-        },
-      },
-    );
-  };
-
-  let commandEndpoint =
-      (
-        ~middleware=?,
-        cfg: commandEndpointConfig('body_in, 'params, 'query, 'body_out),
-      )
-      : endpoint => {
-    endpoint(
-      ~middleware?,
-      {
-        path: cfg.path,
-        verb: POST,
-        handler: req => {
-          let%Async conn = SihlCoreDb.Database.connect(cfg.database);
-          let%Async body = req.requireBody(cfg.body_in_decode);
-          let%Async response = cfg.handler(conn, body, req);
-          async(OkJson(cfg.body_out_encode(response)));
-        },
-      },
-    );
-  };
 };
 
 module Express = Express;
@@ -413,8 +340,6 @@ type endpoint = Endpoint.endpoint;
 
 let endpoint = Endpoint.endpoint;
 let dbEndpoint = Endpoint.dbEndpoint;
-let queryEndpoint = Endpoint.queryEndpoint;
-let commandEndpoint = Endpoint.commandEndpoint;
 let jsonEndpoint = Endpoint.jsonEndpoint;
 
 type application = {

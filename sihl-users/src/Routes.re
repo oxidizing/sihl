@@ -1,43 +1,70 @@
 module Async = Sihl.Core.Async;
 
-// TODO inject db connection elsewhere
-module Database = {
-  let pool = (config: Sihl.Core.Config.Db.t) =>
-    Sihl.Core.Db.Mysql.pool({
-      "user": config.dbUser,
-      "host": config.dbHost,
-      "database": config.dbName,
-      "password": config.dbPassword,
-      "port": config.dbPort,
-      "waitForConnections": true,
-      "connectionLimit": config.connectionLimit,
-      "queueLimit": config.queueLimit,
+module GetUsers = {
+  [@decco]
+  type users = list(Model.User.t);
+
+  let endpoint = database =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: GET,
+      path: "/",
+      handler: (conn, _req) => {
+        let%Async users = Repository.User.GetAll.query(conn);
+        let response =
+          users |> Repository.Repo.RepoResult.rows |> users_encode;
+        Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
+      },
     });
 };
 
-let getUsers = database =>
-  Sihl.Core.Http.dbEndpoint({
-    database,
-    verb: GET,
-    path: "/",
-    handler: (conn, _req) => {
-      let%Async users = Repository.User.GetAll.query(conn);
-      let response = users |> Repository.RepoResult.rows |> Model.Users.encode;
-      Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
-    },
-  });
+module GetUser = {
+  [@decco]
+  type params = {userId: string};
 
-let getUser = database =>
-  Sihl.Core.Http.dbEndpoint({
-    database,
-    verb: GET,
-    path: "/:id/",
-    handler: (conn, _req) => {
-      let%Async users = Repository.User.Get.query(conn, ~userId="TODO");
-      let response = users |> Model.User.encode;
-      Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
-    },
-  });
+  let endpoint = database =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: GET,
+      path: "/:id/",
+      handler: (conn, _req) => {
+        let%Async {userId} = _req.requireParams(params_decode);
+        let%Async user = Repository.User.Get.query(conn, ~userId);
+        let response = user |> Model.User.encode;
+        Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
+      },
+    });
+};
+
+module Login = {
+  [@decco]
+  type query = {
+    email: string,
+    password: string,
+  };
+
+  [@decco]
+  type response_body = {token: string};
+
+  let endpoint = database =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: GET,
+      path: "/login/",
+      handler: (conn, _req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async {email, password} = _req.requireQuery(query_decode);
+        let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+        if (!Sihl.Core.Bcrypt.Hash.compareSync(password, user.password)) {
+          abort @@ Unauthorized("Invalid password or email provided");
+        };
+        let token = Model.Token.generate(~user);
+        let%Async _ = Repository.Token.Store.query(conn, ~token);
+        let response = {token: token.token} |> response_body_encode;
+        Async.async @@ OkJson(response);
+      },
+    });
+};
 
 /* let auth: Sihl.Core.Http.Middleware.t = */
 /*   (handler, request) => { */

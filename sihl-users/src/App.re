@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS $(prefix)_users (
 module Http = {
   // TODO get connection and inject it into routes
   let routes = database => [
-    Routes.getUser(database),
-    Routes.getUsers(database),
+    Routes.GetUser.endpoint(database),
+    Routes.GetUsers.endpoint(database),
   ];
 };

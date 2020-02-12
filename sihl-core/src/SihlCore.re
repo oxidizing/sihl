@@ -1,6 +1,7 @@
 module Async = SihlCoreAsync;
 module Base64 = SihlCoreBase64;
 module Uuid = SihlCoreUuid;
+module Bcrypt = SihlCoreBcrypt;
 //module Jwt = SihlCoreJwt;
 
 module Error = SihlCoreError;
