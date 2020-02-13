@@ -8,21 +8,32 @@ module User = {
     givenName: string,
     familyName: string,
     phone: option(string),
-    created: string,
-    updated: string,
   };
 
-  let encode = t_encode;
-  let decode = t_decode;
-
-  let doesMatchPassword = (~user, ~plainText) =>
-    Belt.Result.Error("Invalid password provided");
+  let make = (~email, ~username, ~password, ~givenName, ~familyName, ~phone) => {
+    let id = Sihl.Core.Uuid.V4.uuidv4();
+    Belt.Result.Ok({
+      id,
+      email,
+      username,
+      password,
+      givenName,
+      familyName,
+      phone,
+    });
+  };
 };
 
 module Token = {
+  [@decco]
   type t = {
     userId: string,
     token: string,
   };
+
+  // TODO implement token generation
   let generate = (~user: User.t) => {userId: user.id, token: "TODO"};
+
+  let fromHeader = header =>
+    Js.String.split(header, " ")->Belt.Array.reverse->Belt.Array.get(0);
 };

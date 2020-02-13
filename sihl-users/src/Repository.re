@@ -74,7 +74,8 @@ module Repo = {
     };
   };
 
-  let execute = (~connection, ~stmt) => Sihl.Core.Db.fail("Not implemented");
+  let execute = (~parameters=?, ~connection, stmt) =>
+    Sihl.Core.Db.fail("Not implemented");
 };
 
 module User = {
@@ -83,7 +84,7 @@ module User = {
 TRUNCATE TABLE users;
 ";
     let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) =
-      connection => Repo.execute(~connection, ~stmt);
+      connection => Repo.execute(~connection, stmt);
   };
 
   module GetAll = {
@@ -104,7 +105,7 @@ FROM users;
       Sihl.Core.Db.Connection.t =>
       Js.Promise.t(Repo.RepoResult.t(Model.User.t)) =
       connection =>
-        Repo.getMany(~connection, ~stmt, ~decode=Model.User.decode, ());
+        Repo.getMany(~connection, ~stmt, ~decode=Model.User.t_decode, ());
   };
 
   module Get = {
@@ -133,7 +134,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
           ~connection,
           ~stmt,
           ~parameters=encode(userId),
-          ~decode=Model.User.decode,
+          ~decode=Model.User.t_decode,
           (),
         );
   };
@@ -164,9 +165,20 @@ WHERE email = ?;
           ~connection,
           ~stmt,
           ~parameters=encode(email),
-          ~decode=Model.User.decode,
+          ~decode=Model.User.t_decode,
           (),
         );
+  };
+
+  module Store = {
+    let stmt = "";
+
+    [@decco]
+    type parameters = string;
+    let encode = parameters_encode;
+
+    let query = (connection, ~user) =>
+      Repo.execute(~parameters=encode("hey"), ~connection, stmt);
   };
 };
 
@@ -174,8 +186,37 @@ module Token = {
   module Store = {
     let stmt = "";
 
+    [@decco]
+    type parameters = string;
+    let encode = parameters_encode;
+
+    let query = (connection, ~token) =>
+      Repo.execute(encode("hoo"), ~connection, ~stmt);
+  };
+
+  module Get = {
+    let stmt = "SELECT
+  uuid_of(uuid) as uuid,
+  userId,
+  token
+FROM tokens
+WHERE token = ?;
+";
+
+    [@decco]
+    type parameters = string;
+    let encode = parameters_encode;
+
     let query:
-      (Sihl.Core.Db.Connection.t, ~token: Model.Token.t) => Js.Promise.t(unit) =
-      (connection, ~token) => Repo.execute(~connection, ~stmt);
+      (Sihl.Core.Db.Connection.t, ~tokenString: string) =>
+      Js.Promise.t(Model.Token.t) =
+      (connection, ~tokenString) =>
+        Repo.getOne(
+          ~connection,
+          ~stmt,
+          ~parameters=encode(tokenString),
+          ~decode=Model.Token.t_decode,
+          (),
+        );
   };
 };

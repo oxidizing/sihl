@@ -34,6 +34,13 @@ module Endpoint = {
     raise(HttpException(res));
   };
 
+  let abortIfError = res => {
+    switch (res) {
+    | Belt.Result.Ok(res) => res
+    | Belt.Result.Error(error) => raise(HttpException(error))
+    };
+  };
+
   type verb =
     | GET
     | POST
