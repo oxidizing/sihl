@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  db:
+    image: mariadb:10.1.41-bionic
+    command: --max_allowed_packet=629145600
+    environment:
+      # default user is "root"
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: dev
+    ports:
+      - 3306:3306
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080

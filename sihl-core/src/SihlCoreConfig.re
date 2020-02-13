@@ -14,11 +14,12 @@ module Db = {
     [@decco.key "DB_PASSWORD"]
     dbPassword: string,
     [@decco.key "DB_PORT"]
-    dbPort: int,
-    [@decco.key "DB_QUEUE_LIMIT"] [@decco.default 300]
-    queueLimit: int,
-    [@decco.key "DB_CONNECTION_LIMIT"] [@decco.default 8]
-    connectionLimit: int,
+    // TODO implement custom encoder/decoder for int as string
+    dbPort: string,
+    [@decco.key "DB_QUEUE_LIMIT"] [@decco.default "300"]
+    queueLimit: string,
+    [@decco.key "DB_CONNECTION_LIMIT"] [@decco.default "8"]
+    connectionLimit: string,
   };
 
   let encode = t_encode;

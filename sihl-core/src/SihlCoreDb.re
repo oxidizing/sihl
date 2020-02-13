@@ -19,6 +19,21 @@ module Mysql = {
     let decode = SihlCoreError.Decco.stringifyDecoder(t_decode);
   };
 
+  module ExecutionResult = {
+    [@decco]
+    type meta = {
+      fieldCount: int,
+      affectedRows: int,
+      insertId: int,
+      info: string,
+      serverStatus: int,
+      warningStatus: int,
+    };
+    [@decco]
+    type t = (meta, unit);
+    let decode = SihlCoreError.Decco.stringifyDecoder(t_decode);
+  };
+
   module Connection = {
     type t;
     [@bs.send]
@@ -31,6 +46,13 @@ module Mysql = {
         Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
       let%Async result = query_(connection, stmt, parameters);
       result |> QueryResult.decode |> Async.async;
+    };
+
+    let execute = (~connection, ~stmt, ~parameters) => {
+      let parameters =
+        Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
+      let%Async result = query_(connection, stmt, parameters);
+      result |> ExecutionResult.decode |> Async.async;
     };
 
     let release: t => unit =

@@ -6,8 +6,23 @@ module Settings = {
 };
 
 module Database = {
-  let clean = [Repository.User.Clean.run, Repository.Token.Clean.run];
+  let clean = [Repository.Token.Clean.run, Repository.User.Clean.run];
   let migrations = namespace => [
+    "
+SET collation_connection = 'utf8mb4_unicode_ci';
+",
+    "
+CREATE OR REPLACE
+  FUNCTION uuid_of(uuid BINARY(16))
+  RETURNS VARCHAR(36)
+  RETURN LOWER(CONCAT(
+  SUBSTR(HEX(uuid), 1, 8), '-',
+  SUBSTR(HEX(uuid), 9, 4), '-',
+  SUBSTR(HEX(uuid), 13, 4), '-',
+  SUBSTR(HEX(uuid), 17, 4), '-',
+  SUBSTR(HEX(uuid), 21)
+));
+",
     {j|
 CREATE TABLE IF NOT EXISTS $(namespace)_users (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -25,18 +40,18 @@ CREATE TABLE IF NOT EXISTS $(namespace)_users (
   CONSTRAINT unique_uuid UNIQUE KEY (uuid)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
+    // TODO add FOREIGN KEY (user) REFERENCES users_users(id)
     {j|
 CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   token VARCHAR(128) NOT NULL,
-  user BIGINT UNISGNED,
+  user BIGINT UNSIGNED,
   created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_token UNIQUE KEY (token),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-  FOREIGN KEY (user) REFERENCES users_users(id)
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
   ];
@@ -46,10 +61,10 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
       "host": config.dbHost,
       "database": config.dbName,
       "password": config.dbPassword,
-      "port": config.dbPort,
+      "port": config.dbPort |> int_of_string,
       "waitForConnections": true,
-      "connectionLimit": config.connectionLimit,
-      "queueLimit": config.queueLimit,
+      "connectionLimit": config.connectionLimit |> int_of_string,
+      "queueLimit": config.queueLimit |> int_of_string,
     });
 };
 
@@ -73,8 +88,8 @@ module Server = {
       |> Sihl.Core.Error.failIfError;
     let pool = config |> Database.database;
     let routes = pool |> Http.routes;
-    Sihl.Core.Http.application(~port=3000, routes) |> ignore;
+    let app = Sihl.Core.Http.application(~port=3000, routes);
     Sihl.Core.Log.info("App started on port 3000", ());
-    ();
+    app;
   };
 };

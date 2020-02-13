@@ -74,9 +74,8 @@ module Repo = {
 
   let execute = (~parameters=?, connection, stmt) => {
     let%Async rows =
-      Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~parameters);
-    let result = rows->Belt.Result.map(_ => ())->Sihl.Core.Db.failIfError;
-    Async.async(result);
+      Sihl.Core.Db.Mysql.Connection.execute(~connection, ~stmt, ~parameters);
+    rows->Belt.Result.map(_ => ())->Sihl.Core.Db.failIfError->Async.async;
   };
 };
 
@@ -85,8 +84,9 @@ module User = {
     let stmt = "
 TRUNCATE TABLE users_users;
 ";
-    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) =
+    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
       connection => Repo.execute(connection, stmt);
+    };
   };
 
   module GetAll = {
@@ -225,8 +225,9 @@ module Token = {
     let stmt = "
 TRUNCATE TABLE users_tokens;
 ";
-    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) =
+    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
       connection => Repo.execute(connection, stmt);
+    };
   };
 
   module Store = {

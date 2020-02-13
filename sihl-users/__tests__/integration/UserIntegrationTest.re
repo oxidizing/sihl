@@ -2,33 +2,63 @@ module Utils = {
   module Async = Sihl.Core.Async;
 
   let getConnection = () => {
-    let config =
-      Sihl.Core.Config.Db.read()
-      |> Sihl.Core.Error.Decco.stringifyResult
-      |> Sihl.Core.Error.failIfError;
-    config |> App.Database.database |> Sihl.Core.Db.Database.connect;
+    Sihl.Core.Config.Db.read()
+    |> Sihl.Core.Error.Decco.stringifyResult
+    |> Sihl.Core.Error.failIfError
+    |> App.Database.database
+    |> Sihl.Core.Db.Database.connect;
   };
 
-  // TODO make sure caller catches all errors
-  let cleanDb = () => {
+  let releaseConnection = conn => {
+    Sihl.Core.Db.Connection.release(conn);
+  };
+
+  let cleanData = () => {
     let%Async conn = getConnection();
-    Async.async @@ Belt.List.map(App.Database.clean, f => f(conn));
+    App.Database.clean
+    ->Belt.List.map(f => f(conn))
+    ->Async.allInOrder
+    ->Async.mapAsync(_ => releaseConnection(conn));
+  };
+
+  let runMigrations = () => {
+    let%Async conn = getConnection();
+    App.Settings.namespace
+    ->App.Database.migrations
+    ->Belt.List.map(Repository.Repo.execute(conn))
+    ->Async.allInOrder
+    ->Async.mapAsync(_ => releaseConnection(conn));
   };
 };
 
 open Jest;
 
+module Async = Sihl.Core.Async;
+
+beforeAllPromise(_ => {
+  let%Async _ = Utils.runMigrations();
+  Async.async(App.Server.start());
+});
+
+beforeEachPromise(_ => Utils.cleanData());
+
 describe("Expect", () => {
-  Expect.(test("toBe", () =>
+  Expect.(test("promise", () =>
             expect(1 + 2) |> toBe(3)
           ))
 });
 
-describe("Expect.Operators", () => {
-  open Expect;
-  open! Expect.Operators;
+/* describe("Expect", () => { */
+/*   Expect.(test("toBe", () => */
+/*             expect(1 + 2) |> toBe(3) */
+/*           )) */
+/* }); */
 
-  test("==", () =>
-    expect(1 + 2) === 3
-  );
-});
+/* describe("Expect.Operators", () => { */
+/*   open Expect; */
+/*   open! Expect.Operators; */
+
+/*   test("==", () => */
+/*     expect(1 + 2) === 3 */
+/*   ); */
+/* }); */

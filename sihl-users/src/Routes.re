@@ -9,7 +9,7 @@ module GetUsers = {
       database,
       verb: GET,
       path: "/",
-      handler: (conn, req) => {
+      handler: (conn, _req) => {
         let%Async users = Repository.User.GetAll.query(conn);
         let response =
           users |> Repository.Repo.RepoResult.rows |> users_encode;

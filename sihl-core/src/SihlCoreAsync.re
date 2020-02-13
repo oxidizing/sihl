@@ -44,3 +44,10 @@ let attemptMapAsync =
     }
   });
 };
+
+let rec allInOrder = promises => {
+  switch (promises) {
+  | [p, ...ps] => let_(p, _ => allInOrder(ps))
+  | [] => async()
+  };
+};

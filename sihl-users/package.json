@@ -6,7 +6,7 @@
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
     "start:server": "node src/Main.bs.js",
-    "test": "jest"
+    "test": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 jest"
   },
   "keywords": [
     "BuckleScript"
