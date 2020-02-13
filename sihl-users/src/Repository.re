@@ -1,7 +1,7 @@
 module Async = Sihl.Core.Async;
 
-// TODO move to sihl-core
 module Repo = {
+  // TODO move to sihl-core
   module RepoResult = {
     module MetaData = {
       [@decco]
@@ -9,8 +9,6 @@ module Repo = {
         [@decco.key "FOUND_ROWS()"]
         totalCount: int,
       };
-
-      let decode = t_decode;
     };
 
     type t('a) = (list('a), MetaData.t);
@@ -65,7 +63,7 @@ module Repo = {
         | ([row], _) =>
           row
           |> Sihl.Core.Error.Decco.stringifyDecoder(
-               RepoResult.MetaData.decode,
+               RepoResult.MetaData.t_decode,
              )
           |> Sihl.Core.Db.failIfError
         | _ => Sihl.Core.Db.fail("Could not fetch FOUND_ROWS()")
@@ -74,17 +72,21 @@ module Repo = {
     };
   };
 
-  let execute = (~parameters=?, ~connection, stmt) =>
-    Sihl.Core.Db.fail("Not implemented");
+  let execute = (~parameters=?, connection, stmt) => {
+    let%Async rows =
+      Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~parameters);
+    let result = rows->Belt.Result.map(_ => ())->Sihl.Core.Db.failIfError;
+    Async.async(result);
+  };
 };
 
 module User = {
   module Clean = {
     let stmt = "
-TRUNCATE TABLE users;
+TRUNCATE TABLE users_users;
 ";
     let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) =
-      connection => Repo.execute(~connection, stmt);
+      connection => Repo.execute(connection, stmt);
   };
 
   module GetAll = {
@@ -98,7 +100,7 @@ SELECT
   username,
   phone,
   status
-FROM users;
+FROM users_users;
 ";
 
     let query:
@@ -118,13 +120,12 @@ FROM users;
   username,
   phone,
   status
-FROM users
+FROM users_users
 WHERE uuid = UNHEX(REPLACE(?, '-', ''));
 ";
 
     [@decco]
     type parameters = string;
-    let encode = parameters_encode;
 
     let query:
       (Sihl.Core.Db.Connection.t, ~userId: string) =>
@@ -133,7 +134,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
         Repo.getOne(
           ~connection,
           ~stmt,
-          ~parameters=encode(userId),
+          ~parameters=parameters_encode(userId),
           ~decode=Model.User.t_decode,
           (),
         );
@@ -149,13 +150,12 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
   username,
   phone,
   status
-FROM users
+FROM users_users
 WHERE email = ?;
 ";
 
     [@decco]
     type parameters = string;
-    let encode = parameters_encode;
 
     let query:
       (Sihl.Core.Db.Connection.t, ~email: string) =>
@@ -164,34 +164,93 @@ WHERE email = ?;
         Repo.getOne(
           ~connection,
           ~stmt,
-          ~parameters=encode(email),
+          ~parameters=parameters_encode(email),
           ~decode=Model.User.t_decode,
           (),
         );
   };
 
   module Store = {
-    let stmt = "";
+    let stmt = "
+INSERT INTO users_users (
+  uuid,
+  email,
+  password,
+  given_name,
+  family_name,
+  username,
+  phone
+) VALUES (
+  UNHEX(REPLACE(?, '-', '')),
+  ?,
+  ?,
+  ?,
+  ?,
+  ?,
+  ?
+);
+";
 
     [@decco]
-    type parameters = string;
-    let encode = parameters_encode;
+    type parameters = (
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      option(string),
+    );
 
-    let query = (connection, ~user) =>
-      Repo.execute(~parameters=encode("hey"), ~connection, stmt);
+    let query = (connection, ~user: Model.User.t) =>
+      Repo.execute(
+        ~parameters=
+          parameters_encode((
+            user.id,
+            user.email,
+            user.password,
+            user.givenName,
+            user.familyName,
+            user.username,
+            user.phone,
+          )),
+        connection,
+        stmt,
+      );
   };
 };
 
 module Token = {
+  module Clean = {
+    let stmt = "
+TRUNCATE TABLE users_tokens;
+";
+    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) =
+      connection => Repo.execute(connection, stmt);
+  };
+
   module Store = {
-    let stmt = "";
+    let stmt = "
+INSERT INTO users_tokens (
+  uuid,
+  token,
+  users
+) VALUES (
+  UNHEX(REPLACE(?, '-', '')),
+  ?,
+  (SELECT id FROM users_users WHERE users.uuid = UNHEX(REPLACE(?, '-', '')))
+);
+";
 
     [@decco]
-    type parameters = string;
-    let encode = parameters_encode;
+    type parameters = (string, string, string);
 
-    let query = (connection, ~token) =>
-      Repo.execute(encode("hoo"), ~connection, ~stmt);
+    let query = (connection, ~token: Model.Token.t) =>
+      Repo.execute(
+        ~parameters=parameters_encode((token.id, token.userId, token.token)),
+        connection,
+        stmt,
+      );
   };
 
   module Get = {
@@ -199,13 +258,12 @@ module Token = {
   uuid_of(uuid) as uuid,
   userId,
   token
-FROM tokens
+FROM users_tokens
 WHERE token = ?;
 ";
 
     [@decco]
     type parameters = string;
-    let encode = parameters_encode;
 
     let query:
       (Sihl.Core.Db.Connection.t, ~tokenString: string) =>
@@ -214,7 +272,7 @@ WHERE token = ?;
         Repo.getOne(
           ~connection,
           ~stmt,
-          ~parameters=encode(tokenString),
+          ~parameters=parameters_encode(tokenString),
           ~decode=Model.Token.t_decode,
           (),
         );

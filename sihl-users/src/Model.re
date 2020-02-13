@@ -27,12 +27,17 @@ module User = {
 module Token = {
   [@decco]
   type t = {
+    id: string,
     userId: string,
     token: string,
   };
 
-  // TODO implement token generation
-  let generate = (~user: User.t) => {userId: user.id, token: "TODO"};
+  let generate = (~user: User.t) => {
+    id: Sihl.Core.Uuid.V4.uuidv4(),
+    userId: user.id,
+    // TODO replace with proper token generation
+    token: Sihl.Core.Uuid.V4.uuidv4(),
+  };
 
   let fromHeader = header =>
     Js.String.split(header, " ")->Belt.Array.reverse->Belt.Array.get(0);
