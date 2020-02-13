@@ -35,30 +35,49 @@ open Jest;
 
 module Async = Sihl.Core.Async;
 
+// TODO move global state like db connection and app to global module
 beforeAllPromise(_ => {
   let%Async _ = Utils.runMigrations();
   Async.async(App.Server.start());
 });
 
-beforeEachPromise(_ => Utils.cleanData());
+beforeEachPromise(Utils.cleanData);
 
-describe("Expect", () => {
-  Expect.(test("promise", () =>
-            expect(1 + 2) |> toBe(3)
-          ))
+describe("User can't login with wrong credentials", () => {
+  // TODO
+  // 1. /login/
+  Expect.(
+    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
+  )
 });
 
-/* describe("Expect", () => { */
-/*   Expect.(test("toBe", () => */
-/*             expect(1 + 2) |> toBe(3) */
-/*           )) */
-/* }); */
+describe("User registers and gets own user", () => {
+  // TODO
+  // 1. /register/
+  // 2. /login/ as user
+  // 2. /me/
+  Expect.(
+    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
+  )
+});
 
-/* describe("Expect.Operators", () => { */
-/*   open Expect; */
-/*   open! Expect.Operators; */
+describe("User can't fetch all users", () => {
+  // TODO
+  // 1. /register/
+  // 2. /login/ as user
+  // 3. /users/ fails
+  Expect.(
+    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
+  )
+});
 
-/*   test("==", () => */
-/*     expect(1 + 2) === 3 */
-/*   ); */
-/* }); */
+describe("Admin fetches all users", () => {
+  // TODO
+  // 1. /register/
+  // 2. /login/ as admin
+  // 3. /users/ as admin
+  // 4. /user/:id/ as admin
+  Expect.(
+    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
+  )
+});

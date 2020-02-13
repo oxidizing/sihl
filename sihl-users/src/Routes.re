@@ -37,8 +37,6 @@ module GetUser = {
 };
 
 module GetMe = {
-  type params = {userId: string};
-
   let endpoint = database =>
     Sihl.Core.Http.dbEndpoint({
       database,
