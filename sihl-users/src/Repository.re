@@ -1,91 +1,12 @@
 module Async = Sihl.Core.Async;
 
-module Repo = {
-  // TODO move to sihl-core
-  module RepoResult = {
-    module MetaData = {
-      [@decco]
-      type t = {
-        [@decco.key "FOUND_ROWS()"]
-        totalCount: int,
-      };
-    };
-
-    type t('a) = (list('a), MetaData.t);
-
-    let create = (rows, metaData) => (rows, metaData);
-    let createWithTotal = (value, totalCount) => (
-      value,
-      MetaData.{totalCount: totalCount},
-    );
-    let total = ((_, MetaData.{totalCount})) => totalCount;
-    let metaData = ((_, metaData)) => metaData;
-    let rows = ((rows, _)) => rows;
-
-    let foundRowsQuery = "SELECT FOUND_ROWS();";
-  };
-
-  let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-    let%Async result =
-      Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~parameters);
-    let result = Sihl.Core.Db.failIfError(result);
-    switch (result) {
-    | ([row], _) =>
-      row
-      |> Sihl.Core.Error.Decco.stringifyDecoder(decode)
-      |> Sihl.Core.Db.failIfError
-      |> Async.async
-    | ([], _) => Sihl.Core.Db.fail("No rows found in database")
-    | _ =>
-      Sihl.Core.Db.fail(
-        "Two or more rows found when we were expecting only one",
-      )
-    };
-  };
-
-  let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-    let%Async result =
-      Sihl.Core.Db.Mysql.Connection.query(~connection, ~stmt, ~parameters);
-    switch (Sihl.Core.Db.failIfError(result)) {
-    | (rows, _) =>
-      let result =
-        rows
-        ->Belt.List.map(Sihl.Core.Error.Decco.stringifyDecoder(decode))
-        ->Belt.List.map(Sihl.Core.Db.failIfError);
-      let%Async meta =
-        Sihl.Core.Db.Mysql.Connection.query(
-          ~connection,
-          ~stmt=RepoResult.foundRowsQuery,
-          ~parameters=None,
-        );
-      let meta =
-        switch (Sihl.Core.Db.failIfError(meta)) {
-        | ([row], _) =>
-          row
-          |> Sihl.Core.Error.Decco.stringifyDecoder(
-               RepoResult.MetaData.t_decode,
-             )
-          |> Sihl.Core.Db.failIfError
-        | _ => Sihl.Core.Db.fail("Could not fetch FOUND_ROWS()")
-        };
-      Async.async @@ RepoResult.create(result, meta);
-    };
-  };
-
-  let execute = (~parameters=?, connection, stmt) => {
-    let%Async rows =
-      Sihl.Core.Db.Mysql.Connection.execute(~connection, ~stmt, ~parameters);
-    rows->Belt.Result.map(_ => ())->Sihl.Core.Db.failIfError->Async.async;
-  };
-};
-
 module User = {
   module Clean = {
     let stmt = "
 TRUNCATE TABLE users_users;
 ";
     let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
-      connection => Repo.execute(connection, stmt);
+      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
     };
   };
 
@@ -105,9 +26,14 @@ FROM users_users;
 
     let query:
       Sihl.Core.Db.Connection.t =>
-      Js.Promise.t(Repo.RepoResult.t(Model.User.t)) =
+      Js.Promise.t(Sihl.Core.Db.Repo.Result.t(Model.User.t)) =
       connection =>
-        Repo.getMany(~connection, ~stmt, ~decode=Model.User.t_decode, ());
+        Sihl.Core.Db.Repo.getMany(
+          ~connection,
+          ~stmt,
+          ~decode=Model.User.t_decode,
+          (),
+        );
   };
 
   module Get = {
@@ -131,7 +57,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
       (Sihl.Core.Db.Connection.t, ~userId: string) =>
       Js.Promise.t(Model.User.t) =
       (connection, ~userId) =>
-        Repo.getOne(
+        Sihl.Core.Db.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(userId),
@@ -161,7 +87,7 @@ WHERE email = ?;
       (Sihl.Core.Db.Connection.t, ~email: string) =>
       Js.Promise.t(Model.User.t) =
       (connection, ~email) =>
-        Repo.getOne(
+        Sihl.Core.Db.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(email),
@@ -203,7 +129,7 @@ INSERT INTO users_users (
     );
 
     let query = (connection, ~user: Model.User.t) =>
-      Repo.execute(
+      Sihl.Core.Db.Repo.execute(
         ~parameters=
           parameters_encode((
             user.id,
@@ -226,7 +152,7 @@ module Token = {
 TRUNCATE TABLE users_tokens;
 ";
     let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
-      connection => Repo.execute(connection, stmt);
+      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
     };
   };
 
@@ -247,7 +173,7 @@ INSERT INTO users_tokens (
     type parameters = (string, string, string);
 
     let query = (connection, ~token: Model.Token.t) =>
-      Repo.execute(
+      Sihl.Core.Db.Repo.execute(
         ~parameters=parameters_encode((token.id, token.userId, token.token)),
         connection,
         stmt,
@@ -270,7 +196,7 @@ WHERE token = ?;
       (Sihl.Core.Db.Connection.t, ~tokenString: string) =>
       Js.Promise.t(Model.Token.t) =
       (connection, ~tokenString) =>
-        Repo.getOne(
+        Sihl.Core.Db.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(tokenString),

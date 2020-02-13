@@ -25,7 +25,7 @@ module Utils = {
     let%Async conn = getConnection();
     App.Settings.namespace
     ->App.Database.migrations
-    ->Belt.List.map(Repository.Repo.execute(conn))
+    ->Belt.List.map(Sihl.Core.Db.Repo.execute(conn))
     ->Async.allInOrder
     ->Async.mapAsync(_ => releaseConnection(conn));
   };

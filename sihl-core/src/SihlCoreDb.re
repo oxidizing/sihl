@@ -93,6 +93,79 @@ let pool = Mysql.pool;
 module Connection = Mysql.Connection;
 module Database = Mysql.Pool;
 
+module Repo = {
+  module Result = {
+    module MetaData = {
+      [@decco]
+      type t = {
+        [@decco.key "FOUND_ROWS()"]
+        totalCount: int,
+      };
+    };
+
+    type t('a) = (list('a), MetaData.t);
+
+    let create = (rows, metaData) => (rows, metaData);
+    let createWithTotal = (value, totalCount) => (
+      value,
+      MetaData.{totalCount: totalCount},
+    );
+    let total = ((_, MetaData.{totalCount})) => totalCount;
+    let metaData = ((_, metaData)) => metaData;
+    let rows = ((rows, _)) => rows;
+
+    let foundRowsQuery = "SELECT FOUND_ROWS();";
+  };
+
+  let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
+    let%Async result =
+      Mysql.Connection.query(~connection, ~stmt, ~parameters);
+    let result = failIfError(result);
+    switch (result) {
+    | ([row], _) =>
+      row
+      |> SihlCoreError.Decco.stringifyDecoder(decode)
+      |> failIfError
+      |> Async.async
+    | ([], _) => fail("No rows found in database")
+    | _ => fail("Two or more rows found when we were expecting only one")
+    };
+  };
+
+  let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
+    let%Async result =
+      Mysql.Connection.query(~connection, ~stmt, ~parameters);
+    switch (failIfError(result)) {
+    | (rows, _) =>
+      let result =
+        rows
+        ->Belt.List.map(SihlCoreError.Decco.stringifyDecoder(decode))
+        ->Belt.List.map(failIfError);
+      let%Async meta =
+        Mysql.Connection.query(
+          ~connection,
+          ~stmt=Result.foundRowsQuery,
+          ~parameters=None,
+        );
+      let meta =
+        switch (failIfError(meta)) {
+        | ([row], _) =>
+          row
+          |> SihlCoreError.Decco.stringifyDecoder(Result.MetaData.t_decode)
+          |> failIfError
+        | _ => fail("Could not fetch FOUND_ROWS()")
+        };
+      Async.async @@ Result.create(result, meta);
+    };
+  };
+
+  let execute = (~parameters=?, connection, stmt) => {
+    let%Async rows =
+      Mysql.Connection.execute(~connection, ~stmt, ~parameters);
+    rows->Belt.Result.map(_ => ())->failIfError->Async.async;
+  };
+};
+
 // taken from caqti make use of GADT
 /* type field(_) = */
 /*   | Bool: field(bool) */

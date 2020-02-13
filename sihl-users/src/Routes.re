@@ -11,8 +11,7 @@ module GetUsers = {
       path: "/",
       handler: (conn, _req) => {
         let%Async users = Repository.User.GetAll.query(conn);
-        let response =
-          users |> Repository.Repo.RepoResult.rows |> users_encode;
+        let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
     });
