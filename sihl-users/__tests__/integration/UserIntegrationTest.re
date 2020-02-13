@@ -1,18 +1,18 @@
 module Utils = {
   module Async = Sihl.Core.Async;
 
-  let getDb = () => {
+  let getConnection = () => {
     let config =
       Sihl.Core.Config.Db.read()
       |> Sihl.Core.Error.Decco.stringifyResult
       |> Sihl.Core.Error.failIfError;
-    config |> Main.Database.pool |> Sihl.Core.Db.Database.connect;
+    config |> App.Database.database |> Sihl.Core.Db.Database.connect;
   };
 
   // TODO make sure caller catches all errors
   let cleanDb = () => {
-    let%Async db = getDb();
-    Async.async @@ Belt.List.map(App.Database.clean, f => f(db));
+    let%Async conn = getConnection();
+    Async.async @@ Belt.List.map(App.Database.clean, f => f(conn));
   };
 };
 

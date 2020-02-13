@@ -59,7 +59,7 @@ module Endpoint = {
     external middlewareAsComplete:
       (Express.Middleware.t, Express.Request.t, Express.Response.t) =>
       Js.Promise.t(Express.complete) =
-      "./middlewareAsComplete.js";
+      "./http/middleware-as-complete.js";
   };
 
   let requireHeader: string => guard(string) =
@@ -136,7 +136,7 @@ module Endpoint = {
 
   [@bs.module]
   external jsonParsingMiddleware: Express.Middleware.t =
-    "./json-parsing-middleware.js";
+    "./http/json-parsing-middleware.js";
 
   type endpointConfig('body_in, 'params, 'query) = {
     path: string,

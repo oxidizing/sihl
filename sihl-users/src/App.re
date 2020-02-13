@@ -40,6 +40,17 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
   ];
+  let database = (config: Sihl.Core.Config.Db.t) =>
+    Sihl.Core.Db.Mysql.pool({
+      "user": config.dbUser,
+      "host": config.dbHost,
+      "database": config.dbName,
+      "password": config.dbPassword,
+      "port": config.dbPort,
+      "waitForConnections": true,
+      "connectionLimit": config.connectionLimit,
+      "queueLimit": config.queueLimit,
+    });
 };
 
 module Http = {
@@ -50,4 +61,20 @@ module Http = {
     Routes.Login.endpoint(database),
     Routes.Register.endpoint(database),
   ];
+};
+
+module Server = {
+  let start = _config => {
+    // TODO catch all exceptions (ServerExceptions might get thrown)
+    Sihl.Core.Log.info("Starting app " ++ Settings.name, ());
+    let config =
+      Sihl.Core.Config.Db.read()
+      |> Sihl.Core.Error.Decco.stringifyResult
+      |> Sihl.Core.Error.failIfError;
+    let pool = config |> Database.database;
+    let routes = pool |> Http.routes;
+    Sihl.Core.Http.application(~port=3000, routes) |> ignore;
+    Sihl.Core.Log.info("App started on port 3000", ());
+    ();
+  };
 };

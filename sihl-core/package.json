@@ -20,14 +20,16 @@
     "decco": "^1.1.1"
   },
   "dependencies": {
+    "bcrypt": "^3.0.8",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
-    "bs-express": "^1.0.1"
+    "bs-express": "^1.0.1",
+    "mysql2": "^2.1.0"
   },
   "devDependencies": {
+    "@glennsl/bs-jest": "^0.4.9",
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
-    "decco": "^1.1.1",
-    "@glennsl/bs-jest": "^0.4.9"
+    "decco": "^1.1.1"
   }
 }
