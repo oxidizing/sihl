@@ -9,6 +9,7 @@ module Utils = {
     config |> Main.Database.pool |> Sihl.Core.Db.Database.connect;
   };
 
+  // TODO make sure caller catches all errors
   let cleanDb = () => {
     let%Async db = getDb();
     Async.async @@ Belt.List.map(App.Database.clean, f => f(db));
