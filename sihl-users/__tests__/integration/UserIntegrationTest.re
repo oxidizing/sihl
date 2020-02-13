@@ -1,16 +1,19 @@
-/* module Utils = { */
-/*   let cleanDb = pool => { */
-/*     pool */
-/*     |> Sihl.Core.Db.Pool.connect */
-/*     >>= ( */
-/*       connection => */
-/*         Future.map( */
-/*           Belt.List.map(App.Database.clean, f => f(connection)) |> Future.all, */
-/*           Sihl.Core.Error.flatten, */
-/*         ) */
-/*     ); */
-/*   }; */
-/* }; */
+module Utils = {
+  module Async = Sihl.Core.Async;
+
+  let getDb = () => {
+    let config =
+      Sihl.Core.Config.Db.read()
+      |> Sihl.Core.Error.Decco.stringifyResult
+      |> Sihl.Core.Error.failIfError;
+    config |> Main.Database.pool |> Sihl.Core.Db.Database.connect;
+  };
+
+  let cleanDb = () => {
+    let%Async db = getDb();
+    Async.async @@ Belt.List.map(App.Database.clean, f => f(db));
+  };
+};
 
 open Jest;
 

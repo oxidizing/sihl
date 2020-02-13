@@ -29,4 +29,5 @@ module Server = {
   };
 };
 
+// TODO catch all exceptions (ServerExceptions might get thrown)
 Server.start();
