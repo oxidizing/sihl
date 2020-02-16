@@ -70,6 +70,10 @@ module Http = {
 };
 
 module Server = {
+  type t = {
+    http: Sihl.Core.Http.application,
+    db: Sihl.Core.Db.Database.t,
+  };
   let start = _config => {
     // TODO catch all exceptions (ServerExceptions might get thrown)
     Sihl.Core.Log.info("Starting app " ++ Settings.name, ());
@@ -77,16 +81,17 @@ module Server = {
       Sihl.Core.Config.Db.read()
       |> Sihl.Core.Error.Decco.stringifyResult
       |> Sihl.Core.Error.failIfError;
-    let pool = config |> Sihl.Core.Db.Database.make;
-    let routes = pool |> Http.routes;
+    let db = config |> Sihl.Core.Db.Database.make;
+    let routes = db |> Http.routes;
     let app = Sihl.Core.Http.application(~port=3000, routes);
     Sihl.Core.Log.info("App started on port 3000", ());
-    app;
+    {http: app, db};
   };
 
   let stop = app => {
-    // TODO close connection to DB
+    module Async = Sihl.Core.Async;
     Sihl.Core.Log.info("Stopping app " ++ Settings.name, ());
-    Sihl.Core.Http.shutdown(app);
+    let%Async _ = Sihl.Core.Http.shutdown(app.http);
+    Async.async @@ Sihl.Core.Db.Database.end_(app.db);
   };
 };

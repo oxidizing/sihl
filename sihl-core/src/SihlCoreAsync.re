@@ -55,7 +55,7 @@ let rec allInOrder = promises => {
 let wait: int => Js.Promise.t(unit) = [%raw
   {|
 function(ms) {
-  new Promise((res, rej) => {
+  return new Promise((res, rej) => {
     setTimeout(res, ms);
   })
 }

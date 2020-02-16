@@ -39,28 +39,30 @@ open Jest;
 
 module Async = Sihl.Core.Async;
 
-let app = ref(None);
-let db = ref(None);
-
 // TODO move global state like db connection and app to global module
+module State = {
+  let app = ref(None);
+  let db = ref(None);
+};
+
 beforeAllPromise(_ => {
-  db := Some(Utils.connectDatabase());
+  State.db := Some(Utils.connectDatabase());
   let%Async _ =
-    (db^)
+    (State.db^)
     ->Belt.Option.map(Utils.runMigrations)
     ->Belt.Option.getWithDefault(Async.async());
-  app := Some(App.Server.start());
+  State.app := Some(App.Server.start());
   Async.async();
 });
 
 beforeEachPromise(_ =>
-  (db^)
+  (State.db^)
   ->Belt.Option.map(Utils.cleanData)
   ->Belt.Option.getWithDefault(Async.async())
 );
 
 afterAllPromise(_ =>
-  switch (app^, db^) {
+  switch (State.app^, State.db^) {
   | (Some(app), Some(db)) =>
     Utils.closeDatabase(db);
     App.Server.stop(app);
