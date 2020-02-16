@@ -74,6 +74,8 @@ module Server = {
     http: Sihl.Core.Http.application,
     db: Sihl.Core.Db.Database.t,
   };
+  let http = server => server.http;
+  let db = server => server.db;
   let start = _config => {
     // TODO catch all exceptions (ServerExceptions might get thrown)
     Sihl.Core.Log.info("Starting app " ++ Settings.name, ());

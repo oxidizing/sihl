@@ -3,17 +3,6 @@
 module Utils = {
   module Async = Sihl.Core.Async;
 
-  let connectDatabase = () => {
-    Sihl.Core.Config.Db.read()
-    |> Sihl.Core.Error.Decco.stringifyResult
-    |> Sihl.Core.Error.failIfError
-    |> Sihl.Core.Db.Database.make;
-  };
-
-  let closeDatabase = db => {
-    Sihl.Core.Db.Database.end_(db);
-  };
-
   let withConnection = (db, f) => {
     let%Async conn = Sihl.Core.Db.Database.connect(db);
     f(conn);
@@ -42,30 +31,23 @@ module Async = Sihl.Core.Async;
 // TODO move global state like db connection and app to global module
 module State = {
   let app = ref(None);
-  let db = ref(None);
 };
 
 beforeAllPromise(_ => {
-  State.db := Some(Utils.connectDatabase());
-  let%Async _ =
-    (State.db^)
-    ->Belt.Option.map(Utils.runMigrations)
-    ->Belt.Option.getWithDefault(Async.async());
   State.app := Some(App.Server.start());
   Async.async();
 });
 
 beforeEachPromise(_ =>
-  (State.db^)
+  (State.app^)
+  ->Belt.Option.map(App.Server.db)
   ->Belt.Option.map(Utils.cleanData)
   ->Belt.Option.getWithDefault(Async.async())
 );
 
 afterAllPromise(_ =>
-  switch (State.app^, State.db^) {
-  | (Some(app), Some(db)) =>
-    Utils.closeDatabase(db);
-    App.Server.stop(app);
+  switch (State.app^) {
+  | Some(app) => App.Server.stop(app)
   | _ => Sihl.Core.Async.async()
   }
 );
