@@ -350,6 +350,7 @@ let dbEndpoint = Endpoint.dbEndpoint;
 let jsonEndpoint = Endpoint.jsonEndpoint;
 
 type application = {
+  httpServer: Express.HttpServer.t,
   expressApp: Express.App.t,
   router: Express.Router.t,
 };
@@ -369,12 +370,25 @@ let application = (~port=?, endpoints: list(endpoint)) => {
 
   let effectivePort = port->Belt.Option.getWithDefault(defaultPort);
 
-  app->Express.App.listen(
-    ~port=effectivePort,
-    ~onListen=_ => {Js.log2("Server listening on port", effectivePort)},
-    (),
-  )
-  |> ignore;
+  let httpServer =
+    app->Express.App.listen(
+      ~port=effectivePort,
+      ~onListen=_ => {Js.log2("Server listening on port", effectivePort)},
+      (),
+    );
 
-  {expressApp: app, router};
+  Express.HttpServer.on(
+    httpServer,
+    `close(_ => Js.log("Closing http server")),
+  );
+
+  {httpServer, expressApp: app, router};
+};
+
+let closeServer: Express.HttpServer.t => unit = [%bs.raw
+  {| server => server.close() |}
+];
+
+let shutdown = app => {
+  app.httpServer |> closeServer;
 };

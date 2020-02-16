@@ -8,7 +8,7 @@ module GetUsers = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/",
+      path: "/api/",
       handler: (conn, _req) => {
         let%Async users = Repository.User.GetAll.query(conn);
         let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
@@ -25,7 +25,7 @@ module GetUser = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/:id/",
+      path: "/api/:id/",
       handler: (conn, req) => {
         let%Async {userId} = req.requireParams(params_decode);
         let%Async user = Repository.User.Get.query(conn, ~userId);
@@ -40,7 +40,7 @@ module GetMe = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/me/",
+      path: "/api/me/",
       handler: (conn, req) => {
         let%Async header = req.requireHeader("authorization");
         let tokenString =
@@ -68,7 +68,7 @@ module Login = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/login/",
+      path: "/api/login/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, password} = req.requireQuery(query_decode);
@@ -102,7 +102,7 @@ module Register = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/login/",
+      path: "/api/register/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, username, password, givenName, familyName, phone} =

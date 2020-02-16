@@ -18,6 +18,7 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
+    "bs-fetch",
     "sihl-core",
     "decco"
   ],

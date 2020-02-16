@@ -39,7 +39,6 @@ module Mysql = {
     [@bs.send]
     external query_: (t, string, Js.Json.t) => Js.Promise.t(Js.Json.t) =
       "query";
-    [@bs.send] external release: t => unit = "release";
 
     let query = (~connection, ~stmt, ~parameters) => {
       let parameters =
@@ -54,23 +53,34 @@ module Mysql = {
       let%Async result = query_(connection, stmt, parameters);
       result |> ExecutionResult.decode |> Async.async;
     };
-
-    let release: t => unit =
-      connection =>
-        try(release(connection)) {
-        | Js.Exn.Error(e) =>
-          switch (Js.Exn.message(e)) {
-          | Some(message) => SihlCoreLog.error(message, ())
-          | None => SihlCoreLog.error("Failed to release client", ())
-          }
-        };
   };
 
   module Pool = {
     type t;
+
     [@bs.send]
     external connect: t => Js.Promise.t(Connection.t) = "getConnection";
     let connect: t => Js.Promise.t(Connection.t) = pool => connect(pool);
+
+    [@bs.send] external release: (t, Connection.t) => unit = "release";
+    let release = (pool, connection) =>
+      try(release(pool, connection)) {
+      | Js.Exn.Error(e) =>
+        switch (Js.Exn.message(e)) {
+        | Some(message) => SihlCoreLog.error(message, ())
+        | None => SihlCoreLog.error("Failed to release connection", ())
+        }
+      };
+
+    [@bs.send] external end_: t => unit = "end";
+    let end_ = pool =>
+      try(end_(pool)) {
+      | Js.Exn.Error(e) =>
+        switch (Js.Exn.message(e)) {
+        | Some(message) => SihlCoreLog.error(message, ())
+        | None => SihlCoreLog.error("Failed to end pool", ())
+        }
+      };
   };
 
   [@bs.module "mysql2/promise"]

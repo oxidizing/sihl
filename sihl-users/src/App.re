@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS $(namespace)_users (
   family_name VARCHAR(128) NOT NULL,
   username VARCHAR(128),
   phone VARCHAR(128),
+  status VARCHAR(128) NOT NULL,
   created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
   ];
+
   let database = (config: Sihl.Core.Config.Db.t) =>
     Sihl.Core.Db.Mysql.pool({
       "user": config.dbUser,
@@ -69,6 +71,7 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 };
 
 module Http = {
+  // namespace routes using Settings.namespace
   let routes = database => [
     Routes.GetUser.endpoint(database),
     Routes.GetUsers.endpoint(database),
@@ -91,5 +94,11 @@ module Server = {
     let app = Sihl.Core.Http.application(~port=3000, routes);
     Sihl.Core.Log.info("App started on port 3000", ());
     app;
+  };
+
+  let stop = app => {
+    Sihl.Core.Http.shutdown(app);
+    // TODO this is a hack, we are waiting for the server to shutdown
+    Sihl.Core.Async.wait(500);
   };
 };

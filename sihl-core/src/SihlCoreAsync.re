@@ -51,3 +51,13 @@ let rec allInOrder = promises => {
   | [] => async()
   };
 };
+
+let wait: int => Js.Promise.t(unit) = [%raw
+  {|
+function(ms) {
+  new Promise((res, rej) => {
+    setTimeout(res, ms);
+  })
+}
+|}
+];

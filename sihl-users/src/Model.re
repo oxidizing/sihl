@@ -1,3 +1,10 @@
+module Status = {
+  [@decco]
+  type t =
+    | Active
+    | Inactive;
+};
+
 module User = {
   [@decco]
   type t = {
@@ -8,6 +15,7 @@ module User = {
     givenName: string,
     familyName: string,
     phone: option(string),
+    status: Status.t,
   };
 
   let make = (~email, ~username, ~password, ~givenName, ~familyName, ~phone) => {
@@ -20,6 +28,7 @@ module User = {
       givenName,
       familyName,
       phone,
+      status: Active,
     });
   };
 };

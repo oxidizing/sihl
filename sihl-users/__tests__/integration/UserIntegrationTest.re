@@ -1,33 +1,37 @@
+[%raw "require('isomorphic-fetch')"];
+
 module Utils = {
   module Async = Sihl.Core.Async;
 
-  let getConnection = () => {
+  let connectDatabase = () => {
     Sihl.Core.Config.Db.read()
     |> Sihl.Core.Error.Decco.stringifyResult
     |> Sihl.Core.Error.failIfError
-    |> App.Database.database
-    |> Sihl.Core.Db.Database.connect;
+    |> App.Database.database;
   };
 
-  let releaseConnection = conn => {
-    Sihl.Core.Db.Connection.release(conn);
+  let closeDatabase = db => {
+    Sihl.Core.Db.Database.end_(db);
   };
 
-  let cleanData = () => {
-    let%Async conn = getConnection();
-    App.Database.clean
-    ->Belt.List.map(f => f(conn))
-    ->Async.allInOrder
-    ->Async.mapAsync(_ => releaseConnection(conn));
+  let withConnection = (db, f) => {
+    let%Async conn = Sihl.Core.Db.Database.connect(db);
+    f(conn);
   };
 
-  let runMigrations = () => {
-    let%Async conn = getConnection();
-    App.Settings.namespace
-    ->App.Database.migrations
-    ->Belt.List.map(Sihl.Core.Db.Repo.execute(conn))
-    ->Async.allInOrder
-    ->Async.mapAsync(_ => releaseConnection(conn));
+  let cleanData = db => {
+    withConnection(db, conn => {
+      App.Database.clean->Belt.List.map(f => f(conn))->Async.allInOrder
+    });
+  };
+
+  let runMigrations = db => {
+    withConnection(db, conn => {
+      App.Settings.namespace
+      ->App.Database.migrations
+      ->Belt.List.map(Sihl.Core.Db.Repo.execute(conn))
+      ->Async.allInOrder
+    });
   };
 };
 
@@ -35,19 +39,60 @@ open Jest;
 
 module Async = Sihl.Core.Async;
 
+let app = ref(None);
+let db = ref(None);
+
 // TODO move global state like db connection and app to global module
 beforeAllPromise(_ => {
-  let%Async _ = Utils.runMigrations();
-  Async.async(App.Server.start());
+  db := Some(Utils.connectDatabase());
+  let%Async _ =
+    (db^)
+    ->Belt.Option.map(Utils.runMigrations)
+    ->Belt.Option.getWithDefault(Async.async());
+  app := Some(App.Server.start());
+  Async.async();
 });
 
-beforeEachPromise(Utils.cleanData);
+beforeEachPromise(_ =>
+  (db^)
+  ->Belt.Option.map(Utils.cleanData)
+  ->Belt.Option.getWithDefault(Async.async())
+);
+
+afterAllPromise(_ =>
+  switch (app^, db^) {
+  | (Some(app), Some(db)) =>
+    Utils.closeDatabase(db);
+    App.Server.stop(app);
+  | _ => Sihl.Core.Async.async()
+  }
+);
 
 describe("User can't login with wrong credentials", () => {
-  // TODO
-  // 1. /login/
   Expect.(
-    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
+    testPromise("promise", () => {
+      let body = {|
+{
+  "email": "foobar@example.com",
+  "username": "foobar",
+  "password": 123,
+  "givenName": "Foo",
+  "familyName": "Bar",
+  "phone": 123"
+}
+|};
+      let _ =
+        Fetch.fetchWithInit(
+          "http://localhost:3000/api/register/",
+          Fetch.RequestInit.make(
+            ~method_=Post,
+            ~body=Fetch.BodyInit.make(body),
+            (),
+          ),
+        )
+        |> Js.Promise.then_(Fetch.Response.json);
+      Async.async(expect(1 + 2) |> toBe(3));
+    })
   )
 });
 
