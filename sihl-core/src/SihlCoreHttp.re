@@ -391,4 +391,6 @@ let closeServer: Express.HttpServer.t => unit = [%bs.raw
 
 let shutdown = app => {
   app.httpServer |> closeServer;
+  // this is a hack, we are waiting for the server to shutdown
+  SihlCoreAsync.wait(500);
 };

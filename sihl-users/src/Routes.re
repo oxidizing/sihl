@@ -101,7 +101,7 @@ module Register = {
   let endpoint = database =>
     Sihl.Core.Http.dbEndpoint({
       database,
-      verb: GET,
+      verb: POST,
       path: "/api/register/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;

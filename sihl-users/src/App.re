@@ -56,18 +56,6 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
   ];
-
-  let database = (config: Sihl.Core.Config.Db.t) =>
-    Sihl.Core.Db.Mysql.pool({
-      "user": config.dbUser,
-      "host": config.dbHost,
-      "database": config.dbName,
-      "password": config.dbPassword,
-      "port": config.dbPort |> int_of_string,
-      "waitForConnections": true,
-      "connectionLimit": config.connectionLimit |> int_of_string,
-      "queueLimit": config.queueLimit |> int_of_string,
-    });
 };
 
 module Http = {
@@ -89,7 +77,7 @@ module Server = {
       Sihl.Core.Config.Db.read()
       |> Sihl.Core.Error.Decco.stringifyResult
       |> Sihl.Core.Error.failIfError;
-    let pool = config |> Database.database;
+    let pool = config |> Sihl.Core.Db.Database.make;
     let routes = pool |> Http.routes;
     let app = Sihl.Core.Http.application(~port=3000, routes);
     Sihl.Core.Log.info("App started on port 3000", ());
@@ -97,8 +85,8 @@ module Server = {
   };
 
   let stop = app => {
+    // TODO close connection to DB
+    Sihl.Core.Log.info("Stopping app " ++ Settings.name, ());
     Sihl.Core.Http.shutdown(app);
-    // TODO this is a hack, we are waiting for the server to shutdown
-    Sihl.Core.Async.wait(500);
   };
 };

@@ -100,8 +100,22 @@ let failIfError = result => {
 let fail = reason => raise(DatabaseException(reason));
 
 let pool = Mysql.pool;
+
 module Connection = Mysql.Connection;
-module Database = Mysql.Pool;
+module Database = {
+  include Mysql.Pool;
+  let make = (config: SihlCoreConfig.Db.t) =>
+    Mysql.pool({
+      "user": config.dbUser,
+      "host": config.dbHost,
+      "database": config.dbName,
+      "password": config.dbPassword,
+      "port": config.dbPort |> int_of_string,
+      "waitForConnections": true,
+      "connectionLimit": config.connectionLimit |> int_of_string,
+      "queueLimit": config.queueLimit |> int_of_string,
+    });
+};
 
 module Repo = {
   module Result = {

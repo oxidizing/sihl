@@ -7,7 +7,7 @@ module Utils = {
     Sihl.Core.Config.Db.read()
     |> Sihl.Core.Error.Decco.stringifyResult
     |> Sihl.Core.Error.failIfError
-    |> App.Database.database;
+    |> Sihl.Core.Db.Database.make;
   };
 
   let closeDatabase = db => {
@@ -68,17 +68,17 @@ afterAllPromise(_ =>
   }
 );
 
-describe("User can't login with wrong credentials", () => {
+describe("User", () => {
   Expect.(
-    testPromise("promise", () => {
+    testPromise("can't login with wrong credentials", () => {
       let body = {|
 {
   "email": "foobar@example.com",
   "username": "foobar",
-  "password": 123,
+  "password": "123",
   "givenName": "Foo",
   "familyName": "Bar",
-  "phone": 123"
+  "phone": "123"
 }
 |};
       Fetch.fetchWithInit(
@@ -94,40 +94,40 @@ describe("User can't login with wrong credentials", () => {
            json
            |> Js.Json.stringify
            |> expect
-           |> toBe("")
+           |> toBe({|{"message":"ok"}|})
            |> Sihl.Core.Async.async
          );
     })
   )
 });
 
-describe("User registers and gets own user", () => {
-  // TODO
-  // 1. /register/
-  // 2. /login/ as user
-  // 2. /me/
-  Expect.(
-    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
-  )
-});
+/* describe("User registers and gets own user", () => { */
+/*   // TODO */
+/*   // 1. /register/ */
+/*   // 2. /login/ as user */
+/*   // 2. /me/ */
+/*   Expect.( */
+/*     testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3))) */
+/*   ) */
+/* }); */
 
-describe("User can't fetch all users", () => {
-  // TODO
-  // 1. /register/
-  // 2. /login/ as user
-  // 3. /users/ fails
-  Expect.(
-    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
-  )
-});
+/* describe("User can't fetch all users", () => { */
+/*   // TODO */
+/*   // 1. /register/ */
+/*   // 2. /login/ as user */
+/*   // 3. /users/ fails */
+/*   Expect.( */
+/*     testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3))) */
+/*   ) */
+/* }); */
 
-describe("Admin fetches all users", () => {
-  // TODO
-  // 1. /register/
-  // 2. /login/ as admin
-  // 3. /users/ as admin
-  // 4. /user/:id/ as admin
-  Expect.(
-    testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3)))
-  )
-});
+/* describe("Admin fetches all users", () => { */
+/*   // TODO */
+/*   // 1. /register/ */
+/*   // 2. /login/ as admin */
+/*   // 3. /users/ as admin */
+/*   // 4. /user/:id/ as admin */
+/*   Expect.( */
+/*     testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3))) */
+/*   ) */
+/* }); */
