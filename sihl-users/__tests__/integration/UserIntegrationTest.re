@@ -81,17 +81,22 @@ describe("User can't login with wrong credentials", () => {
   "phone": 123"
 }
 |};
-      let _ =
-        Fetch.fetchWithInit(
-          "http://localhost:3000/api/register/",
-          Fetch.RequestInit.make(
-            ~method_=Post,
-            ~body=Fetch.BodyInit.make(body),
-            (),
-          ),
-        )
-        |> Js.Promise.then_(Fetch.Response.json);
-      Async.async(expect(1 + 2) |> toBe(3));
+      Fetch.fetchWithInit(
+        "http://localhost:3000/api/register/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      )
+      |> Js.Promise.then_(Fetch.Response.json)
+      |> Js.Promise.then_(json =>
+           json
+           |> Js.Json.stringify
+           |> expect
+           |> toBe("")
+           |> Sihl.Core.Async.async
+         );
     })
   )
 });
