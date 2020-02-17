@@ -63,27 +63,14 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 CREATE TABLE IF NOT EXISTS $(namespace)_permissions (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
-  name VARCHAR(128) NOT NULL,
-  created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-  CONSTRAINT unique_name UNIQUE KEY (name)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-|j},
-    {j|
-CREATE TABLE IF NOT EXISTS $(namespace)_users_permissions (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
   user BIGINT UNSIGNED,
-  permission BIGINT UNSIGNED,
+  permission VARCHAR(128) NOT NULL,
   created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid),
   CONSTRAINT unique_user_permission UNIQUE KEY (user, permission),
-  FOREIGN KEY (user) REFERENCES $(namespace)_users(id),
-  FOREIGN KEY (permission) REFERENCES $(namespace)_permissions(id)
+  FOREIGN KEY (user) REFERENCES $(namespace)_users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
   ];

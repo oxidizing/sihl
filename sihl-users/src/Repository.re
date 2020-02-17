@@ -216,14 +216,8 @@ module Permission = {
     let stmt_users_permissions = "
 TRUNCATE TABLE users_permissions;
 ";
-    let stmt_users_users_permissions = "
-TRUNCATE TABLE users_users_permissions;
-";
-
     let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
       connection => {
-        let%Async _ =
-          Sihl.Core.Db.Repo.execute(connection, stmt_users_users_permissions);
         Sihl.Core.Db.Repo.execute(connection, stmt_users_permissions);
       };
     };
@@ -262,27 +256,27 @@ AND permission = ?;
     };
   };
 
-  module Store = {
-    let stmt = "
-INSERT INTO users_permissions (
-  uuid,
-  name
-) VALUES (
-  UNHEX(REPLACE(?, '-', '')),
-  ?
-);
-";
+  /*  module Store = { */
+  /*     let stmt = " */
+         /* INSERT INTO users_permissions ( */
+         /*   uuid, */
+         /*   name */
+         /* ) VALUES ( */
+         /*   UNHEX(REPLACE(?, '-', '')), */
+         /*   ? */
+         /* ); */
+         /* "; */
 
-    [@decco]
-    type parameters = (string, string);
+  /*     [@decco] */
+  /*     type parameters = (string, string); */
 
-    let query = (connection, ~permission: Model.Permission.t) =>
-      Sihl.Core.Db.Repo.execute(
-        ~parameters=parameters_encode((permission.id, permission.name)),
-        connection,
-        stmt,
-      );
-  };
+  /*     let query = (connection, ~permission: Model.Permission.t) => */
+  /*       Sihl.Core.Db.Repo.execute( */
+  /*         ~parameters=parameters_encode((permission.id, permission.name)), */
+  /*         connection, */
+  /*         stmt, */
+  /*       ); */
+  /*   }; */
 
   module Assign = {
     let stmt = "
@@ -293,17 +287,16 @@ INSERT INTO users_users_permissions (
 ) VALUES (
   UNHEX(REPLACE(?, '-', '')),
   (SELECT id FROM users_users WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))),
-  (SELECT id FROM users_permissions WHERE users_permissions.uuid = UNHEX(REPLACE(?, '-', '')))
+  ?
 );
 ";
 
     [@decco]
     type parameters = (string, string);
 
-    let query = (connection, ~assignment: Model.Assignment.t) =>
+    let query = (connection, ~user: Model.User.t, ~perm: Model.Permission.t) =>
       Sihl.Core.Db.Repo.execute(
-        ~parameters=
-          parameters_encode((assignment.user.id, assignment.permission.id)),
+        ~parameters=parameters_encode((user.id, perm.id)),
         connection,
         stmt,
       );

@@ -1,52 +1,30 @@
 [%raw "require('isomorphic-fetch')"];
-
-module Utils = {
-  module Async = Sihl.Core.Async;
-
-  let cleanData = db => {
-    Sihl.Core.Db.Database.withConnection(
-      db,
-      conn => {
-        let%Async _ =
-          Sihl.Core.Db.Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
-        let%Async _ =
-          App.Database.clean->Belt.List.map(f => f(conn))->Async.allInOrder;
-        Sihl.Core.Db.Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
-      },
-    );
-  };
-
-  let runMigrations = db => {
-    Sihl.Core.Db.Database.withConnection(db, conn => {
-      App.Settings.namespace
-      ->App.Database.migrations
-      ->Belt.List.map(Sihl.Core.Db.Repo.execute(conn))
-      ->Async.allInOrder
-    });
-  };
-};
-
 open Jest;
-
 module Async = Sihl.Core.Async;
 
-// TODO move global state like db connection and app to global module
+// TODO move state to global module
 module State = {
   let app = ref(None);
 };
 
 beforeAllPromise(_ => {
+  // TODO Create admin
   State.app := Some(App.Server.start());
   (State.app^)
   ->Belt.Option.map(App.Server.db)
-  ->Belt.Option.map(Utils.runMigrations)
+  ->Belt.Option.map(
+      Sihl.Core.Db.Database.runMigrations(
+        App.Settings.namespace,
+        App.Database.migrations,
+      ),
+    )
   ->Belt.Option.getWithDefault(Async.async());
 });
 
 beforeEachPromise(_ =>
   (State.app^)
   ->Belt.Option.map(App.Server.db)
-  ->Belt.Option.map(Utils.cleanData)
+  ->Belt.Option.map(Sihl.Core.Db.Database.clean(App.Database.clean))
   ->Belt.Option.getWithDefault(Async.async())
 );
 

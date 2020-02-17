@@ -12,8 +12,9 @@ module GetUsers = {
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
+        let%Async user = Service.User.authenticate(conn, header);
         let%Async _ =
-          Service.Permission.authorize(conn, header, "users.view_users");
+          Service.Permission.authorize(conn, user, "users.view_users");
         let%Async users = Service.User.getAll(conn);
         let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
@@ -33,8 +34,9 @@ module GetUser = {
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
+        let%Async user = Service.User.authenticate(conn, header);
         let%Async _ =
-          Service.Permission.authorize(conn, header, "users.view_users");
+          Service.Permission.authorize(conn, user, "users.view_users");
         let%Async {userId} = req.requireParams(params_decode);
         let%Async user = Repository.User.Get.query(conn, ~userId);
         let response = user |> Model.User.t_encode;

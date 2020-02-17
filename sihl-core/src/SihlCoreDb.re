@@ -101,26 +101,6 @@ let fail = reason => raise(DatabaseException(reason));
 
 let pool = Mysql.pool;
 
-module Connection = Mysql.Connection;
-module Database = {
-  include Mysql.Pool;
-  let make = (config: SihlCoreConfig.Db.t) =>
-    Mysql.pool({
-      "user": config.dbUser,
-      "host": config.dbHost,
-      "database": config.dbName,
-      "password": config.dbPassword,
-      "port": config.dbPort |> int_of_string,
-      "waitForConnections": true,
-      "connectionLimit": config.connectionLimit |> int_of_string,
-      "queueLimit": config.queueLimit |> int_of_string,
-    });
-  let withConnection = (db, f) => {
-    let%Async conn = connect(db);
-    f(conn);
-  };
-};
-
 module Repo = {
   module Result = {
     module MetaData = {
@@ -191,6 +171,48 @@ module Repo = {
     let%Async rows =
       Mysql.Connection.execute(~connection, ~stmt, ~parameters);
     rows->Belt.Result.map(_ => ())->failIfError->Async.async;
+  };
+};
+
+module Connection = Mysql.Connection;
+module Database = {
+  include Mysql.Pool;
+
+  let make = (config: SihlCoreConfig.Db.t) =>
+    Mysql.pool({
+      "user": config.dbUser,
+      "host": config.dbHost,
+      "database": config.dbName,
+      "password": config.dbPassword,
+      "port": config.dbPort |> int_of_string,
+      "waitForConnections": true,
+      "connectionLimit": config.connectionLimit |> int_of_string,
+      "queueLimit": config.queueLimit |> int_of_string,
+    });
+
+  let withConnection = (db, f) => {
+    let%Async conn = connect(db);
+    f(conn);
+  };
+
+  let clean = (fns, db) => {
+    withConnection(
+      db,
+      conn => {
+        let%Async _ = Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
+        let%Async _ = fns->Belt.List.map(f => f(conn))->Async.allInOrder;
+        Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
+      },
+    );
+  };
+
+  let runMigrations = (namespace, migrations, db) => {
+    withConnection(db, conn => {
+      namespace
+      ->migrations
+      ->Belt.List.map(Repo.execute(conn))
+      ->Async.allInOrder
+    });
   };
 };
 
