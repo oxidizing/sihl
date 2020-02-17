@@ -6,7 +6,11 @@ module Settings = {
 };
 
 module Database = {
-  let clean = [Repository.Token.Clean.run, Repository.User.Clean.run];
+  let clean = [
+    Repository.Token.Clean.run,
+    Repository.User.Clean.run,
+    Repository.Permission.Clean.run,
+  ];
   let migrations = namespace => [
     "
 SET collation_connection = 'utf8mb4_unicode_ci';
@@ -55,11 +59,38 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
   FOREIGN KEY (user) REFERENCES $(namespace)_users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
+    {j|
+CREATE TABLE IF NOT EXISTS $(namespace)_permissions (
+  id BIGINT UNSIGNED AUTO_INCREMENT,
+  uuid BINARY(16) NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+  CONSTRAINT unique_name UNIQUE KEY (name)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+|j},
+    {j|
+CREATE TABLE IF NOT EXISTS $(namespace)_users_permissions (
+  id BIGINT UNSIGNED AUTO_INCREMENT,
+  uuid BINARY(16) NOT NULL,
+  user BIGINT UNSIGNED,
+  permission BIGINT UNSIGNED,
+  created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+  CONSTRAINT unique_user_permission UNIQUE KEY (user, permission),
+  FOREIGN KEY (user) REFERENCES $(namespace)_users(id),
+  FOREIGN KEY (permission) REFERENCES $(namespace)_permissions(id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+|j},
   ];
 };
 
 module Http = {
-  // namespace routes using Settings.namespace
+  // TODO namespace routes using Settings.namespace
   let routes = database => [
     Routes.GetUser.endpoint(database),
     Routes.GetUsers.endpoint(database),

@@ -213,11 +213,19 @@ WHERE token = ?;
 
 module Permission = {
   module Clean = {
-    let stmt = "
+    let stmt_users_permissions = "
 TRUNCATE TABLE users_permissions;
 ";
+    let stmt_users_users_permissions = "
+TRUNCATE TABLE users_users_permissions;
+";
+
     let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
-      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
+      connection => {
+        let%Async _ =
+          Sihl.Core.Db.Repo.execute(connection, stmt_users_users_permissions);
+        Sihl.Core.Db.Repo.execute(connection, stmt_users_permissions);
+      };
     };
   };
 
@@ -271,6 +279,31 @@ INSERT INTO users_permissions (
     let query = (connection, ~permission: Model.Permission.t) =>
       Sihl.Core.Db.Repo.execute(
         ~parameters=parameters_encode((permission.id, permission.name)),
+        connection,
+        stmt,
+      );
+  };
+
+  module Assign = {
+    let stmt = "
+INSERT INTO users_users_permissions (
+  uuid,
+  user,
+  permission
+) VALUES (
+  UNHEX(REPLACE(?, '-', '')),
+  (SELECT id FROM users_users WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))),
+  (SELECT id FROM users_permissions WHERE users_permissions.uuid = UNHEX(REPLACE(?, '-', '')))
+);
+";
+
+    [@decco]
+    type parameters = (string, string);
+
+    let query = (connection, ~assignment: Model.Assignment.t) =>
+      Sihl.Core.Db.Repo.execute(
+        ~parameters=
+          parameters_encode((assignment.user.id, assignment.permission.id)),
         connection,
         stmt,
       );

@@ -37,7 +37,10 @@ module State = {
 
 beforeAllPromise(_ => {
   State.app := Some(App.Server.start());
-  Async.async();
+  (State.app^)
+  ->Belt.Option.map(App.Server.db)
+  ->Belt.Option.map(Utils.runMigrations)
+  ->Belt.Option.getWithDefault(Async.async());
 });
 
 beforeEachPromise(_ =>

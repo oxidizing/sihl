@@ -51,3 +51,22 @@ module Token = {
   let fromHeader = header =>
     Js.String.split(header, " ")->Belt.Array.reverse->Belt.Array.get(0);
 };
+
+module Permission = {
+  [@decco]
+  type t = {
+    id: string,
+    name: string,
+  };
+
+  let make = permission => {id: Sihl.Core.Uuid.V4.uuidv4(), name: permission};
+};
+
+module Assignment = {
+  [@decco]
+  type t = {
+    id: string,
+    user: User.t,
+    permission: Permission.t,
+  };
+};
