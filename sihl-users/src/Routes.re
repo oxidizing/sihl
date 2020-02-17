@@ -1,4 +1,5 @@
 module Async = Sihl.Core.Async;
+// TODO extract business logic into Service so it can provide its API
 
 module GetUsers = {
   [@decco]
@@ -112,7 +113,8 @@ module Register = {
             Model.User.make(
               ~email,
               ~username,
-              ~password,
+              ~password=
+                Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, password),
               ~givenName,
               ~familyName,
               ~phone,

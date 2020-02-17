@@ -47,10 +47,9 @@ afterAllPromise(_ =>
   }
 );
 
-describe("User", () => {
-  Expect.(
-    testPromise("can't login with wrong credentials", () => {
-      let body = {|
+Expect.(
+  testPromise("User can register", () => {
+    let body = {|
 {
   "email": "foobar@example.com",
   "username": "foobar",
@@ -60,25 +59,24 @@ describe("User", () => {
   "phone": "123"
 }
 |};
-      Fetch.fetchWithInit(
-        "http://localhost:3000/api/register/",
-        Fetch.RequestInit.make(
-          ~method_=Post,
-          ~body=Fetch.BodyInit.make(body),
-          (),
-        ),
-      )
-      |> Js.Promise.then_(Fetch.Response.json)
-      |> Js.Promise.then_(json =>
-           json
-           |> Js.Json.stringify
-           |> expect
-           |> toBe({|{"message":"ok"}|})
-           |> Sihl.Core.Async.async
-         );
-    })
-  )
-});
+    Fetch.fetchWithInit(
+      "http://localhost:3000/api/register/",
+      Fetch.RequestInit.make(
+        ~method_=Post,
+        ~body=Fetch.BodyInit.make(body),
+        (),
+      ),
+    )
+    |> Js.Promise.then_(Fetch.Response.json)
+    |> Js.Promise.then_(json =>
+         json
+         |> Js.Json.stringify
+         |> expect
+         |> toBe({|{"message":"ok"}|})
+         |> Sihl.Core.Async.async
+       );
+  })
+);
 
 /* describe("User registers and gets own user", () => { */
 /*   // TODO */
