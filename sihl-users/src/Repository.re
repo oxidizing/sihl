@@ -105,9 +105,11 @@ INSERT INTO users_users (
   given_name,
   family_name,
   username,
-  phone
+  phone,
+  status
 ) VALUES (
   UNHEX(REPLACE(?, '-', '')),
+  ?,
   ?,
   ?,
   ?,
@@ -126,6 +128,7 @@ INSERT INTO users_users (
       string,
       string,
       option(string),
+      Js.Json.t,
     );
 
     let query = (connection, ~user: Model.User.t) =>
@@ -139,6 +142,7 @@ INSERT INTO users_users (
             user.familyName,
             user.username,
             user.phone,
+            user.status |> Model.Status.t_encode,
           )),
         connection,
         stmt,
@@ -221,24 +225,54 @@ TRUNCATE TABLE users_permissions;
     let stmt = "
 SELECT
   uuid_of(uuid) as uuid,
-  userId,
-  token
-FROM users_tokens
-WHERE token = ?;
+  user,
+  permission
+FROM users_users_permissions
+WHERE user = (SELECT id FROM users WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+AND permission = ?;
 ";
 
     [@decco]
     type parameters = (string, string);
+
+    [@decco]
+    type result = {
+      uuid: string,
+      user: int,
+      permission: string,
+    };
 
     let query = (connection, ~user: Model.User.t, ~perm: string) => {
       Sihl.Core.Db.Repo.getOne(
         ~connection,
         ~parameters=parameters_encode((user.id, perm)),
         ~stmt,
-        ~decode=Model.User.t_decode,
+        ~decode=result_decode,
         (),
       )
       ->Async.mapAsync(_ => true);
     };
+  };
+
+  module Store = {
+    let stmt = "
+INSERT INTO users_permissions (
+  uuid,
+  name
+) VALUES (
+  UNHEX(REPLACE(?, '-', '')),
+  ?
+);
+";
+
+    [@decco]
+    type parameters = (string, string);
+
+    let query = (connection, ~permission: Model.Permission.t) =>
+      Sihl.Core.Db.Repo.execute(
+        ~parameters=parameters_encode((permission.id, permission.name)),
+        connection,
+        stmt,
+      );
   };
 };
