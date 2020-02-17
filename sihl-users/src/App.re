@@ -41,7 +41,6 @@ CREATE TABLE IF NOT EXISTS $(namespace)_users (
   CONSTRAINT unique_uuid UNIQUE KEY (uuid)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
-    // TODO add FOREIGN KEY (user) REFERENCES users_users(id)
     {j|
 CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -52,7 +51,8 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_token UNIQUE KEY (token),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+  FOREIGN KEY (user) REFERENCES $(namespace)_users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
   ];

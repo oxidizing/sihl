@@ -4,9 +4,16 @@ module Utils = {
   module Async = Sihl.Core.Async;
 
   let cleanData = db => {
-    Sihl.Core.Db.Database.withConnection(db, conn => {
-      App.Database.clean->Belt.List.map(f => f(conn))->Async.allInOrder
-    });
+    Sihl.Core.Db.Database.withConnection(
+      db,
+      conn => {
+        let%Async _ =
+          Sihl.Core.Db.Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
+        let%Async _ =
+          App.Database.clean->Belt.List.map(f => f(conn))->Async.allInOrder;
+        Sihl.Core.Db.Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
+      },
+    );
   };
 
   let runMigrations = db => {

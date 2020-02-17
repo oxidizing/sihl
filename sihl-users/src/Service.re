@@ -46,7 +46,7 @@ module Permission = {
     Repository.Permission.Has.query(conn, ~user, ~perm);
   };
 
-  let ensure = (conn, header, perm) => {
+  let authorize = (conn, header, perm) => {
     open! Sihl.Core.Http.Endpoint;
     let%Async user = User.authenticate(conn, header);
     let%Async isAllowed = has(conn, user, perm);
