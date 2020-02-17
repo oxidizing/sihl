@@ -1,5 +1,4 @@
 module Async = Sihl.Core.Async;
-// TODO extract business logic into Service so it can provide its API
 
 module GetUsers = {
   [@decco]
@@ -10,8 +9,12 @@ module GetUsers = {
       database,
       verb: GET,
       path: "/api/",
-      handler: (conn, _req) => {
-        let%Async users = Repository.User.GetAll.query(conn);
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async header = req.requireHeader("authorization");
+        let%Async _ =
+          Service.Permission.ensure(conn, header, "users.view_users");
+        let%Async users = Service.User.getAll(conn);
         let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
@@ -28,6 +31,9 @@ module GetUser = {
       verb: GET,
       path: "/api/:id/",
       handler: (conn, req) => {
+        let%Async header = req.requireHeader("authorization");
+        let%Async _ =
+          Service.Permission.ensure(conn, header, "users.view_users");
         let%Async {userId} = req.requireParams(params_decode);
         let%Async user = Repository.User.Get.query(conn, ~userId);
         let response = user |> Model.User.t_encode;
@@ -44,11 +50,7 @@ module GetMe = {
       path: "/api/me/",
       handler: (conn, req) => {
         let%Async header = req.requireHeader("authorization");
-        let tokenString =
-          header |> Model.Token.fromHeader |> Belt.Option.getExn;
-        let%Async token = Repository.Token.Get.query(conn, ~tokenString);
-        let%Async user =
-          Repository.User.Get.query(conn, ~userId=token.userId);
+        let%Async user = Service.User.authenticate(conn, header);
         let response = user |> Model.User.t_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
@@ -73,12 +75,7 @@ module Login = {
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, password} = req.requireQuery(query_decode);
-        let%Async user = Repository.User.GetByEmail.query(conn, ~email);
-        if (!Sihl.Core.Bcrypt.Hash.compareSync(password, user.password)) {
-          abort @@ Unauthorized("Invalid password or email provided");
-        };
-        let token = Model.Token.generate(~user);
-        let%Async _ = Repository.Token.Store.query(conn, ~token);
+        let%Async token = Service.User.login(conn, ~email, ~password);
         let response = {token: token.token} |> response_body_encode;
         Async.async @@ OkJson(response);
       },
@@ -108,19 +105,16 @@ module Register = {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, username, password, givenName, familyName, phone} =
           req.requireBody(body_in_decode);
-        let user =
-          abortIfError(
-            Model.User.make(
-              ~email,
-              ~username,
-              ~password=
-                Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, password),
-              ~givenName,
-              ~familyName,
-              ~phone,
-            ),
+        let%Async _ =
+          Service.User.register(
+            conn,
+            ~email,
+            ~username,
+            ~password,
+            ~givenName,
+            ~familyName,
+            ~phone,
           );
-        let%Async _ = Repository.User.Store.query(conn, ~user);
         Async.async @@ OkJson(body_out_encode({message: "ok"}));
       },
     });

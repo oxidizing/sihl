@@ -18,6 +18,7 @@ module Endpoint = {
     | BadRequest(string)
     | NotFound(string)
     | Unauthorized(string)
+    | Forbidden(string)
     | OkString(string)
     | OkJson(Js.Json.t)
     | OkBuffer(Node.Buffer.t)
@@ -181,6 +182,9 @@ module Endpoint = {
       Express.Response.(
         res |> status(Status.Unauthorized) |> sendString(msg)
       )
+    | Forbidden(msg) =>
+      async @@
+      Express.Response.(res |> status(Status.Forbidden) |> sendString(msg))
     | OkString(msg) =>
       async @@
       Express.Response.(

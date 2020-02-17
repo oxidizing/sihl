@@ -181,7 +181,8 @@ INSERT INTO users_tokens (
   };
 
   module Get = {
-    let stmt = "SELECT
+    let stmt = "
+SELECT
   uuid_of(uuid) as uuid,
   userId,
   token
@@ -203,5 +204,41 @@ WHERE token = ?;
           ~decode=Model.Token.t_decode,
           (),
         );
+  };
+};
+
+module Permission = {
+  module Clean = {
+    let stmt = "
+TRUNCATE TABLE users_permissions;
+";
+    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
+      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
+    };
+  };
+
+  module Has = {
+    let stmt = "
+SELECT
+  uuid_of(uuid) as uuid,
+  userId,
+  token
+FROM users_tokens
+WHERE token = ?;
+";
+
+    [@decco]
+    type parameters = (string, string);
+
+    let query = (connection, ~user: Model.User.t, ~perm: string) => {
+      Sihl.Core.Db.Repo.getOne(
+        ~connection,
+        ~parameters=parameters_encode((user.id, perm)),
+        ~stmt,
+        ~decode=Model.User.t_decode,
+        (),
+      )
+      ->Async.mapAsync(_ => true);
+    };
   };
 };
