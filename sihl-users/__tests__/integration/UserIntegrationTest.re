@@ -69,22 +69,21 @@ Expect.(
   "phone": "123"
 }
 |};
-    Fetch.fetchWithInit(
-      "http://localhost:3000/api/register/",
-      Fetch.RequestInit.make(
-        ~method_=Post,
-        ~body=Fetch.BodyInit.make(body),
-        (),
-      ),
-    )
-    |> Js.Promise.then_(Fetch.Response.json)
-    |> Js.Promise.then_(json =>
-         json
-         |> Js.Json.stringify
-         |> expect
-         |> toBe({|{"message":"ok"}|})
-         |> Sihl.Core.Async.async
-       );
+    let%Async response =
+      Fetch.fetchWithInit(
+        "http://localhost:3000/api/register/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+    let%Async json = Fetch.Response.json(response);
+    json
+    |> Js.Json.stringify
+    |> expect
+    |> toBe({|{"message":"ok"}|})
+    |> Sihl.Core.Async.async;
   })
 );
 
