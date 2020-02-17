@@ -3,19 +3,14 @@
 module Utils = {
   module Async = Sihl.Core.Async;
 
-  let withConnection = (db, f) => {
-    let%Async conn = Sihl.Core.Db.Database.connect(db);
-    f(conn);
-  };
-
   let cleanData = db => {
-    withConnection(db, conn => {
+    Sihl.Core.Db.Database.withConnection(db, conn => {
       App.Database.clean->Belt.List.map(f => f(conn))->Async.allInOrder
     });
   };
 
   let runMigrations = db => {
-    withConnection(db, conn => {
+    Sihl.Core.Db.Database.withConnection(db, conn => {
       App.Settings.namespace
       ->App.Database.migrations
       ->Belt.List.map(Sihl.Core.Db.Repo.execute(conn))

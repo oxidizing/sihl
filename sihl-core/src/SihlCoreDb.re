@@ -115,6 +115,10 @@ module Database = {
       "connectionLimit": config.connectionLimit |> int_of_string,
       "queueLimit": config.queueLimit |> int_of_string,
     });
+  let withConnection = (db, f) => {
+    let%Async conn = connect(db);
+    f(conn);
+  };
 };
 
 module Repo = {
