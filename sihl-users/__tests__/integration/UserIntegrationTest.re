@@ -45,6 +45,8 @@ afterAllPromise(_ =>
   }
 );
 
+let baseUrl = "http://localhost:3000";
+
 Expect.(
   testPromise("User register yields new user", () => {
     let body = {|
@@ -59,23 +61,23 @@ Expect.(
 |};
     let%Async _ =
       Fetch.fetchWithInit(
-        "http://localhost:3000/register/",
+        baseUrl ++ "/users/register/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
           (),
         ),
       );
-    let%Async login =
+    let%Async loginResponse =
       Fetch.fetch(
-        "http://localhost:3000/login?email=admin@example.com&password=password",
+        baseUrl ++ "/users/login?email=admin@example.com&password=password",
       );
-    let%Async json = Fetch.Response.json(login);
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      json |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
     let%Async usersResponse =
       Fetch.fetchWithInit(
-        "http://localhost:3000/",
+        baseUrl ++ "/users/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=

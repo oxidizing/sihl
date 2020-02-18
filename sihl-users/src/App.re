@@ -60,13 +60,12 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 };
 
 module Http = {
-  // TODO namespace routes using Settings.namespace
   let routes = database => [
-    Routes.Login.endpoint(database),
-    Routes.Register.endpoint(database),
-    Routes.GetUser.endpoint(database),
-    Routes.GetUsers.endpoint(database),
-    Routes.GetMe.endpoint(database),
+    Routes.Login.endpoint(Settings.namespace, database),
+    Routes.Register.endpoint(Settings.namespace, database),
+    Routes.GetUser.endpoint(Settings.namespace, database),
+    Routes.GetUsers.endpoint(Settings.namespace, database),
+    Routes.GetMe.endpoint(Settings.namespace, database),
   ];
 };
 

@@ -145,6 +145,8 @@ module Endpoint = {
     handler: request('body_in, 'params, 'query) => Js.Promise.t(response),
   };
 
+  let verb = endpoint => endpoint.verb;
+
   type dbEndpointConfig('body_in, 'params, 'query) = {
     database: SihlCoreDb.Database.t,
     path: string,

@@ -4,11 +4,11 @@ module GetUsers = {
   [@decco]
   type users = list(Model.User.t);
 
-  let endpoint = database =>
+  let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/",
+      path: {j|/$root/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async token = Sihl.Core.Http.requireAuthorization(req);
@@ -27,11 +27,11 @@ module GetUser = {
   [@decco]
   type params = {userId: string};
 
-  let endpoint = database =>
+  let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/:id/",
+      path: {j|/$root/:id/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
@@ -48,11 +48,11 @@ module GetUser = {
 };
 
 module GetMe = {
-  let endpoint = database =>
+  let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/me/",
+      path: {j|/$root/me/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
@@ -73,11 +73,11 @@ module Login = {
   [@decco]
   type response_body = {token: string};
 
-  let endpoint = database =>
+  let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/login/",
+      path: {j|/$root/login/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, password} = req.requireQuery(query_decode);
@@ -102,11 +102,11 @@ module Register = {
   [@decco]
   type body_out = {message: string};
 
-  let endpoint = database =>
+  let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: POST,
-      path: "/register/",
+      path: {j|/$root/register/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, username, password, givenName, familyName, phone} =
