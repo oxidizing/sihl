@@ -1,26 +1,5 @@
 module Async = Sihl.Core.Async;
 
-module Permission = {
-  let default = ["users.all", "users.view_users"];
-
-  let assign = (conn, user, perm) => {
-    Repository.Permission.Assign.query(conn, ~user, ~perm);
-  };
-
-  let has = (conn, user, perm) => {
-    Repository.Permission.Has.query(conn, ~user, ~perm);
-  };
-
-  let authorize = (conn, user, perm) => {
-    open! Sihl.Core.Http.Endpoint;
-    let%Async isAllowed = has(conn, user, perm);
-    if (!isAllowed) {
-      abort @@ Forbidden("Not allowed");
-    };
-    Async.async(user);
-  };
-};
-
 module User = {
   let authenticate = (conn, header) => {
     let tokenString = header |> Model.Token.fromHeader |> Belt.Option.getExn;
@@ -55,13 +34,14 @@ module User = {
           ~givenName,
           ~familyName,
           ~phone,
+          ~admin=false,
         ),
       );
     let%Async _ = Repository.User.Store.query(conn, ~user);
     Async.async(user);
   };
 
-  let createSuperuser = (conn, ~email, ~username, ~password) => {
+  let createAdmin = (conn, ~email, ~username, ~password) => {
     open! Sihl.Core.Http.Endpoint;
     let user =
       abortIfError(
@@ -72,6 +52,7 @@ module User = {
           ~givenName="",
           ~familyName="",
           ~phone=None,
+          ~admin=true,
         ),
       );
     let%Async _ = Repository.User.Store.query(conn, ~user);

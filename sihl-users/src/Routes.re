@@ -8,13 +8,14 @@ module GetUsers = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/api/",
+      path: "/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
         let%Async user = Service.User.authenticate(conn, header);
-        let%Async _ =
-          Service.Permission.authorize(conn, user, "users.view_users");
+        if (!Model.User.isAdmin(user)) {
+          abort @@ Forbidden("Not allowed");
+        };
         let%Async users = Service.User.getAll(conn);
         let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
@@ -30,14 +31,15 @@ module GetUser = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/api/:id/",
+      path: "/:id/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
         let%Async user = Service.User.authenticate(conn, header);
-        let%Async _ =
-          Service.Permission.authorize(conn, user, "users.view_users");
         let%Async {userId} = req.requireParams(params_decode);
+        if (!Model.User.isAdmin(user) && userId !== user.id) {
+          abort @@ Forbidden("Not allowed");
+        };
         let%Async user = Repository.User.Get.query(conn, ~userId);
         let response = user |> Model.User.t_encode;
         Async.async @@ OkJson(response);
@@ -50,7 +52,7 @@ module GetMe = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/api/me/",
+      path: "/me/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
@@ -75,7 +77,7 @@ module Login = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: "/api/login/",
+      path: "/login/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, password} = req.requireQuery(query_decode);
@@ -104,7 +106,7 @@ module Register = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: POST,
-      path: "/api/register/",
+      path: "/register/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, username, password, givenName, familyName, phone} =

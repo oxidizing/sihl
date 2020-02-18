@@ -174,6 +174,19 @@ module Repo = {
   };
 };
 
+module Bool = {
+  let encoder = i => i ? Js.Json.number(1.0) : Js.Json.number(0.0);
+  let decoder = j => {
+    switch (Js.Json.decodeNumber(j)) {
+    | Some(0.0) => Belt.Result.Ok(false)
+    | Some(1.0) => Belt.Result.Ok(true)
+    | _ => Decco.error(~path="", "Not a boolean", j)
+    };
+  };
+  [@decco]
+  type t = [@decco.codec (encoder, decoder)] bool;
+};
+
 module Connection = Mysql.Connection;
 module Database = {
   include Mysql.Pool;

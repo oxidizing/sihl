@@ -1,24 +1,29 @@
-module Status = {
-  [@decco]
-  type t =
-    | Active
-    | Inactive;
-};
+/* module Status = { */
+/*   [@decco] */
+/*   type t = */
+/*     | Active */
+/*     | Inactive; */
+/* }; */
 
 module User = {
   [@decco]
   type t = {
+    [@decco.key "uuid"]
     id: string,
     email: string,
     username: string,
     password: string,
+    [@decco.key "given_name"]
     givenName: string,
+    [@decco.key "family_name"]
     familyName: string,
     phone: option(string),
-    status: Status.t,
+    status: string,
+    admin: Sihl.Core.Db.Bool.t,
   };
 
-  let make = (~email, ~username, ~password, ~givenName, ~familyName, ~phone) => {
+  let make =
+      (~email, ~username, ~password, ~givenName, ~familyName, ~phone, ~admin) => {
     let id = Sihl.Core.Uuid.V4.uuidv4();
     Belt.Result.Ok({
       id,
@@ -28,9 +33,12 @@ module User = {
       givenName,
       familyName,
       phone,
-      status: Active,
+      status: "active",
+      admin,
     });
   };
+
+  let isAdmin = user => user.admin;
 };
 
 module Token = {
@@ -50,23 +58,4 @@ module Token = {
 
   let fromHeader = header =>
     Js.String.split(header, " ")->Belt.Array.reverse->Belt.Array.get(0);
-};
-
-module Permission = {
-  [@decco]
-  type t = {
-    id: string,
-    name: string,
-  };
-
-  let make = permission => {id: Sihl.Core.Uuid.V4.uuidv4(), name: permission};
-};
-
-module Assignment = {
-  [@decco]
-  type t = {
-    id: string,
-    user: User.t,
-    permission: Permission.t,
-  };
 };

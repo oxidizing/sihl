@@ -8,7 +8,6 @@ module State = {
 };
 
 beforeAllPromise(_ => {
-  // TODO Create admin
   State.app := Some(App.Server.start());
   (State.app^)
   ->Belt.Option.map(App.Server.db)
@@ -24,7 +23,18 @@ beforeAllPromise(_ => {
 beforeEachPromise(_ =>
   (State.app^)
   ->Belt.Option.map(App.Server.db)
-  ->Belt.Option.map(Sihl.Core.Db.Database.clean(App.Database.clean))
+  ->Belt.Option.map(db => {
+      let%Async _ = Sihl.Core.Db.Database.clean(App.Database.clean, db);
+      Sihl.Core.Db.Database.withConnection(db, conn => {
+        Service.User.createAdmin(
+          conn,
+          ~email="admin@example.com",
+          ~username="admin",
+          ~password="password",
+        )
+        ->Async.mapAsync(_ => ())
+      });
+    })
   ->Belt.Option.getWithDefault(Async.async())
 );
 
@@ -36,7 +46,7 @@ afterAllPromise(_ =>
 );
 
 Expect.(
-  testPromise("User can register", () => {
+  testPromise("User register yields new user", () => {
     let body = {|
 {
   "email": "foobar@example.com",
@@ -47,21 +57,23 @@ Expect.(
   "phone": "123"
 }
 |};
-    let%Async response =
+    let%Async _ =
       Fetch.fetchWithInit(
-        "http://localhost:3000/api/register/",
+        "http://localhost:3000/register/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
           (),
         ),
       );
-    let%Async json = Fetch.Response.json(response);
-    json
-    |> Js.Json.stringify
-    |> expect
-    |> toBe({|{"message":"ok"}|})
-    |> Sihl.Core.Async.async;
+    let%Async login =
+      Fetch.fetch(
+        "http://localhost:3000/login?email=admin@example.com&password=password",
+      );
+    let%Async json = Fetch.Response.json(login);
+    let Routes.Login.{token} =
+      json |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    token |> expect |> ExpectJs.toBeTruthy |> Sihl.Core.Async.async;
   })
 );
 
