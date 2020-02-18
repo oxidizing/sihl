@@ -3,7 +3,7 @@ module Async = Sihl.Core.Async;
 module User = {
   let authenticate = (conn, token) => {
     let%Async tokenAssignment = Repository.Token.Get.query(conn, ~token);
-    Repository.User.Get.query(conn, ~userId=tokenAssignment.userId);
+    Repository.User.Get.query(conn, ~userId=tokenAssignment.user);
   };
 
   let getAll = conn => {

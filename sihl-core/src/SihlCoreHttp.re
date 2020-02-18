@@ -346,9 +346,8 @@ module Endpoint = {
 };
 
 let parseAuthToken = header => {
-  let token =
-    header->Js.String.split(" ")->Belt.Array.reverse->Belt.Array.get(0);
-  switch (token) {
+  let parts = header |> Js.String.split(" ") |> Belt.Array.reverse;
+  switch (Belt.Array.get(parts, 0)) {
   | Some(token) => Belt.Result.Ok(token)
   | None => Belt.Result.Error("No authorization token found")
   };

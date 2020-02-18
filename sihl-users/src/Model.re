@@ -1,14 +1,6 @@
-/* module Status = { */
-/*   [@decco] */
-/*   type t = */
-/*     | Active */
-/*     | Inactive; */
-/* }; */
-
 module User = {
   [@decco]
   type t = {
-    [@decco.key "uuid"]
     id: string,
     email: string,
     username: string,
@@ -45,13 +37,13 @@ module Token = {
   [@decco]
   type t = {
     id: string,
-    userId: string,
+    user: string,
     token: string,
   };
 
   let generate = (~user: User.t) => {
     id: Sihl.Core.Uuid.V4.uuidv4(),
-    userId: user.id,
+    user: user.id,
     // TODO replace with proper token generation
     token: Sihl.Core.Uuid.V4.uuidv4(),
   };

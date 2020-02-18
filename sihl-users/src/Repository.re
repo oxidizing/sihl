@@ -13,7 +13,7 @@ TRUNCATE TABLE users_users;
   module GetAll = {
     let stmt = "
 SELECT
-  uuid_of(uuid) as uuid,
+  uuid_of(uuid) as id,
   email,
   password,
   given_name,
@@ -40,7 +40,7 @@ FROM users_users;
   module Get = {
     let stmt = "
 SELECT
-  uuid_of(uuid) as uuid,
+  uuid_of(uuid) as id,
   email,
   password,
   given_name,
@@ -71,8 +71,9 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
   };
 
   module GetByEmail = {
-    let stmt = "SELECT
-  uuid_of(uuid) as uuid,
+    let stmt = "
+SELECT
+  uuid_of(uuid) as id,
   email,
   password,
   given_name,
@@ -186,9 +187,8 @@ INSERT INTO users_tokens (
     type parameters = (string, string, string);
 
     let query = (connection, ~token: Model.Token.t) => {
-      Js.log(token.userId);
       Sihl.Core.Db.Repo.execute(
-        ~parameters=parameters_encode((token.id, token.token, token.userId)),
+        ~parameters=parameters_encode((token.id, token.token, token.user)),
         connection,
         stmt,
       );
@@ -198,10 +198,12 @@ INSERT INTO users_tokens (
   module Get = {
     let stmt = "
 SELECT
-  uuid_of(uuid) as uuid,
-  user,
+  uuid_of(users_tokens.uuid) as id,
+  uuid_of(users_users.uuid) as user,
   token
 FROM users_tokens
+LEFT JOIN users_users
+ON users_users.id = users_tokens.user
 WHERE token LIKE ?;
 ";
 
