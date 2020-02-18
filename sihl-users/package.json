@@ -22,7 +22,7 @@
     "sihl-core": "0.0.1"
   },
   "devDependencies": {
-    "@glennsl/bs-jest": "0.4.9",
+    "@glennsl/bs-jest": "^0.4.9",
     "bs-platform": "^7.1.0"
   }
 }

@@ -135,7 +135,12 @@ module Repo = {
       |> SihlCoreError.Decco.stringifyDecoder(decode)
       |> failIfError
       |> Async.async
-    | ([], _) => fail("No rows found in database")
+    | ([], _) =>
+      let params =
+        Belt.Option.mapWithDefault(parameters, "", parameters =>
+          " with params=" ++ Js.Json.stringify(parameters)
+        );
+      fail("No rows found in database for stmt=" ++ stmt ++ params);
     | _ => fail("Two or more rows found when we were expecting only one")
     };
   };

@@ -73,7 +73,24 @@ Expect.(
     let%Async json = Fetch.Response.json(login);
     let Routes.Login.{token} =
       json |> Routes.Login.response_body_decode |> Belt.Result.getExn;
-    token |> expect |> ExpectJs.toBeTruthy |> Sihl.Core.Async.async;
+    let%Async usersResponse =
+      Fetch.fetchWithInit(
+        "http://localhost:3000/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async usersJson = Fetch.Response.json(usersResponse);
+    let users =
+      usersJson
+      |> Routes.GetUsers.users_decode
+      |> Belt.Result.getExn
+      |> Belt.List.toArray;
+
+    users |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
   })
 );
 

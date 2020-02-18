@@ -11,8 +11,8 @@ module GetUsers = {
       path: "/",
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async header = req.requireHeader("authorization");
-        let%Async user = Service.User.authenticate(conn, header);
+        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async user = Service.User.authenticate(conn, token);
         if (!Model.User.isAdmin(user)) {
           abort @@ Forbidden("Not allowed");
         };

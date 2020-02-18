@@ -345,6 +345,25 @@ module Endpoint = {
   };
 };
 
+let parseAuthToken = header => {
+  let token =
+    header->Js.String.split(" ")->Belt.Array.reverse->Belt.Array.get(0);
+  switch (token) {
+  | Some(token) => Belt.Result.Ok(token)
+  | None => Belt.Result.Error("No authorization token found")
+  };
+};
+
+let requireAuthorization =
+    (request: Endpoint.request('body, 'query, 'params)) => {
+  module Async = SihlCoreAsync;
+  let%Async header = Endpoint.requireHeader("authorization", request.req);
+  switch (parseAuthToken(header)) {
+  | Belt.Result.Ok(token) => Async.async(token)
+  | Belt.Result.Error(message) => Endpoint.abort(BadRequest(message))
+  };
+};
+
 module Express = Express;
 
 type endpoint = Endpoint.endpoint;

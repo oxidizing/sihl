@@ -5,7 +5,7 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "test": "SIHL_TEST=true mocha --recursive test/**/*.js"
+    "test": "jest"
   },
   "keywords": [
     "BuckleScript",

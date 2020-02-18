@@ -1,10 +1,9 @@
 module Async = Sihl.Core.Async;
 
 module User = {
-  let authenticate = (conn, header) => {
-    let tokenString = header |> Model.Token.fromHeader |> Belt.Option.getExn;
-    let%Async token = Repository.Token.Get.query(conn, ~tokenString);
-    Repository.User.Get.query(conn, ~userId=token.userId);
+  let authenticate = (conn, token) => {
+    let%Async tokenAssignment = Repository.Token.Get.query(conn, ~token);
+    Repository.User.Get.query(conn, ~userId=tokenAssignment.userId);
   };
 
   let getAll = conn => {

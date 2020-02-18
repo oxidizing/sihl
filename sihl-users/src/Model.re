@@ -55,7 +55,4 @@ module Token = {
     // TODO replace with proper token generation
     token: Sihl.Core.Uuid.V4.uuidv4(),
   };
-
-  let fromHeader = header =>
-    Js.String.split(header, " ")->Belt.Array.reverse->Belt.Array.get(0);
 };

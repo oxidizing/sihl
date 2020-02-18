@@ -7,7 +7,7 @@
       "subdirs": true
     },
     {
-      "dir": "test",
+      "dir": "__tests__",
       "subdirs": true,
       "type": "dev"
     }
@@ -21,6 +21,7 @@
     "bs-express",
     "decco"
   ],
+  "bs-dev-dependencies": ["@glennsl/bs-jest"],
   "warnings": {
     "error" : "+101"
   },

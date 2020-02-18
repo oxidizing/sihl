@@ -38,7 +38,8 @@ FROM users_users;
   };
 
   module Get = {
-    let stmt = "SELECT
+    let stmt = "
+SELECT
   uuid_of(uuid) as uuid,
   email,
   password,
@@ -57,7 +58,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
 
     let query:
       (Sihl.Core.Db.Connection.t, ~userId: string) =>
-      Js.Promise.t(Model.User.t) =
+      Js.Promise.t(Model.User.t) = {
       (connection, ~userId) =>
         Sihl.Core.Db.Repo.getOne(
           ~connection,
@@ -66,6 +67,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
           ~decode=Model.User.t_decode,
           (),
         );
+    };
   };
 
   module GetByEmail = {
@@ -183,35 +185,37 @@ INSERT INTO users_tokens (
     [@decco]
     type parameters = (string, string, string);
 
-    let query = (connection, ~token: Model.Token.t) =>
+    let query = (connection, ~token: Model.Token.t) => {
+      Js.log(token.userId);
       Sihl.Core.Db.Repo.execute(
-        ~parameters=parameters_encode((token.id, token.userId, token.token)),
+        ~parameters=parameters_encode((token.id, token.token, token.userId)),
         connection,
         stmt,
       );
+    };
   };
 
   module Get = {
     let stmt = "
 SELECT
   uuid_of(uuid) as uuid,
-  userId,
+  user,
   token
 FROM users_tokens
-WHERE token = ?;
+WHERE token LIKE ?;
 ";
 
     [@decco]
     type parameters = string;
 
     let query:
-      (Sihl.Core.Db.Connection.t, ~tokenString: string) =>
+      (Sihl.Core.Db.Connection.t, ~token: string) =>
       Js.Promise.t(Model.Token.t) =
-      (connection, ~tokenString) =>
+      (connection, ~token) =>
         Sihl.Core.Db.Repo.getOne(
           ~connection,
           ~stmt,
-          ~parameters=parameters_encode(tokenString),
+          ~parameters=parameters_encode(token),
           ~decode=Model.Token.t_decode,
           (),
         );
