@@ -340,7 +340,9 @@ module Endpoint = {
         verb: cfg.verb,
         handler: req => {
           let%Async conn = SihlCoreDb.Database.connect(cfg.database);
-          cfg.handler(conn, req);
+          let%Async response = cfg.handler(conn, req);
+          SihlCoreDb.Connection.release(conn);
+          async(response);
         },
       },
     );

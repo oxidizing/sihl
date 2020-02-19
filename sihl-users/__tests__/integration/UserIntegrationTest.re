@@ -20,7 +20,7 @@ beforeAllPromise(_ => {
   ->Belt.Option.getWithDefault(Async.async());
 });
 
-beforeEachPromise(_ =>
+beforeEachPromise(_ => {
   (State.app^)
   ->Belt.Option.map(App.Server.db)
   ->Belt.Option.map(db => {
@@ -36,14 +36,14 @@ beforeEachPromise(_ =>
       });
     })
   ->Belt.Option.getWithDefault(Async.async())
-);
+});
 
-afterAllPromise(_ =>
+afterAllPromise(_ => {
   switch (State.app^) {
   | Some(app) => App.Server.stop(app)
   | _ => Sihl.Core.Async.async()
   }
-);
+});
 
 let baseUrl = "http://localhost:3000";
 
@@ -93,6 +93,33 @@ Expect.(
       |> Belt.List.toArray;
 
     users |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
+  testPromise("Just a clone", () => {
+    let body = {|
+{
+  "email": "foobar@example.com",
+  "username": "foobar",
+  "password": "123",
+  "givenName": "Foo",
+  "familyName": "Bar",
+  "phone": "123"
+}
+|};
+    Js.log("RUnning second test");
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/register/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+    Js.log("Just ran second fetch");
+    [|1, 2|] |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
   })
 );
 
