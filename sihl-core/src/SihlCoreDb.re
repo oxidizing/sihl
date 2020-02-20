@@ -92,14 +92,7 @@ module Mysql = {
 
 exception DatabaseException(string);
 
-let failIfError = result => {
-  switch (result) {
-  | Belt.Result.Ok(ok) => ok
-  | Belt.Result.Error(error) => raise(DatabaseException(error))
-  };
-};
-
-let fail = reason => raise(DatabaseException(reason));
+let abort = reason => raise(DatabaseException(reason));
 
 let pool = Mysql.pool;
 
@@ -127,35 +120,59 @@ module Repo = {
     let foundRowsQuery = "SELECT FOUND_ROWS();";
   };
 
+  let debug = (stmt, parameters) => {
+    "for stmt="
+    ++ stmt
+    ++ Belt.Option.mapWithDefault(parameters, "", parameters =>
+         " with params=" ++ Js.Json.stringify(parameters)
+       );
+  };
+
   let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
     let%Async result =
       Mysql.Connection.query(~connection, ~stmt, ~parameters);
-    let result = failIfError(result);
-    switch (result) {
-    | ([row], _) =>
-      row
-      |> SihlCoreError.Decco.stringifyDecoder(decode)
-      |> failIfError
-      |> Async.async
-    | ([], _) =>
-      let params =
-        Belt.Option.mapWithDefault(parameters, "", parameters =>
-          " with params=" ++ Js.Json.stringify(parameters)
-        );
-      fail("No rows found in database for stmt=" ++ stmt ++ params);
-    | _ => fail("Two or more rows found when we were expecting only one")
-    };
+    Async.async(
+      switch (result) {
+      | Belt.Result.Ok(([row], _)) =>
+        row |> SihlCoreError.Decco.stringifyDecoder(decode)
+      | Belt.Result.Ok(([], _)) =>
+        Belt.Result.Error(
+          "No rows found in database " ++ debug(stmt, parameters),
+        )
+      | Belt.Result.Ok(_) =>
+        Belt.Result.Error(
+          "Two or more rows found when we were expecting only one "
+          ++ debug(stmt, parameters),
+        )
+      | Belt.Result.Error(msg) =>
+        abort(
+          "Error happened in DB when getOne() msg="
+          ++ msg
+          ++ debug(stmt, parameters),
+        )
+      },
+    );
   };
 
   let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
     let%Async result =
       Mysql.Connection.query(~connection, ~stmt, ~parameters);
-    switch (failIfError(result)) {
-    | (rows, _) =>
+    switch (result) {
+    | Belt.Result.Ok((rows, _)) =>
       let result =
         rows
         ->Belt.List.map(SihlCoreError.Decco.stringifyDecoder(decode))
-        ->Belt.List.map(failIfError);
+        ->Belt.List.map(result =>
+            switch (result) {
+            | Belt.Result.Ok(result) => result
+            | Belt.Result.Error(msg) =>
+              abort(
+                "Error happened in DB when getMany() msg="
+                ++ msg
+                ++ debug(stmt, parameters),
+              )
+            }
+          );
       let%Async meta =
         Mysql.Connection.query(
           ~connection,
@@ -163,21 +180,49 @@ module Repo = {
           ~parameters=None,
         );
       let meta =
-        switch (failIfError(meta)) {
-        | ([row], _) =>
-          row
-          |> SihlCoreError.Decco.stringifyDecoder(Result.MetaData.t_decode)
-          |> failIfError
-        | _ => fail("Could not fetch FOUND_ROWS()")
+        switch (meta) {
+        | Belt.Result.Ok(([row], _)) =>
+          switch (
+            row
+            |> SihlCoreError.Decco.stringifyDecoder(Result.MetaData.t_decode)
+          ) {
+          | Belt.Result.Ok(meta) => meta
+          | Belt.Result.Error(_) =>
+            abort(
+              "Error happened in DB when decoding meta "
+              ++ debug(stmt, parameters),
+            )
+          }
+        | _ =>
+          abort(
+            "Error happened in DB when fetching FOUND_ROWS() "
+            ++ debug(stmt, parameters),
+          )
         };
       Async.async @@ Result.create(result, meta);
+    | Belt.Result.Error(msg) =>
+      abort(
+        "Error happened in DB when getMany() msg="
+        ++ msg
+        ++ debug(stmt, parameters),
+      )
     };
   };
 
   let execute = (~parameters=?, connection, stmt) => {
     let%Async rows =
       Mysql.Connection.execute(~connection, ~stmt, ~parameters);
-    rows->Belt.Result.map(_ => ())->failIfError->Async.async;
+    Async.async(
+      switch (rows) {
+      | Belt.Result.Ok(_) => ()
+      | Belt.Result.Error(msg) =>
+        abort(
+          "Error happened in DB when getMany() msg="
+          ++ msg
+          ++ debug(stmt, parameters),
+        )
+      },
+    );
   };
 };
 

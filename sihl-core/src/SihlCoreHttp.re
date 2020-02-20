@@ -35,11 +35,20 @@ module Endpoint = {
     raise(HttpException(res));
   };
 
-  let abortIfError = res => {
+  let abortIfErrResponse = res => {
     switch (res) {
     | Belt.Result.Ok(res) => res
     | Belt.Result.Error(error) => raise(HttpException(error))
     };
+  };
+
+  let abortIfErr = (errorResponse, result) => {
+    SihlCoreAsync.mapAsync(result, result =>
+      switch (result) {
+      | Belt.Result.Ok(result) => result
+      | Belt.Result.Error(_) => raise(HttpException(errorResponse))
+      }
+    );
   };
 
   type verb =

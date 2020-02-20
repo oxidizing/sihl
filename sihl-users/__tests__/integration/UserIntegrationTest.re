@@ -97,7 +97,7 @@ Expect.(
 );
 
 Expect.(
-  testPromise("Just a clone", () => {
+  testPromise("User can't log in with wrong credentials", () => {
     let body = {|
 {
   "email": "foobar@example.com",
@@ -108,7 +108,6 @@ Expect.(
   "phone": "123"
 }
 |};
-    Js.log("RUnning second test");
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/users/register/",
@@ -118,8 +117,18 @@ Expect.(
           (),
         ),
       );
-    Js.log("Just ran second fetch");
-    [|1, 2|] |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@exampel.com&password=321",
+      );
+    loginResponse
+    |> Fetch.Response.status
+    |> expect
+    |> toBe(
+         Sihl.Core.Http.Endpoint.Status.Unauthorized
+         |> Sihl.Core.Http.Endpoint.Status.toInt,
+       )
+    |> Sihl.Core.Async.async;
   })
 );
 

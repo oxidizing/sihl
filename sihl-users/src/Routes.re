@@ -40,7 +40,9 @@ module GetUser = {
         if (!Model.User.isAdmin(user) && userId !== user.id) {
           abort @@ Forbidden("Not allowed");
         };
-        let%Async user = Repository.User.Get.query(conn, ~userId);
+        let%Async user =
+          Repository.User.Get.query(conn, ~userId)
+          |> abortIfErr(Forbidden("Not allowed"));
         let response = user |> Model.User.t_encode;
         Async.async @@ OkJson(response);
       },
