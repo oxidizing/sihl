@@ -14,22 +14,18 @@ let seed = (app, seed) => {
 
 beforeAllPromise(_ => {
   State.app := Some(App.Server.start());
-  (State.app^)
-  ->Belt.Option.map(App.Server.db)
-  ->Belt.Option.map(
-      Sihl.Core.Db.Database.runMigrations(
-        App.Settings.namespace,
-        App.Database.migrations,
-      ),
-    )
-  ->Belt.Option.getWithDefault(Async.async());
+  let app = State.app^ |> Belt.Option.getExn;
+  app
+  |> App.Server.db
+  |> Sihl.Core.Db.Database.runMigrations(
+       App.Settings.namespace,
+       App.Database.migrations,
+     );
 });
 
 beforeEachPromise(_ => {
-  (State.app^)
-  ->Belt.Option.map(App.Server.db)
-  ->Belt.Option.map(db => Sihl.Core.Db.Database.clean(App.Database.clean, db))
-  ->Belt.Option.getWithDefault(Async.async())
+  let app = State.app^ |> Belt.Option.getExn;
+  app |> App.Server.db |> Sihl.Core.Db.Database.clean(App.Database.clean);
 });
 
 afterAllPromise(_ => {
