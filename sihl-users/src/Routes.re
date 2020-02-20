@@ -57,8 +57,8 @@ module GetMe = {
       path: {j|/$root/me/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async header = req.requireHeader("authorization");
-        let%Async user = Service.User.authenticate(conn, header);
+        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async user = Service.User.authenticate(conn, token);
         let response = user |> Model.User.t_encode;
         Async.async @@ OkJson(response);
       },

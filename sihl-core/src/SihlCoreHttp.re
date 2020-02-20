@@ -408,13 +408,19 @@ let application = (~port=?, endpoints: list(endpoint)) => {
   let httpServer =
     app->Express.App.listen(
       ~port=effectivePort,
-      ~onListen=_ => {Js.log2("Server listening on port", effectivePort)},
+      ~onListen=
+        _ => {
+          SihlCoreLog.info(
+            "Server listening on port " ++ string_of_int(effectivePort),
+            (),
+          )
+        },
       (),
     );
 
   Express.HttpServer.on(
     httpServer,
-    `close(_ => Js.log("Closing http server")),
+    `close(_ => SihlCoreLog.info("Closing http server", ())),
   );
 
   {httpServer, expressApp: app, router};

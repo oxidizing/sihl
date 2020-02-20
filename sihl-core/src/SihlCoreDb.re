@@ -257,7 +257,8 @@ module Database = {
 
   let withConnection = (db, f) => {
     let%Async conn = connect(db);
-    f(conn);
+    let%Async _ = f(conn);
+    Async.async @@ Connection.release(conn);
   };
 
   let clean = (fns, db) => {

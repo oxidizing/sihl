@@ -63,9 +63,9 @@ module Http = {
   let routes = database => [
     Routes.Login.endpoint(Settings.namespace, database),
     Routes.Register.endpoint(Settings.namespace, database),
+    Routes.GetMe.endpoint(Settings.namespace, database),
     Routes.GetUser.endpoint(Settings.namespace, database),
     Routes.GetUsers.endpoint(Settings.namespace, database),
-    Routes.GetMe.endpoint(Settings.namespace, database),
   ];
 };
 

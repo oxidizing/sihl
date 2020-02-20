@@ -38,17 +38,17 @@ afterAllPromise(_ => {
 let baseUrl = "http://localhost:3000";
 
 Expect.(
-  testPromise("User register yields new user", () => {
+  testPromise("User registers, logs in and fetches own user", () => {
     let body = {|
-{
-  "email": "foobar@example.com",
-  "username": "foobar",
-  "password": "123",
-  "givenName": "Foo",
-  "familyName": "Bar",
-  "phone": "123"
-}
-|};
+       {
+         "email": "foobar@example.com",
+         "username": "foobar",
+         "password": "123",
+         "givenName": "Foo",
+         "familyName": "Bar",
+         "phone": "123"
+       }
+       |};
     let%Async _ = seed(State.app, Seeds.Admin);
     let%Async _ =
       Fetch.fetchWithInit(
@@ -61,14 +61,14 @@ Expect.(
       );
     let%Async loginResponse =
       Fetch.fetch(
-        baseUrl ++ "/users/login?email=admin@example.com&password=password",
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
       );
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
     let%Async usersResponse =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/",
+        baseUrl ++ "/users/me/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=
@@ -77,13 +77,10 @@ Expect.(
         ),
       );
     let%Async usersJson = Fetch.Response.json(usersResponse);
-    let users =
-      usersJson
-      |> Routes.GetUsers.users_decode
-      |> Belt.Result.getExn
-      |> Belt.List.toArray;
+    let {Model.User.email} =
+      usersJson |> Model.User.t_decode |> Belt.Result.getExn;
 
-    users |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
+    email |> expect |> toBe("foobar@example.com") |> Sihl.Core.Async.async;
   })
 );
 
@@ -105,33 +102,66 @@ Expect.(
   })
 );
 
-/* describe("User registers and gets own user", () => { */
-/*   // TODO */
-/*   // 1. /register/ */
-/*   // 2. /login/ as user */
-/*   // 2. /me/ */
-/*   Expect.( */
-/*     testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3))) */
-/*   ) */
-/* }); */
+Expect.(
+  testPromise("User can't fetch all users", () => {
+    let%Async _ = seed(State.app, Seeds.AdminOneUser);
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
 
-/* describe("User can't fetch all users", () => { */
-/*   // TODO */
-/*   // 1. /register/ */
-/*   // 2. /login/ as user */
-/*   // 3. /users/ fails */
-/*   Expect.( */
-/*     testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3))) */
-/*   ) */
-/* }); */
+    let%Async usersResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    Fetch.Response.status(usersResponse)
+    |> expect
+    |> toBe(
+         Sihl.Core.Http.Endpoint.Status.toInt(
+           Sihl.Core.Http.Endpoint.Status.Forbidden,
+         ),
+       )
+    |> Sihl.Core.Async.async;
+  })
+);
 
-/* describe("Admin fetches all users", () => { */
-/*   // TODO */
-/*   // 1. /register/ */
-/*   // 2. /login/ as admin */
-/*   // 3. /users/ as admin */
-/*   // 4. /user/:id/ as admin */
-/*   Expect.( */
-/*     testPromise("promise", () => Async.async(expect(1 + 2) |> toBe(3))) */
-/*   ) */
-/* }); */
+Expect.(
+  testPromise("Admin can fetch all users", () => {
+    let%Async _ = seed(State.app, Seeds.AdminOneUser);
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=admin@example.com&password=password",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+
+    let%Async usersResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async usersJson = Fetch.Response.json(usersResponse);
+    let users =
+      usersJson
+      |> Routes.GetUsers.users_decode
+      |> Belt.Result.getExn
+      |> Belt.List.toArray;
+
+    users |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
+  })
+);
