@@ -7,6 +7,11 @@ module State = {
   let app = ref(None);
 };
 
+let seed = (app, seed) => {
+  let db = Belt.Option.getExn(app^) |> App.Server.db;
+  Seeds.set(db, seed);
+};
+
 beforeAllPromise(_ => {
   State.app := Some(App.Server.start());
   (State.app^)
@@ -23,18 +28,7 @@ beforeAllPromise(_ => {
 beforeEachPromise(_ => {
   (State.app^)
   ->Belt.Option.map(App.Server.db)
-  ->Belt.Option.map(db => {
-      let%Async _ = Sihl.Core.Db.Database.clean(App.Database.clean, db);
-      Sihl.Core.Db.Database.withConnection(db, conn => {
-        Service.User.createAdmin(
-          conn,
-          ~email="admin@example.com",
-          ~username="admin",
-          ~password="password",
-        )
-        ->Async.mapAsync(_ => ())
-      });
-    })
+  ->Belt.Option.map(db => Sihl.Core.Db.Database.clean(App.Database.clean, db))
   ->Belt.Option.getWithDefault(Async.async())
 });
 
@@ -59,6 +53,7 @@ Expect.(
   "phone": "123"
 }
 |};
+    let%Async _ = seed(State.app, Seeds.Admin);
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/users/register/",
@@ -98,28 +93,10 @@ Expect.(
 
 Expect.(
   testPromise("User can't log in with wrong credentials", () => {
-    let body = {|
-{
-  "email": "foobar@example.com",
-  "username": "foobar",
-  "password": "123",
-  "givenName": "Foo",
-  "familyName": "Bar",
-  "phone": "123"
-}
-|};
-    let%Async _ =
-      Fetch.fetchWithInit(
-        baseUrl ++ "/users/register/",
-        Fetch.RequestInit.make(
-          ~method_=Post,
-          ~body=Fetch.BodyInit.make(body),
-          (),
-        ),
-      );
+    let%Async _ = seed(State.app, Seeds.AdminOneUser);
     let%Async loginResponse =
       Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@exampel.com&password=321",
+        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
       );
     loginResponse
     |> Fetch.Response.status
