@@ -2,35 +2,39 @@
 open Jest;
 module Async = Sihl.Core.Async;
 
-// TODO move state to global module
 module State = {
   let app = ref(None);
 };
 
 let seed = (app, seed) => {
-  let db = Belt.Option.getExn(app^) |> App.Server.db;
+  let db = Belt.Option.getExn(app^) |> Sihl.Core.Main.App.db;
   Seeds.set(db, seed);
 };
 
-beforeAllPromise(_ => {
-  State.app := Some(App.Server.start());
-  let app = State.app^ |> Belt.Option.getExn;
-  app
-  |> App.Server.db
-  |> Sihl.Core.Db.Database.runMigrations(
-       App.Settings.namespace,
-       App.Database.migrations,
-     );
-});
+let beforeAll = () =>
+  beforeAllPromise(_ => {
+    State.app := Some(Sihl.Core.Main.App.start(App.app));
+    let app = State.app^ |> Belt.Option.getExn;
+    app
+    |> Sihl.Core.Main.App.db
+    |> Sihl.Core.Db.Database.runMigrations(
+         App.Settings.namespace,
+         App.Database.migrations,
+       );
+  });
+
+beforeAll();
 
 beforeEachPromise(_ => {
   let app = State.app^ |> Belt.Option.getExn;
-  app |> App.Server.db |> Sihl.Core.Db.Database.clean(App.Database.clean);
+  app
+  |> Sihl.Core.Main.App.db
+  |> Sihl.Core.Db.Database.clean(App.Database.clean);
 });
 
 afterAllPromise(_ => {
   switch (State.app^) {
-  | Some(app) => App.Server.stop(app)
+  | Some(app) => Sihl.Core.Main.App.stop(app)
   | _ => Sihl.Core.Async.async()
   }
 });

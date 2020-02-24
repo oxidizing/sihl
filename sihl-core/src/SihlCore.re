@@ -9,5 +9,6 @@ module Log = SihlCoreLog;
 
 module Db = SihlCoreDb;
 
+module Main = SihlCoreMain;
 module Http = SihlCoreHttp;
 module Config = SihlCoreConfig;
