@@ -19,9 +19,10 @@
   "suffix": ".bs.js",
   "bs-dependencies": [
     "bs-express",
-    "decco"
+    "decco",
+    "@glennsl/bs-jest"
   ],
-  "bs-dev-dependencies": ["@glennsl/bs-jest"],
+  "bs-dev-dependencies": [],
   "warnings": {
     "error" : "+101"
   },

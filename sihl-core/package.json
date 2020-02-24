@@ -20,6 +20,8 @@
     "decco": "^1.1.1"
   },
   "dependencies": {
+    "@glennsl/bs-jest": "^0.4.9",
+    "isomorphic-fetch": "^2.2.1",
     "bcrypt": "^3.0.8",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
@@ -27,7 +29,6 @@
     "mysql2": "^2.1.0"
   },
   "devDependencies": {
-    "@glennsl/bs-jest": "^0.4.9",
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
     "decco": "^1.1.1"

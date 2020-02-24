@@ -18,11 +18,9 @@
     "bs-let": "^0.1.16",
     "compression": "^1.7.4",
     "decco": "^1.1.1",
-    "isomorphic-fetch": "^2.2.1",
     "sihl-core": "0.0.1"
   },
   "devDependencies": {
-    "@glennsl/bs-jest": "^0.4.9",
     "bs-platform": "^7.1.0"
   }
 }

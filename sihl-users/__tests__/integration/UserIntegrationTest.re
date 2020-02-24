@@ -1,43 +1,6 @@
-[%raw "require('isomorphic-fetch')"];
+include Sihl.Core.Test;
+Integration.setupHarness(App.app);
 open Jest;
-module Async = Sihl.Core.Async;
-
-module State = {
-  let app = ref(None);
-};
-
-let seed = (app, seed) => {
-  let db = Belt.Option.getExn(app^) |> Sihl.Core.Main.App.db;
-  Seeds.set(db, seed);
-};
-
-let beforeAll = () =>
-  beforeAllPromise(_ => {
-    State.app := Some(Sihl.Core.Main.App.start(App.app));
-    let app = State.app^ |> Belt.Option.getExn;
-    app
-    |> Sihl.Core.Main.App.db
-    |> Sihl.Core.Db.Database.runMigrations(
-         App.Settings.namespace,
-         App.Database.migrations,
-       );
-  });
-
-beforeAll();
-
-beforeEachPromise(_ => {
-  let app = State.app^ |> Belt.Option.getExn;
-  app
-  |> Sihl.Core.Main.App.db
-  |> Sihl.Core.Db.Database.clean(App.Database.clean);
-});
-
-afterAllPromise(_ => {
-  switch (State.app^) {
-  | Some(app) => Sihl.Core.Main.App.stop(app)
-  | _ => Sihl.Core.Async.async()
-  }
-});
 
 let baseUrl = "http://localhost:3000";
 
@@ -53,7 +16,7 @@ Expect.(
          "phone": "123"
        }
        |};
-    let%Async _ = seed(State.app, Seeds.Admin);
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.Admin);
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/users/register/",
@@ -90,7 +53,7 @@ Expect.(
 
 Expect.(
   testPromise("User can't log in with wrong credentials", () => {
-    let%Async _ = seed(State.app, Seeds.AdminOneUser);
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
       Fetch.fetch(
         baseUrl ++ "/users/login?email=foobar@example.com&password=321",
@@ -108,7 +71,7 @@ Expect.(
 
 Expect.(
   testPromise("User can't fetch all users", () => {
-    let%Async _ = seed(State.app, Seeds.AdminOneUser);
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
       Fetch.fetch(
         baseUrl ++ "/users/login?email=foobar@example.com&password=123",
@@ -140,7 +103,7 @@ Expect.(
 
 Expect.(
   testPromise("Admin can fetch all users", () => {
-    let%Async _ = seed(State.app, Seeds.AdminOneUser);
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
       Fetch.fetch(
         baseUrl ++ "/users/login?email=admin@example.com&password=password",
