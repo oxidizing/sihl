@@ -34,6 +34,8 @@ let set = (db, seed) => {
           ~givenName="Foo",
           ~familyName="Bar",
           ~phone=None,
+          ~suppressEmail=true,
+          (),
         );
       },
     )

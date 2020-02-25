@@ -22,8 +22,33 @@ module Db = {
     connectionLimit: string,
   };
 
-  let encode = t_encode;
-  let decode = t_decode;
-
-  let read = () => Env.get() |> decode;
+  let read = () => {
+    Env.get() |> t_decode;
+  };
 };
+
+// TODO get rid of decoded record approach and evaluate GADT vs string lookup
+// TODO provide configs for development, production, test
+
+let get = key => "";
+
+/* module TestingGround = { */
+/*   type backend = */
+/*     | Console */
+/*     | Smtp; */
+
+/*   type config('a) = */
+/*     | EmailBackend(backend): config(backend) */
+/*     | Float(float): config(float) */
+/*     | Bool(bool): config(bool) */
+/*     | Str(string): config(string); */
+
+/*   let eval: type a. config(a) => a = */
+/*     fun */
+/*     | EmailBackend(i) => i */
+/*     | Float(f) => f */
+/*     | Bool(b) => b */
+/*     | Str(s) => s; */
+/* }; */
+
+/* let test = TestingGround.eval(EmailBackend(Console)); */

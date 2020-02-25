@@ -1,5 +1,15 @@
 module Async = Sihl.Core.Async;
 
+module Email = {
+  let send = (_, ~email) => {
+    // TODO use type safe GADTs
+    let backend = Sihl.Core.Config.get("EMAIL_BACKEND");
+    backend === "SMTP"
+      ? Async.async()
+      : Async.async @@ Sihl.Core.Log.info(Model.Email.toString(email), ());
+  };
+};
+
 module User = {
   let authenticate = (conn, token) => {
     open! Sihl.Core.Http.Endpoint;
@@ -26,14 +36,50 @@ module User = {
       if (!Sihl.Core.Bcrypt.Hash.compareSync(password, user.password)) {
         abort @@ Unauthorized("Invalid password or email provided");
       };
-      let token = Model.Token.generate(~user);
-      let%Async _ = Repository.Token.Store.query(conn, ~token);
+      let token = Model.Token.generateAuth(~user);
+      let%Async _ = Repository.Token.Upsert.query(conn, ~token);
       Async.async(token);
     };
   };
 
+  let sendRegistrationEmail = (conn, ~user) => {
+    let token = Model.Token.generateEmailConfirmation(~user);
+    let%Async _ = Repository.Token.Upsert.query(conn, ~token);
+    let email = Model.Email.EmailConfirmation.make(~token, ~user);
+    Email.send(conn, ~email);
+  };
+
+  let confirmEmail = (conn, ~token) => {
+    open! Sihl.Core.Http.Endpoint;
+    let%Async token =
+      Repository.Token.Get.query(conn, ~token)
+      |> abortIfErr(Forbidden("Not authorized"));
+    if (!Model.Token.isEmailConfirmation(token)) {
+      abort @@ Unauthorized("Invalid token provided");
+    };
+    let%Async _ =
+      Repository.Token.Upsert.query(
+        conn,
+        ~token={...token, status: "inactive"},
+      );
+    let%Async user =
+      Repository.User.Get.query(conn, ~userId=token.user)
+      |> abortIfErr(Unauthorized("Invalid token provided"));
+    Repository.User.Upsert.query(conn, ~user={...user, confirmed: true});
+  };
+
   let register =
-      (conn, ~email, ~username, ~password, ~givenName, ~familyName, ~phone) => {
+      (
+        conn,
+        ~email,
+        ~username,
+        ~password,
+        ~givenName,
+        ~familyName,
+        ~phone,
+        ~suppressEmail=false,
+        (),
+      ) => {
     open! Sihl.Core.Http.Endpoint;
     let user =
       Model.User.make(
@@ -47,7 +93,10 @@ module User = {
       );
     switch (user) {
     | Belt.Result.Ok(user) =>
-      Repository.User.Store.query(conn, ~user)->Async.mapAsync(_ => user)
+      let%Async _ = Repository.User.Upsert.query(conn, ~user);
+      let%Async _ =
+        suppressEmail ? Async.async() : sendRegistrationEmail(conn, ~user);
+      Async.async(user);
     | Belt.Result.Error(msg) => abort(BadRequest(msg))
     };
   };
@@ -66,7 +115,7 @@ module User = {
       );
     switch (user) {
     | Belt.Result.Ok(user) =>
-      Repository.User.Store.query(conn, ~user)->Async.mapAsync(_ => user)
+      Repository.User.Upsert.query(conn, ~user)->Async.mapAsync(_ => user)
     | Belt.Result.Error(msg) => abort(BadRequest(msg))
     };
   };

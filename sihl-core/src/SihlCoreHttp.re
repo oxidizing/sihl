@@ -46,7 +46,9 @@ module Endpoint = {
     SihlCoreAsync.mapAsync(result, result =>
       switch (result) {
       | Belt.Result.Ok(result) => result
-      | Belt.Result.Error(_) => raise(HttpException(errorResponse))
+      | Belt.Result.Error(msg) =>
+        SihlCoreLog.error("HTTP error=" ++ msg, ());
+        raise(HttpException(errorResponse));
       }
     );
   };

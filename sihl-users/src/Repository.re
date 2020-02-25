@@ -21,7 +21,8 @@ SELECT
   username,
   phone,
   status,
-  admin
+  admin,
+  confirmed
 FROM users_users;
 ";
 
@@ -48,7 +49,8 @@ SELECT
   username,
   phone,
   status,
-  admin
+  admin,
+  confirmed
 FROM users_users
 WHERE uuid = UNHEX(REPLACE(?, '-', ''));
 ";
@@ -81,7 +83,8 @@ SELECT
   username,
   phone,
   status,
-  admin
+  admin,
+  confirmed
 FROM users_users
 WHERE email = ?;
 ";
@@ -102,7 +105,7 @@ WHERE email = ?;
         );
   };
 
-  module Store = {
+  module Upsert = {
     let stmt = "
 INSERT INTO users_users (
   uuid,
@@ -113,7 +116,8 @@ INSERT INTO users_users (
   username,
   phone,
   status,
-  admin
+  admin,
+  confirmed
 ) VALUES (
   UNHEX(REPLACE(?, '-', '')),
   ?,
@@ -123,9 +127,19 @@ INSERT INTO users_users (
   ?,
   ?,
   ?,
+  ?,
   ?
-);
-";
+) ON DUPLICATE KEY UPDATE
+email = VALUES(email),
+password = VALUES(password),
+given_name = VALUES(given_name),
+family_name = VALUES(family_name),
+username = VALUES(username),
+phone = VALUES(phone),
+status = VALUES(status),
+admin = VALUES(admin),
+confirmed = VALUES(confirmed)
+;";
 
     [@decco]
     type parameters = (
@@ -137,6 +151,7 @@ INSERT INTO users_users (
       string,
       option(string),
       string,
+      bool,
       bool,
     );
 
@@ -153,6 +168,7 @@ INSERT INTO users_users (
             user.phone,
             user.status,
             user.admin,
+            user.confirmed,
           )),
         connection,
         stmt,
@@ -170,25 +186,41 @@ TRUNCATE TABLE users_tokens;
     };
   };
 
-  module Store = {
+  module Upsert = {
     let stmt = "
 INSERT INTO users_tokens (
   uuid,
   token,
-  user
+  user,
+  status,
+  kind
 ) VALUES (
   UNHEX(REPLACE(?, '-', '')),
   ?,
-  (SELECT id FROM users_users WHERE users_users.uuid = UNHEX(REPLACE(?, '-', '')))
-);
-";
+  (SELECT id FROM users_users WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))),
+  ?,
+  ?
+)
+ON DUPLICATE KEY UPDATE
+token = VALUES(token),
+user = VALUES(user),
+status = VALUES(status),
+kind = VALUES(kind)
+;";
 
     [@decco]
-    type parameters = (string, string, string);
+    type parameters = (string, string, string, string, string);
 
     let query = (connection, ~token: Model.Token.t) => {
       Sihl.Core.Db.Repo.execute(
-        ~parameters=parameters_encode((token.id, token.token, token.user)),
+        ~parameters=
+          parameters_encode((
+            token.id,
+            token.token,
+            token.user,
+            token.status,
+            token.kind,
+          )),
         connection,
         stmt,
       );
@@ -200,7 +232,9 @@ INSERT INTO users_tokens (
 SELECT
   uuid_of(users_tokens.uuid) as id,
   uuid_of(users_users.uuid) as user,
-  token
+  users_tokens.token as token,
+  users_tokens.status as status,
+  users_tokens.kind as kind
 FROM users_tokens
 LEFT JOIN users_users
 ON users_users.id = users_tokens.user

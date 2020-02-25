@@ -122,8 +122,31 @@ module Register = {
             ~givenName,
             ~familyName,
             ~phone,
+            (),
           );
         Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+
+module ConfirmEmail = {
+  [@decco]
+  type query = {token: string};
+
+  [@decco]
+  type response_body = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: GET,
+      path: {j|/$root/confirm-email/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async {token} = req.requireQuery(query_decode);
+        let%Async _ = Service.User.confirmEmail(conn, ~token);
+        let response = {message: "Email confirmed"} |> response_body_encode;
+        Async.async @@ OkJson(response);
       },
     });
 };
@@ -133,3 +156,4 @@ module Register = {
 // POST /reset-password/
 // POST /update-password/
 // POST /set-password/
+// POST /update-user-details/
