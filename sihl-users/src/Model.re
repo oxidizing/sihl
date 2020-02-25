@@ -99,7 +99,6 @@ $(text)
   let rec render = (template, data) =>
     switch (data) {
     | [] => template
-    | [(key, value)] => replaceElement(template, key, value)
     | [(key, value), ...rest] =>
       render(replaceElement(template, key, value), rest)
     };
@@ -108,12 +107,13 @@ $(text)
     let template = {|
 Hello {givenName} {familyName},
 
-Confirm your email http://localhost:3000/users/confirm-email?token={token}.
+Confirm your email {baseUrl}/{root}/confirm-email?token={token}.
 
 Best,
 |};
 
     let make = (~token: Token.t, ~user: User.t) => {
+      // TODO set correct sender (read from config)
       sender: "TODO read from config",
       recipient: user.email,
       subject: "Email address confirmation",
@@ -121,6 +121,9 @@ Best,
         render(
           template,
           [
+            // TODO inject baseUrl and root
+            ("baseUrl", "http://localhost:3000"),
+            ("root", "users"),
             ("givenName", user.givenName),
             ("familyName", user.familyName),
             ("token", token.token),
