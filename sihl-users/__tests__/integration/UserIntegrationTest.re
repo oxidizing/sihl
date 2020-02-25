@@ -52,6 +52,71 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User registers and confirms mail", () => {
+    let body = {|
+       {
+         "email": "foobar@example.com",
+         "username": "foobar",
+         "password": "123",
+         "givenName": "Foo",
+         "familyName": "Bar",
+         "phone": "123"
+       }
+       |};
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.Admin);
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/register/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+    let mail: Model.Email.t =
+      Service.Email.getLastEmail() |> Belt.Option.getExn;
+    let tokenRe = Js.Re.fromString("token\=(.*)");
+    let token =
+      Js.Re.exec_(tokenRe, mail.text)
+      ->Belt.Option.getExn
+      ->Js.Re.captures
+      ->Belt.Array.get(1)
+      ->Belt.Option.getExn
+      ->Js.Nullable.toOption
+      ->Belt.Option.getExn;
+
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/confirm-email?token=" ++ token,
+        Fetch.RequestInit.make(~method_=Get, ()),
+      );
+
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    let%Async usersResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/me/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async usersJson = Fetch.Response.json(usersResponse);
+    let {Model.User.confirmed} =
+      usersJson |> Model.User.t_decode |> Belt.Result.getExn;
+
+    confirmed |> expect |> toBe(true) |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("User can't log in with wrong credentials", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =

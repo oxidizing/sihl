@@ -1,12 +1,21 @@
 module Async = Sihl.Core.Async;
 
 module Email = {
+  let devInbox = ref(None);
+
+  let getLastEmail = () => devInbox^;
+
   let send = (_, ~email) => {
     // TODO use type safe GADTs
     let backend = Sihl.Core.Config.get("EMAIL_BACKEND");
-    backend === "SMTP"
-      ? Async.async()
-      : Async.async @@ Sihl.Core.Log.info(Model.Email.toString(email), ());
+    if (backend === "SMTP") {
+      Async.async();
+    } else {
+      devInbox := Some(email);
+      // TODO log based on config
+      /* Async.async @@ Sihl.Core.Log.info(Model.Email.toString(email), ()); */
+      Async.async();
+    };
   };
 };
 

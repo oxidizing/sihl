@@ -107,7 +107,7 @@ $(text)
     let template = {|
 Hello {givenName} {familyName},
 
-Confirm your email {baseUrl}/{root}/confirm-email?token={token}.
+Confirm your email {baseUrl}/{root}/confirm-email?token={token}
 
 Best,
 |};
