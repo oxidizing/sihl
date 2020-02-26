@@ -140,13 +140,22 @@ module User = {
     Repository.User.Upsert.query(conn, ~user);
   };
 
-  let update =
+  let updateDetails =
       (conn, ~userId, ~email, ~username, ~givenName, ~familyName, ~phone) => {
     open! Sihl.Core.Http.Endpoint;
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
-    let user = {...user, email, username, givenName, familyName, phone};
+    let confirmed = email !== user.email ? false : true;
+    let user = {
+      ...user,
+      email,
+      username,
+      givenName,
+      familyName,
+      phone,
+      confirmed,
+    };
     Repository.User.Upsert.query(conn, ~user);
   };
 

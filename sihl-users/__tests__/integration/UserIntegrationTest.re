@@ -249,6 +249,70 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User updates own details", () => {
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    let%Async userResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/me/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async userJson = Fetch.Response.json(userResponse);
+    let user = userJson |> Model.User.t_decode |> Belt.Result.getExn;
+    let userId = user.id;
+    let body = {j|
+{
+  "userId": "$(userId)",
+  "email": "updatedmail@example.com",
+  "username": "foobar",
+  "givenName": "Foo",
+  "familyName": "Bar"
+}
+|j};
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/update-user-details/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+
+    let%Async userResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/me/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async userJson = Fetch.Response.json(userResponse);
+    let user = userJson |> Model.User.t_decode |> Belt.Result.getExn;
+
+    user.email
+    |> expect
+    |> toBe("updatedmail@example.com")
+    |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("Admin sets password", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =

@@ -287,11 +287,11 @@ module UpdateUserDetails = {
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, email, username, givenName, familyName, phone} =
           req.requireBody(body_in_decode);
-        if (!Model.User.isAdmin(user) && user.id === userId) {
+        if (!Model.User.isAdmin(user) && user.id !== userId) {
           abort @@ Forbidden("Not allowed");
         };
         let%Async _ =
-          Service.User.update(
+          Service.User.updateDetails(
             conn,
             ~userId,
             ~email,
