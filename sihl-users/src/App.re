@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS $(namespace)_tokens (
 
 module Http = {
   let routes = database => [
+    // TODO properly namespace routes like /users-app/users/:id/
     Routes.Login.endpoint(Settings.namespace, database),
     Routes.Register.endpoint(Settings.namespace, database),
     Routes.ConfirmEmail.endpoint(Settings.namespace, database),
