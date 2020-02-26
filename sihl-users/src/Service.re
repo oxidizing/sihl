@@ -79,27 +79,42 @@ module User = {
 
   let requestPasswordReset = (conn, ~email) => {
     // TODO implement
+    // 1. fetch user by email
+    // 2. create password reset token for user and store it
+    // 3. create email
+    // 4. send email
     Async.async();
   };
 
   let resetPassword = (conn, ~token, ~newPassword) => {
     // TODO implement
+    // 1. fetch token
+    // 2. check if kind is email reset
+    // 3. fetch user by userId
+    // 4. hash password and upsert user
     Async.async();
   };
 
   let updatePassword = (conn, ~userId, ~currentPassword, ~newPassword) => {
     // TODO implement
+    // 1. fetch user by userId
+    // 2. check if user.password === currentPassword
+    // 3. hash password and upsert user
     Async.async();
   };
 
   let setPassword = (conn, ~userId, ~newPassword) => {
     // TODO implement
+    // 1. fetch user by userId
+    // 2. hash password and upsert user
     Async.async();
   };
 
   let update =
       (conn, ~userId, ~email, ~username, ~givenName, ~familyName, ~phone) => {
     // TODO implement
+    // 1. fetch user by userId
+    // 2. upsert user
     Async.async();
   };
 
