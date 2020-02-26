@@ -64,6 +64,15 @@ module Token = {
     status: "active",
   };
 
+  let generatePasswordReset = (~user: User.t) => {
+    kind: "password_reset",
+    id: Sihl.Core.Uuid.V4.uuidv4(),
+    user: user.id,
+    // TODO replace with proper token generation
+    token: Sihl.Core.Uuid.V4.uuidv4(),
+    status: "active",
+  };
+
   let isEmailConfirmation = token => token.kind === "email_confirmation";
 };
 
@@ -117,6 +126,35 @@ Best,
       sender: "TODO read from config",
       recipient: user.email,
       subject: "Email address confirmation",
+      text:
+        render(
+          template,
+          [
+            // TODO inject baseUrl and root
+            ("baseUrl", "http://localhost:3000"),
+            ("root", "users"),
+            ("givenName", user.givenName),
+            ("familyName", user.familyName),
+            ("token", token.token),
+          ],
+        ),
+    };
+  };
+
+  module PasswordReset = {
+    let template = {|
+Hello {givenName} {familyName},
+
+Go to this URL to reset your password {baseUrl}/{root}/reset-password?token={token}
+
+Best,
+|};
+
+    let make = (~token: Token.t, ~user: User.t) => {
+      // TODO set correct sender (read from config)
+      sender: "TODO read from config",
+      recipient: user.email,
+      subject: "Password reset",
       text:
         render(
           template,

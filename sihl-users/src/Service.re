@@ -78,44 +78,74 @@ module User = {
   };
 
   let requestPasswordReset = (conn, ~email) => {
-    // TODO implement
-    // 1. fetch user by email
-    // 2. create password reset token for user and store it
-    // 3. create email
-    // 4. send email
-    Async.async();
+    open! Sihl.Core.Http.Endpoint;
+    let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+    switch (user) {
+    | Belt.Result.Ok(user) =>
+      let token = Model.Token.generatePasswordReset(~user);
+      let%Async _ = Repository.Token.Upsert.query(conn, ~token);
+      let email = Model.Email.PasswordReset.make(~token, ~user);
+      Email.send(conn, ~email);
+    | Belt.Result.Error(_) =>
+      // If no user was found, just send 200 ok to not expose user data
+      Async.async()
+    };
   };
 
   let resetPassword = (conn, ~token, ~newPassword) => {
-    // TODO implement
-    // 1. fetch token
-    // 2. check if kind is email reset
-    // 3. fetch user by userId
-    // 4. hash password and upsert user
-    Async.async();
+    open! Sihl.Core.Http.Endpoint;
+    let%Async token =
+      Repository.Token.Get.query(conn, ~token)
+      |> abortIfErr(Forbidden("Invalid token provided"));
+    if (token.kind !== "password_reset") {
+      abort @@ Forbidden("Invalid token provided");
+    };
+    let%Async user =
+      Repository.User.Get.query(conn, ~userId=token.user)
+      |> abortIfErr(Unauthorized("Invalid token provided"));
+    let user = {
+      ...user,
+      password: Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, newPassword),
+    };
+    Repository.User.Upsert.query(conn, ~user);
   };
 
   let updatePassword = (conn, ~userId, ~currentPassword, ~newPassword) => {
-    // TODO implement
-    // 1. fetch user by userId
-    // 2. check if user.password === currentPassword
-    // 3. hash password and upsert user
-    Async.async();
+    open! Sihl.Core.Http.Endpoint;
+    let%Async user =
+      Repository.User.Get.query(conn, ~userId)
+      |> abortIfErr(BadRequest("Invalid userId provided"));
+    if (user.password
+        !== Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, currentPassword)) {
+      abort @@ BadRequest("Current password doesn't match provided password");
+    };
+    let user = {
+      ...user,
+      password: Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, newPassword),
+    };
+    Repository.User.Upsert.query(conn, ~user);
   };
 
   let setPassword = (conn, ~userId, ~newPassword) => {
-    // TODO implement
-    // 1. fetch user by userId
-    // 2. hash password and upsert user
-    Async.async();
+    open! Sihl.Core.Http.Endpoint;
+    let%Async user =
+      Repository.User.Get.query(conn, ~userId)
+      |> abortIfErr(BadRequest("Invalid userId provided"));
+    let user = {
+      ...user,
+      password: Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, newPassword),
+    };
+    Repository.User.Upsert.query(conn, ~user);
   };
 
   let update =
       (conn, ~userId, ~email, ~username, ~givenName, ~familyName, ~phone) => {
-    // TODO implement
-    // 1. fetch user by userId
-    // 2. upsert user
-    Async.async();
+    open! Sihl.Core.Http.Endpoint;
+    let%Async user =
+      Repository.User.Get.query(conn, ~userId)
+      |> abortIfErr(BadRequest("Invalid userId provided"));
+    let user = {...user, email, username, givenName, familyName, phone};
+    Repository.User.Upsert.query(conn, ~user);
   };
 
   let register =
