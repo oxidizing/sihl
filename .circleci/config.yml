@@ -1,0 +1,36 @@
+version: 2.1
+jobs:
+  test:
+    working_directory: ~/sihl
+    docker:
+      - image: circleci/node:10.16.3
+      - image: mariadb:10.1.41-bionic
+        environment:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: dev
+    steps:
+      - checkout
+      - run:
+          name: yarn
+          command: yarn
+      - run:
+          name: sihl-core
+          command: |
+            cd sihl-core
+            yarn build
+            yarn test
+      - run:
+          name: sihl-users
+          command: |
+            cd sihl-users
+            yarn build
+            yarn test
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: master
