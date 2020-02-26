@@ -115,8 +115,10 @@ module User = {
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
-    if (user.password
-        !== Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, currentPassword)) {
+    if (Sihl.Core.Bcrypt.Hash.compareSync(
+          user.password,
+          Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, currentPassword),
+        )) {
       abort @@ BadRequest("Current password doesn't match provided password");
     };
     let user = {
