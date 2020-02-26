@@ -77,6 +77,32 @@ module User = {
     Repository.User.Upsert.query(conn, ~user={...user, confirmed: true});
   };
 
+  let requestPasswordReset = (conn, ~email) => {
+    // TODO implement
+    Async.async();
+  };
+
+  let resetPassword = (conn, ~token, ~newPassword) => {
+    // TODO implement
+    Async.async();
+  };
+
+  let updatePassword = (conn, ~userId, ~currentPassword, ~newPassword) => {
+    // TODO implement
+    Async.async();
+  };
+
+  let setPassword = (conn, ~userId, ~newPassword) => {
+    // TODO implement
+    Async.async();
+  };
+
+  let update =
+      (conn, ~userId, ~email, ~username, ~givenName, ~familyName, ~phone) => {
+    // TODO implement
+    Async.async();
+  };
+
   let register =
       (
         conn,

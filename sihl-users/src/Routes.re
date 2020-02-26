@@ -151,9 +151,156 @@ module ConfirmEmail = {
     });
 };
 
-// TODO
-// POST /request-password-reset/
-// POST /reset-password/
-// POST /update-password/
-// POST /set-password/
-// POST /update-user-details/
+module RequestPasswordReset = {
+  [@decco]
+  type body_in = {email: string};
+
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/request-password-reset/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async {email} = req.requireBody(body_in_decode);
+        let%Async _ = Service.User.requestPasswordReset(conn, ~email);
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+
+module ResetPassword = {
+  [@decco]
+  type body_in = {
+    token: string,
+    newPassword: string,
+  };
+
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/reset-password/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async {token, newPassword} = req.requireBody(body_in_decode);
+        let%Async _ = Service.User.resetPassword(conn, ~token, ~newPassword);
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+
+module UpdatePassword = {
+  [@decco]
+  type body_in = {
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  };
+
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/update-password/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async user = Service.User.authenticate(conn, token);
+        let%Async {userId, currentPassword, newPassword} =
+          req.requireBody(body_in_decode);
+        if (user.id !== userId) {
+          abort @@ Forbidden("Not allowed");
+        };
+        let%Async _ =
+          Service.User.updatePassword(
+            conn,
+            ~userId,
+            ~currentPassword,
+            ~newPassword,
+          );
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+
+module SetPassword = {
+  [@decco]
+  type body_in = {
+    userId: string,
+    newPassword: string,
+  };
+
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/set-password/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async user = Service.User.authenticate(conn, token);
+        let%Async {userId, newPassword} = req.requireBody(body_in_decode);
+        if (!Model.User.isAdmin(user)) {
+          abort @@ Forbidden("Not allowed");
+        };
+        let%Async _ = Service.User.setPassword(conn, ~userId, ~newPassword);
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+
+module UpdateUserDetails = {
+  [@decco]
+  type body_in = {
+    userId: string,
+    email: string,
+    username: string,
+    givenName: string,
+    familyName: string,
+    phone: option(string),
+  };
+
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/update-user-details/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async user = Service.User.authenticate(conn, token);
+        let%Async {userId, email, username, givenName, familyName, phone} =
+          req.requireBody(body_in_decode);
+        if (!Model.User.isAdmin(user) && user.id === userId) {
+          abort @@ Forbidden("Not allowed");
+        };
+        let%Async _ =
+          Service.User.update(
+            conn,
+            ~userId,
+            ~email,
+            ~username,
+            ~givenName,
+            ~familyName,
+            ~phone,
+          );
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
