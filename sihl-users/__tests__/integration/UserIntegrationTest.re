@@ -249,6 +249,61 @@ Expect.(
 );
 
 Expect.(
+  testPromise("Admin sets password", () => {
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    let%Async userResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/me/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async userJson = Fetch.Response.json(userResponse);
+    let user = userJson |> Model.User.t_decode |> Belt.Result.getExn;
+    let userId = user.id;
+    let body = {j|{"userId": "$(userId)", "newPassword": "321"}|j};
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=admin@example.com&password=password",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/set-password/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+
+    token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("Admin can fetch all users", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
