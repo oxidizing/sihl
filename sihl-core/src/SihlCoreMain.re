@@ -6,7 +6,7 @@ module App = {
     namespace: string,
     routes: SihlCoreDb.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
     clean: list(SihlCoreDb.Connection.t => Js.Promise.t(unit)),
-    migrations: string => list(string),
+    migration: SihlCoreDb.Migration.t,
   };
 
   module Instance = {
@@ -22,12 +22,12 @@ module App = {
 
   let db = instance => Instance.db(instance);
 
-  let make = (~name, ~namespace, ~routes, ~clean, ~migrations) => {
+  let make = (~name, ~namespace, ~routes, ~clean, ~migration) => {
     name,
     namespace,
     routes,
     clean,
-    migrations,
+    migration,
   };
 
   let readConfig = () =>
@@ -38,11 +38,7 @@ module App = {
   let connectDatabase = config => config |> SihlCoreDb.Database.make;
 
   let runMigrations = (instance: Instance.instance) =>
-    SihlCoreDb.Database.runMigrations(
-      instance.app.namespace,
-      instance.app.migrations,
-      instance.db,
-    );
+    SihlCoreDb.Database.applyMigrations(instance.app.migration, instance.db);
 
   let startHttpServer = (routes, db) => {
     let routes = db |> routes;

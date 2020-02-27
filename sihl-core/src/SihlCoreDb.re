@@ -240,6 +240,133 @@ module Bool = {
 };
 
 module Connection = Mysql.Connection;
+
+module Migration = {
+  type t = {
+    steps: string => list((int, string)),
+    namespace: string,
+  };
+
+  let stepsToApply = (migration, currentVersion) => {
+    migration.steps(migration.namespace)
+    ->Belt.List.sort(((v1, _), (v2, _)) => v1 > v2 ? 1 : (-1))
+    ->Belt.List.keep(((v, _)) => v > currentVersion);
+  };
+
+  let maxVersion = steps => {
+    steps
+    ->Belt.List.sort(((v1, _), (v2, _)) => v1 < v2 ? 1 : (-1))
+    ->Belt.List.map(((v, _)) => v)
+    ->Belt.List.head
+    ->Belt.Option.getWithDefault(0);
+  };
+};
+
+module MigrationStatus = {
+  [@decco]
+  type t = {
+    namespace: string,
+    version: int,
+    dirty: Bool.t,
+  };
+
+  let make = (~namespace) => {namespace, version: 0, dirty: false};
+
+  module CreateTableIfDoesNotExist = {
+    let stmt = "
+CREATE TABLE IF NOT EXISTS core_migration_status (
+  namespace VARCHAR(128) NOT NULL,
+  version BIGINT,
+  dirty BOOL,
+  CONSTRAINT unique_namespace UNIQUE KEY (namespace)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+";
+
+    let query = connection => {
+      Repo.execute(connection, stmt);
+    };
+  };
+
+  module Has = {
+    let stmt = "
+SELECT
+  namespace,
+  version,
+  dirty
+FROM core_migration_status
+WHERE namespace = ?;
+";
+
+    [@decco]
+    type parameters = string;
+
+    let query = (connection, ~namespace) => {
+      let%Async result =
+        Repo.getOne(
+          ~connection,
+          ~stmt,
+          ~parameters=parameters_encode(namespace),
+          ~decode=t_decode,
+          (),
+        );
+      result->Belt.Result.mapWithDefault(false, _ => true)->Async.async;
+    };
+  };
+
+  module Get = {
+    let stmt = "
+SELECT
+  namespace,
+  version,
+  dirty
+FROM core_migration_status
+WHERE namespace = ?;
+";
+
+    [@decco]
+    type parameters = string;
+
+    let query = (connection, ~namespace) =>
+      Repo.getOne(
+        ~connection,
+        ~stmt,
+        ~parameters=parameters_encode(namespace),
+        ~decode=t_decode,
+        (),
+      );
+  };
+
+  module Upsert = {
+    let stmt = "
+INSERT INTO core_migration_status (
+  namespace,
+  version,
+  dirty
+) VALUES (
+  ?,
+  ?,
+  ?
+)
+ON DUPLICATE KEY UPDATE
+namespace = VALUES(namespace),
+version = VALUES(version),
+dirty = VALUES(dirty)
+;";
+
+    [@decco]
+    type parameters = (string, int, Bool.t);
+
+    let query = (connection, ~status: t) => {
+      Repo.execute(
+        ~parameters=
+          parameters_encode((status.namespace, status.version, status.dirty)),
+        connection,
+        stmt,
+      );
+    };
+  };
+};
+
 module Database = {
   include Mysql.Pool;
 
@@ -272,13 +399,44 @@ module Database = {
     );
   };
 
-  let runMigrations = (namespace, migrations, db) => {
-    withConnection(db, conn => {
-      namespace
-      ->migrations
-      ->Belt.List.map(Repo.execute(conn))
-      ->Async.allInOrder
-    });
+  let applyMigrations = (migration: Migration.t, db) => {
+    withConnection(
+      db,
+      conn => {
+        let%Async _ = MigrationStatus.CreateTableIfDoesNotExist.query(conn);
+        let%Async hasStatus =
+          MigrationStatus.Has.query(conn, ~namespace=migration.namespace);
+        let%Async _ =
+          !hasStatus
+            ? MigrationStatus.Upsert.query(
+                conn,
+                ~status=MigrationStatus.make(~namespace=migration.namespace),
+              )
+            : Async.async();
+        let%Async status =
+          MigrationStatus.Get.query(conn, ~namespace=migration.namespace);
+        let status = Belt.Result.getExn(status);
+        let steps = Migration.stepsToApply(migration, status.version);
+        let newVersion = Migration.maxVersion(steps);
+        let nrSteps = steps |> Belt.List.length;
+        if (nrSteps > 0) {
+          SihlCoreLog.info(
+            {j|There are $(nrSteps) unapplied migrations, applying them now|j},
+            (),
+          );
+          let%Async _ =
+            steps
+            ->Belt.List.map(((_, stmt)) => Repo.execute(conn, stmt))
+            ->Async.allInOrder;
+          MigrationStatus.Upsert.query(
+            conn,
+            ~status={...status, version: newVersion},
+          );
+        } else {
+          Async.async();
+        };
+      },
+    );
   };
 };
 
