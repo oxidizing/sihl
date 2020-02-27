@@ -31,8 +31,20 @@ module User = {
     Async.async(user);
   };
 
-  let getAll = conn => {
+  let getAll = ((conn, user)) => {
+    open! Sihl.Core.Http.Endpoint;
+    if (!Model.User.isAdmin(user)) {
+      abort @@ Forbidden("Not allowed");
+    };
     Repository.User.GetAll.query(conn);
+  };
+
+  let get = ((conn, user), ~userId) => {
+    open! Sihl.Core.Http.Endpoint;
+    if (!Model.User.isAdmin(user) && !Model.User.isOwner(user, userId)) {
+      abort @@ Forbidden("Not allowed");
+    };
+    Repository.User.Get.query(conn, ~userId);
   };
 
   let login = (conn, ~email, ~password) => {
@@ -110,8 +122,12 @@ module User = {
     Repository.User.Upsert.query(conn, ~user);
   };
 
-  let updatePassword = (conn, ~userId, ~currentPassword, ~newPassword) => {
+  let updatePassword =
+      ((conn, user), ~userId, ~currentPassword, ~newPassword) => {
     open! Sihl.Core.Http.Endpoint;
+    if (!Model.User.isOwner(user, userId)) {
+      abort @@ Forbidden("Not allowed");
+    };
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
@@ -128,8 +144,11 @@ module User = {
     Repository.User.Upsert.query(conn, ~user);
   };
 
-  let setPassword = (conn, ~userId, ~newPassword) => {
+  let setPassword = ((conn, user), ~userId, ~newPassword) => {
     open! Sihl.Core.Http.Endpoint;
+    if (!Model.User.isAdmin(user)) {
+      abort @@ Forbidden("Not allowed");
+    };
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
@@ -141,8 +160,19 @@ module User = {
   };
 
   let updateDetails =
-      (conn, ~userId, ~email, ~username, ~givenName, ~familyName, ~phone) => {
+      (
+        (conn, user),
+        ~userId,
+        ~email,
+        ~username,
+        ~givenName,
+        ~familyName,
+        ~phone,
+      ) => {
     open! Sihl.Core.Http.Endpoint;
+    if (!Model.User.isAdmin(user) && !Model.User.isOwner(user, userId)) {
+      abort @@ Forbidden("Not allowed");
+    };
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
