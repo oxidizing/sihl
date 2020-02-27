@@ -2,7 +2,7 @@ include Sihl.Core.Test;
 Integration.setupHarness(App.app);
 open Jest;
 
-let baseUrl = "http://localhost:3000";
+let baseUrl = "http://localhost:3000/users";
 
 Expect.(
   testPromise("User registers, logs in and fetches own user", () => {
@@ -19,7 +19,7 @@ Expect.(
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.Admin);
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/register/",
+        baseUrl ++ "/register/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -27,9 +27,7 @@ Expect.(
         ),
       );
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -66,7 +64,7 @@ Expect.(
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.Admin);
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/register/",
+        baseUrl ++ "/register/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -87,14 +85,12 @@ Expect.(
 
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/confirm-email?token=" ++ token,
+        baseUrl ++ "/confirm-email?token=" ++ token,
         Fetch.RequestInit.make(~method_=Get, ()),
       );
 
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -120,9 +116,7 @@ Expect.(
   testPromise("User can't log in with wrong credentials", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     loginResponse
     |> Fetch.Response.status
     |> expect
@@ -138,9 +132,7 @@ Expect.(
   testPromise("User can't log in with wrong credentials", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     loginResponse
     |> Fetch.Response.status
     |> expect
@@ -158,7 +150,7 @@ Expect.(
     let body = {|{"email": "foobar@example.com"}|};
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/request-password-reset/",
+        baseUrl ++ "/request-password-reset/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -181,7 +173,7 @@ Expect.(
     let body = {j|{"token": "$(token)", "newPassword": "321"}|j};
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/reset-password/",
+        baseUrl ++ "/reset-password/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -189,9 +181,7 @@ Expect.(
         ),
       );
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -204,9 +194,7 @@ Expect.(
   testPromise("User updates password", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -226,7 +214,7 @@ Expect.(
     let body = {j|{"userId": "$(userId)", "currentPassword": "123", "newPassword": "321"}|j};
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/update-password/",
+        baseUrl ++ "/update-password/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -237,9 +225,7 @@ Expect.(
       );
 
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -252,9 +238,7 @@ Expect.(
   testPromise("User updates own details", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -282,7 +266,7 @@ Expect.(
 |j};
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/update-user-details/",
+        baseUrl ++ "/update-user-details/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -316,9 +300,7 @@ Expect.(
   testPromise("Admin sets password", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -338,14 +320,14 @@ Expect.(
     let body = {j|{"userId": "$(userId)", "newPassword": "321"}|j};
     let%Async loginResponse =
       Fetch.fetch(
-        baseUrl ++ "/users/login?email=admin@example.com&password=password",
+        baseUrl ++ "/login?email=admin@example.com&password=password",
       );
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/set-password/",
+        baseUrl ++ "/set-password/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -356,9 +338,7 @@ Expect.(
       );
 
     let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=321",
-      );
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
@@ -372,7 +352,7 @@ Expect.(
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =
       Fetch.fetch(
-        baseUrl ++ "/users/login?email=admin@example.com&password=password",
+        baseUrl ++ "/login?email=admin@example.com&password=password",
       );
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =

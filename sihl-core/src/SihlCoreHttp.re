@@ -1,4 +1,6 @@
-// TODO credit serbet github
+// Based on https://github.com/mrmurphy/serbet/tree/a86cbd097ecaf78a7ef303c2dd117021f27a1891
+// Thanks to the author Murphy Randle
+// We'll consider creating a PR once our API is more stable
 
 module Endpoint = {
   open SihlCoreAsync;

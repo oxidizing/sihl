@@ -8,7 +8,7 @@ module GetUsers = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: {j|/$root/|j},
+      path: {j|/$root/users/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async token = Sihl.Core.Http.requireAuthorization(req);
@@ -31,7 +31,7 @@ module GetUser = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: {j|/$root/:id/|j},
+      path: {j|/$root/users/:id/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
@@ -54,7 +54,7 @@ module GetMe = {
     Sihl.Core.Http.dbEndpoint({
       database,
       verb: GET,
-      path: {j|/$root/me/|j},
+      path: {j|/$root/users/me/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async token = Sihl.Core.Http.requireAuthorization(req);
