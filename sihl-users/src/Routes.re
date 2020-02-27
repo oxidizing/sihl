@@ -13,10 +13,7 @@ module GetUsers = {
         open! Sihl.Core.Http.Endpoint;
         let%Async token = Sihl.Core.Http.requireAuthorization(req);
         let%Async user = Service.User.authenticate(conn, token);
-        if (!Model.User.isAdmin(user)) {
-          abort @@ Forbidden("Not allowed");
-        };
-        let%Async users = Service.User.getAll(conn);
+        let%Async users = Service.User.getAll((conn, user));
         let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
@@ -37,11 +34,8 @@ module GetUser = {
         let%Async header = req.requireHeader("authorization");
         let%Async user = Service.User.authenticate(conn, header);
         let%Async {userId} = req.requireParams(params_decode);
-        if (!Model.User.isAdmin(user) && userId !== user.id) {
-          abort @@ Forbidden("Not allowed");
-        };
         let%Async user =
-          Repository.User.Get.query(conn, ~userId)
+          Service.User.get((conn, user), ~userId)
           |> abortIfErr(Forbidden("Not allowed"));
         let response = user |> Model.User.t_encode;
         Async.async @@ OkJson(response);
@@ -218,12 +212,9 @@ module UpdatePassword = {
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, currentPassword, newPassword} =
           req.requireBody(body_in_decode);
-        if (user.id !== userId) {
-          abort @@ Forbidden("Not allowed");
-        };
         let%Async _ =
           Service.User.updatePassword(
-            conn,
+            (conn, user),
             ~userId,
             ~currentPassword,
             ~newPassword,
@@ -253,10 +244,8 @@ module SetPassword = {
         let%Async token = Sihl.Core.Http.requireAuthorization(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, newPassword} = req.requireBody(body_in_decode);
-        if (!Model.User.isAdmin(user)) {
-          abort @@ Forbidden("Not allowed");
-        };
-        let%Async _ = Service.User.setPassword(conn, ~userId, ~newPassword);
+        let%Async _ =
+          Service.User.setPassword((conn, user), ~userId, ~newPassword);
         Async.async @@ OkJson(body_out_encode({message: "ok"}));
       },
     });
@@ -287,12 +276,9 @@ module UpdateUserDetails = {
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, email, username, givenName, familyName, phone} =
           req.requireBody(body_in_decode);
-        if (!Model.User.isAdmin(user) && user.id !== userId) {
-          abort @@ Forbidden("Not allowed");
-        };
         let%Async _ =
           Service.User.updateDetails(
-            conn,
+            (conn, user),
             ~userId,
             ~email,
             ~username,

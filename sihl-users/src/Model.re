@@ -33,6 +33,7 @@ module User = {
   };
 
   let isAdmin = user => user.admin;
+  let isOwner = (user, id) => user.id === id;
 };
 
 module Token = {
