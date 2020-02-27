@@ -31,6 +31,3 @@ workflows:
   build_and_test:
     jobs:
       - test:
-          filters:
-            branches:
-              only: master
