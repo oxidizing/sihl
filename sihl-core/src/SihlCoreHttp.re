@@ -18,24 +18,13 @@ module Endpoint = {
     requireHeader: string => Js.Promise.t(string),
   };
 
-  module ContentType = {
-    type t =
-      | TextPlain
-      | TextHtml;
-
-    let toString =
-      fun
-      | TextPlain => "text/plain; charset=utf-8"
-      | TextHtml => "text/html; charset=utf-8";
-  };
-
   type response =
     | BadRequest(string)
     | NotFound(string)
     | Unauthorized(string)
     | Forbidden(string)
     | OkString(string)
-    | OkStringContentType(string, ContentType.t)
+    | OkHtml(string)
     | OkJson(Js.Json.t)
     | OkHeaders(Js.Dict.t(string))
     | OkBuffer(Node.Buffer.t)
@@ -227,12 +216,12 @@ module Endpoint = {
         |> setHeader("content-type", "text/plain; charset=utf-8")
         |> sendString(msg)
       )
-    | OkStringContentType(msg, contentType) =>
+    | OkHtml(msg) =>
       async @@
       Express.Response.(
         res
         |> status(Status.Ok)
-        |> setHeader("content-type", ContentType.toString(contentType))
+        |> setHeader("content-type", "text/html; charset=utf-8")
         |> sendString(msg)
       )
     | OkJson(js) =>

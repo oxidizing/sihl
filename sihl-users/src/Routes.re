@@ -304,27 +304,43 @@ module UpdateUserDetails = {
 };
 
 module AdminUi = {
-  module App = {
-    [@react.component]
-    let make = (~name) =>
-      <span> {React.string("hello there " ++ name)} </span>;
-  };
+  module User = {
+    [@decco]
+    type params = {userId: string};
 
-  module GetMe = {
     let endpoint = (root, database) =>
       Sihl.Core.Http.dbEndpoint({
         database,
         verb: GET,
-        path: {j|/admin/$root/users/me/|j},
+        path: {j|/admin/$root/users/:userId/|j},
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
           let%Async token = Sihl.Core.Http.requireSessionToken(req);
           let%Async user = Service.User.authenticate(conn, token);
+          let%Async {userId} = req.requireParams(params_decode);
+          let%Async user =
+            Service.User.get((conn, user), ~userId)
+            |> abortIfErr(NotFound("User not found"));
           Async.async @@
-          OkStringContentType(
-            ReactDOMServerRe.renderToString(<App name={user.email} />),
-            TextHtml,
-          );
+          OkHtml(ReactDOMServerRe.renderToString(<AdminUi.User user />));
+        },
+      });
+  };
+
+  module Users = {
+    let endpoint = (root, database) =>
+      Sihl.Core.Http.dbEndpoint({
+        database,
+        verb: GET,
+        path: {j|/admin/$root/users/|j},
+        handler: (conn, req) => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async token = Sihl.Core.Http.requireSessionToken(req);
+          let%Async user = Service.User.authenticate(conn, token);
+          let%Async users = Service.User.getAll((conn, user));
+          let users = users |> Sihl.Core.Db.Repo.Result.rows;
+          Async.async @@
+          OkHtml(ReactDOMServerRe.renderToString(<AdminUi.Users users />));
         },
       });
   };
