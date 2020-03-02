@@ -47,6 +47,12 @@ module Token = {
     status: string,
   };
 
+  let cookieHeader = token => {
+    token.kind === "auth"
+      ? Belt.Result.Ok(("set-cookie", "session=" ++ token.token))
+      : Belt.Result.Error("Invalid token provided");
+  };
+
   let generateAuth = (~user: User.t) => {
     kind: "auth",
     id: Sihl.Core.Uuid.V4.uuidv4(),

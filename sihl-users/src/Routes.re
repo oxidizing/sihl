@@ -11,7 +11,7 @@ module GetUsers = {
       path: {j|/$root/users/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async users = Service.User.getAll((conn, user));
         let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
@@ -51,7 +51,7 @@ module GetMe = {
       path: {j|/$root/users/me/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async token = Sihl.Core.Http.requireSessionToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let response = user |> Model.User.t_encode;
         Async.async @@ OkJson(response);
@@ -64,6 +64,7 @@ module Login = {
   type query = {
     email: string,
     password: string,
+    cookie: option(string),
   };
 
   [@decco]
@@ -76,10 +77,21 @@ module Login = {
       path: {j|/$root/login/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async {email, password} = req.requireQuery(query_decode);
+        let%Async {email, password, cookie} = req.requireQuery(query_decode);
         let%Async token = Service.User.login(conn, ~email, ~password);
-        let response = {token: token.token} |> response_body_encode;
-        Async.async @@ OkJson(response);
+        switch (cookie) {
+        | None =>
+          let response = {token: token.token} |> response_body_encode;
+          Async.async @@ OkJson(response);
+        | Some(_) =>
+          switch (Model.Token.cookieHeader(token)) {
+          | Belt.Result.Ok(header) =>
+            let headers = [header] |> Js.Dict.fromList;
+            Async.async @@ OkHeaders(headers);
+          | Belt.Result.Error(_) =>
+            abort @@ Unauthorized("Invalid token type found")
+          }
+        };
       },
     });
 };
@@ -208,7 +220,7 @@ module UpdatePassword = {
       path: {j|/$root/update-password/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, currentPassword, newPassword} =
           req.requireBody(body_in_decode);
@@ -241,7 +253,7 @@ module SetPassword = {
       path: {j|/$root/set-password/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, newPassword} = req.requireBody(body_in_decode);
         let%Async _ =
@@ -272,7 +284,7 @@ module UpdateUserDetails = {
       path: {j|/$root/update-user-details/|j},
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorization(req);
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, email, username, givenName, familyName, phone} =
           req.requireBody(body_in_decode);
