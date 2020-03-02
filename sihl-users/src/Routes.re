@@ -321,9 +321,7 @@ module AdminUi = {
               abort @@ Unauthorized("User is not an admin");
             };
             Async.async @@
-            OkHtml(
-              ReactDOMServerRe.renderToString(<AdminUi.Dashboard user />),
-            );
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />));
           | Some(token) =>
             let%Async user = Service.User.authenticate(conn, token);
             if (!Model.User.isAdmin(user)) {
@@ -333,7 +331,7 @@ module AdminUi = {
               [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
             Async.async @@
             OkHtmlWithHeaders(
-              ReactDOMServerRe.renderToString(<AdminUi.Dashboard user />),
+              AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />),
               headers,
             );
           };
@@ -366,7 +364,7 @@ module AdminUi = {
             Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
           | _ =>
             Async.async @@
-            OkHtml(ReactDOMServerRe.renderToString(<AdminUi.Login />))
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
           };
         },
       });
@@ -391,7 +389,7 @@ module AdminUi = {
             Service.User.get((conn, user), ~userId)
             |> abortIfErr(NotFound("User not found"));
           Async.async @@
-          OkHtml(ReactDOMServerRe.renderToString(<AdminUi.User user />));
+          OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />));
         },
       });
   };
@@ -410,7 +408,7 @@ module AdminUi = {
           let%Async users = Service.User.getAll((conn, user));
           let users = users |> Sihl.Core.Db.Repo.Result.rows;
           Async.async @@
-          OkHtml(ReactDOMServerRe.renderToString(<AdminUi.Users users />));
+          OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users />));
         },
       });
   };
