@@ -315,7 +315,7 @@ module AdminUi = {
       Sihl.Core.Http.dbEndpoint({
         database,
         verb: GET,
-        path: {j|/$root/admin/users/me/|j},
+        path: {j|/admin/$root/users/me/|j},
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
           let%Async token = Sihl.Core.Http.requireSessionToken(req);

@@ -3,6 +3,7 @@ Integration.setupHarness(App.app);
 open Jest;
 
 let baseUrl = "http://localhost:3000/users";
+let adminBaseUrl = "http://localhost:3000/admin/users";
 
 Expect.(
   testPromise("User registers, logs in and fetches own user", () => {
@@ -62,7 +63,7 @@ Expect.(
       |> Fetch.Headers.get("set-cookie");
     let%Async usersResponse =
       Fetch.fetchWithInit(
-        baseUrl ++ "/admin/users/me/",
+        adminBaseUrl ++ "/users/me/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=Fetch.HeadersInit.make({"cookie": cookie}),
