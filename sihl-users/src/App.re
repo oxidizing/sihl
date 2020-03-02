@@ -13,6 +13,7 @@ let routes = database => [
   Routes.GetMe.endpoint(namespace, database),
   Routes.GetUser.endpoint(namespace, database),
   Routes.GetUsers.endpoint(namespace, database),
+  Routes.AdminUi.GetMe.endpoint(namespace, database),
 ];
 
 let app =

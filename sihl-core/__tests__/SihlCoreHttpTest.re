@@ -6,6 +6,6 @@ describe("Http", () => {
     "Bearer foobar123"
     |> SihlCoreHttp.parseAuthToken
     |> expect
-    |> toEqual(Belt.Result.Ok("foobar123"))
+    |> toEqual(Some("foobar123"))
   })
 });

@@ -18,6 +18,9 @@
     "bs-let": "^0.1.16",
     "compression": "^1.7.4",
     "decco": "^1.1.1",
+    "reason-react": "^0.7.0",
+    "react": "^16.8.1",
+    "react-dom": "^16.8.1",
     "sihl-core": "0.0.1"
   },
   "devDependencies": {

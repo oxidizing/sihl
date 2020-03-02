@@ -18,13 +18,26 @@ module Endpoint = {
     requireHeader: string => Js.Promise.t(string),
   };
 
+  module ContentType = {
+    type t =
+      | TextPlain
+      | TextHtml;
+
+    let toString =
+      fun
+      | TextPlain => "text/plain; charset=utf-8"
+      | TextHtml => "text/html; charset=utf-8";
+  };
+
   type response =
     | BadRequest(string)
     | NotFound(string)
     | Unauthorized(string)
     | Forbidden(string)
     | OkString(string)
+    | OkStringContentType(string, ContentType.t)
     | OkJson(Js.Json.t)
+    | OkHeaders(Js.Dict.t(string))
     | OkBuffer(Node.Buffer.t)
     | StatusString(Status.t, string)
     | StatusJson(Status.t, Js.Json.t)
@@ -154,6 +167,10 @@ module Endpoint = {
   external jsonParsingMiddleware: Express.Middleware.t =
     "./http/json-parsing-middleware.js";
 
+  [@bs.module]
+  external cookieParsingMiddleware: Express.Middleware.t =
+    "./http/cookie-parsing-middleware.js";
+
   type endpointConfig('body_in, 'params, 'query) = {
     path: string,
     verb,
@@ -210,8 +227,27 @@ module Endpoint = {
         |> setHeader("content-type", "text/plain; charset=utf-8")
         |> sendString(msg)
       )
+    | OkStringContentType(msg, contentType) =>
+      async @@
+      Express.Response.(
+        res
+        |> status(Status.Ok)
+        |> setHeader("content-type", ContentType.toString(contentType))
+        |> sendString(msg)
+      )
     | OkJson(js) =>
       async @@ Express.Response.(res |> status(Status.Ok) |> sendJson(js))
+    | OkHeaders(headers) =>
+      open Express.Response;
+      let res =
+        headers
+        ->Js.Dict.entries
+        ->Belt.List.fromArray
+        ->Belt.List.reduce(res, (res, (key, value)) =>
+            setHeader(key, value, res)
+          );
+      let result = res |> sendStatus(Express.Response.StatusCode.Ok);
+      async(result);
     | OkBuffer(buff) =>
       async @@
       Express.Response.(res |> status(Status.Ok) |> sendBuffer(buff))
@@ -242,8 +278,9 @@ module Endpoint = {
     };
 
   let defaultMiddleware = [|
-    // By default we parse JSON bodies
+    // By default we parse JSON bodies and cookies
     jsonParsingMiddleware,
+    cookieParsingMiddleware,
   |];
 
   let endpoint =
@@ -365,20 +402,38 @@ module Endpoint = {
 };
 
 let parseAuthToken = header => {
+  // TODO make this faster
   let parts = header |> Js.String.split(" ") |> Belt.Array.reverse;
-  switch (Belt.Array.get(parts, 0)) {
-  | Some(token) => Belt.Result.Ok(token)
-  | None => Belt.Result.Error("No authorization token found")
-  };
+  Belt.Array.get(parts, 0);
 };
 
-let requireAuthorization =
+let requireAuthorizationToken =
     (request: Endpoint.request('body, 'query, 'params)) => {
   module Async = SihlCoreAsync;
   let%Async header = Endpoint.requireHeader("authorization", request.req);
   switch (parseAuthToken(header)) {
-  | Belt.Result.Ok(token) => Async.async(token)
-  | Belt.Result.Error(message) => Endpoint.abort(BadRequest(message))
+  | Some(token) => Async.async(token)
+  | None => Endpoint.abort(BadRequest("No authorization token found"))
+  };
+};
+
+let parseCookie = (cookies, key) => {
+  cookies
+  ->Belt.Option.flatMap(cookies => Js.Dict.get(cookies, key))
+  ->Belt.Option.flatMap(Js.Json.decodeString);
+};
+
+let requireSessionToken = (request: Endpoint.request('body, 'query, 'params)) => {
+  module Async = SihlCoreAsync;
+  let headerToken =
+    Express.Request.get("authorization", request.req)
+    ->Belt.Option.flatMap(parseAuthToken);
+  let cookieToken =
+    request.req->Express.Request.cookies->parseCookie("session");
+  switch (headerToken, cookieToken) {
+  | (Some(token), _) => Async.async(token)
+  | (_, Some(token)) => Async.async(token)
+  | _ => Endpoint.abort(BadRequest("No authorization token or cookie found"))
   };
 };
 

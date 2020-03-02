@@ -50,6 +50,35 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User logs in, gets cookie and fetches own user", () => {
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/login?email=foobar@example.com&password=123&cookie=true",
+      );
+    let cookie =
+      loginResponse
+      |> Fetch.Response.headers
+      |> Fetch.Headers.get("set-cookie");
+    let%Async usersResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/admin/users/me/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=Fetch.HeadersInit.make({"cookie": cookie}),
+          (),
+        ),
+      );
+
+    usersResponse
+    |> Fetch.Response.status
+    |> expect
+    |> toBe(200)
+    |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("User registers and confirms mail", () => {
     let body = {|
        {
