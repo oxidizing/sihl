@@ -78,19 +78,15 @@ module Login = {
       handler: (conn, req) => {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, password, cookie} = req.requireQuery(query_decode);
-        let%Async token = Service.User.login(conn, ~email, ~password);
+        let%Async (_, token) = Service.User.login(conn, ~email, ~password);
         switch (cookie) {
         | None =>
           let response = {token: token.token} |> response_body_encode;
           Async.async @@ OkJson(response);
         | Some(_) =>
-          switch (Model.Token.setCookieHeader(token)) {
-          | Belt.Result.Ok(header) =>
-            let headers = [header] |> Js.Dict.fromList;
-            Async.async @@ OkHeaders(headers);
-          | Belt.Result.Error(_) =>
-            abort @@ Unauthorized("Invalid token type found")
-          }
+          let headers =
+            [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
+          Async.async @@ OkHeaders(headers);
         };
       },
     });
@@ -304,6 +300,78 @@ module UpdateUserDetails = {
 };
 
 module AdminUi = {
+  module Dashboard = {
+    [@decco]
+    type query = {session: option(string)};
+
+    let endpoint = (_, database) =>
+      Sihl.Core.Http.dbEndpoint({
+        database,
+        verb: GET,
+        path: {j|/admin/|j},
+        handler: (conn, req) => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async {session} = req.requireQuery(query_decode);
+          switch (session) {
+          | None =>
+            let%Async token =
+              Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+            let%Async user = Service.User.authenticate(conn, token);
+            if (!Model.User.isAdmin(user)) {
+              abort @@ Unauthorized("User is not an admin");
+            };
+            Async.async @@
+            OkHtml(
+              ReactDOMServerRe.renderToString(<AdminUi.Dashboard user />),
+            );
+          | Some(token) =>
+            let%Async user = Service.User.authenticate(conn, token);
+            if (!Model.User.isAdmin(user)) {
+              abort @@ Unauthorized("User is not an admin");
+            };
+            let headers =
+              [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
+            Async.async @@
+            OkHtmlWithHeaders(
+              ReactDOMServerRe.renderToString(<AdminUi.Dashboard user />),
+              headers,
+            );
+          };
+        },
+      });
+  };
+
+  module Login = {
+    [@decco]
+    type query = {
+      email: option(string),
+      password: option(string),
+    };
+
+    let endpoint = (_, database) =>
+      Sihl.Core.Http.dbEndpoint({
+        database,
+        verb: GET,
+        path: {j|/admin/login/|j},
+        handler: (conn, req) => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async {email, password} = req.requireQuery(query_decode);
+          switch (email, password) {
+          | (Some(email), Some(password)) =>
+            let%Async (user, token) =
+              Service.User.login(conn, ~email, ~password);
+            if (!Model.User.isAdmin(user)) {
+              abort @@ Unauthorized("User is not an admin");
+            };
+            Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
+          | _ =>
+            Async.async @@
+            OkHtml(ReactDOMServerRe.renderToString(<AdminUi.Login />))
+          };
+        },
+      });
+  };
+
   module User = {
     [@decco]
     type params = {userId: string};
@@ -315,7 +383,8 @@ module AdminUi = {
         path: {j|/admin/$root/users/:userId/|j},
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
-          let%Async token = Sihl.Core.Http.requireSessionToken(req);
+          let%Async token =
+            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
           let%Async user = Service.User.authenticate(conn, token);
           let%Async {userId} = req.requireParams(params_decode);
           let%Async user =
@@ -335,7 +404,8 @@ module AdminUi = {
         path: {j|/admin/$root/users/|j},
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
-          let%Async token = Sihl.Core.Http.requireSessionToken(req);
+          let%Async token =
+            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
           let%Async user = Service.User.authenticate(conn, token);
           let%Async users = Service.User.getAll((conn, user));
           let users = users |> Sihl.Core.Db.Repo.Result.rows;

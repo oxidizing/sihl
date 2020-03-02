@@ -25,12 +25,14 @@ module Endpoint = {
     | Forbidden(string)
     | OkString(string)
     | OkHtml(string)
+    | OkHtmlWithHeaders(string, Js.Dict.t(string))
     | OkJson(Js.Json.t)
     | OkHeaders(Js.Dict.t(string))
     | OkBuffer(Node.Buffer.t)
     | StatusString(Status.t, string)
     | StatusJson(Status.t, Js.Json.t)
     | TemporaryRedirect(string)
+    | FoundRedirect(string)
     | InternalServerError
     | RespondRaw(Express.Response.t => Express.complete)
     | RespondRawAsync(Express.Response.t => promise(Express.complete));
@@ -224,6 +226,17 @@ module Endpoint = {
         |> setHeader("content-type", "text/html; charset=utf-8")
         |> sendString(msg)
       )
+    | OkHtmlWithHeaders(msg, headers) =>
+      Js.Dict.set(headers, "content-type", "text/html; charset=utf-8");
+      open Express.Response;
+      let res =
+        headers
+        ->Js.Dict.entries
+        ->Belt.List.fromArray
+        ->Belt.List.reduce(res, (res, (key, value)) =>
+            setHeader(key, value, res)
+          );
+      async @@ (res |> status(Status.Ok) |> sendString(msg));
     | OkJson(js) =>
       async @@ Express.Response.(res |> status(Status.Ok) |> sendJson(js))
     | OkHeaders(headers) =>
@@ -261,6 +274,13 @@ module Endpoint = {
         res
         |> setHeader("Location", location)
         |> sendStatus(StatusCode.TemporaryRedirect)
+      )
+    | FoundRedirect(location) =>
+      async @@
+      Express.Response.(
+        res
+        |> setHeader("Location", location)
+        |> sendStatus(StatusCode.Found)
       )
     | RespondRaw(fn) => async @@ fn(res)
     | RespondRawAsync(fn) => fn(res)
@@ -412,17 +432,14 @@ let parseCookie = (cookies, key) => {
   ->Belt.Option.flatMap(Js.Json.decodeString);
 };
 
-let requireSessionToken = (request: Endpoint.request('body, 'query, 'params)) => {
+let requireSessionCookie =
+    (request: Endpoint.request('body, 'query, 'params), location) => {
   module Async = SihlCoreAsync;
-  let headerToken =
-    Express.Request.get("authorization", request.req)
-    ->Belt.Option.flatMap(parseAuthToken);
   let cookieToken =
     request.req->Express.Request.cookies->parseCookie("session");
-  switch (headerToken, cookieToken) {
-  | (Some(token), _) => Async.async(token)
-  | (_, Some(token)) => Async.async(token)
-  | _ => Endpoint.abort(BadRequest("No authorization token or cookie found"))
+  switch (cookieToken) {
+  | Some(token) => Async.async(token)
+  | _ => Endpoint.abort(FoundRedirect(location))
   };
 };
 

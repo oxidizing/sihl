@@ -59,7 +59,7 @@ module User = {
       };
       let token = Model.Token.generateAuth(~user);
       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
-      Async.async(token);
+      Async.async((user, token));
     };
   };
 
