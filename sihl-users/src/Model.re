@@ -47,9 +47,14 @@ module Token = {
     status: string,
   };
 
-  let cookieHeader = token => {
+  let setCookieHeader = token => {
+    // TODO add expiration date
+    let tokenString = token.token;
     token.kind === "auth"
-      ? Belt.Result.Ok(("set-cookie", "session=" ++ token.token))
+      ? Belt.Result.Ok((
+          "set-cookie",
+          {j|session=$(tokenString); HttpOnly";|j},
+        ))
       : Belt.Result.Error("Invalid token provided");
   };
 

@@ -18,12 +18,24 @@ module Endpoint = {
     requireHeader: string => Js.Promise.t(string),
   };
 
+  module ContentType = {
+    type t =
+      | TextPlain
+      | TextHtml;
+
+    let toString =
+      fun
+      | TextPlain => "text/plain; charset=utf-8"
+      | TextHtml => "text/html; charset=utf-8";
+  };
+
   type response =
     | BadRequest(string)
     | NotFound(string)
     | Unauthorized(string)
     | Forbidden(string)
     | OkString(string)
+    | OkStringContentType(string, ContentType.t)
     | OkJson(Js.Json.t)
     | OkHeaders(Js.Dict.t(string))
     | OkBuffer(Node.Buffer.t)
@@ -215,6 +227,14 @@ module Endpoint = {
         |> setHeader("content-type", "text/plain; charset=utf-8")
         |> sendString(msg)
       )
+    | OkStringContentType(msg, contentType) =>
+      async @@
+      Express.Response.(
+        res
+        |> status(Status.Ok)
+        |> setHeader("content-type", ContentType.toString(contentType))
+        |> sendString(msg)
+      )
     | OkJson(js) =>
       async @@ Express.Response.(res |> status(Status.Ok) |> sendJson(js))
     | OkHeaders(headers) =>
@@ -394,16 +414,6 @@ let requireAuthorizationToken =
   switch (parseAuthToken(header)) {
   | Some(token) => Async.async(token)
   | None => Endpoint.abort(BadRequest("No authorization token found"))
-  };
-};
-
-module SetSessionCookie = {
-  [@decco]
-  type t = {
-    id: string,
-    expires: string,
-    secure: bool,
-    httpOnly: bool,
   };
 };
 

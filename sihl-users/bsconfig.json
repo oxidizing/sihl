@@ -1,6 +1,9 @@
 {
   "name": "sihl-users",
   "version": "0.0.1",
+  "reason": {
+    "react-jsx": 3
+  },
   "sources": [
     {
       "dir" : "src",
@@ -18,6 +21,7 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
+    "reason-react",
     "bs-fetch",
     "sihl-core",
     "decco"

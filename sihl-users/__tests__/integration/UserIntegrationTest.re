@@ -62,18 +62,19 @@ Expect.(
       |> Fetch.Headers.get("set-cookie");
     let%Async usersResponse =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/me/",
+        baseUrl ++ "/admin/users/me/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=Fetch.HeadersInit.make({"cookie": cookie}),
           (),
         ),
       );
-    let%Async usersJson = Fetch.Response.json(usersResponse);
-    let {Model.User.email} =
-      usersJson |> Model.User.t_decode |> Belt.Result.getExn;
 
-    email |> expect |> toBe("foobar@example.com") |> Sihl.Core.Async.async;
+    usersResponse
+    |> Fetch.Response.status
+    |> expect
+    |> toBe(200)
+    |> Sihl.Core.Async.async;
   })
 );
 
