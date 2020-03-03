@@ -31,6 +31,11 @@ module User = {
     Async.async(user);
   };
 
+  let isTokenValid = (conn, token) => {
+    open! Sihl.Core.Http.Endpoint;
+    Repository.Token.Get.query(conn, ~token)->Async.mapAsync(_ => true);
+  };
+
   let logout = ((conn, user: Model.User.t)) => {
     open! Sihl.Core.Http.Endpoint;
     let%Async _ =
