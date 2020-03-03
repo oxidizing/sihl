@@ -15,8 +15,8 @@ let routes = database => [
   Routes.GetUsers.endpoint(namespace, database),
   Routes.AdminUi.Dashboard.endpoint(namespace, database),
   Routes.AdminUi.Login.endpoint(namespace, database),
-  Routes.AdminUi.User.endpoint(namespace, database),
   Routes.AdminUi.Users.endpoint(namespace, database),
+  Routes.AdminUi.User.endpoint(namespace, database),
 ];
 
 let app =

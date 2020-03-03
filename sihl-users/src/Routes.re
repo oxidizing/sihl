@@ -85,7 +85,7 @@ module Login = {
           Async.async @@ OkJson(response);
         | Some(_) =>
           let headers =
-            [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
+            [Model.Token.setCookieHeader(token.token)] |> Js.Dict.fromList;
           Async.async @@ OkHeaders(headers);
         };
       },
