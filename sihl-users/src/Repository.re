@@ -256,4 +256,26 @@ WHERE token LIKE ?;
           (),
         );
   };
+
+  module DeleteForUser = {
+    let stmt = "
+DELETE users_tokens
+FROM users_tokens
+LEFT JOIN users_users
+ON users_users.id = users_tokens.user
+WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))
+AND users_tokens.kind LIKE ?;
+";
+
+    [@decco]
+    type parameters = (string, string);
+
+    let query = (connection, ~userId: string, ~kind: string) => {
+      Sihl.Core.Db.Repo.execute(
+        ~parameters=parameters_encode((userId, kind)),
+        connection,
+        stmt,
+      );
+    };
+  };
 };

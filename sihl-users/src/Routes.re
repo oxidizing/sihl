@@ -92,6 +92,23 @@ module Login = {
     });
 };
 
+module Logout = {
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: DELETE,
+      path: {j|/$root/logout/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        let%Async user = Service.User.authenticate(conn, token);
+        let%Async _ = Service.User.logout((conn, user));
+        let response = user |> Model.User.t_encode;
+        Async.async @@ OkJson(response);
+      },
+    });
+};
+
 module Register = {
   [@decco]
   type body_in = {

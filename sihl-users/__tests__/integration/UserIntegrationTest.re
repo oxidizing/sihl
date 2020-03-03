@@ -51,6 +51,42 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User can not fetch own user after logging out", () => {
+    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
+    let%Async loginResponse =
+      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Routes.Login.{token} =
+      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/logout/",
+        Fetch.RequestInit.make(
+          ~method_=Delete,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async usersResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/users/me/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    usersResponse
+    |> Fetch.Response.status
+    |> expect
+    |> toBe(401)
+    |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("User logs in, gets cookie and fetches own user", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
     let%Async loginResponse =

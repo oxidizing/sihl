@@ -3,6 +3,7 @@ let namespace = "users";
 
 let routes = database => [
   Routes.Login.endpoint(namespace, database),
+  Routes.Logout.endpoint(namespace, database),
   Routes.Register.endpoint(namespace, database),
   Routes.ConfirmEmail.endpoint(namespace, database),
   Routes.RequestPasswordReset.endpoint(namespace, database),
