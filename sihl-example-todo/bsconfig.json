@@ -1,0 +1,37 @@
+{
+  "name": "sihl-example-todo",
+  "version": "0.0.1",
+  "reason": {
+    "react-jsx": 3
+  },
+  "sources": [
+    {
+      "dir" : "src",
+      "subdirs" : true
+    },
+    {
+      "dir": "__tests__",
+      "subdirs": true,
+      "type": "dev"
+    }
+  ],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js",
+  "bs-dependencies": [
+    "reason-react",
+    "bs-fetch",
+    "sihl-core",
+    "sihl-users",
+    "decco"
+  ],
+  "bs-dev-dependencies": ["@glennsl/bs-jest"],
+  "warnings": {
+    "error" : "+101"
+  },
+  "ppx-flags": ["decco/ppx", "bs-let/ppx"],
+  "namespace": true,
+  "refmt": 3
+}
