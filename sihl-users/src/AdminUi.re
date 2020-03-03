@@ -91,16 +91,13 @@ module Login = {
               <label className="label">
                 {React.string("E-Mail address")}
               </label>
-              <div className="control has-icons-left">
+              <div className="control">
                 <input
                   className="input"
                   name="email"
                   type_="text"
                   placeholder=""
                 />
-                <span className="icon is-small is-left">
-                  <i className="fas fa-envelope" />
-                </span>
               </div>
             </div>
             <div className="field">
@@ -180,9 +177,53 @@ module Users = {
 };
 
 module User = {
+  module SetPasswordForm = {
+    [@react.component]
+    let make = (~user: Model.User.t) => {
+      <form action={"/admin/users/users/" ++ user.id} method="get">
+        <div className="field">
+          <div className="control">
+            <input
+              className="input"
+              name="action"
+              value="set-password"
+              type_="hidden"
+            />
+          </div>
+        </div>
+        <div className="field">
+          <label className="label"> {React.string("New password")} </label>
+          <div className="control">
+            <input
+              className="input"
+              name="password"
+              type_="password"
+              placeholder=""
+            />
+          </div>
+        </div>
+        <div className="field is-grouped">
+          <div className="control">
+            <button className="button is-link" type_="submit" value="Login">
+              {React.string("Set")}
+            </button>
+          </div>
+        </div>
+      </form>;
+    };
+  };
+
   [@react.component]
-  let make = (~user: Model.User.t) =>
+  let make = (~user: Model.User.t, ~msg=?, ()) => {
     <NavigationLayout title={user.email} items=[]>
+      <div className="columns">
+        <div className="column is-one-third">
+          <span> {React.string(Belt.Option.getWithDefault(msg, ""))} </span>
+        </div>
+      </div>
+      <div className="columns">
+        <div className="column is-one-third"> <SetPasswordForm user /> </div>
+      </div>
       <table className="table is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
@@ -216,6 +257,7 @@ module User = {
         </tr>
       </table>
     </NavigationLayout>;
+  };
 };
 
 module Dashboard = {

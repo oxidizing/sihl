@@ -162,6 +162,10 @@ module Endpoint = {
   external cookieParsingMiddleware: Express.Middleware.t =
     "./http/cookie-parsing-middleware.js";
 
+  [@bs.module]
+  external formDataParsingMiddleware: Express.Middleware.t =
+    "./http/form-data-parsing-middleware.js";
+
   type endpointConfig('body_in, 'params, 'query) = {
     path: string,
     verb,
@@ -290,6 +294,7 @@ module Endpoint = {
     // By default we parse JSON bodies and cookies
     jsonParsingMiddleware,
     cookieParsingMiddleware,
+    formDataParsingMiddleware,
   |];
 
   let endpoint =
