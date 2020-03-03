@@ -5,7 +5,6 @@ module HtmlTemplate = {
       <head>
         <title>$title</title>
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css">
-        <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
       </head>
       <body>
         <div id="react-root">$content</div>
@@ -31,7 +30,11 @@ module Layout = {
           </div>
         </div>
       </section>
-      <section className="section"> children </section>
+      <section
+        className="section"
+        style={ReactDOMRe.Style.make(~minHeight="40em", ())}>
+        children
+      </section>
       <footer className="footer">
         <div className="content has-text-centered">
           <p>
@@ -88,13 +91,16 @@ module Login = {
               <label className="label">
                 {React.string("E-Mail address")}
               </label>
-              <div className="control">
+              <div className="control has-icons-left">
                 <input
                   className="input"
                   name="email"
                   type_="text"
                   placeholder=""
                 />
+                <span className="icon is-small is-left">
+                  <i className="fas fa-envelope" />
+                </span>
               </div>
             </div>
             <div className="field">
@@ -128,10 +134,20 @@ module Users = {
     [@react.component]
     let make = (~user: Model.User.t) =>
       <tr>
+        <td>
+          <a href={"/admin/users/users/" ++ user.id}>
+            {React.string(user.username)}
+          </a>
+        </td>
+        <td> {React.string(user.email)} </td>
         <td> {React.string(user.givenName)} </td>
         <td> {React.string(user.familyName)} </td>
-        <td> {React.string(user.email)} </td>
+        <td>
+          {React.string(user.phone->Belt.Option.getWithDefault("-"))}
+        </td>
         <td> {React.string(string_of_bool(Model.User.isAdmin(user)))} </td>
+        <td> {React.string(string_of_bool(user.confirmed))} </td>
+        <td> {React.string(user.status)} </td>
       </tr>;
   };
 
@@ -144,12 +160,16 @@ module Users = {
       ->ReasonReact.array;
 
     <NavigationLayout title="Users" items=[]>
-      <table className="table">
+      <table className="table is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
+            <th> {React.string("Username")} </th>
+            <th> {React.string("Email")} </th>
             <th> {React.string("Given name")} </th>
             <th> {React.string("Family name")} </th>
-            <th> {React.string("Email")} </th>
+            <th> {React.string("Phone")} </th>
+            <th> {React.string("Status")} </th>
+            <th> {React.string("Email confirmed?")} </th>
             <th> {React.string("Admin?")} </th>
           </tr>
         </thead>
@@ -162,8 +182,39 @@ module Users = {
 module User = {
   [@react.component]
   let make = (~user: Model.User.t) =>
-    <NavigationLayout title="User" items=[]>
-      <span> {React.string("This will be the user detail")} </span>
+    <NavigationLayout title={user.email} items=[]>
+      <table className="table is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th> {React.string("Username")} </th>
+            <th> {React.string("Email")} </th>
+            <th> {React.string("Given name")} </th>
+            <th> {React.string("Family name")} </th>
+            <th> {React.string("Phone")} </th>
+            <th> {React.string("Status")} </th>
+            <th> {React.string("Email confirmed?")} </th>
+            <th> {React.string("Admin?")} </th>
+          </tr>
+        </thead>
+        <tr>
+          <td>
+            <a href={"/admin/users/users/" ++ user.id}>
+              {React.string(user.username)}
+            </a>
+          </td>
+          <td> {React.string(user.email)} </td>
+          <td> {React.string(user.givenName)} </td>
+          <td> {React.string(user.familyName)} </td>
+          <td>
+            {React.string(user.phone->Belt.Option.getWithDefault("-"))}
+          </td>
+          <td>
+            {React.string(string_of_bool(Model.User.isAdmin(user)))}
+          </td>
+          <td> {React.string(string_of_bool(user.confirmed))} </td>
+          <td> {React.string(user.status)} </td>
+        </tr>
+      </table>
     </NavigationLayout>;
 };
 
@@ -172,14 +223,8 @@ module Dashboard = {
   [@react.component]
   let make = (~user: Model.User.t) =>
     <NavigationLayout title="Dashboard" items=[]>
-      <span>
-        {React.string(
-           "Have a great day"
-           ++ user.givenName
-           ++ " "
-           ++ user.familyName
-           ++ "!",
-         )}
-      </span>
+      <h4 className="title is-4">
+        {React.string("Have a great day, " ++ user.givenName ++ "!")}
+      </h4>
     </NavigationLayout>;
 };

@@ -353,18 +353,24 @@ module AdminUi = {
         path: {j|/admin/login/|j},
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
-          let%Async {email, password} = req.requireQuery(query_decode);
-          switch (email, password) {
-          | (Some(email), Some(password)) =>
-            let%Async (user, token) =
-              Service.User.login(conn, ~email, ~password);
-            if (!Model.User.isAdmin(user)) {
-              abort @@ Unauthorized("User is not an admin");
+          let%Async token = Sihl.Core.Http.sessionCookie(req);
+          switch (token) {
+          | Some(token) =>
+            Async.async @@ FoundRedirect("/admin?session=" ++ token)
+          | None =>
+            let%Async {email, password} = req.requireQuery(query_decode);
+            switch (email, password) {
+            | (Some(email), Some(password)) =>
+              let%Async (user, token) =
+                Service.User.login(conn, ~email, ~password);
+              if (!Model.User.isAdmin(user)) {
+                abort @@ Unauthorized("User is not an admin");
+              };
+              Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
+            | _ =>
+              Async.async @@
+              OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
             };
-            Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
-          | _ =>
-            Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
           };
         },
       });

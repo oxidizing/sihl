@@ -411,7 +411,6 @@ module Endpoint = {
 };
 
 let parseAuthToken = header => {
-  // TODO make this faster
   let parts = header |> Js.String.split(" ") |> Belt.Array.reverse;
   Belt.Array.get(parts, 0);
 };
@@ -432,12 +431,18 @@ let parseCookie = (cookies, key) => {
   ->Belt.Option.flatMap(Js.Json.decodeString);
 };
 
-let requireSessionCookie =
-    (request: Endpoint.request('body, 'query, 'params), location) => {
+let sessionCookie = (request: Endpoint.request('body, 'query, 'params)) => {
   module Async = SihlCoreAsync;
   let cookieToken =
     request.req->Express.Request.cookies->parseCookie("session");
-  switch (cookieToken) {
+  Async.async(cookieToken);
+};
+
+let requireSessionCookie =
+    (request: Endpoint.request('body, 'query, 'params), location) => {
+  module Async = SihlCoreAsync;
+  let%Async token = sessionCookie(request);
+  switch (token) {
   | Some(token) => Async.async(token)
   | _ => Endpoint.abort(FoundRedirect(location))
   };
