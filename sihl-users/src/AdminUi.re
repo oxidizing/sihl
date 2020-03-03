@@ -19,11 +19,23 @@ module HtmlTemplate = {
 };
 
 module Layout = {
+  module Logout = {
+    [@react.component]
+    let make = () => {
+      <form action="/admin/logout/" method="post">
+        <button className="button is-danger is-pulled-right" type_="submit">
+          {React.string("Logout")}
+        </button>
+      </form>;
+    };
+  };
+
   [@react.component]
-  let make = (~children) => {
+  let make = (~children, ~isLoggedIn) => {
     <div>
       <section className="hero is-small is-primary is-bold">
         <div className="hero-body">
+          {isLoggedIn ? <Logout /> : React.null}
           <div className="container">
             <h1 className="title"> {React.string("Sihl")} </h1>
             <h2 className="subtitle"> {React.string("Admin UI")} </h2>
@@ -65,7 +77,7 @@ module Navigation = {
 module NavigationLayout = {
   [@react.component]
   let make = (~title, ~items, ~children) => {
-    <Layout>
+    <Layout isLoggedIn=true>
       <div className="columns">
         <div className="column is-2 is-desktop"> <Navigation items=[] /> </div>
         <div className="column is-10">
@@ -82,7 +94,7 @@ module NavigationLayout = {
 module Login = {
   [@react.component]
   let make = () =>
-    <Layout>
+    <Layout isLoggedIn=false>
       <div className="columns">
         <div className="column is-one-quarter" />
         <div className="column is-two-quarters">
@@ -165,9 +177,9 @@ module Users = {
             <th> {React.string("Given name")} </th>
             <th> {React.string("Family name")} </th>
             <th> {React.string("Phone")} </th>
-            <th> {React.string("Status")} </th>
-            <th> {React.string("Email confirmed?")} </th>
             <th> {React.string("Admin?")} </th>
+            <th> {React.string("Email confirmed?")} </th>
+            <th> {React.string("Status")} </th>
           </tr>
         </thead>
         userRows
@@ -232,9 +244,9 @@ module User = {
             <th> {React.string("Given name")} </th>
             <th> {React.string("Family name")} </th>
             <th> {React.string("Phone")} </th>
-            <th> {React.string("Status")} </th>
-            <th> {React.string("Email confirmed?")} </th>
             <th> {React.string("Admin?")} </th>
+            <th> {React.string("Email confirmed?")} </th>
+            <th> {React.string("Status")} </th>
           </tr>
         </thead>
         <tr>

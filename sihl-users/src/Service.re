@@ -24,10 +24,26 @@ module User = {
     open! Sihl.Core.Http.Endpoint;
     let%Async tokenAssignment =
       Repository.Token.Get.query(conn, ~token)
-      |> abortIfErr(Forbidden("Not authorized"));
+      |> abortIfErr(Unauthorized("Not authorized"));
     let%Async user =
       Repository.User.Get.query(conn, ~userId=tokenAssignment.user)
-      |> abortIfErr(Forbidden("Not authorized"));
+      |> abortIfErr(Unauthorized("Not authorized"));
+    Async.async(user);
+  };
+
+  let isTokenValid = (conn, token) => {
+    open! Sihl.Core.Http.Endpoint;
+    Repository.Token.Get.query(conn, ~token)->Async.mapAsync(_ => true);
+  };
+
+  let logout = ((conn, user: Model.User.t)) => {
+    open! Sihl.Core.Http.Endpoint;
+    let%Async _ =
+      Repository.Token.DeleteForUser.query(
+        conn,
+        ~userId=user.id,
+        ~kind="auth",
+      );
     Async.async(user);
   };
 
