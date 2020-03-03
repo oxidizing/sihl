@@ -162,6 +162,10 @@ module Endpoint = {
   external cookieParsingMiddleware: Express.Middleware.t =
     "./http/cookie-parsing-middleware.js";
 
+  [@bs.module]
+  external formDataParsingMiddleware: Express.Middleware.t =
+    "./http/form-data-parsing-middleware.js";
+
   type endpointConfig('body_in, 'params, 'query) = {
     path: string,
     verb,
@@ -290,6 +294,7 @@ module Endpoint = {
     // By default we parse JSON bodies and cookies
     jsonParsingMiddleware,
     cookieParsingMiddleware,
+    formDataParsingMiddleware,
   |];
 
   let endpoint =
@@ -411,7 +416,6 @@ module Endpoint = {
 };
 
 let parseAuthToken = header => {
-  // TODO make this faster
   let parts = header |> Js.String.split(" ") |> Belt.Array.reverse;
   Belt.Array.get(parts, 0);
 };
@@ -432,12 +436,18 @@ let parseCookie = (cookies, key) => {
   ->Belt.Option.flatMap(Js.Json.decodeString);
 };
 
-let requireSessionCookie =
-    (request: Endpoint.request('body, 'query, 'params), location) => {
+let sessionCookie = (request: Endpoint.request('body, 'query, 'params)) => {
   module Async = SihlCoreAsync;
   let cookieToken =
     request.req->Express.Request.cookies->parseCookie("session");
-  switch (cookieToken) {
+  Async.async(cookieToken);
+};
+
+let requireSessionCookie =
+    (request: Endpoint.request('body, 'query, 'params), location) => {
+  module Async = SihlCoreAsync;
+  let%Async token = sessionCookie(request);
+  switch (token) {
   | Some(token) => Async.async(token)
   | _ => Endpoint.abort(FoundRedirect(location))
   };

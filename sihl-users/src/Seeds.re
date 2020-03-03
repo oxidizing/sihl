@@ -13,6 +13,8 @@ let set = (db, seed) => {
         ~email="admin@example.com",
         ~username="admin",
         ~password="password",
+        ~givenName="Admin",
+        ~familyName="Admin",
       )
     })
   | AdminOneUser =>
@@ -25,6 +27,8 @@ let set = (db, seed) => {
             ~email="admin@example.com",
             ~username="admin",
             ~password="password",
+            ~givenName="Admin",
+            ~familyName="Admin",
           );
         Service.User.register(
           conn,

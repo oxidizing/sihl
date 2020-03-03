@@ -222,15 +222,16 @@ module User = {
     };
   };
 
-  let createAdmin = (conn, ~email, ~username, ~password) => {
+  let createAdmin =
+      (conn, ~email, ~username, ~givenName, ~familyName, ~password) => {
     open! Sihl.Core.Http.Endpoint;
     let user =
       Model.User.make(
         ~email,
         ~username,
         ~password=Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, password),
-        ~givenName="",
-        ~familyName="",
+        ~givenName,
+        ~familyName,
         ~phone=None,
         ~admin=true,
       );

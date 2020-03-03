@@ -353,24 +353,36 @@ module AdminUi = {
         path: {j|/admin/login/|j},
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
-          let%Async {email, password} = req.requireQuery(query_decode);
-          switch (email, password) {
-          | (Some(email), Some(password)) =>
-            let%Async (user, token) =
-              Service.User.login(conn, ~email, ~password);
-            if (!Model.User.isAdmin(user)) {
-              abort @@ Unauthorized("User is not an admin");
+          let%Async token = Sihl.Core.Http.sessionCookie(req);
+          switch (token) {
+          | Some(token) =>
+            Async.async @@ FoundRedirect("/admin?session=" ++ token)
+          | None =>
+            let%Async {email, password} = req.requireQuery(query_decode);
+            switch (email, password) {
+            | (Some(email), Some(password)) =>
+              let%Async (user, token) =
+                Service.User.login(conn, ~email, ~password);
+              if (!Model.User.isAdmin(user)) {
+                abort @@ Unauthorized("User is not an admin");
+              };
+              Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
+            | _ =>
+              Async.async @@
+              OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
             };
-            Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
-          | _ =>
-            Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
           };
         },
       });
   };
 
   module User = {
+    [@decco]
+    type query = {
+      action: option(string),
+      password: option(string),
+    };
+
     [@decco]
     type params = {userId: string};
 
@@ -383,13 +395,37 @@ module AdminUi = {
           open! Sihl.Core.Http.Endpoint;
           let%Async token =
             Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
-          let%Async user = Service.User.authenticate(conn, token);
+          let%Async currentUser = Service.User.authenticate(conn, token);
           let%Async {userId} = req.requireParams(params_decode);
           let%Async user =
-            Service.User.get((conn, user), ~userId)
+            Service.User.get((conn, currentUser), ~userId)
             |> abortIfErr(NotFound("User not found"));
-          Async.async @@
-          OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />));
+          let%Async {action, password} = req.requireQuery(query_decode);
+          switch (action, password) {
+          | (None, _) =>
+            Async.async @@
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />))
+          | (Some("set-password"), Some(password)) =>
+            let%Async _ =
+              Service.User.setPassword(
+                (conn, currentUser),
+                ~userId,
+                ~newPassword=password,
+              );
+            Async.async @@
+            OkHtml(
+              AdminUi.HtmlTemplate.render(
+                <AdminUi.User user msg="Successfully set password!" />,
+              ),
+            );
+          | (Some(action), _) =>
+            Sihl.Core.Log.error(
+              "Invalid action=" ++ action ++ " provided",
+              (),
+            );
+            Async.async @@
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />));
+          };
         },
       });
   };
