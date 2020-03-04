@@ -7,8 +7,11 @@ CREATE TABLE $(namespace)_boards (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   title VARCHAR(128) NOT NULL,
+  owner BIGINT UNSIGNED,
+  status VARCHAR(128) NOT NULL,
   PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+  FOREIGN KEY (owner) REFERENCES users_users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
     ),

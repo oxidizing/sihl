@@ -31,6 +31,9 @@ module User = {
     Async.async(user);
   };
 
+  let isAdmin = Model.User.isAdmin;
+  let id = Model.User.id;
+
   let getAll = ((conn, user)) => {
     open! Sihl.Core.Http.Endpoint;
     if (!Model.User.isAdmin(user)) {

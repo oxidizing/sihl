@@ -8,6 +8,6 @@ let app =
     ~name,
     ~namespace,
     ~routes,
-    ~clean=[Repository.Issue.Clean.run],
+    ~clean=[Repository.Issue.Clean.run, Repository.Board.Clean.run],
     ~migration=Migrations.MariaDb.make(~namespace),
   );
