@@ -1,7 +1,12 @@
 let name = "Issue Management App";
 let namespace = "issues";
 
-let routes = database => [];
+let routes = database => [
+  Routes.GetBoardsByUser.endpoint(namespace, database),
+  Routes.GetIssuesByBoard.endpoint(namespace, database),
+  Routes.AddBoard.endpoint(namespace, database),
+  Routes.AddIssue.endpoint(namespace, database),
+];
 
 let app =
   Sihl.Core.Main.App.make(

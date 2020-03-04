@@ -20,6 +20,10 @@ module Email = {
 };
 
 module User = {
+  let isAdmin = Model.User.isAdmin;
+  let id = Model.User.id;
+  let fromJson = Model.User.t_decode;
+
   let authenticate = (conn, token) => {
     open! Sihl.Core.Http.Endpoint;
     let%Async tokenAssignment =
@@ -30,9 +34,6 @@ module User = {
       |> abortIfErr(Forbidden("Not authorized"));
     Async.async(user);
   };
-
-  let isAdmin = Model.User.isAdmin;
-  let id = Model.User.id;
 
   let getAll = ((conn, user)) => {
     open! Sihl.Core.Http.Endpoint;
