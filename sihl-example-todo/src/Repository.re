@@ -172,7 +172,7 @@ SELECT
   uuid_of(issues_boards.uuid) as id,
   issues_boards.title as title,
   uuid_of(users_users.uuid) as owner,
-  issues_issues.status as status
+  issues_boards.status as status
 FROM issues_boards
 LEFT JOIN users_users
 ON users_users.id  = issues_boards.owner
@@ -201,7 +201,7 @@ SELECT
   uuid_of(issues_boards.uuid) as id,
   issues_boards.title as title,
   uuid_of(users_users.uuid) as owner,
-  issues_issues.status as status
+  issues_boards.status as status
 FROM issues_boards
 LEFT JOIN users_users
 ON users_users.id  = issues_boards.owner

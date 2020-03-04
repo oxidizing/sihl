@@ -1,5 +1,5 @@
 include Sihl.Core.Test;
-Integration.setupHarness(App.app);
+Integration.setupHarness([App.app]);
 open Jest;
 
 let baseUrl = "http://localhost:3000/users";

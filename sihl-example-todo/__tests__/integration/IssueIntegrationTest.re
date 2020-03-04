@@ -1,8 +1,8 @@
 include Sihl.Core.Test;
-Integration.setupHarness(App.app);
+Integration.setupHarness([Sihl.Users.App.app, App.app]);
 open Jest;
 
-let baseUrl = "http://localhost:3000/issues";
+let baseUrl = "http://localhost:3000";
 
 Expect.(
   testPromise("User creates board", () => {
@@ -13,7 +13,9 @@ Expect.(
         Sihl.Users.Seeds.AdminOneUser,
       );
     let%Async loginResponse =
-      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Sihl.Users.Routes.Login.{token} =
       tokenJson
@@ -21,7 +23,7 @@ Expect.(
       |> Belt.Result.getExn;
     let%Async _ =
       Fetch.fetchWithInit(
-        baseUrl ++ "/boards/",
+        baseUrl ++ "/issues/boards/",
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
@@ -32,7 +34,7 @@ Expect.(
       );
     let%Async userResponse =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/me/",
+        baseUrl ++ "/users/users/me/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=
@@ -45,7 +47,7 @@ Expect.(
 
     let%Async boardsResponse =
       Fetch.fetchWithInit(
-        baseUrl ++ "/users/" ++ Sihl.Users.User.id(user) ++ "/boards/",
+        baseUrl ++ "/issues/users/" ++ Sihl.Users.User.id(user) ++ "/boards/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=
@@ -59,6 +61,6 @@ Expect.(
 
     let Model.Board.{title} = boards |> Belt.List.headExn;
 
-    title |> expect |> toBe("foobar@example.com") |> Sihl.Core.Async.async;
+    title |> expect |> toBe("foobar") |> Sihl.Core.Async.async;
   })
 );

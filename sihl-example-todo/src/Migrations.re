@@ -11,7 +11,7 @@ CREATE TABLE $(namespace)_boards (
   status VARCHAR(128) NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-  FOREIGN KEY (owner) REFERENCES users_users(id)
+  FOREIGN KEY(owner) REFERENCES users_users(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |j},
     ),
@@ -24,7 +24,7 @@ CREATE TABLE $(namespace)_issues (
   title VARCHAR(128) NOT NULL,
   description VARCHAR(512),
   board BIGINT UNSIGNED,
-  assignee BIGINT UNSIGNED,
+  assignee BIGINT UNSIGNED NULL,
   status VARCHAR(128) NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid),
