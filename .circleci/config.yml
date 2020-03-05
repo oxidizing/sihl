@@ -25,6 +25,12 @@ jobs:
             cd sihl-users
             yarn build
             yarn test
+      - run:
+          name: sihl-example-todo
+          command: |
+            cd sihl-example-todo
+            yarn build
+            yarn test
 
 workflows:
   version: 2

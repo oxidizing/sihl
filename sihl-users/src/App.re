@@ -1,6 +1,11 @@
 let name = "User Management App";
 let namespace = "users";
 
+let adminUiPages = [
+  AdminUi.Page.make(~path="/admin/", ~label="Dashboard"),
+  AdminUi.Page.make(~path="/admin/users/users/", ~label="Users"),
+];
+
 let routes = database => [
   Routes.Login.endpoint(namespace, database),
   Routes.Logout.endpoint(namespace, database),
@@ -21,7 +26,9 @@ let routes = database => [
   Routes.AdminUi.User.endpoint(namespace, database),
 ];
 
-let app =
+let app = externalAdminUiPages => {
+  let adminUiPages = Belt.List.concat(adminUiPages, externalAdminUiPages);
+  AdminUi.State.pages := adminUiPages;
   Sihl.Core.Main.App.make(
     ~name,
     ~namespace,
@@ -29,3 +36,4 @@ let app =
     ~clean=[Repository.Token.Clean.run, Repository.User.Clean.run],
     ~migration=Migrations.MariaDb.make(~namespace),
   );
+};

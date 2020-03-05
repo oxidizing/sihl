@@ -1,5 +1,5 @@
 include Sihl.Core.Test;
-Integration.setupHarness(App.app);
+Integration.setupHarness([App.app([])]);
 open Jest;
 
 let baseUrl = "http://localhost:3000/users";
@@ -195,22 +195,6 @@ Expect.(
       usersJson |> Model.User.t_decode |> Belt.Result.getExn;
 
     confirmed |> expect |> toBe(true) |> Sihl.Core.Async.async;
-  })
-);
-
-Expect.(
-  testPromise("User can't log in with wrong credentials", () => {
-    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.set, Seeds.AdminOneUser);
-    let%Async loginResponse =
-      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
-    loginResponse
-    |> Fetch.Response.status
-    |> expect
-    |> toBe(
-         Sihl.Core.Http.Endpoint.Status.Unauthorized
-         |> Sihl.Core.Http.Endpoint.Status.toInt,
-       )
-    |> Sihl.Core.Async.async;
   })
 );
 

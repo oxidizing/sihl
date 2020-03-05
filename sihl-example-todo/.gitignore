@@ -3,14 +3,5 @@
 .bsb.lock
 npm-debug.log
 /lib/bs/
-/lib/ocaml/
-*.cmt
-*.cmi
-*.cmj
 /node_modules/
-*.bs.js
-/static/bundle.js
-dist
-!dist/assets
-.cache
 yarn-error.log

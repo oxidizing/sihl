@@ -3,8 +3,8 @@ open Jest;
 module Async = SihlCoreAsync;
 
 module Integration = {
-  let setupHarness = app => {
-    beforeAllPromise(_ => SihlCoreMain.Manager.start(app));
+  let setupHarness = apps => {
+    beforeAllPromise(_ => SihlCoreMain.Manager.startApps(apps));
     beforeEachPromise(_ => SihlCoreMain.Manager.clean());
     afterAllPromise(_ => SihlCoreMain.Manager.stop());
   };

@@ -1,3 +1,15 @@
+module Page = {
+  type t = {
+    path: string,
+    label: string,
+  };
+  let make = (~path, ~label) => {path, label};
+};
+
+module State = {
+  let pages: Pervasives.ref(list(Page.t)) = ref([]);
+};
+
 module HtmlTemplate = {
   let make = (~content, ~title) => {j|
   <!DOCTYPE html>
@@ -63,12 +75,18 @@ module Layout = {
 
 module Navigation = {
   [@react.component]
-  let make = (~items) => {
+  let make = () => {
     <aside className="menu">
       <p className="menu-label"> {React.string("General")} </p>
       <ul className="menu-list">
-        <a href="/admin/"> {React.string("Dashboard")} </a>
-        <a href="/admin/users/users/"> {React.string("Users")} </a>
+        {(State.pages^)
+         ->Belt.List.map((item: Page.t) =>
+             <a key={item.path} href={item.path}>
+               {React.string(item.label)}
+             </a>
+           )
+         ->Belt.List.toArray
+         ->React.array}
       </ul>
     </aside>;
   };
@@ -79,7 +97,7 @@ module NavigationLayout = {
   let make = (~title, ~items, ~children) => {
     <Layout isLoggedIn=true>
       <div className="columns">
-        <div className="column is-2 is-desktop"> <Navigation items=[] /> </div>
+        <div className="column is-2 is-desktop"> <Navigation /> </div>
         <div className="column is-10">
           <div>
             <h2 className="title"> {React.string(title)} </h2>
@@ -168,7 +186,7 @@ module Users = {
       ->Belt.List.toArray
       ->ReasonReact.array;
 
-    <NavigationLayout title="Users" items=[]>
+    <NavigationLayout title="Users">
       <table className="table is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
@@ -227,7 +245,7 @@ module User = {
 
   [@react.component]
   let make = (~user: Model.User.t, ~msg=?, ()) => {
-    <NavigationLayout title={user.email} items=[]>
+    <NavigationLayout title={user.email}>
       <div className="columns">
         <div className="column is-one-third">
           <span> {React.string(Belt.Option.getWithDefault(msg, ""))} </span>
@@ -273,10 +291,9 @@ module User = {
 };
 
 module Dashboard = {
-  // TODO show navigation with /users/
   [@react.component]
   let make = (~user: Model.User.t) =>
-    <NavigationLayout title="Dashboard" items=[]>
+    <NavigationLayout title="Dashboard">
       <h4 className="title is-4">
         {React.string("Have a great day, " ++ user.givenName ++ "!")}
       </h4>

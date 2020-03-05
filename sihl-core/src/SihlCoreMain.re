@@ -9,15 +9,21 @@ module App = {
     migration: SihlCoreDb.Migration.t,
   };
 
+  let names = apps =>
+    Js.Array.joinWith(
+      ", ",
+      apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
+    );
+
   module Instance = {
     type instance = {
       http: SihlCoreHttp.application,
       db: SihlCoreDb.Database.t,
-      app: t,
+      apps: list(t),
     };
     let http = instance => instance.http;
     let db = instance => instance.db;
-    let make = (~http, ~db, ~app) => {http, db, app};
+    let make = (~http, ~db, ~apps) => {http, db, apps};
   };
 
   let db = instance => Instance.db(instance);
@@ -37,29 +43,36 @@ module App = {
 
   let connectDatabase = config => config |> SihlCoreDb.Database.make;
 
-  let runMigrations = (instance: Instance.instance) =>
-    SihlCoreDb.Database.applyMigrations(instance.app.migration, instance.db);
-
-  let startHttpServer = (routes, db) => {
-    let routes = db |> routes;
-    SihlCoreHttp.application(~port=3000, routes);
+  let runMigrations = (instance: Instance.instance) => {
+    module Async = SihlCoreAsync;
+    instance.apps
+    ->Belt.List.map(app =>
+        SihlCoreDb.Database.applyMigrations(app.migration, instance.db)
+      )
+    ->Async.allInOrder;
   };
 
-  let start = (app: t) => {
+  let startApps = (apps: list(t)) => {
     // TODO catch all exceptions (ServerExceptions might get thrown)
-    SihlCoreLog.info("Starting app " ++ app.name, ());
+    SihlCoreLog.info("Starting apps: " ++ names(apps), ());
     let config = readConfig();
     let db = connectDatabase(config);
-    let http = startHttpServer(app.routes, db);
+    SihlCoreLog.info("Mounting HTTP routes", ());
+    let routes =
+      apps
+      ->Belt.List.map(app => app.routes(db))
+      ->Belt.List.toArray
+      ->Belt.List.concatMany;
+    let http = SihlCoreHttp.application(~port=3000, routes);
     SihlCoreLog.info("App started on port 3000", ());
-    Instance.make(~http, ~db, ~app);
+    Instance.make(~http, ~db, ~apps);
   };
 
-  let stop = (app: Instance.instance) => {
+  let stop = (instance: Instance.instance) => {
     module Async = SihlCoreAsync;
-    SihlCoreLog.info("Stopping app " ++ app.app.name, ());
-    let%Async _ = SihlCoreHttp.shutdown(app.http);
-    Async.async @@ SihlCoreDb.Database.end_(app.db);
+    SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
+    let%Async _ = SihlCoreHttp.shutdown(instance.http);
+    Async.async @@ SihlCoreDb.Database.end_(instance.db);
   };
 };
 
@@ -69,11 +82,11 @@ module Manager = {
   module Async = SihlCoreAsync;
   let state = ref(None);
 
-  let start = (app: App.t) => {
+  let startApps = (apps: list(App.t)) => {
     if (Belt.Option.isSome(state^)) {
       raise(InvalidState("There is already an app running, can not start"));
     };
-    let app = App.start(app);
+    let app = App.startApps(apps);
     state := Some(app);
     App.runMigrations(app);
   };
@@ -103,7 +116,12 @@ module Manager = {
   let clean = () => {
     switch (state^) {
     | Some(instance) =>
-      SihlCoreDb.Database.clean(instance.app.clean, instance.db)
+      let cleanFns =
+        instance.apps
+        ->Belt.List.map(app => app.clean)
+        ->Belt.List.toArray
+        ->Belt.List.concatMany;
+      SihlCoreDb.Database.clean(cleanFns, instance.db);
     | _ =>
       SihlCoreLog.warn("Can not clean because app was not started", ());
       raise(InvalidState("Can not clean because app was not started"));

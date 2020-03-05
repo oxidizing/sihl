@@ -20,6 +20,10 @@ module Email = {
 };
 
 module User = {
+  let isAdmin = Model.User.isAdmin;
+  let id = Model.User.id;
+  let fromJson = Model.User.t_decode;
+
   let authenticate = (conn, token) => {
     open! Sihl.Core.Http.Endpoint;
     let%Async tokenAssignment =
