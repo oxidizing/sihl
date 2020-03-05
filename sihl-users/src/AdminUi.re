@@ -94,7 +94,7 @@ module Navigation = {
 
 module NavigationLayout = {
   [@react.component]
-  let make = (~title, ~items, ~children) => {
+  let make = (~title, ~children) => {
     <Layout isLoggedIn=true>
       <div className="columns">
         <div className="column is-2 is-desktop"> <Navigation /> </div>
