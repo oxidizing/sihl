@@ -19,7 +19,8 @@ module Board = {
 
   let create = ((conn, user), ~title) => {
     let board = Model.Board.make(~title, ~owner=Sihl.Users.User.id(user));
-    Repository.Board.Upsert.query(conn, ~board);
+    let%Async _ = Repository.Board.Upsert.query(conn, ~board);
+    Async.async(board);
   };
 };
 

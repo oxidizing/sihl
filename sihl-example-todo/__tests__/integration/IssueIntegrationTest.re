@@ -46,7 +46,9 @@ Expect.(
       );
     let%Async boardsJson = Fetch.Response.json(boardsResponse);
     let boards =
-      boardsJson |> Routes.GetBoardsByUser.boards_decode |> Belt.Result.getExn;
+      boardsJson
+      |> Routes.GetBoardsByUser.body_out_decode
+      |> Belt.Result.getExn;
 
     let Model.Board.{title} = boards |> Belt.List.headExn;
 
@@ -54,70 +56,63 @@ Expect.(
   })
 );
 
-/* Expect.( */
-/*   testPromise("User creates issue for board", () => { */
-/*     let boardId = ""; */
-/*     let body = {j| */
-       /* { */
-       /*   "title": "Issue title", */
-       /*   "description": "This is the description", */
-       /*   "board": "$(boardId)" */
-       /* } */
-       /* |j}; */
-/*     let%Async _ = */
-/*       Sihl.Core.Main.Manager.seed( */
-/*         Sihl.Users.Seeds.set, */
-/*         Sihl.Users.Seeds.AdminOneUser, */
-/*       ); */
-/*     let%Async loginResponse = */
-/*       Fetch.fetch( */
-/*         baseUrl ++ "/users/login?email=foobar@example.com&password=123", */
-/*       ); */
-/*     let%Async tokenJson = Fetch.Response.json(loginResponse); */
-/*     let Sihl.Users.Routes.Login.{token} = */
-/*       tokenJson */
-/*       |> Sihl.Users.Routes.Login.response_body_decode */
-/*       |> Belt.Result.getExn; */
-/*     let%Async _ = */
-/*       Fetch.fetchWithInit( */
-/*         baseUrl ++ "/issues/boards/", */
-/*         Fetch.RequestInit.make( */
-/*           ~method_=Post, */
-/*           ~body=Fetch.BodyInit.make(body), */
-/*           ~headers= */
-/*             Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}), */
-/*           (), */
-/*         ), */
-/*       ); */
-/*     let%Async userResponse = */
-/*       Fetch.fetchWithInit( */
-/*         baseUrl ++ "/users/users/me/", */
-/*         Fetch.RequestInit.make( */
-/*           ~method_=Get, */
-/*           ~headers= */
-/*             Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}), */
-/*           (), */
-/*         ), */
-/*       ); */
-/*     let%Async userJson = Fetch.Response.json(userResponse); */
-/*     let user = userJson |> Sihl.Users.User.fromJson |> Belt.Result.getExn; */
+Expect.(
+  testPromise("User creates issue for board", () => {
+    let%Async _ = Sihl.Core.Main.Manager.seed(Sihl.Users.Seeds.admin);
+    let%Async user =
+      Sihl.Core.Main.Manager.seed(
+        Sihl.Users.Seeds.user("foobar@example.com", "123"),
+      );
+    let%Async board =
+      Sihl.Core.Main.Manager.seed(Seeds.board(~user, ~title="Board title"));
 
-/*     let%Async boardsResponse = */
-/*       Fetch.fetchWithInit( */
-/*         baseUrl ++ "/issues/users/" ++ Sihl.Users.User.id(user) ++ "/boards/", */
-/*         Fetch.RequestInit.make( */
-/*           ~method_=Get, */
-/*           ~headers= */
-/*             Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}), */
-/*           (), */
-/*         ), */
-/*       ); */
-/*     let%Async boardsJson = Fetch.Response.json(boardsResponse); */
-/*     let boards = */
-/*       boardsJson |> Routes.GetBoardsByUser.boards_decode |> Belt.Result.getExn; */
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Sihl.Users.Routes.Login.{token} =
+      tokenJson
+      |> Sihl.Users.Routes.Login.response_body_decode
+      |> Belt.Result.getExn;
+    let boardId = board.id;
+    let body = {j|
+       {
+         "title": "Issue title",
+         "description": "This is the description",
+         "board": "$(boardId)"
+       }
+       |j};
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
 
-/*     let Model.Board.{title} = boards |> Belt.List.headExn; */
+    let%Async issuesResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/boards/" ++ board.id ++ "/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async issueJson = Fetch.Response.json(issuesResponse);
+    let issues =
+      issueJson
+      |> Routes.GetIssuesByBoard.body_out_decode
+      |> Belt.Result.getExn;
 
-/*     title |> expect |> toBe("foobar") |> Sihl.Core.Async.async; */
-/*   }) */
-/* ); */
+    let Model.Issue.{title} = issues |> Belt.List.headExn;
+
+    title |> expect |> toBe("Issue title") |> Sihl.Core.Async.async;
+  })
+);
