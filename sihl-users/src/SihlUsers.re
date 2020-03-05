@@ -4,6 +4,8 @@ module Seeds = Seeds;
 module Routes = Routes;
 module App = App;
 module AdminUi = {
-  module Page = AdminUi.Navigation.Item;
+  module NavigationLayout = AdminUi.NavigationLayout;
+  module Page = AdminUi.Page;
   let render = AdminUi.HtmlTemplate.render;
+  let pages = AdminUi.State.pages^;
 };

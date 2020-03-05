@@ -1,6 +1,14 @@
 module Async = Sihl.Core.Async;
 
 module Board = {
+  let getAll = ((conn, user)) => {
+    open! Sihl.Core.Http.Endpoint;
+    if (!Sihl.Users.User.isAdmin(user)) {
+      abort @@ Forbidden("Not allowed");
+    };
+    Repository.Board.GetAll.query(conn);
+  };
+
   let getAllByUser = ((conn, user), ~userId) => {
     open! Sihl.Core.Http.Endpoint;
     if (!Sihl.Users.User.isAdmin(user) && user.id !== userId) {

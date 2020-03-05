@@ -224,6 +224,30 @@ WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''));
         );
   };
 
+  module GetAll = {
+    let stmt = "
+SELECT
+  uuid_of(issues_boards.uuid) as id,
+  issues_boards.title as title,
+  uuid_of(users_users.uuid) as owner,
+  issues_boards.status as status
+FROM issues_boards
+LEFT JOIN users_users
+ON users_users.id  = issues_boards.owner;
+";
+
+    let query:
+      Sihl.Core.Db.Connection.t =>
+      Js.Promise.t(Sihl.Core.Db.Repo.Result.t(Model.Board.t)) =
+      connection =>
+        Sihl.Core.Db.Repo.getMany(
+          ~connection,
+          ~stmt,
+          ~decode=Model.Board.t_decode,
+          (),
+        );
+  };
+
   module Upsert = {
     let stmt = "
 INSERT INTO issues_boards (

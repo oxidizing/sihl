@@ -120,4 +120,23 @@ module AdminUi = {
         },
       });
   };
+
+  module Boards = {
+    let endpoint = (root, database) =>
+      Sihl.Core.Http.dbEndpoint({
+        database,
+        verb: GET,
+        path: {j|/admin/$root/boards/|j},
+        handler: (conn, req) => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async token =
+            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+          let%Async user = Sihl.Users.User.authenticate(conn, token);
+          let%Async boards = Service.Board.getAll((conn, user));
+          let boards = boards |> Sihl.Core.Db.Repo.Result.rows;
+          Async.async @@
+          OkHtml(Sihl.Users.AdminUi.render(<AdminUi.Boards boards />));
+        },
+      });
+  };
 };
