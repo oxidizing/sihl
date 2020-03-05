@@ -2,4 +2,8 @@
 
 # Sihl
 
-Sihl is a set of tools for building web applications in ReasonML. This repository contains components packaged as NPM packages, design and architecture documents and example applications.
+Sihl is a high-level ReasonML web application framework that makes development fun and safe. It provides tools, conventions and patterns to quickly ramp up your next project without sacrificing long-term maintanability.
+
+# Getting started
+
+Check out the [example project](/sihl-example-todo/README.md).
