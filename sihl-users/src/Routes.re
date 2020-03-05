@@ -92,6 +92,23 @@ module Login = {
     });
 };
 
+module Logout = {
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: DELETE,
+      path: {j|/$root/logout/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        let%Async user = Service.User.authenticate(conn, token);
+        let%Async _ = Service.User.logout((conn, user));
+        let response = user |> Model.User.t_encode;
+        Async.async @@ OkJson(response);
+      },
+    });
+};
+
 module Register = {
   [@decco]
   type body_in = {
@@ -354,24 +371,43 @@ module AdminUi = {
         handler: (conn, req) => {
           open! Sihl.Core.Http.Endpoint;
           let%Async token = Sihl.Core.Http.sessionCookie(req);
-          switch (token) {
-          | Some(token) =>
-            Async.async @@ FoundRedirect("/admin?session=" ++ token)
-          | None =>
-            let%Async {email, password} = req.requireQuery(query_decode);
-            switch (email, password) {
-            | (Some(email), Some(password)) =>
-              let%Async (user, token) =
-                Service.User.login(conn, ~email, ~password);
-              if (!Model.User.isAdmin(user)) {
-                abort @@ Unauthorized("User is not an admin");
-              };
-              Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
-            | _ =>
-              Async.async @@
-              OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
+          let%Async {email, password} = req.requireQuery(query_decode);
+          switch (token, email, password) {
+          | (_, Some(email), Some(password)) =>
+            let%Async (user, token) =
+              Service.User.login(conn, ~email, ~password);
+            if (!Model.User.isAdmin(user)) {
+              abort @@ Unauthorized("User is not an admin");
             };
+            Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
+          | (Some(token), _, _) =>
+            let%Async isTokenValid = Service.User.isTokenValid(conn, token);
+            Async.async(
+              isTokenValid
+                ? OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
+                : FoundRedirect("/admin?session=" ++ token),
+            );
+          | _ =>
+            Async.async @@
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
           };
+        },
+      });
+  };
+
+  module Logout = {
+    let endpoint = (_, database) =>
+      Sihl.Core.Http.dbEndpoint({
+        database,
+        verb: POST,
+        path: {j|/admin/logout/|j},
+        handler: (conn, req) => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async token =
+            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+          let%Async currentUser = Service.User.authenticate(conn, token);
+          let%Async _ = Service.User.logout((conn, currentUser));
+          Async.async @@ FoundRedirect("/admin/login");
         },
       });
   };
