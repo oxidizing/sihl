@@ -111,7 +111,53 @@ CREATE TABLE $(namespace)_issues (
 };
 ```
 
-Notice how Sihl does the namespacing.
+Notice how Sihl takes care of the namespacing.
+
+### Model
+
+A model encapsulates business types and business logic. We need one model for the *issue* and one for the *board* to reflect both tables. Create a file `Model.re`:
+
+```reasonml
+module Issue = {
+  [@decco]
+  type t = {
+    id: string,
+    title: string,
+    description: option(string),
+    board: string,
+    assignee: option(string),
+    status: string,
+  };
+
+  let make = (~title, ~description, ~board) => {
+    id: Sihl.Core.Uuid.V4.uuidv4(),
+    title,
+    description,
+    board,
+    assignee: None,
+    status: "todo",
+  };
+};
+
+module Board = {
+  [@decco]
+  type t = {
+    id: string,
+    title: string,
+    owner: string,
+    status: string,
+  };
+
+  let make = (~title, ~owner) => {
+    id: Sihl.Core.Uuid.V4.uuidv4(),
+    title,
+    owner,
+    status: "active",
+  };
+};
+```
+
+Models typically consist of ReasonML modules each having one main type `t`, a smart constructor and information about decoding returns values that come from the persistence layer. In the models there should be no async code and no dependency on any infrastructure like SQL, HTTP or Logging.
 
 ### HTTP Route
 
@@ -327,4 +373,154 @@ let app = () =>
 
 While the type checker of ReasonML is able to catch many bugs at compile-time, we should test high-level integration of components.
 
-Let's write an integration test
+Let's write an integration test where a user create a board.
+
+Create a file `/__tests__/integration/IssueIntegrationTest.re`:
+
+```
+include Sihl.Core.Test;
+Integration.setupHarness([Sihl.Users.App.app([]), App.app()]);
+open Jest;
+```
+
+These three lines setup jest as the test runner and the test harness which starts the web server and removes the data between the tests.
+
+#### Seeding
+
+When writing integration tests we often want to test a certain functionality that requires some data in the database. The seeding mechanism allows us to fill the database with data easily prior running the test.
+
+We want to test that a user can create a board, which requires one registered user. Luckily the `sihl-users` app provides some useful seeds which can be used like:
+
+```reasonml
+let%Async user =
+  Sihl.Core.Main.Manager.seed(
+    Sihl.Users.Seeds.user("foobar@example.com", "123"),
+  );
+```
+
+The full test looks like:
+
+```reasonml
+let baseUrl = "http://localhost:3000";
+
+Expect.(
+  testPromise("User creates board", () => {
+    let%Async user =
+      Sihl.Core.Main.Manager.seed(
+        Sihl.Users.Seeds.user("foobar@example.com", "123"),
+      );
+
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Sihl.Users.Routes.Login.{token} =
+      tokenJson
+      |> Sihl.Users.Routes.Login.response_body_decode
+      |> Belt.Result.getExn;
+    let body = {|{"title": "Board title"}|};
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/boards/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+
+    let%Async boardsResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/users/" ++ Sihl.Users.User.id(user) ++ "/boards/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async boardsJson = Fetch.Response.json(boardsResponse);
+    let boards =
+      boardsJson
+      |> Routes.GetBoardsByUser.body_out_decode
+      |> Belt.Result.getExn;
+
+    let Model.Board.{title} = boards |> Belt.List.headExn;
+
+    title |> expect |> toBe("Board title") |> Sihl.Core.Async.async;
+  })
+);
+```
+
+Now we can run the test with `yarn test` given there is a running MariaDB instance. Sihl will apply migrations automatically.
+
+### Admin UI
+
+`sihl-users` provides first class support fort building UIs for admins to manage users. It can be easily customized by adding new pages.
+
+We want to add a *boards* page that shows the list of boards to the admins. Create a file `AdminUi.re`:
+
+```reasonml
+module Boards = {
+  module Row = {
+    [@react.component]
+    let make = (~board: Model.Board.t) =>
+      <tr>
+        <td>
+          <a href={"/admin/users/users/" ++ board.owner}>
+            {React.string(board.owner)}
+          </a>
+        </td>
+        <td> {React.string(board.title)} </td>
+        <td> {React.string(board.status)} </td>
+      </tr>;
+  };
+
+  [@react.component]
+  let make = (~boards: list(Model.Board.t)) => {
+    let boardRows =
+      boards
+      ->Belt.List.map(board => <Row key={board.id} board />)
+      ->Belt.List.toArray
+      ->ReasonReact.array;
+
+    <Sihl.Users.AdminUi.NavigationLayout title="Issues">
+      <table className="table is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th> {React.string("Owner")} </th>
+            <th> {React.string("Title")} </th>
+            <th> {React.string("Status")} </th>
+          </tr>
+        </thead>
+        boardRows
+      </table>
+    </Sihl.Users.AdminUi.NavigationLayout>;
+  };
+};
+```
+
+We need to configure that page so `sihl-users` can load it. This is done in the last step.
+
+### Running the app
+
+The app that is described in `App.re` can be started. Since our issues management app depends on `sihl-users`, we have to start them together. Create a file `Main.re`:
+
+```reasonml
+let adminUiPages = [
+  Sihl.Users.AdminUi.Page.make(
+    ~path="/admin/issues/boards/",
+    ~label="Boards",
+  ),
+];
+
+Sihl.Core.Main.Manager.startApps([
+  Sihl.Users.App.app(adminUiPages),
+  App.app(),
+]);
+```
+
+Now you can start the app with `yarn server:start`. Huray, our first Sihl app!

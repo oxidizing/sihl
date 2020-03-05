@@ -6,8 +6,6 @@ let baseUrl = "http://localhost:3000";
 
 Expect.(
   testPromise("User creates board", () => {
-    let body = {|{"title": "Board title"}|};
-    let%Async _ = Sihl.Core.Main.Manager.seed(Sihl.Users.Seeds.admin);
     let%Async user =
       Sihl.Core.Main.Manager.seed(
         Sihl.Users.Seeds.user("foobar@example.com", "123"),
@@ -22,6 +20,7 @@ Expect.(
       tokenJson
       |> Sihl.Users.Routes.Login.response_body_decode
       |> Belt.Result.getExn;
+    let body = {|{"title": "Board title"}|};
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/issues/boards/",
@@ -58,7 +57,6 @@ Expect.(
 
 Expect.(
   testPromise("User creates issue for board", () => {
-    let%Async _ = Sihl.Core.Main.Manager.seed(Sihl.Users.Seeds.admin);
     let%Async user =
       Sihl.Core.Main.Manager.seed(
         Sihl.Users.Seeds.user("foobar@example.com", "123"),
