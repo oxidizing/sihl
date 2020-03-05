@@ -5,7 +5,7 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "start:server": "node src/Main.bs.js",
+    "start:server": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 node src/Main.bs.js",
     "test": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 jest"
   },
   "keywords": [

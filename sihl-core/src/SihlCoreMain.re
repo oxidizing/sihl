@@ -104,9 +104,10 @@ module Manager = {
     };
   };
 
-  let seed = (seedSetter, seed) => {
+  let seed = f => {
     switch (state^) {
-    | Some(instance) => seedSetter(instance.db, seed)
+    | Some(instance) =>
+      SihlCoreDb.Database.withConnection(instance.db, conn => f(conn))
     | _ =>
       SihlCoreLog.warn("Can not seed because app was not started", ());
       raise(InvalidState("Can not seed because app was not started"));

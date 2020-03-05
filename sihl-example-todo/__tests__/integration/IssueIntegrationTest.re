@@ -7,11 +7,12 @@ let baseUrl = "http://localhost:3000";
 Expect.(
   testPromise("User creates board", () => {
     let body = {|{"title": "Board title"}|};
-    let%Async _ =
+    let%Async _ = Sihl.Core.Main.Manager.seed(Sihl.Users.Seeds.admin);
+    let%Async user =
       Sihl.Core.Main.Manager.seed(
-        Sihl.Users.Seeds.set,
-        Sihl.Users.Seeds.AdminOneUser,
+        Sihl.Users.Seeds.user("foobar@example.com", "123"),
       );
+
     let%Async loginResponse =
       Fetch.fetch(
         baseUrl ++ "/users/login?email=foobar@example.com&password=123",
@@ -32,18 +33,6 @@ Expect.(
           (),
         ),
       );
-    let%Async userResponse =
-      Fetch.fetchWithInit(
-        baseUrl ++ "/users/users/me/",
-        Fetch.RequestInit.make(
-          ~method_=Get,
-          ~headers=
-            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
-          (),
-        ),
-      );
-    let%Async userJson = Fetch.Response.json(userResponse);
-    let user = userJson |> Sihl.Users.User.fromJson |> Belt.Result.getExn;
 
     let%Async boardsResponse =
       Fetch.fetchWithInit(
