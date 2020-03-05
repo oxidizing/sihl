@@ -1,18 +1,17 @@
-# Basic Reason Template
+# sihl-users
 
-Hello! This project allows you to quickly get started with Reason and BuckleScript. If you wanted a more sophisticated version, try the `react` template (`bsb -theme react -init .`).
+This package contains a Sihl app that deals with user management.
 
-# Build
-```
-npm run build
-```
+## Features
 
-# Build + Watch
+* Login, logout
+* Register, confirm email flow
+* Forgot password flow (reset password)
+* Update password, set password (as admin)
+* Update user
+* Fetch users
+* Admin UI: Show users, user details, set password, login, logout
 
-```
-npm run start
-```
+## Admin UI
 
-
-# Editor
-If you use `vscode`, Press `Windows + Shift + B` it will build automatically
+![User management](/sihl-users/images/screen.png)

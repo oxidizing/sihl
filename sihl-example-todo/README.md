@@ -523,4 +523,4 @@ Sihl.Core.Main.Manager.startApps([
 ]);
 ```
 
-Now you can start the app with `yarn server:start`. Huray, our first Sihl app!
+Now you can start the app with `yarn start:server`. Huray, our first Sihl app!
