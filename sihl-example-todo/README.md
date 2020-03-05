@@ -2,7 +2,7 @@
 
 This issue management app showcases Sihl. It uses `sihl-users` for user management.
 
-# Getting started
+## Getting started
 
 Start a local MariaDB instance. You can you `docker-compose` for that.
 
@@ -10,7 +10,7 @@ Run `yarn test` to run all integration tests.
 
 Run `yarn start:server` to start the web server. The admin UI can be accessed at `http://localhost:3000/admin/login/`.
 
-# Tutorial
+## Tutorial
 
 This tutorial walks you through the code base step by step. Let's create an "Issue Management App" using Sihl.
 
@@ -33,7 +33,7 @@ let app = () =>
   );
 ```
 
-## Data model
+### Data model
 
 Let's start with the data model. A user should be able to create boards and he should be able to add issues to boards.
 
@@ -113,7 +113,7 @@ CREATE TABLE $(namespace)_issues (
 
 Notice how Sihl does the namespacing.
 
-## HTTP Route
+### HTTP Route
 
 We want provide an HTTP endpoint for the client to fetch all boards of a user. Only authenticated users are allowed to use that route. The user has to be admin, otherwise he can only fetch his own boards.
 
@@ -151,3 +151,180 @@ Sihl uses [decco](https://github.com/reasonml-labs/decco) to encode and decode t
 For the path we use string interpolation to set the proper root, which we have configured in `App.re` as the value `namespace`.
 
 The handler is a function with that takes the database connection and the request and returns a response. We use `sihl-users` to perform user authentication and user authorization.
+
+The file doesn't compile yet because we have not implemented `Service.Board.getAllByUser((conn, user), ~userId)` yet. We do that in a second. Let's add another route for creating new boards. This will be a POST route:
+
+```reasonml
+module AddBoard = {
+  [@decco]
+  type body_in = {title: string};
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/boards/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        let%Async user = Sihl.Users.User.authenticate(conn, token);
+        let%Async {title} = req.requireBody(body_in_decode);
+        let%Async _ = Service.Board.create((conn, user), ~title);
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+```
+
+Keep in mind that here we are using the function `Service.Board.create((conn, user), ~title)` which does not exist yet. We create these functions right after properly configuring the two routes we just added.
+
+We need to add both routes to the app configuration in `App.re` so that Sihl know about them:
+
+```reasonml
+...
+
+let routes = database => [
+  Routes.GetBoardsByUser.endpoint(namespace, database),
+  Routes.AddBoard.endpoint(namespace, database),
+];
+
+...
+```
+### Service
+
+A service is just a collection of functions that provide functionality to the routes or to other apps.
+
+Let's create a `Board` service with the two functions that we have used in the routes in `Service.re`:
+
+```reasonml
+module Board = {
+  let getAllByUser = ((conn, user), ~userId) => {
+    open! Sihl.Core.Http.Endpoint;
+    if (!Sihl.Users.User.isAdmin(user) && user.id !== userId) {
+      abort @@ Forbidden("Not allowed");
+    };
+    Repository.Board.GetAllByUser.query(conn, ~userId);
+  };
+
+  let create = ((conn, user), ~title) => {
+    let board = Model.Board.make(~title, ~owner=Sihl.Users.User.id(user));
+    Repository.Board.Upsert.query(conn, ~board);
+  };
+};
+```
+
+Note that services call models, which encapsulate business types and pure business logic and repositories, which abstract away concerns around persistence.
+
+Authorization is done in the service while authentication is done in the HTTP route.
+
+### Repository
+
+Sihl makes no assumptions about the persistence layer. In this example application we have written SQL manually in repositories. A *repository* hides implementation details like what kind of database has been used.
+
+Let's implement the repository for board in `Repository.re`.
+
+```reasonml
+module Board = {
+  module Clean = {
+    let stmt = "
+TRUNCATE TABLE issues_boards;
+";
+    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
+      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
+    };
+  };
+
+  module GetAllByUser = {
+    let stmt = "
+SELECT
+  uuid_of(issues_boards.uuid) as id,
+  issues_boards.title as title,
+  uuid_of(users_users.uuid) as owner,
+  issues_boards.status as status
+FROM issues_boards
+LEFT JOIN users_users
+ON users_users.id  = issues_boards.owner
+WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''));
+";
+
+    [@decco]
+    type params = string;
+
+    let query:
+      (Sihl.Core.Db.Connection.t, ~userId: string) =>
+      Js.Promise.t(Sihl.Core.Db.Repo.Result.t(Model.Board.t)) =
+      (connection, ~userId) =>
+        Sihl.Core.Db.Repo.getMany(
+          ~connection,
+          ~stmt,
+          ~decode=Model.Board.t_decode,
+          ~parameters=params_encode(userId),
+          (),
+        );
+  };
+
+  module Upsert = {
+    let stmt = "
+INSERT INTO issues_boards (
+  uuid,
+  title,
+  owner,
+  status
+) VALUES (
+  UNHEX(REPLACE(?, '-', '')),
+  ?,
+  (SELECT id FROM users_users WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))),
+  ?
+)
+ON DUPLICATE KEY UPDATE
+title = VALUES(title),
+owner = VALUES(owner),
+status = VALUES(status)
+;";
+
+    [@decco]
+    type parameters = (string, string, string, string);
+
+    let query = (connection, ~board: Model.Board.t) =>
+      Sihl.Core.Db.Repo.execute(
+        ~parameters=
+          parameters_encode((
+            board.id,
+            board.title,
+            board.owner,
+            board.status,
+          )),
+        connection,
+        stmt,
+      );
+  };
+};
+
+```
+
+Repositories have to implement a "clean" function that removes all data if called. This is later going to be used by the test harness in the integration tests.
+
+The clean functions have to be configured in `App.re` so that Sihl is aware of them.
+
+```reasonml
+...
+
+let app = () =>
+  Sihl.Core.Main.App.make(
+    ~name,
+    ~namespace,
+    ~routes,
+    ~clean=[Repository.Issue.Clean.run, Repository.Board.Clean.run],
+    ~migration=Migrations.MariaDb.make(~namespace),
+  );
+
+...
+```
+
+### Testing
+
+While the type checker of ReasonML is able to catch many bugs at compile-time, we should test high-level integration of components.
+
+Let's write an integration test
