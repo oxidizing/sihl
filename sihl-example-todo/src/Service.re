@@ -16,9 +16,9 @@ module Board = {
 };
 
 module Issue = {
-  let getAll = ((conn, user), ~userId) => {
+  let getAll = ((conn, user)) => {
     open! Sihl.Core.Http.Endpoint;
-    if (!Sihl.Users.User.isAdmin(user) && user.id !== userId) {
+    if (!Sihl.Users.User.isAdmin(user)) {
       abort @@ Forbidden("Not allowed");
     };
     Repository.Issue.GetAll.query(conn);

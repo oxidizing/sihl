@@ -100,3 +100,24 @@ module AddIssue = {
       },
     });
 };
+
+module AdminUi = {
+  module Issues = {
+    let endpoint = (root, database) =>
+      Sihl.Core.Http.dbEndpoint({
+        database,
+        verb: GET,
+        path: {j|/admin/$root/issues/|j},
+        handler: (conn, req) => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async token =
+            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+          let%Async user = Sihl.Users.User.authenticate(conn, token);
+          let%Async issues = Service.Issue.getAll((conn, user));
+          let issues = issues |> Sihl.Core.Db.Repo.Result.rows;
+          Async.async @@
+          OkHtml(Sihl.Users.AdminUi.render(<AdminUi.Issues issues />));
+        },
+      });
+  };
+};

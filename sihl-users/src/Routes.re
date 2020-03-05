@@ -304,7 +304,7 @@ module AdminUi = {
     [@decco]
     type query = {session: option(string)};
 
-    let endpoint = (_, database) =>
+    let endpoint = (_, database, items) =>
       Sihl.Core.Http.dbEndpoint({
         database,
         verb: GET,
@@ -321,7 +321,9 @@ module AdminUi = {
               abort @@ Unauthorized("User is not an admin");
             };
             Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />));
+            OkHtml(
+              AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user items />),
+            );
           | Some(token) =>
             let%Async user = Service.User.authenticate(conn, token);
             if (!Model.User.isAdmin(user)) {
@@ -331,7 +333,7 @@ module AdminUi = {
               [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
             Async.async @@
             OkHtmlWithHeaders(
-              AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />),
+              AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user items />),
               headers,
             );
           };
@@ -386,7 +388,7 @@ module AdminUi = {
     [@decco]
     type params = {userId: string};
 
-    let endpoint = (root, database) =>
+    let endpoint = (root, database, items) =>
       Sihl.Core.Http.dbEndpoint({
         database,
         verb: GET,
@@ -404,7 +406,7 @@ module AdminUi = {
           switch (action, password) {
           | (None, _) =>
             Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />))
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User items user />))
           | (Some("set-password"), Some(password)) =>
             let%Async _ =
               Service.User.setPassword(
@@ -415,7 +417,7 @@ module AdminUi = {
             Async.async @@
             OkHtml(
               AdminUi.HtmlTemplate.render(
-                <AdminUi.User user msg="Successfully set password!" />,
+                <AdminUi.User user items msg="Successfully set password!" />,
               ),
             );
           | (Some(action), _) =>
@@ -424,14 +426,14 @@ module AdminUi = {
               (),
             );
             Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />));
+            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User items user />));
           };
         },
       });
   };
 
   module Users = {
-    let endpoint = (root, database) =>
+    let endpoint = (root, database, items) =>
       Sihl.Core.Http.dbEndpoint({
         database,
         verb: GET,
@@ -444,7 +446,7 @@ module AdminUi = {
           let%Async users = Service.User.getAll((conn, user));
           let users = users |> Sihl.Core.Db.Repo.Result.rows;
           Async.async @@
-          OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users />));
+          OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users items />));
         },
       });
   };

@@ -1,1 +1,1 @@
-Sihl.Core.Main.Manager.startApps([App.app]);
+Sihl.Core.Main.Manager.startApps([App.app([])]);
