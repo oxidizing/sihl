@@ -2,7 +2,7 @@ module Async = Sihl.Core.Async;
 
 module GetBoardsByUser = {
   [@decco]
-  type boards = list(Model.Board.t);
+  type body_out = list(Model.Board.t);
 
   [@decco]
   type params = {userId: string};
@@ -19,7 +19,7 @@ module GetBoardsByUser = {
         let%Async {userId} = req.requireParams(params_decode);
         let%Async boards = Service.Board.getAllByUser((conn, user), ~userId);
         let response =
-          boards |> Sihl.Core.Db.Repo.Result.rows |> boards_encode;
+          boards |> Sihl.Core.Db.Repo.Result.rows |> body_out_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
     });
@@ -27,7 +27,7 @@ module GetBoardsByUser = {
 
 module GetIssuesByBoard = {
   [@decco]
-  type issues = list(Model.Issue.t);
+  type body_out = list(Model.Issue.t);
 
   [@decco]
   type params = {boardId: string};
@@ -45,7 +45,7 @@ module GetIssuesByBoard = {
         let%Async issues =
           Service.Issue.getAllByBoard((conn, user), ~boardId);
         let response =
-          issues |> Sihl.Core.Db.Repo.Result.rows |> issues_encode;
+          issues |> Sihl.Core.Db.Repo.Result.rows |> body_out_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
     });
