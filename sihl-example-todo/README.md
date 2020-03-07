@@ -12,4 +12,4 @@ Run `yarn start:server` to start the web server. The admin UI can be accessed at
 
 ## Tutorial
 
-Check out the [tutorial](/sihl/wiki/Tutorial:-Issue-management-app) in the Wiki.
+Check out the [tutorial](https://github.com/oxidizing/sihl/wiki/Tutorial:-Issue-management-app) in the Wiki.
