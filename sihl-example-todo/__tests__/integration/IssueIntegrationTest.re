@@ -6,20 +6,10 @@ let baseUrl = "http://localhost:3000";
 
 Expect.(
   testPromise("User creates board", () => {
-    let%Async user =
+    let%Async (user, {token}) =
       Sihl.Core.Main.Manager.seed(
-        Sihl.Users.Seeds.user("foobar@example.com", "123"),
+        Sihl.Users.Seeds.loggedInUser("foobar@example.com", "123"),
       );
-
-    let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Sihl.Users.Routes.Login.{token} =
-      tokenJson
-      |> Sihl.Users.Routes.Login.response_body_decode
-      |> Belt.Result.getExn;
     let body = {|{"title": "Board title"}|};
     let%Async _ =
       Fetch.fetchWithInit(
@@ -57,22 +47,13 @@ Expect.(
 
 Expect.(
   testPromise("User creates issue for board", () => {
-    let%Async user =
+    let%Async (user, {token}) =
       Sihl.Core.Main.Manager.seed(
-        Sihl.Users.Seeds.user("foobar@example.com", "123"),
+        Sihl.Users.Seeds.loggedInUser("foobar@example.com", "123"),
       );
     let%Async board =
       Sihl.Core.Main.Manager.seed(Seeds.board(~user, ~title="Board title"));
 
-    let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Sihl.Users.Routes.Login.{token} =
-      tokenJson
-      |> Sihl.Users.Routes.Login.response_body_decode
-      |> Belt.Result.getExn;
     let boardId = board.id;
     let body = {j|
        {
@@ -117,9 +98,9 @@ Expect.(
 
 Expect.(
   testPromise("User commpletes issue", () => {
-    let%Async user =
+    let%Async (user, {token}) =
       Sihl.Core.Main.Manager.seed(
-        Sihl.Users.Seeds.user("foobar@example.com", "123"),
+        Sihl.Users.Seeds.loggedInUser("foobar@example.com", "123"),
       );
     let%Async board =
       Sihl.Core.Main.Manager.seed(Seeds.board(~user, ~title="Board title"));
@@ -132,15 +113,6 @@ Expect.(
           ~description=None,
         ),
       );
-    let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
-      );
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Sihl.Users.Routes.Login.{token} =
-      tokenJson
-      |> Sihl.Users.Routes.Login.response_body_decode
-      |> Belt.Result.getExn;
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/issues/issues/" ++ issue.id ++ "/complete/",

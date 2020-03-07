@@ -253,13 +253,10 @@ Expect.(
 Expect.(
   testPromise("User updates password", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.admin);
-    let%Async user =
-      Sihl.Core.Main.Manager.seed(Seeds.user("foobar@example.com", "123"));
-    let%Async loginResponse =
-      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+    let%Async (user, {token}) =
+      Sihl.Core.Main.Manager.seed(
+        Seeds.loggedInUser("foobar@example.com", "123"),
+      );
     let userId = user.id;
     let body = {j|{"userId": "$(userId)", "currentPassword": "123", "newPassword": "321"}|j};
     let%Async _ =
@@ -287,14 +284,11 @@ Expect.(
 Expect.(
   testPromise("User updates own details", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.admin);
-    let%Async user =
-      Sihl.Core.Main.Manager.seed(Seeds.user("foobar@example.com", "123"));
+    let%Async (user, {token}) =
+      Sihl.Core.Main.Manager.seed(
+        Seeds.loggedInUser("foobar@example.com", "123"),
+      );
 
-    let%Async loginResponse =
-      Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
     let userId = user.id;
     let body = {j|
 {
@@ -339,18 +333,12 @@ Expect.(
 
 Expect.(
   testPromise("Admin sets password", () => {
-    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.admin);
+    let%Async (_, {token}) =
+      Sihl.Core.Main.Manager.seed(Seeds.loggedInAdmin);
     let%Async user =
       Sihl.Core.Main.Manager.seed(Seeds.user("foobar@example.com", "123"));
     let userId = user.id;
     let body = {j|{"userId": "$(userId)", "newPassword": "321"}|j};
-    let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/login?email=admin@example.com&password=password",
-      );
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/set-password/",
@@ -375,17 +363,10 @@ Expect.(
 
 Expect.(
   testPromise("Admin can fetch all users", () => {
-    let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.admin);
+    let%Async (_, {token}) =
+      Sihl.Core.Main.Manager.seed(Seeds.loggedInAdmin);
     let%Async _ =
       Sihl.Core.Main.Manager.seed(Seeds.user("foobar@example.com", "123"));
-    let%Async loginResponse =
-      Fetch.fetch(
-        baseUrl ++ "/login?email=admin@example.com&password=password",
-      );
-    let%Async tokenJson = Fetch.Response.json(loginResponse);
-    let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
-
     let%Async usersResponse =
       Fetch.fetchWithInit(
         baseUrl ++ "/users/",
