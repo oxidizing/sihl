@@ -17,6 +17,8 @@ module Issue = {
     assignee: None,
     status: "todo",
   };
+
+  let complete = issue => {...issue, status: "completed"};
 };
 
 module Board = {

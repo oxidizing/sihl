@@ -48,7 +48,7 @@ SELECT
   uuid_of(users_users.uuid) as assignee,
   issues_issues.status as status
 FROM issues_issues
-LEFT JOIN users.users
+LEFT JOIN users_users
 ON users_users.id = issues_issues.assignee
 LEFT JOIN issues.boards
 ON issues_boards.id = issues_issues.board
@@ -77,14 +77,14 @@ SELECT
   uuid_of(issues_issues.uuid) as id,
   issues_issues.title as title,
   issues_issues.description as description,
-  uuid_of(users_boards.uuid) as board,
+  uuid_of(issues_boards.uuid) as board,
   uuid_of(users_users.uuid) as assignee,
   issues_issues.status as status
 FROM issues_issues
-LEFT JOIN users.users
-ON users.users.id = issues_issues.assignee
-LEFT JOIN issues.boards
-ON issues.boards.id = issues_issues.board
+LEFT JOIN users_users
+ON users_users.id = issues_issues.assignee
+LEFT JOIN issues_boards
+ON issues_boards.id = issues_issues.board
 WHERE issues_issues.uuid = UNHEX(REPLACE(?, '-', ''));
 ";
 

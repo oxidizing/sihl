@@ -114,3 +114,62 @@ Expect.(
     title |> expect |> toBe("Issue title") |> Sihl.Core.Async.async;
   })
 );
+
+Expect.(
+  testPromise("User commpletes issue", () => {
+    let%Async user =
+      Sihl.Core.Main.Manager.seed(
+        Sihl.Users.Seeds.user("foobar@example.com", "123"),
+      );
+    let%Async board =
+      Sihl.Core.Main.Manager.seed(Seeds.board(~user, ~title="Board title"));
+    let%Async issue =
+      Sihl.Core.Main.Manager.seed(
+        Seeds.issue(
+          ~board=board.id,
+          ~user,
+          ~title="Issue title",
+          ~description=None,
+        ),
+      );
+    let%Async loginResponse =
+      Fetch.fetch(
+        baseUrl ++ "/users/login?email=foobar@example.com&password=123",
+      );
+    let%Async tokenJson = Fetch.Response.json(loginResponse);
+    let Sihl.Users.Routes.Login.{token} =
+      tokenJson
+      |> Sihl.Users.Routes.Login.response_body_decode
+      |> Belt.Result.getExn;
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/issues/" ++ issue.id ++ "/complete/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+
+    let%Async issuesResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/boards/" ++ board.id ++ "/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async issueJson = Fetch.Response.json(issuesResponse);
+    let issues =
+      issueJson
+      |> Routes.GetIssuesByBoard.body_out_decode
+      |> Belt.Result.getExn;
+
+    let Model.Issue.{status} = issues |> Belt.List.headExn;
+
+    status |> expect |> toBe("completed") |> Sihl.Core.Async.async;
+  })
+);

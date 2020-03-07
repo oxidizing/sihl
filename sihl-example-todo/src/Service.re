@@ -53,6 +53,22 @@ module Issue = {
       abort @@ Forbidden("Not allowed");
     };
     let issue = Model.Issue.make(~title, ~description, ~board=board.id);
+    let%Async _ = Repository.Issue.Upsert.query(conn, ~issue);
+    Async.async(issue);
+  };
+
+  let complete = ((conn, user), ~issueId) => {
+    open! Sihl.Core.Http.Endpoint;
+    let%Async issue =
+      Repository.Issue.Get.query(conn, ~issueId)
+      |> abortIfErr(NotFound("Issue not found with that id"));
+    let%Async board =
+      Repository.Board.Get.query(conn, ~boardId=issue.board)
+      |> abortIfErr(NotFound("Board not found with that id"));
+    if (!Sihl.Users.User.isAdmin(user) && board.owner !== user.id) {
+      abort @@ Forbidden("Not allowed");
+    };
+    let issue = Model.Issue.complete(issue);
     Repository.Issue.Upsert.query(conn, ~issue);
   };
 };

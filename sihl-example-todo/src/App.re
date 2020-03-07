@@ -6,6 +6,7 @@ let routes = database => [
   Routes.GetIssuesByBoard.endpoint(namespace, database),
   Routes.AddBoard.endpoint(namespace, database),
   Routes.AddIssue.endpoint(namespace, database),
+  Routes.CompleteIssue.endpoint(namespace, database),
   Routes.AdminUi.Issues.endpoint(namespace, database),
   Routes.AdminUi.Boards.endpoint(namespace, database),
 ];
