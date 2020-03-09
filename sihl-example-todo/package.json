@@ -5,8 +5,8 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "start:bundle": "parcel build static/index.html --no-source-maps",
-    "watch:bundle": "parcel watch static/index.html --no-hmr --no-source-maps",
+    "start:bundle": "parcel build static/index.html --public-url /asset/",
+    "watch:bundle": "parcel watch static/index.html --public-url /asset/",
     "start:server": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 node src/Main.bs.js",
     "test": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 jest"
   },
