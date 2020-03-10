@@ -51,6 +51,39 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User registration for existing email fails", () => {
+    let%Async _ =
+      Sihl.Core.Main.Manager.seed(Seeds.user("foobar@example.com", "123"));
+
+    let body = {|
+       {
+         "email": "foobar@example.com",
+         "username": "someothername",
+         "password": "somepassword",
+         "givenName": "Foo",
+         "familyName": "Bar",
+         "phone": "123"
+       }
+       |};
+    let%Async response =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/register/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+
+    response
+    |> Fetch.Response.status
+    |> expect
+    |> toBe(400)
+    |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("User can not fetch own user after logging out", () => {
     let%Async _ = Sihl.Core.Main.Manager.seed(Seeds.admin);
     let%Async _ =
