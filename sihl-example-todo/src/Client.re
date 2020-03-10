@@ -83,11 +83,6 @@ module Layout = {
   };
 };
 
-let wrapFormValue = event => {
-  let value = ReactEvent.Form.target(event)##value;
-  value === "" ? None : Some(value);
-};
-
 module Register = {
   module Async = Sihl.Core.Async;
   let register = (~username, ~givenName, ~familyName, ~email, ~password) => {
@@ -113,7 +108,11 @@ module Register = {
         ~body=Fetch.BodyInit.make(body),
         (),
       ),
-    );
+    )
+    ->ClientUtils.handleResponse(
+        () => ReasonReactRouter.push("/app/login"),
+        msg => Js.log("Failed to register msg=" ++ msg),
+      );
   };
 
   [@react.component]
@@ -140,7 +139,7 @@ module Register = {
               <input
                 value={username->Belt.Option.getWithDefault("")}
                 onChange={event => {
-                  let username = wrapFormValue(event);
+                  let username = ClientUtils.wrapFormValue(event);
                   setUsername(_ => username);
                 }}
                 className="input"
@@ -155,7 +154,7 @@ module Register = {
             <div className="control">
               <input
                 onChange={event => {
-                  let givenName = wrapFormValue(event);
+                  let givenName = ClientUtils.wrapFormValue(event);
                   setGivenName(_ => givenName);
                 }}
                 value={givenName->Belt.Option.getWithDefault("")}
@@ -171,7 +170,7 @@ module Register = {
             <div className="control">
               <input
                 onChange={event => {
-                  let familyName = wrapFormValue(event);
+                  let familyName = ClientUtils.wrapFormValue(event);
                   setFamilyName(_ => familyName);
                 }}
                 value={familyName->Belt.Option.getWithDefault("")}
@@ -187,7 +186,7 @@ module Register = {
             <div className="control">
               <input
                 onChange={event => {
-                  let email = wrapFormValue(event);
+                  let email = ClientUtils.wrapFormValue(event);
                   setEmail(_ => email);
                 }}
                 value={email->Belt.Option.getWithDefault("")}
@@ -203,7 +202,7 @@ module Register = {
             <div className="control">
               <input
                 onChange={event => {
-                  let password = wrapFormValue(event);
+                  let password = ClientUtils.wrapFormValue(event);
                   setPassword(_ => password);
                 }}
                 value={password->Belt.Option.getWithDefault("")}
