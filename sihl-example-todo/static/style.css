@@ -1,0 +1,18 @@
+@keyframes slide-in {
+    from {
+        top: -10rem;
+    }
+    to {
+        top: 2rem;
+    }
+}
+
+.is-global-message {
+    position: fixed;
+    z-index: 101;
+    left: 0;
+    right: 0;
+    top: 2rem;
+    text-align: center;
+    animation: slide-in ease-out 0.2s;
+}

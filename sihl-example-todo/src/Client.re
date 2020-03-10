@@ -108,11 +108,7 @@ module Register = {
         ~body=Fetch.BodyInit.make(body),
         (),
       ),
-    )
-    ->ClientUtils.handleResponse(
-        () => ReasonReactRouter.push("/app/login"),
-        msg => Js.log("Failed to register msg=" ++ msg),
-      );
+    );
   };
 
   [@react.component]
@@ -127,6 +123,10 @@ module Register = {
       | (Some(_), Some(_), Some(_), Some(_), Some(_)) => true
       | _ => false
       };
+    let (_, setError) =
+      React.useContext(ClientContextProvider.Error.context);
+    let (_, setMsg) =
+      React.useContext(ClientContextProvider.Message.context);
 
     <Layout isLoggedIn=false>
       <div className="columns">
@@ -226,7 +226,19 @@ module Register = {
                       ~familyName,
                       ~email,
                       ~password,
-                    );
+                    )
+                    ->ClientUtils.handleResponse(
+                        () => {
+                          ReasonReactRouter.push("/app/login");
+                          setMsg(_ =>
+                            Some(
+                              "Registration successful, you can now log in!",
+                            )
+                          );
+                        },
+                        msg =>
+                          setError(_ => Some("Failed to register: " ++ msg)),
+                      );
                   ();
                 }}>
                 {React.string("Register")}
@@ -289,7 +301,7 @@ module Login = {
     </Layout>;
 };
 
-module Main = {
+module Route = {
   [@react.component]
   let make = () => {
     let url = ReasonReactRouter.useUrl();
@@ -301,4 +313,20 @@ module Main = {
   };
 };
 
-ReactDOMRe.renderToElementWithId(<Main />, "app");
+module Main = {
+  [@react.component]
+  let make = (~children) => {
+    let (error, setError) = React.useState(_ => None);
+    let (message, setMessage) = React.useState(_ => None);
+
+    <ClientContextProvider.Message value=(message, setMessage)>
+      <ClientContextProvider.Error value=(error, setError)>
+        <ClientNotification.Error />
+        <ClientNotification.Message />
+        children
+      </ClientContextProvider.Error>
+    </ClientContextProvider.Message>;
+  };
+};
+
+ReactDOMRe.renderToElementWithId(<Main> <Route /> </Main>, "app");
