@@ -488,9 +488,7 @@ module BoardSelection = {
 module Issue = {
   [@react.component]
   let make = (~issue: Model.Issue.t) =>
-    <div className="box" key={issue.id}>
-      <span> {React.string(issue.title)} </span>
-    </div>;
+    <div className="box"> <span> {React.string(issue.title)} </span> </div>;
 };
 
 module Issues = {
@@ -500,7 +498,7 @@ module Issues = {
       {Belt.List.length(issues) === 0
          ? <span> {React.string("No issues found")} </span>
          : issues
-           ->Belt.List.map(issue => <Issue issue />)
+           ->Belt.List.map(issue => <Issue key={issue.id} issue />)
            ->Belt.List.toArray
            ->React.array}
     </div>;

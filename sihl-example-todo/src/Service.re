@@ -41,7 +41,7 @@ module Issue = {
     if (!Sihl.Users.User.isAdmin(user) && user.id !== board.owner) {
       abort @@ Forbidden("Not allowed");
     };
-    Repository.Issue.GetAll.query(conn);
+    Repository.Issue.GetAllByBoard.query(conn, ~boardId);
   };
 
   let create = ((conn, user), ~title, ~description, ~board) => {
