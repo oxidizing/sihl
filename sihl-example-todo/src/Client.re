@@ -38,8 +38,9 @@ module Layout = {
         className="button is-danger is-pulled-right"
         onClick={event => {
           let _ = ReactEvent.Mouse.preventDefault(event);
-          // TODO logout
-          ();
+          ReasonReactRouter.push("/app/login");
+          ClientUtils.Token.delete();
+          ClientUtils.User.currentUser := None;
         }}>
         {React.string("Logout")}
       </button>;

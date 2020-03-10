@@ -15,6 +15,7 @@ module Token = {
       ReasonReactRouter.push("/app/login");
       "";
     };
+  let delete = () => Dom.Storage.(removeItem("/users/token", localStorage));
 };
 
 exception FetchException(string);
