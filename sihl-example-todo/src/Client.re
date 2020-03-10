@@ -83,9 +83,52 @@ module Layout = {
   };
 };
 
+let wrapFormValue = event => {
+  let value = ReactEvent.Form.target(event)##value;
+  value === "" ? None : Some(value);
+};
+
 module Register = {
+  module Async = Sihl.Core.Async;
+  let register = (~username, ~givenName, ~familyName, ~email, ~password) => {
+    let username = username->Belt.Option.getWithDefault("test-user");
+    let givenName = givenName->Belt.Option.getWithDefault("Test");
+    let familyName = familyName->Belt.Option.getWithDefault("User");
+    let email = email->Belt.Option.getWithDefault("test-user@example.com");
+    let password = password->Belt.Option.getWithDefault("123");
+    let body = {j|
+       {
+         "email": "$(email)",
+         "username": "$(username)",
+         "password": "$(password)",
+         "givenName": "$(givenName)",
+         "familyName": "$(familyName)"
+       }
+       |j};
+
+    Fetch.fetchWithInit(
+      ClientConfig.baseUrl() ++ "/users/register/",
+      Fetch.RequestInit.make(
+        ~method_=Post,
+        ~body=Fetch.BodyInit.make(body),
+        (),
+      ),
+    );
+  };
+
   [@react.component]
-  let make = () =>
+  let make = () => {
+    let (username, setUsername) = React.useState(() => None);
+    let (givenName, setGivenName) = React.useState(() => None);
+    let (familyName, setFamilyName) = React.useState(() => None);
+    let (email, setEmail) = React.useState(() => None);
+    let (password, setPassword) = React.useState(() => None);
+    let canSubmit =
+      switch (username, givenName, familyName, email, password) {
+      | (Some(_), Some(_), Some(_), Some(_), Some(_)) => true
+      | _ => false
+      };
+
     <Layout isLoggedIn=false>
       <div className="columns">
         <div className="column is-one-quarter" />
@@ -93,22 +136,29 @@ module Register = {
           <h2 className="title is-2"> {React.string("Register")} </h2>
           <div className="field">
             <label className="label"> {React.string("Username")} </label>
-            <div className="control has-icons-left">
+            <div className="control">
               <input
+                value={username->Belt.Option.getWithDefault("")}
+                onChange={event => {
+                  let username = wrapFormValue(event);
+                  setUsername(_ => username);
+                }}
                 className="input"
-                name="username"
                 type_="text"
+                required=true
                 placeholder=""
               />
-              <span className="icon is-small is-left">
-                <i className="fas fa-user" />
-              </span>
             </div>
           </div>
           <div className="field">
             <label className="label"> {React.string("Given name")} </label>
             <div className="control">
               <input
+                onChange={event => {
+                  let givenName = wrapFormValue(event);
+                  setGivenName(_ => givenName);
+                }}
+                value={givenName->Belt.Option.getWithDefault("")}
                 className="input"
                 name="givenName"
                 type_="text"
@@ -120,6 +170,11 @@ module Register = {
             <label className="label"> {React.string("Family name")} </label>
             <div className="control">
               <input
+                onChange={event => {
+                  let familyName = wrapFormValue(event);
+                  setFamilyName(_ => familyName);
+                }}
+                value={familyName->Belt.Option.getWithDefault("")}
                 className="input"
                 name="familyName"
                 type_="text"
@@ -129,35 +184,52 @@ module Register = {
           </div>
           <div className="field">
             <label className="label"> {React.string("Email address")} </label>
-            <div className="control has-icons-left">
+            <div className="control">
               <input
+                onChange={event => {
+                  let email = wrapFormValue(event);
+                  setEmail(_ => email);
+                }}
+                value={email->Belt.Option.getWithDefault("")}
                 className="input"
                 name="email"
                 type_="email"
                 placeholder=""
               />
-              <span className="icon is-small is-left">
-                <i className="fas fa-envelope" />
-              </span>
             </div>
           </div>
           <div className="field">
             <label className="label"> {React.string("Password")} </label>
-            <div className="control has-icons-left">
+            <div className="control">
               <input
+                onChange={event => {
+                  let password = wrapFormValue(event);
+                  setPassword(_ => password);
+                }}
+                value={password->Belt.Option.getWithDefault("")}
                 className="input"
                 name="password"
                 type_="password"
                 placeholder=""
               />
-              <span className="icon is-small is-left">
-                <i className="fas fa-lock" />
-              </span>
             </div>
           </div>
           <div className="field is-grouped">
             <div className="control">
-              <button className="button is-link" value="Login">
+              <button
+                className="button is-link"
+                disabled={!canSubmit}
+                onClick={_ => {
+                  let _ =
+                    register(
+                      ~username,
+                      ~givenName,
+                      ~familyName,
+                      ~email,
+                      ~password,
+                    );
+                  ();
+                }}>
                 {React.string("Register")}
               </button>
             </div>
@@ -166,6 +238,7 @@ module Register = {
         <div className="column is-one-quarter" />
       </div>
     </Layout>;
+  };
 };
 
 module Login = {
