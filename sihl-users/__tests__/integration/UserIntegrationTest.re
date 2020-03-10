@@ -31,7 +31,7 @@ Expect.(
       Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
     let%Async usersResponse =
       Fetch.fetchWithInit(
         baseUrl ++ "/users/me/",
@@ -93,7 +93,7 @@ Expect.(
       Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
     let%Async _ =
       Fetch.fetchWithInit(
         baseUrl ++ "/logout/",
@@ -198,7 +198,7 @@ Expect.(
       Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=123");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
     let%Async usersResponse =
       Fetch.fetchWithInit(
         baseUrl ++ "/users/me/",
@@ -277,7 +277,7 @@ Expect.(
       Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
 
     token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
   })
@@ -308,7 +308,7 @@ Expect.(
       Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
 
     token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
   })
@@ -388,7 +388,7 @@ Expect.(
       Fetch.fetch(baseUrl ++ "/login?email=foobar@example.com&password=321");
     let%Async tokenJson = Fetch.Response.json(loginResponse);
     let Routes.Login.{token} =
-      tokenJson |> Routes.Login.response_body_decode |> Belt.Result.getExn;
+      tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
 
     token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
   })
@@ -413,7 +413,7 @@ Expect.(
     let%Async usersJson = Fetch.Response.json(usersResponse);
     let users =
       usersJson
-      |> Routes.GetUsers.users_decode
+      |> Routes.GetUsers.body_out_decode
       |> Belt.Result.getExn
       |> Belt.List.toArray;
 
