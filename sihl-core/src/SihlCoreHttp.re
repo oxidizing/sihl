@@ -198,22 +198,38 @@ module Endpoint = {
     useOnRouter: Express.Router.t => unit,
   };
 
-  let _resToExpressRes = (res, handlerRes) =>
+  let sendRequestedContent = (msg, req, res) => {
+    Express.Response.(
+      switch (Express.Request.get("content-type", req)) {
+      | Some("text/plain; charset=utf-8") => sendString(msg, res)
+      | Some("text/html; charset=utf-8") => sendString(msg, res)
+      // Default is to send JSON
+      | _ => sendJson(Js.Json.parseExn({j|{"msg": "$(msg)"}|j}), res)
+      }
+    );
+  };
+  let _resToExpressRes = (req, res, handlerRes) => {
     switch (handlerRes) {
     | BadRequest(msg) =>
       async @@
-      Express.Response.(res |> status(Status.BadRequest) |> sendString(msg))
+      Express.Response.(
+        res |> status(Status.BadRequest) |> sendRequestedContent(msg, req)
+      )
     | NotFound(msg) =>
       async @@
-      Express.Response.(res |> status(Status.NotFound) |> sendString(msg))
+      Express.Response.(
+        res |> status(Status.NotFound) |> sendRequestedContent(msg, req)
+      )
     | Unauthorized(msg) =>
       async @@
       Express.Response.(
-        res |> status(Status.Unauthorized) |> sendString(msg)
+        res |> status(Status.Unauthorized) |> sendRequestedContent(msg, req)
       )
     | Forbidden(msg) =>
       async @@
-      Express.Response.(res |> status(Status.Forbidden) |> sendString(msg))
+      Express.Response.(
+        res |> status(Status.Forbidden) |> sendRequestedContent(msg, req)
+      )
     | OkString(msg) =>
       async @@
       Express.Response.(
@@ -265,13 +281,13 @@ module Endpoint = {
         |> setHeader("content-type", "text/plain; charset=utf-8")
         |> sendString(msg)
       )
+    | StatusJson(stat, js) =>
+      async @@ Express.Response.(res |> status(stat) |> sendJson(js))
     | InternalServerError =>
       async @@
       Express.Response.(
         res |> sendStatus(Express.Response.StatusCode.InternalServerError)
       )
-    | StatusJson(stat, js) =>
-      async @@ Express.Response.(res |> status(stat) |> sendJson(js))
     | TemporaryRedirect(location) =>
       async @@
       Express.Response.(
@@ -289,6 +305,7 @@ module Endpoint = {
     | RespondRaw(fn) => async @@ fn(res)
     | RespondRawAsync(fn) => fn(res)
     };
+  };
 
   let defaultMiddleware = [|
     // By default we parse JSON bodies and cookies
@@ -329,10 +346,10 @@ module Endpoint = {
       switch (cfg.handler(request)) {
       | exception err =>
         let%Async r = handleError(err);
-        _resToExpressRes(res, r);
+        _resToExpressRes(req, res, r);
       | p =>
         let%Async r = p->catchAsync(handleError);
-        _resToExpressRes(res, r);
+        _resToExpressRes(req, res, r);
       };
     };
     let expressHandler = Express.PromiseMiddleware.from(wrappedHandler);
