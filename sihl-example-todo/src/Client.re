@@ -1,3 +1,5 @@
+module Async = Sihl.Core.Async;
+
 module Layout = {
   module LoginRegister = {
     [@react.component]
@@ -45,7 +47,7 @@ module Layout = {
   };
 
   [@react.component]
-  let make = (~children, ~isLoggedIn) => {
+  let make = (~children) => {
     <div>
       <section className="hero is-small is-primary is-bold">
         <div className="hero-body">
@@ -59,7 +61,7 @@ module Layout = {
               </div>
             </div>
             <div className="column is-one-quarter">
-              {isLoggedIn ? <Logout /> : <LoginRegister />}
+              {ClientUtils.User.isLoggedIn() ? <Logout /> : <LoginRegister />}
             </div>
           </div>
         </div>
@@ -84,7 +86,6 @@ module Layout = {
 };
 
 module Register = {
-  module Async = Sihl.Core.Async;
   let register =
       (
         setError,
@@ -147,7 +148,7 @@ module Register = {
     let (_, setMsg) =
       React.useContext(ClientContextProvider.Message.context);
 
-    <Layout isLoggedIn=false>
+    <Layout>
       <div className="columns">
         <div className="column is-one-quarter" />
         <div className="column is-two-quarters">
@@ -255,14 +256,13 @@ module Register = {
             </div>
           </div>
         </div>
+        <div className="column is-one-quarter" />
       </div>
     </Layout>;
   };
 };
 
 module Login = {
-  module Async = Sihl.Core.Async;
-
   [@decco]
   type t = {token: string};
 
@@ -281,7 +281,7 @@ module Login = {
           switch (t_decode(response)) {
           | Belt.Result.Ok({token}) =>
             ClientUtils.Token.set(token);
-            Async.async(ReasonReactRouter.push("/app/home"));
+            Async.async(ReasonReactRouter.push("/app/boards/"));
           | Belt.Result.Error(error) =>
             Async.async(
               setError(_ => Some(Sihl.Core.Error.Decco.stringify(error))),
@@ -304,7 +304,7 @@ module Login = {
     let (_, setError) =
       React.useContext(ClientContextProvider.Error.context);
 
-    <Layout isLoggedIn=false>
+    <Layout>
       <div className="columns">
         <div className="column is-one-quarter" />
         <div className="column is-two-quarters">
@@ -361,19 +361,214 @@ module Login = {
             </div>
           </div>
         </div>
+        <div className="column is-one-quarter" />
       </div>
     </Layout>;
   };
 };
 
-module Home = {
+module BoardSelection = {
+  let selectedBoard = () => {
+    let url = ReasonReactRouter.useUrl();
+    switch (url.path) {
+    | ["app", "boards", boardId] => Some(boardId)
+    | _ => None
+    };
+  };
+
+  [@decco]
+  type t = list(Model.Board.t);
+
   [@react.component]
   let make = () => {
-    <Layout isLoggedIn=false>
+    let (boards, setBoards) = React.useState(_ => None);
+    let (title, setTitle) = React.useState(_ => "");
+
+    React.useEffect1(
+      () => {
+        {
+          let%Async user = ClientUtils.User.get();
+          let%Async response =
+            Fetch.fetchWithInit(
+              ClientConfig.baseUrl()
+              ++ "/issues/users/"
+              ++ user.id
+              ++ "/boards/",
+              Fetch.RequestInit.make(
+                ~method_=Get,
+                ~headers=
+                  Fetch.HeadersInit.make({
+                    "authorization": "Bearer " ++ ClientUtils.Token.get(),
+                  }),
+                (),
+              ),
+            );
+          let%Async json = Fetch.Response.json(response);
+          Async.async(
+            switch (t_decode(json)) {
+            | Belt.Result.Ok(boards) => setBoards(_ => Some(boards))
+            | Belt.Result.Error(msg) =>
+              Js.log(Sihl.Core.Error.Decco.stringify(msg))
+            },
+          );
+        }
+        ->ignore;
+        None;
+      },
+      [||],
+    );
+
+    <div>
+      <div className="field has-addons">
+        <div className="control">
+          <input
+            onChange={event => {
+              let value = ReactEvent.Form.target(event)##value;
+              setTitle(_ => value);
+            }}
+            value=title
+            className="input"
+            type_="text"
+            placeholder="Board title"
+          />
+        </div>
+        <div className="control">
+          <a
+            className="button is-info"
+            onClick={event => {
+              ReactEvent.Mouse.preventDefault(event);
+              let body = {j|{"title": "$(title)"}|j};
+              Fetch.fetchWithInit(
+                ClientConfig.baseUrl() ++ "/issues/boards/",
+                Fetch.RequestInit.make(
+                  ~method_=Post,
+                  ~body=Fetch.BodyInit.make(body),
+                  ~headers=
+                    Fetch.HeadersInit.make({
+                      "authorization": "Bearer " ++ ClientUtils.Token.get(),
+                    }),
+                  (),
+                ),
+              )
+              ->ignore;
+              ();
+            }}>
+            {React.string("Add board")}
+          </a>
+        </div>
+      </div>
+      <div className="field">
+        <p className="control">
+          <span className="select">
+            <select
+              value={selectedBoard()->Belt.Option.getWithDefault("select")}
+              onChange={event => {
+                let value = ReactEvent.Form.target(event)##value;
+                let value = value === "select" ? "" : value;
+                ReasonReactRouter.push("/app/boards/" ++ value);
+              }}>
+              <option value="select"> {React.string("Select board")} </option>
+              {boards
+               ->Belt.Option.getWithDefault([])
+               ->Belt.List.map(board =>
+                   <option key={board.id} value={board.id}>
+                     {React.string(board.title)}
+                   </option>
+                 )
+               ->Belt.List.toArray
+               ->React.array}
+            </select>
+          </span>
+        </p>
+      </div>
+    </div>;
+  };
+};
+
+module Issue = {
+  [@react.component]
+  let make = (~issue: Model.Issue.t) =>
+    <div className="box" key={issue.id}>
+      <span> {React.string(issue.title)} </span>
+    </div>;
+};
+
+module Issues = {
+  [@react.component]
+  let make = (~issues: list(Model.Issue.t)) => {
+    <div>
+      {Belt.List.length(issues) === 0
+         ? <span> {React.string("No issues found")} </span>
+         : issues
+           ->Belt.List.map(issue => <Issue issue />)
+           ->Belt.List.toArray
+           ->React.array}
+    </div>;
+  };
+};
+
+module Board = {
+  [@decco]
+  type t = list(Model.Issue.t);
+
+  [@react.component]
+  let make = (~boardId) => {
+    let (issues, setIssues) = React.useState(_ => None);
+    React.useEffect1(
+      () => {
+        {
+          let%Async response =
+            Fetch.fetchWithInit(
+              ClientConfig.baseUrl()
+              ++ "/issues/boards/"
+              ++ boardId
+              ++ "/issues/",
+              Fetch.RequestInit.make(
+                ~method_=Get,
+                ~headers=
+                  Fetch.HeadersInit.make({
+                    "authorization": "Bearer " ++ ClientUtils.Token.get(),
+                  }),
+                (),
+              ),
+            );
+          let%Async json = Fetch.Response.json(response);
+          Async.async(
+            switch (t_decode(json)) {
+            | Belt.Result.Ok(issues) => setIssues(_ => Some(issues))
+            | Belt.Result.Error(msg) =>
+              Js.log(Sihl.Core.Error.Decco.stringify(msg))
+            },
+          );
+        }
+        ->ignore;
+        None;
+      },
+      [||],
+    );
+
+    switch (issues) {
+    | Some(issues) => <Issues issues />
+    | None => <span> {React.string("Loading...")} </span>
+    };
+  };
+};
+
+module Boards = {
+  [@react.component]
+  let make = () => {
+    let url = ReasonReactRouter.useUrl();
+    <Layout>
       <div className="columns">
-        <div className="column is-one-quarter" />
-        <div className="column is-two-quarters">
+        <div className="column is-one-third"> <BoardSelection /> </div>
+        <div className="column is-two-thirds">
           <h2 className="title is-2"> {React.string("Issues")} </h2>
+          {switch (url.path) {
+           | ["app", "boards"] =>
+             <span> {React.string("Please select a board")} </span>
+           | ["app", "boards", boardId] => <Board boardId />
+           | _ => <Login />
+           }}
         </div>
       </div>
     </Layout>;
@@ -387,7 +582,7 @@ module Route = {
     switch (url.path) {
     | ["app", "login"] => <Login />
     | ["app", "register"] => <Register />
-    | ["app", "home"] => <Home />
+    | ["app", "boards", ...rest] => <Boards />
     | _ => <Login />
     };
   };
