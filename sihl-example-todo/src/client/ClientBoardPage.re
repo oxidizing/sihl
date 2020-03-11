@@ -20,39 +20,21 @@ module SelectBoard = {
     };
   };
 
-  [@decco]
-  type t = list(Model.Board.t);
-
   [@react.component]
   let make = () => {
+    let (_, setError) =
+      React.useContext(ClientContextProvider.Error.context);
     let (boards, setBoards) = React.useState(_ => None);
     let (title, setTitle) = React.useState(_ => "");
 
     React.useEffect1(
       () => {
         {
-          let%Async user = ClientUtils.User.get();
-          let%Async response =
-            Fetch.fetchWithInit(
-              ClientConfig.baseUrl()
-              ++ "/issues/users/"
-              ++ user.id
-              ++ "/boards/",
-              Fetch.RequestInit.make(
-                ~method_=Get,
-                ~headers=
-                  Fetch.HeadersInit.make({
-                    "authorization": "Bearer " ++ ClientUtils.Token.get(),
-                  }),
-                (),
-              ),
-            );
-          let%Async json = Fetch.Response.json(response);
+          let%Async boards = ClientApi.Board.GetAll.f();
           Async.async(
-            switch (t_decode(json)) {
+            switch (boards) {
             | Belt.Result.Ok(boards) => setBoards(_ => Some(boards))
-            | Belt.Result.Error(msg) =>
-              Js.log(Sihl.Core.Error.Decco.stringify(msg))
+            | Belt.Result.Error(msg) => setError(_ => Some(msg))
             },
           );
         }
@@ -81,20 +63,7 @@ module SelectBoard = {
             className="button is-info"
             onClick={event => {
               ReactEvent.Mouse.preventDefault(event);
-              let body = {j|{"title": "$(title)"}|j};
-              Fetch.fetchWithInit(
-                ClientConfig.baseUrl() ++ "/issues/boards/",
-                Fetch.RequestInit.make(
-                  ~method_=Post,
-                  ~body=Fetch.BodyInit.make(body),
-                  ~headers=
-                    Fetch.HeadersInit.make({
-                      "authorization": "Bearer " ++ ClientUtils.Token.get(),
-                    }),
-                  (),
-                ),
-              )
-              ->ignore;
+              ClientApi.Board.Add.f(~title)->ignore;
               ();
             }}>
             {React.string("Add board")}
@@ -131,23 +100,18 @@ module SelectBoard = {
 
 module Issue = {
   let complete = (~issueId, ~currentStatus, setError, dispatch) => {
-    dispatch(StartCompleteIssue(issueId));
-    Fetch.fetchWithInit(
-      ClientConfig.baseUrl() ++ "/issues/issues/" ++ issueId ++ "/complete/",
-      Fetch.RequestInit.make(
-        ~method_=Post,
-        ~headers=
-          Fetch.HeadersInit.make({"authorization": ClientUtils.Token.get()}),
-        (),
-      ),
-    )
-    ->ClientUtils.handleResponse(
-        _ => Async.async(),
-        msg => {
+    {
+      dispatch(StartCompleteIssue(issueId));
+      let%Async result = ClientApi.Issue.Complete.f(~issueId);
+      Async.async(
+        switch (result) {
+        | Belt.Result.Ok () => ()
+        | Belt.Result.Error(msg) =>
           dispatch(FailCompleteIssue(issueId, currentStatus));
-          Async.async(setError(_ => Some("Failed create issue: " ++ msg)));
+          setError(_ => Some("Failed create issue: " ++ msg));
         },
-      )
+      );
+    }
     ->ignore;
   };
 
@@ -206,35 +170,19 @@ module Issues = {
 };
 
 module Board = {
-  [@decco]
-  type t = list(Model.Issue.t);
-
   [@react.component]
   let make = (~boardId, ~issues, ~dispatch) => {
+    let (_, setError) =
+      React.useContext(ClientContextProvider.Error.context);
+
     React.useEffect1(
       () => {
         {
-          let%Async response =
-            Fetch.fetchWithInit(
-              ClientConfig.baseUrl()
-              ++ "/issues/boards/"
-              ++ boardId
-              ++ "/issues/",
-              Fetch.RequestInit.make(
-                ~method_=Get,
-                ~headers=
-                  Fetch.HeadersInit.make({
-                    "authorization": "Bearer " ++ ClientUtils.Token.get(),
-                  }),
-                (),
-              ),
-            );
-          let%Async json = Fetch.Response.json(response);
+          let%Async result = ClientApi.Board.Issues.f(~boardId);
           Async.async(
-            switch (t_decode(json)) {
+            switch (result) {
             | Belt.Result.Ok(issues) => dispatch(Set(issues))
-            | Belt.Result.Error(msg) =>
-              Js.log(Sihl.Core.Error.Decco.stringify(msg))
+            | Belt.Result.Error(msg) => setError(_ => Some(msg))
             },
           );
         }
@@ -252,44 +200,28 @@ module Board = {
 };
 
 module AddIssue = {
+  let addIssue = (setError, dispatch, ~boardId, ~title, ~description) => {
+    dispatch(StartAddIssue(boardId, title, description));
+    let%Async result = ClientApi.Issue.Add.f(~boardId, ~title, ~description);
+    Async.async(
+      switch (result) {
+      | Belt.Result.Ok(_) =>
+        // TODO dispatch(Succeed(boardId, title, description));
+        ()
+      | Belt.Result.Error(msg) =>
+        setError(_ => Some("Failed create issue: " ++ msg));
+        dispatch(FailAddIssue(boardId));
+      },
+    );
+  };
+
   [@react.component]
   let make = (~boardId, ~dispatch) => {
     let (title, setTitle) = React.useState(_ => "");
     let (description, setDescription) = React.useState(_ => None);
     let (_, setError) =
       React.useContext(ClientContextProvider.Error.context);
-
-    let addIssue = (~boardId, ~title, ~description) => {
-      dispatch(StartAddIssue(boardId, title, description));
-      let description =
-        description
-        ->Belt.Option.map(d => "\"" ++ d ++ "\"")
-        ->Belt.Option.getWithDefault("null");
-      let body = {j|
-       {
-         "board": "$(boardId)",
-         "title": "$(title)",
-         "description": $(description)
-       }
-       |j};
-      Fetch.fetchWithInit(
-        ClientConfig.baseUrl() ++ "/issues/issues/",
-        Fetch.RequestInit.make(
-          ~method_=Post,
-          ~body=Fetch.BodyInit.make(body),
-          ~headers=
-            Fetch.HeadersInit.make({
-              "authorization": ClientUtils.Token.get(),
-            }),
-          (),
-        ),
-      )
-      ->ClientUtils.handleResponse(
-          _ => Async.async(),
-          msg =>
-            Async.async(setError(_ => Some("Failed create issue: " ++ msg))),
-        );
-    };
+    let addIssue = addIssue(setError, dispatch);
 
     <div style={ReactDOMRe.Style.make(~marginBottom="2em", ())}>
       <div className="field">
