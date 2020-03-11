@@ -1,7 +1,7 @@
 module LoginRegister = {
   [@react.component]
   let make = () => {
-    <div>
+    <div className="is-pulled-right">
       <div className="field is-grouped">
         <div className="control">
           <button

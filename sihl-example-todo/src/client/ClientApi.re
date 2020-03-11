@@ -1,5 +1,74 @@
 module Async = Sihl.Core.Async;
 
+module Http = {
+  module Msg = {
+    [@decco]
+    type t = {msg: string};
+  };
+};
+
+let decodeRespone = (response, decode) => {
+  Async.catchAsync(
+    {
+      let%Async json = Fetch.Response.json(response);
+      Async.async(
+        switch (decode(json)) {
+        | Belt.Result.Ok(result) => Belt.Result.Ok(result)
+        | Belt.Result.Error(error) =>
+          Js.log(Sihl.Core.Error.Decco.stringify(error));
+          Belt.Result.Error(
+            "Invalid response retrieved url="
+            ++ Fetch.Response.url(response)
+            ++ " "
+            ++ Sihl.Core.Error.Decco.stringify(error),
+          );
+        },
+      );
+    },
+    _ => {
+      Js.log(
+        "Failed to parse response from url=" ++ Fetch.Response.url(response),
+      );
+      Async.async(
+        Belt.Result.Error(
+          "Failed request status="
+          ++ string_of_int(Fetch.Response.status(response)),
+        ),
+      );
+    },
+  );
+};
+
+let decodeResult = (~decode, response) => {
+  let%Async response = response;
+  if (Fetch.Response.status(response) === 200) {
+    decodeRespone(response, decode);
+  } else {
+    let%Async result = decodeRespone(response, Http.Msg.t_decode);
+    Async.async(
+      switch (result) {
+      | Belt.Result.Ok(Http.Msg.{msg}) => Belt.Result.Error(msg)
+      | Belt.Result.Error(_) as error => error
+      },
+    );
+  };
+};
+
+let toResult = response => {
+  let%Async response = response;
+  if (Fetch.Response.status(response) === 200) {
+    Async.async(Belt.Result.Ok());
+  } else {
+    let%Async result = decodeRespone(response, Http.Msg.t_decode);
+    Async.async(
+      switch (result) {
+      | Belt.Result.Ok(Http.Msg.{msg}) => Belt.Result.Error(msg)
+      | Belt.Result.Error(_) as error => error
+      },
+    );
+  };
+};
+
 module Board = {
   module GetAll = {
     [@decco]
@@ -7,26 +76,19 @@ module Board = {
 
     let f = () => {
       let%Async user = ClientUtils.User.get();
-      let%Async response =
-        Fetch.fetchWithInit(
-          ClientConfig.baseUrl() ++ "/issues/users/" ++ user.id ++ "/boards/",
-          Fetch.RequestInit.make(
-            ~method_=Get,
-            ~headers=
-              Fetch.HeadersInit.make({
-                "authorization": "Bearer " ++ ClientUtils.Token.get(),
-              }),
-            (),
-          ),
-        );
-      let%Async json = Fetch.Response.json(response);
-      Async.async(
-        switch (t_decode(json)) {
-        | Belt.Result.Ok(_) as result => result
-        | Belt.Result.Error(msg) =>
-          Belt.Result.Error(Sihl.Core.Error.Decco.stringify(msg))
-        },
-      );
+
+      Fetch.fetchWithInit(
+        ClientConfig.baseUrl() ++ "/issues/users/" ++ user.id ++ "/boards/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({
+              "authorization": "Bearer " ++ ClientUtils.Token.get(),
+            }),
+          (),
+        ),
+      )
+      |> decodeResult(~decode=t_decode);
     };
   };
 
@@ -44,7 +106,8 @@ module Board = {
             }),
           (),
         ),
-      );
+      )
+      |> toResult;
     };
   };
 
@@ -53,26 +116,18 @@ module Board = {
     type t = list(Model.Issue.t);
 
     let f = (~boardId) => {
-      let%Async response =
-        Fetch.fetchWithInit(
-          ClientConfig.baseUrl() ++ "/issues/boards/" ++ boardId ++ "/issues/",
-          Fetch.RequestInit.make(
-            ~method_=Get,
-            ~headers=
-              Fetch.HeadersInit.make({
-                "authorization": "Bearer " ++ ClientUtils.Token.get(),
-              }),
-            (),
-          ),
-        );
-      let%Async json = Fetch.Response.json(response);
-      Async.async(
-        switch (t_decode(json)) {
-        | Belt.Result.Ok(_) as result => result
-        | Belt.Result.Error(msg) =>
-          Belt.Result.Error(Sihl.Core.Error.Decco.stringify(msg))
-        },
-      );
+      Fetch.fetchWithInit(
+        ClientConfig.baseUrl() ++ "/issues/boards/" ++ boardId ++ "/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({
+              "authorization": "Bearer " ++ ClientUtils.Token.get(),
+            }),
+          (),
+        ),
+      )
+      |> decodeResult(~decode=t_decode);
     };
   };
 };
@@ -80,23 +135,18 @@ module Board = {
 module Issue = {
   module Complete = {
     let f = (~issueId) => {
-      let%Async _ =
-        Fetch.fetchWithInit(
-          ClientConfig.baseUrl()
-          ++ "/issues/issues/"
-          ++ issueId
-          ++ "/complete/",
-          Fetch.RequestInit.make(
-            ~method_=Post,
-            ~headers=
-              Fetch.HeadersInit.make({
-                "authorization": ClientUtils.Token.get(),
-              }),
-            (),
-          ),
-        );
-      // TODO return based on status code
-      Async.async(Belt.Result.Ok());
+      Fetch.fetchWithInit(
+        ClientConfig.baseUrl() ++ "/issues/issues/" ++ issueId ++ "/complete/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~headers=
+            Fetch.HeadersInit.make({
+              "authorization": ClientUtils.Token.get(),
+            }),
+          (),
+        ),
+      )
+      |> toResult;
     };
   };
 
@@ -113,22 +163,19 @@ module Issue = {
          "description": $(description)
        }
        |j};
-
-      let%Async _ =
-        Fetch.fetchWithInit(
-          ClientConfig.baseUrl() ++ "/issues/issues/",
-          Fetch.RequestInit.make(
-            ~method_=Post,
-            ~body=Fetch.BodyInit.make(body),
-            ~headers=
-              Fetch.HeadersInit.make({
-                "authorization": ClientUtils.Token.get(),
-              }),
-            (),
-          ),
-        );
-      // TODO return added issue
-      Async.async(Belt.Result.Ok());
+      Fetch.fetchWithInit(
+        ClientConfig.baseUrl() ++ "/issues/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          ~headers=
+            Fetch.HeadersInit.make({
+              "authorization": ClientUtils.Token.get(),
+            }),
+          (),
+        ),
+      )
+      |> toResult;
     };
   };
 };
@@ -139,22 +186,14 @@ module User = {
     type t = {token: string};
 
     let f = (~email, ~password) => {
-      let%Async response =
-        Fetch.fetch(
-          ClientConfig.baseUrl()
-          ++ "/users/login?email="
-          ++ email
-          ++ "&password="
-          ++ password,
-        );
-      let%Async json = Fetch.Response.json(response);
-      Async.async(
-        switch (t_decode(json)) {
-        | Belt.Result.Ok({token}) => Belt.Result.Ok(token)
-        | Belt.Result.Error(error) =>
-          Belt.Result.Error(Sihl.Core.Error.Decco.stringify(error))
-        },
-      );
+      Fetch.fetch(
+        ClientConfig.baseUrl()
+        ++ "/users/login?email="
+        ++ email
+        ++ "&password="
+        ++ password,
+      )
+      |> decodeResult(~decode=t_decode);
     };
   };
 
@@ -171,17 +210,15 @@ module User = {
        }
        |j};
 
-      let%Async _ =
-        Fetch.fetchWithInit(
-          ClientConfig.baseUrl() ++ "/users/register/",
-          Fetch.RequestInit.make(
-            ~method_=Post,
-            ~body=Fetch.BodyInit.make(body),
-            (),
-          ),
-        );
-      // TODO return added issue
-      Async.async(Belt.Result.Ok());
+      Fetch.fetchWithInit(
+        ClientConfig.baseUrl() ++ "/users/register/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      )
+      |> toResult;
     };
   };
 };

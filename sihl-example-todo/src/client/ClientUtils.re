@@ -51,23 +51,3 @@ module User = {
     };
   };
 };
-
-module Msg = {
-  [@decco]
-  type t = {msg: string};
-};
-
-let handleResponse = (response, resolve, reject) => {
-  let%Async response = response;
-  let%Async json = Fetch.Response.json(response);
-  if (Fetch.Response.status(response) !== 200) {
-    json
-    ->Msg.t_decode
-    ->Belt.Result.getWithDefault(
-        Msg.{msg: "Error response url=" ++ Fetch.Response.url(response)},
-      )
-    ->((Msg.{msg}) => reject(msg));
-  } else {
-    resolve(json);
-  };
-};

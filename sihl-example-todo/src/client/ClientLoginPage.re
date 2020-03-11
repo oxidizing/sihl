@@ -10,7 +10,7 @@ let login = (setError, ~email, ~password) => {
   let%Async result = ClientApi.User.Login.f(~email, ~password);
   Async.async(
     switch (result) {
-    | Belt.Result.Ok(token) =>
+    | Belt.Result.Ok({token}) =>
       ClientUtils.Token.set(token);
       ReasonReactRouter.push("/app/boards/");
     | Belt.Result.Error(msg) => setError(_ => Some(msg))

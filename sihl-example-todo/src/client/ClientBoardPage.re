@@ -202,7 +202,8 @@ module AddIssue = {
     Async.async(
       switch (result) {
       | Belt.Result.Ok(_) =>
-        // TODO dispatch(Succeed(boardId, title, description));
+        // TODO
+        // dispatch(Succeed(boardId, title, description));
         ()
       | Belt.Result.Error(msg) =>
         setError(_ => Some("Failed create issue: " ++ msg));
@@ -310,7 +311,6 @@ let reducer = (state, action) =>
 [@react.component]
 let make = () => {
   let (state, dispatch) = React.useReducer(reducer, None);
-
   let url = ReasonReactRouter.useUrl();
   <Layout>
     <div className="columns">
