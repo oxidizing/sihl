@@ -490,7 +490,8 @@ type action =
   | StartAddIssue(string, string, option(string))
   | SucceedAddIssue(string, string, string, option(string))
   | FailAddIssue(string)
-  | CompleteIssue(string)
+  | StartCompleteIssue(string)
+  | FailCompleteIssue(string, string)
   | Set(list(Model.Issue.t));
 
 module Issue = {
@@ -662,14 +663,20 @@ module Boards = {
     | (None, FailAddIssue(_)) => None
     | (Some(issues), FailAddIssue(issueId)) =>
       Some(Belt.List.keep(issues, issue => issue.id !== issueId))
-    | (Some(issues), CompleteIssue(issueId)) =>
+    | (Some(issues), StartCompleteIssue(issueId)) =>
       Some(
         Belt.List.map(issues, issue =>
           issue.id === issueId ? complete(issue) : issue
         ),
       )
+    | (Some(issues), FailCompleteIssue(issueId, status)) =>
+      Some(
+        Belt.List.map(issues, issue =>
+          issue.id === issueId ? setStatus(issue, status) : issue
+        ),
+      )
     | (_, Set(issues)) => Some(issues)
-    | (None, CompleteIssue(issueId)) =>
+    | (None, StartCompleteIssue(issueId) | FailCompleteIssue(issueId, _)) =>
       Js.log(
         "How on earth were you able to call that action without issues? issueId="
         ++ issueId,

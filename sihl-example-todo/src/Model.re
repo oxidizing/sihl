@@ -28,6 +28,7 @@ module Issue = {
   };
 
   let complete = issue => {...issue, status: "completed"};
+  let setStatus = (issue, status) => {...issue, status};
 };
 
 module Board = {
