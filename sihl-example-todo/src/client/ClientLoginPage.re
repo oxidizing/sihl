@@ -1,17 +1,14 @@
 module Async = Sihl.Core.Async;
 module Layout = ClientLayout;
 
-[@decco]
-type t = {token: string};
-
 let login = (setError, ~email, ~password) => {
   let email = email->Belt.Option.getWithDefault("");
   let password = password->Belt.Option.getWithDefault("");
   let%Async result = ClientApi.User.Login.f(~email, ~password);
   Async.async(
     switch (result) {
-    | Belt.Result.Ok({token}) =>
-      ClientUtils.Token.set(token);
+    | Belt.Result.Ok({token, userId}) =>
+      ClientSession.store(~token, ~userId);
       ReasonReactRouter.push("/app/boards/");
     | Belt.Result.Error(msg) => setError(_ => Some(msg))
     },

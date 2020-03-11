@@ -69,7 +69,10 @@ module Login = {
   };
 
   [@decco]
-  type body_out = {token: string};
+  type body_out = {
+    token: string,
+    userId: string,
+  };
 
   let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
@@ -80,9 +83,11 @@ module Login = {
         open! Sihl.Core.Http.Endpoint;
         let%Async {email, password, cookie} = req.requireQuery(query_decode);
         let%Async (_, token) = Service.User.login(conn, ~email, ~password);
+        let%Async user = Service.User.authenticate(conn, token.token);
         switch (cookie) {
         | None =>
-          let response = {token: token.token} |> body_out_encode;
+          let response =
+            {token: token.token, userId: user.id} |> body_out_encode;
           Async.async @@ OkJson(response);
         | Some(_) =>
           let headers =

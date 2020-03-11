@@ -75,15 +75,15 @@ module Board = {
     type t = list(Model.Board.t);
 
     let f = () => {
-      let%Async user = ClientUtils.User.get();
+      let ClientSession.{userId} = ClientSession.get();
 
       Fetch.fetchWithInit(
-        ClientConfig.baseUrl() ++ "/issues/users/" ++ user.id ++ "/boards/",
+        ClientConfig.baseUrl() ++ "/issues/users/" ++ userId ++ "/boards/",
         Fetch.RequestInit.make(
           ~method_=Get,
           ~headers=
             Fetch.HeadersInit.make({
-              "authorization": "Bearer " ++ ClientUtils.Token.get(),
+              "authorization": "Bearer " ++ ClientSession.get().token,
             }),
           (),
         ),
@@ -102,7 +102,7 @@ module Board = {
           ~body=Fetch.BodyInit.make(body),
           ~headers=
             Fetch.HeadersInit.make({
-              "authorization": "Bearer " ++ ClientUtils.Token.get(),
+              "authorization": "Bearer " ++ ClientSession.get().token,
             }),
           (),
         ),
@@ -122,7 +122,7 @@ module Board = {
           ~method_=Get,
           ~headers=
             Fetch.HeadersInit.make({
-              "authorization": "Bearer " ++ ClientUtils.Token.get(),
+              "authorization": "Bearer " ++ ClientSession.get().token,
             }),
           (),
         ),
@@ -141,7 +141,7 @@ module Issue = {
           ~method_=Post,
           ~headers=
             Fetch.HeadersInit.make({
-              "authorization": ClientUtils.Token.get(),
+              "authorization": ClientSession.get().token,
             }),
           (),
         ),
@@ -170,7 +170,7 @@ module Issue = {
           ~body=Fetch.BodyInit.make(body),
           ~headers=
             Fetch.HeadersInit.make({
-              "authorization": ClientUtils.Token.get(),
+              "authorization": ClientSession.get().token,
             }),
           (),
         ),
@@ -183,7 +183,10 @@ module Issue = {
 module User = {
   module Login = {
     [@decco]
-    type t = {token: string};
+    type t = {
+      token: string,
+      userId: string,
+    };
 
     let f = (~email, ~password) => {
       Fetch.fetch(
