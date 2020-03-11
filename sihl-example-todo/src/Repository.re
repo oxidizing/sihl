@@ -38,6 +38,39 @@ ON issues_boards.id = issues_issues.board;
         );
   };
 
+  module GetAllByBoard = {
+    let stmt = "
+SELECT
+  uuid_of(issues_issues.uuid) as id,
+  issues_issues.title as title,
+  issues_issues.description as description,
+  uuid_of(issues_boards.uuid) as board,
+  uuid_of(users_users.uuid) as assignee,
+  issues_issues.status as status
+FROM issues_issues
+LEFT JOIN users_users
+ON users_users.id = issues_issues.assignee
+LEFT JOIN issues_boards
+ON issues_boards.id = issues_issues.board
+WHERE issues_boards.uuid = UNHEX(REPLACE(?, '-', ''));
+";
+
+    [@decco]
+    type params = string;
+
+    let query:
+      (Sihl.Core.Db.Connection.t, ~boardId: string) =>
+      Js.Promise.t(Sihl.Core.Db.Repo.Result.t(Model.Issue.t)) =
+      (connection, ~boardId) =>
+        Sihl.Core.Db.Repo.getMany(
+          ~connection,
+          ~stmt,
+          ~decode=Model.Issue.t_decode,
+          ~parameters=params_encode(boardId),
+          (),
+        );
+  };
+
   module GetAllByUser = {
     let stmt = "
 SELECT
@@ -50,7 +83,7 @@ SELECT
 FROM issues_issues
 LEFT JOIN users_users
 ON users_users.id = issues_issues.assignee
-LEFT JOIN issues.boards
+LEFT JOIN issues_boards
 ON issues_boards.id = issues_issues.board
 WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''));
 ";

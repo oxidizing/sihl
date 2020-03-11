@@ -97,6 +97,46 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User fetches issues of board", () => {
+    let%Async (user, {token}) =
+      Sihl.Core.Main.Manager.seed(
+        Sihl.Users.Seeds.loggedInUser("foobar@example.com", "123"),
+      );
+    let%Async board1 =
+      Sihl.Core.Main.Manager.seed(Seeds.board(~user, ~title="board 1"));
+    let%Async board2 =
+      Sihl.Core.Main.Manager.seed(Seeds.board(~user, ~title="board 2"));
+    let%Async _ =
+      Sihl.Core.Main.Manager.seed(
+        Seeds.issue(
+          ~board=board1.id,
+          ~user,
+          ~title="issue",
+          ~description=None,
+        ),
+      );
+    let%Async issuesResponse =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/issues/boards/" ++ board2.id ++ "/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Get,
+          ~headers=
+            Fetch.HeadersInit.make({"authorization": "Bearer " ++ token}),
+          (),
+        ),
+      );
+    let%Async issueJson = Fetch.Response.json(issuesResponse);
+
+    let issues =
+      issueJson
+      |> Routes.GetIssuesByBoard.body_out_decode
+      |> Belt.Result.getExn
+      |> Belt.List.toArray;
+    issues |> expect |> toHaveLength(0) |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("User commpletes issue", () => {
     let%Async (user, {token}) =
       Sihl.Core.Main.Manager.seed(

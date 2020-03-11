@@ -2,7 +2,7 @@ module Async = Sihl.Core.Async;
 
 module GetUsers = {
   [@decco]
-  type users = list(Model.User.t);
+  type body_out = list(Model.User.t);
 
   let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
@@ -14,7 +14,8 @@ module GetUsers = {
         let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async users = Service.User.getAll((conn, user));
-        let response = users |> Sihl.Core.Db.Repo.Result.rows |> users_encode;
+        let response =
+          users |> Sihl.Core.Db.Repo.Result.rows |> body_out_encode;
         Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
       },
     });
@@ -68,7 +69,7 @@ module Login = {
   };
 
   [@decco]
-  type response_body = {token: string};
+  type body_out = {token: string};
 
   let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
@@ -81,7 +82,7 @@ module Login = {
         let%Async (_, token) = Service.User.login(conn, ~email, ~password);
         switch (cookie) {
         | None =>
-          let response = {token: token.token} |> response_body_encode;
+          let response = {token: token.token} |> body_out_encode;
           Async.async @@ OkJson(response);
         | Some(_) =>
           let headers =
@@ -153,7 +154,7 @@ module ConfirmEmail = {
   type query = {token: string};
 
   [@decco]
-  type response_body = {message: string};
+  type body_out = {message: string};
 
   let endpoint = (root, database) =>
     Sihl.Core.Http.dbEndpoint({
@@ -164,7 +165,7 @@ module ConfirmEmail = {
         open! Sihl.Core.Http.Endpoint;
         let%Async {token} = req.requireQuery(query_decode);
         let%Async _ = Service.User.confirmEmail(conn, ~token);
-        let response = {message: "Email confirmed"} |> response_body_encode;
+        let response = {message: "Email confirmed"} |> body_out_encode;
         Async.async @@ OkJson(response);
       },
     });

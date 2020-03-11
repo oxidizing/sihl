@@ -29,6 +29,7 @@ module Endpoint = {
     | OkJson(Js.Json.t)
     | OkHeaders(Js.Dict.t(string))
     | OkBuffer(Node.Buffer.t)
+    | OkFile(string)
     | StatusString(Status.t, string)
     | StatusJson(Status.t, Js.Json.t)
     | TemporaryRedirect(string)
@@ -273,6 +274,13 @@ module Endpoint = {
     | OkBuffer(buff) =>
       async @@
       Express.Response.(res |> status(Status.Ok) |> sendBuffer(buff))
+    | OkFile(path) =>
+      async @@
+      Express.Response.(
+        res
+        |> status(Status.Ok)
+        |> sendFile(path, {"root": Node.Process.cwd()})
+      )
     | StatusString(stat, msg) =>
       async @@
       Express.Response.(

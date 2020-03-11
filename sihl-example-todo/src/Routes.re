@@ -123,6 +123,36 @@ module CompleteIssue = {
     });
 };
 
+module Client = {
+  module Asset = {
+    [@decco]
+    type params = {asset: string};
+
+    let endpoint = () =>
+      Sihl.Core.Http.endpoint({
+        verb: GET,
+        path: {j|/asset/:asset|j},
+        handler: req => {
+          open! Sihl.Core.Http.Endpoint;
+          let%Async {asset} = req.requireParams(params_decode);
+          Async.async @@ Sihl.Core.Http.Endpoint.OkFile("dist/" ++ asset);
+        },
+      });
+  };
+
+  module App = {
+    let endpoint = () =>
+      Sihl.Core.Http.endpoint({
+        verb: GET,
+        path: {j|(/app|/app/*)|j},
+        handler: _ => {
+          open! Sihl.Core.Http.Endpoint;
+          Async.async @@ Sihl.Core.Http.Endpoint.OkFile("dist/index.html");
+        },
+      });
+  };
+};
+
 module AdminUi = {
   module Issues = {
     let endpoint = (root, database) =>
