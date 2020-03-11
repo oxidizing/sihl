@@ -368,7 +368,7 @@ module Login = {
   };
 };
 
-module BoardSelection = {
+module SelectBoard = {
   let selectedBoard = () => {
     let url = ReasonReactRouter.useUrl();
     switch (url.path) {
@@ -553,19 +553,92 @@ module Board = {
   };
 };
 
+module AddIssue = {
+  [@react.component]
+  let make = (~boardId) => {
+    let (title, setTitle) = React.useState(_ => "");
+    let (description, setDescription) = React.useState(_ => "");
+    let (_, setError) =
+      React.useContext(ClientContextProvider.Error.context);
+
+    let addIssue = (~boardId, ~title, ~description) => {
+      let body = {j|
+       {
+         "board": "$(boardId)",
+         "title": "$(title)",
+         "description": "$(description)",
+       }
+       |j};
+      Fetch.fetchWithInit(
+        ClientConfig.baseUrl() ++ "/issues/issues/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      )
+      ->ClientUtils.handleResponse(
+          _ => Async.async(),
+          msg =>
+            Async.async(setError(_ => Some("Failed create issue: " ++ msg))),
+        );
+    };
+
+    <div style={ReactDOMRe.Style.make(~marginBottom="2em", ())}>
+      <div className="field">
+        <div className="control">
+          <input
+            onChange={event => {
+              let value = ReactEvent.Form.target(event)##value;
+              setTitle(_ => value);
+            }}
+            value=title
+            className="input"
+            type_="text"
+            placeholder="Issue title"
+          />
+        </div>
+      </div>
+      <div className="field">
+        <div className="control">
+          <textarea
+            onChange={event => {
+              let value = ReactEvent.Form.target(event)##value;
+              setDescription(_ => value);
+            }}
+            value=description
+            className="textarea"
+            placeholder="Description"
+          />
+        </div>
+      </div>
+      <button
+        className="button is-info"
+        onClick={event => {
+          ReactEvent.Mouse.preventDefault(event);
+          let _ = addIssue(~boardId, ~title, ~description);
+          ();
+        }}>
+        {React.string("Add Issue")}
+      </button>
+    </div>;
+  };
+};
+
 module Boards = {
   [@react.component]
   let make = () => {
     let url = ReasonReactRouter.useUrl();
     <Layout>
       <div className="columns">
-        <div className="column is-one-third"> <BoardSelection /> </div>
-        <div className="column is-two-thirds">
+        <div className="column is-one-third"> <SelectBoard /> </div>
+        <div className="column is-one-third">
           <h2 className="title is-2"> {React.string("Issues")} </h2>
           {switch (url.path) {
            | ["app", "boards"] =>
              <span> {React.string("Please select a board")} </span>
-           | ["app", "boards", boardId] => <Board boardId />
+           | ["app", "boards", boardId] =>
+             <div> <AddIssue boardId /> <Board boardId /> </div>
            | _ => <Login />
            }}
         </div>
@@ -581,7 +654,7 @@ module Route = {
     switch (url.path) {
     | ["app", "login"] => <Login />
     | ["app", "register"] => <Register />
-    | ["app", "boards", ...rest] => <Boards />
+    | ["app", "boards", ..._] => <Boards />
     | _ => <Login />
     };
   };
