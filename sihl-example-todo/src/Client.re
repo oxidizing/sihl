@@ -496,8 +496,16 @@ type action =
 
 module Issue = {
   [@react.component]
-  let make = (~issue: Model.Issue.t) =>
-    <div className="box"> <span> {React.string(issue.title)} </span> </div>;
+  let make = (~issue: Model.Issue.t) => {
+    <div className="box">
+      <h3 className="is-3 title"> {React.string(issue.title)} </h3>
+      {issue.description
+       ->Belt.Option.map(description =>
+           <span> {React.string(description)} </span>
+         )
+       ->Belt.Option.getWithDefault(React.null)}
+    </div>;
+  };
 };
 
 module Issues = {
@@ -570,11 +578,15 @@ module AddIssue = {
 
     let addIssue = (~boardId, ~title, ~description) => {
       dispatch(StartAddIssue(boardId, title, description));
+      let description =
+        description
+        ->Belt.Option.map(d => "\"" ++ d ++ "\"")
+        ->Belt.Option.getWithDefault("null");
       let body = {j|
        {
          "board": "$(boardId)",
          "title": "$(title)",
-         "description": "$(description)"
+         "description": $(description)
        }
        |j};
       Fetch.fetchWithInit(
