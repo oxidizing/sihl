@@ -99,7 +99,7 @@ module SelectBoard = {
 };
 
 module Issue = {
-  let complete = (~issueId, ~currentStatus, setError, dispatch) => {
+  let complete = (setError, dispatch, ~issueId, ~currentStatus) => {
     {
       dispatch(StartCompleteIssue(issueId));
       let%Async result = ClientApi.Issue.Complete.f(~issueId);
@@ -119,6 +119,7 @@ module Issue = {
   let make = (~issue: Model.Issue.t, ~dispatch) => {
     let (_, setError) =
       React.useContext(ClientContextProvider.Error.context);
+    let complete = complete(setError, dispatch);
 
     let statusBadge =
       issue.status === "todo"
@@ -141,12 +142,7 @@ module Issue = {
          ? <button
              className="button is-small is-info is-pulled-right"
              onClick={_ =>
-               complete(
-                 ~issueId=issue.id,
-                 ~currentStatus=issue.status,
-                 setError,
-                 dispatch,
-               )
+               complete(~issueId=issue.id, ~currentStatus=issue.status)
              }>
              {React.string("Complete")}
            </button>

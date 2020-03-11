@@ -7,27 +7,15 @@ type t = {token: string};
 let login = (setError, ~email, ~password) => {
   let email = email->Belt.Option.getWithDefault("");
   let password = password->Belt.Option.getWithDefault("");
-  Fetch.fetch(
-    ClientConfig.baseUrl()
-    ++ "/users/login?email="
-    ++ email
-    ++ "&password="
-    ++ password,
-  )
-  ->ClientUtils.handleResponse(
-      response => {
-        switch (t_decode(response)) {
-        | Belt.Result.Ok({token}) =>
-          ClientUtils.Token.set(token);
-          Async.async(ReasonReactRouter.push("/app/boards/"));
-        | Belt.Result.Error(error) =>
-          Async.async(
-            setError(_ => Some(Sihl.Core.Error.Decco.stringify(error))),
-          )
-        }
-      },
-      msg => Async.async(setError(_ => Some("Failed to login: " ++ msg))),
-    );
+  let%Async result = ClientApi.User.Login.f(~email, ~password);
+  Async.async(
+    switch (result) {
+    | Belt.Result.Ok(token) =>
+      ClientUtils.Token.set(token);
+      ReasonReactRouter.push("/app/boards/");
+    | Belt.Result.Error(msg) => setError(_ => Some(msg))
+    },
+  );
 };
 
 [@react.component]
@@ -40,6 +28,7 @@ let make = () => {
     | _ => false
     };
   let (_, setError) = React.useContext(ClientContextProvider.Error.context);
+  let login = login(setError);
 
   <Layout>
     <div className="columns">
@@ -90,7 +79,7 @@ let make = () => {
               className="button is-link"
               disabled={!canSubmit}
               onClick={_ => {
-                let _ = login(setError, ~email, ~password);
+                let _ = login(~email, ~password);
                 ();
               }}>
               {React.string("Login")}

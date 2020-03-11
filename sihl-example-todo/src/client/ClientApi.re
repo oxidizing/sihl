@@ -132,3 +132,56 @@ module Issue = {
     };
   };
 };
+
+module User = {
+  module Login = {
+    [@decco]
+    type t = {token: string};
+
+    let f = (~email, ~password) => {
+      let%Async response =
+        Fetch.fetch(
+          ClientConfig.baseUrl()
+          ++ "/users/login?email="
+          ++ email
+          ++ "&password="
+          ++ password,
+        );
+      let%Async json = Fetch.Response.json(response);
+      Async.async(
+        switch (t_decode(json)) {
+        | Belt.Result.Ok({token}) => Belt.Result.Ok(token)
+        | Belt.Result.Error(error) =>
+          Belt.Result.Error(Sihl.Core.Error.Decco.stringify(error))
+        },
+      );
+    };
+  };
+
+  module Register = {
+    [@decco]
+    let f = (~username, ~givenName, ~familyName, ~email, ~password) => {
+      let body = {j|
+       {
+         "email": "$(email)",
+         "username": "$(username)",
+         "password": "$(password)",
+         "givenName": "$(givenName)",
+         "familyName": "$(familyName)"
+       }
+       |j};
+
+      let%Async _ =
+        Fetch.fetchWithInit(
+          ClientConfig.baseUrl() ++ "/users/register/",
+          Fetch.RequestInit.make(
+            ~method_=Post,
+            ~body=Fetch.BodyInit.make(body),
+            (),
+          ),
+        );
+      // TODO return added issue
+      Async.async(Belt.Result.Ok());
+    };
+  };
+};
