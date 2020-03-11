@@ -1,7 +1,7 @@
 module LoginRegister = {
   [@react.component]
   let make = () => {
-    <div>
+    <div className="is-pulled-right">
       <div className="field is-grouped">
         <div className="control">
           <button
@@ -36,8 +36,7 @@ module Logout = {
       onClick={event => {
         let _ = ReactEvent.Mouse.preventDefault(event);
         ReasonReactRouter.push("/app/login");
-        ClientUtils.Token.delete();
-        ClientUtils.User.currentUser := None;
+        ClientSession.end_();
       }}>
       {React.string("Logout")}
     </button>;
@@ -59,7 +58,7 @@ let make = (~children) => {
             </div>
           </div>
           <div className="column is-one-quarter">
-            {ClientUtils.User.isLoggedIn() ? <Logout /> : <LoginRegister />}
+            {ClientSession.has() ? <Logout /> : <LoginRegister />}
           </div>
         </div>
       </div>

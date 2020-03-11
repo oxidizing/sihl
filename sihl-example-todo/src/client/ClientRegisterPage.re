@@ -8,33 +8,23 @@ let register =
   let familyName = familyName->Belt.Option.getWithDefault("User");
   let email = email->Belt.Option.getWithDefault("test-user@example.com");
   let password = password->Belt.Option.getWithDefault("123");
-  let body = {j|
-       {
-         "email": "$(email)",
-         "username": "$(username)",
-         "password": "$(password)",
-         "givenName": "$(givenName)",
-         "familyName": "$(familyName)"
-       }
-       |j};
-
-  Fetch.fetchWithInit(
-    ClientConfig.baseUrl() ++ "/users/register/",
-    Fetch.RequestInit.make(
-      ~method_=Post,
-      ~body=Fetch.BodyInit.make(body),
-      (),
-    ),
-  )
-  ->ClientUtils.handleResponse(
-      _ => {
-        ReasonReactRouter.push("/app/login");
-        Async.async(
-          setMsg(_ => Some("Registration successful, you can now log in!")),
-        );
-      },
-      msg => Async.async(setError(_ => Some("Failed to register: " ++ msg))),
+  let%Async result =
+    ClientApi.User.Register.f(
+      ~username,
+      ~givenName,
+      ~familyName,
+      ~email,
+      ~password,
     );
+  Async.async(
+    switch (result) {
+    | Belt.Result.Ok(_) =>
+      ReasonReactRouter.push("/app/login");
+      setMsg(_ => Some("Registration successful, you can now log in!"));
+    | Belt.Result.Error(msg) =>
+      setError(_ => Some("Failed to register: " ++ msg))
+    },
+  );
 };
 
 [@react.component]
