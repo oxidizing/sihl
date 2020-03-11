@@ -486,6 +486,13 @@ module SelectBoard = {
   };
 };
 
+type action =
+  | StartAddIssue(string, string, option(string))
+  | SucceedAddIssue(string, string, string, option(string))
+  | FailAddIssue(string)
+  | CompleteIssue(string)
+  | Set(list(Model.Issue.t));
+
 module Issue = {
   [@react.component]
   let make = (~issue: Model.Issue.t) =>
@@ -511,8 +518,7 @@ module Board = {
   type t = list(Model.Issue.t);
 
   [@react.component]
-  let make = (~boardId) => {
-    let (issues, setIssues) = React.useState(_ => None);
+  let make = (~boardId, ~issues, ~dispatch) => {
     React.useEffect1(
       () => {
         {
@@ -534,7 +540,7 @@ module Board = {
           let%Async json = Fetch.Response.json(response);
           Async.async(
             switch (t_decode(json)) {
-            | Belt.Result.Ok(issues) => setIssues(_ => Some(issues))
+            | Belt.Result.Ok(issues) => dispatch(Set(issues))
             | Belt.Result.Error(msg) =>
               Js.log(Sihl.Core.Error.Decco.stringify(msg))
             },
@@ -555,18 +561,19 @@ module Board = {
 
 module AddIssue = {
   [@react.component]
-  let make = (~boardId) => {
+  let make = (~boardId, ~dispatch) => {
     let (title, setTitle) = React.useState(_ => "");
-    let (description, setDescription) = React.useState(_ => "");
+    let (description, setDescription) = React.useState(_ => None);
     let (_, setError) =
       React.useContext(ClientContextProvider.Error.context);
 
     let addIssue = (~boardId, ~title, ~description) => {
+      dispatch(StartAddIssue(boardId, title, description));
       let body = {j|
        {
          "board": "$(boardId)",
          "title": "$(title)",
-         "description": "$(description)",
+         "description": "$(description)"
        }
        |j};
       Fetch.fetchWithInit(
@@ -574,6 +581,10 @@ module AddIssue = {
         Fetch.RequestInit.make(
           ~method_=Post,
           ~body=Fetch.BodyInit.make(body),
+          ~headers=
+            Fetch.HeadersInit.make({
+              "authorization": ClientUtils.Token.get(),
+            }),
           (),
         ),
       )
@@ -606,7 +617,7 @@ module AddIssue = {
               let value = ReactEvent.Form.target(event)##value;
               setDescription(_ => value);
             }}
-            value=description
+            value={description->Belt.Option.getWithDefault("")}
             className="textarea"
             placeholder="Description"
           />
@@ -626,8 +637,50 @@ module AddIssue = {
 };
 
 module Boards = {
+  open Model.Issue;
+  let reducer = (state, action) =>
+    switch (state, action) {
+    | (Some(issues), StartAddIssue(boardId, title, description)) =>
+      Some(
+        Belt.List.concat(
+          issues,
+          [make(~title, ~description, ~board=boardId)],
+        ),
+      )
+    | (None, StartAddIssue(boardId, title, description)) =>
+      Some([Model.Issue.make(~title, ~description, ~board=boardId)])
+    | (Some(issues), SucceedAddIssue(issueId, boardId, title, description)) =>
+      let issues = Belt.List.keep(issues, issue => issue.id !== issueId);
+      Some(
+        Belt.List.concat(
+          issues,
+          [makeId(~id=issueId, ~title, ~description, ~board=boardId)],
+        ),
+      );
+    | (None, SucceedAddIssue(issueId, boardId, title, description)) =>
+      Some([makeId(~id=issueId, ~board=boardId, ~title, ~description)])
+    | (None, FailAddIssue(_)) => None
+    | (Some(issues), FailAddIssue(issueId)) =>
+      Some(Belt.List.keep(issues, issue => issue.id !== issueId))
+    | (Some(issues), CompleteIssue(issueId)) =>
+      Some(
+        Belt.List.map(issues, issue =>
+          issue.id === issueId ? complete(issue) : issue
+        ),
+      )
+    | (_, Set(issues)) => Some(issues)
+    | (None, CompleteIssue(issueId)) =>
+      Js.log(
+        "How on earth were you able to call that action without issues? issueId="
+        ++ issueId,
+      );
+      None;
+    };
+
   [@react.component]
   let make = () => {
+    let (state, dispatch) = React.useReducer(reducer, None);
+
     let url = ReasonReactRouter.useUrl();
     <Layout>
       <div className="columns">
@@ -638,7 +691,10 @@ module Boards = {
            | ["app", "boards"] =>
              <span> {React.string("Please select a board")} </span>
            | ["app", "boards", boardId] =>
-             <div> <AddIssue boardId /> <Board boardId /> </div>
+             <div>
+               <AddIssue dispatch boardId />
+               <Board issues=state dispatch boardId />
+             </div>
            | _ => <Login />
            }}
         </div>

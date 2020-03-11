@@ -18,6 +18,15 @@ module Issue = {
     status: "todo",
   };
 
+  let makeId = (~id, ~title, ~description, ~board) => {
+    id,
+    title,
+    description,
+    board,
+    assignee: None,
+    status: "todo",
+  };
+
   let complete = issue => {...issue, status: "completed"};
 };
 

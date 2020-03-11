@@ -101,6 +101,28 @@ module AddIssue = {
     });
 };
 
+module CompleteIssue = {
+  [@decco]
+  type params = {issueId: string};
+  [@decco]
+  type body_out = {message: string};
+
+  let endpoint = (root, database) =>
+    Sihl.Core.Http.dbEndpoint({
+      database,
+      verb: POST,
+      path: {j|/$root/issues/:issueId/complete/|j},
+      handler: (conn, req) => {
+        open! Sihl.Core.Http.Endpoint;
+        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        let%Async user = Sihl.Users.User.authenticate(conn, token);
+        let%Async {issueId} = req.requireParams(params_decode);
+        let%Async _ = Service.Issue.complete((conn, user), ~issueId);
+        Async.async @@ OkJson(body_out_encode({message: "ok"}));
+      },
+    });
+};
+
 module Client = {
   module Asset = {
     [@decco]
@@ -129,28 +151,6 @@ module Client = {
         },
       });
   };
-};
-
-module CompleteIssue = {
-  [@decco]
-  type params = {issueId: string};
-  [@decco]
-  type body_out = {message: string};
-
-  let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
-      database,
-      verb: POST,
-      path: {j|/$root/issues/:issueId/complete/|j},
-      handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
-        let%Async user = Sihl.Users.User.authenticate(conn, token);
-        let%Async {issueId} = req.requireParams(params_decode);
-        let%Async _ = Service.Issue.complete((conn, user), ~issueId);
-        Async.async @@ OkJson(body_out_encode({message: "ok"}));
-      },
-    });
 };
 
 module AdminUi = {
