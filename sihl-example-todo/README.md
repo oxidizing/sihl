@@ -8,7 +8,7 @@ Start a local MariaDB instance. You can you `docker-compose` for that.
 
 Run `yarn test` to run all integration tests.
 
-Run `yarn start:server` to start the web server. The admin UI can be accessed at `http://localhost:3000/admin/login/`.
+Run `yarn sihl start` to start the web server. The admin UI can be accessed at `http://localhost:3000/admin/login/`.
 
 ## Tutorial
 

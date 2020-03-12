@@ -80,7 +80,7 @@ module Manager = {
     };
     let app = App.startApps(apps);
     state := Some(app);
-    App.runMigrations(app);
+    App.runMigrations(app)->Async.mapAsync(_ => app);
   };
 
   let stop = () => {
@@ -118,6 +118,55 @@ module Manager = {
     | _ =>
       SihlCoreLog.warn("Can not clean because app was not started", ());
       raise(InvalidState("Can not clean because app was not started"));
+    };
+  };
+};
+
+module Cli = {
+  open! SihlCoreCli;
+  let version = {
+    name: "version",
+    description: "version",
+    f: (_, args, description) => {
+      switch (args) {
+      | ["version", ..._] => Async.async(Js.log("Sihl v0.0.1"))
+      | _ => Async.async(Js.log("Usage: sihl " ++ description))
+      };
+    },
+  };
+
+  let start = apps => {
+    name: "start",
+    description: "start",
+    f: (_, args, description) => {
+      switch (args) {
+      | ["start", ..._] => Manager.startApps(apps)->Async.mapAsync(_ => ())
+      | _ => Async.async(Js.log("Usage: " ++ description))
+      };
+    },
+  };
+
+  let register = (commands: list(SihlCoreCli.command), apps) => {
+    let defaultCommands = [version, start(apps)];
+    commands
+    ->Belt.List.concat(defaultCommands)
+    ->Belt.List.map(command => (command.name, command))
+    ->Js.Dict.fromList;
+  };
+
+  let execute = (apps: list(App.t), args) => {
+    let commands =
+      apps
+      ->Belt.List.map(app => app.commands)
+      ->Belt.List.toArray
+      ->Belt.List.concatMany
+      ->register(apps);
+    let args = SihlCoreCli.trimArgs(args, "sihl");
+    let commandName = args->Belt.List.head->Belt.Option.getExn;
+    switch (SihlCoreCli.getCommand(commands, commandName)) {
+    | exception (SihlCoreCli.InvalidCommandException(msg)) =>
+      Async.async(Js.log(msg))
+    | command => SihlCoreCli.runCommand(command, args)
     };
   };
 };

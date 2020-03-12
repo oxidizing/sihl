@@ -24,19 +24,6 @@ type command = {
   f: (SihlCoreDb.Connection.t, list(string), string) => Js.Promise.t(unit),
 };
 
-module Command = {
-  let version: command = {
-    name: "version",
-    description: "version",
-    f: (_, args, description) => {
-      switch (args) {
-      | ["version", ..._] => Async.async(Js.log("Sihl v0.0.1"))
-      | _ => Async.async(Js.log("Usage: sihl " ++ description))
-      };
-    },
-  };
-};
-
 let runCommand = (command, args) => {
   let db = SihlCoreDb.Database.connectWithCfg();
   let%Async _ =
@@ -64,21 +51,5 @@ let getCommand = (commands, commandName) => {
     printCommands(commands);
     raise(InvalidCommandException(msg));
   | Some(command) => command
-  };
-};
-
-let registerCommands = commands => {
-  commands
-  ->Belt.List.concat([Command.version])
-  ->Belt.List.map(command => (command.name, command))
-  ->Js.Dict.fromList;
-};
-
-let execute = (commands, args) => {
-  let args = trimArgs(args, "sihl");
-  let commandName = args->Belt.List.head->Belt.Option.getExn;
-  switch (getCommand(commands, commandName)) {
-  | exception (InvalidCommandException(msg)) => Async.async(Js.log(msg))
-  | command => runCommand(command, args)
   };
 };
