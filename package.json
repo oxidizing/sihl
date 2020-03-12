@@ -1,4 +1,4 @@
 {
   "private": true,
-  "workspaces": ["sihl-core", "sihl-ql", "sihl-users", "sihl-example-issues"]
+  "workspaces": ["@sihl/core", "@sihl/ql", "@sihl/users"]
 }
