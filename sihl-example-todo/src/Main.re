@@ -9,7 +9,6 @@ let adminUiPages = [
   ),
 ];
 
-Sihl.Core.Main.Manager.startApps([
-  Sihl.Users.App.app(adminUiPages),
-  App.app(),
-]);
+let apps = [Sihl.Users.App.app(adminUiPages), App.app()];
+
+Sihl.Core.Main.Cli.execute(apps, Node.Process.argv);
