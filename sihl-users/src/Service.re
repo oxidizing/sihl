@@ -249,6 +249,10 @@ module User = {
   let createAdmin =
       (conn, ~email, ~username, ~givenName, ~familyName, ~password) => {
     open! Sihl.Core.Http.Endpoint;
+    let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+    if (Belt.Result.isOk(user)) {
+      abort @@ BadRequest("Email already taken");
+    };
     let user =
       Model.User.make(
         ~email,
