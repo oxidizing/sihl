@@ -1,4 +1,4 @@
-# sihl-users
+# users
 
 This package contains a Sihl app that deals with user management.
 
