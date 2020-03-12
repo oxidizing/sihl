@@ -20,4 +20,5 @@ let app = () =>
     ~routes,
     ~clean=[Repository.Issue.Clean.run, Repository.Board.Clean.run],
     ~migration=Migrations.MariaDb.make(~namespace),
+    ~commands=[],
   );

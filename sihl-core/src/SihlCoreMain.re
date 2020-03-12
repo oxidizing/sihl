@@ -1,3 +1,5 @@
+module Async = SihlCoreAsync;
+
 exception InvalidConfiguration(string);
 
 module App = {
@@ -7,6 +9,7 @@ module App = {
     routes: SihlCoreDb.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
     clean: list(SihlCoreDb.Connection.t => Js.Promise.t(unit)),
     migration: SihlCoreDb.Migration.t,
+    commands: list(SihlCoreCli.command),
   };
 
   let names = apps =>
@@ -28,23 +31,16 @@ module App = {
 
   let db = instance => Instance.db(instance);
 
-  let make = (~name, ~namespace, ~routes, ~clean, ~migration) => {
+  let make = (~name, ~namespace, ~routes, ~clean, ~migration, ~commands) => {
     name,
     namespace,
     routes,
     clean,
     migration,
+    commands,
   };
 
-  let readConfig = () =>
-    SihlCoreConfig.Db.read()
-    |> SihlCoreError.Decco.stringifyResult
-    |> SihlCoreError.failIfError;
-
-  let connectDatabase = config => config |> SihlCoreDb.Database.make;
-
   let runMigrations = (instance: Instance.instance) => {
-    module Async = SihlCoreAsync;
     instance.apps
     ->Belt.List.map(app =>
         SihlCoreDb.Database.applyMigrations(app.migration, instance.db)
@@ -53,10 +49,8 @@ module App = {
   };
 
   let startApps = (apps: list(t)) => {
-    // TODO catch all exceptions (ServerExceptions might get thrown)
     SihlCoreLog.info("Starting apps: " ++ names(apps), ());
-    let config = readConfig();
-    let db = connectDatabase(config);
+    let db = SihlCoreDb.Database.connectWithCfg();
     SihlCoreLog.info("Mounting HTTP routes", ());
     let routes =
       apps
@@ -69,7 +63,6 @@ module App = {
   };
 
   let stop = (instance: Instance.instance) => {
-    module Async = SihlCoreAsync;
     SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
     let%Async _ = SihlCoreHttp.shutdown(instance.http);
     Async.async @@ SihlCoreDb.Database.end_(instance.db);
@@ -79,7 +72,6 @@ module App = {
 module Manager = {
   exception InvalidState(string);
 
-  module Async = SihlCoreAsync;
   let state = ref(None);
 
   let startApps = (apps: list(App.t)) => {

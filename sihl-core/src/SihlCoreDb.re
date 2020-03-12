@@ -439,6 +439,12 @@ module Database = {
       },
     );
   };
+
+  let connectWithCfg = () =>
+    SihlCoreConfig.Db.read()
+    |> SihlCoreError.Decco.stringifyResult
+    |> SihlCoreError.failIfError
+    |> make;
 };
 
 // taken from caqti make use of GADT

@@ -24,9 +24,21 @@ type command = {
   f: (SihlCoreDb.Connection.t, list(string), string) => Js.Promise.t(unit),
 };
 
+module Command = {
+  let version: command = {
+    name: "version",
+    description: "version",
+    f: (_, args, description) => {
+      switch (args) {
+      | ["version", ..._] => Async.async(Js.log("Sihl v0.0.1"))
+      | _ => Async.async(Js.log("Usage: sihl " ++ description))
+      };
+    },
+  };
+};
+
 let runCommand = (command, args) => {
-  let config = SihlCoreMain.App.readConfig();
-  let db = SihlCoreMain.App.connectDatabase(config);
+  let db = SihlCoreDb.Database.connectWithCfg();
   let%Async _ =
     SihlCoreDb.Database.withConnection(db, conn =>
       Async.catchAsync(command.f(conn, args, command.description), err =>
@@ -36,18 +48,12 @@ let runCommand = (command, args) => {
   Async.async(SihlCoreDb.Database.end_(db));
 };
 
-let registerCommands = commands => {
-  commands
-  ->Belt.List.map(command => (command.name, command))
-  ->Js.Dict.fromList;
-};
-
 let printCommands = commands => {
   Js.log("These are all supported commands:");
   Js.log("---------------------------------");
   commands
   ->Js.Dict.values
-  ->Belt.Array.forEach(command => Js.log(command.description));
+  ->Belt.Array.forEach(command => Js.log("sihl " ++ command.description));
   Js.log("---------------------------------");
 };
 
@@ -59,6 +65,13 @@ let getCommand = (commands, commandName) => {
     raise(InvalidCommandException(msg));
   | Some(command) => command
   };
+};
+
+let registerCommands = commands => {
+  commands
+  ->Belt.List.concat([Command.version])
+  ->Belt.List.map(command => (command.name, command))
+  ->Js.Dict.fromList;
 };
 
 let execute = (commands, args) => {
