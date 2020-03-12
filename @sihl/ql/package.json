@@ -1,6 +1,6 @@
 {
-  "name": "sihl-ql",
-  "version": "0.0.1",
+  "name": "@sihl/ql",
+  "version": "0.0.4",
   "scripts": {
     "test": "mocha --recursive test/**/*.js",
     "build": "bsb -make-world",

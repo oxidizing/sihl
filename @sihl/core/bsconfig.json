@@ -1,13 +1,10 @@
 {
-  "name": "sihl-users",
-  "version": "0.0.1",
-  "reason": {
-    "react-jsx": 3
-  },
+  "name": "@sihl/core",
+  "version": "0.0.4",
   "sources": [
     {
-      "dir" : "src",
-      "subdirs" : true
+      "dir": "src",
+      "subdirs": true
     },
     {
       "dir": "__tests__",
@@ -21,16 +18,15 @@
   },
   "suffix": ".bs.js",
   "bs-dependencies": [
-    "reason-react",
-    "bs-fetch",
-    "sihl-core",
-    "decco"
+    "bs-express",
+    "decco",
+    "@glennsl/bs-jest"
   ],
-  "bs-dev-dependencies": ["@glennsl/bs-jest"],
+  "bs-dev-dependencies": [],
   "warnings": {
     "error" : "+101"
   },
-  "ppx-flags": ["decco/ppx", "bs-let/ppx"],
+  "ppx-flags": [ "decco/ppx", "bs-let/ppx" ],
   "namespace": true,
   "refmt": 3
 }

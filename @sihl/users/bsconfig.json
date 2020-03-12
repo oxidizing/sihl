@@ -1,6 +1,6 @@
 {
-  "name": "sihl-example-issues",
-  "version": "0.0.1",
+  "name": "@sihl/users",
+  "version": "0.0.4",
   "reason": {
     "react-jsx": 3
   },
@@ -23,8 +23,7 @@
   "bs-dependencies": [
     "reason-react",
     "bs-fetch",
-    "sihl-core",
-    "sihl-users",
+    "@sihl/core",
     "decco"
   ],
   "bs-dev-dependencies": ["@glennsl/bs-jest"],

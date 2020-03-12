@@ -16,19 +16,13 @@ jobs:
       - run:
           name: sihl-core
           command: |
-            cd sihl-core
+            cd @sihl/core
             yarn build
             yarn test
       - run:
           name: sihl-users
           command: |
-            cd sihl-users
-            yarn build
-            yarn test
-      - run:
-          name: sihl-example-issues
-          command: |
-            cd sihl-example-issues
+            cd @sihl/users
             yarn build
             yarn test
 

@@ -2,6 +2,8 @@
 .merlin
 .bsb.lock
 npm-debug.log
-/lib/bs/
+/lib/
 /node_modules/
-yarn-error.log
+*.bs.js
+/__tests__/
+.vscode
