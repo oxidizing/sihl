@@ -15,4 +15,4 @@ Sihl is a high-level ReasonML web application framework that makes development f
 
 ## Getting started
 
-Check out the tutorial of the [example project](/sihl-example-todo/) for a quick introduction on how to use Sihl.
+Check out the tutorial of the [example project](/sihl-example-issues/) for a quick introduction on how to use Sihl.
