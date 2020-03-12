@@ -26,9 +26,9 @@ jobs:
             yarn build
             yarn test
       - run:
-          name: sihl-example-todo
+          name: sihl-example-issues
           command: |
-            cd sihl-example-todo
+            cd sihl-example-issues
             yarn build
             yarn test
 
