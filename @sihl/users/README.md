@@ -1,4 +1,4 @@
-# users
+# Users
 
 This package contains a Sihl app that deals with user management.
 
@@ -14,4 +14,4 @@ This package contains a Sihl app that deals with user management.
 
 ## Admin UI
 
-![User management](/sihl-users/images/screen.png)
+![User management](/@sihl/users/images/screen.png)
