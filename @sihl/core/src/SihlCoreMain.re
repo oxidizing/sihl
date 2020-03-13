@@ -57,8 +57,7 @@ module App = {
       ->Belt.List.map(app => app.routes(db))
       ->Belt.List.toArray
       ->Belt.List.concatMany;
-    let http = SihlCoreHttp.application(~port=3000, routes);
-    SihlCoreLog.info("App started on port 3000", ());
+    let http = SihlCoreHttp.application(routes);
     Instance.make(~http, ~db, ~apps);
   };
 
