@@ -9,6 +9,7 @@ SET collation_connection = 'utf8mb4_unicode_ci';
 CREATE
   FUNCTION uuid_of(uuid BINARY(16))
   RETURNS VARCHAR(36)
+  DETERMINISTIC
   RETURN LOWER(CONCAT(
   SUBSTR(HEX(uuid), 1, 8), '-',
   SUBSTR(HEX(uuid), 9, 4), '-',
