@@ -1,6 +1,6 @@
 {
   "name": "@sihl/users",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -23,7 +23,7 @@
     "compression": "^1.7.4",
     "decco": "^1.1.1",
     "reason-react": "^0.7.0",
-    "@sihl/core": "0.0.6"
+    "@sihl/core": "0.0.7"
   },
   "devDependencies": {
     "bs-platform": "^7.1.0",
