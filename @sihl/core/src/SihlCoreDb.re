@@ -370,6 +370,33 @@ dirty = VALUES(dirty)
 module Database = {
   include Mysql.Pool;
 
+  let parseUrl = url => {
+    switch (url |> Js.String.replace("mysql://", "") |> Js.String.split("@")) {
+    | [|credentials, hostAndDb|] =>
+      switch (Js.String.split(":", credentials)) {
+      | [|user, password|] =>
+        switch (Js.String.split(":", hostAndDb)) {
+        | [|host, portAndDb|] =>
+          switch (Js.String.split("/", portAndDb)) {
+          | [|port, db|] =>
+            Ok(SihlCoreConfig.Db.make(~user, ~password, ~host, ~port, ~db))
+          | _ => Error("Invalid database url provided")
+          }
+        | _ => Error("Invalid database url provided")
+        }
+      | _ => Error("Invalid database url provided")
+      }
+    | _ => Error("Invalid database url provided")
+    };
+  };
+
+  let parseUrlFromEnv = () => {
+    switch (SihlCoreConfig.Db.readDatabaseUrl()) {
+    | Ok({url}) => parseUrl(url)
+    | Error(error) => Error(SihlCoreError.Decco.stringify(error))
+    };
+  };
+
   let make = (config: SihlCoreConfig.Db.t) =>
     Mysql.pool({
       "user": config.dbUser,
@@ -440,11 +467,9 @@ module Database = {
     );
   };
 
-  let connectWithCfg = () =>
-    SihlCoreConfig.Db.read()
-    |> SihlCoreError.Decco.stringifyResult
-    |> SihlCoreError.failIfError
-    |> make;
+  let connectWithCfg = () => {
+    parseUrlFromEnv() |> SihlCoreError.failIfError |> make;
+  };
 };
 
 // taken from caqti make use of GADT

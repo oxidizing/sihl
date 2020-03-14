@@ -5,8 +5,8 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "start:server": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 node src/Main.bs.js",
-    "test": "DB_USER=root DB_HOST=localhost DB_PASSWORD=password DB_NAME=dev DB_PORT=3306 jest"
+    "start:server": "DATABASE_URL=mysql://root:password@localhost:3306/dev node src/Main.bs.js",
+    "test": "DATABASE_URL=mysql://root:password@localhost:3306/dev jest"
   },
   "keywords": [
     "BuckleScript"
