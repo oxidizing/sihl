@@ -379,14 +379,21 @@ module Database = {
         | [|host, portAndDb|] =>
           switch (Js.String.split("/", portAndDb)) {
           | [|port, db|] =>
-            Some(SihlCoreConfig.Db.make(~user, ~password, ~host, ~port, ~db))
-          | _ => None
+            Ok(SihlCoreConfig.Db.make(~user, ~password, ~host, ~port, ~db))
+          | _ => Error("Invalid database url provided")
           }
-        | _ => None
+        | _ => Error("Invalid database url provided")
         }
-      | _ => None
+      | _ => Error("Invalid database url provided")
       }
-    | _ => None
+    | _ => Error("Invalid database url provided")
+    };
+  };
+
+  let parseUrlFromEnv = () => {
+    switch (SihlCoreConfig.Db.readDatabaseUrl()) {
+    | Ok({url}) => parseUrl(url)
+    | Error(error) => Error(SihlCoreError.Decco.stringify(error))
     };
   };
 
@@ -460,11 +467,9 @@ module Database = {
     );
   };
 
-  let connectWithCfg = () =>
-    SihlCoreConfig.Db.read()
-    |> SihlCoreError.Decco.stringifyResult
-    |> SihlCoreError.failIfError
-    |> make;
+  let connectWithCfg = () => {
+    parseUrlFromEnv() |> SihlCoreError.failIfError |> make;
+  };
 };
 
 // taken from caqti make use of GADT

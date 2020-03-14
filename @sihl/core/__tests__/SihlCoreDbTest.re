@@ -39,10 +39,14 @@ describe("Migrations", () => {
 
 describe("Parses DATABASE_URL", () => {
   test("is empty with empty string", () => {
-    SihlCoreDb.Database.parseUrl("") |> expect |> toBe(None)
+    SihlCoreDb.Database.parseUrl("")
+    |> expect
+    |> toEqual(Error("Invalid database url provided"))
   });
   test("is empty with invalid url", () => {
-    SihlCoreDb.Database.parseUrl("sdfaadsf") |> expect |> toBe(None)
+    SihlCoreDb.Database.parseUrl("sdfaadsf")
+    |> expect
+    |> toEqual(Error("Invalid database url provided"))
   });
   test("returns config", () => {
     let config =
@@ -55,6 +59,6 @@ describe("Parses DATABASE_URL", () => {
       );
     SihlCoreDb.Database.parseUrl("mysql://username:password@host:port/db")
     |> expect
-    |> toEqual(Some(config));
+    |> toEqual(Ok(config));
   });
 });
