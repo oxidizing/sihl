@@ -25,12 +25,22 @@ module Db = {
   let read = () => {
     Env.get() |> t_decode;
   };
+
+  let make = (~user, ~host, ~db, ~password, ~port) => {
+    {
+      dbUser: user,
+      dbHost: host,
+      dbName: db,
+      dbPassword: password,
+      dbPort: port,
+      queueLimit: "300",
+      connectionLimit: "8",
+    };
+  };
 };
 
 // TODO get rid of decoded record approach and evaluate GADT vs string lookup
 // TODO provide configs for development, production, test
-
-let get = key => "";
 
 /* module TestingGround = { */
 /*   type backend = */

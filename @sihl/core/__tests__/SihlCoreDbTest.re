@@ -36,3 +36,25 @@ describe("Migrations", () => {
     |> toBe(2)
   });
 });
+
+describe("Parses DATABASE_URL", () => {
+  test("is empty with empty string", () => {
+    SihlCoreDb.Database.parseUrl("") |> expect |> toBe(None)
+  });
+  test("is empty with invalid url", () => {
+    SihlCoreDb.Database.parseUrl("sdfaadsf") |> expect |> toBe(None)
+  });
+  test("returns config", () => {
+    let config =
+      SihlCoreConfig.Db.make(
+        ~user="username",
+        ~password="password",
+        ~host="host",
+        ~port="port",
+        ~db="db",
+      );
+    SihlCoreDb.Database.parseUrl("mysql://username:password@host:port/db")
+    |> expect
+    |> toEqual(Some(config));
+  });
+});

@@ -370,6 +370,26 @@ dirty = VALUES(dirty)
 module Database = {
   include Mysql.Pool;
 
+  let parseUrl = url => {
+    switch (url |> Js.String.replace("mysql://", "") |> Js.String.split("@")) {
+    | [|credentials, hostAndDb|] =>
+      switch (Js.String.split(":", credentials)) {
+      | [|user, password|] =>
+        switch (Js.String.split(":", hostAndDb)) {
+        | [|host, portAndDb|] =>
+          switch (Js.String.split("/", portAndDb)) {
+          | [|port, db|] =>
+            Some(SihlCoreConfig.Db.make(~user, ~password, ~host, ~port, ~db))
+          | _ => None
+          }
+        | _ => None
+        }
+      | _ => None
+      }
+    | _ => None
+    };
+  };
+
   let make = (config: SihlCoreConfig.Db.t) =>
     Mysql.pool({
       "user": config.dbUser,
