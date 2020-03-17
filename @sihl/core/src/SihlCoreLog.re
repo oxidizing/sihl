@@ -52,7 +52,7 @@ let log = (level, content, ~path, ~id) => {
       date ++ " - " ++ level ++ id ++ path ++ " - " ++ content
     | _ => date ++ " - " ++ level ++ " - " ++ content
     };
-  buffer := Belt.List.add(buffer^, toLog);
+  buffer := Belt.List.concat(buffer^, [toLog]);
   scheduleAsyncLog(flushBufferTimer);
 };
 

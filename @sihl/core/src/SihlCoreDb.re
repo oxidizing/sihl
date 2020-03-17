@@ -429,6 +429,8 @@ module Database = {
   };
 
   let applyMigration = (migration: Migration.t, db) => {
+    let namespace = migration.namespace;
+    SihlCoreLog.info({j|Checking migrations for app $(namespace)|j}, ());
     withConnection(
       db,
       conn => {
@@ -445,12 +447,13 @@ module Database = {
         let%Async status =
           MigrationStatus.Get.query(conn, ~namespace=migration.namespace);
         let status = Belt.Result.getExn(status);
-        let steps = Migration.stepsToApply(migration, status.version);
+        let currentVersion = status.version;
+        let steps = Migration.stepsToApply(migration, currentVersion);
         let newVersion = Migration.maxVersion(steps);
         let nrSteps = steps |> Belt.List.length;
         if (nrSteps > 0) {
           SihlCoreLog.info(
-            {j|There are $(nrSteps) unapplied migrations, applying them now|j},
+            {j|There are $(nrSteps) unapplied migrations for app $(namespace), current version is $(currentVersion) but should be $(newVersion)|j},
             (),
           );
           let%Async _ =
@@ -460,8 +463,15 @@ module Database = {
           MigrationStatus.Upsert.query(
             conn,
             ~status={...status, version: newVersion},
-          );
+          )
+          ->Async.mapAsync(_ =>
+              SihlCoreLog.info(
+                {j|Applied migrations for $(namespace) to reach schema version $(newVersion)|j},
+                (),
+              )
+            );
         } else {
+          SihlCoreLog.info("No migrations to apply", ());
           Async.async();
         };
       },
