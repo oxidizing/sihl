@@ -42,10 +42,8 @@ module App = {
 
   let runMigrations = (instance: Instance.instance) => {
     instance.apps
-    ->Belt.List.map(app =>
-        SihlCoreDb.Database.applyMigrations(app.migration, instance.db)
-      )
-    ->Async.allInOrder;
+    ->Belt.List.map(app => app.migration)
+    ->SihlCoreDb.Database.applyMigrations(instance.db);
   };
 
   let startApps = (apps: list(t)) => {

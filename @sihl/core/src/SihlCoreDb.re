@@ -421,13 +421,14 @@ module Database = {
       db,
       conn => {
         let%Async _ = Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
-        let%Async _ = fns->Belt.List.map(f => f(conn))->Async.allInOrder;
+        let%Async _ =
+          fns->Belt.List.map((f, ()) => f(conn))->Async.allInOrder;
         Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
       },
     );
   };
 
-  let applyMigrations = (migration: Migration.t, db) => {
+  let applyMigration = (migration: Migration.t, db) => {
     withConnection(
       db,
       conn => {
@@ -454,7 +455,7 @@ module Database = {
           );
           let%Async _ =
             steps
-            ->Belt.List.map(((_, stmt)) => Repo.execute(conn, stmt))
+            ->Belt.List.map(((_, stmt), ()) => Repo.execute(conn, stmt))
             ->Async.allInOrder;
           MigrationStatus.Upsert.query(
             conn,
@@ -465,6 +466,12 @@ module Database = {
         };
       },
     );
+  };
+
+  let applyMigrations = (migrations: list(Migration.t), db) => {
+    migrations
+    ->Belt.List.map((migration, ()) => applyMigration(migration, db))
+    ->Async.allInOrder;
   };
 
   let connectWithCfg = () => {

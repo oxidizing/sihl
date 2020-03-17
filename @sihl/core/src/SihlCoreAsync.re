@@ -45,12 +45,13 @@ let attemptMapAsync =
   });
 };
 
-let rec allInOrder = promises => {
-  switch (promises) {
-  | [p, ...ps] => let_(p, _ => allInOrder(ps))
-  | [] => async()
+let rec allInOrder: list(unit => Js.Promise.t(unit)) => Js.Promise.t(unit) =
+  fns => {
+    switch (fns) {
+    | [f, ...fs] => let_(f(), _ => allInOrder(fs))
+    | [] => async()
+    };
   };
-};
 
 let wait: int => Js.Promise.t(unit) = [%raw
   {|
