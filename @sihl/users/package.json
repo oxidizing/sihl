@@ -15,17 +15,18 @@
   "license": "MIT",
   "peerDependencies": {
     "react": "^16.8.1",
-    "react-dom": "^16.8.1"
+    "react-dom": "^16.8.1",
+    "@sihl/core": "0.0.8"
   },
   "dependencies": {
     "bs-fetch": "^0.5.1",
     "bs-let": "^0.1.16",
     "compression": "^1.7.4",
     "decco": "^1.1.1",
-    "reason-react": "^0.7.0",
-    "@sihl/core": "0.0.8"
+    "reason-react": "^0.7.0"
   },
   "devDependencies": {
+    "@sihl/core": "0.0.8",
     "bs-platform": "^7.1.0",
     "react": "^16.8.1",
     "react-dom": "^16.8.1"
