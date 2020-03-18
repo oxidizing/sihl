@@ -2,7 +2,7 @@
 
 # Sihl
 
-Sihl aims to be Rails or Django for [Reason](https://reasonml.github.io/). It is a high-level web framework that makes development fun and safe by turning run-time bugs into compile-time bugs.
+Sihl aims to be a framework like Rails or Django for [Reason](https://reasonml.github.io/). It makes web development fun and safe by turning run-time bugs into compile-time bugs.
 
 Documentation is in the making, check out this [example project](https://github.com/oxidizing/sihl-example-issues) meanwhile.
 
@@ -41,4 +41,8 @@ These are the things that Sihl can do for you:
 * Type-safe query builder: The compiler will tell you if your SQL queries are not valid
 * Native: It will be possible to access libraries form the OCaml ecosystem and compiling the backend to an executable *while sharing business logic with the frontend*
 
-Made by https://www.oxidizing.io
+## License
+
+Copyright (c) 2020 [Oxidizing Systems GmbH](https://oxidizing.io/)
+
+Distributed under the MIT License.
