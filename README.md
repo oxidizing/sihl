@@ -41,6 +41,10 @@ These are the things that Sihl can do for you:
 * Type-safe query builder: The compiler will tell you if your SQL queries are not valid
 * Native: It will be possible to access libraries form the OCaml ecosystem and compiling the backend to an executable *while sharing business logic with the frontend*
 
+## Status of the project
+
+The project is WIP and the APIs are not stable yet. Nevertheless we have [one project](https://oxidizing.io/#projects) in production that uses Sihl.
+
 ## License
 
 Copyright (c) 2020 [Oxidizing Systems GmbH](https://oxidizing.io/)
