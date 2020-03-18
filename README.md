@@ -2,17 +2,43 @@
 
 # Sihl
 
-Sihl is a high-level ReasonML web application framework that makes development fun and safe. It provides tools, conventions and patterns to quickly ramp up your next project without sacrificing long-term maintanability.
+Sihl aims to be Rails or Django for [Reason](https://reasonml.github.io/). It is a high-level web framework that makes development fun and safe by turning run-time bugs into compile-time bugs.
 
-## Features
+Documentation is in the making, check out this [example project](https://github.com/oxidizing/sihl-example-issues) meanwhile.
 
-* Familiar and safe: ReasonML looks familiar to JavaScript (ES6+) developers while providing safety through strict type checks without writing type annotations, let the compiler do the work for you!
-* Modular architecture: Sihl projects are composed of small and self-contained Sihl apps
-* Admin UI: Unified way of creating UIs for admins easily using server side rendered React
-* Opinionated: Sihl gives your app structure and guides you through the development process
-* Node.js ecosystem: ReasonML compiles down to JavaScript, so you can keep using the libraries you are familiar with!
-* Persistence agnostic: Your know how you want to handle your data, Sihl doesn't ship an ORM
+## Installation
 
-## Getting started
+Install Sihl from NPM: `yarn add @sihl/core`
 
-Check out the tutorial of the [example project](/sihl-example-issues/) for a quick introduction on how to use Sihl.
+You can install the users app as well to get user management out of the box: `yarn add @sihl/users`
+
+## Why Reason?
+
+The [official documentation](https://reasonml.github.io/docs/en/what-and-why#why-reason) explains it better than we ever could.
+
+## What Sihl does for you
+
+These are the things that Sihl can do for you:
+
+* HTTP: Type-safe declarative routes
+* Structure & Lifecycle: You develop Sihl apps, compose them to projects and Sihl runs them
+* Migrations: Create database migrations per app, Sihl takes care of applying them
+* Admin UI: Your admins will love you for the UIs you give them using the Admin UI React API
+* Testing: Seed data before and clean up after your integration tests
+* CLI: Create your own CLI commands per app `yarn sihl <command> <param1> <param2> ...`
+* Run on Node.js: Use the libraries and tooling you already know
+* Full Stack by Design: With the [ReasonReact](https://reasonml.github.io/reason-react/) bindings you can share business logic with the backend while using React as you know it
+* Async/await: Write non-blocking code without the noise of nesting Promises (or, god forbid, callback hell)
+
+## What Sihl does not do for you
+
+* ORM: Sihl makes no assumptions about the persistence layer and it doesn't come with an ORM
+* Infrastructure: You develop Sihl apps that *can* be deployed as monolith. Sihl wont help you with the deployment of apps as standalone "micro" services, please consult your trusted container/service orchestrator
+
+## What Sihl will do for you in the future
+
+* Scaffolding: The CLI will be extended to allow generating CRUD routes, models, repositories and services quickly
+* Type-safe query builder: The compiler will tell you if your SQL queries are not valid
+* Native: It will be possible to access libraries form the OCaml ecosystem and compiling the backend to an executable *while sharing business logic with the frontend*
+
+Made by https://www.oxidizing.io
