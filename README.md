@@ -2,17 +2,32 @@
 
 # Sihl
 
-Sihl is a high-level ReasonML web application framework that makes development fun and safe. It provides tools, conventions and patterns to quickly ramp up your next project without sacrificing long-term maintanability.
+Sihl aims to be a Rails or Django for [Reason](https://reasonml.github.io/). It is a high-level Reason web framework that makes development fun and safe.
+
+Documentation is in the making, check out this [example project](https://github.com/oxidizing/sihl-example-issues) meanwhile.
+
+## Installation
+
+Install Sihl as NPM package `yarn add @sihl/core`.
+
+You can install the users app as well to have user management out of the box `yarn add @sihl/users`.
+
+## Why Reason?
+
+The [official documentation](https://reasonml.github.io/docs/en/what-and-why#why-reason) explains it better than we ever could.
 
 ## Features
 
-* Familiar and safe: ReasonML looks familiar to JavaScript (ES6+) developers while providing safety through strict type checks without writing type annotations, let the compiler do the work for you!
-* Modular architecture: Sihl projects are composed of small and self-contained Sihl apps
-* Admin UI: Unified way of creating UIs for admins easily using server side rendered React
-* Opinionated: Sihl gives your app structure and guides you through the development process
-* Node.js ecosystem: ReasonML compiles down to JavaScript, so you can keep using the libraries you are familiar with!
-* Persistence agnostic: Your know how you want to handle your data, Sihl doesn't ship an ORM
+* Familiar and Safe: Reason looks a lot like JavaScript at first sight, but a powerful compiler is having your back
+* Modular Architecture: Just like with [Django](https://docs.djangoproject.com/en/3.0/ref/applications/#module-django.apps), Sihl projects comprise of small self-contained apps
+* Admin UI: Your admins will love you for giving them UIs using Sihl's unified mechanism to create them
+* Opinionated: Sihl demands you to do a few things the certain way which gives your project structure
+* Persistence Agnostic: Your know how you want to handle your data, Sihl doesn't ship an ORM
+* Node.js Ecosystem: Reason compiles to JavaScript, you can keep using the libraries you already know and love!
+* Full Stack by Design:
 
 ## Getting started
 
 Check out the tutorial of the [example project](/sihl-example-issues/) for a quick introduction on how to use Sihl.
+
+Made by https://www.oxidizing.io
