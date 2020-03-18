@@ -1,6 +1,6 @@
 {
   "name": "@sihl/core",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",

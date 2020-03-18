@@ -1,6 +1,6 @@
 {
   "name": "@sihl/users",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -16,7 +16,7 @@
   "peerDependencies": {
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
-    "@sihl/core": "0.0.8"
+    "@sihl/core": "0.0.10"
   },
   "dependencies": {
     "bs-fetch": "^0.5.1",
@@ -26,7 +26,7 @@
     "reason-react": "^0.7.0"
   },
   "devDependencies": {
-    "@sihl/core": "0.0.9",
+    "@sihl/core": "0.0.10",
     "bs-platform": "^7.1.0",
     "react": "^16.8.1",
     "react-dom": "^16.8.1"
