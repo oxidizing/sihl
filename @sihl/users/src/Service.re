@@ -74,7 +74,9 @@ module User = {
     | Belt.Result.Error(_) =>
       abort @@ Unauthorized("Invalid password or email provided")
     | Belt.Result.Ok(user) =>
-      if (!Sihl.Core.Bcrypt.Hash.compareSync(password, user.password)) {
+      let%Async isSame =
+        Sihl.Core.Bcrypt.Hash.compare(~plain=password, ~hash=user.password);
+      if (!isSame) {
         abort @@ Unauthorized("Invalid password or email provided");
       };
       let token = Model.Token.generateAuth(~user);
@@ -135,10 +137,9 @@ module User = {
     let%Async user =
       Repository.User.Get.query(conn, ~userId=token.user)
       |> abortIfErr(Unauthorized("Invalid token provided"));
-    let user = {
-      ...user,
-      password: Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, newPassword),
-    };
+    let%Async hash =
+      Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
+    let user = {...user, password: hash};
     Repository.User.Upsert.query(conn, ~user);
   };
 
@@ -151,16 +152,17 @@ module User = {
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
-    if (Sihl.Core.Bcrypt.Hash.compareSync(
-          user.password,
-          Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, currentPassword),
-        )) {
+    let%Async isSame =
+      Sihl.Core.Bcrypt.Hash.compare(
+        ~plain=currentPassword,
+        ~hash=user.password,
+      );
+    if (!isSame) {
       abort @@ BadRequest("Current password doesn't match provided password");
     };
-    let user = {
-      ...user,
-      password: Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, newPassword),
-    };
+    let%Async hash =
+      Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
+    let user = {...user, password: hash};
     Repository.User.Upsert.query(conn, ~user);
   };
 
@@ -172,10 +174,9 @@ module User = {
     let%Async user =
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
-    let user = {
-      ...user,
-      password: Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, newPassword),
-    };
+    let%Async hash =
+      Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
+    let user = {...user, password: hash};
     Repository.User.Upsert.query(conn, ~user);
   };
 
@@ -226,11 +227,13 @@ module User = {
     if (Belt.Result.isOk(user)) {
       abort @@ BadRequest("Email already taken");
     };
+    let%Async hash =
+      Sihl.Core.Bcrypt.hashAndSalt(~plain=password, ~rounds=12);
     let user =
       Model.User.make(
         ~email,
         ~username,
-        ~password=Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, password),
+        ~password=hash,
         ~givenName,
         ~familyName,
         ~phone,
@@ -253,11 +256,13 @@ module User = {
     if (Belt.Result.isOk(user)) {
       abort @@ BadRequest("Email already taken");
     };
+    let%Async hash =
+      Sihl.Core.Bcrypt.hashAndSalt(~plain=password, ~rounds=12);
     let user =
       Model.User.make(
         ~email,
         ~username,
-        ~password=Sihl.Core.Bcrypt.hashAndSaltSync(~rounds=12, password),
+        ~password=hash,
         ~givenName,
         ~familyName,
         ~phone=None,

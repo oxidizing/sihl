@@ -1,7 +1,7 @@
 module Salt = {
   type t = string;
   external toString: t => string = "%identity";
-  [@bs.module "bcrypt"] external genSync_: int => string = "genSaltSync";
+  [@bs.module "bcrypt"] external genSync: int => string = "genSaltSync";
   [@bs.module "bcrypt"] external gen: int => Js.Promise.t(string) = "genSalt";
 };
 
@@ -22,8 +22,8 @@ module Hash = {
 };
 
 [@bs.module "bcrypt"]
-external hashAndSaltSync: (~plain: string, ~rounds: int) => string =
+external hashAndSaltSync: (~plain: string, ~rounds: int) => Hash.t =
   "hashSync";
 [@bs.module "bcrypt"]
-external hashAndSalt: (~plain: string, ~rounds: int) => Js.Promise.t(string) =
+external hashAndSalt: (~plain: string, ~rounds: int) => Js.Promise.t(Hash.t) =
   "hash";
