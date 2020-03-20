@@ -1,3 +1,11 @@
+type meta('a) = {
+  namespace: string,
+  resource: string,
+  encode: 'a => Js.Json.t,
+  decode: Js.Json.t => Belt.Result.t('a, Decco.decodeError),
+  fields: list(string),
+};
+
 module User = {
   [@decco]
   type t = {
@@ -13,6 +21,24 @@ module User = {
     status: string,
     admin: Sihl.Core.Db.Bool.t,
     confirmed: Sihl.Core.Db.Bool.t,
+  };
+
+  let meta: meta(t) = {
+    namespace: "users",
+    resource: "users",
+    encode: t_encode,
+    decode: t_decode,
+    fields: [
+      "email",
+      "password",
+      "given_name",
+      "family_name",
+      "username",
+      "phone",
+      "status",
+      "admin",
+      "confirmed",
+    ],
   };
 
   let make =
