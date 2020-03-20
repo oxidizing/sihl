@@ -13,3 +13,4 @@ module Main = SihlCoreMain;
 module Cli = SihlCoreCli;
 module Config = SihlCoreConfig;
 module Test = SihlCoreTest;
+module Meta = SihlCoreMeta;

@@ -1,11 +1,3 @@
-type meta('a) = {
-  namespace: string,
-  resource: string,
-  encode: 'a => Js.Json.t,
-  decode: Js.Json.t => Belt.Result.t('a, Decco.decodeError),
-  fields: list(string),
-};
-
 module User = {
   [@decco]
   type t = {
@@ -23,7 +15,7 @@ module User = {
     confirmed: Sihl.Core.Db.Bool.t,
   };
 
-  let meta: meta(t) = {
+  let meta: Sihl.Core.Meta.t(t) = {
     namespace: "users",
     resource: "users",
     encode: t_encode,

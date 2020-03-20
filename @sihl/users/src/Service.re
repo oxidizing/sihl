@@ -30,7 +30,7 @@ module User = {
       Repository.Token.Get.query(conn, ~token)
       |> abortIfErr(Unauthorized("Not authorized"));
     let%Async user =
-      Repository.User.Get.query(conn, ~userId=tokenAssignment.user)
+      Repository.User.get(conn, ~id=tokenAssignment.user)
       |> abortIfErr(Unauthorized("Not authorized"));
     Async.async(user);
   };
@@ -56,7 +56,7 @@ module User = {
     if (!Model.User.isAdmin(user)) {
       abort @@ Forbidden("Not allowed");
     };
-    Repository.User.GetAll.query(conn);
+    Repository.User.getAll(conn);
   };
 
   let get = ((conn, user), ~userId) => {
@@ -64,12 +64,12 @@ module User = {
     if (!Model.User.isAdmin(user) && !Model.User.isOwner(user, userId)) {
       abort @@ Forbidden("Not allowed");
     };
-    Repository.User.Get.query(conn, ~userId);
+    Repository.User.get(conn, ~id=userId);
   };
 
   let login = (conn, ~email, ~password) => {
     open! Sihl.Core.Http.Endpoint;
-    let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+    let%Async user = Repository.User.getByEmail(conn, ~email);
     switch (user) {
     | Belt.Result.Error(_) =>
       abort @@ Unauthorized("Invalid password or email provided")
@@ -106,14 +106,14 @@ module User = {
         ~token={...token, status: "inactive"},
       );
     let%Async user =
-      Repository.User.Get.query(conn, ~userId=token.user)
+      Repository.User.get(conn, ~id=token.user)
       |> abortIfErr(Unauthorized("Invalid token provided"));
-    Repository.User.Upsert.query(conn, ~user={...user, confirmed: true});
+    Repository.User.upsert(conn, ~entity={...user, confirmed: true});
   };
 
   let requestPasswordReset = (conn, ~email) => {
     open! Sihl.Core.Http.Endpoint;
-    let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+    let%Async user = Repository.User.getByEmail(conn, ~email);
     switch (user) {
     | Belt.Result.Ok(user) =>
       let token = Model.Token.generatePasswordReset(~user);
@@ -135,12 +135,12 @@ module User = {
       abort @@ Forbidden("Invalid token provided");
     };
     let%Async user =
-      Repository.User.Get.query(conn, ~userId=token.user)
+      Repository.User.get(conn, ~id=token.user)
       |> abortIfErr(Unauthorized("Invalid token provided"));
     let%Async hash =
       Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
-    Repository.User.Upsert.query(conn, ~user);
+    Repository.User.upsert(conn, ~entity=user);
   };
 
   let updatePassword =
@@ -150,7 +150,7 @@ module User = {
       abort @@ Forbidden("Not allowed");
     };
     let%Async user =
-      Repository.User.Get.query(conn, ~userId)
+      Repository.User.get(conn, ~id=userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
     let%Async isSame =
       Sihl.Core.Bcrypt.Hash.compare(
@@ -163,7 +163,7 @@ module User = {
     let%Async hash =
       Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
-    Repository.User.Upsert.query(conn, ~user);
+    Repository.User.upsert(conn, ~entity=user);
   };
 
   let setPassword = ((conn, user), ~userId, ~newPassword) => {
@@ -172,12 +172,12 @@ module User = {
       abort @@ Forbidden("Not allowed");
     };
     let%Async user =
-      Repository.User.Get.query(conn, ~userId)
+      Repository.User.get(conn, ~id=userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
     let%Async hash =
       Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
-    Repository.User.Upsert.query(conn, ~user);
+    Repository.User.upsert(conn, ~entity=user);
   };
 
   let updateDetails =
@@ -195,7 +195,7 @@ module User = {
       abort @@ Forbidden("Not allowed");
     };
     let%Async user =
-      Repository.User.Get.query(conn, ~userId)
+      Repository.User.get(conn, ~id=userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
     let confirmed = email !== user.email ? false : true;
     let user = {
@@ -207,7 +207,7 @@ module User = {
       phone,
       confirmed,
     };
-    Repository.User.Upsert.query(conn, ~user);
+    Repository.User.upsert(conn, ~entity=user);
   };
 
   let register =
@@ -223,7 +223,7 @@ module User = {
         (),
       ) => {
     open! Sihl.Core.Http.Endpoint;
-    let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+    let%Async user = Repository.User.getByEmail(conn, ~email);
     if (Belt.Result.isOk(user)) {
       abort @@ BadRequest("Email already taken");
     };
@@ -241,7 +241,7 @@ module User = {
       );
     switch (user) {
     | Belt.Result.Ok(user) =>
-      let%Async _ = Repository.User.Upsert.query(conn, ~user);
+      let%Async _ = Repository.User.upsert(conn, ~entity=user);
       let%Async _ =
         suppressEmail ? Async.async() : sendRegistrationEmail(conn, ~user);
       Async.async(user);
@@ -252,7 +252,7 @@ module User = {
   let createAdmin =
       (conn, ~email, ~username, ~givenName, ~familyName, ~password) => {
     open! Sihl.Core.Http.Endpoint;
-    let%Async user = Repository.User.GetByEmail.query(conn, ~email);
+    let%Async user = Repository.User.getByEmail(conn, ~email);
     if (Belt.Result.isOk(user)) {
       abort @@ BadRequest("Email already taken");
     };
@@ -270,7 +270,7 @@ module User = {
       );
     switch (user) {
     | Belt.Result.Ok(user) =>
-      Repository.User.Upsert.query(conn, ~user)->Async.mapAsync(_ => user)
+      Repository.User.upsert(conn, ~entity=user)->Async.mapAsync(_ => user)
     | Belt.Result.Error(msg) => abort(BadRequest(msg))
     };
   };

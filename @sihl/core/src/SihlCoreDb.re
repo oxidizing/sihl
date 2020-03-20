@@ -489,6 +489,93 @@ module Database = {
   };
 };
 
+module Crud = {
+  let jsonValues: (Js.Json.t, array(string)) => Js.Json.t = [%raw
+    {|
+(obj, fields) => fields.map(field => obj[field])
+  |}
+  ];
+
+  type t('a) = {
+    clean: Connection.t => Js.Promise.t(unit),
+    getAll: Connection.t => Js.Promise.t(Repo.Result.t('a)),
+    get:
+      (Connection.t, ~id: string) => Js.Promise.t(Belt.Result.t('a, string)),
+    upsert: (Connection.t, ~entity: 'a) => Js.Promise.t(unit),
+  };
+
+  let makeRepos: SihlCoreMeta.t('a) => t('a) =
+    (meta: SihlCoreMeta.t('a)) => {
+      let fields = Js.Array.joinWith(", ", Belt.List.toArray(meta.fields));
+      let namespace = meta.namespace;
+      let resource = meta.resource;
+      let getAllStmt = {j|
+SELECT
+  uuid_of(uuid) as id,
+  $(fields)
+FROM $(namespace)_$(resource);
+|j};
+      let getStmt = {j|
+SELECT
+  uuid_of(uuid) as id,
+  $(fields)
+FROM $(namespace)_$(resource)
+WHERE uuid = UNHEX(REPLACE(?, '-', ''));
+|j};
+      let freeVarsStmt =
+        Js.Array.joinWith(
+          ",\n",
+          meta.fields->Belt.List.map(_ => "?")->Belt.List.toArray,
+        );
+      let onDuplicateStmt =
+        Js.Array.joinWith(
+          ",\n",
+          meta.fields
+          ->Belt.List.map(field => {j|$(field) = VALUES($(field))|j})
+          ->Belt.List.toArray,
+        );
+
+      let upsertStmt = {j|
+INSERT INTO $(namespace)_$(resource) (
+  uuid,
+  $(fields)
+) VALUES (
+UNHEX(REPLACE(?, '-', '')),
+$(freeVarsStmt)
+) ON DUPLICATE KEY UPDATE
+$(onDuplicateStmt)
+;
+|j};
+      let cleanStmt = {j|
+TRUNCATE TABLE $(namespace)_$(resource);
+     |j};
+
+      {
+        clean: connection => Repo.execute(connection, cleanStmt),
+        getAll: connection =>
+          Repo.getMany(
+            ~connection,
+            ~stmt=getAllStmt,
+            ~decode=meta.decode,
+            (),
+          ),
+        get: (connection, ~id) =>
+          Repo.getOne(
+            ~connection,
+            ~stmt=getStmt,
+            ~parameters=Js.Json.string(id),
+            ~decode=meta.decode,
+            (),
+          ),
+        upsert: (connection, ~entity: 'a) => {
+          let insertFields =
+            Belt.List.concat(["id"], meta.fields)->Belt.List.toArray;
+          let parameters = jsonValues(meta.encode(entity), insertFields);
+          Repo.execute(~parameters, connection, upsertStmt);
+        },
+      };
+    };
+};
 // taken from caqti make use of GADT
 /* type field(_) = */
 /*   | Bool: field(bool) */
