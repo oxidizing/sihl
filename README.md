@@ -16,14 +16,14 @@ You can install the users app as well to get [user management](/@sihl/users) out
 
 These are the things that Sihl can do for you:
 
-* HTTP: Type-safe declarative routes (thanks to the abstractions of [Serbet](https://github.com/mrmurphy/serbet)
+* HTTP: Declarative endpoints (thanks to the abstractions of [Serbet](https://github.com/mrmurphy/serbet)
 * Structure & Lifecycle: You develop Sihl apps, compose them to projects and Sihl runs them
 * Migrations: Create database migrations per app, Sihl takes care of applying them
 * Admin UI: Your admins will love you for the UIs you give them using the Admin UI React API
 * Testing: Seed data before and clean up after your integration tests
 * CLI: Create your own CLI commands per app `yarn sihl <command> <param1> <param2> ...`
-* Full Stack: With the [ReasonReact](https://reasonml.github.io/reason-react/) bindings you can share business logic with the backend while using React as you know it
-* Async/await: Write non-blocking code without the noise of nesting Promises (or, god forbid, callback hell)
+* Full Stack: With [ReasonReact](https://reasonml.github.io/reason-react/) you share business logic with the backend while using React as you know it
+* Async/await: Write non-blocking code without the noise of nesting Promises (or, god forbid, Callback Hell)
 
 Check out [this blog post](https://oxidizing.io/blog/2020-03-sihl-introduction/) for more details.
 
