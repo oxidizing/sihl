@@ -2,10 +2,10 @@ open Jest;
 open Expect;
 
 describe("Migrations", () => {
-  open SihlCoreDb.Migration;
+  open SihlCoreDbMigration;
   test("steps to apply returns empty list", () => {
     let migration = {steps: _ => [], namespace: "foo-namespace"};
-    SihlCoreDb.Migration.stepsToApply(migration, 10)
+    SihlCoreDbMigration.stepsToApply(migration, 10)
     |> Belt.List.toArray
     |> expect
     |> toHaveLength(0);
@@ -16,7 +16,7 @@ describe("Migrations", () => {
       namespace: "foo-namespace",
     };
     let expected = [(2, "baz")];
-    SihlCoreDb.Migration.stepsToApply(migration, 1)
+    SihlCoreDbMigration.stepsToApply(migration, 1)
     |> expect
     |> toEqual(expected);
   });
@@ -26,12 +26,12 @@ describe("Migrations", () => {
       namespace: "foo-namespace",
     };
     let expected = [(1, "foo"), (2, "baz")];
-    SihlCoreDb.Migration.stepsToApply(migration, 0)
+    SihlCoreDbMigration.stepsToApply(migration, 0)
     |> expect
     |> toEqual(expected);
   });
   test("gets maximum version", () => {
-    SihlCoreDb.Migration.maxVersion([(1, "foo"), (0, "bar"), (2, "baz")])
+    SihlCoreDbMigration.maxVersion([(1, "foo"), (0, "bar"), (2, "baz")])
     |> expect
     |> toBe(2)
   });

@@ -8,7 +8,7 @@ module App = {
     namespace: string,
     routes: SihlCoreDb.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
     clean: list(SihlCoreDb.Connection.t => Js.Promise.t(unit)),
-    migration: SihlCoreDb.Migration.t,
+    migration: SihlCoreDbMigration.t,
     commands: list(SihlCoreCli.command),
   };
 
@@ -43,7 +43,7 @@ module App = {
   let runMigrations = (instance: Instance.instance) => {
     instance.apps
     ->Belt.List.map(app => app.migration)
-    ->SihlCoreDb.Database.applyMigrations(instance.db);
+    ->SihlCoreDbMigration.applyMigrations(instance.db);
   };
 
   let startApps = (apps: list(t)) => {
