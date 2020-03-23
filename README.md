@@ -10,7 +10,7 @@ Documentation is in the making, check out this [example project](https://github.
 
 Install Sihl from NPM: `yarn add @sihl/core`
 
-You can install the users app as well to get user management out of the box: `yarn add @sihl/users`
+You can install the users app as well to get [user management](/@sihl/users) out of the box: `yarn add @sihl/users`
 
 ## Features
 
