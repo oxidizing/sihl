@@ -71,9 +71,8 @@ module User = {
     open! Sihl.Core.Http.Endpoint;
     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
     switch (user) {
-    | Belt.Result.Error(_) =>
-      abort @@ Unauthorized("Invalid password or email provided")
-    | Belt.Result.Ok(user) =>
+    | Error(_) => abort @@ Unauthorized("Invalid password or email provided")
+    | Ok(user) =>
       let%Async isSame =
         Sihl.Core.Bcrypt.Hash.compare(~plain=password, ~hash=user.password);
       if (!isSame) {
@@ -115,12 +114,12 @@ module User = {
     open! Sihl.Core.Http.Endpoint;
     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
     switch (user) {
-    | Belt.Result.Ok(user) =>
+    | Ok(user) =>
       let token = Model.Token.generatePasswordReset(~user);
       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
       let email = Model.Email.PasswordReset.make(~token, ~user);
       Email.send(conn, ~email);
-    | Belt.Result.Error(_) =>
+    | Error(_) =>
       // If no user was found, just send 200 ok to not expose user data
       Async.async()
     };
@@ -240,12 +239,12 @@ module User = {
         ~admin=false,
       );
     switch (user) {
-    | Belt.Result.Ok(user) =>
+    | Ok(user) =>
       let%Async _ = Repository.User.Upsert.query(conn, ~user);
       let%Async _ =
         suppressEmail ? Async.async() : sendRegistrationEmail(conn, ~user);
       Async.async(user);
-    | Belt.Result.Error(msg) => abort(BadRequest(msg))
+    | Error(msg) => abort(BadRequest(msg))
     };
   };
 
@@ -269,9 +268,9 @@ module User = {
         ~admin=true,
       );
     switch (user) {
-    | Belt.Result.Ok(user) =>
+    | Ok(user) =>
       Repository.User.Upsert.query(conn, ~user)->Async.mapAsync(_ => user)
-    | Belt.Result.Error(msg) => abort(BadRequest(msg))
+    | Error(msg) => abort(BadRequest(msg))
     };
   };
 };
