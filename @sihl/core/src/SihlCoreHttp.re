@@ -46,16 +46,16 @@ module Endpoint = {
 
   let abortIfErrResponse = res => {
     switch (res) {
-    | Belt.Result.Ok(res) => res
-    | Belt.Result.Error(error) => raise(HttpException(error))
+    | Ok(res) => res
+    | Error(error) => raise(HttpException(error))
     };
   };
 
   let abortIfErr = (errorResponse, result) => {
     SihlCoreAsync.mapAsync(result, result =>
       switch (result) {
-      | Belt.Result.Ok(result) => result
-      | Belt.Result.Error(msg) =>
+      | Ok(result) => result
+      | Error(msg) =>
         SihlCoreLog.error("HTTP error=" ++ msg, ());
         raise(HttpException(errorResponse));
       }

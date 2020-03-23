@@ -18,7 +18,7 @@ module User = {
   let make =
       (~email, ~username, ~password, ~givenName, ~familyName, ~phone, ~admin) => {
     let id = Sihl.Core.Uuid.V4.uuidv4();
-    Belt.Result.Ok({
+    Ok({
       id,
       email,
       username,

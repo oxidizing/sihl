@@ -133,18 +133,16 @@ module Repo = {
       Mysql.Connection.query(~connection, ~stmt, ~parameters);
     Async.async(
       switch (result) {
-      | Belt.Result.Ok(([row], _)) =>
+      | Ok(([row], _)) =>
         row |> SihlCoreError.Decco.stringifyDecoder(decode)
-      | Belt.Result.Ok(([], _)) =>
-        Belt.Result.Error(
-          "No rows found in database " ++ debug(stmt, parameters),
-        )
-      | Belt.Result.Ok(_) =>
-        Belt.Result.Error(
+      | Ok(([], _)) =>
+        Error("No rows found in database " ++ debug(stmt, parameters))
+      | Ok(_) =>
+        Error(
           "Two or more rows found when we were expecting only one "
           ++ debug(stmt, parameters),
         )
-      | Belt.Result.Error(msg) =>
+      | Error(msg) =>
         abort(
           "Error happened in DB when getOne() msg="
           ++ msg
@@ -158,14 +156,14 @@ module Repo = {
     let%Async result =
       Mysql.Connection.query(~connection, ~stmt, ~parameters);
     switch (result) {
-    | Belt.Result.Ok((rows, _)) =>
+    | Ok((rows, _)) =>
       let result =
         rows
         ->Belt.List.map(SihlCoreError.Decco.stringifyDecoder(decode))
         ->Belt.List.map(result =>
             switch (result) {
-            | Belt.Result.Ok(result) => result
-            | Belt.Result.Error(msg) =>
+            | Ok(result) => result
+            | Error(msg) =>
               abort(
                 "Error happened in DB when getMany() msg="
                 ++ msg
@@ -181,13 +179,13 @@ module Repo = {
         );
       let meta =
         switch (meta) {
-        | Belt.Result.Ok(([row], _)) =>
+        | Ok(([row], _)) =>
           switch (
             row
             |> SihlCoreError.Decco.stringifyDecoder(Result.MetaData.t_decode)
           ) {
-          | Belt.Result.Ok(meta) => meta
-          | Belt.Result.Error(_) =>
+          | Ok(meta) => meta
+          | Error(_) =>
             abort(
               "Error happened in DB when decoding meta "
               ++ debug(stmt, parameters),
@@ -200,7 +198,7 @@ module Repo = {
           )
         };
       Async.async @@ Result.create(result, meta);
-    | Belt.Result.Error(msg) =>
+    | Error(msg) =>
       abort(
         "Error happened in DB when getMany() msg="
         ++ msg
@@ -214,8 +212,8 @@ module Repo = {
       Mysql.Connection.execute(~connection, ~stmt, ~parameters);
     Async.async(
       switch (rows) {
-      | Belt.Result.Ok(_) => ()
-      | Belt.Result.Error(msg) =>
+      | Ok(_) => ()
+      | Error(msg) =>
         abort(
           "Error happened in DB when getMany() msg="
           ++ msg
@@ -230,8 +228,8 @@ module Bool = {
   let encoder = i => i ? Js.Json.number(1.0) : Js.Json.number(0.0);
   let decoder = j => {
     switch (Js.Json.decodeNumber(j)) {
-    | Some(0.0) => Belt.Result.Ok(false)
-    | Some(1.0) => Belt.Result.Ok(true)
+    | Some(0.0) => Ok(false)
+    | Some(1.0) => Ok(true)
     | _ => Decco.error(~path="", "Not a boolean", j)
     };
   };
