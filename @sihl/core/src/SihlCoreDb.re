@@ -1,6 +1,11 @@
+// TODO move to @sihl/mysql
 module Mysql = SihlCoreDbMysql;
-module Connection = SihlCoreDbMysql.Connection;
-module Repo = SihlCoreDbRepo;
+
+// TODO extract types from implementation, move implementation into @sihl/mysql
 module Database = SihlCoreDbDatabase;
-module Bool = SihlCoreDbMysql.Bool;
+module Connection = SihlCoreDbMysql.Connection;
+
+// TODO extract types from implementation, move implementation into @sihl/mysql
 module Migration = SihlCoreDbMigration;
+
+module Repo = SihlCoreDbRepo;
