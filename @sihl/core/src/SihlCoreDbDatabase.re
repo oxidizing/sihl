@@ -30,7 +30,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   };
 
   let make = (config: SihlCoreConfig.Db.t) =>
-    SihlCoreDbMysql.Database.setup({
+    Persistence.Database.setup({
       "user": config.dbUser,
       "host": config.dbHost,
       "database": config.dbName,
@@ -42,9 +42,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     });
 
   let withConnection = (db, f) => {
-    let%Async conn = SihlCoreDbMysql.Database.connect(db);
+    let%Async conn = Persistence.Database.connect(db);
     let%Async result = f(conn);
-    SihlCoreDbMysql.Connection.release(conn);
+    Persistence.Connection.release(conn);
     Async.async(result);
   };
 

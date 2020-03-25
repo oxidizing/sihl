@@ -87,6 +87,3 @@ module Mysql: SihlCoreDbCore.INTERFACE = {
       );
   };
 };
-
-// TODO remove this once there is no usage
-include SihlCoreDbCore.Make(Mysql);

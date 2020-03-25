@@ -2,168 +2,176 @@ module Async = SihlCoreAsync;
 
 exception InvalidConfiguration(string);
 
-module App = {
-  type t = {
-    name: string,
-    namespace: string,
-    routes: SihlCoreDbCore.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
-    clean: list(SihlCoreDbCore.Connection.t => Js.Promise.t(unit)),
-    migration: SihlCoreDb.Migration.t,
-    commands: list(SihlCoreCli.command),
-  };
+module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+  module SihlCoreHttp = SihlCoreHttp.Make(Persistence);
+  module SihlCoreCli = SihlCoreCli.Make(Persistence);
 
-  let names = apps =>
-    Js.Array.joinWith(
-      ", ",
-      apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
-    );
-
-  module Instance = {
-    type instance = {
-      http: SihlCoreHttp.application,
-      db: SihlCoreDbCore.Database.t,
-      apps: list(t),
+  module App = {
+    type t = {
+      name: string,
+      namespace: string,
+      routes:
+        SihlCoreDbCore.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
+      clean: list(SihlCoreDbCore.Connection.t => Js.Promise.t(unit)),
+      migration: SihlCoreDb.Migration.t,
+      commands: list(SihlCoreCli.command),
     };
-    let http = instance => instance.http;
-    let db = instance => instance.db;
-    let make = (~http, ~db, ~apps) => {http, db, apps};
-  };
 
-  let db = instance => Instance.db(instance);
-
-  let make = (~name, ~namespace, ~routes, ~clean, ~migration, ~commands) => {
-    name,
-    namespace,
-    routes,
-    clean,
-    migration,
-    commands,
-  };
-
-  let runMigrations = (instance: Instance.instance) => {
-    instance.apps
-    ->Belt.List.map(app => app.migration)
-    ->SihlCoreDb.Migration.applyMigrations(instance.db);
-  };
-
-  let startApps = (apps: list(t)) => {
-    SihlCoreLog.info("Starting apps: " ++ names(apps), ());
-    let db = SihlCoreDb.Database.connectWithCfg();
-    SihlCoreLog.info("Mounting HTTP routes", ());
-    let routes =
-      apps
-      ->Belt.List.map(app => app.routes(db))
-      ->Belt.List.toArray
-      ->Belt.List.concatMany;
-    let http = SihlCoreHttp.application(routes);
-    Instance.make(~http, ~db, ~apps);
-  };
-
-  let stop = (instance: Instance.instance) => {
-    SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
-    let%Async _ = SihlCoreHttp.shutdown(instance.http);
-    Async.async @@ SihlCoreDbMysql.Database.end_(instance.db);
-  };
-};
-
-module Manager = {
-  exception InvalidState(string);
-
-  let state = ref(None);
-
-  let startApps = (apps: list(App.t)) => {
-    if (Belt.Option.isSome(state^)) {
-      raise(InvalidState("There is already an app running, can not start"));
-    };
-    let app = App.startApps(apps);
-    state := Some(app);
-    App.runMigrations(app)->Async.mapAsync(_ => app);
-  };
-
-  let stop = () => {
-    switch (state^) {
-    | Some(instance) =>
-      App.stop(instance)->Async.mapAsync(_ => {state := None})
-    | _ =>
-      SihlCoreLog.warn(
-        "Can not stop app because it was not started, ignoring stop",
-        (),
+    let names = apps =>
+      Js.Array.joinWith(
+        ", ",
+        apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
       );
-      Async.async();
-    };
-  };
 
-  let seed = f => {
-    switch (state^) {
-    | Some(instance) =>
-      SihlCoreDb.Database.withConnection(instance.db, conn => f(conn))
-    | _ =>
-      SihlCoreLog.warn("Can not seed because app was not started", ());
-      raise(InvalidState("Can not seed because app was not started"));
+    module Instance = {
+      type instance = {
+        http: SihlCoreHttp.application,
+        db: SihlCoreDbCore.Database.t,
+        apps: list(t),
+      };
+      let http = instance => instance.http;
+      let db = instance => instance.db;
+      let make = (~http, ~db, ~apps) => {http, db, apps};
     };
-  };
 
-  let clean = () => {
-    switch (state^) {
-    | Some(instance) =>
-      let cleanFns =
-        instance.apps
-        ->Belt.List.map(app => app.clean)
+    let db = instance => Instance.db(instance);
+
+    let make = (~name, ~namespace, ~routes, ~clean, ~migration, ~commands) => {
+      name,
+      namespace,
+      routes,
+      clean,
+      migration,
+      commands,
+    };
+
+    let runMigrations = (instance: Instance.instance) => {
+      instance.apps
+      ->Belt.List.map(app => app.migration)
+      ->SihlCoreDb.Migration.applyMigrations(instance.db);
+    };
+
+    let startApps = (apps: list(t)) => {
+      SihlCoreLog.info("Starting apps: " ++ names(apps), ());
+      let db = SihlCoreDb.Database.connectWithCfg();
+      SihlCoreLog.info("Mounting HTTP routes", ());
+      let routes =
+        apps
+        ->Belt.List.map(app => app.routes(db))
         ->Belt.List.toArray
         ->Belt.List.concatMany;
-      SihlCoreDb.Database.clean(cleanFns, instance.db);
-    | _ =>
-      SihlCoreLog.warn("Can not clean because app was not started", ());
-      raise(InvalidState("Can not clean because app was not started"));
+      let http = SihlCoreHttp.application(routes);
+      Instance.make(~http, ~db, ~apps);
+    };
+
+    let stop = (instance: Instance.instance) => {
+      SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
+      let%Async _ = SihlCoreHttp.shutdown(instance.http);
+      Async.async @@ Persistence.Database.end_(instance.db);
     };
   };
-};
 
-module Cli = {
-  open! SihlCoreCli;
-  let version = {
-    name: "version",
-    description: "version",
-    f: (_, args, description) => {
-      switch (args) {
-      | ["version", ..._] => Async.async(Js.log("Sihl v0.0.1"))
-      | _ => Async.async(Js.log("Usage: sihl " ++ description))
+  module Manager = {
+    exception InvalidState(string);
+
+    let state = ref(None);
+
+    let startApps = (apps: list(App.t)) => {
+      if (Belt.Option.isSome(state^)) {
+        raise(
+          InvalidState("There is already an app running, can not start"),
+        );
       };
-    },
-  };
+      let app = App.startApps(apps);
+      state := Some(app);
+      App.runMigrations(app)->Async.mapAsync(_ => app);
+    };
 
-  let start = apps => {
-    name: "start",
-    description: "start",
-    f: (_, args, description) => {
-      switch (args) {
-      | ["start", ..._] => Manager.startApps(apps)->Async.mapAsync(_ => ())
-      | _ => Async.async(Js.log("Usage: " ++ description))
+    let stop = () => {
+      switch (state^) {
+      | Some(instance) =>
+        App.stop(instance)->Async.mapAsync(_ => {state := None})
+      | _ =>
+        SihlCoreLog.warn(
+          "Can not stop app because it was not started, ignoring stop",
+          (),
+        );
+        Async.async();
       };
-    },
+    };
+
+    let seed = f => {
+      switch (state^) {
+      | Some(instance) =>
+        SihlCoreDb.Database.withConnection(instance.db, conn => f(conn))
+      | _ =>
+        SihlCoreLog.warn("Can not seed because app was not started", ());
+        raise(InvalidState("Can not seed because app was not started"));
+      };
+    };
+
+    let clean = () => {
+      switch (state^) {
+      | Some(instance) =>
+        let cleanFns =
+          instance.apps
+          ->Belt.List.map(app => app.clean)
+          ->Belt.List.toArray
+          ->Belt.List.concatMany;
+        SihlCoreDb.Database.clean(cleanFns, instance.db);
+      | _ =>
+        SihlCoreLog.warn("Can not clean because app was not started", ());
+        raise(InvalidState("Can not clean because app was not started"));
+      };
+    };
   };
 
-  let register = (commands: list(SihlCoreCli.command), apps) => {
-    let defaultCommands = [version, start(apps)];
-    commands
-    ->Belt.List.concat(defaultCommands)
-    ->Belt.List.map(command => (command.name, command))
-    ->Js.Dict.fromList;
-  };
+  module Cli = {
+    open! SihlCoreCli;
+    let version = {
+      name: "version",
+      description: "version",
+      f: (_, args, description) => {
+        switch (args) {
+        | ["version", ..._] => Async.async(Js.log("Sihl v0.0.1"))
+        | _ => Async.async(Js.log("Usage: sihl " ++ description))
+        };
+      },
+    };
 
-  let execute = (apps: list(App.t), args) => {
-    let commands =
-      apps
-      ->Belt.List.map(app => app.commands)
-      ->Belt.List.toArray
-      ->Belt.List.concatMany
-      ->register(apps);
-    let args = SihlCoreCli.trimArgs(args, "sihl");
-    let commandName = args->Belt.List.head->Belt.Option.getExn;
-    switch (SihlCoreCli.getCommand(commands, commandName)) {
-    | exception (SihlCoreCli.InvalidCommandException(msg)) =>
-      Async.async(Js.log(msg))
-    | command => SihlCoreCli.runCommand(command, args)
+    let start = apps => {
+      name: "start",
+      description: "start",
+      f: (_, args, description) => {
+        switch (args) {
+        | ["start", ..._] => Manager.startApps(apps)->Async.mapAsync(_ => ())
+        | _ => Async.async(Js.log("Usage: " ++ description))
+        };
+      },
+    };
+
+    let register = (commands: list(SihlCoreCli.command), apps) => {
+      let defaultCommands = [version, start(apps)];
+      commands
+      ->Belt.List.concat(defaultCommands)
+      ->Belt.List.map(command => (command.name, command))
+      ->Js.Dict.fromList;
+    };
+
+    let execute = (apps: list(App.t), args) => {
+      let commands =
+        apps
+        ->Belt.List.map(app => app.commands)
+        ->Belt.List.toArray
+        ->Belt.List.concatMany
+        ->register(apps);
+      let args = SihlCoreCli.trimArgs(args, "sihl");
+      let commandName = args->Belt.List.head->Belt.Option.getExn;
+      switch (SihlCoreCli.getCommand(commands, commandName)) {
+      | exception (SihlCoreCli.InvalidCommandException(msg)) =>
+        Async.async(Js.log(msg))
+      | command => SihlCoreCli.runCommand(command, args)
+      };
     };
   };
 };
