@@ -20,3 +20,12 @@ module Persistence = SihlCoreDbCore.Make(TestPersistence);
 
 module Core = SihlCore;
 module App = SihlCore.Make(Persistence);
+
+open Jest;
+open Expect;
+
+describe("Setup", () => {
+  test("all good", () => {
+    true |> expect |> toEqual(true)
+  })
+});

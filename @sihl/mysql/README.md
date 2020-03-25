@@ -1,19 +1,3 @@
-# sihl-core
+# @sihl/mysql
 
-This package contains namespaced libraries and glue code that Sihl apps depend on. Some of the libraries get pulled from NPM and Sihl provides the typed bindings.
-
-## Components
-
-* Async
-* Base64
-* Uuid
-* Bcrypt
-* Config
-* Date
-* Db
-* Error
-* HTTP
-* Logging
-* Testing
-* Settings
-* App
+This package contains bindings to [mysql2](https://www.npmjs.com/package/mysql2) and it implements the persistence API, so it can be used as data storage.
