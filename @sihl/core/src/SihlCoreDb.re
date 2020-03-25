@@ -1,11 +1,8 @@
-// TODO move to @sihl/mysql
 module Bool = SihlCoreDbCore.Bool;
+module Persistence = SihlCoreDbCore.Make(SihlCoreDbMysql.Mysql);
 
-// TODO extract types from implementation, move implementation into @sihl/mysql
 module Database = SihlCoreDbDatabase;
 module Connection = SihlCoreDbCore.Connection;
-
-// TODO extract types from implementation, move implementation into @sihl/mysql
 
 module Migration = SihlCoreDbMigration;
 

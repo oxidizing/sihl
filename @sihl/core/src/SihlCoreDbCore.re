@@ -46,10 +46,7 @@ module Connection = {
   type t;
 };
 
-module type DATABASE = {
-  let setup: Config.t => Database.t;
-  let end_: Database.t => unit;
-  let connect: Database.t => Js.Promise.t(Connection.t);
+module type CONNECTION = {
   let release: Connection.t => unit;
   let query:
     (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
@@ -59,13 +56,29 @@ module type DATABASE = {
     Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
 };
 
-module Make = (Database: DATABASE) => {
-  module Connection = {
+module type DATABASE = {
+  let setup: Config.t => Database.t;
+  let end_: Database.t => unit;
+  let connect: Database.t => Js.Promise.t(Connection.t);
+};
+
+module type INTERFACE = {
+  include DATABASE;
+  include CONNECTION;
+};
+
+module type PERSISTENCE = {
+  module Connection: CONNECTION;
+  module Database: DATABASE;
+};
+
+module Make = (Database: INTERFACE) : PERSISTENCE => {
+  module Connection: CONNECTION = {
+    let release = Database.release;
     let query = Database.query;
     let execute = Database.execute;
-    let release = Database.release;
   };
-  module Database = {
+  module Database: DATABASE = {
     let setup = Database.setup;
     let connect = Database.connect;
     let end_ = Database.end_;
