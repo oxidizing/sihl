@@ -1,4 +1,4 @@
-module Async = SihlCoreAsync;
+let map = (p, cb) => Js.Promise.then_(a => cb(a)->Js.Promise.resolve, p);
 
 module Bindings = {
   [@bs.module "mysql2/promise"]
@@ -65,24 +65,26 @@ module Mysql: SihlCoreDbCore.DATABASE = {
   let query = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-    let%Async result = Bindings.query_(connection, stmt, parameters);
-    Async.async @@
-    result
-    ->Result.Query.decode
-    ->Belt.Result.map(((rows, _))
-        // TODO read rowCount properly
-        => SihlCoreDbCore.Result.Query.make(rows, ~rowCount=0));
+    Bindings.query_(connection, stmt, parameters)
+    ->map(result =>
+        result
+        ->Result.Query.decode
+        ->Belt.Result.map(((rows, _))
+            // TODO read rowCount properly
+            => SihlCoreDbCore.Result.Query.make(rows, ~rowCount=0))
+      );
   };
   let execute = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-    let%Async result = Bindings.query_(connection, stmt, parameters);
-    Async.async @@
-    result
-    ->Result.Execution.decode
-    ->Belt.Result.map(_
-        // TODO read rowCount properly
-        => SihlCoreDbCore.Result.Execution.make(0));
+    Bindings.query_(connection, stmt, parameters)
+    ->map(result =>
+        result
+        ->Result.Execution.decode
+        ->Belt.Result.map(_
+            // TODO read rowCount properly
+            => SihlCoreDbCore.Result.Execution.make(0))
+      );
   };
 };
 
