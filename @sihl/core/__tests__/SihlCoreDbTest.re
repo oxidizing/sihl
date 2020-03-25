@@ -44,7 +44,7 @@ describe("Parses DATABASE_URL", () => {
   });
   test("returns config", () => {
     let config =
-      Sihl.App.Config.Db.make(
+      Sihl.Core.Config.Db.make(
         ~user="username",
         ~password="password",
         ~host="host",

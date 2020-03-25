@@ -5,7 +5,8 @@ module Core = {
   module Bcrypt = SihlCoreBcrypt;
   module Error = SihlCoreError;
   module Log = SihlCoreLog;
-  module DbTypes = SihlCoreDbCore;
+  module Db = SihlCoreDbCore;
+  module Config = SihlCoreConfig;
 };
 
 module MakeApp = (Database: SihlCoreDbCore.INTERFACE) => {
@@ -15,5 +16,4 @@ module MakeApp = (Database: SihlCoreDbCore.INTERFACE) => {
   module Main = SihlCoreMain.Make(Persistence);
   module Test = Main.Test;
   module Cli = SihlCoreCli.Make(Persistence);
-  module Config = SihlCoreConfig;
 };

@@ -11,8 +11,8 @@ module User = {
     familyName: string,
     phone: option(string),
     status: string,
-    admin: Sihl.Core.Db.Bool.t,
-    confirmed: Sihl.Core.Db.Bool.t,
+    admin: Sihl.App.Db.Bool.t,
+    confirmed: Sihl.App.Db.Bool.t,
   };
 
   let make =

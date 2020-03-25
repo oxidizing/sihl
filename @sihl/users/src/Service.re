@@ -25,7 +25,7 @@ module User = {
   let fromJson = Model.User.t_decode;
 
   let authenticate = (conn, token) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async tokenAssignment =
       Repository.Token.Get.query(conn, ~token)
       |> abortIfErr(Unauthorized("Not authorized"));
@@ -36,12 +36,12 @@ module User = {
   };
 
   let isTokenValid = (conn, token) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     Repository.Token.Get.query(conn, ~token)->Async.mapAsync(_ => true);
   };
 
   let logout = ((conn, user: Model.User.t)) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async _ =
       Repository.Token.DeleteForUser.query(
         conn,
@@ -52,7 +52,7 @@ module User = {
   };
 
   let getAll = ((conn, user)) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     if (!Model.User.isAdmin(user)) {
       abort @@ Forbidden("Not allowed");
     };
@@ -60,7 +60,7 @@ module User = {
   };
 
   let get = ((conn, user), ~userId) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     if (!Model.User.isAdmin(user) && !Model.User.isOwner(user, userId)) {
       abort @@ Forbidden("Not allowed");
     };
@@ -68,7 +68,7 @@ module User = {
   };
 
   let login = (conn, ~email, ~password) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
     switch (user) {
     | Error(_) => abort @@ Unauthorized("Invalid password or email provided")
@@ -92,7 +92,7 @@ module User = {
   };
 
   let confirmEmail = (conn, ~token) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async token =
       Repository.Token.Get.query(conn, ~token)
       |> abortIfErr(Forbidden("Not authorized"));
@@ -111,7 +111,7 @@ module User = {
   };
 
   let requestPasswordReset = (conn, ~email) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
     switch (user) {
     | Ok(user) =>
@@ -126,7 +126,7 @@ module User = {
   };
 
   let resetPassword = (conn, ~token, ~newPassword) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async token =
       Repository.Token.Get.query(conn, ~token)
       |> abortIfErr(Forbidden("Invalid token provided"));
@@ -144,7 +144,7 @@ module User = {
 
   let updatePassword =
       ((conn, user), ~userId, ~currentPassword, ~newPassword) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     if (!Model.User.isOwner(user, userId)) {
       abort @@ Forbidden("Not allowed");
     };
@@ -166,7 +166,7 @@ module User = {
   };
 
   let setPassword = ((conn, user), ~userId, ~newPassword) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     if (!Model.User.isAdmin(user)) {
       abort @@ Forbidden("Not allowed");
     };
@@ -189,7 +189,7 @@ module User = {
         ~familyName,
         ~phone,
       ) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     if (!Model.User.isAdmin(user) && !Model.User.isOwner(user, userId)) {
       abort @@ Forbidden("Not allowed");
     };
@@ -221,7 +221,7 @@ module User = {
         ~suppressEmail=false,
         (),
       ) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
     if (Belt.Result.isOk(user)) {
       abort @@ BadRequest("Email already taken");
@@ -250,7 +250,7 @@ module User = {
 
   let createAdmin =
       (conn, ~email, ~username, ~givenName, ~familyName, ~password) => {
-    open! Sihl.Core.Http.Endpoint;
+    open! Sihl.App.Http.Endpoint;
     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
     if (Belt.Result.isOk(user)) {
       abort @@ BadRequest("Email already taken");

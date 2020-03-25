@@ -29,7 +29,7 @@ let routes = database => [
 let app = externalAdminUiPages => {
   let adminUiPages = Belt.List.concat(adminUiPages, externalAdminUiPages);
   AdminUi.State.pages := adminUiPages;
-  Sihl.Core.Main.App.make(
+  Sihl.App.Main.App.make(
     ~name,
     ~namespace,
     ~routes,

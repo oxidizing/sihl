@@ -9,7 +9,7 @@ Promise.config({
 })
 |};
 
-open Sihl.Core.DbTypes;
+open Sihl.Core.Db;
 
 [@bs.module "mysql2/promise"]
 external setup: Config.t => Database.t = "createPool";

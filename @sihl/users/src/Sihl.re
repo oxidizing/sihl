@@ -1,4 +1,2 @@
-module Core = {
-  include SihlCore.Setup.Core;
-  include SihlCore.Setup.MakeApp(SihlMysql.Persistence.Mysql);
-};
+module Core = SihlCore.Setup.Core;
+module App = SihlCore.Setup.MakeApp(SihlMysql.Persistence.Mysql);
