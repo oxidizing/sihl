@@ -16,8 +16,8 @@ module TestDatabase = {
   ];
 };
 
-module Core = Setup.Core;
-module App = Setup.MakeApp(TestDatabase);
+module Core = Api.Core;
+module App = Api.MakeApp(TestDatabase);
 
 open Jest;
 open Expect;

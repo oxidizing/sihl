@@ -37,7 +37,7 @@ module Result = {
   };
 };
 
-module Mysql: INTERFACE = {
+module Persistence: INTERFACE = {
   let setup = Bindings.setup;
   let end_ = pool =>
     try(Bindings.end_(pool)) {

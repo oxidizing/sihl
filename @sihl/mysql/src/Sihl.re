@@ -1,1 +1,1 @@
-module Core = SihlCore.Setup.Core;
+module Core = SihlCore.Api.Core;
