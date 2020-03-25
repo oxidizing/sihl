@@ -1,10 +1,8 @@
 open Jest;
 open Expect;
 
-open SihlTestSetup;
-
 describe("Migrations", () => {
-  open App.Db.Migration;
+  open Sihl.App.Db.Migration;
   test("steps to apply returns empty list", () => {
     let migration = {steps: _ => [], namespace: "foo-namespace"};
     stepsToApply(migration, 10)
@@ -35,25 +33,25 @@ describe("Migrations", () => {
 
 describe("Parses DATABASE_URL", () => {
   test("is empty with empty string", () => {
-    App.Db.Database.parseUrl("")
+    Sihl.App.Db.Database.parseUrl("")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("is empty with invalid url", () => {
-    App.Db.Database.parseUrl("sdfaadsf")
+    Sihl.App.Db.Database.parseUrl("sdfaadsf")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("returns config", () => {
     let config =
-      SihlCoreConfig.Db.make(
+      Sihl.App.Config.Db.make(
         ~user="username",
         ~password="password",
         ~host="host",
         ~port="port",
         ~db="db",
       );
-    App.Db.Database.parseUrl("mysql://username:password@host:port/db")
+    Sihl.App.Db.Database.parseUrl("mysql://username:password@host:port/db")
     |> expect
     |> toEqual(Ok(config));
   });

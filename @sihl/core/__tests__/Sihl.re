@@ -1,8 +1,8 @@
-module TestPersistence = {
+module TestDatabase = {
   let release = _ => ();
-  let query = (_, ~stmt, ~parameters) =>
+  let query = (_, ~stmt as _, ~parameters as _) =>
     Js.Promise.resolve(Belt.Result.Error("Not implemented"));
-  let execute = (_, ~stmt, ~parameters) =>
+  let execute = (_, ~stmt as _, ~parameters as _) =>
     Js.Promise.resolve(Belt.Result.Error("Not implemented"));
   let setup: SihlCoreDbCore.Config.t => SihlCoreDbCore.Database.t = [%raw
     {| function() { return ""; } |}
@@ -16,10 +16,8 @@ module TestPersistence = {
   ];
 };
 
-module Persistence = SihlCoreDbCore.Make(TestPersistence);
-
-module Core = SihlCore;
-module App = SihlCore.Make(Persistence);
+module Core = Setup.Core;
+module App = Setup.MakeApp(TestDatabase);
 
 open Jest;
 open Expect;

@@ -3,7 +3,7 @@ open Expect;
 
 describe("Async", () => {
   testPromise("allInOrder() executes functions in order", () => {
-    open SihlCoreAsync;
+    open Sihl.Core.Async;
     let actual = ref([]);
     let first = () =>
       wait(50)->mapAsync(_ => actual := Belt.List.add(actual^, 3));

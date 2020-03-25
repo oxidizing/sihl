@@ -9,9 +9,7 @@ Promise.config({
 })
 |};
 
-open SihlCore.SihlCoreDbCore;
-module Error = SihlCore.SihlCore.Error;
-module Log = SihlCore.SihlCore.Log;
+open Sihl.Core.DbTypes;
 
 [@bs.module "mysql2/promise"]
 external setup: Config.t => Database.t = "createPool";

@@ -12,14 +12,12 @@ Promise.config({
 let map = (p, cb) => Js.Promise.then_(a => cb(a)->Js.Promise.resolve, p);
 
 open SihlCore.SihlCoreDbCore;
-module Error = SihlCore.SihlCore.Error;
-module Log = SihlCore.SihlCore.Log;
 
 module Result = {
   module Query = {
     [@decco]
     type t = (list(Js.Json.t), Js.Json.t);
-    let decode = Error.Decco.stringifyDecoder(t_decode);
+    let decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
   };
 
   module Execution = {
@@ -35,7 +33,7 @@ module Result = {
 
     [@decco]
     type t = (meta, unit);
-    let decode = Error.Decco.stringifyDecoder(t_decode);
+    let decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
   };
 };
 
@@ -45,8 +43,8 @@ module Mysql: INTERFACE = {
     try(Bindings.end_(pool)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
-      | Some(message) => Log.error(message, ())
-      | None => Log.error("Failed to end pool", ())
+      | Some(message) => Sihl.Core.Log.error(message, ())
+      | None => Sihl.Core.Log.error("Failed to end pool", ())
       }
     };
   let connect = Bindings.connect;
@@ -54,8 +52,8 @@ module Mysql: INTERFACE = {
     try(Bindings.release(connection)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
-      | Some(message) => Log.error(message, ())
-      | None => Log.error("Failed to release client", ())
+      | Some(message) => Sihl.Core.Log.error(message, ())
+      | None => Sihl.Core.Log.error("Failed to release client", ())
       }
     };
 
