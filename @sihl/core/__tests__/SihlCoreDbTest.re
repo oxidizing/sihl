@@ -1,11 +1,10 @@
 open Jest;
 open Expect;
 
-module Persistence = SihlCoreDbCore.Make(SihlCoreDbMysql.Mysql);
-module SihlCoreDb = SihlCoreDb.Make(Persistence);
+open SihlTestSetup;
 
 describe("Migrations", () => {
-  open SihlCoreDb.Migration;
+  open App.Db.Migration;
   test("steps to apply returns empty list", () => {
     let migration = {steps: _ => [], namespace: "foo-namespace"};
     stepsToApply(migration, 10)
@@ -36,12 +35,12 @@ describe("Migrations", () => {
 
 describe("Parses DATABASE_URL", () => {
   test("is empty with empty string", () => {
-    SihlCoreDb.Database.parseUrl("")
+    App.Db.Database.parseUrl("")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("is empty with invalid url", () => {
-    SihlCoreDb.Database.parseUrl("sdfaadsf")
+    App.Db.Database.parseUrl("sdfaadsf")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
@@ -54,7 +53,7 @@ describe("Parses DATABASE_URL", () => {
         ~port="port",
         ~db="db",
       );
-    SihlCoreDb.Database.parseUrl("mysql://username:password@host:port/db")
+    App.Db.Database.parseUrl("mysql://username:password@host:port/db")
     |> expect
     |> toEqual(Ok(config));
   });
