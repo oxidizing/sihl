@@ -3,6 +3,7 @@
   "workspaces": [
     "@sihl/core",
     "@sihl/ql",
-    "@sihl/users"
+    "@sihl/users",
+    "@sihl/mysql"
   ]
 }

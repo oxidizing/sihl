@@ -1,5 +1,4 @@
-module Persistence =
-  SihlCore.SihlCoreDbCore.Make(SihlCore.SihlCoreDbMysql.Mysql);
+module Persistence = SihlCore.SihlCoreDbCore.Make(SihlMysql.SihlMysql.Mysql);
 
 module Core = {
   include SihlCore.SihlCore;
