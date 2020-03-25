@@ -1,17 +1,4 @@
-// Using Bluebird for the global promise implementation allows actually useful
-// stack traces to be generated for debugging runtime issues.
-%bs.raw
-{|global.Promise = require('bluebird')|};
-%bs.raw
-{|
-Promise.config({
-  warnings: false
-})
-|};
-
-let map = (p, cb) => Js.Promise.then_(a => cb(a)->Js.Promise.resolve, p);
-
-open SihlCore.SihlCoreDbCore;
+module Async = Sihl.Core.Async;
 
 module Result = {
   module Query = {
@@ -37,7 +24,7 @@ module Result = {
   };
 };
 
-module Persistence: INTERFACE = {
+module Persistence: Sihl.Core.Db.INTERFACE = {
   let setup = Bindings.setup;
   let end_ = pool =>
     try(Bindings.end_(pool)) {
@@ -61,7 +48,7 @@ module Persistence: INTERFACE = {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
     Bindings.query_(connection, stmt, parameters)
-    ->map(result =>
+    ->Async.mapAsync(result =>
         result
         ->Result.Query.decode
         ->Belt.Result.map(((rows, _))
@@ -73,7 +60,7 @@ module Persistence: INTERFACE = {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
     Bindings.query_(connection, stmt, parameters)
-    ->map(result =>
+    ->Async.mapAsync(result =>
         result
         ->Result.Execution.decode
         ->Belt.Result.map(_

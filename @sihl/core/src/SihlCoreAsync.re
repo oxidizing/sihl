@@ -11,6 +11,8 @@ Promise.config({
 })
 |};
 
+type t('a) = Js.Promise.t('a);
+
 let let_ = (p, cb) => Js.Promise.then_(cb, p);
 
 let mapAsync = (p, cb) =>

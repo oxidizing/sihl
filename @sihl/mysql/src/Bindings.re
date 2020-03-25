@@ -1,23 +1,15 @@
-// Using Bluebird for the global promise implementation allows actually useful
-// stack traces to be generated for debugging runtime issues.
-%bs.raw
-{|global.Promise = require('bluebird')|};
-%bs.raw
-{|
-Promise.config({
-  warnings: false
-})
-|};
-
-open Sihl.Core.Db;
+module Async = Sihl.Core.Async;
 
 [@bs.module "mysql2/promise"]
-external setup: Config.t => Database.t = "createPool";
-[@bs.send] external end_: Database.t => unit = "end";
+external setup: Sihl.Core.Db.Config.t => Sihl.Core.Db.Database.t =
+  "createPool";
+[@bs.send] external end_: Sihl.Core.Db.Database.t => unit = "end";
 [@bs.send]
-external connect: Database.t => Js.Promise.t(Connection.t) = "getConnection";
-[@bs.send] external release: Connection.t => unit = "release";
-
+external connect:
+  Sihl.Core.Db.Database.t => Async.t(Sihl.Core.Db.Connection.t) =
+  "getConnection";
+[@bs.send] external release: Sihl.Core.Db.Connection.t => unit = "release";
 [@bs.send]
-external query_: (Connection.t, string, Js.Json.t) => Js.Promise.t(Js.Json.t) =
+external query_:
+  (Sihl.Core.Db.Connection.t, string, Js.Json.t) => Async.t(Js.Json.t) =
   "query";
