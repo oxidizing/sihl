@@ -1,6 +1,9 @@
 open Jest;
 open Expect;
 
+module Persistence = SihlCoreDbCore.Make(SihlCoreDbMysql.Mysql);
+module SihlCoreDb = SihlCoreDb.Make(Persistence);
+
 describe("Migrations", () => {
   open SihlCoreDb.Migration;
   test("steps to apply returns empty list", () => {

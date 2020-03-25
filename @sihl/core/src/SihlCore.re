@@ -6,14 +6,11 @@ module Bcrypt = SihlCoreBcrypt;
 module Error = SihlCoreError;
 module Log = SihlCoreLog;
 
-module Persistence = SihlCoreDbCore.Make(SihlCoreDbMysql.Mysql);
-module Db = SihlCoreDb;
-module Http = SihlCoreHttp.Make(Persistence);
-
-module Main = SihlCoreMain.Make(Persistence);
-
-module Cli = SihlCoreCli.Make(Persistence);
-
-module Config = SihlCoreConfig;
-
-module Test = SihlCoreTest.Make(Persistence);
+module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+  module Db = SihlCoreDb.Make(Persistence);
+  module Http = SihlCoreHttp.Make(Persistence);
+  module Main = SihlCoreMain.Make(Persistence);
+  module Test = Main.Test;
+  module Cli = SihlCoreCli.Make(Persistence);
+  module Config = SihlCoreConfig;
+};

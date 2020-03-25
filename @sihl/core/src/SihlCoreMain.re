@@ -1,10 +1,11 @@
-module Async = SihlCoreAsync;
-
-exception InvalidConfiguration(string);
-
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+  module Async = SihlCoreAsync;
+
+  exception InvalidConfiguration(string);
+
   module SihlCoreHttp = SihlCoreHttp.Make(Persistence);
   module SihlCoreCli = SihlCoreCli.Make(Persistence);
+  module SihlCoreDb = SihlCoreDb.Make(Persistence);
 
   module App = {
     type t = {
@@ -171,6 +172,19 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       | exception (SihlCoreCli.InvalidCommandException(msg)) =>
         Async.async(Js.log(msg))
       | command => SihlCoreCli.runCommand(command, args)
+      };
+    };
+  };
+
+  module Test = {
+    module Async = SihlCoreAsync;
+    module Integration = {
+      open Jest;
+      [%raw "require('isomorphic-fetch')"];
+      let setupHarness = apps => {
+        beforeAllPromise(_ => Manager.startApps(apps));
+        beforeEachPromise(_ => Manager.clean());
+        afterAllPromise(_ => Manager.stop());
       };
     };
   };
