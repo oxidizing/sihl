@@ -2,6 +2,7 @@ module Async = SihlCoreAsync;
 
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   module Database = SihlCoreDbDatabase.Make(Persistence);
+  module Repo = SihlCoreDbRepo.Make(Persistence);
 
   module Status = {
     [@decco]
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS core_migration_status (
 ";
 
       let query = connection => {
-        SihlCoreDbRepo.execute(connection, stmt);
+        Repo.execute(connection, stmt);
       };
     };
 
@@ -43,7 +44,7 @@ WHERE namespace = ?;
 
       let query = (connection, ~namespace) => {
         let%Async result =
-          SihlCoreDbRepo.getOne(
+          Repo.getOne(
             ~connection,
             ~stmt,
             ~parameters=parameters_encode(namespace),
@@ -68,7 +69,7 @@ WHERE namespace = ?;
       type parameters = string;
 
       let query = (connection, ~namespace) =>
-        SihlCoreDbRepo.getOne(
+        Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(namespace),
@@ -98,7 +99,7 @@ dirty = VALUES(dirty)
       type parameters = (string, int, SihlCoreDbCore.Bool.t);
 
       let query = (connection, ~status: t) => {
-        SihlCoreDbRepo.execute(
+        Repo.execute(
           ~parameters=
             parameters_encode((
               status.namespace,
@@ -161,9 +162,7 @@ dirty = VALUES(dirty)
           );
           let%Async _ =
             steps
-            ->Belt.List.map(((_, stmt), ()) =>
-                SihlCoreDbRepo.execute(conn, stmt)
-              )
+            ->Belt.List.map(((_, stmt), ()) => Repo.execute(conn, stmt))
             ->Async.allInOrder;
           Status.Upsert.query(conn, ~status={...status, version: newVersion})
           ->Async.mapAsync(_ =>

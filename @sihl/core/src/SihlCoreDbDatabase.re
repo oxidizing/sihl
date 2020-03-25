@@ -1,6 +1,7 @@
 module Async = SihlCoreAsync;
 
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+  module Repo = SihlCoreDbRepo.Make(Persistence);
   let parseUrl = url => {
     switch (url |> Js.String.replace("mysql://", "") |> Js.String.split("@")) {
     | [|credentials, hostAndDb|] =>
@@ -51,11 +52,10 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     withConnection(
       db,
       conn => {
-        let%Async _ =
-          SihlCoreDbRepo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
+        let%Async _ = Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
         let%Async _ =
           fns->Belt.List.map((f, ()) => f(conn))->Async.allInOrder;
-        SihlCoreDbRepo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
+        Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
       },
     );
   };
