@@ -1,128 +1,131 @@
 module Async = SihlCoreAsync;
 
-module Result = {
-  module MetaData = {
-    [@decco]
-    type t = {
-      [@decco.key "FOUND_ROWS()"]
-      totalCount: int,
+module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+  module Result = {
+    module MetaData = {
+      [@decco]
+      type t = {
+        [@decco.key "FOUND_ROWS()"]
+        totalCount: int,
+      };
     };
+
+    type t('a) = (list('a), MetaData.t);
+
+    let create = (rows, metaData) => (rows, metaData);
+    let createWithTotal = (value, totalCount) => (
+      value,
+      MetaData.{totalCount: totalCount},
+    );
+    let total = ((_, MetaData.{totalCount})) => totalCount;
+    let metaData = ((_, metaData)) => metaData;
+    let rows = ((rows, _)) => rows;
+
+    let foundRowsQuery = "SELECT FOUND_ROWS();";
   };
 
-  type t('a) = (list('a), MetaData.t);
+  let debug = (stmt, parameters) => {
+    "for stmt="
+    ++ stmt
+    ++ Belt.Option.mapWithDefault(parameters, "", parameters =>
+         " with params=" ++ Js.Json.stringify(parameters)
+       );
+  };
 
-  let create = (rows, metaData) => (rows, metaData);
-  let createWithTotal = (value, totalCount) => (
-    value,
-    MetaData.{totalCount: totalCount},
-  );
-  let total = ((_, MetaData.{totalCount})) => totalCount;
-  let metaData = ((_, metaData)) => metaData;
-  let rows = ((rows, _)) => rows;
+  let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
+    let%Async result =
+      Persistence.Connection.query(connection, ~stmt, ~parameters);
+    Async.async(
+      switch (result) {
+      | Ok(([row], _)) =>
+        row |> SihlCoreError.Decco.stringifyDecoder(decode)
+      | Ok(([], _)) =>
+        Error("No rows found in database " ++ debug(stmt, parameters))
+      | Ok(_) =>
+        Error(
+          "Two or more rows found when we were expecting only one "
+          ++ debug(stmt, parameters),
+        )
+      | Error(msg) =>
+        SihlCoreDbError.abort(
+          "Error happened in DB when getOne() msg="
+          ++ msg
+          ++ debug(stmt, parameters),
+        )
+      },
+    );
+  };
 
-  let foundRowsQuery = "SELECT FOUND_ROWS();";
-};
-
-let debug = (stmt, parameters) => {
-  "for stmt="
-  ++ stmt
-  ++ Belt.Option.mapWithDefault(parameters, "", parameters =>
-       " with params=" ++ Js.Json.stringify(parameters)
-     );
-};
-
-let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-  let%Async result =
-    SihlCoreDbMysql.Connection.query(connection, ~stmt, ~parameters);
-  Async.async(
+  let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
+    let%Async result =
+      Persistence.Connection.query(connection, ~stmt, ~parameters);
     switch (result) {
-    | Ok(([row], _)) => row |> SihlCoreError.Decco.stringifyDecoder(decode)
-    | Ok(([], _)) =>
-      Error("No rows found in database " ++ debug(stmt, parameters))
-    | Ok(_) =>
-      Error(
-        "Two or more rows found when we were expecting only one "
-        ++ debug(stmt, parameters),
-      )
-    | Error(msg) =>
-      SihlCoreDbError.abort(
-        "Error happened in DB when getOne() msg="
-        ++ msg
-        ++ debug(stmt, parameters),
-      )
-    },
-  );
-};
-
-let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-  let%Async result =
-    SihlCoreDbMysql.Connection.query(connection, ~stmt, ~parameters);
-  switch (result) {
-  | Ok((rows, _)) =>
-    let result =
-      rows
-      ->Belt.List.map(SihlCoreError.Decco.stringifyDecoder(decode))
-      ->Belt.List.map(result =>
-          switch (result) {
-          | Ok(result) => result
-          | Error(msg) =>
+    | Ok((rows, _)) =>
+      let result =
+        rows
+        ->Belt.List.map(SihlCoreError.Decco.stringifyDecoder(decode))
+        ->Belt.List.map(result =>
+            switch (result) {
+            | Ok(result) => result
+            | Error(msg) =>
+              SihlCoreDbError.abort(
+                "Error happened in DB when getMany() msg="
+                ++ msg
+                ++ debug(stmt, parameters),
+              )
+            }
+          );
+      let%Async meta =
+        Persistence.Connection.query(
+          connection,
+          ~stmt=Result.foundRowsQuery,
+          ~parameters=None,
+        );
+      let meta =
+        switch (meta) {
+        | Ok(([row], _)) =>
+          switch (
+            row
+            |> SihlCoreError.Decco.stringifyDecoder(Result.MetaData.t_decode)
+          ) {
+          | Ok(meta) => meta
+          | Error(_) =>
             SihlCoreDbError.abort(
-              "Error happened in DB when getMany() msg="
-              ++ msg
+              "Error happened in DB when decoding meta "
               ++ debug(stmt, parameters),
             )
           }
-        );
-    let%Async meta =
-      SihlCoreDbMysql.Connection.query(
-        connection,
-        ~stmt=Result.foundRowsQuery,
-        ~parameters=None,
-      );
-    let meta =
-      switch (meta) {
-      | Ok(([row], _)) =>
-        switch (
-          row
-          |> SihlCoreError.Decco.stringifyDecoder(Result.MetaData.t_decode)
-        ) {
-        | Ok(meta) => meta
-        | Error(_) =>
+        | _ =>
           SihlCoreDbError.abort(
-            "Error happened in DB when decoding meta "
+            "Error happened in DB when fetching FOUND_ROWS() "
             ++ debug(stmt, parameters),
           )
-        }
-      | _ =>
-        SihlCoreDbError.abort(
-          "Error happened in DB when fetching FOUND_ROWS() "
-          ++ debug(stmt, parameters),
-        )
-      };
-    Async.async @@ Result.create(result, meta);
-  | Error(msg) =>
-    SihlCoreDbError.abort(
-      "Error happened in DB when getMany() msg="
-      ++ msg
-      ++ debug(stmt, parameters),
-    )
-  };
-};
-
-let execute = (~parameters=?, connection, stmt) => {
-  let%Async rows =
-    SihlCoreDbMysql.Connection.execute(connection, ~stmt, ~parameters);
-  Async.async(
-    switch (rows) {
-    | Ok(_) => ()
+        };
+      Async.async @@ Result.create(result, meta);
     | Error(msg) =>
       SihlCoreDbError.abort(
         "Error happened in DB when getMany() msg="
         ++ msg
         ++ debug(stmt, parameters),
       )
-    },
-  );
+    };
+  };
+
+  let execute = (~parameters=?, connection, stmt) => {
+    let%Async rows =
+      Persistence.Connection.execute(connection, ~stmt, ~parameters);
+    Async.async(
+      switch (rows) {
+      | Ok(_) => ()
+      | Error(msg) =>
+        SihlCoreDbError.abort(
+          "Error happened in DB when getMany() msg="
+          ++ msg
+          ++ debug(stmt, parameters),
+        )
+      },
+    );
+  };
 };
 
 // taken from caqti make use of GADT
