@@ -176,11 +176,11 @@ module Endpoint = {
   let verb = endpoint => endpoint.verb;
 
   type dbEndpointConfig('body_in, 'params, 'query) = {
-    database: SihlCoreDb.Database.t,
+    database: SihlCoreDbCore.Database.t,
     path: string,
     verb,
     handler:
-      (SihlCoreDb.Connection.t, request('body_in, 'params, 'query)) =>
+      (SihlCoreDbCore.Connection.t, request('body_in, 'params, 'query)) =>
       Js.Promise.t(response),
   };
 
@@ -430,9 +430,9 @@ module Endpoint = {
         path: cfg.path,
         verb: cfg.verb,
         handler: req => {
-          let%Async conn = SihlCoreDb.Database.connect(cfg.database);
+          let%Async conn = SihlCoreDbMysql.Database.connect(cfg.database);
           let%Async response = cfg.handler(conn, req);
-          SihlCoreDb.Connection.release(conn);
+          SihlCoreDbMysql.Connection.release(conn);
           async(response);
         },
       },

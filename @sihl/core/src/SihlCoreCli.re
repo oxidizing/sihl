@@ -21,7 +21,8 @@ let trimArgs = (args, command) => {
 type command = {
   name: string,
   description: string,
-  f: (SihlCoreDb.Connection.t, list(string), string) => Js.Promise.t(unit),
+  f:
+    (SihlCoreDbCore.Connection.t, list(string), string) => Js.Promise.t(unit),
 };
 
 let runCommand = (command, args) => {
@@ -32,7 +33,7 @@ let runCommand = (command, args) => {
         Async.async(Js.log2("Failed to run command: ", err))
       )
     );
-  Async.async(SihlCoreDb.Database.end_(db));
+  Async.async(SihlCoreDbMysql.Database.end_(db));
 };
 
 let printCommands = commands => {
