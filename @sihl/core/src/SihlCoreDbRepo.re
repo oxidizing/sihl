@@ -33,7 +33,7 @@ let debug = (stmt, parameters) => {
 
 let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
   let%Async result =
-    SihlCoreDbMysql.Connection.query(~connection, ~stmt, ~parameters);
+    SihlCoreDbMysql.Connection.query(connection, ~stmt, ~parameters);
   Async.async(
     switch (result) {
     | Ok(([row], _)) => row |> SihlCoreError.Decco.stringifyDecoder(decode)
@@ -56,7 +56,7 @@ let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
 
 let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
   let%Async result =
-    SihlCoreDbMysql.Connection.query(~connection, ~stmt, ~parameters);
+    SihlCoreDbMysql.Connection.query(connection, ~stmt, ~parameters);
   switch (result) {
   | Ok((rows, _)) =>
     let result =
@@ -75,7 +75,7 @@ let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
         );
     let%Async meta =
       SihlCoreDbMysql.Connection.query(
-        ~connection,
+        connection,
         ~stmt=Result.foundRowsQuery,
         ~parameters=None,
       );
@@ -111,7 +111,7 @@ let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
 
 let execute = (~parameters=?, connection, stmt) => {
   let%Async rows =
-    SihlCoreDbMysql.Connection.execute(~connection, ~stmt, ~parameters);
+    SihlCoreDbMysql.Connection.execute(connection, ~stmt, ~parameters);
   Async.async(
     switch (rows) {
     | Ok(_) => ()

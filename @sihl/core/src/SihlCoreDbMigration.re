@@ -5,7 +5,7 @@ module Status = {
   type t = {
     namespace: string,
     version: int,
-    dirty: SihlCoreDbMysql.Bool.t,
+    dirty: SihlCoreDbCore.Bool.t,
   };
 
   let make = (~namespace) => {namespace, version: 0, dirty: false};
@@ -92,7 +92,7 @@ dirty = VALUES(dirty)
 ;";
 
     [@decco]
-    type parameters = (string, int, SihlCoreDbMysql.Bool.t);
+    type parameters = (string, int, SihlCoreDbCore.Bool.t);
 
     let query = (connection, ~status: t) => {
       SihlCoreDbRepo.execute(

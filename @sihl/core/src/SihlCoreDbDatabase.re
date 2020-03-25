@@ -1,7 +1,5 @@
 module Async = SihlCoreAsync;
 
-include SihlCoreDbMysql.Pool;
-
 let parseUrl = url => {
   switch (url |> Js.String.replace("mysql://", "") |> Js.String.split("@")) {
   | [|credentials, hostAndDb|] =>
@@ -30,7 +28,7 @@ let parseUrlFromEnv = () => {
 };
 
 let make = (config: SihlCoreConfig.Db.t) =>
-  SihlCoreDbMysql.pool({
+  SihlCoreDbMysql.Database.setup({
     "user": config.dbUser,
     "host": config.dbHost,
     "database": config.dbName,
@@ -42,7 +40,7 @@ let make = (config: SihlCoreConfig.Db.t) =>
   });
 
 let withConnection = (db, f) => {
-  let%Async conn = connect(db);
+  let%Async conn = SihlCoreDbMysql.Database.connect(db);
   let%Async result = f(conn);
   SihlCoreDbMysql.Connection.release(conn);
   Async.async(result);

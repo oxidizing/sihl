@@ -1,3 +1,16 @@
+module Bool = {
+  let encoder = i => i ? Js.Json.number(1.0) : Js.Json.number(0.0);
+  let decoder = j => {
+    switch (Js.Json.decodeNumber(j)) {
+    | Some(0.0) => Ok(false)
+    | Some(1.0) => Ok(true)
+    | _ => Decco.error(~path="", "Not a boolean", j)
+    };
+  };
+  [@decco]
+  type t = [@decco.codec (encoder, decoder)] bool;
+};
+
 module Result = {
   type meta = {rowCount: int};
   module Query = {
@@ -39,10 +52,10 @@ module type DATABASE = {
   let connect: Database.t => Js.Promise.t(Connection.t);
   let release: Connection.t => unit;
   let query:
-    (Connection.t, ~params: Js.Json.t=?, ~stmt: string) =>
+    (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Query.t, string));
   let execute:
-    (Connection.t, ~params: Js.Json.t=?, ~stmt: string) =>
+    (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
 };
 

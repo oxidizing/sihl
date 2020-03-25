@@ -6,8 +6,8 @@ module App = {
   type t = {
     name: string,
     namespace: string,
-    routes: SihlCoreDb.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
-    clean: list(SihlCoreDb.Connection.t => Js.Promise.t(unit)),
+    routes: SihlCoreDbCore.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
+    clean: list(SihlCoreDbCore.Connection.t => Js.Promise.t(unit)),
     migration: SihlCoreDbMigration.t,
     commands: list(SihlCoreCli.command),
   };
@@ -21,7 +21,7 @@ module App = {
   module Instance = {
     type instance = {
       http: SihlCoreHttp.application,
-      db: SihlCoreDb.Database.t,
+      db: SihlCoreDbCore.Database.t,
       apps: list(t),
     };
     let http = instance => instance.http;
@@ -62,7 +62,7 @@ module App = {
   let stop = (instance: Instance.instance) => {
     SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
     let%Async _ = SihlCoreHttp.shutdown(instance.http);
-    Async.async @@ SihlCoreDb.Database.end_(instance.db);
+    Async.async @@ SihlCoreDbMysql.Database.end_(instance.db);
   };
 };
 
