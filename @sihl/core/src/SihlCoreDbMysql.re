@@ -42,7 +42,7 @@ module Result = {
   };
 };
 
-module Mysql: SihlCoreDbCore.DATABASE = {
+module Mysql: SihlCoreDbCore.INTERFACE = {
   let setup = Bindings.setup;
   let end_ = pool =>
     try(Bindings.end_(pool)) {
