@@ -33,7 +33,6 @@ let app = externalAdminUiPages => {
     ~name,
     ~namespace,
     ~routes,
-    ~clean=[Repository.Token.Clean.run, Repository.User.Clean.run],
     ~migration=Migrations.MariaDb.make(~namespace),
     ~commands=[Cli.createAdmin],
   );

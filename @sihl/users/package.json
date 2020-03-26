@@ -2,6 +2,7 @@
   "name": "@sihl/users",
   "version": "0.0.10",
   "scripts": {
+    "sihl": "node src/Main.bs.js sihl",
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",

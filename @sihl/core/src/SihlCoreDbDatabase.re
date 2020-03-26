@@ -42,28 +42,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       "queueLimit": config.queueLimit |> int_of_string,
     });
 
-  // TODO evaluate whether this has to be moved into @sihl/mysql
-  let clean = (fns, db) => {
-    Persistence.Database.withConnection(
-      db,
-      conn => {
-        let%Async _ =
-          Persistence.Connection.execute(
-            conn,
-            ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
-            ~parameters=None,
-          );
-        let%Async _ =
-          fns->Belt.List.map((f, ()) => f(conn))->Async.allInOrder;
-        Persistence.Connection.execute(
-          conn,
-          ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
-          ~parameters=None,
-        );
-      },
-    );
-  };
-
   let connectWithCfg = () => {
     parseUrlFromEnv() |> SihlCoreError.failIfError |> make;
   };

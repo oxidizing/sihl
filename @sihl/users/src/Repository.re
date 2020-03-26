@@ -1,15 +1,6 @@
 module Async = Sihl.Core.Async;
 
 module User = {
-  module Clean = {
-    let stmt = "
-TRUNCATE TABLE users_users;
-";
-    let run: Sihl.App.Persistence.Connection.t => Js.Promise.t(unit) = {
-      connection => Sihl.App.Db.Repo.execute(connection, stmt);
-    };
-  };
-
   module GetAll = {
     let stmt = "
 SELECT
@@ -177,15 +168,6 @@ confirmed = VALUES(confirmed)
 };
 
 module Token = {
-  module Clean = {
-    let stmt = "
-TRUNCATE TABLE users_tokens;
-";
-    let run: Sihl.App.Persistence.Connection.t => Js.Promise.t(unit) = {
-      connection => Sihl.App.Db.Repo.execute(connection, stmt);
-    };
-  };
-
   module Upsert = {
     let stmt = "
 INSERT INTO users_tokens (

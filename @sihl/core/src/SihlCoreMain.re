@@ -12,7 +12,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       name: string,
       namespace: string,
       routes: Persistence.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
-      clean: list(Persistence.Connection.t => Js.Promise.t(unit)),
       migration: SihlCoreDb.Migration.t,
       commands: list(SihlCoreCli.command),
     };
@@ -36,11 +35,10 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let db = instance => Instance.db(instance);
 
-    let make = (~name, ~namespace, ~routes, ~clean, ~migration, ~commands) => {
+    let make = (~name, ~namespace, ~routes, ~migration, ~commands) => {
       name,
       namespace,
       routes,
-      clean,
       migration,
       commands,
     };
@@ -112,13 +110,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let clean = () => {
       switch (state^) {
-      | Some(instance) =>
-        let cleanFns =
-          instance.apps
-          ->Belt.List.map(app => app.clean)
-          ->Belt.List.toArray
-          ->Belt.List.concatMany;
-        SihlCoreDb.Database.clean(cleanFns, instance.db);
+      | Some(instance) => Persistence.Database.clean(instance.db)
       | _ =>
         SihlCoreLog.warn("Can not clean because app was not started", ());
         raise(InvalidState("Can not clean because app was not started"));

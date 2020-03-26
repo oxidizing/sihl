@@ -77,6 +77,7 @@ module type PERSISTENCE = {
     let end_: t => unit;
     let withConnection:
       (t, Connection.t => Js.Promise.t('a)) => Js.Promise.t('a);
+    let clean: t => Js.Promise.t(unit);
   };
   module Migration: {
     module Status: MIGRATIONSTATUS;

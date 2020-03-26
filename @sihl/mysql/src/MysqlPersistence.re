@@ -101,12 +101,81 @@ module Database = {
       | None => Sihl.Core.Log.error("Failed to end pool", ())
       }
     };
+
   let withConnection = (db, f) => {
     let%Async conn = connect(db);
     let%Async result = f(conn);
     Connection.release(conn);
     Async.async(result);
   };
+
+  [@decco]
+  type command = {command: string};
+
+  // TODO inject database name
+  let stmt = "
+  SELECT
+  CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS command
+  FROM information_schema.TABLES
+  WHERE TABLE_SCHEMA = 'dev';
+";
+
+  let clean = db =>
+    withConnection(
+      db,
+      conn => {
+        let%Async _ =
+          Connection.execute(
+            conn,
+            ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
+            ~parameters=None,
+          );
+        let%Async commands =
+          Connection.querySimple(conn, ~stmt, ~parameters=None);
+        let commands =
+          switch (commands) {
+          | Ok(rows) =>
+            rows
+            ->Belt.List.map(
+                Sihl.Core.Error.Decco.stringifyDecoder(command_decode),
+              )
+            ->Belt.List.map(result =>
+                switch (result) {
+                | Ok(result) => result
+                | Error(msg) =>
+                  Sihl.Core.Db.abort(
+                    "Error happened in DB when getMany() msg="
+                    ++ msg
+                    ++ Sihl.Core.Db.debug(stmt, None),
+                  )
+                }
+              )
+          | Error(msg) =>
+            Sihl.Core.Db.abort(
+              "Error happened in DB when getMany() msg="
+              ++ msg
+              ++ Sihl.Core.Db.debug(stmt, None),
+            )
+          };
+        let%Async _ =
+          commands
+          ->Belt.List.map(({command}, ()) => {
+              command !== "TRUNCATE TABLE core_migration_status;"
+                ? Connection.execute(conn, ~stmt=command, ~parameters=None)
+                  ->Async.mapAsync(_ => ())
+                : Async.async()
+            })
+          ->Sihl.Core.Async.allInOrder;
+
+        let%Async _ =
+          Connection.execute(
+            conn,
+            ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
+            ~parameters=None,
+          );
+        Async.async();
+      },
+    );
 };
 
 module Migration = {
