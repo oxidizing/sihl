@@ -5,7 +5,7 @@ module User = {
     let stmt = "
 TRUNCATE TABLE users_users;
 ";
-    let run: Sihl.App.Db.Connection.t => Js.Promise.t(unit) = {
+    let run: Sihl.App.Persistence.Connection.t => Js.Promise.t(unit) = {
       connection => Sihl.App.Db.Repo.execute(connection, stmt);
     };
   };
@@ -27,7 +27,7 @@ FROM users_users;
 ";
 
     let query:
-      Sihl.App.Db.Connection.t =>
+      Sihl.App.Persistence.Connection.t =>
       Js.Promise.t(Sihl.App.Db.Repo.Result.t(Model.User.t)) =
       connection =>
         Sihl.App.Db.Repo.getMany(
@@ -59,7 +59,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
     type parameters = string;
 
     let query:
-      (Sihl.App.Db.Connection.t, ~userId: string) =>
+      (Sihl.App.Persistence.Connection.t, ~userId: string) =>
       Js.Promise.t(Belt.Result.t(Model.User.t, string)) = {
       (connection, ~userId) =>
         Sihl.App.Db.Repo.getOne(
@@ -93,7 +93,7 @@ WHERE email = ?;
     type parameters = string;
 
     let query:
-      (Sihl.App.Db.Connection.t, ~email: string) =>
+      (Sihl.App.Persistence.Connection.t, ~email: string) =>
       Js.Promise.t(Belt.Result.t(Model.User.t, string)) =
       (connection, ~email) =>
         Sihl.App.Db.Repo.getOne(
@@ -181,7 +181,7 @@ module Token = {
     let stmt = "
 TRUNCATE TABLE users_tokens;
 ";
-    let run: Sihl.App.Db.Connection.t => Js.Promise.t(unit) = {
+    let run: Sihl.App.Persistence.Connection.t => Js.Promise.t(unit) = {
       connection => Sihl.App.Db.Repo.execute(connection, stmt);
     };
   };
@@ -245,7 +245,7 @@ WHERE token LIKE ?;
     type parameters = string;
 
     let query:
-      (Sihl.App.Db.Connection.t, ~token: string) =>
+      (Sihl.App.Persistence.Connection.t, ~token: string) =>
       Js.Promise.t(Belt.Result.t(Model.Token.t, string)) =
       (connection, ~token) =>
         Sihl.App.Db.Repo.getOne(

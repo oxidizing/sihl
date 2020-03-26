@@ -10,6 +10,7 @@ module Core = {
 };
 
 module MakeApp = (Persistence: Core.Db.PERSISTENCE) => {
+  module Persistence = Persistence;
   module Db = SihlCoreDb.Make(Persistence);
   module Http = SihlCoreHttp.Make(Persistence);
   module Main = SihlCoreMain.Make(Persistence);

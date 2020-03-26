@@ -12,7 +12,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       name: string,
       namespace: string,
       routes: Persistence.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
-      clean: list(SihlCoreDbCore.Connection.t => Js.Promise.t(unit)),
+      clean: list(Persistence.Connection.t => Js.Promise.t(unit)),
       migration: SihlCoreDb.Migration.t,
       commands: list(SihlCoreCli.command),
     };

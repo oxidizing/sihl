@@ -1,30 +1,10 @@
 module Async = Sihl.Core.Async;
 
-module Database = {
-  type t;
-  [@bs.module "mysql2/promise"]
-  external setup: Sihl.Core.Db.Config.t => t = "createPool";
-  [@bs.send] external end_: t => unit = "end";
-  [@bs.send]
-  external connect: t => Async.t(Sihl.Core.Db.Connection.t) = "getConnection";
-
-  let end_ = pool =>
-    try(end_(pool)) {
-    | Js.Exn.Error(e) =>
-      switch (Js.Exn.message(e)) {
-      | Some(message) => Sihl.Core.Log.error(message, ())
-      | None => Sihl.Core.Log.error("Failed to end pool", ())
-      }
-    };
-};
-
 module Connection = {
   type t;
-  [@bs.send] external release: Sihl.Core.Db.Connection.t => unit = "release";
+  [@bs.send] external release: t => unit = "release";
   [@bs.send]
-  external query_:
-    (Sihl.Core.Db.Connection.t, string, Js.Json.t) => Async.t(Js.Json.t) =
-    "query";
+  external query_: (t, string, Js.Json.t) => Async.t(Js.Json.t) = "query";
 
   let release = connection =>
     try(release(connection)) {
@@ -45,11 +25,7 @@ module Connection = {
       );
   };
   let query:
-    (
-      SihlMysql.Sihl.Core.Db.Connection.t,
-      ~stmt: string,
-      ~parameters: option(Js.Json.t)
-    ) =>
+    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(
       Belt.Result.t(SihlMysql.Sihl.Core.Db.Result.Query.t, string),
     ) =
@@ -108,6 +84,23 @@ module Connection = {
           )
       );
   };
+};
+
+module Database = {
+  type t;
+  [@bs.module "mysql2/promise"]
+  external setup: Sihl.Core.Db.Config.t => t = "createPool";
+  [@bs.send] external end_: t => unit = "end";
+  [@bs.send] external connect: t => Async.t(Connection.t) = "getConnection";
+
+  let end_ = pool =>
+    try(end_(pool)) {
+    | Js.Exn.Error(e) =>
+      switch (Js.Exn.message(e)) {
+      | Some(message) => Sihl.Core.Log.error(message, ())
+      | None => Sihl.Core.Log.error("Failed to end pool", ())
+      }
+    };
 };
 
 module Migration = {

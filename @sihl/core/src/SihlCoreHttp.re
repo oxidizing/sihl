@@ -183,7 +183,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       path: string,
       verb,
       handler:
-        (SihlCoreDbCore.Connection.t, request('body_in, 'params, 'query)) =>
+        (Persistence.Connection.t, request('body_in, 'params, 'query)) =>
         Js.Promise.t(response),
     };
 

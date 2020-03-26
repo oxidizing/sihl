@@ -46,10 +46,6 @@ module Config = {
   };
 };
 
-module Connection = {
-  type t;
-};
-
 module type MIGRATIONSTATUS = {
   type t;
   let version: t => int;
@@ -61,41 +57,38 @@ module type MIGRATIONSTATUS = {
 };
 
 module type CONNECTION = {
-  let release: Connection.t => unit;
+  type t;
+  let release: t => unit;
   let query:
-    (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Query.t, string));
   let querySimple:
-    (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(list(Js.Json.t), string));
   let execute:
-    (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
-};
-
-module type DATABASE = {
-  type t;
-  let setup: Config.t => t;
-  let end_: t => unit;
-  let connect: t => Js.Promise.t(Connection.t);
-};
-
-module type MIGRATION = {
-  module Status: MIGRATIONSTATUS;
-  let setupMigrationStorage: Connection.t => Js.Promise.t(unit);
-  let hasMigrationStatus:
-    (Connection.t, ~namespace: string) => Js.Promise.t(bool);
-  let getMigrationStatus:
-    (Connection.t, ~namespace: string) =>
-    Js.Promise.t(Belt.Result.t(Status.t, string));
-  let upsertMigrationStatus:
-    (Connection.t, ~status: Status.t) => Js.Promise.t(unit);
 };
 
 module type PERSISTENCE = {
   module Connection: CONNECTION;
-  module Database: DATABASE;
-  module Migration: MIGRATION;
+  module Database: {
+    type t;
+    let setup: Config.t => t;
+    let end_: t => unit;
+    let connect: t => Js.Promise.t(Connection.t);
+  };
+  module Migration: {
+    module Status: MIGRATIONSTATUS;
+    let setupMigrationStorage: Connection.t => Js.Promise.t(unit);
+    let hasMigrationStatus:
+      (Connection.t, ~namespace: string) => Js.Promise.t(bool);
+    let getMigrationStatus:
+      (Connection.t, ~namespace: string) =>
+      Js.Promise.t(Belt.Result.t(Status.t, string));
+    let upsertMigrationStatus:
+      (Connection.t, ~status: Status.t) => Js.Promise.t(unit);
+  };
 };
 
 exception DatabaseException(string);

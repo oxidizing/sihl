@@ -24,8 +24,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     name: string,
     description: string,
     f:
-      (SihlCoreDbCore.Connection.t, list(string), string) =>
-      Js.Promise.t(unit),
+      (Persistence.Connection.t, list(string), string) => Js.Promise.t(unit),
   };
 
   let runCommand = (command, args) => {

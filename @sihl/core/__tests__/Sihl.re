@@ -2,6 +2,7 @@
 // In the future we might plug in some in-memory database to properly test everything
 module TestPersistence = {
   module Connection = {
+    type t;
     let release = _ => ();
     let query = (_, ~stmt as _, ~parameters as _) =>
       Js.Promise.resolve(Belt.Result.Error("Not implemented"));
