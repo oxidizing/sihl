@@ -87,20 +87,30 @@ module Connection = {
 };
 
 module Database = {
-  type t;
+  type handle;
+  type t = {
+    name: string,
+    handle,
+  };
+
   [@bs.module "mysql2/promise"]
-  external setup: Sihl.Core.Db.Config.t => t = "createPool";
-  [@bs.send] external end_: t => unit = "end";
-  [@bs.send] external connect: t => Async.t(Connection.t) = "getConnection";
+  external setup: Sihl.Core.Db.Config.t => handle = "createPool";
+  [@bs.send] external end_: handle => unit = "end";
+  [@bs.send]
+  external connect: handle => Async.t(Connection.t) = "getConnection";
+
+  let setup = config => {name: config##database, handle: setup(config)};
 
   let end_ = db =>
-    try(end_(db)) {
+    try(end_(db.handle)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
       | Some(message) => Sihl.Core.Log.error(message, ())
       | None => Sihl.Core.Log.error("Failed to end pool", ())
       }
     };
+
+  let connect = db => connect(db.handle);
 
   let withConnection = (db, f) => {
     let%Async conn = connect(db);
@@ -109,73 +119,77 @@ module Database = {
     Async.async(result);
   };
 
-  [@decco]
-  type command = {command: string};
+  module Clean = {
+    [@decco]
+    type t = {command: string};
 
-  // TODO inject database name
-  let stmt = "
+    let stmt = ({name}) => {j|
   SELECT
   CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS command
   FROM information_schema.TABLES
-  WHERE TABLE_SCHEMA = 'dev';
-";
+  WHERE TABLE_SCHEMA = '$(name)';
+|j};
 
-  let clean = db =>
-    withConnection(
-      db,
-      conn => {
-        let%Async _ =
-          Connection.execute(
-            conn,
-            ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
-            ~parameters=None,
-          );
-        let%Async commands =
-          Connection.querySimple(conn, ~stmt, ~parameters=None);
-        let commands =
-          switch (commands) {
-          | Ok(rows) =>
-            rows
-            ->Belt.List.map(
-                Sihl.Core.Error.Decco.stringifyDecoder(command_decode),
+    let query = db => {
+      let stmt = stmt(db);
+      withConnection(
+        db,
+        conn => {
+          let%Async _ =
+            Connection.execute(
+              conn,
+              ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
+              ~parameters=None,
+            );
+          let%Async commands =
+            Connection.querySimple(conn, ~stmt, ~parameters=None);
+          let commands =
+            switch (commands) {
+            | Ok(rows) =>
+              rows
+              ->Belt.List.map(
+                  Sihl.Core.Error.Decco.stringifyDecoder(t_decode),
+                )
+              ->Belt.List.map(result =>
+                  switch (result) {
+                  | Ok(result) => result
+                  | Error(msg) =>
+                    Sihl.Core.Db.abort(
+                      "Error happened in DB when getMany() msg="
+                      ++ msg
+                      ++ Sihl.Core.Db.debug(stmt, None),
+                    )
+                  }
+                )
+            | Error(msg) =>
+              Sihl.Core.Db.abort(
+                "Error happened in DB when getMany() msg="
+                ++ msg
+                ++ Sihl.Core.Db.debug(stmt, None),
               )
-            ->Belt.List.map(result =>
-                switch (result) {
-                | Ok(result) => result
-                | Error(msg) =>
-                  Sihl.Core.Db.abort(
-                    "Error happened in DB when getMany() msg="
-                    ++ msg
-                    ++ Sihl.Core.Db.debug(stmt, None),
-                  )
-                }
-              )
-          | Error(msg) =>
-            Sihl.Core.Db.abort(
-              "Error happened in DB when getMany() msg="
-              ++ msg
-              ++ Sihl.Core.Db.debug(stmt, None),
-            )
-          };
-        let%Async _ =
-          commands
-          ->Belt.List.map(({command}, ()) => {
-              command !== "TRUNCATE TABLE core_migration_status;"
-                ? Connection.execute(conn, ~stmt=command, ~parameters=None)
-                  ->Async.mapAsync(_ => ())
-                : Async.async()
-            })
-          ->Sihl.Core.Async.allInOrder;
+            };
+          let%Async _ =
+            commands
+            ->Belt.List.map(({command}, ()) => {
+                command !== "TRUNCATE TABLE core_migration_status;"
+                  ? Connection.execute(conn, ~stmt=command, ~parameters=None)
+                    ->Async.mapAsync(_ => ())
+                  : Async.async()
+              })
+            ->Sihl.Core.Async.allInOrder;
 
-        let%Async _ =
-          Connection.execute(
-            conn,
-            ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
-            ~parameters=None,
-          );
-        Async.async();
-      },
-    );
+          let%Async _ =
+            Connection.execute(
+              conn,
+              ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
+              ~parameters=None,
+            );
+          Async.async();
+        },
+      );
+    };
+  };
+  let clean = Clean.query;
 };
 
 module Migration = {
