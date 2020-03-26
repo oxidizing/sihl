@@ -1,21 +1,33 @@
 module Async = Sihl.Core.Async;
 
 module Database = {
-  let setup = Bindings.setup;
+  type t;
+  [@bs.module "mysql2/promise"]
+  external setup: Sihl.Core.Db.Config.t => t = "createPool";
+  [@bs.send] external end_: t => unit = "end";
+  [@bs.send]
+  external connect: t => Async.t(Sihl.Core.Db.Connection.t) = "getConnection";
+
   let end_ = pool =>
-    try(Bindings.end_(pool)) {
+    try(end_(pool)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
       | Some(message) => Sihl.Core.Log.error(message, ())
       | None => Sihl.Core.Log.error("Failed to end pool", ())
       }
     };
-  let connect = Bindings.connect;
 };
 
 module Connection = {
+  type t;
+  [@bs.send] external release: Sihl.Core.Db.Connection.t => unit = "release";
+  [@bs.send]
+  external query_:
+    (Sihl.Core.Db.Connection.t, string, Js.Json.t) => Async.t(Js.Json.t) =
+    "query";
+
   let release = connection =>
-    try(Bindings.release(connection)) {
+    try(release(connection)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
       | Some(message) => Sihl.Core.Log.error(message, ())
@@ -25,7 +37,7 @@ module Connection = {
   let querySimple = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-    Bindings.query_(connection, stmt, parameters)
+    query_(connection, stmt, parameters)
     ->Async.mapAsync(result =>
         result
         ->MysqlResult.Query.decode
@@ -44,13 +56,13 @@ module Connection = {
     (connection, ~stmt, ~parameters) => {
       let parameters =
         Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-      let%Async result = Bindings.query_(connection, stmt, parameters);
+      let%Async result = query_(connection, stmt, parameters);
       let rows =
         result
         ->MysqlResult.Query.decode
         ->Belt.Result.map(((rows, _)) => rows);
       let%Async meta =
-        Bindings.query_(
+        query_(
           connection,
           MysqlResult.Query.MetaData.foundRowsQuery,
           Js.Json.stringArray([||]),
@@ -87,7 +99,7 @@ module Connection = {
   let execute = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-    Bindings.query_(connection, stmt, parameters)
+    query_(connection, stmt, parameters)
     ->Async.mapAsync(result =>
         result
         ->MysqlResult.Execution.decode

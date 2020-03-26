@@ -46,10 +46,6 @@ module Config = {
   };
 };
 
-module Database = {
-  type t;
-};
-
 module Connection = {
   type t;
 };
@@ -78,9 +74,10 @@ module type CONNECTION = {
 };
 
 module type DATABASE = {
-  let setup: Config.t => Database.t;
-  let end_: Database.t => unit;
-  let connect: Database.t => Js.Promise.t(Connection.t);
+  type t;
+  let setup: Config.t => t;
+  let end_: t => unit;
+  let connect: t => Js.Promise.t(Connection.t);
 };
 
 module type MIGRATION = {

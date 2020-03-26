@@ -11,8 +11,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     type t = {
       name: string,
       namespace: string,
-      routes:
-        SihlCoreDbCore.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
+      routes: Persistence.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
       clean: list(SihlCoreDbCore.Connection.t => Js.Promise.t(unit)),
       migration: SihlCoreDb.Migration.t,
       commands: list(SihlCoreCli.command),
@@ -27,7 +26,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     module Instance = {
       type instance = {
         http: SihlCoreHttp.application,
-        db: SihlCoreDbCore.Database.t,
+        db: Persistence.Database.t,
         apps: list(t),
       };
       let http = instance => instance.http;

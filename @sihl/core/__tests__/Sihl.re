@@ -1,3 +1,5 @@
+// TODO this is just so we can instantiate the App module to test some pure functions
+// In the future we might plug in some in-memory database to properly test everything
 module TestPersistence = {
   module Connection = {
     let release = _ => ();
@@ -11,16 +13,10 @@ module TestPersistence = {
       Js.Promise.resolve(Belt.Result.Error("Not implemented"));
   };
   module Database = {
-    let setup: SihlCoreDbCore.Config.t => SihlCoreDbCore.Database.t = [%raw
-      {| function() { return ""; } |}
-    ];
-    let end_: SihlCoreDbCore.Database.t => unit = [%raw
-      {| function() { return ""; } |}
-    ];
-    let connect:
-      SihlCoreDbCore.Database.t => Js.Promise.t(SihlCoreDbCore.Connection.t) = [%raw
-      {| function() { return ""; } |}
-    ];
+    type t;
+    let setup = [%raw {| function() { return ""; } |}];
+    let end_ = [%raw {| function() { return ""; } |}];
+    let connect = [%raw {| function() { return ""; } |}];
   };
   module Migration = {
     module Status = {

@@ -179,7 +179,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     let verb = endpoint => endpoint.verb;
 
     type dbEndpointConfig('body_in, 'params, 'query) = {
-      database: SihlCoreDbCore.Database.t,
+      database: Persistence.Database.t,
       path: string,
       verb,
       handler:
