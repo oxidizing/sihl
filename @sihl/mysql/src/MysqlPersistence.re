@@ -12,6 +12,7 @@ module Database = {
     };
   let connect = Bindings.connect;
 };
+
 module Connection = {
   let release = connection =>
     try(Bindings.release(connection)) {
@@ -95,4 +96,13 @@ module Connection = {
           )
       );
   };
+};
+
+module Migration = {
+  module MysqlMigration = MysqlMigration.Make(Connection);
+  module Status = MysqlMigration.Status;
+  let setupMigrationStorage = MysqlMigration.CreateTableIfDoesNotExist.query;
+  let hasMigrationStatus = MysqlMigration.Has.query;
+  let getMigrationStatus = MysqlMigration.Get.query;
+  let upsertMigrationStatus = MysqlMigration.Upsert.query;
 };

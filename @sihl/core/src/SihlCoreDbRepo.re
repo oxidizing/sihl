@@ -1,6 +1,6 @@
 module Async = SihlCoreAsync;
 
-module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
   module Result = {
     type t('a) = (list('a), SihlCoreDbCore.Result.meta);
 
@@ -9,8 +9,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   };
 
   let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-    let%Async result =
-      Persistence.Connection.querySimple(connection, ~stmt, ~parameters);
+    let%Async result = Connection.querySimple(connection, ~stmt, ~parameters);
     Async.async(
       switch (result) {
       | Ok([row]) => row |> SihlCoreError.Decco.stringifyDecoder(decode)
@@ -35,8 +34,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   };
 
   let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-    let%Async result =
-      Persistence.Connection.query(connection, ~stmt, ~parameters);
+    let%Async result = Connection.query(connection, ~stmt, ~parameters);
     switch (result) {
     | Ok((rows, meta)) =>
       let result =
@@ -64,8 +62,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   };
 
   let execute = (~parameters=?, connection, stmt) => {
-    let%Async rows =
-      Persistence.Connection.execute(connection, ~stmt, ~parameters);
+    let%Async rows = Connection.execute(connection, ~stmt, ~parameters);
     Async.async(
       switch (rows) {
       | Ok(_) => ()

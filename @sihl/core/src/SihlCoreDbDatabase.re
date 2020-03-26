@@ -1,7 +1,7 @@
 module Async = SihlCoreAsync;
 
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
-  module Repo = SihlCoreDbRepo.Make(Persistence);
+  module Repo = SihlCoreDbRepo.Make(Persistence.Connection);
   let parseUrl = url => {
     switch (url |> Js.String.replace("mysql://", "") |> Js.String.split("@")) {
     | [|credentials, hostAndDb|] =>

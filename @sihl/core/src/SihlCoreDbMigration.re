@@ -2,116 +2,6 @@ module Async = SihlCoreAsync;
 
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   module Database = SihlCoreDbDatabase.Make(Persistence);
-  module Repo = SihlCoreDbRepo.Make(Persistence);
-
-  module Status = {
-    [@decco]
-    type t = {
-      namespace: string,
-      version: int,
-      dirty: SihlCoreDbCore.Bool.t,
-    };
-
-    let make = (~namespace) => {namespace, version: 0, dirty: false};
-
-    module CreateTableIfDoesNotExist = {
-      let stmt = "
-CREATE TABLE IF NOT EXISTS core_migration_status (
-  namespace VARCHAR(128) NOT NULL,
-  version BIGINT,
-  dirty BOOL,
-  CONSTRAINT unique_namespace UNIQUE KEY (namespace)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-";
-
-      let query = connection => {
-        Repo.execute(connection, stmt);
-      };
-    };
-
-    module Has = {
-      let stmt = "
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_status
-WHERE namespace = ?;
-";
-
-      [@decco]
-      type parameters = string;
-
-      let query = (connection, ~namespace) => {
-        let%Async result =
-          Repo.getOne(
-            ~connection,
-            ~stmt,
-            ~parameters=parameters_encode(namespace),
-            ~decode=t_decode,
-            (),
-          );
-        result->Belt.Result.mapWithDefault(false, _ => true)->Async.async;
-      };
-    };
-
-    module Get = {
-      let stmt = "
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_status
-WHERE namespace = ?;
-";
-
-      [@decco]
-      type parameters = string;
-
-      let query = (connection, ~namespace) =>
-        Repo.getOne(
-          ~connection,
-          ~stmt,
-          ~parameters=parameters_encode(namespace),
-          ~decode=t_decode,
-          (),
-        );
-    };
-
-    module Upsert = {
-      let stmt = "
-INSERT INTO core_migration_status (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  ?,
-  ?,
-  ?
-)
-ON DUPLICATE KEY UPDATE
-namespace = VALUES(namespace),
-version = VALUES(version),
-dirty = VALUES(dirty)
-;";
-
-      [@decco]
-      type parameters = (string, int, SihlCoreDbCore.Bool.t);
-
-      let query = (connection, ~status: t) => {
-        Repo.execute(
-          ~parameters=
-            parameters_encode((
-              status.namespace,
-              status.version,
-              status.dirty,
-            )),
-          connection,
-          stmt,
-        );
-      };
-    };
-  };
 
   type t = {
     steps: string => list((int, string)),
@@ -138,20 +28,29 @@ dirty = VALUES(dirty)
     Database.withConnection(
       db,
       conn => {
-        let%Async _ = Status.CreateTableIfDoesNotExist.query(conn);
+        let%Async _ = Persistence.Migration.setupMigrationStorage(conn);
         let%Async hasStatus =
-          Status.Has.query(conn, ~namespace=migration.namespace);
+          Persistence.Migration.hasMigrationStatus(
+            conn,
+            ~namespace=migration.namespace,
+          );
         let%Async _ =
           !hasStatus
-            ? Status.Upsert.query(
+            ? Persistence.Migration.upsertMigrationStatus(
                 conn,
-                ~status=Status.make(~namespace=migration.namespace),
+                ~status=
+                  Persistence.Migration.Status.make(
+                    ~namespace=migration.namespace,
+                  ),
               )
             : Async.async();
         let%Async status =
-          Status.Get.query(conn, ~namespace=migration.namespace);
+          Persistence.Migration.getMigrationStatus(
+            conn,
+            ~namespace=migration.namespace,
+          );
         let status = Belt.Result.getExn(status);
-        let currentVersion = status.version;
+        let currentVersion = Persistence.Migration.Status.version(status);
         let steps = stepsToApply(migration, currentVersion);
         let newVersion = maxVersion(steps);
         let nrSteps = steps |> Belt.List.length;
@@ -162,9 +61,16 @@ dirty = VALUES(dirty)
           );
           let%Async _ =
             steps
-            ->Belt.List.map(((_, stmt), ()) => Repo.execute(conn, stmt))
+            ->Belt.List.map(((_, stmt), ()) =>
+                Persistence.Connection.execute(conn, ~stmt, ~parameters=None)
+                ->Async.mapAsync(_ => ())
+              )
             ->Async.allInOrder;
-          Status.Upsert.query(conn, ~status={...status, version: newVersion})
+          Persistence.Migration.upsertMigrationStatus(
+            conn,
+            ~status=
+              Persistence.Migration.Status.setVersion(status, ~newVersion),
+          )
           ->Async.mapAsync(_ =>
               SihlCoreLog.info(
                 {j|Applied migrations for $(namespace) to reach schema version $(newVersion)|j},

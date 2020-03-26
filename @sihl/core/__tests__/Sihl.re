@@ -22,6 +22,23 @@ module TestPersistence = {
       {| function() { return ""; } |}
     ];
   };
+  module Migration = {
+    module Status = {
+      type t = unit;
+      let make = (~namespace as _) => ();
+      let version = _ => 0;
+      let namespace = _ => "";
+      let dirty = _ => false;
+      let setVersion = (old, ~newVersion as _) => old;
+      let t_decode = _ => Ok();
+    };
+    let setupMigrationStorage = _ => Js.Promise.resolve();
+    let getMigrationStatus = (_, ~namespace as _) =>
+      Js.Promise.resolve(Belt.Result.Error("Not impelemted"));
+    let hasMigrationStatus = (_, ~namespace as _) =>
+      Js.Promise.resolve(true);
+    let upsertMigrationStatus = (_, ~status as _) => Js.Promise.resolve();
+  };
 };
 
 module Core = Api.Core;

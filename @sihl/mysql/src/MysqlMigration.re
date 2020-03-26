@@ -1,15 +1,23 @@
 module Async = Sihl.Core.Async;
-module Repo = SihlCore.SihlCoreDbRepo.Make(MysqlPersistence);
 
-module Status = {
-  [@decco]
-  type t = {
-    namespace: string,
-    version: int,
-    dirty: Sihl.Core.Db.Bool.t,
+module Make = (Connection: Sihl.Core.Db.CONNECTION) => {
+  module Repo = SihlCore.SihlCoreDbRepo.Make(Connection);
+  module Status: Sihl.Core.Db.MIGRATIONSTATUS = {
+    [@decco]
+    type t = {
+      namespace: string,
+      version: int,
+      dirty: Sihl.Core.Db.Bool.t,
+    };
+    let make = (~namespace) => {namespace, version: 0, dirty: false};
+    let version = status => status.version;
+    let namespace = status => status.namespace;
+    let dirty = status => status.dirty;
+    let setVersion = (status, ~newVersion) => {
+      ...status,
+      version: newVersion,
+    };
   };
-
-  let make = (~namespace) => {namespace, version: 0, dirty: false};
 
   module CreateTableIfDoesNotExist = {
     let stmt = "
@@ -45,7 +53,7 @@ WHERE namespace = ?;
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(namespace),
-          ~decode=t_decode,
+          ~decode=Status.t_decode,
           (),
         );
       result->Belt.Result.mapWithDefault(false, _ => true)->Async.async;
@@ -70,7 +78,7 @@ WHERE namespace = ?;
         ~connection,
         ~stmt,
         ~parameters=parameters_encode(namespace),
-        ~decode=t_decode,
+        ~decode=Status.t_decode,
         (),
       );
   };
@@ -95,18 +103,17 @@ dirty = VALUES(dirty)
     [@decco]
     type parameters = (string, int, Sihl.Core.Db.Bool.t);
 
-    let query = (connection, ~status: t) => {
+    let query = (connection, ~status: Status.t) => {
       Repo.execute(
         ~parameters=
-          parameters_encode((status.namespace, status.version, status.dirty)),
+          parameters_encode((
+            Status.namespace(status),
+            Status.version(status),
+            Status.dirty(status),
+          )),
         connection,
         stmt,
       );
     };
   };
 };
-
-let setupMigrationStorage = Status.CreateTableIfDoesNotExist.query;
-let hasMigrationStatus = Status.Has.query;
-let getMigrationStatus = Status.Get.query;
-let upsertMigrationStatus = Status.Upsert.query;
