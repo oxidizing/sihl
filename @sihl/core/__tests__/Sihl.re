@@ -2,7 +2,11 @@ module TestDatabase = {
   let release = _ => ();
   let query = (_, ~stmt as _, ~parameters as _) =>
     Js.Promise.resolve(Belt.Result.Error("Not implemented"));
+  let querySimple = (_, ~stmt as _, ~parameters as _) =>
+    Js.Promise.resolve(Belt.Result.Error("Not implemented"));
   let execute = (_, ~stmt as _, ~parameters as _) =>
+    Js.Promise.resolve(Belt.Result.Error("Not implemented"));
+  let executeSimple = (_, ~stmt as _, ~parameters as _) =>
     Js.Promise.resolve(Belt.Result.Error("Not implemented"));
   let setup: SihlCoreDbCore.Config.t => SihlCoreDbCore.Database.t = [%raw
     {| function() { return ""; } |}

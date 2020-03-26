@@ -11,6 +11,14 @@ module Bool = {
   type t = [@decco.codec (encoder, decoder)] bool;
 };
 
+let debug = (stmt, parameters) => {
+  "for stmt="
+  ++ stmt
+  ++ Belt.Option.mapWithDefault(parameters, "", parameters =>
+       " with params=" ++ Js.Json.stringify(parameters)
+     );
+};
+
 module Result = {
   type meta = {rowCount: int};
   module Query = {
@@ -51,6 +59,9 @@ module type CONNECTION = {
   let query:
     (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Query.t, string));
+  let querySimple:
+    (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    Js.Promise.t(Belt.Result.t(list(Js.Json.t), string));
   let execute:
     (Connection.t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
@@ -76,6 +87,7 @@ module Make = (Database: INTERFACE) : PERSISTENCE => {
   module Connection: CONNECTION = {
     let release = Database.release;
     let query = Database.query;
+    let querySimple = Database.querySimple;
     let execute = Database.execute;
   };
   module Database: DATABASE = {
@@ -84,3 +96,7 @@ module Make = (Database: INTERFACE) : PERSISTENCE => {
     let end_ = Database.end_;
   };
 };
+
+exception DatabaseException(string);
+
+let abort = reason => raise(DatabaseException(reason));

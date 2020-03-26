@@ -5,6 +5,16 @@ module Result = {
     [@decco]
     type t = (list(Js.Json.t), Js.Json.t);
     let decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
+
+    module MetaData = {
+      [@decco]
+      type t = {
+        [@decco.key "FOUND_ROWS()"]
+        totalCount: int,
+      };
+
+      let foundRowsQuery = "SELECT FOUND_ROWS();";
+    };
   };
 
   module Execution = {
@@ -43,19 +53,64 @@ module Persistence: Sihl.Core.Db.INTERFACE = {
       | None => Sihl.Core.Log.error("Failed to release client", ())
       }
     };
-
-  let query = (connection, ~stmt, ~parameters) => {
+  let querySimple = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
     Bindings.query_(connection, stmt, parameters)
     ->Async.mapAsync(result =>
-        result
-        ->Result.Query.decode
-        ->Belt.Result.map(((rows, _))
-            // TODO read rowCount properly
-            => SihlCore.SihlCoreDbCore.Result.Query.make(rows, ~rowCount=0))
+        result->Result.Query.decode->Belt.Result.map(((rows, _)) => rows)
       );
   };
+  let query:
+    (
+      SihlMysql.Sihl.Core.Db.Connection.t,
+      ~stmt: string,
+      ~parameters: option(Js.Json.t)
+    ) =>
+    Js.Promise.t(
+      Belt.Result.t(SihlMysql.Sihl.Core.Db.Result.Query.t, string),
+    ) =
+    (connection, ~stmt, ~parameters) => {
+      let parameters =
+        Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
+      let%Async result = Bindings.query_(connection, stmt, parameters);
+      let rows =
+        result->Result.Query.decode->Belt.Result.map(((rows, _)) => rows);
+      let%Async meta =
+        Bindings.query_(
+          connection,
+          Result.Query.MetaData.foundRowsQuery,
+          Js.Json.stringArray([||]),
+        );
+      let meta = meta->Result.Query.decode;
+      let totalCount: int =
+        switch (meta) {
+        | Ok(([row], _)) =>
+          switch (
+            row
+            |> Sihl.Core.Error.Decco.stringifyDecoder(
+                 Result.Query.MetaData.t_decode,
+               )
+          ) {
+          | Ok(Result.Query.MetaData.{totalCount}) => totalCount
+          | Error(_) =>
+            Sihl.Core.Db.abort(
+              "Error happened in DB when decoding meta "
+              ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
+            )
+          }
+        | _ =>
+          Sihl.Core.Db.abort(
+            "Error happened in DB when fetching FOUND_ROWS() "
+            ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
+          )
+        };
+      rows
+      ->Belt.Result.map(rows =>
+          Sihl.Core.Db.Result.Query.make(rows, ~rowCount=totalCount)
+        )
+      ->Async.async;
+    };
   let execute = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
@@ -63,9 +118,9 @@ module Persistence: Sihl.Core.Db.INTERFACE = {
     ->Async.mapAsync(result =>
         result
         ->Result.Execution.decode
-        ->Belt.Result.map(_
-            // TODO read rowCount properly
-            => SihlCore.SihlCoreDbCore.Result.Execution.make(0))
+        ->Belt.Result.map(((Result.Execution.{affectedRows}, _)) =>
+            SihlCore.SihlCoreDbCore.Result.Execution.make(affectedRows)
+          )
       );
   };
 };

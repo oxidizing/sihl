@@ -15,6 +15,7 @@
   "author": "Josef Erben josef@oxidizing.io",
   "license": "MIT",
   "peerDependencies": {
+    "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
     "@sihl/core": "0.0.10",
     "decco": "^1.1.1"
@@ -24,6 +25,7 @@
     "mysql2": "^2.1.0"
   },
   "devDependencies": {
+    "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
     "@sihl/core": "0.0.10",
     "decco": "^1.1.1"
