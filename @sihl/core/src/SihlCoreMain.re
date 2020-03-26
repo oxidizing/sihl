@@ -103,7 +103,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     let seed = f => {
       switch (state^) {
       | Some(instance) =>
-        SihlCoreDb.Database.withConnection(instance.db, conn => f(conn))
+        Persistence.Database.withConnection(instance.db, conn => f(conn))
       | _ =>
         SihlCoreLog.warn("Can not seed because app was not started", ());
         raise(InvalidState("Can not seed because app was not started"));

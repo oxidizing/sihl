@@ -30,7 +30,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   let runCommand = (command, args) => {
     let db = SihlCoreDb.Database.connectWithCfg();
     let%Async _ =
-      SihlCoreDb.Database.withConnection(db, conn =>
+      Persistence.Database.withConnection(db, conn =>
         Async.catchAsync(command.f(conn, args, command.description), err =>
           Async.async(Js.log2("Failed to run command: ", err))
         )

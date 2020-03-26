@@ -1,8 +1,6 @@
 module Async = SihlCoreAsync;
 
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
-  module Database = SihlCoreDbDatabase.Make(Persistence);
-
   type t = {
     steps: string => list((int, string)),
     namespace: string,
@@ -25,7 +23,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   let applyMigration = (migration: t, db) => {
     let namespace = migration.namespace;
     SihlCoreLog.info({j|Checking migrations for app $(namespace)|j}, ());
-    Database.withConnection(
+    Persistence.Database.withConnection(
       db,
       conn => {
         let%Async _ = Persistence.Migration.setupMigrationStorage(conn);

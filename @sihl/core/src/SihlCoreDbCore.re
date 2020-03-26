@@ -58,7 +58,6 @@ module type MIGRATIONSTATUS = {
 
 module type CONNECTION = {
   type t;
-  let release: t => unit;
   let query:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Query.t, string));
@@ -76,7 +75,8 @@ module type PERSISTENCE = {
     type t;
     let setup: Config.t => t;
     let end_: t => unit;
-    let connect: t => Js.Promise.t(Connection.t);
+    let withConnection:
+      (t, Connection.t => Js.Promise.t('a)) => Js.Promise.t('a);
   };
   module Migration: {
     module Status: MIGRATIONSTATUS;

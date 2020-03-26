@@ -437,10 +437,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
           path: cfg.path,
           verb: cfg.verb,
           handler: req => {
-            let%Async conn = Persistence.Database.connect(cfg.database);
-            let%Async response = cfg.handler(conn, req);
-            Persistence.Connection.release(conn);
-            async(response);
+            Persistence.Database.withConnection(cfg.database, conn =>
+              cfg.handler(conn, req)
+            );
           },
         },
       );

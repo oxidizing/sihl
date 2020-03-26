@@ -93,14 +93,20 @@ module Database = {
   [@bs.send] external end_: t => unit = "end";
   [@bs.send] external connect: t => Async.t(Connection.t) = "getConnection";
 
-  let end_ = pool =>
-    try(end_(pool)) {
+  let end_ = db =>
+    try(end_(db)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
       | Some(message) => Sihl.Core.Log.error(message, ())
       | None => Sihl.Core.Log.error("Failed to end pool", ())
       }
     };
+  let withConnection = (db, f) => {
+    let%Async conn = connect(db);
+    let%Async result = f(conn);
+    Connection.release(conn);
+    Async.async(result);
+  };
 };
 
 module Migration = {

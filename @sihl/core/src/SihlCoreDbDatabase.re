@@ -42,21 +42,24 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       "queueLimit": config.queueLimit |> int_of_string,
     });
 
-  let withConnection = (db, f) => {
-    let%Async conn = Persistence.Database.connect(db);
-    let%Async result = f(conn);
-    Persistence.Connection.release(conn);
-    Async.async(result);
-  };
-
+  // TODO evaluate whether this has to be moved into @sihl/mysql
   let clean = (fns, db) => {
-    withConnection(
+    Persistence.Database.withConnection(
       db,
       conn => {
-        let%Async _ = Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 0;");
+        let%Async _ =
+          Persistence.Connection.execute(
+            conn,
+            ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
+            ~parameters=None,
+          );
         let%Async _ =
           fns->Belt.List.map((f, ()) => f(conn))->Async.allInOrder;
-        Repo.execute(conn, "SET FOREIGN_KEY_CHECKS = 1;");
+        Persistence.Connection.execute(
+          conn,
+          ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
+          ~parameters=None,
+        );
       },
     );
   };

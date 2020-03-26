@@ -18,6 +18,7 @@ module TestPersistence = {
     let setup = [%raw {| function() { return ""; } |}];
     let end_ = [%raw {| function() { return ""; } |}];
     let connect = [%raw {| function() { return ""; } |}];
+    let withConnection = [%raw {| function() { return ""; } |}];
   };
   module Migration = {
     module Status = {

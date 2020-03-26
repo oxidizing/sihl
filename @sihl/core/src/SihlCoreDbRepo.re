@@ -76,32 +76,3 @@ module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
     );
   };
 };
-
-// taken from caqti make use of GADT
-/* type field(_) = */
-/*   | Bool: field(bool) */
-/*   | Int: field(int) */
-/*   | Float: field(float) */
-/*   | String: field(string); */
-
-/* type t(_) = */
-/*   | Unit: t(unit) */
-/*   | Field(field('a)): t('a) */
-/*   | Option(t('a)): t(option('a)) */
-/*   | Tup2(t('a0), t('a1)): t(('a0, 'a1)) */
-/*   | Tup3(t('a0), t('a1), t('a2)): t(('a0, 'a1, 'a2)) */
-/*   | Tup4(t('a0), t('a1), t('a2), t('a3)): t(('a0, 'a1, 'a2, 'a3)); */
-
-/* module Std = { */
-/*   let unit = Unit; */
-/*   let option = t => Option(t); */
-/*   let tup2 = (t0, t1) => Tup2(t0, t1); */
-/*   let tup3 = (t0, t1, t2) => Tup3(t0, t1, t2); */
-/*   let tup4 = (t0, t1, t2, t3) => Tup4(t0, t1, t2, t3); */
-/*   let bool = Field(Bool); */
-/*   let int = Field(Int); */
-/*   let float = Field(Float); */
-/*   let string = Field(String); */
-/* }; */
-
-/* let test = Std.tup2(Std.bool, Std.int); */
