@@ -1,1 +1,1 @@
-module Persistence = MysqlPersistence;
+include MysqlPersistence;
