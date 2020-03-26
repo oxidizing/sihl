@@ -9,8 +9,7 @@ module Core = {
   module Config = SihlCoreConfig;
 };
 
-module MakeApp = (Database: Core.Db.INTERFACE) => {
-  module Persistence = SihlCoreDbCore.Make(Database);
+module MakeApp = (Persistence: Core.Db.PERSISTENCE) => {
   module Db = SihlCoreDb.Make(Persistence);
   module Http = SihlCoreHttp.Make(Persistence);
   module Main = SihlCoreMain.Make(Persistence);

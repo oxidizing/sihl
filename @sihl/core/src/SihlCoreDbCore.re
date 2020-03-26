@@ -73,28 +73,9 @@ module type DATABASE = {
   let connect: Database.t => Js.Promise.t(Connection.t);
 };
 
-module type INTERFACE = {
-  include DATABASE;
-  include CONNECTION;
-};
-
 module type PERSISTENCE = {
   module Connection: CONNECTION;
   module Database: DATABASE;
-};
-
-module Make = (Database: INTERFACE) : PERSISTENCE => {
-  module Connection: CONNECTION = {
-    let release = Database.release;
-    let query = Database.query;
-    let querySimple = Database.querySimple;
-    let execute = Database.execute;
-  };
-  module Database: DATABASE = {
-    let setup = Database.setup;
-    let connect = Database.connect;
-    let end_ = Database.end_;
-  };
 };
 
 exception DatabaseException(string);

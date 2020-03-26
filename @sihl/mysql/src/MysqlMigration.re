@@ -1,6 +1,5 @@
 module Async = Sihl.Core.Async;
-module Persistence = SihlCore.SihlCoreDbCore.Make(MysqlPersistence);
-module Repo = SihlCore.SihlCoreDbRepo.Make(Persistence);
+module Repo = SihlCore.SihlCoreDbRepo.Make(MysqlPersistence);
 
 module Status = {
   [@decco]
