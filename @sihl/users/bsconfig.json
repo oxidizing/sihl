@@ -24,6 +24,7 @@
     "reason-react",
     "bs-fetch",
     "@sihl/core",
+    "@sihl/mysql",
     "decco"
   ],
   "bs-dev-dependencies": ["@glennsl/bs-jest"],

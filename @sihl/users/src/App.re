@@ -29,11 +29,10 @@ let routes = database => [
 let app = externalAdminUiPages => {
   let adminUiPages = Belt.List.concat(adminUiPages, externalAdminUiPages);
   AdminUi.State.pages := adminUiPages;
-  Sihl.Core.Main.App.make(
+  Sihl.App.Main.App.make(
     ~name,
     ~namespace,
     ~routes,
-    ~clean=[Repository.Token.Clean.run, Repository.User.Clean.run],
     ~migration=Migrations.MariaDb.make(~namespace),
     ~commands=[Cli.createAdmin],
   );

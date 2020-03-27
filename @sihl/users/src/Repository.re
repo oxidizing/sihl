@@ -1,15 +1,6 @@
 module Async = Sihl.Core.Async;
 
 module User = {
-  module Clean = {
-    let stmt = "
-TRUNCATE TABLE users_users;
-";
-    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
-      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
-    };
-  };
-
   module GetAll = {
     let stmt = "
 SELECT
@@ -27,10 +18,10 @@ FROM users_users;
 ";
 
     let query:
-      Sihl.Core.Db.Connection.t =>
-      Js.Promise.t(Sihl.Core.Db.Repo.Result.t(Model.User.t)) =
+      Sihl.App.Persistence.Connection.t =>
+      Js.Promise.t(Sihl.Core.Db.Result.Query.t(Model.User.t)) =
       connection =>
-        Sihl.Core.Db.Repo.getMany(
+        Sihl.App.Db.Repo.getMany(
           ~connection,
           ~stmt,
           ~decode=Model.User.t_decode,
@@ -59,10 +50,10 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
     type parameters = string;
 
     let query:
-      (Sihl.Core.Db.Connection.t, ~userId: string) =>
+      (Sihl.App.Persistence.Connection.t, ~userId: string) =>
       Js.Promise.t(Belt.Result.t(Model.User.t, string)) = {
       (connection, ~userId) =>
-        Sihl.Core.Db.Repo.getOne(
+        Sihl.App.Db.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(userId),
@@ -93,10 +84,10 @@ WHERE email = ?;
     type parameters = string;
 
     let query:
-      (Sihl.Core.Db.Connection.t, ~email: string) =>
+      (Sihl.App.Persistence.Connection.t, ~email: string) =>
       Js.Promise.t(Belt.Result.t(Model.User.t, string)) =
       (connection, ~email) =>
-        Sihl.Core.Db.Repo.getOne(
+        Sihl.App.Db.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(email),
@@ -156,7 +147,7 @@ confirmed = VALUES(confirmed)
     );
 
     let query = (connection, ~user: Model.User.t) =>
-      Sihl.Core.Db.Repo.execute(
+      Sihl.App.Db.Repo.execute(
         ~parameters=
           parameters_encode((
             user.id,
@@ -177,15 +168,6 @@ confirmed = VALUES(confirmed)
 };
 
 module Token = {
-  module Clean = {
-    let stmt = "
-TRUNCATE TABLE users_tokens;
-";
-    let run: Sihl.Core.Db.Connection.t => Js.Promise.t(unit) = {
-      connection => Sihl.Core.Db.Repo.execute(connection, stmt);
-    };
-  };
-
   module Upsert = {
     let stmt = "
 INSERT INTO users_tokens (
@@ -212,7 +194,7 @@ kind = VALUES(kind)
     type parameters = (string, string, string, string, string);
 
     let query = (connection, ~token: Model.Token.t) => {
-      Sihl.Core.Db.Repo.execute(
+      Sihl.App.Db.Repo.execute(
         ~parameters=
           parameters_encode((
             token.id,
@@ -245,10 +227,10 @@ WHERE token LIKE ?;
     type parameters = string;
 
     let query:
-      (Sihl.Core.Db.Connection.t, ~token: string) =>
+      (Sihl.App.Persistence.Connection.t, ~token: string) =>
       Js.Promise.t(Belt.Result.t(Model.Token.t, string)) =
       (connection, ~token) =>
-        Sihl.Core.Db.Repo.getOne(
+        Sihl.App.Db.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(token),
@@ -271,7 +253,7 @@ AND users_tokens.kind LIKE ?;
     type parameters = (string, string);
 
     let query = (connection, ~userId: string, ~kind: string) => {
-      Sihl.Core.Db.Repo.execute(
+      Sihl.App.Db.Repo.execute(
         ~parameters=parameters_encode((userId, kind)),
         connection,
         stmt,

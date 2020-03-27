@@ -2,6 +2,7 @@
   "name": "@sihl/users",
   "version": "0.0.10",
   "scripts": {
+    "sihl": "node src/Main.bs.js sihl",
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
@@ -23,7 +24,8 @@
     "bs-let": "^0.1.16",
     "compression": "^1.7.4",
     "decco": "^1.1.1",
-    "reason-react": "^0.7.0"
+    "reason-react": "^0.7.0",
+    "@sihl/mysql": "0.0.10"
   },
   "devDependencies": {
     "@sihl/core": "0.0.10",

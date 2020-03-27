@@ -5,18 +5,18 @@ module GetUsers = {
   type body_out = list(Model.User.t);
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: GET,
       path: {j|/$root/users/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        open! Sihl.App.Http.Endpoint;
+        let%Async token = Sihl.App.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async users = Service.User.getAll((conn, user));
         let response =
-          users |> Sihl.Core.Db.Repo.Result.rows |> body_out_encode;
-        Async.async @@ Sihl.Core.Http.Endpoint.OkJson(response);
+          users |> Sihl.Core.Db.Result.Query.rows |> body_out_encode;
+        Async.async @@ Sihl.App.Http.Endpoint.OkJson(response);
       },
     });
 };
@@ -26,12 +26,12 @@ module GetUser = {
   type params = {userId: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: GET,
       path: {j|/$root/users/:id/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
+        open! Sihl.App.Http.Endpoint;
         let%Async header = req.requireHeader("authorization");
         let%Async user = Service.User.authenticate(conn, header);
         let%Async {userId} = req.requireParams(params_decode);
@@ -46,13 +46,13 @@ module GetUser = {
 
 module GetMe = {
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: GET,
       path: {j|/$root/users/me/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        open! Sihl.App.Http.Endpoint;
+        let%Async token = Sihl.App.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let response = user |> Model.User.t_encode;
         Async.async @@ OkJson(response);
@@ -75,12 +75,12 @@ module Login = {
   };
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: GET,
       path: {j|/$root/login/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
+        open! Sihl.App.Http.Endpoint;
         let%Async {email, password, cookie} = req.requireQuery(query_decode);
         let%Async (_, token) = Service.User.login(conn, ~email, ~password);
         let%Async user = Service.User.authenticate(conn, token.token);
@@ -100,13 +100,13 @@ module Login = {
 
 module Logout = {
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: DELETE,
       path: {j|/$root/logout/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        open! Sihl.App.Http.Endpoint;
+        let%Async token = Sihl.App.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async _ = Service.User.logout((conn, user));
         let response = user |> Model.User.t_encode;
@@ -130,12 +130,12 @@ module Register = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: POST,
       path: {j|/$root/register/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
+        open! Sihl.App.Http.Endpoint;
         let%Async {email, username, password, givenName, familyName, phone} =
           req.requireBody(body_in_decode);
         let%Async _ =
@@ -162,12 +162,12 @@ module ConfirmEmail = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: GET,
       path: {j|/$root/confirm-email/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
+        open! Sihl.App.Http.Endpoint;
         let%Async {token} = req.requireQuery(query_decode);
         let%Async _ = Service.User.confirmEmail(conn, ~token);
         let response = {message: "Email confirmed"} |> body_out_encode;
@@ -184,12 +184,12 @@ module RequestPasswordReset = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: POST,
       path: {j|/$root/request-password-reset/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
+        open! Sihl.App.Http.Endpoint;
         let%Async {email} = req.requireBody(body_in_decode);
         let%Async _ = Service.User.requestPasswordReset(conn, ~email);
         Async.async @@ OkJson(body_out_encode({message: "ok"}));
@@ -208,12 +208,12 @@ module ResetPassword = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: POST,
       path: {j|/$root/reset-password/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
+        open! Sihl.App.Http.Endpoint;
         let%Async {token, newPassword} = req.requireBody(body_in_decode);
         let%Async _ = Service.User.resetPassword(conn, ~token, ~newPassword);
         Async.async @@ OkJson(body_out_encode({message: "ok"}));
@@ -233,13 +233,13 @@ module UpdatePassword = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: POST,
       path: {j|/$root/update-password/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        open! Sihl.App.Http.Endpoint;
+        let%Async token = Sihl.App.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, currentPassword, newPassword} =
           req.requireBody(body_in_decode);
@@ -266,13 +266,13 @@ module SetPassword = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: POST,
       path: {j|/$root/set-password/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        open! Sihl.App.Http.Endpoint;
+        let%Async token = Sihl.App.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, newPassword} = req.requireBody(body_in_decode);
         let%Async _ =
@@ -297,13 +297,13 @@ module UpdateUserDetails = {
   type body_out = {message: string};
 
   let endpoint = (root, database) =>
-    Sihl.Core.Http.dbEndpoint({
+    Sihl.App.Http.dbEndpoint({
       database,
       verb: POST,
       path: {j|/$root/update-user-details/|j},
       handler: (conn, req) => {
-        open! Sihl.Core.Http.Endpoint;
-        let%Async token = Sihl.Core.Http.requireAuthorizationToken(req);
+        open! Sihl.App.Http.Endpoint;
+        let%Async token = Sihl.App.Http.requireAuthorizationToken(req);
         let%Async user = Service.User.authenticate(conn, token);
         let%Async {userId, email, username, givenName, familyName, phone} =
           req.requireBody(body_in_decode);
@@ -328,17 +328,17 @@ module AdminUi = {
     type query = {session: option(string)};
 
     let endpoint = (_, database) =>
-      Sihl.Core.Http.dbEndpoint({
+      Sihl.App.Http.dbEndpoint({
         database,
         verb: GET,
         path: {j|/admin/|j},
         handler: (conn, req) => {
-          open! Sihl.Core.Http.Endpoint;
+          open! Sihl.App.Http.Endpoint;
           let%Async {session} = req.requireQuery(query_decode);
           switch (session) {
           | None =>
             let%Async token =
-              Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+              Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
             let%Async user = Service.User.authenticate(conn, token);
             if (!Model.User.isAdmin(user)) {
               abort @@ Unauthorized("User is not an admin");
@@ -370,13 +370,13 @@ module AdminUi = {
     };
 
     let endpoint = (_, database) =>
-      Sihl.Core.Http.dbEndpoint({
+      Sihl.App.Http.dbEndpoint({
         database,
         verb: GET,
         path: {j|/admin/login/|j},
         handler: (conn, req) => {
-          open! Sihl.Core.Http.Endpoint;
-          let%Async token = Sihl.Core.Http.sessionCookie(req);
+          open! Sihl.App.Http.Endpoint;
+          let%Async token = Sihl.App.Http.sessionCookie(req);
           let%Async {email, password} = req.requireQuery(query_decode);
           switch (token, email, password) {
           | (_, Some(email), Some(password)) =>
@@ -403,14 +403,14 @@ module AdminUi = {
 
   module Logout = {
     let endpoint = (_, database) =>
-      Sihl.Core.Http.dbEndpoint({
+      Sihl.App.Http.dbEndpoint({
         database,
         verb: POST,
         path: {j|/admin/logout/|j},
         handler: (conn, req) => {
-          open! Sihl.Core.Http.Endpoint;
+          open! Sihl.App.Http.Endpoint;
           let%Async token =
-            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+            Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
           let%Async currentUser = Service.User.authenticate(conn, token);
           let%Async _ = Service.User.logout((conn, currentUser));
           Async.async @@ FoundRedirect("/admin/login");
@@ -429,14 +429,14 @@ module AdminUi = {
     type params = {userId: string};
 
     let endpoint = (root, database) =>
-      Sihl.Core.Http.dbEndpoint({
+      Sihl.App.Http.dbEndpoint({
         database,
         verb: GET,
         path: {j|/admin/$root/users/:userId/|j},
         handler: (conn, req) => {
-          open! Sihl.Core.Http.Endpoint;
+          open! Sihl.App.Http.Endpoint;
           let%Async token =
-            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+            Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
           let%Async currentUser = Service.User.authenticate(conn, token);
           let%Async {userId} = req.requireParams(params_decode);
           let%Async user =
@@ -474,17 +474,17 @@ module AdminUi = {
 
   module Users = {
     let endpoint = (root, database) =>
-      Sihl.Core.Http.dbEndpoint({
+      Sihl.App.Http.dbEndpoint({
         database,
         verb: GET,
         path: {j|/admin/$root/users/|j},
         handler: (conn, req) => {
-          open! Sihl.Core.Http.Endpoint;
+          open! Sihl.App.Http.Endpoint;
           let%Async token =
-            Sihl.Core.Http.requireSessionCookie(req, "/admin/login/");
+            Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
           let%Async user = Service.User.authenticate(conn, token);
           let%Async users = Service.User.getAll((conn, user));
-          let users = users |> Sihl.Core.Db.Repo.Result.rows;
+          let users = users |> Sihl.Core.Db.Result.Query.rows;
           Async.async @@
           OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users />));
         },

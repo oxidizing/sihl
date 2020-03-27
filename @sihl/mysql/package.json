@@ -1,5 +1,5 @@
 {
-  "name": "@sihl/core",
+  "name": "@sihl/mysql",
   "version": "0.0.10",
   "scripts": {
     "build": "bsb -make-world",
@@ -17,20 +17,17 @@
   "peerDependencies": {
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
+    "@sihl/core": "0.0.10",
     "decco": "^1.1.1"
   },
   "dependencies": {
-    "@glennsl/bs-jest": "^0.4.9",
-    "bcrypt": "^3.0.8",
     "bluebird": "^3.7.2",
-    "body-parser": "^1.19.0",
-    "bs-express": "^1.0.1",
-    "cookie-parser": "^1.4.4",
-    "isomorphic-fetch": "^2.2.1"
+    "mysql2": "^2.1.0"
   },
   "devDependencies": {
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
+    "@sihl/core": "0.0.10",
     "decco": "^1.1.1"
   }
 }

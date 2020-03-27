@@ -2,10 +2,10 @@ open Jest;
 open Expect;
 
 describe("Migrations", () => {
-  open SihlCoreDb.Migration;
+  open Sihl.Core.Db.Migration;
   test("steps to apply returns empty list", () => {
     let migration = {steps: _ => [], namespace: "foo-namespace"};
-    SihlCoreDb.Migration.stepsToApply(migration, 10)
+    stepsToApply(migration, 10)
     |> Belt.List.toArray
     |> expect
     |> toHaveLength(0);
@@ -16,9 +16,7 @@ describe("Migrations", () => {
       namespace: "foo-namespace",
     };
     let expected = [(2, "baz")];
-    SihlCoreDb.Migration.stepsToApply(migration, 1)
-    |> expect
-    |> toEqual(expected);
+    stepsToApply(migration, 1) |> expect |> toEqual(expected);
   });
   test("steps to apply returns sorted missing migrations", () => {
     let migration = {
@@ -26,38 +24,34 @@ describe("Migrations", () => {
       namespace: "foo-namespace",
     };
     let expected = [(1, "foo"), (2, "baz")];
-    SihlCoreDb.Migration.stepsToApply(migration, 0)
-    |> expect
-    |> toEqual(expected);
+    stepsToApply(migration, 0) |> expect |> toEqual(expected);
   });
   test("gets maximum version", () => {
-    SihlCoreDb.Migration.maxVersion([(1, "foo"), (0, "bar"), (2, "baz")])
-    |> expect
-    |> toBe(2)
+    maxVersion([(1, "foo"), (0, "bar"), (2, "baz")]) |> expect |> toBe(2)
   });
 });
 
 describe("Parses DATABASE_URL", () => {
   test("is empty with empty string", () => {
-    SihlCoreDb.Database.parseUrl("")
+    Sihl.Core.Config.Db.Url.parse("")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("is empty with invalid url", () => {
-    SihlCoreDb.Database.parseUrl("sdfaadsf")
+    Sihl.Core.Config.Db.Url.parse("sdfaadsf")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("returns config", () => {
     let config =
-      SihlCoreConfig.Db.make(
+      Sihl.Core.Config.Db.make(
         ~user="username",
         ~password="password",
         ~host="host",
         ~port="port",
         ~db="db",
       );
-    SihlCoreDb.Database.parseUrl("mysql://username:password@host:port/db")
+    Sihl.Core.Config.Db.makeFromUrl("mysql://username:password@host:port/db")
     |> expect
     |> toEqual(Ok(config));
   });
