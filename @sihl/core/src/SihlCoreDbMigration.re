@@ -1,26 +1,7 @@
 module Async = SihlCoreAsync;
 
 module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
-  type t = {
-    steps: string => list((int, string)),
-    namespace: string,
-  };
-
-  let stepsToApply = (migration, currentVersion) => {
-    migration.steps(migration.namespace)
-    ->Belt.List.sort(((v1, _), (v2, _)) => v1 > v2 ? 1 : (-1))
-    ->Belt.List.keep(((v, _)) => v > currentVersion);
-  };
-
-  let maxVersion = steps => {
-    steps
-    ->Belt.List.sort(((v1, _), (v2, _)) => v1 < v2 ? 1 : (-1))
-    ->Belt.List.map(((v, _)) => v)
-    ->Belt.List.head
-    ->Belt.Option.getWithDefault(0);
-  };
-
-  let applyMigration = (migration: t, db) => {
+  let applyMigration = (migration: SihlCoreDbCore.Migration.t, db) => {
     let namespace = migration.namespace;
     SihlCoreLog.info({j|Checking migrations for app $(namespace)|j}, ());
     Persistence.Database.withConnection(
@@ -44,8 +25,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
           Persistence.Migration.get(conn, ~namespace=migration.namespace);
         let status = Belt.Result.getExn(status);
         let currentVersion = Persistence.Migration.Status.version(status);
-        let steps = stepsToApply(migration, currentVersion);
-        let newVersion = maxVersion(steps);
+        let steps =
+          SihlCoreDbCore.Migration.stepsToApply(migration, currentVersion);
+        let newVersion = SihlCoreDbCore.Migration.maxVersion(steps);
         let nrSteps = steps |> Belt.List.length;
         if (nrSteps > 0) {
           SihlCoreLog.info(
@@ -78,7 +60,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     );
   };
 
-  let applyMigrations = (migrations: list(t), db) => {
+  let applyMigrations = (migrations: list(SihlCoreDbCore.Migration.t), db) => {
     migrations
     ->Belt.List.map((migration, ()) => applyMigration(migration, db))
     ->Async.allInOrder;

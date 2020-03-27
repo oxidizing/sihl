@@ -446,16 +446,11 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     };
   };
 
-  let parseAuthToken = header => {
-    let parts = header |> Js.String.split(" ") |> Belt.Array.reverse;
-    Belt.Array.get(parts, 0);
-  };
-
   let requireAuthorizationToken =
       (request: Endpoint.request('body, 'query, 'params)) => {
     module Async = SihlCoreAsync;
     let%Async header = Endpoint.requireHeader("authorization", request.req);
-    switch (parseAuthToken(header)) {
+    switch (SihlCoreHttpCore.parseAuthToken(header)) {
     | Some(token) => Async.async(token)
     | None => Endpoint.abort(BadRequest("No authorization token found"))
     };

@@ -33,6 +33,27 @@ module Result = {
   };
 };
 
+module Migration = {
+  type t = {
+    steps: string => list((int, string)),
+    namespace: string,
+  };
+
+  let stepsToApply = (migration, currentVersion) => {
+    migration.steps(migration.namespace)
+    ->Belt.List.sort(((v1, _), (v2, _)) => v1 > v2 ? 1 : (-1))
+    ->Belt.List.keep(((v, _)) => v > currentVersion);
+  };
+
+  let maxVersion = steps => {
+    steps
+    ->Belt.List.sort(((v1, _), (v2, _)) => v1 < v2 ? 1 : (-1))
+    ->Belt.List.map(((v, _)) => v)
+    ->Belt.List.head
+    ->Belt.Option.getWithDefault(0);
+  };
+};
+
 module Config = {
   type t = {
     .

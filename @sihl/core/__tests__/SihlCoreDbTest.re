@@ -2,7 +2,7 @@ open Jest;
 open Expect;
 
 describe("Migrations", () => {
-  open Sihl.App.Db.Migration;
+  open Sihl.Core.Db.Migration;
   test("steps to apply returns empty list", () => {
     let migration = {steps: _ => [], namespace: "foo-namespace"};
     stepsToApply(migration, 10)
