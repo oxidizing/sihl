@@ -8,15 +8,14 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   module SihlCoreDb = SihlCoreDb.Make(Persistence);
 
   module App = {
-    type t = {
-      name: string,
-      namespace: string,
-      routes: Persistence.Database.t => list(SihlCoreHttp.Endpoint.endpoint),
-      migration: SihlCoreDbCore.Migration.t,
-      commands: list(SihlCoreCli.command),
-    };
+    type t =
+      SihlCoreApp.t(
+        Persistence.Database.t,
+        SihlCoreHttpCore.endpoint,
+        SihlCoreHttpCore.command(Persistence.Connection.t),
+      );
 
-    let names = apps =>
+    let names = (apps: list(t)) =>
       Js.Array.joinWith(
         ", ",
         apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
@@ -35,7 +34,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let db = instance => Instance.db(instance);
 
-    let make = (~name, ~namespace, ~routes, ~migration, ~commands) => {
+    let make = (~name, ~namespace, ~routes, ~migration, ~commands): t => {
       name,
       namespace,
       routes,
@@ -119,9 +118,11 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     };
   };
 
+  type command = SihlCoreHttpCore.command(Persistence.Connection.t);
+
   module Cli = {
     open! SihlCoreCli;
-    let version = {
+    let version: command = {
       name: "version",
       description: "version",
       f: (_, args, description) => {
@@ -132,16 +133,18 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       },
     };
 
-    let start = apps => {
-      name: "start",
-      description: "start",
-      f: (_, args, description) => {
-        switch (args) {
-        | ["start", ..._] => Manager.startApps(apps)->Async.mapAsync(_ => ())
-        | _ => Async.async(Js.log("Usage: " ++ description))
-        };
-      },
-    };
+    let start: list(App.t) => command =
+      apps => {
+        name: "start",
+        description: "start",
+        f: (_, args, description) => {
+          switch (args) {
+          | ["start", ..._] =>
+            Manager.startApps(apps)->Async.mapAsync(_ => ())
+          | _ => Async.async(Js.log("Usage: " ++ description))
+          };
+        },
+      };
 
     let register = (commands: list(SihlCoreCli.command), apps) => {
       let defaultCommands = [version, start(apps)];

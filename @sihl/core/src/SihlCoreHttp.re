@@ -197,11 +197,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         Js.Promise.t('body_out),
     };
 
-    type endpoint = {
-      use: Express.App.t => unit,
-      useOnRouter: Express.Router.t => unit,
-    };
-
     let sendRequestedContent = (msg, req, res) => {
       Express.Response.(
         switch (Express.Request.get("content-type", req)) {
@@ -329,7 +324,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let endpoint =
         (~middleware=?, cfg: endpointConfig('body, 'params, 'query))
-        : endpoint => {
+        : SihlCoreHttpCore.endpoint => {
       let wrappedHandler = (_next, req, res) => {
         let handleOCamlError =
           [@bs.open]
@@ -413,7 +408,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
           ~middleware=?,
           cfg: jsonEndpointConfig('body_in, 'query, 'params, 'body_out),
         )
-        : endpoint => {
+        : SihlCoreHttpCore.endpoint => {
       endpoint(
         ~middleware?,
         {
@@ -430,7 +425,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let dbEndpoint =
         (~middleware=?, cfg: dbEndpointConfig('body_in, 'params, 'query))
-        : endpoint => {
+        : SihlCoreHttpCore.endpoint => {
       endpoint(
         ~middleware?,
         {
@@ -481,7 +476,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
   module Express = Express;
 
-  type endpoint = Endpoint.endpoint;
+  type endpoint = SihlCoreHttpCore.endpoint;
 
   let endpoint = Endpoint.endpoint;
   let dbEndpoint = Endpoint.dbEndpoint;
