@@ -20,14 +20,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     };
   };
 
-  type command = {
-    name: string,
-    description: string,
-    f:
-      (Persistence.Connection.t, list(string), string) => Js.Promise.t(unit),
-  };
+  type command = SihlCoreHttpCore.command(Persistence.Connection.t);
 
-  let runCommand = (command, args) => {
+  let runCommand = (command: command, args) => {
     let db = SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
     let%Async _ =
       Persistence.Database.withConnection(db, conn =>
@@ -43,7 +38,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     Js.log("---------------------------------");
     commands
     ->Js.Dict.values
-    ->Belt.Array.forEach(command => Js.log("sihl " ++ command.description));
+    ->Belt.Array.forEach((command: command) =>
+        Js.log("sihl " ++ command.description)
+      );
     Js.log("---------------------------------");
   };
 
