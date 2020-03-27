@@ -9,22 +9,12 @@ module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
   };
 
   let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-    let%Async result = Connection.querySimple(connection, ~stmt, ~parameters);
+    let%Async result = Connection.getOne(connection, ~stmt, ~parameters);
     Async.async(
       switch (result) {
-      | Ok([row]) => row |> SihlCoreError.Decco.stringifyDecoder(decode)
-      | Ok([]) =>
-        Error(
-          "No rows found in database "
-          ++ SihlCoreDbCore.debug(stmt, parameters),
-        )
-      | Ok(_) =>
-        Error(
-          "Two or more rows found when we were expecting only one "
-          ++ SihlCoreDbCore.debug(stmt, parameters),
-        )
+      | Ok(result) => result |> SihlCoreError.Decco.stringifyDecoder(decode)
       | Error(msg) =>
-        SihlCoreDbCore.abort(
+        Error(
           "Error happened in DB when getOne() msg="
           ++ msg
           ++ SihlCoreDbCore.debug(stmt, parameters),
@@ -34,7 +24,7 @@ module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
   };
 
   let getMany = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
-    let%Async result = Connection.query(connection, ~stmt, ~parameters);
+    let%Async result = Connection.getMany(connection, ~stmt, ~parameters);
     switch (result) {
     | Ok((rows, meta)) =>
       let result =

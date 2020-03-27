@@ -22,8 +22,7 @@ let debug = (stmt, parameters) => {
 module Result = {
   type meta = {rowCount: int};
   module Query = {
-    type data = list(Js.Json.t);
-    type t = (data, meta);
+    type t('a) = (list('a), meta);
     let make = (data, ~rowCount) => (data, {rowCount: rowCount});
   };
   module Execution = {
@@ -53,17 +52,20 @@ module type MIGRATIONSTATUS = {
   let dirty: t => bool;
   let setVersion: (t, ~newVersion: int) => t;
   let make: (~namespace: string) => t;
-  let t_decode: Js.Json.t => Decco.result(t);
+  let t_decode: Js.Json.t => Belt.Result.t(t, string);
 };
 
 module type CONNECTION = {
   type t;
-  let query:
+  let raw:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Js.Promise.t(Belt.Result.t(Result.Query.t, string));
-  let querySimple:
+    Js.Promise.t(Js.Json.t);
+  let getMany:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Js.Promise.t(Belt.Result.t(list(Js.Json.t), string));
+    Js.Promise.t(Belt.Result.t(Result.Query.t(Js.Json.t), string));
+  let getOne:
+    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    Js.Promise.t(Belt.Result.t(Js.Json.t, string));
   let execute:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
@@ -81,14 +83,15 @@ module type PERSISTENCE = {
   };
   module Migration: {
     module Status: MIGRATIONSTATUS;
-    let setupMigrationStorage: Connection.t => Js.Promise.t(unit);
-    let hasMigrationStatus:
-      (Connection.t, ~namespace: string) => Js.Promise.t(bool);
-    let getMigrationStatus:
+    let setup:
+      Connection.t => Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
+    let has: (Connection.t, ~namespace: string) => Js.Promise.t(bool);
+    let get:
       (Connection.t, ~namespace: string) =>
       Js.Promise.t(Belt.Result.t(Status.t, string));
-    let upsertMigrationStatus:
-      (Connection.t, ~status: Status.t) => Js.Promise.t(unit);
+    let upsert:
+      (Connection.t, ~status: Status.t) =>
+      Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
   };
 };
 

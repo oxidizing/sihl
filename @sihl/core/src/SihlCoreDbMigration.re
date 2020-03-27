@@ -26,27 +26,22 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     Persistence.Database.withConnection(
       db,
       conn => {
-        let%Async _ = Persistence.Migration.setupMigrationStorage(conn);
+        let%Async _ = Persistence.Migration.setup(conn);
         let%Async hasStatus =
-          Persistence.Migration.hasMigrationStatus(
-            conn,
-            ~namespace=migration.namespace,
-          );
+          Persistence.Migration.has(conn, ~namespace=migration.namespace);
         let%Async _ =
           !hasStatus
-            ? Persistence.Migration.upsertMigrationStatus(
+            ? Persistence.Migration.upsert(
                 conn,
                 ~status=
                   Persistence.Migration.Status.make(
                     ~namespace=migration.namespace,
                   ),
               )
+              ->Async.mapAsync(_ => ())
             : Async.async();
         let%Async status =
-          Persistence.Migration.getMigrationStatus(
-            conn,
-            ~namespace=migration.namespace,
-          );
+          Persistence.Migration.get(conn, ~namespace=migration.namespace);
         let status = Belt.Result.getExn(status);
         let currentVersion = Persistence.Migration.Status.version(status);
         let steps = stepsToApply(migration, currentVersion);
@@ -64,7 +59,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
                 ->Async.mapAsync(_ => ())
               )
             ->Async.allInOrder;
-          Persistence.Migration.upsertMigrationStatus(
+          Persistence.Migration.upsert(
             conn,
             ~status=
               Persistence.Migration.Status.setVersion(status, ~newVersion),

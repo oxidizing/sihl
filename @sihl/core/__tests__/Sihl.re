@@ -4,13 +4,11 @@ module TestPersistence = {
   module Connection = {
     type t;
     let release = _ => ();
-    let query = (_, ~stmt as _, ~parameters as _) =>
-      Js.Promise.resolve(Belt.Result.Error("Not implemented"));
-    let querySimple = (_, ~stmt as _, ~parameters as _) =>
-      Js.Promise.resolve(Belt.Result.Error("Not implemented"));
+    let raw = [%raw {| function() { return ""; } |}];
+    let getMany = [%raw {| function() { return ""; } |}];
+    let getOne = [%raw {| function() { return ""; } |}];
+    let querySimple = [%raw {| function() { return ""; } |}];
     let execute = (_, ~stmt as _, ~parameters as _) =>
-      Js.Promise.resolve(Belt.Result.Error("Not implemented"));
-    let executeSimple = (_, ~stmt as _, ~parameters as _) =>
       Js.Promise.resolve(Belt.Result.Error("Not implemented"));
   };
   module Database = {
@@ -31,12 +29,10 @@ module TestPersistence = {
       let setVersion = (old, ~newVersion as _) => old;
       let t_decode = _ => Ok();
     };
-    let setupMigrationStorage = _ => Js.Promise.resolve();
-    let getMigrationStatus = (_, ~namespace as _) =>
-      Js.Promise.resolve(Belt.Result.Error("Not impelemted"));
-    let hasMigrationStatus = (_, ~namespace as _) =>
-      Js.Promise.resolve(true);
-    let upsertMigrationStatus = (_, ~status as _) => Js.Promise.resolve();
+    let setup = _ => [%raw {| function() { return ""; } |}];
+    let get = [%raw {| function() { return ""; } |}];
+    let has = [%raw {| function() { return ""; } |}];
+    let upsert = [%raw {| function() { return ""; } |}];
   };
 };
 
