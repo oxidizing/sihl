@@ -123,7 +123,23 @@ module Database = {
   [@bs.send]
   external connect: handle => Async.t(Connection.t) = "getConnection";
 
-  let setup = config => {name: config##database, handle: setup(config)};
+  let setup = (databaseUrl: Sihl.Core.Config.Db.Url.t) => {
+    let config: Sihl.Core.Config.Db.t =
+      Sihl.Core.Config.Db.makeFromUrl(databaseUrl)
+      |> Sihl.Core.Error.failIfError;
+    let handle =
+      setup({
+        "user": config.dbUser,
+        "host": config.dbHost,
+        "database": config.dbName,
+        "password": config.dbPassword,
+        "port": config.dbPort |> int_of_string,
+        "waitForConnections": true,
+        "connectionLimit": config.connectionLimit |> int_of_string,
+        "queueLimit": config.queueLimit |> int_of_string,
+      });
+    {name: config.dbName, handle};
+  };
 
   let end_ = db =>
     try(end_(db.handle)) {

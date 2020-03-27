@@ -51,7 +51,8 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let startApps = (apps: list(t)) => {
       SihlCoreLog.info("Starting apps: " ++ names(apps), ());
-      let db = SihlCoreDb.Database.connectWithCfg();
+      let db =
+        SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
       SihlCoreLog.info("Mounting HTTP routes", ());
       let routes =
         apps

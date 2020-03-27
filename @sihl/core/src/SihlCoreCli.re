@@ -28,7 +28,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   };
 
   let runCommand = (command, args) => {
-    let db = SihlCoreDb.Database.connectWithCfg();
+    let db = SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
     let%Async _ =
       Persistence.Database.withConnection(db, conn =>
         Async.catchAsync(command.f(conn, args, command.description), err =>

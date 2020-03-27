@@ -1,13 +1,6 @@
 module Async = SihlCoreAsync;
 
 module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
-  module Result = {
-    type t('a) = (list('a), SihlCoreDbCore.Result.meta);
-
-    let metaData = ((_, metaData)) => metaData;
-    let rows = ((rows, _)) => rows;
-  };
-
   let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
     let%Async result = Connection.getOne(connection, ~stmt, ~parameters);
     Async.async(

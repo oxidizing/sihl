@@ -15,7 +15,7 @@ module GetUsers = {
         let%Async user = Service.User.authenticate(conn, token);
         let%Async users = Service.User.getAll((conn, user));
         let response =
-          users |> Sihl.App.Db.Repo.Result.rows |> body_out_encode;
+          users |> Sihl.Core.Db.Result.Query.rows |> body_out_encode;
         Async.async @@ Sihl.App.Http.Endpoint.OkJson(response);
       },
     });
@@ -484,7 +484,7 @@ module AdminUi = {
             Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
           let%Async user = Service.User.authenticate(conn, token);
           let%Async users = Service.User.getAll((conn, user));
-          let users = users |> Sihl.App.Db.Repo.Result.rows;
+          let users = users |> Sihl.Core.Db.Result.Query.rows;
           Async.async @@
           OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users />));
         },

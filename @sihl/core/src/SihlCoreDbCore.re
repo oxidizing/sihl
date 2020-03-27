@@ -24,6 +24,8 @@ module Result = {
   module Query = {
     type t('a) = (list('a), meta);
     let make = (data, ~rowCount) => (data, {rowCount: rowCount});
+    let meta = ((_, meta)) => meta;
+    let rows = ((rows, _)) => rows;
   };
   module Execution = {
     type t = meta;
@@ -75,7 +77,7 @@ module type PERSISTENCE = {
   module Connection: CONNECTION;
   module Database: {
     type t;
-    let setup: Config.t => t;
+    let setup: SihlCoreConfig.Db.Url.t => t;
     let end_: t => unit;
     let withConnection:
       (t, Connection.t => Js.Promise.t('a)) => Js.Promise.t('a);

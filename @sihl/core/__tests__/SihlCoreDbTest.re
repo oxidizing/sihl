@@ -33,12 +33,12 @@ describe("Migrations", () => {
 
 describe("Parses DATABASE_URL", () => {
   test("is empty with empty string", () => {
-    Sihl.App.Db.Database.parseUrl("")
+    Sihl.Core.Config.Db.Url.parse("")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("is empty with invalid url", () => {
-    Sihl.App.Db.Database.parseUrl("sdfaadsf")
+    Sihl.Core.Config.Db.Url.parse("sdfaadsf")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
@@ -51,7 +51,7 @@ describe("Parses DATABASE_URL", () => {
         ~port="port",
         ~db="db",
       );
-    Sihl.App.Db.Database.parseUrl("mysql://username:password@host:port/db")
+    Sihl.Core.Config.Db.makeFromUrl("mysql://username:password@host:port/db")
     |> expect
     |> toEqual(Ok(config));
   });

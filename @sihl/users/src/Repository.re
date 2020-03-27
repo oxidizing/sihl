@@ -19,7 +19,7 @@ FROM users_users;
 
     let query:
       Sihl.App.Persistence.Connection.t =>
-      Js.Promise.t(Sihl.App.Db.Repo.Result.t(Model.User.t)) =
+      Js.Promise.t(Sihl.Core.Db.Result.Query.t(Model.User.t)) =
       connection =>
         Sihl.App.Db.Repo.getMany(
           ~connection,
