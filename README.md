@@ -34,6 +34,9 @@ Check out [this blog post](https://oxidizing.io/blog/2020-03-sihl-introduction/)
 
 ## Roadmap
 
+Currently we focus on the [first release](/milestone/1).
+
+Long-term goals are:
 * Scaffolding: The CLI will be extended to allow generating CRUD routes, models, repositories and services quickly
 * Type-safe query builder: The compiler will tell you if your SQL queries are not valid
 * Native: It will be possible to access libraries form the OCaml ecosystem and compiling the backend to an executable *while sharing business logic with the frontend*
