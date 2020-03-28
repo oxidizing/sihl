@@ -1,6 +1,6 @@
 {
   "name": "@sihl/users",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "scripts": {
     "sihl": "node src/Main.bs.js sihl",
     "build": "bsb -make-world",
@@ -10,6 +10,9 @@
     "test": "DATABASE_URL=mysql://root:password@localhost:3306/dev jest"
   },
   "keywords": [
+    "Sihl",
+    "ReasonML",
+    "Reason",
     "BuckleScript"
   ],
   "author": "Josef Erben josef@oxidizing.io",
@@ -17,18 +20,19 @@
   "peerDependencies": {
     "react": "^16.8.1",
     "react-dom": "^16.8.1",
-    "@sihl/core": "0.0.10"
+    "@sihl/core": "0.0.12",
+    "@sihl/mysql": "0.0.12"
   },
   "dependencies": {
     "bs-fetch": "^0.5.1",
     "bs-let": "^0.1.16",
     "compression": "^1.7.4",
     "decco": "^1.1.1",
-    "reason-react": "^0.7.0",
-    "@sihl/mysql": "0.0.10"
+    "reason-react": "^0.7.0"
   },
   "devDependencies": {
-    "@sihl/core": "0.0.10",
+    "@sihl/core": "0.0.12",
+    "@sihl/mysql": "0.0.12",
     "bs-platform": "^7.1.0",
     "react": "^16.8.1",
     "react-dom": "^16.8.1"
