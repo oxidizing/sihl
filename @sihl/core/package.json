@@ -1,6 +1,6 @@
 {
   "name": "@sihl/core",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -8,9 +8,10 @@
     "test": "jest"
   },
   "keywords": [
-    "BuckleScript",
+    "Sihl",
     "ReasonML",
-    "Sihl"
+    "Reason",
+    "BuckleScript"
   ],
   "author": "Josef Erben josef@oxidizing.io",
   "license": "MIT",
