@@ -176,8 +176,8 @@ Expect.(
           (),
         ),
       );
-    let mail: Model.Email.t =
-      Service.Email.getLastEmail() |> Belt.Option.getExn;
+    let mail: Sihl.Core.Email.t =
+      Sihl.Core.Email.getLastEmail() |> Belt.Option.getExn;
     let tokenRe = Js.Re.fromString("token\=(.*)");
     let token =
       Js.Re.exec_(tokenRe, mail.text)
@@ -251,8 +251,8 @@ Expect.(
         ),
       );
 
-    let mail: Model.Email.t =
-      Service.Email.getLastEmail() |> Belt.Option.getExn;
+    let mail: Sihl.Core.Email.t =
+      Sihl.Core.Email.getLastEmail() |> Belt.Option.getExn;
     let tokenRe = Js.Re.fromString("token\=(.*)");
     let token =
       Js.Re.exec_(tokenRe, mail.text)
