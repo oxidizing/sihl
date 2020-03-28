@@ -34,7 +34,7 @@ Check out [this blog post](https://oxidizing.io/blog/2020-03-sihl-introduction/)
 
 ## Roadmap
 
-Currently we focus on the [first release](https://github.com/oxidizing/sihl/milestone/1).
+Currently we are focusing on the [first release](https://github.com/oxidizing/sihl/milestone/1).
 
 Long-term goals are:
 * Scaffolding: The CLI will be extended to allow generating CRUD routes, models, repositories and services quickly
