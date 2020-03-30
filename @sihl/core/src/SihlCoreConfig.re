@@ -1,3 +1,11 @@
+module Schema = {
+  type type_ =
+    | String(string, option(string), list(string))
+    | Int(string, option(int))
+    | Bool(string, option(bool));
+  type t = list(type_);
+};
+
 module Env = {
   let get: unit => Js.Json.t = [%raw {| function() { return process.env; } |}];
 };
@@ -76,7 +84,7 @@ module Db = {
 
 exception EnvironmentConfigurationException(string);
 
-// TODO take configuration scheme as first parameter
+// TODO take configuration schema as first parameter
 let _get = k => {
   Env.get()
   ->Js.Json.decodeObject

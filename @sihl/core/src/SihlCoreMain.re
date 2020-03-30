@@ -34,12 +34,14 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let db = instance => Instance.db(instance);
 
-    let make = (~name, ~namespace, ~routes, ~migration, ~commands): t => {
+    let make =
+        (~name, ~namespace, ~routes, ~migration, ~commands, ~configuration): t => {
       name,
       namespace,
       routes,
       migration,
       commands,
+      configuration,
     };
 
     let runMigrations = (instance: Instance.instance) => {
