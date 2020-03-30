@@ -96,9 +96,8 @@ let devInbox: Pervasives.ref(option(t)) = ref(None);
 
 let getLastEmail = () => devInbox^;
 
-let send = email => {
-  let backend = SihlCoreConfig.get("EMAIL_BACKEND");
-  if (backend === "smtp") {
+let send = email =>
+  if (SihlCoreConfig.get(~default="console", "EMAIL_BACKEND") === "smtp") {
     let email =
       Nodemailer.Email.make(
         ~from=email.sender,
@@ -106,14 +105,16 @@ let send = email => {
         ~text=email.text,
         (),
       );
-    // TODO read these things from env vars
     let transport =
       Nodemailer.Transport.make(
-        ~host="",
-        ~port=1234,
-        ~auth={"user": "", "pass": ""},
-        ~secure=true,
-        ~pool=false,
+        ~host=SihlCoreConfig.get("SMTP_HOST"),
+        ~port=SihlCoreConfig.getInt("SMTP_PORT"),
+        ~auth={
+          "user": SihlCoreConfig.get("SMTP_AUTH_USERNAME"),
+          "pass": SihlCoreConfig.get("SMTP_AUTH_PASSWORD"),
+        },
+        ~secure=SihlCoreConfig.getBool("SMTP_SECURE"),
+        ~pool=SihlCoreConfig.getBool("SMTP_POOL"),
         (),
       );
     Nodemailer.Transport.send(transport, email);
@@ -121,4 +122,3 @@ let send = email => {
     devInbox := Some(email);
     Async.async @@ SihlCoreLog.info(toString(email), ());
   };
-};

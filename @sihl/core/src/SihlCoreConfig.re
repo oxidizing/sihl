@@ -74,4 +74,26 @@ module Db = {
   };
 };
 
-let get = _ => "";
+exception EnvironmentConfigurationException(string);
+
+// TODO take configuration scheme as first parameter
+let get = (~default=?, k) => {
+  let env =
+    Env.get()
+    ->Js.Json.decodeObject
+    ->Belt.Option.getExn
+    ->Js.Dict.get(k)
+    ->Belt.Option.flatMap(Js.Json.decodeString);
+  switch (env, default) {
+  | (Some(env), _) => env
+  | (None, Some(default)) => default
+  | _ =>
+    raise(
+      EnvironmentConfigurationException(
+        "Env var not found and no default provided for key= " ++ k,
+      ),
+    )
+  };
+};
+let getInt = k => k->get->int_of_string;
+let getBool = k => k->get->bool_of_string;
