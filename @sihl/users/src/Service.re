@@ -69,7 +69,7 @@ module User = {
     let token = Model.Token.generateEmailConfirmation(~user);
     let%Async _ = Repository.Token.Upsert.query(conn, ~token);
     let email = Model.EmailConfirmation.make(~token, ~user);
-    Sihl.Core.Email.send(email);
+    Sihl.Core.Email.Transport.send(email);
   };
 
   let confirmEmail = (conn, ~token) => {
@@ -99,10 +99,14 @@ module User = {
       let token = Model.Token.generatePasswordReset(~user);
       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
       let email = Model.PasswordReset.make(~token, ~user);
-      Sihl.Core.Email.send(email);
+      Sihl.Core.Email.Transport.send(email);
     | Error(_) =>
+      Sihl.Core.Log.error(
+        "Password reset was requested but no user was found email=" ++ email,
+        (),
+      );
       // If no user was found, just send 200 ok to not expose user data
-      Async.async()
+      Async.async();
     };
   };
 

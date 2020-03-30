@@ -87,23 +87,28 @@ module EmailConfirmation = {
   let template = {|
 Hello {givenName} {familyName},
 
-Confirm your email {baseUrl}/{root}/confirm-email?token={token}
+Confirm your email {baseUrl}/app/password-reset?token={token}
 
 Best,
 |};
 
   let make = (~token: Token.t, ~user: User.t) =>
     Sihl.Core.Email.make(
-      // TODO set correct sender (read from config)
-      ~sender="TODO read from config",
+      ~sender=
+        Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
       ~recipient=user.email,
       ~subject="Email address confirmation",
       ~text=
         Sihl.Core.Email.render(
           template,
           [
-            // TODO inject baseUrl and root
-            ("baseUrl", "http://localhost:3000"),
+            (
+              "baseUrl",
+              Sihl.Core.Config.get(
+                ~default="http://localhost:3000",
+                "BASE_URL",
+              ),
+            ),
             ("root", "users"),
             ("givenName", user.givenName),
             ("familyName", user.familyName),
@@ -117,23 +122,28 @@ module PasswordReset = {
   let template = {|
 Hello {givenName} {familyName},
 
-Go to this URL to reset your password {baseUrl}/{root}/reset-password?token={token}
+Go to this URL to reset your password {baseUrl}/app/password-reset?token={token}
 
 Best,
 |};
 
   let make = (~token: Token.t, ~user: User.t) => {
-    // TODO set correct sender (read from config)
     Sihl.Core.Email.make(
-      ~sender="TODO read from config",
+      ~sender=
+        Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
       ~recipient=user.email,
       ~subject="Password reset",
       ~text=
         Sihl.Core.Email.render(
           template,
           [
-            // TODO inject baseUrl and root
-            ("baseUrl", "http://localhost:3000"),
+            (
+              "baseUrl",
+              Sihl.Core.Config.get(
+                ~default="http://localhost:3000",
+                "BASE_URL",
+              ),
+            ),
             ("root", "users"),
             ("givenName", user.givenName),
             ("familyName", user.familyName),
