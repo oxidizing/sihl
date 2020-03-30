@@ -74,4 +74,53 @@ module Db = {
   };
 };
 
-let get = _ => "";
+exception EnvironmentConfigurationException(string);
+
+// TODO take configuration scheme as first parameter
+let _get = k => {
+  Env.get()
+  ->Js.Json.decodeObject
+  ->Belt.Option.flatMap(o => Js.Dict.get(o, k))
+  ->Belt.Option.flatMap(Js.Json.decodeString);
+};
+
+let get = (~default=?, k) => {
+  switch (_get(k), default) {
+  | (Some(env), _) => env
+  | (None, Some(default)) => default
+  | _ =>
+    raise(
+      EnvironmentConfigurationException(
+        "Env var not found and no default provided for key= " ++ k,
+      ),
+    )
+  };
+};
+
+let getInt = (~default=?, k) => {
+  let env = k->_get->Belt.Option.flatMap(int_of_string_opt);
+  switch (env, default) {
+  | (Some(env), _) => env
+  | (None, Some(default)) => default
+  | _ =>
+    raise(
+      EnvironmentConfigurationException(
+        "Env var not found and no default provided for key= " ++ k,
+      ),
+    )
+  };
+};
+
+let getBool = (~default=?, k) => {
+  let env = k->_get->Belt.Option.flatMap(bool_of_string_opt);
+  switch (env, default) {
+  | (Some(env), _) => env
+  | (None, Some(default)) => default
+  | _ =>
+    raise(
+      EnvironmentConfigurationException(
+        "Env var not found and no default provided for key= " ++ k,
+      ),
+    )
+  };
+};

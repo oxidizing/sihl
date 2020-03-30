@@ -8,6 +8,7 @@ module Core = {
   module Db = SihlCoreDbCore;
   module Config = SihlCoreConfig;
   module Http = SihlCoreHttpCore;
+  module Email = SihlCoreEmail;
 };
 
 module MakeApp = (Persistence: Core.Db.PERSISTENCE) => {

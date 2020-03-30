@@ -22,6 +22,7 @@ Something like this:
 
 ```reasonml
 let config = [
+  Enum("EMAIL_BACKEND", ["smtp", "console"]),
   String("SMTP_HOST"),
   Int("SMTP_PORT"),
   Optional(String("EMAIL_HEADER"), "Default header")

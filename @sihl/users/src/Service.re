@@ -1,24 +1,5 @@
 module Async = Sihl.Core.Async;
 
-module Email = {
-  let devInbox = ref(None);
-
-  let getLastEmail = () => devInbox^;
-
-  let send = (_, ~email) => {
-    // TODO use type safe GADTs
-    let backend = Sihl.Core.Config.get("EMAIL_BACKEND");
-    if (backend === "SMTP") {
-      Async.async();
-    } else {
-      devInbox := Some(email);
-      // TODO log based on config
-      /* Async.async @@ Sihl.Core.Log.info(Model.Email.toString(email), ()); */
-      Async.async();
-    };
-  };
-};
-
 module User = {
   let isAdmin = Model.User.isAdmin;
   let id = Model.User.id;
@@ -87,8 +68,8 @@ module User = {
   let sendRegistrationEmail = (conn, ~user) => {
     let token = Model.Token.generateEmailConfirmation(~user);
     let%Async _ = Repository.Token.Upsert.query(conn, ~token);
-    let email = Model.Email.EmailConfirmation.make(~token, ~user);
-    Email.send(conn, ~email);
+    let email = Model.EmailConfirmation.make(~token, ~user);
+    Sihl.Core.Email.Transport.send(email);
   };
 
   let confirmEmail = (conn, ~token) => {
@@ -117,11 +98,15 @@ module User = {
     | Ok(user) =>
       let token = Model.Token.generatePasswordReset(~user);
       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
-      let email = Model.Email.PasswordReset.make(~token, ~user);
-      Email.send(conn, ~email);
+      let email = Model.PasswordReset.make(~token, ~user);
+      Sihl.Core.Email.Transport.send(email);
     | Error(_) =>
+      Sihl.Core.Log.error(
+        "Password reset was requested but no user was found email=" ++ email,
+        (),
+      );
       // If no user was found, just send 200 ok to not expose user data
-      Async.async()
+      Async.async();
     };
   };
 

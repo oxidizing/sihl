@@ -83,97 +83,73 @@ module Token = {
   let isEmailConfirmation = token => token.kind === "email_confirmation";
 };
 
-module Email = {
-  type t = {
-    sender: string,
-    subject: string,
-    recipient: string,
-    text: string,
-  };
-
-  let toString = email => {
-    let sender = email.sender;
-    let subject = email.subject;
-    let recipient = email.recipient;
-    let text = email.text;
-    {j|
----------------------------
-Email sent by: $(sender)
-Recipient: $(recipient)
-Subject: $(subject)
-
-$(text)
----------------------------
-|j};
-  };
-
-  let replaceElement = (text, key, value) => {
-    let re = Js.Re.fromStringWithFlags("{" ++ key ++ "}", ~flags="g");
-    Js.String.replaceByRe(re, value, text);
-  };
-
-  let rec render = (template, data) =>
-    switch (data) {
-    | [] => template
-    | [(key, value), ...rest] =>
-      render(replaceElement(template, key, value), rest)
-    };
-
-  module EmailConfirmation = {
-    let template = {|
+module EmailConfirmation = {
+  let template = {|
 Hello {givenName} {familyName},
 
-Confirm your email {baseUrl}/{root}/confirm-email?token={token}
+Confirm your email {baseUrl}/app/password-reset?token={token}
 
 Best,
 |};
 
-    let make = (~token: Token.t, ~user: User.t) => {
-      // TODO set correct sender (read from config)
-      sender: "TODO read from config",
-      recipient: user.email,
-      subject: "Email address confirmation",
-      text:
-        render(
+  let make = (~token: Token.t, ~user: User.t) =>
+    Sihl.Core.Email.make(
+      ~sender=
+        Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
+      ~recipient=user.email,
+      ~subject="Email address confirmation",
+      ~text=
+        Sihl.Core.Email.render(
           template,
           [
-            // TODO inject baseUrl and root
-            ("baseUrl", "http://localhost:3000"),
+            (
+              "baseUrl",
+              Sihl.Core.Config.get(
+                ~default="http://localhost:3000",
+                "BASE_URL",
+              ),
+            ),
             ("root", "users"),
             ("givenName", user.givenName),
             ("familyName", user.familyName),
             ("token", token.token),
           ],
         ),
-    };
-  };
+    );
+};
 
-  module PasswordReset = {
-    let template = {|
+module PasswordReset = {
+  let template = {|
 Hello {givenName} {familyName},
 
-Go to this URL to reset your password {baseUrl}/{root}/reset-password?token={token}
+Go to this URL to reset your password {baseUrl}/app/password-reset?token={token}
 
 Best,
 |};
 
-    let make = (~token: Token.t, ~user: User.t) => {
-      // TODO set correct sender (read from config)
-      sender: "TODO read from config",
-      recipient: user.email,
-      subject: "Password reset",
-      text:
-        render(
+  let make = (~token: Token.t, ~user: User.t) => {
+    Sihl.Core.Email.make(
+      ~sender=
+        Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
+      ~recipient=user.email,
+      ~subject="Password reset",
+      ~text=
+        Sihl.Core.Email.render(
           template,
           [
-            // TODO inject baseUrl and root
-            ("baseUrl", "http://localhost:3000"),
+            (
+              "baseUrl",
+              Sihl.Core.Config.get(
+                ~default="http://localhost:3000",
+                "BASE_URL",
+              ),
+            ),
             ("root", "users"),
             ("givenName", user.givenName),
             ("familyName", user.familyName),
             ("token", token.token),
           ],
         ),
-    };
+    );
   };
 };
