@@ -1,6 +1,6 @@
 {
   "name": "@sihl/mysql",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -8,16 +8,17 @@
     "test": "jest"
   },
   "keywords": [
-    "BuckleScript",
+    "Sihl",
     "ReasonML",
-    "Sihl"
+    "Reason",
+    "BuckleScript"
   ],
   "author": "Josef Erben josef@oxidizing.io",
   "license": "MIT",
   "peerDependencies": {
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
-    "@sihl/core": "0.0.10",
+    "@sihl/core": "0.0.12",
     "decco": "^1.1.1"
   },
   "dependencies": {
@@ -27,7 +28,7 @@
   "devDependencies": {
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
-    "@sihl/core": "0.0.10",
+    "@sihl/core": "0.0.12",
     "decco": "^1.1.1"
   }
 }
