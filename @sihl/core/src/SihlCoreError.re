@@ -16,7 +16,7 @@ exception ServerException(string);
 let failIfError = result => {
   switch (result) {
   | Ok(ok) => ok
-  | Error(error) => raise(ServerException(error))
+  | Error(msg) => raise(ServerException(msg))
   };
 };
 
@@ -35,6 +35,7 @@ module Decco = {
     | Error(error) => Error(stringify(error))
     };
   };
+
   let stringifyDecoder = (decoder, json) => {
     switch (decoder(json)) {
     | Ok(_) as ok => ok

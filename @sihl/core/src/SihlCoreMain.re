@@ -75,14 +75,17 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let start = (project: t) => {
       let apps = project.apps;
-      // TODO
-      let configuration = [];
-      // get current SIHL_ENV
-      // merge configuration schemas per app => configurationSchema
-      // merge (environment vars, app1 env, app2 env, ...) => configuration
-      // validate(configuration, configurationSchema)
-      // store configuration
-      SihlCoreLog.info("Starting apps: " ++ App.names(apps), ());
+      SihlCoreLog.info(
+        "Starting project with apps: " ++ App.names(apps),
+        (),
+      );
+      SihlCoreLog.info("Loading and validating project configuration", ());
+      let configuration =
+        SihlCoreConfig.Environment.configuration(
+          project.environment,
+          Belt.List.map(project.apps, app => app.configurationSchema),
+        )
+        ->SihlCoreError.failIfError;
       let db =
         SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
       SihlCoreLog.info("Mounting HTTP routes", ());
