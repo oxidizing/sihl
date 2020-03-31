@@ -1,5 +1,28 @@
+exception EnvironmentConfigurationException(string);
+
 module Env = {
-  let get: unit => Js.Json.t = [%raw {| function() { return process.env; } |}];
+  let getAll: unit => Js.Json.t = [%raw
+    {| function() { return process.env; } |}
+  ];
+
+  let get = key => {
+    getAll()
+    ->Js.Json.decodeObject
+    ->Belt.Option.flatMap(o => Js.Dict.get(o, key))
+    ->Belt.Option.flatMap(Js.Json.decodeString);
+  };
+
+  let getExn = key => {
+    switch (get(key)) {
+    | Some(env) => env
+    | None =>
+      raise(
+        EnvironmentConfigurationException(
+          "Environment variable not found key=" ++ key,
+        ),
+      )
+    };
+  };
 };
 
 module Configuration = {
@@ -17,26 +40,17 @@ module Environment = {
     e.test;
   };
 };
+
 module Db = {
   module Url = {
-    [@decco]
-    type env = {
-      [@decco.key "DATABASE_URL"]
-      url: string,
-    };
-
     type t = string;
 
     let readFromEnv = () => {
-      let {url} =
-        Env.get()
-        |> env_decode
-        |> SihlCoreError.Decco.stringifyResult
-        |> SihlCoreError.failIfError;
-      url;
+      Env.getExn("DATABASE_URL");
     };
 
     let parse = url => {
+      // TODO make sure this works for other databases as well
       switch (
         url |> Js.String.replace("mysql://", "") |> Js.String.split("@")
       ) {
@@ -102,11 +116,9 @@ module Schema = {
   let bool_ = (~default=?, key) => Bool(key, default);
 };
 
-exception EnvironmentConfigurationException(string);
-
 // TODO take configuration schema as first parameter
 let _get = k => {
-  Env.get()
+  Env.getAll()
   ->Js.Json.decodeObject
   ->Belt.Option.flatMap(o => Js.Dict.get(o, k))
   ->Belt.Option.flatMap(Js.Json.decodeString);
