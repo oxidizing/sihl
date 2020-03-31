@@ -118,13 +118,17 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       };
       let project = Project.start(project);
       state := Some(project);
+      // TODO this might get out of sync
+      SihlCoreConfig.configuration := Some(project.configuration);
       Project.runMigrations(project)->Async.mapAsync(_ => project);
     };
 
     let stop = () => {
       switch (state^) {
       | Some(instance) =>
-        Project.stop(instance)->Async.mapAsync(_ => {state := None})
+        // TODO this might get out of sync
+        SihlCoreConfig.configuration := None;
+        Project.stop(instance)->Async.mapAsync(_ => {state := None});
       | _ =>
         SihlCoreLog.warn(
           "Can not stop app because it was not started, ignoring stop",
@@ -213,6 +217,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       open Jest;
       [%raw "require('isomorphic-fetch')"];
       let setupHarness = (project: Project.t) => {
+        Node.Process.putEnvVar("SIHL_ENV", "test");
         beforeAllPromise(_ => Manager.start(project));
         beforeEachPromise(_ => Manager.clean());
         afterAllPromise(_ => Manager.stop());

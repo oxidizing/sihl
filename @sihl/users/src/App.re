@@ -30,7 +30,7 @@ let configurationSchema =
   Sihl.Core.Config.Schema.[
     string_(
       ~default="console",
-      ~choices=["smtp", "console"],
+      ~choices=["smtp", "console", "memory"],
       "EMAIL_BACKEND",
     ),
     string_(~requiredIf=("EMAIL_BACKEND", "smtp"), "SMTP_HOST"),

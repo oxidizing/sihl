@@ -1,7 +1,7 @@
 exception ConfigurationException(string);
 
 module Configuration = {
-  // TODO use Belt.Map.String instead
+  // TODO use Belt.Map.String instead because Js.Dict.t is mutable
   [@decco]
   type t = Js.Dict.t(string);
 
@@ -151,7 +151,10 @@ module Schema = {
   };
 };
 
-let _get = key => Js.Dict.get(Env.getAllExn(), key);
+// TODO store defaults as well, right now they get lost
+let configuration: Pervasives.ref(option(Configuration.t)) = ref(None);
+
+let _get = key => (configuration^)->Belt.Option.getExn->Js.Dict.get(key);
 
 let get = (~default=?, key) => {
   switch (_get(key), default) {
@@ -227,6 +230,7 @@ module Environment = {
   };
 };
 
+// TODO replace this
 module Db = {
   module Url = {
     type t = string;

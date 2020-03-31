@@ -6,7 +6,7 @@ let environment =
     ],
     ~test=[
       ("DATABASE_URL", "mysql://root:password@localhost:3306/dev"),
-      ("EMAIL_BACKEND", "test"),
+      ("EMAIL_BACKEND", "memory"),
     ],
     ~production=[
       ("EMAIL_BACKEND", "smtp"),
