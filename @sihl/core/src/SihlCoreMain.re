@@ -102,13 +102,13 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let state = ref(None);
 
-    let startApps = (~environment, apps: list(App.t)) => {
+    let start = (project: Project.t) => {
       if (Belt.Option.isSome(state^)) {
         raise(
           InvalidState("There is already an app running, can not start"),
         );
       };
-      let app = App.startApps(~environment, apps);
+      let app = App.startApps(~environment=project.environment, project.apps);
       state := Some(app);
       App.runMigrations(app)->Async.mapAsync(_ => app);
     };
@@ -161,22 +161,21 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       },
     };
 
-    let start: list(App.t) => command =
-      apps => {
+    let start: Project.t => command =
+      project => {
         name: "start",
         description: "start",
         f: (_, args, description) => {
           switch (args) {
           | ["start", ..._] =>
-            // TODO load proper environment
-            Manager.startApps(~environment=[], apps)->Async.mapAsync(_ => ())
+            Manager.start(project)->Async.mapAsync(_ => ())
           | _ => Async.async(Js.log("Usage: " ++ description))
           };
         },
       };
 
-    let register = (commands: list(SihlCoreCli.command), apps) => {
-      let defaultCommands = [version, start(apps)];
+    let register = (commands: list(SihlCoreCli.command), project) => {
+      let defaultCommands = [version, start(project)];
       commands
       ->Belt.List.concat(defaultCommands)
       ->Belt.List.map(command => (command.name, command))
@@ -189,7 +188,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         ->Belt.List.map(app => app.commands)
         ->Belt.List.toArray
         ->Belt.List.concatMany
-        ->register(project.apps);
+        ->register(project);
       let args = SihlCoreCli.trimArgs(args, "sihl");
       let commandName = args->Belt.List.head->Belt.Option.getExn;
       switch (SihlCoreCli.getCommand(commands, commandName)) {
@@ -205,9 +204,8 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     module Integration = {
       open Jest;
       [%raw "require('isomorphic-fetch')"];
-      let setupHarness = (~environment, apps) => {
-        // TODO load proper environment
-        beforeAllPromise(_ => Manager.startApps(~environment, apps));
+      let setupHarness = (project: Project.t) => {
+        beforeAllPromise(_ => Manager.start(project));
         beforeEachPromise(_ => Manager.clean());
         afterAllPromise(_ => Manager.stop());
       };
