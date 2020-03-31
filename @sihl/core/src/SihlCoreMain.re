@@ -21,20 +21,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
       );
 
-    module Instance = {
-      type app = t;
-      type t = {
-        http: SihlCoreHttp.application,
-        db: Persistence.Database.t,
-        apps: list(app),
-      };
-      let http = instance => instance.http;
-      let db = instance => instance.db;
-      let make = (~http, ~db, ~apps) => {http, db, apps};
-    };
-
-    let db = instance => Instance.db(instance);
-
     let make =
         (
           ~name,
@@ -52,21 +38,51 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       commands,
       configurationSchema,
     };
+  };
 
-    let runMigrations = (instance: Instance.t) => {
+  module Project = {
+    type t = {
+      environment: SihlCoreConfig.Environment.t,
+      apps: list(App.t),
+    };
+
+    module RunningInstance = {
+      type t = {
+        configuration: SihlCoreConfig.Configuration.t,
+        http: SihlCoreHttp.application,
+        db: Persistence.Database.t,
+        apps: list(App.t),
+      };
+      let http = instance => instance.http;
+      let db = instance => instance.db;
+      let make = (~configuration, ~http, ~db, ~apps) => {
+        configuration,
+        http,
+        db,
+        apps,
+      };
+    };
+
+    let make = (~environment, apps) => {
+      {environment, apps};
+    };
+
+    let runMigrations = (instance: RunningInstance.t) => {
       instance.apps
       ->Belt.List.map(app => app.migration)
       ->SihlCoreDb.Migration.applyMigrations(instance.db);
     };
 
-    let startApps = (~environment, apps: list(t)) => {
+    let start = (project: t) => {
+      let apps = project.apps;
       // TODO
+      let configuration = [];
       // get current SIHL_ENV
       // merge configuration schemas per app => configurationSchema
       // merge (environment vars, app1 env, app2 env, ...) => configuration
       // validate(configuration, configurationSchema)
-      // store config in state
-      SihlCoreLog.info("Starting apps: " ++ names(apps), ());
+      // store configuration
+      SihlCoreLog.info("Starting apps: " ++ App.names(apps), ());
       let db =
         SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
       SihlCoreLog.info("Mounting HTTP routes", ());
@@ -76,24 +92,13 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         ->Belt.List.toArray
         ->Belt.List.concatMany;
       let http = SihlCoreHttp.application(routes);
-      Instance.make(~http, ~db, ~apps);
+      RunningInstance.make(~configuration, ~http, ~db, ~apps);
     };
 
-    let stop = (instance: Instance.t) => {
-      SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
+    let stop = (instance: RunningInstance.t) => {
+      SihlCoreLog.info("Stopping apps: " ++ App.names(instance.apps), ());
       let%Async _ = SihlCoreHttp.shutdown(instance.http);
       Async.async @@ Persistence.Database.end_(instance.db);
-    };
-  };
-
-  module Project = {
-    type t = {
-      environment: SihlCoreConfig.Environment.t,
-      apps: list(App.t),
-    };
-
-    let make = (~environment, apps) => {
-      {environment, apps};
     };
   };
 
@@ -108,15 +113,15 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
           InvalidState("There is already an app running, can not start"),
         );
       };
-      let app = App.startApps(~environment=project.environment, project.apps);
-      state := Some(app);
-      App.runMigrations(app)->Async.mapAsync(_ => app);
+      let project = Project.start(project);
+      state := Some(project);
+      Project.runMigrations(project)->Async.mapAsync(_ => project);
     };
 
     let stop = () => {
       switch (state^) {
       | Some(instance) =>
-        App.stop(instance)->Async.mapAsync(_ => {state := None})
+        Project.stop(instance)->Async.mapAsync(_ => {state := None})
       | _ =>
         SihlCoreLog.warn(
           "Can not stop app because it was not started, ignoring stop",

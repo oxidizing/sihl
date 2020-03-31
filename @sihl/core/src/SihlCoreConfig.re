@@ -2,13 +2,15 @@ module Env = {
   let get: unit => Js.Json.t = [%raw {| function() { return process.env; } |}];
 };
 
-module Environment = {
-  type configuration = list((string, string));
+module Configuration = {
+  type t = list((string, string));
+};
 
+module Environment = {
   type t = {
-    development: configuration,
-    test: configuration,
-    production: configuration,
+    development: Configuration.t,
+    test: Configuration.t,
+    production: Configuration.t,
   };
 
   let get = e => {
