@@ -86,6 +86,17 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     };
   };
 
+  module Project = {
+    type t = {
+      environment: SihlCoreConfig.Environment.t,
+      apps: list(App.t),
+    };
+
+    let make = (~environment, apps) => {
+      {environment, apps};
+    };
+  };
+
   module Manager = {
     exception InvalidState(string);
 
@@ -172,13 +183,13 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       ->Js.Dict.fromList;
     };
 
-    let execute = (apps: list(App.t), args) => {
+    let execute = (project: Project.t, args) => {
       let commands =
-        apps
+        project.apps
         ->Belt.List.map(app => app.commands)
         ->Belt.List.toArray
         ->Belt.List.concatMany
-        ->register(apps);
+        ->register(project.apps);
       let args = SihlCoreCli.trimArgs(args, "sihl");
       let commandName = args->Belt.List.head->Belt.Option.getExn;
       switch (SihlCoreCli.getCommand(commands, commandName)) {
@@ -194,9 +205,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     module Integration = {
       open Jest;
       [%raw "require('isomorphic-fetch')"];
-      let setupHarness = apps => {
+      let setupHarness = (~environment, apps) => {
         // TODO load proper environment
-        beforeAllPromise(_ => Manager.startApps(~environment=[], apps));
+        beforeAllPromise(_ => Manager.startApps(~environment, apps));
         beforeEachPromise(_ => Manager.clean());
         afterAllPromise(_ => Manager.stop());
       };

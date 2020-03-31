@@ -18,4 +18,6 @@ let environment =
     ],
   };
 
-Sihl.App.Main.Manager.startApps(~environment, [App.app([])]);
+let project = Sihl.App.Main.Project.make(~environment, [App.app([])]);
+
+Sihl.App.Main.Cli.execute(project, Node.Process.argv);

@@ -1,5 +1,5 @@
 include Sihl.App.Test;
-Integration.setupHarness([App.app([])]);
+Integration.setupHarness(~environment=Main.environment, [App.app([])]);
 open Jest;
 
 let baseUrl = "http://localhost:3000/users";
