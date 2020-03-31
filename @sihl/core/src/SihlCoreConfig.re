@@ -1,9 +1,11 @@
-module Schema = {
-  type type_ =
-    | String(string, option(string), list(string))
-    | Int(string, option(int))
-    | Bool(string, option(bool));
-  type t = list(type_);
+module Environment = {
+  type configuration = list((string, string));
+
+  type t = {
+    development: configuration,
+    test: configuration,
+    production: configuration,
+  };
 };
 
 module Env = {
@@ -80,6 +82,19 @@ module Db = {
         make(~user, ~password, ~host, ~port, ~db)
       );
   };
+};
+
+module Schema = {
+  type type_ =
+    | String(string, option(string), list(string))
+    | Int(string, option(int))
+    | Bool(string, option(bool));
+  type t = list(type_);
+
+  let string_ = (~default=?, ~choices=?, key) =>
+    String(key, default, Belt.Option.getWithDefault(choices, []));
+  let int_ = (~default=?, key) => Int(key, default);
+  let bool_ = (~default=?, key) => Bool(key, default);
 };
 
 exception EnvironmentConfigurationException(string);

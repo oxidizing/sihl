@@ -22,10 +22,11 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       );
 
     module Instance = {
-      type instance = {
+      type app = t;
+      type t = {
         http: SihlCoreHttp.application,
         db: Persistence.Database.t,
-        apps: list(t),
+        apps: list(app),
       };
       let http = instance => instance.http;
       let db = instance => instance.db;
@@ -35,22 +36,36 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     let db = instance => Instance.db(instance);
 
     let make =
-        (~name, ~namespace, ~routes, ~migration, ~commands, ~configuration): t => {
+        (
+          ~name,
+          ~namespace,
+          ~routes,
+          ~migration,
+          ~commands,
+          ~configurationSchema,
+        )
+        : t => {
       name,
       namespace,
       routes,
       migration,
       commands,
-      configuration,
+      configurationSchema,
     };
 
-    let runMigrations = (instance: Instance.instance) => {
+    let runMigrations = (instance: Instance.t) => {
       instance.apps
       ->Belt.List.map(app => app.migration)
       ->SihlCoreDb.Migration.applyMigrations(instance.db);
     };
 
-    let startApps = (apps: list(t)) => {
+    let startApps = (~environment, apps: list(t)) => {
+      // TODO
+      // get current SIHL_ENV
+      // merge configuration schemas per app => configurationSchema
+      // merge (environment vars, app1 env, app2 env, ...) => configuration
+      // validate(configuration, configurationSchema)
+      // store config in state
       SihlCoreLog.info("Starting apps: " ++ names(apps), ());
       let db =
         SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
@@ -64,7 +79,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       Instance.make(~http, ~db, ~apps);
     };
 
-    let stop = (instance: Instance.instance) => {
+    let stop = (instance: Instance.t) => {
       SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
       let%Async _ = SihlCoreHttp.shutdown(instance.http);
       Async.async @@ Persistence.Database.end_(instance.db);
@@ -76,13 +91,13 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let state = ref(None);
 
-    let startApps = (apps: list(App.t)) => {
+    let startApps = (~environment, apps: list(App.t)) => {
       if (Belt.Option.isSome(state^)) {
         raise(
           InvalidState("There is already an app running, can not start"),
         );
       };
-      let app = App.startApps(apps);
+      let app = App.startApps(~environment, apps);
       state := Some(app);
       App.runMigrations(app)->Async.mapAsync(_ => app);
     };
@@ -142,7 +157,8 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         f: (_, args, description) => {
           switch (args) {
           | ["start", ..._] =>
-            Manager.startApps(apps)->Async.mapAsync(_ => ())
+            // TODO load proper environment
+            Manager.startApps(~environment=[], apps)->Async.mapAsync(_ => ())
           | _ => Async.async(Js.log("Usage: " ++ description))
           };
         },
@@ -179,7 +195,8 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       open Jest;
       [%raw "require('isomorphic-fetch')"];
       let setupHarness = apps => {
-        beforeAllPromise(_ => Manager.startApps(apps));
+        // TODO load proper environment
+        beforeAllPromise(_ => Manager.startApps(~environment=[], apps));
         beforeEachPromise(_ => Manager.clean());
         afterAllPromise(_ => Manager.stop());
       };
