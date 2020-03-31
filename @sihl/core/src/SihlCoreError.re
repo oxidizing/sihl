@@ -4,10 +4,10 @@ let catchAsResult = (f, error) =>
   | exception _ => Error(error)
   };
 
-let optionAsResult = (error, optn) => {
+let optionAsResult = (optn, msg) => {
   switch (optn) {
   | Some(value) => Ok(value)
-  | None => Error(error)
+  | None => Error(msg)
   };
 };
 

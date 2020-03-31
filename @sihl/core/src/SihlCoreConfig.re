@@ -1,34 +1,15 @@
 exception ConfigurationException(string);
 
 module Configuration = {
+  // TODO use Belt.Map.String instead
   [@decco]
   type t = Js.Dict.t(string);
 
   let merge = (c1, c2) => {
-    let s1 =
-      c1
-      ->Js.Dict.entries
-      ->Belt.Array.map(((k, _)) => k)
-      ->Belt.Set.String.fromArray;
-    let s2 =
-      c2
-      ->Js.Dict.entries
-      ->Belt.Array.map(((k, _)) => k)
-      ->Belt.Set.String.fromArray;
-    let intersection = Belt.Set.String.intersect(s1, s2);
-    if (!Belt.Set.String.isEmpty(intersection)) {
-      Error(
-        "Can not merge configurations, found duplicate configuration="
-        ++ (
-          intersection |> Belt.Set.String.toArray |> Js.Array.joinWith(", ")
-        ),
-      );
-    } else {
-      c1
-      ->Js.Dict.entries
-      ->Belt.Array.forEach(((k, v)) => Js.Dict.set(c2, k, v));
-      Ok(c2);
-    };
+    c1
+    ->Js.Dict.entries
+    ->Belt.Array.forEach(((k, v)) => Js.Dict.set(c2, k, v));
+    c2;
   };
 };
 
@@ -39,9 +20,11 @@ module Env = {
 
   // We can not recover from not being able to read env vars
   let getAllExn = () => {
-    switch (
-      processEnv()->Configuration.t_decode->SihlCoreError.Decco.stringifyResult
-    ) {
+    let env =
+      processEnv()
+      ->Configuration.t_decode
+      ->SihlCoreError.Decco.stringifyResult;
+    switch (env) {
     | Ok(env) => env
     | Error(msg) =>
       raise(ConfigurationException("Can not get process.env msg=" ++ msg))
@@ -62,20 +45,109 @@ module Env = {
 };
 
 module Schema = {
-  type type_ =
-    | String(string, option(string), list(string))
-    | Int(string, option(int))
-    | Bool(string, option(bool));
-  type t = list(type_);
+  module Type = {
+    type condition('a) =
+      | Default('a)
+      | RequiredIf(string, string)
+      | None;
 
-  let string_ = (~default=?, ~choices=?, key) =>
-    String(key, default, Belt.Option.getWithDefault(choices, []));
-  let int_ = (~default=?, key) => Int(key, default);
-  let bool_ = (~default=?, key) => Bool(key, default);
+    type choices = list(string);
+    type t =
+      | String(string, condition(string), choices)
+      | Int(string, condition(int))
+      | Bool(string, condition(bool));
+
+    let key = type_ =>
+      switch (type_) {
+      | String(key, _, _) => key
+      | Int(key, _) => key
+      | Bool(key, _) => key
+      };
+
+    let validate = (type_, configuration) => {
+      let key = key(type_);
+      let value = Js.Dict.get(configuration, key);
+      switch (type_, value) {
+      | (String(_, None, []), Some(_))
+      | (String(_, Default(_), _), Some(_))
+      | (String(_, Default(_), _), None) => Ok()
+      | (String(_, RequiredIf(requiredKey, requiredValue), _), _) =>
+        Js.Dict.get(configuration, requiredKey)
+        ->Belt.Option.map(value => value === requiredValue)
+        ->Belt.Option.getWithDefault(false)
+          ? Error("Failed") : Ok()
+      | (String(_, None, choices), Some(value)) =>
+        let choices = Belt.List.toArray(choices);
+        Belt.Array.some(choices, choice => choice === value)
+          ? Ok()
+          : Error(
+              {j|value not found in choices key=$(key), value=$(value), choices=$(choices)|j},
+            );
+      | (String(_, None, _), None) =>
+        Error({j|required configuration not provided key=$(key)|j})
+      | (Int(_, _), Some(value)) =>
+        value
+        ->int_of_string_opt
+        ->SihlCoreError.optionAsResult(
+            {j|provided configuration is not an int key=$(key), value=$(value)|j},
+          )
+        ->Belt.Result.map(_ => ())
+      | (Int(_, None), None) =>
+        Error({j|required configuration not provided key=$(key)|j})
+      | (Int(_, Default(_)), None) => Ok()
+      | (Int(_, RequiredIf(requiredKey, requiredValue)), _) =>
+        Js.Dict.get(configuration, requiredKey)
+        ->Belt.Option.map(value => value === requiredValue)
+        ->Belt.Option.getWithDefault(false)
+          ? Error("Failed") : Ok()
+      | (Bool(_, _), Some(value)) =>
+        value
+        ->bool_of_string_opt
+        ->SihlCoreError.optionAsResult(
+            {j|provided configuration is not a bool key=$(key)|j},
+          )
+        ->Belt.Result.map(_ => ())
+      | (Bool(_, Default(_)), None) => Ok()
+      | (Bool(_, RequiredIf(requiredKey, requiredValue)), None) =>
+        Js.Dict.get(configuration, requiredKey)
+        ->Belt.Option.map(value => value === requiredValue)
+        ->Belt.Option.getWithDefault(false)
+          ? Error("Failed") : Ok()
+      | (Bool(_, None), None) =>
+        Error({j|required configuration is not provided key=$(key)|j})
+      };
+    };
+  };
+
+  type t = list(Type.t);
+
+  let keys = schema => schema->Belt.List.map(Type.key);
+
+  let condition = (requiredIf, default) =>
+    switch (requiredIf, default) {
+    | (_, Some(default)) => Type.Default(default)
+    | (Some((key, value)), _) => Type.RequiredIf(key, value)
+    | _ => Type.None
+    };
+
+  let string_ = (~requiredIf=?, ~default=?, ~choices=?, key) =>
+    Type.String(
+      key,
+      condition(requiredIf, default),
+      Belt.Option.getWithDefault(choices, []),
+    );
+  let int_ = (~requiredIf=?, ~default=?, key) =>
+    Type.Int(key, condition(requiredIf, default));
+  let bool_ = (~requiredIf=?, ~default=?, key) =>
+    Type.Bool(key, condition(requiredIf, default));
 
   let validate = (schemas, configuration) => {
-    // TODO implement
-    Ok(configuration);
+    schemas
+    ->Belt.List.toArray
+    ->Belt.List.concatMany
+    ->Belt.List.map(type_ => Type.validate(type_, configuration))
+    ->Belt.List.reduce(Ok(), (a, b) => Belt.Result.flatMap(a, _ => b))
+    ->Belt.Result.map(_ => configuration);
   };
 };
 
@@ -139,18 +211,19 @@ module Environment = {
 
   let get = (env, sihlEnv) => {
     switch (sihlEnv) {
-    | "development" => env.development
-    | "test" => env.test
-    | "production" => env.production
+    | Some("development") => env.development
+    | Some("test") => env.test
+    | Some("production") => env.production
     | _ => env.development
     };
   };
 
   let configuration = (environment: t, schemas: list(Schema.t)) => {
-    let projectConfiguration = get(environment, Env.getExn("SIHL_ENV"));
+    let projectConfiguration = get(environment, Env.get("SIHL_ENV"));
     let environmentConfiguration = Env.getAllExn();
-    Configuration.merge(environmentConfiguration, projectConfiguration)
-    ->Belt.Result.flatMap(Schema.validate(schemas));
+    let configuration =
+      Configuration.merge(environmentConfiguration, projectConfiguration);
+    Schema.validate(schemas, configuration);
   };
 };
 
