@@ -26,6 +26,21 @@ let routes = database => [
   Routes.AdminUi.User.endpoint(namespace, database),
 ];
 
+let configurationSchema =
+  Sihl.Core.Config.Schema.[
+    string_(
+      ~default="console",
+      ~choices=["smtp", "console", "memory"],
+      "EMAIL_BACKEND",
+    ),
+    string_(~requiredIf=("EMAIL_BACKEND", "smtp"), "SMTP_HOST"),
+    int_(~requiredIf=("EMAIL_BACKEND", "smtp"), "SMTP_PORT"),
+    string_(~requiredIf=("EMAIL_BACKEND", "smtp"), "SMTP_AUTH_USERNAME"),
+    string_(~requiredIf=("EMAIL_BACKEND", "smtp"), "SMTP_AUTH_PASSWORD"),
+    bool_("SMTP_SECURE", ~default=false),
+    bool_("SMTP_POOL", ~default=false),
+  ];
+
 let app = externalAdminUiPages => {
   let adminUiPages = Belt.List.concat(adminUiPages, externalAdminUiPages);
   AdminUi.State.pages := adminUiPages;
@@ -35,5 +50,6 @@ let app = externalAdminUiPages => {
     ~routes,
     ~migration=Migrations.MariaDb.make(~namespace),
     ~commands=[Cli.createAdmin],
+    ~configurationSchema,
   );
 };

@@ -21,35 +21,71 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
       );
 
-    module Instance = {
-      type instance = {
-        http: SihlCoreHttp.application,
-        db: Persistence.Database.t,
-        apps: list(t),
-      };
-      let http = instance => instance.http;
-      let db = instance => instance.db;
-      let make = (~http, ~db, ~apps) => {http, db, apps};
-    };
-
-    let db = instance => Instance.db(instance);
-
-    let make = (~name, ~namespace, ~routes, ~migration, ~commands): t => {
+    let make =
+        (
+          ~name,
+          ~namespace,
+          ~routes,
+          ~migration,
+          ~commands,
+          ~configurationSchema,
+        )
+        : t => {
       name,
       namespace,
       routes,
       migration,
       commands,
+      configurationSchema,
+    };
+  };
+
+  module Project = {
+    type t = {
+      environment: SihlCoreConfig.Environment.t,
+      apps: list(App.t),
     };
 
-    let runMigrations = (instance: Instance.instance) => {
+    module RunningInstance = {
+      type t = {
+        configuration: SihlCoreConfig.Configuration.t,
+        http: SihlCoreHttp.application,
+        db: Persistence.Database.t,
+        apps: list(App.t),
+      };
+      let http = instance => instance.http;
+      let db = instance => instance.db;
+      let make = (~configuration, ~http, ~db, ~apps) => {
+        configuration,
+        http,
+        db,
+        apps,
+      };
+    };
+
+    let make = (~environment, apps) => {
+      {environment, apps};
+    };
+
+    let runMigrations = (instance: RunningInstance.t) => {
       instance.apps
       ->Belt.List.map(app => app.migration)
       ->SihlCoreDb.Migration.applyMigrations(instance.db);
     };
 
-    let startApps = (apps: list(t)) => {
-      SihlCoreLog.info("Starting apps: " ++ names(apps), ());
+    let start = (project: t) => {
+      let apps = project.apps;
+      SihlCoreLog.info(
+        "Starting project with apps: " ++ App.names(apps),
+        (),
+      );
+      SihlCoreLog.info("Loading and validating project configuration", ());
+      let configuration =
+        SihlCoreConfig.Environment.configuration(
+          project.environment,
+          Belt.List.map(project.apps, app => app.configurationSchema),
+        )
+        ->SihlCoreError.failIfError;
       let db =
         SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
       SihlCoreLog.info("Mounting HTTP routes", ());
@@ -59,11 +95,11 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
         ->Belt.List.toArray
         ->Belt.List.concatMany;
       let http = SihlCoreHttp.application(routes);
-      Instance.make(~http, ~db, ~apps);
+      RunningInstance.make(~configuration, ~http, ~db, ~apps);
     };
 
-    let stop = (instance: Instance.instance) => {
-      SihlCoreLog.info("Stopping apps: " ++ names(instance.apps), ());
+    let stop = (instance: RunningInstance.t) => {
+      SihlCoreLog.info("Stopping apps: " ++ App.names(instance.apps), ());
       let%Async _ = SihlCoreHttp.shutdown(instance.http);
       Async.async @@ Persistence.Database.end_(instance.db);
     };
@@ -74,21 +110,25 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
     let state = ref(None);
 
-    let startApps = (apps: list(App.t)) => {
+    let start = (project: Project.t) => {
       if (Belt.Option.isSome(state^)) {
         raise(
           InvalidState("There is already an app running, can not start"),
         );
       };
-      let app = App.startApps(apps);
-      state := Some(app);
-      App.runMigrations(app)->Async.mapAsync(_ => app);
+      let project = Project.start(project);
+      state := Some(project);
+      // TODO this might get out of sync
+      SihlCoreConfig.configuration := Some(project.configuration);
+      Project.runMigrations(project)->Async.mapAsync(_ => project);
     };
 
     let stop = () => {
       switch (state^) {
       | Some(instance) =>
-        App.stop(instance)->Async.mapAsync(_ => {state := None})
+        // TODO this might get out of sync
+        SihlCoreConfig.configuration := None;
+        Project.stop(instance)->Async.mapAsync(_ => {state := None});
       | _ =>
         SihlCoreLog.warn(
           "Can not stop app because it was not started, ignoring stop",
@@ -133,34 +173,34 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       },
     };
 
-    let start: list(App.t) => command =
-      apps => {
+    let start: Project.t => command =
+      project => {
         name: "start",
         description: "start",
         f: (_, args, description) => {
           switch (args) {
           | ["start", ..._] =>
-            Manager.startApps(apps)->Async.mapAsync(_ => ())
+            Manager.start(project)->Async.mapAsync(_ => ())
           | _ => Async.async(Js.log("Usage: " ++ description))
           };
         },
       };
 
-    let register = (commands: list(SihlCoreCli.command), apps) => {
-      let defaultCommands = [version, start(apps)];
+    let register = (commands: list(SihlCoreCli.command), project) => {
+      let defaultCommands = [version, start(project)];
       commands
       ->Belt.List.concat(defaultCommands)
       ->Belt.List.map(command => (command.name, command))
       ->Js.Dict.fromList;
     };
 
-    let execute = (apps: list(App.t), args) => {
+    let execute = (project: Project.t, args) => {
       let commands =
-        apps
+        project.apps
         ->Belt.List.map(app => app.commands)
         ->Belt.List.toArray
         ->Belt.List.concatMany
-        ->register(apps);
+        ->register(project);
       let args = SihlCoreCli.trimArgs(args, "sihl");
       let commandName = args->Belt.List.head->Belt.Option.getExn;
       switch (SihlCoreCli.getCommand(commands, commandName)) {
@@ -176,8 +216,9 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     module Integration = {
       open Jest;
       [%raw "require('isomorphic-fetch')"];
-      let setupHarness = apps => {
-        beforeAllPromise(_ => Manager.startApps(apps));
+      let setupHarness = (project: Project.t) => {
+        Node.Process.putEnvVar("SIHL_ENV", "test");
+        beforeAllPromise(_ => Manager.start(project));
         beforeEachPromise(_ => Manager.clean());
         afterAllPromise(_ => Manager.stop());
       };

@@ -4,4 +4,5 @@ type t('database, 'endpoint, 'cliCommand) = {
   routes: 'database => list('endpoint),
   migration: SihlCoreDbCore.Migration.t,
   commands: list('cliCommand),
+  configurationSchema: SihlCoreConfig.Schema.t,
 };

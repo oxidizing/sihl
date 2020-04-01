@@ -58,7 +58,8 @@ module Nodemailer = {
 };
 
 let send = (email: SihlCoreEmailCore.t) =>
-  if (SihlCoreConfig.get(~default="console", "EMAIL_BACKEND") === "smtp") {
+  switch (SihlCoreConfig.get(~default="console", "EMAIL_BACKEND")) {
+  | "smtp" =>
     let email =
       Nodemailer.Email.make(
         ~from=email.sender,
@@ -80,7 +81,9 @@ let send = (email: SihlCoreEmailCore.t) =>
         (),
       );
     Nodemailer.Transport.send(transport, email);
-  } else {
+  | "console" =>
+    Async.async @@ SihlCoreLog.info(SihlCoreEmailCore.toString(email), ())
+  | _ =>
     devInbox := Some(email);
-    Async.async @@ SihlCoreLog.info(SihlCoreEmailCore.toString(email), ());
+    Async.async();
   };

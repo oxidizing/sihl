@@ -1,1 +1,1 @@
-Sihl.App.Main.Manager.startApps([App.app([])]);
+Sihl.App.Main.Cli.execute(Project.project, Node.Process.argv);

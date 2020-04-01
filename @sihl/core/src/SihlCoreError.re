@@ -4,10 +4,10 @@ let catchAsResult = (f, error) =>
   | exception _ => Error(error)
   };
 
-let optionAsResult = (error, optn) => {
+let optionAsResult = (optn, msg) => {
   switch (optn) {
   | Some(value) => Ok(value)
-  | None => Error(error)
+  | None => Error(msg)
   };
 };
 
@@ -16,7 +16,7 @@ exception ServerException(string);
 let failIfError = result => {
   switch (result) {
   | Ok(ok) => ok
-  | Error(error) => raise(ServerException(error))
+  | Error(msg) => raise(ServerException(msg))
   };
 };
 
@@ -35,6 +35,7 @@ module Decco = {
     | Error(error) => Error(stringify(error))
     };
   };
+
   let stringifyDecoder = (decoder, json) => {
     switch (decoder(json)) {
     | Ok(_) as ok => ok
