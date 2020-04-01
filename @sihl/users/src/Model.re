@@ -48,42 +48,38 @@ module Token = {
     status: string,
   };
 
-  let canResetPassword = token =>
-    token.kind === "password_reset" && token.status === "active";
-
   let setCookieHeader = token => (
     "set-cookie",
     {j|session=$(token); HttpOnly;|j},
   );
 
-  let generateAuth = (~user: User.t) => {
+  let generateAuth = (~user: User.t, ~token) => {
     kind: "auth",
     id: Sihl.Core.Uuid.V4.uuidv4(),
     user: user.id,
-    // TODO replace with proper token generation
-    token: Sihl.Core.Uuid.V4.uuidv4(),
+    token,
     status: "active",
   };
 
-  let generateEmailConfirmation = (~user: User.t) => {
+  let generateEmailConfirmation = (~user: User.t, ~token) => {
     kind: "email_confirmation",
     id: Sihl.Core.Uuid.V4.uuidv4(),
     user: user.id,
-    // TODO replace with proper token generation
-    token: Sihl.Core.Uuid.V4.uuidv4(),
+    token,
     status: "active",
   };
 
-  let generatePasswordReset = (~user: User.t) => {
+  let generatePasswordReset = (~user: User.t, ~token) => {
     kind: "password_reset",
     id: Sihl.Core.Uuid.V4.uuidv4(),
     user: user.id,
-    // TODO replace with proper token generation
-    token: Sihl.Core.Uuid.V4.uuidv4(),
+    token,
     status: "active",
   };
 
   let isEmailConfirmation = token => token.kind === "email_confirmation";
+  let canResetPassword = token =>
+    token.kind === "password_reset" && token.status === "active";
 };
 
 // TODO make email configurable

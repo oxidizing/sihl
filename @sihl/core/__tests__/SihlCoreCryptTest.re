@@ -19,8 +19,16 @@ describe("Bcrypt", () => {
 
 describe("Random", () => {
   open! Sihl.Core.Crypt.Random;
-  testPromise("generates random HEX string", () => {
-    let%Async randomString = hex(~nBytes=30);
-    randomString |> Js.String.length |> expect |> toBe(60) |> Async.async;
+  testPromise("generates random base64 string", () => {
+    let%Async randomString = base64(30);
+    randomString |> Js.String.length |> expect |> toBe(40) |> Async.async;
+  });
+  testPromise("generates random base64 string without special chars", () => {
+    let%Async randomString = base64(200, ~specialChars=false);
+    let hasNoSpecialChars =
+      !Js.String.includes("/", randomString)
+      && !Js.String.includes("+", randomString)
+      && !Js.String.includes("=", randomString);
+    hasNoSpecialChars |> expect |> toBe(true) |> Async.async;
   });
 });
