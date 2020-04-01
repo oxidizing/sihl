@@ -48,6 +48,9 @@ module Token = {
     status: string,
   };
 
+  let canResetPassword = token =>
+    token.kind === "password_reset" && token.status === "active";
+
   let setCookieHeader = token => (
     "set-cookie",
     {j|session=$(token); HttpOnly;|j},

@@ -284,6 +284,62 @@ Expect.(
 );
 
 Expect.(
+  testPromise("User can not use password reset token twice", () => {
+    let%Async _ = Sihl.App.Main.Manager.seed(Seeds.admin);
+    let%Async _ =
+      Sihl.App.Main.Manager.seed(Seeds.user("foobar@example.com", "123"));
+    let body = {|{"email": "foobar@example.com"}|};
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/request-password-reset/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+
+    let mail: Sihl.Core.Email.t =
+      Sihl.Core.Email.Transport.getLastEmail() |> Belt.Option.getExn;
+    let tokenRe = Js.Re.fromString("token=(.*)");
+    let token =
+      Js.Re.exec_(tokenRe, mail.text)
+      ->Belt.Option.getExn
+      ->Js.Re.captures
+      ->Belt.Array.get(1)
+      ->Belt.Option.getExn
+      ->Js.Nullable.toOption
+      ->Belt.Option.getExn;
+
+    let body = {j|{"token": "$(token)", "newPassword": "321"}|j};
+    let%Async _ =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/reset-password/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+    let%Async response =
+      Fetch.fetchWithInit(
+        baseUrl ++ "/reset-password/",
+        Fetch.RequestInit.make(
+          ~method_=Post,
+          ~body=Fetch.BodyInit.make(body),
+          (),
+        ),
+      );
+
+    response
+    |> Fetch.Response.status
+    |> expect
+    |> toBe(403)
+    |> Sihl.Core.Async.async;
+  })
+);
+
+Expect.(
   testPromise("User updates password", () => {
     let%Async _ = Sihl.App.Main.Manager.seed(Seeds.admin);
     let%Async (user, {token}) =
