@@ -115,8 +115,8 @@ module User = {
     let%Async token =
       Repository.Token.Get.query(conn, ~token)
       |> abortIfErr(Forbidden("Invalid token provided"));
-    if (token.kind !== "password_reset") {
-      abort @@ Forbidden("Invalid token provided");
+    if (!Model.Token.canResetPassword(token)) {
+      abort @@ Forbidden("Invalid or inactive token provided");
     };
     let%Async user =
       Repository.User.Get.query(conn, ~userId=token.user)
@@ -124,7 +124,11 @@ module User = {
     let%Async hash =
       Sihl.Core.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
-    Repository.User.Upsert.query(conn, ~user);
+    let%Async _ = Repository.User.Upsert.query(conn, ~user);
+    Repository.Token.Upsert.query(
+      conn,
+      ~token={...token, status: "inactive"},
+    );
   };
 
   let updatePassword =
