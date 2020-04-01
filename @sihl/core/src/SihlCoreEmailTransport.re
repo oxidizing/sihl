@@ -60,6 +60,7 @@ module Nodemailer = {
 let send = (email: SihlCoreEmailCore.t) =>
   switch (SihlCoreConfig.get(~default="console", "EMAIL_BACKEND")) {
   | "smtp" =>
+    let recipient = email.recipient;
     let email =
       Nodemailer.Email.make(
         ~from=email.sender,
@@ -80,7 +81,13 @@ let send = (email: SihlCoreEmailCore.t) =>
         ~pool=SihlCoreConfig.getBool(~default=false, "SMTP_POOL"),
         (),
       );
-    Nodemailer.Transport.send(transport, email);
+    Nodemailer.Transport.send(transport, email)
+    ->Async.mapAsync(_ =>
+        SihlCoreLog.info(
+          "email sent using smtp backend recipient=" ++ recipient,
+          (),
+        )
+      );
   | "console" =>
     Async.async @@ SihlCoreLog.info(SihlCoreEmailCore.toString(email), ())
   | _ =>

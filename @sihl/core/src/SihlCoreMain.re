@@ -81,11 +81,20 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
       );
       SihlCoreLog.info("Loading and validating project configuration", ());
       let configuration =
-        SihlCoreConfig.Environment.configuration(
-          project.environment,
-          Belt.List.map(project.apps, app => app.configurationSchema),
-        )
-        ->SihlCoreError.failIfError;
+        switch (
+          SihlCoreConfig.Environment.configuration(
+            project.environment,
+            Belt.List.map(project.apps, app => app.configurationSchema),
+          )
+        ) {
+        | Ok(configuration) =>
+          SihlCoreLog.info("Project configuration is valid", ());
+          configuration;
+        | Error(msg) =>
+          let msg = "Project configuration is invalid: " ++ msg;
+          SihlCoreLog.error(msg, ());
+          raise(InvalidConfiguration(msg));
+        };
       let db =
         SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
       SihlCoreLog.info("Mounting HTTP routes", ());

@@ -29,6 +29,70 @@ describe("Schema Type", () => {
       |> toEqual(Ok())
     );
   });
+  test("validate existing requiredIf string", () => {
+    let configuration =
+      Js.Dict.fromList([("FOO", "value1"), ("BAR", "value2")]);
+    Sihl.Core.Config.Schema.(
+      Type.validate(
+        string_(~requiredIf=("BAR", "value2"), "FOO"),
+        configuration,
+      )
+      |> expect
+      |> toEqual(Ok())
+    );
+  });
+  test("validate existing requiredIf bool", () => {
+    let configuration =
+      Js.Dict.fromList([("FOO", "true"), ("BAR", "value2")]);
+    Sihl.Core.Config.Schema.(
+      Type.validate(
+        bool_(~requiredIf=("BAR", "value2"), "FOO"),
+        configuration,
+      )
+      |> expect
+      |> toEqual(Ok())
+    );
+  });
+  test("validate existing requiredIf bool fails", () => {
+    let configuration =
+      Js.Dict.fromList([("FOO", "123"), ("BAR", "value2")]);
+    Sihl.Core.Config.Schema.(
+      Type.validate(
+        bool_(~requiredIf=("BAR", "value2"), "FOO"),
+        configuration,
+      )
+      |> expect
+      |> toEqual(
+           Error("provided configuration is not a bool key=FOO, value=123"),
+         )
+    );
+  });
+  test("validate requiredIf non-existing string fails", () => {
+    let configuration = Js.Dict.fromList([("BAR", "value2")]);
+    Sihl.Core.Config.Schema.(
+      Type.validate(
+        string_(~requiredIf=("BAR", "value2"), "FOO"),
+        configuration,
+      )
+      |> expect
+      |> toEqual(
+           Error(
+             "required configuration because of dependency not found requiredConfig=(BAR, value2), key=FOO",
+           ),
+         )
+    );
+  });
+  test("validate non-existing requiredIf string", () => {
+    let configuration = Js.Dict.fromList([("BAR", "value2")]);
+    Sihl.Core.Config.Schema.(
+      Type.validate(
+        string_(~requiredIf=("BAR", "othervalue"), "FOO"),
+        configuration,
+      )
+      |> expect
+      |> toEqual(Ok())
+    );
+  });
   test("validate string with choices", () => {
     let configuration = Js.Dict.fromList([("FOO", "value1")]);
     Sihl.Core.Config.Schema.(
@@ -82,7 +146,9 @@ describe("Schema Type", () => {
     Sihl.Core.Config.Schema.(
       Type.validate(bool_("BAR"), configuration)
       |> expect
-      |> toEqual(Error("provided configuration is not a bool key=BAR"))
+      |> toEqual(
+           Error("provided configuration is not a bool key=BAR, value=123"),
+         )
     );
   });
   test("validate int", () => {
@@ -118,6 +184,8 @@ describe("Schema", () => {
       Js.Dict.fromList([("FOO", "value1"), ("BAR", "123")]);
     validate(schemas, configuration)
     |> expect
-    |> toEqual(Error("provided configuration is not a bool key=BAR"));
+    |> toEqual(
+         Error("provided configuration is not a bool key=BAR, value=123"),
+       );
   });
 });

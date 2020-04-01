@@ -64,25 +64,47 @@ module Schema = {
       | Bool(key, _) => key
       };
 
+    let validateString = (~key, ~value, ~choices) => {
+      let choices = choices->Belt.List.toArray;
+      let isInChoices =
+        Belt.Array.length(choices) === 0
+        || choices->Belt.Array.some(choice => choice === value);
+      isInChoices
+        ? Ok()
+        : Error(
+            {j|value not found in choices key=$(key), value=$(value), choices=$(choices)|j},
+          );
+    };
+
+    let doesRequiredConfigurationExist =
+        (~requiredKey, ~requiredValue, configuration: Js.Dict.t(string)) =>
+      Js.Dict.get(configuration, requiredKey)
+      ->Belt.Option.map(value => value === requiredValue)
+      ->Belt.Option.getWithDefault(false);
+
     let validate = (type_, configuration) => {
       let key = key(type_);
       let value = Js.Dict.get(configuration, key);
       switch (type_, value) {
-      | (String(_, None, []), Some(_))
       | (String(_, Default(_), _), Some(_))
       | (String(_, Default(_), _), None) => Ok()
-      | (String(_, RequiredIf(requiredKey, requiredValue), _), _) =>
-        Js.Dict.get(configuration, requiredKey)
-        ->Belt.Option.map(value => value === requiredValue)
-        ->Belt.Option.getWithDefault(false)
-          ? Error("Failed") : Ok()
+      | (String(_, RequiredIf(requiredKey, requiredValue), choices), value) =>
+        let doesRequiredConfigurationExist =
+          doesRequiredConfigurationExist(
+            ~requiredKey,
+            ~requiredValue,
+            configuration,
+          );
+        switch (doesRequiredConfigurationExist, value) {
+        | (true, Some(value)) => validateString(~key, ~value, ~choices)
+        | (true, None) =>
+          Error(
+            {j|required configuration because of dependency not found requiredConfig=($(requiredKey), $(requiredValue)), key=$(key)|j},
+          )
+        | (false, _) => Ok()
+        };
       | (String(_, None, choices), Some(value)) =>
-        let choices = Belt.List.toArray(choices);
-        Belt.Array.some(choices, choice => choice === value)
-          ? Ok()
-          : Error(
-              {j|value not found in choices key=$(key), value=$(value), choices=$(choices)|j},
-            );
+        validateString(~key, ~value, ~choices)
       | (String(_, None, _), None) =>
         Error({j|required configuration not provided key=$(key)|j})
       | (Int(_, _), Some(value)) =>
@@ -104,7 +126,7 @@ module Schema = {
         value
         ->bool_of_string_opt
         ->SihlCoreError.optionAsResult(
-            {j|provided configuration is not a bool key=$(key)|j},
+            {j|provided configuration is not a bool key=$(key), value=$(value)|j},
           )
         ->Belt.Result.map(_ => ())
       | (Bool(_, Default(_)), None) => Ok()

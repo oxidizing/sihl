@@ -8,6 +8,9 @@
     "clean": "bsb -clean-world"
   },
   "keywords": [
+    "Sihl",
+    "ReasonML",
+    "Reason",
     "BuckleScript"
   ],
   "author": "",
