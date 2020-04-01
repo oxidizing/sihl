@@ -1,8 +1,6 @@
 module Async = SihlCoreAsync;
 
-module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
-  module SihlCoreDb = SihlCoreDb.Make(Persistence);
-
+module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
   exception InvalidCommandException(string);
   let trimArgs = (args, command) => {
     let args =

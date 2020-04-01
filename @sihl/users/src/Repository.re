@@ -18,10 +18,10 @@ FROM users_users;
 ";
 
     let query:
-      Sihl.App.Persistence.Connection.t =>
+      Sihl.App.Repo.Connection.t =>
       Js.Promise.t(Sihl.Core.Db.Result.Query.t(Model.User.t)) =
       connection =>
-        Sihl.App.Db.Repo.getMany(
+        Sihl.App.Repo.getMany(
           ~connection,
           ~stmt,
           ~decode=Model.User.t_decode,
@@ -50,10 +50,10 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
     type parameters = string;
 
     let query:
-      (Sihl.App.Persistence.Connection.t, ~userId: string) =>
+      (Sihl.App.Repo.Connection.t, ~userId: string) =>
       Js.Promise.t(Belt.Result.t(Model.User.t, string)) = {
       (connection, ~userId) =>
-        Sihl.App.Db.Repo.getOne(
+        Sihl.App.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(userId),
@@ -84,10 +84,10 @@ WHERE email = ?;
     type parameters = string;
 
     let query:
-      (Sihl.App.Persistence.Connection.t, ~email: string) =>
+      (Sihl.App.Repo.Connection.t, ~email: string) =>
       Js.Promise.t(Belt.Result.t(Model.User.t, string)) =
       (connection, ~email) =>
-        Sihl.App.Db.Repo.getOne(
+        Sihl.App.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(email),
@@ -147,7 +147,7 @@ confirmed = VALUES(confirmed)
     );
 
     let query = (connection, ~user: Model.User.t) =>
-      Sihl.App.Db.Repo.execute(
+      Sihl.App.Repo.execute(
         ~parameters=
           parameters_encode((
             user.id,
@@ -194,7 +194,7 @@ kind = VALUES(kind)
     type parameters = (string, string, string, string, string);
 
     let query = (connection, ~token: Model.Token.t) => {
-      Sihl.App.Db.Repo.execute(
+      Sihl.App.Repo.execute(
         ~parameters=
           parameters_encode((
             token.id,
@@ -227,10 +227,10 @@ WHERE token LIKE ?;
     type parameters = string;
 
     let query:
-      (Sihl.App.Persistence.Connection.t, ~token: string) =>
+      (Sihl.App.Repo.Connection.t, ~token: string) =>
       Js.Promise.t(Belt.Result.t(Model.Token.t, string)) =
       (connection, ~token) =>
-        Sihl.App.Db.Repo.getOne(
+        Sihl.App.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(token),
@@ -253,7 +253,7 @@ AND users_tokens.kind LIKE ?;
     type parameters = (string, string);
 
     let query = (connection, ~userId: string, ~kind: string) => {
-      Sihl.App.Db.Repo.execute(
+      Sihl.App.Repo.execute(
         ~parameters=parameters_encode((userId, kind)),
         connection,
         stmt,

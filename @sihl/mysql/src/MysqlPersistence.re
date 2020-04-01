@@ -104,10 +104,28 @@ module Connection = {
         result
         ->MysqlResult.Execution.decode
         ->Belt.Result.map(((MysqlResult.Execution.{affectedRows}, _)) =>
-            SihlCore.SihlCoreDbCore.Result.Execution.make(affectedRows)
+            Sihl.Core.Db.Result.Execution.make(affectedRows)
           )
       );
   };
+
+  let withTransaction: (t, t => Js.Promise.t('a)) => Js.Promise.t('a) =
+    (connection, f) => {
+      let%Async _ =
+        execute(connection, ~stmt="START TRANSACTION;", ~parameters=None);
+      let%Async result = f(connection);
+      let%Async _ =
+        execute(connection, ~stmt="COMMIT;", ~parameters=None)
+        ->Async.catchAsync(error => {
+            Sihl.Core.Log.error(
+              "error happened while commiting the transaction, rolling back",
+              (),
+            );
+            Js.log(error);
+            execute(connection, ~stmt="ROLLBACK;", ~parameters=None);
+          });
+      Async.async(result);
+    };
 };
 
 module Database = {

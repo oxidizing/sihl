@@ -1,11 +1,11 @@
-module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
   module Async = SihlCoreAsync;
 
   exception InvalidConfiguration(string);
 
   module SihlCoreHttp = SihlCoreHttp.Make(Persistence);
   module SihlCoreCli = SihlCoreCli.Make(Persistence);
-  module SihlCoreDb = SihlCoreDb.Make(Persistence);
+  module SihlCoreMigration = SihlCoreMigration.Make(Persistence);
 
   module App = {
     type t =
@@ -70,7 +70,7 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
     let runMigrations = (instance: RunningInstance.t) => {
       instance.apps
       ->Belt.List.map(app => app.migration)
-      ->SihlCoreDb.Migration.applyMigrations(instance.db);
+      ->SihlCoreMigration.applyMigrations(instance.db);
     };
 
     let start = (project: t) => {

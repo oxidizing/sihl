@@ -5,15 +5,14 @@ module Core = {
   module Crypt = SihlCoreCrypt;
   module Error = SihlCoreError;
   module Log = SihlCoreLog;
-  module Db = SihlCoreDbCore;
+  module Db = SihlCoreDb;
   module Config = SihlCoreConfig;
   module Http = SihlCoreHttpCore;
   module Email = SihlCoreEmail;
 };
 
 module MakeApp = (Persistence: Core.Db.PERSISTENCE) => {
-  module Persistence = Persistence;
-  module Db = SihlCoreDb.Make(Persistence);
+  module Repo = SihlCoreRepo.Make(Persistence);
   module Http = SihlCoreHttp.Make(Persistence);
   module Main = SihlCoreMain.Make(Persistence);
   module Test = Main.Test;

@@ -2,10 +2,11 @@
 // Thanks to the author Murphy Randle
 // We'll consider creating a PR once our API is more stable
 
-module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
+module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
+  module Async = SihlCoreAsync;
+
   module Endpoint = {
     open SihlCoreAsync;
-    module Async = SihlCoreAsync;
 
     module Status = {
       include Express.Response.StatusCode;
@@ -443,7 +444,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
   let requireAuthorizationToken =
       (request: Endpoint.request('body, 'query, 'params)) => {
-    module Async = SihlCoreAsync;
     let%Async header = Endpoint.requireHeader("authorization", request.req);
     switch (SihlCoreHttpCore.parseAuthToken(header)) {
     | Some(token) => Async.async(token)
@@ -458,7 +458,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
   };
 
   let sessionCookie = (request: Endpoint.request('body, 'query, 'params)) => {
-    module Async = SihlCoreAsync;
     let cookieToken =
       request.req->Express.Request.cookies->parseCookie("session");
     Async.async(cookieToken);
@@ -466,7 +465,6 @@ module Make = (Persistence: SihlCoreDbCore.PERSISTENCE) => {
 
   let requireSessionCookie =
       (request: Endpoint.request('body, 'query, 'params), location) => {
-    module Async = SihlCoreAsync;
     let%Async token = sessionCookie(request);
     switch (token) {
     | Some(token) => Async.async(token)

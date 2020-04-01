@@ -1,6 +1,10 @@
 module Async = SihlCoreAsync;
 
-module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
+module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
+  module Connection = Persistence.Connection;
+  module Database = Persistence.Database;
+  module Migration = Persistence.Migration;
+
   let getOne = (~connection, ~stmt, ~parameters=?, ~decode, ()) => {
     let%Async result = Connection.getOne(connection, ~stmt, ~parameters);
     Async.async(
@@ -10,7 +14,7 @@ module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
         Error(
           "Error happened in DB when getOne() msg="
           ++ msg
-          ++ SihlCoreDbCore.debug(stmt, parameters),
+          ++ SihlCoreDb.debug(stmt, parameters),
         )
       },
     );
@@ -27,19 +31,19 @@ module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
             switch (result) {
             | Ok(result) => result
             | Error(msg) =>
-              SihlCoreDbCore.abort(
+              SihlCoreDb.abort(
                 "Error happened in DB when getMany() msg="
                 ++ msg
-                ++ SihlCoreDbCore.debug(stmt, parameters),
+                ++ SihlCoreDb.debug(stmt, parameters),
               )
             }
           );
       Async.async((result, meta));
     | Error(msg) =>
-      SihlCoreDbCore.abort(
+      SihlCoreDb.abort(
         "Error happened in DB when getMany() msg="
         ++ msg
-        ++ SihlCoreDbCore.debug(stmt, parameters),
+        ++ SihlCoreDb.debug(stmt, parameters),
       )
     };
   };
@@ -50,10 +54,10 @@ module Make = (Connection: SihlCoreDbCore.CONNECTION) => {
       switch (rows) {
       | Ok(_) => ()
       | Error(msg) =>
-        SihlCoreDbCore.abort(
+        SihlCoreDb.abort(
           "Error happened in DB when getMany() msg="
           ++ msg
-          ++ SihlCoreDbCore.debug(stmt, parameters),
+          ++ SihlCoreDb.debug(stmt, parameters),
         )
       },
     );
