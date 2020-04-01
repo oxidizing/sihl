@@ -1,4 +1,6 @@
+![GitHub milestone](https://img.shields.io/github/milestones/progress-percent/oxidizing/sihl/1?style=flat-square)
 [![CircleCI](https://circleci.com/gh/oxidizing/sihl.svg?style=svg&circle-token=1bd6f0745de660fcdd463dbe017a67d6c8229447)](https://circleci.com/gh/oxidizing/sihl)
+![NPM](https://img.shields.io/npm/l/@sihl/core?style=flat-square)
 
 # Sihl
 
@@ -16,7 +18,7 @@ You can install the users app as well to get [user management](/@sihl/users) out
 
 These are the things that Sihl can do for you:
 
-* HTTP: Declarative endpoints (thanks to the abstractions of [Serbet](https://github.com/mrmurphy/serbet)
+* HTTP: Declarative endpoints (thanks to the abstractions of [Serbet](https://github.com/mrmurphy/serbet))
 * Structure & Lifecycle: You develop Sihl apps, compose them to projects and Sihl runs them
 * Migrations: Create database migrations per app, Sihl takes care of applying them
 * Admin UI: Your admins will love you for the UIs you give them using the Admin UI React API
