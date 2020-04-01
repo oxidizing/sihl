@@ -83,13 +83,17 @@ module Token = {
   let isEmailConfirmation = token => token.kind === "email_confirmation";
 };
 
+// TODO make email configurable
 module EmailConfirmation = {
   let template = {|
-Hello {givenName} {familyName},
+Hi {givenName} {familyName},
 
-Confirm your email {baseUrl}/app/password-reset?token={token}
+Thanks for signing up.
+
+Please go to this URL to confirm your email address: {baseUrl}/app/confirm-email?token={token}
 
 Best,
+Josef
 |};
 
   let make = (~token: Token.t, ~user: User.t) =>
@@ -97,7 +101,7 @@ Best,
       ~sender=
         Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
       ~recipient=user.email,
-      ~subject="Email address confirmation",
+      ~subject="Email Address Confirmation",
       ~text=
         Sihl.Core.Email.render(
           template,
@@ -118,13 +122,17 @@ Best,
     );
 };
 
+// TODO make email configurable
 module PasswordReset = {
   let template = {|
-Hello {givenName} {familyName},
+Hi {givenName} {familyName},
 
-Go to this URL to reset your password {baseUrl}/app/password-reset?token={token}
+You requested to reset your password.
+
+Please go to this URL to reset your password: {baseUrl}/app/password-reset?token={token}
 
 Best,
+Josef
 |};
 
   let make = (~token: Token.t, ~user: User.t) => {
@@ -132,7 +140,7 @@ Best,
       ~sender=
         Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
       ~recipient=user.email,
-      ~subject="Password reset",
+      ~subject="Password Reset",
       ~text=
         Sihl.Core.Email.render(
           template,
