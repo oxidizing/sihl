@@ -1,6 +1,6 @@
 {
   "name": "@sihl/mysql",
-  "version": "0.0.13",
+  "version": "0.0.15",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -18,7 +18,7 @@
   "peerDependencies": {
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
-    "@sihl/core": "0.0.13",
+    "@sihl/core": "0.0.15",
     "decco": "^1.1.1"
   },
   "dependencies": {
@@ -28,7 +28,7 @@
   "devDependencies": {
     "bs-let": "^0.1.16",
     "bs-platform": "^7.1.0",
-    "@sihl/core": "0.0.13",
+    "@sihl/core": "0.0.15",
     "decco": "^1.1.1"
   }
 }

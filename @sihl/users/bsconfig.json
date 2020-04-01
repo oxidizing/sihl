@@ -1,6 +1,6 @@
 {
   "name": "@sihl/users",
-  "version": "0.0.13",
+  "version": "0.0.15",
   "reason": {
     "react-jsx": 3
   },
