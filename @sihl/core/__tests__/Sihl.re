@@ -1,4 +1,4 @@
-module Core = Api.Core;
+module Common = Core.Common;
 
 open Jest;
 open Expect;

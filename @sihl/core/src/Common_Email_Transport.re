@@ -1,6 +1,6 @@
-module Async = SihlCoreAsync;
+module Async = Common_Async;
 
-let devInbox: Pervasives.ref(option(SihlCoreEmailCore.t)) = ref(None);
+let devInbox: Pervasives.ref(option(Common_Email_Core.t)) = ref(None);
 
 let getLastEmail = () => devInbox^;
 
@@ -57,8 +57,8 @@ module Nodemailer = {
   };
 };
 
-let send = (email: SihlCoreEmailCore.t) =>
-  switch (SihlCoreConfig.get(~default="console", "EMAIL_BACKEND")) {
+let send = (email: Common_Email_Core.t) =>
+  switch (Common_Config.get(~default="console", "EMAIL_BACKEND")) {
   | "smtp" =>
     let recipient = email.recipient;
     let email =
@@ -71,25 +71,25 @@ let send = (email: SihlCoreEmailCore.t) =>
       );
     let transport =
       Nodemailer.Transport.make(
-        ~host=SihlCoreConfig.get("SMTP_HOST"),
-        ~port=SihlCoreConfig.getInt("SMTP_PORT"),
+        ~host=Common_Config.get("SMTP_HOST"),
+        ~port=Common_Config.getInt("SMTP_PORT"),
         ~auth={
-          "user": SihlCoreConfig.get("SMTP_AUTH_USERNAME"),
-          "pass": SihlCoreConfig.get("SMTP_AUTH_PASSWORD"),
+          "user": Common_Config.get("SMTP_AUTH_USERNAME"),
+          "pass": Common_Config.get("SMTP_AUTH_PASSWORD"),
         },
-        ~secure=SihlCoreConfig.getBool("SMTP_SECURE"),
-        ~pool=SihlCoreConfig.getBool(~default=false, "SMTP_POOL"),
+        ~secure=Common_Config.getBool("SMTP_SECURE"),
+        ~pool=Common_Config.getBool(~default=false, "SMTP_POOL"),
         (),
       );
     Nodemailer.Transport.send(transport, email)
     ->Async.mapAsync(_ =>
-        SihlCoreLog.info(
+        Common_Log.info(
           "email sent using smtp backend recipient=" ++ recipient,
           (),
         )
       );
   | "console" =>
-    Async.async @@ SihlCoreLog.info(SihlCoreEmailCore.toString(email), ())
+    Async.async @@ Common_Log.info(Common_Email_Core.toString(email), ())
   | _ =>
     devInbox := Some(email);
     Async.async();

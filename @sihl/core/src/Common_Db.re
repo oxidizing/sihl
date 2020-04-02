@@ -99,7 +99,7 @@ module type PERSISTENCE = {
   module Connection: CONNECTION;
   module Database: {
     type t;
-    let setup: SihlCoreConfig.Db.Url.t => t;
+    let setup: Common_Config.Db.Url.t => t;
     let end_: t => unit;
     let withConnection:
       (t, Connection.t => Js.Promise.t('a)) => Js.Promise.t('a);

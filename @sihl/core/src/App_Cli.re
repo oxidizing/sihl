@@ -1,6 +1,6 @@
-module Async = SihlCoreAsync;
+module Async = Common_Async;
 
-module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
+module Make = (Persistence: Common_Db.PERSISTENCE) => {
   exception InvalidCommandException(string);
   let trimArgs = (args, command) => {
     let args =
@@ -18,10 +18,10 @@ module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
     };
   };
 
-  type command = SihlCoreHttpCore.command(Persistence.Connection.t);
+  type command = Common_Http.command(Persistence.Connection.t);
 
   let runCommand = (command: command, args) => {
-    let db = SihlCoreConfig.Db.Url.readFromEnv() |> Persistence.Database.setup;
+    let db = Common_Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
     let%Async _ =
       Persistence.Database.withConnection(db, conn =>
         Async.catchAsync(command.f(conn, args, command.description), err =>

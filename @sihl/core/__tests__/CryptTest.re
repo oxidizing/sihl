@@ -1,10 +1,10 @@
 open Jest;
 open Expect;
 
-module Async = SihlCoreAsync;
+module Async = Common_Async;
 
 describe("Bcrypt", () => {
-  open Sihl.Core.Crypt.Bcrypt;
+  open Sihl.Common.Crypt.Bcrypt;
   testPromise("compares different passwords", () => {
     let%Async hash = hashAndSalt(~plain="foobar", ~rounds=1);
     let%Async isEqual = Hash.compare(~plain="123", ~hash);
@@ -18,7 +18,7 @@ describe("Bcrypt", () => {
 });
 
 describe("Random", () => {
-  open! Sihl.Core.Crypt.Random;
+  open! Sihl.Common.Crypt.Random;
   testPromise("generates random base64 string", () => {
     let%Async randomString = base64(30);
     randomString |> Js.String.length |> expect |> toBe(40) |> Async.async;

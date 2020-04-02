@@ -13,7 +13,7 @@ describe("Configuration", () => {
         ("FOOZ", "value3"),
         ("FOOB", "value4"),
       ]);
-    Sihl.Core.Config.Configuration.merge(config1, config2)
+    Sihl.Common.Config.Configuration.merge(config1, config2)
     |> expect
     |> toEqual(expected);
   })
@@ -23,7 +23,7 @@ describe("Schema Type", () => {
   test("validate string", () => {
     let configuration =
       Js.Dict.fromList([("FOO", "value1"), ("BAR", "value2")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(string_("FOO"), configuration)
       |> expect
       |> toEqual(Ok())
@@ -32,7 +32,7 @@ describe("Schema Type", () => {
   test("validate existing requiredIf string", () => {
     let configuration =
       Js.Dict.fromList([("FOO", "value1"), ("BAR", "value2")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         string_(~requiredIf=("BAR", "value2"), "FOO"),
         configuration,
@@ -44,7 +44,7 @@ describe("Schema Type", () => {
   test("validate existing requiredIf bool", () => {
     let configuration =
       Js.Dict.fromList([("FOO", "true"), ("BAR", "value2")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         bool_(~requiredIf=("BAR", "value2"), "FOO"),
         configuration,
@@ -56,7 +56,7 @@ describe("Schema Type", () => {
   test("validate existing requiredIf bool fails", () => {
     let configuration =
       Js.Dict.fromList([("FOO", "123"), ("BAR", "value2")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         bool_(~requiredIf=("BAR", "value2"), "FOO"),
         configuration,
@@ -69,7 +69,7 @@ describe("Schema Type", () => {
   });
   test("validate requiredIf non-existing string fails", () => {
     let configuration = Js.Dict.fromList([("BAR", "value2")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         string_(~requiredIf=("BAR", "value2"), "FOO"),
         configuration,
@@ -84,7 +84,7 @@ describe("Schema Type", () => {
   });
   test("validate non-existing requiredIf string", () => {
     let configuration = Js.Dict.fromList([("BAR", "value2")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         string_(~requiredIf=("BAR", "othervalue"), "FOO"),
         configuration,
@@ -95,7 +95,7 @@ describe("Schema Type", () => {
   });
   test("validate string with choices", () => {
     let configuration = Js.Dict.fromList([("FOO", "value1")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         string_(~choices=["value1", "value2"], "FOO"),
         configuration,
@@ -106,7 +106,7 @@ describe("Schema Type", () => {
   });
   test("validate string with choices fails", () => {
     let configuration = Js.Dict.fromList([("FOO", "value3")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(
         string_(~choices=["value1", "value2"], "FOO"),
         configuration,
@@ -121,7 +121,7 @@ describe("Schema Type", () => {
   });
   test("validate required string without default value fails", () => {
     let configuration = Js.Dict.fromList([("BAR", "value")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(string_("FOO"), configuration)
       |> expect
       |> toEqual(Error("required configuration not provided key=FOO"))
@@ -129,7 +129,7 @@ describe("Schema Type", () => {
   });
   test("validate string with default value fails", () => {
     let configuration = Js.Dict.fromList([("BAR", "value")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(string_(~default="value", "FOO"), configuration)
       |> expect
       |> toEqual(Ok())
@@ -137,13 +137,13 @@ describe("Schema Type", () => {
   });
   test("validate bool", () => {
     let configuration = Js.Dict.fromList([("BAR", "true")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(bool_("BAR"), configuration) |> expect |> toEqual(Ok())
     );
   });
   test("validate bool fails", () => {
     let configuration = Js.Dict.fromList([("BAR", "123")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(bool_("BAR"), configuration)
       |> expect
       |> toEqual(
@@ -153,13 +153,13 @@ describe("Schema Type", () => {
   });
   test("validate int", () => {
     let configuration = Js.Dict.fromList([("BAR", "123")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(int_("BAR"), configuration) |> expect |> toEqual(Ok())
     );
   });
   test("validate int fails", () => {
     let configuration = Js.Dict.fromList([("BAR", "123f")]);
-    Sihl.Core.Config.Schema.(
+    Sihl.Common.Config.Schema.(
       Type.validate(int_("BAR"), configuration)
       |> expect
       |> toEqual(
@@ -171,14 +171,14 @@ describe("Schema Type", () => {
 
 describe("Schema", () => {
   test("validate one schema with valid configuration", () => {
-    open Sihl.Core.Config.Schema;
+    open Sihl.Common.Config.Schema;
     let schemas = [[string_("FOO"), bool_("BAR")]];
     let configuration =
       Js.Dict.fromList([("FOO", "value1"), ("BAR", "true")]);
     validate(schemas, configuration) |> expect |> toEqual(Ok(configuration));
   });
   test("validate one schema with invalid configuration", () => {
-    open Sihl.Core.Config.Schema;
+    open Sihl.Common.Config.Schema;
     let schemas = [[string_("FOO"), bool_("BAR")]];
     let configuration =
       Js.Dict.fromList([("FOO", "value1"), ("BAR", "123")]);

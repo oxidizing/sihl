@@ -2,7 +2,7 @@ type t('database, 'endpoint, 'cliCommand) = {
   name: string,
   namespace: string,
   routes: 'database => list('endpoint),
-  migration: SihlCoreDb.Migration.t,
+  migration: Common_Db.Migration.t,
   commands: list('cliCommand),
-  configurationSchema: SihlCoreConfig.Schema.t,
+  configurationSchema: Common_Config.Schema.t,
 };

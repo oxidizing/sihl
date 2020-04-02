@@ -1,6 +1,6 @@
-module Async = SihlCoreAsync;
+module Async = Common_Async;
 
-module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
+module Make = (Persistence: Common_Db.PERSISTENCE) => {
   module Connection = Persistence.Connection;
   module Database = Persistence.Database;
   module Migration = Persistence.Migration;
@@ -9,12 +9,12 @@ module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
     let%Async result = Connection.getOne(connection, ~stmt, ~parameters);
     Async.async(
       switch (result) {
-      | Ok(result) => result |> SihlCoreError.Decco.stringifyDecoder(decode)
+      | Ok(result) => result |> Common_Error.Decco.stringifyDecoder(decode)
       | Error(msg) =>
         Error(
           "Error happened in DB when getOne() msg="
           ++ msg
-          ++ SihlCoreDb.debug(stmt, parameters),
+          ++ Common_Db.debug(stmt, parameters),
         )
       },
     );
@@ -26,24 +26,24 @@ module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
     | Ok((rows, meta)) =>
       let result =
         rows
-        ->Belt.List.map(SihlCoreError.Decco.stringifyDecoder(decode))
+        ->Belt.List.map(Common_Error.Decco.stringifyDecoder(decode))
         ->Belt.List.map(result =>
             switch (result) {
             | Ok(result) => result
             | Error(msg) =>
-              SihlCoreDb.abort(
+              Common_Db.abort(
                 "Error happened in DB when getMany() msg="
                 ++ msg
-                ++ SihlCoreDb.debug(stmt, parameters),
+                ++ Common_Db.debug(stmt, parameters),
               )
             }
           );
       Async.async((result, meta));
     | Error(msg) =>
-      SihlCoreDb.abort(
+      Common_Db.abort(
         "Error happened in DB when getMany() msg="
         ++ msg
-        ++ SihlCoreDb.debug(stmt, parameters),
+        ++ Common_Db.debug(stmt, parameters),
       )
     };
   };
@@ -54,10 +54,10 @@ module Make = (Persistence: SihlCoreDb.PERSISTENCE) => {
       switch (rows) {
       | Ok(_) => ()
       | Error(msg) =>
-        SihlCoreDb.abort(
+        Common_Db.abort(
           "Error happened in DB when getMany() msg="
           ++ msg
-          ++ SihlCoreDb.debug(stmt, parameters),
+          ++ Common_Db.debug(stmt, parameters),
         )
       },
     );

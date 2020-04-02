@@ -1,4 +1,4 @@
-module Async = SihlCoreAsync;
+module Async = Common_Async;
 
 [@bs.module]
 external random: (~nBytes: int, ~encoding: string) => Js.Promise.t(string) =
