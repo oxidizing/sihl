@@ -1,6 +1,4 @@
-![GitHub milestone](https://img.shields.io/github/milestones/progress-percent/oxidizing/sihl/1?style=flat-square)
 [![CircleCI](https://circleci.com/gh/oxidizing/sihl.svg?style=svg&circle-token=1bd6f0745de660fcdd463dbe017a67d6c8229447)](https://circleci.com/gh/oxidizing/sihl)
-![NPM](https://img.shields.io/npm/l/@sihl/core?style=flat-square)
 
 # Sihl
 
