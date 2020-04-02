@@ -1,7 +1,7 @@
 module Query = {
   [@decco]
   type t = (list(Js.Json.t), Js.Json.t);
-  let decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
+  let decode = Sihl.Common.Error.Decco.stringifyDecoder(t_decode);
 
   module MetaData = {
     [@decco]
@@ -27,5 +27,5 @@ module Execution = {
 
   [@decco]
   type t = (meta, unit);
-  let decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
+  let decode = Sihl.Common.Error.Decco.stringifyDecoder(t_decode);
 };

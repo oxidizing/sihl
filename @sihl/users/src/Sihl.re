@@ -1,2 +1,2 @@
-module Core = SihlCore.Api.Core;
-module App = SihlCore.Api.MakeApp(SihlMysql.Mysql.Persistence);
+module Common = SihlCore.Core.Common;
+module App = SihlCore.Core.MakeApp(SihlMysql.Mysql.Persistence);

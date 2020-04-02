@@ -46,7 +46,7 @@ Expect.(
     let {Model.User.email} =
       usersJson |> Model.User.t_decode |> Belt.Result.getExn;
 
-    email |> expect |> toBe("foobar@example.com") |> Sihl.Core.Async.async;
+    email |> expect |> toBe("foobar@example.com") |> Sihl.Common.Async.async;
   })
 );
 
@@ -79,7 +79,7 @@ Expect.(
     |> Fetch.Response.status
     |> expect
     |> toBe(400)
-    |> Sihl.Core.Async.async;
+    |> Sihl.Common.Async.async;
   })
 );
 
@@ -118,7 +118,7 @@ Expect.(
     |> Fetch.Response.status
     |> expect
     |> toBe(401)
-    |> Sihl.Core.Async.async;
+    |> Sihl.Common.Async.async;
   })
 );
 
@@ -150,7 +150,7 @@ Expect.(
     |> Fetch.Response.status
     |> expect
     |> toBe(200)
-    |> Sihl.Core.Async.async;
+    |> Sihl.Common.Async.async;
   })
 );
 
@@ -176,8 +176,8 @@ Expect.(
           (),
         ),
       );
-    let mail: Sihl.Core.Email.t =
-      Sihl.Core.Email.Transport.getLastEmail() |> Belt.Option.getExn;
+    let mail: Sihl.Common.Email.t =
+      Sihl.Common.Email.Transport.getLastEmail() |> Belt.Option.getExn;
     let tokenRe = Js.Re.fromString("token=(.*)");
     let token =
       Js.Re.exec_(tokenRe, mail.text)
@@ -213,7 +213,7 @@ Expect.(
     let {Model.User.confirmed} =
       usersJson |> Model.User.t_decode |> Belt.Result.getExn;
 
-    confirmed |> expect |> toBe(true) |> Sihl.Core.Async.async;
+    confirmed |> expect |> toBe(true) |> Sihl.Common.Async.async;
   })
 );
 
@@ -231,7 +231,7 @@ Expect.(
          Sihl.App.Http.Endpoint.Status.Unauthorized
          |> Sihl.App.Http.Endpoint.Status.toInt,
        )
-    |> Sihl.Core.Async.async;
+    |> Sihl.Common.Async.async;
   })
 );
 
@@ -251,8 +251,8 @@ Expect.(
         ),
       );
 
-    let mail: Sihl.Core.Email.t =
-      Sihl.Core.Email.Transport.getLastEmail() |> Belt.Option.getExn;
+    let mail: Sihl.Common.Email.t =
+      Sihl.Common.Email.Transport.getLastEmail() |> Belt.Option.getExn;
     let tokenRe = Js.Re.fromString("token=(.*)");
     let token =
       Js.Re.exec_(tokenRe, mail.text)
@@ -279,7 +279,7 @@ Expect.(
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
 
-    token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
+    token |> expect |> toMatch(".*") |> Sihl.Common.Async.async;
   })
 );
 
@@ -299,8 +299,8 @@ Expect.(
         ),
       );
 
-    let mail: Sihl.Core.Email.t =
-      Sihl.Core.Email.Transport.getLastEmail() |> Belt.Option.getExn;
+    let mail: Sihl.Common.Email.t =
+      Sihl.Common.Email.Transport.getLastEmail() |> Belt.Option.getExn;
     let tokenRe = Js.Re.fromString("token=(.*)");
     let token =
       Js.Re.exec_(tokenRe, mail.text)
@@ -335,7 +335,7 @@ Expect.(
     |> Fetch.Response.status
     |> expect
     |> toBe(403)
-    |> Sihl.Core.Async.async;
+    |> Sihl.Common.Async.async;
   })
 );
 
@@ -366,7 +366,7 @@ Expect.(
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
 
-    token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
+    token |> expect |> toMatch(".*") |> Sihl.Common.Async.async;
   })
 );
 
@@ -416,7 +416,7 @@ Expect.(
     user.email
     |> expect
     |> toBe("updatedmail@example.com")
-    |> Sihl.Core.Async.async;
+    |> Sihl.Common.Async.async;
   })
 );
 
@@ -446,7 +446,7 @@ Expect.(
     let Routes.Login.{token} =
       tokenJson |> Routes.Login.body_out_decode |> Belt.Result.getExn;
 
-    token |> expect |> toMatch(".*") |> Sihl.Core.Async.async;
+    token |> expect |> toMatch(".*") |> Sihl.Common.Async.async;
   })
 );
 
@@ -473,6 +473,6 @@ Expect.(
       |> Belt.Result.getExn
       |> Belt.List.toArray;
 
-    users |> expect |> toHaveLength(2) |> Sihl.Core.Async.async;
+    users |> expect |> toHaveLength(2) |> Sihl.Common.Async.async;
   })
 );

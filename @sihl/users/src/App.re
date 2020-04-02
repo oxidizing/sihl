@@ -27,7 +27,7 @@ let routes = database => [
 ];
 
 let configurationSchema =
-  Sihl.Core.Config.Schema.[
+  Sihl.Common.Config.Schema.[
     string_(
       ~default="console",
       ~choices=["smtp", "console", "memory"],

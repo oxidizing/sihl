@@ -1,4 +1,4 @@
-module Async = Sihl.Core.Async;
+module Async = Sihl.Common.Async;
 
 module User = {
   let isAdmin = Model.User.isAdmin;
@@ -55,7 +55,7 @@ module User = {
     | Error(_) => abort @@ Unauthorized("Invalid password or email provided")
     | Ok(user) =>
       let%Async isSame =
-        Sihl.Core.Crypt.Bcrypt.Hash.compare(
+        Sihl.Common.Crypt.Bcrypt.Hash.compare(
           ~plain=password,
           ~hash=user.password,
         );
@@ -63,7 +63,7 @@ module User = {
         abort @@ Unauthorized("Invalid password or email provided");
       };
       let%Async tokenStr =
-        Sihl.Core.Crypt.Random.base64(~specialChars=false, 96);
+        Sihl.Common.Crypt.Random.base64(~specialChars=false, 96);
       let token = Model.Token.generateAuth(~user, ~token=tokenStr);
       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
       Async.async((user, token));
@@ -72,11 +72,11 @@ module User = {
 
   let sendRegistrationEmail = (conn, ~user) => {
     let%Async tokenStr =
-      Sihl.Core.Crypt.Random.base64(~specialChars=false, 96);
+      Sihl.Common.Crypt.Random.base64(~specialChars=false, 96);
     let token = Model.Token.generateEmailConfirmation(~user, ~token=tokenStr);
     let%Async _ = Repository.Token.Upsert.query(conn, ~token);
     let email = Model.EmailConfirmation.make(~token, ~user);
-    Sihl.Core.Email.Transport.send(email);
+    Sihl.Common.Email.Transport.send(email);
   };
 
   let confirmEmail = (conn, ~token) => {
@@ -109,13 +109,13 @@ module User = {
     switch (user) {
     | Ok(user) =>
       let%Async tokenStr =
-        Sihl.Core.Crypt.Random.base64(~specialChars=false, 96);
+        Sihl.Common.Crypt.Random.base64(~specialChars=false, 96);
       let token = Model.Token.generatePasswordReset(~user, ~token=tokenStr);
       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
       let email = Model.PasswordReset.make(~token, ~user);
-      Sihl.Core.Email.Transport.send(email);
+      Sihl.Common.Email.Transport.send(email);
     | Error(_) =>
-      Sihl.Core.Log.error(
+      Sihl.Common.Log.error(
         "Password reset was requested but no user was found email=" ++ email,
         (),
       );
@@ -136,7 +136,7 @@ module User = {
       Repository.User.Get.query(conn, ~userId=token.user)
       |> abortIfErr(Unauthorized("Invalid token provided"));
     let%Async hash =
-      Sihl.Core.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
+      Sihl.Common.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
     Sihl.App.Repo.Connection.withTransaction(
       conn,
@@ -160,7 +160,7 @@ module User = {
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
     let%Async isSame =
-      Sihl.Core.Crypt.Bcrypt.Hash.compare(
+      Sihl.Common.Crypt.Bcrypt.Hash.compare(
         ~plain=currentPassword,
         ~hash=user.password,
       );
@@ -168,7 +168,7 @@ module User = {
       abort @@ BadRequest("Current password doesn't match provided password");
     };
     let%Async hash =
-      Sihl.Core.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
+      Sihl.Common.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
     Repository.User.Upsert.query(conn, ~user);
   };
@@ -182,7 +182,7 @@ module User = {
       Repository.User.Get.query(conn, ~userId)
       |> abortIfErr(BadRequest("Invalid userId provided"));
     let%Async hash =
-      Sihl.Core.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
+      Sihl.Common.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
     Repository.User.Upsert.query(conn, ~user);
   };
@@ -235,7 +235,7 @@ module User = {
       abort @@ BadRequest("Email already taken");
     };
     let%Async hash =
-      Sihl.Core.Crypt.Bcrypt.hashAndSalt(~plain=password, ~rounds=12);
+      Sihl.Common.Crypt.Bcrypt.hashAndSalt(~plain=password, ~rounds=12);
     let user =
       Model.User.make(
         ~email,
@@ -264,7 +264,7 @@ module User = {
       abort @@ BadRequest("Email already taken");
     };
     let%Async hash =
-      Sihl.Core.Crypt.Bcrypt.hashAndSalt(~plain=password, ~rounds=12);
+      Sihl.Common.Crypt.Bcrypt.hashAndSalt(~plain=password, ~rounds=12);
     let user =
       Model.User.make(
         ~email,

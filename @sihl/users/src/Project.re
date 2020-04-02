@@ -1,5 +1,5 @@
 let environment =
-  Sihl.Core.Config.Environment.make(
+  Sihl.Common.Config.Environment.make(
     ~development=[
       ("BASE_URL", "http://localhost:3000"),
       ("EMAIL_SENDER", "josef@oxidizing.io"),

@@ -1,5 +1,5 @@
-module Persistence: Sihl.Core.Db.PERSISTENCE = {
-  module Database = MysqlPersistence.Database;
-  module Connection = MysqlPersistence.Connection;
-  module Migration = MysqlMigration;
+module Persistence: Sihl.Common.Db.PERSISTENCE = {
+  module Database = Mysql_Persistence.Database;
+  module Connection = Mysql_Persistence.Connection;
+  module Migration = Mysql_Migration;
 };

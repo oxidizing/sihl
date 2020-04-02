@@ -11,13 +11,13 @@ module User = {
     familyName: string,
     phone: option(string),
     status: string,
-    admin: Sihl.Core.Db.Bool.t,
-    confirmed: Sihl.Core.Db.Bool.t,
+    admin: Sihl.Common.Db.Bool.t,
+    confirmed: Sihl.Common.Db.Bool.t,
   };
 
   let make =
       (~email, ~username, ~password, ~givenName, ~familyName, ~phone, ~admin) => {
-    let id = Sihl.Core.Uuid.V4.uuidv4();
+    let id = Sihl.Common.Uuid.V4.uuidv4();
     Ok({
       id,
       email,
@@ -55,7 +55,7 @@ module Token = {
 
   let generateAuth = (~user: User.t, ~token) => {
     kind: "auth",
-    id: Sihl.Core.Uuid.V4.uuidv4(),
+    id: Sihl.Common.Uuid.V4.uuidv4(),
     user: user.id,
     token,
     status: "active",
@@ -63,7 +63,7 @@ module Token = {
 
   let generateEmailConfirmation = (~user: User.t, ~token) => {
     kind: "email_confirmation",
-    id: Sihl.Core.Uuid.V4.uuidv4(),
+    id: Sihl.Common.Uuid.V4.uuidv4(),
     user: user.id,
     token,
     status: "active",
@@ -71,7 +71,7 @@ module Token = {
 
   let generatePasswordReset = (~user: User.t, ~token) => {
     kind: "password_reset",
-    id: Sihl.Core.Uuid.V4.uuidv4(),
+    id: Sihl.Common.Uuid.V4.uuidv4(),
     user: user.id,
     token,
     status: "active",
@@ -96,18 +96,18 @@ Josef
 |};
 
   let make = (~token: Token.t, ~user: User.t) =>
-    Sihl.Core.Email.make(
+    Sihl.Common.Email.make(
       ~sender=
-        Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
+        Sihl.Common.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
       ~recipient=user.email,
       ~subject="Email Address Confirmation",
       ~text=
-        Sihl.Core.Email.render(
+        Sihl.Common.Email.render(
           template,
           [
             (
               "baseUrl",
-              Sihl.Core.Config.get(
+              Sihl.Common.Config.get(
                 ~default="http://localhost:3000",
                 "BASE_URL",
               ),
@@ -135,18 +135,18 @@ Josef
 |};
 
   let make = (~token: Token.t, ~user: User.t) => {
-    Sihl.Core.Email.make(
+    Sihl.Common.Email.make(
       ~sender=
-        Sihl.Core.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
+        Sihl.Common.Config.get(~default="josef@oxidizing.io", "EMAIL_SENDER"),
       ~recipient=user.email,
       ~subject="Password Reset",
       ~text=
-        Sihl.Core.Email.render(
+        Sihl.Common.Email.render(
           template,
           [
             (
               "baseUrl",
-              Sihl.Core.Config.get(
+              Sihl.Common.Config.get(
                 ~default="http://localhost:3000",
                 "BASE_URL",
               ),

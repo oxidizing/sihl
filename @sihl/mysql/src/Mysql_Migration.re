@@ -1,13 +1,13 @@
-module Async = Sihl.Core.Async;
+module Async = Sihl.Common.Async;
 
-module Status: Sihl.Core.Db.MIGRATIONSTATUS = {
+module Status: Sihl.Common.Db.MIGRATIONSTATUS = {
   [@decco]
   type t = {
     namespace: string,
     version: int,
-    dirty: Sihl.Core.Db.Bool.t,
+    dirty: Sihl.Common.Db.Bool.t,
   };
-  let t_decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
+  let t_decode = Sihl.Common.Error.Decco.stringifyDecoder(t_decode);
   let make = (~namespace) => {namespace, version: 0, dirty: false};
   let version = status => status.version;
   let namespace = status => status.namespace;
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS core_migration_status (
 ";
 
   let query = connection => {
-    MysqlPersistence.Connection.execute(connection, ~stmt, ~parameters=None);
+    Mysql_Persistence.Connection.execute(connection, ~stmt, ~parameters=None);
   };
 };
 
@@ -45,7 +45,7 @@ WHERE namespace = ?;
 
   let query = (connection, ~namespace) => {
     let%Async result =
-      MysqlPersistence.Connection.getOne(
+      Mysql_Persistence.Connection.getOne(
         connection,
         ~stmt,
         ~parameters=Some(parameters_encode(namespace)),
@@ -72,7 +72,7 @@ WHERE namespace = ?;
 
   let query = (connection, ~namespace) => {
     let%Async result =
-      MysqlPersistence.Connection.getOne(
+      Mysql_Persistence.Connection.getOne(
         connection,
         ~stmt,
         ~parameters=Some(parameters_encode(namespace)),
@@ -99,10 +99,10 @@ dirty = VALUES(dirty)
 ;";
 
   [@decco]
-  type parameters = (string, int, Sihl.Core.Db.Bool.t);
+  type parameters = (string, int, Sihl.Common.Db.Bool.t);
 
   let query = (connection, ~status: Status.t) => {
-    MysqlPersistence.Connection.execute(
+    Mysql_Persistence.Connection.execute(
       connection,
       ~stmt,
       ~parameters=

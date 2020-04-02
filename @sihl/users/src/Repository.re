@@ -1,4 +1,4 @@
-module Async = Sihl.Core.Async;
+module Async = Sihl.Common.Async;
 
 module User = {
   module GetAll = {
@@ -19,7 +19,7 @@ FROM users_users;
 
     let query:
       Sihl.App.Repo.Connection.t =>
-      Js.Promise.t(Sihl.Core.Db.Result.Query.t(Model.User.t)) =
+      Js.Promise.t(Sihl.Common.Db.Result.Query.t(Model.User.t)) =
       connection =>
         Sihl.App.Repo.getMany(
           ~connection,
