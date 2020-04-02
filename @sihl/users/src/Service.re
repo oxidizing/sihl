@@ -17,12 +17,10 @@ module User = {
   };
 
   let isTokenValid = (conn, token) => {
-    open! Sihl.App.Http.Endpoint;
     Repository.Token.Get.query(conn, ~token)->Async.mapAsync(_ => true);
   };
 
   let logout = ((conn, user: Model.User.t)) => {
-    open! Sihl.App.Http.Endpoint;
     let%Async _ =
       Repository.Token.DeleteForUser.query(
         conn,

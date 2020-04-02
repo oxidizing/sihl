@@ -55,12 +55,4 @@ let rec allInOrder: list(unit => Js.Promise.t(unit)) => Js.Promise.t(unit) =
     };
   };
 
-let wait: int => Js.Promise.t(unit) = [%raw
-  {|
-function(ms) {
-  return new Promise((res, rej) => {
-    setTimeout(res, ms);
-  })
-}
-|}
-];
+[@bs.module] external wait: int => Js.Promise.t(unit) = "./async/wait.js";
