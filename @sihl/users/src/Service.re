@@ -87,15 +87,20 @@ module User = {
     if (!Model.Token.isEmailConfirmation(token)) {
       abort @@ Unauthorized("Invalid token provided");
     };
-    let%Async _ =
-      Repository.Token.Upsert.query(
-        conn,
-        ~token={...token, status: "inactive"},
-      );
-    let%Async user =
-      Repository.User.Get.query(conn, ~userId=token.user)
-      |> abortIfErr(Unauthorized("Invalid token provided"));
-    Repository.User.Upsert.query(conn, ~user={...user, confirmed: true});
+    Sihl.App.Repo.Connection.withTransaction(
+      conn,
+      conn => {
+        let%Async _ =
+          Repository.Token.Upsert.query(
+            conn,
+            ~token={...token, status: "inactive"},
+          );
+        let%Async user =
+          Repository.User.Get.query(conn, ~userId=token.user)
+          |> abortIfErr(Unauthorized("Invalid token provided"));
+        Repository.User.Upsert.query(conn, ~user={...user, confirmed: true});
+      },
+    );
   };
 
   let requestPasswordReset = (conn, ~email) => {
@@ -133,10 +138,15 @@ module User = {
     let%Async hash =
       Sihl.Core.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
     let user = {...user, password: hash};
-    let%Async _ = Repository.User.Upsert.query(conn, ~user);
-    Repository.Token.Upsert.query(
+    Sihl.App.Repo.Connection.withTransaction(
       conn,
-      ~token={...token, status: "inactive"},
+      conn => {
+        let%Async _ = Repository.User.Upsert.query(conn, ~user);
+        Repository.Token.Upsert.query(
+          conn,
+          ~token={...token, status: "inactive"},
+        );
+      },
     );
   };
 
