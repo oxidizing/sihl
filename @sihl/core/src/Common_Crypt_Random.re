@@ -1,7 +1,7 @@
 module Async = Common_Async;
 
 [@bs.module]
-external random: (~nBytes: int, ~encoding: string) => Js.Promise.t(string) =
+external random: (~nBytes: int, ~encoding: string) => Async.t(string) =
   "./crypt/random-bytes.js";
 
 let base64 = (~specialChars=?, nBytes) =>

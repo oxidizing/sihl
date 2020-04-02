@@ -1,3 +1,5 @@
+module Async = Common_Async;
+
 module Bool = {
   let encoder = i => i ? Js.Json.number(1.0) : Js.Json.number(0.0);
   let decoder = j => {
@@ -81,18 +83,17 @@ module type MIGRATIONSTATUS = {
 module type CONNECTION = {
   type t;
   let raw:
-    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Js.Promise.t(Js.Json.t);
+    (t, ~stmt: string, ~parameters: option(Js.Json.t)) => Async.t(Js.Json.t);
   let getMany:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Js.Promise.t(Belt.Result.t(Result.Query.t(Js.Json.t), string));
+    Async.t(Belt.Result.t(Result.Query.t(Js.Json.t), string));
   let getOne:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Js.Promise.t(Belt.Result.t(Js.Json.t, string));
+    Async.t(Belt.Result.t(Js.Json.t, string));
   let execute:
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
-  let withTransaction: (t, t => Js.Promise.t('a)) => Js.Promise.t('a);
+    Async.t(Belt.Result.t(Result.Execution.t, string));
+  let withTransaction: (t, t => Async.t('a)) => Async.t('a);
 };
 
 module type PERSISTENCE = {
@@ -101,21 +102,20 @@ module type PERSISTENCE = {
     type t;
     let setup: Common_Config.Db.Url.t => t;
     let end_: t => unit;
-    let withConnection:
-      (t, Connection.t => Js.Promise.t('a)) => Js.Promise.t('a);
-    let clean: t => Js.Promise.t(unit);
+    let withConnection: (t, Connection.t => Async.t('a)) => Async.t('a);
+    let clean: t => Async.t(unit);
   };
   module Migration: {
     module Status: MIGRATIONSTATUS;
     let setup:
-      Connection.t => Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
-    let has: (Connection.t, ~namespace: string) => Js.Promise.t(bool);
+      Connection.t => Async.t(Belt.Result.t(Result.Execution.t, string));
+    let has: (Connection.t, ~namespace: string) => Async.t(bool);
     let get:
       (Connection.t, ~namespace: string) =>
-      Js.Promise.t(Belt.Result.t(Status.t, string));
+      Async.t(Belt.Result.t(Status.t, string));
     let upsert:
       (Connection.t, ~status: Status.t) =>
-      Js.Promise.t(Belt.Result.t(Result.Execution.t, string));
+      Async.t(Belt.Result.t(Result.Execution.t, string));
   };
 };
 

@@ -48,8 +48,8 @@ module Nodemailer = {
     type t;
     [@bs.module "nodemailer"]
     external create: Config.t => t = "createTransport";
-    [@bs.send] external send: (t, Email.t) => Js.Promise.t(unit) = "sendMail";
-    [@bs.send] external verify: t => Js.Promise.t(unit) = "verify";
+    [@bs.send] external send: (t, Email.t) => Async.t(unit) = "sendMail";
+    [@bs.send] external verify: t => Async.t(unit) = "verify";
 
     let make = (~host, ~port, ~secure, ~auth, ~pool, ()) => {
       Config.make(~host, ~port, ~secure, ~auth, ~pool, ()) |> create;

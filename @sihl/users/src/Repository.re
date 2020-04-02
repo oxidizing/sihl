@@ -19,7 +19,7 @@ FROM users_users;
 
     let query:
       Sihl.App.Repo.Connection.t =>
-      Js.Promise.t(Sihl.Common.Db.Result.Query.t(Model.User.t)) =
+      Async.t(Sihl.Common.Db.Result.Query.t(Model.User.t)) =
       connection =>
         Sihl.App.Repo.getMany(
           ~connection,
@@ -51,7 +51,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
 
     let query:
       (Sihl.App.Repo.Connection.t, ~userId: string) =>
-      Js.Promise.t(Belt.Result.t(Model.User.t, string)) = {
+      Async.t(Belt.Result.t(Model.User.t, string)) = {
       (connection, ~userId) =>
         Sihl.App.Repo.getOne(
           ~connection,
@@ -85,7 +85,7 @@ WHERE email = ?;
 
     let query:
       (Sihl.App.Repo.Connection.t, ~email: string) =>
-      Js.Promise.t(Belt.Result.t(Model.User.t, string)) =
+      Async.t(Belt.Result.t(Model.User.t, string)) =
       (connection, ~email) =>
         Sihl.App.Repo.getOne(
           ~connection,
@@ -228,7 +228,7 @@ WHERE token LIKE ?;
 
     let query:
       (Sihl.App.Repo.Connection.t, ~token: string) =>
-      Js.Promise.t(Belt.Result.t(Model.Token.t, string)) =
+      Async.t(Belt.Result.t(Model.Token.t, string)) =
       (connection, ~token) =>
         Sihl.App.Repo.getOne(
           ~connection,

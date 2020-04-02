@@ -111,7 +111,7 @@ module Connection = {
       );
   };
 
-  let withTransaction: (t, t => Js.Promise.t('a)) => Js.Promise.t('a) =
+  let withTransaction: (t, t => Async.t('a)) => Async.t('a) =
     (connection, f) => {
       let%Async _ =
         execute(connection, ~stmt="START TRANSACTION;", ~parameters=None);

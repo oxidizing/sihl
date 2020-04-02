@@ -1,8 +1,10 @@
+module Async = Common_Async;
+
 module Salt = {
   type t = string;
   external toString: t => string = "%identity";
   [@bs.module "bcrypt"] external genSync: int => string = "genSaltSync";
-  [@bs.module "bcrypt"] external gen: int => Js.Promise.t(string) = "genSalt";
+  [@bs.module "bcrypt"] external gen: int => Async.t(string) = "genSalt";
 };
 
 module Hash = {
@@ -11,9 +13,9 @@ module Hash = {
   [@bs.module "bcrypt"]
   external makeSync: (string, string) => string = "hashSync";
   [@bs.module "bcrypt"]
-  external make: (string, string) => Js.Promise.t(string) = "hash";
+  external make: (string, string) => Async.t(string) = "hash";
   [@bs.module "bcrypt"]
-  external compare: (~plain: string, ~hash: string) => Js.Promise.t(bool) =
+  external compare: (~plain: string, ~hash: string) => Async.t(bool) =
     "compare";
   [@bs.module "bcrypt"]
   external compareSync: (~plain: string, ~hash: string) => bool =
@@ -25,5 +27,5 @@ module Hash = {
 external hashAndSaltSync: (~plain: string, ~rounds: int) => Hash.t =
   "hashSync";
 [@bs.module "bcrypt"]
-external hashAndSalt: (~plain: string, ~rounds: int) => Js.Promise.t(Hash.t) =
+external hashAndSalt: (~plain: string, ~rounds: int) => Async.t(Hash.t) =
   "hash";

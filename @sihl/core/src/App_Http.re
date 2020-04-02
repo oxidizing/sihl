@@ -14,10 +14,10 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
     type request('body, 'query, 'params) = {
       req: Express.Request.t,
-      requireBody: Decco.decoder('body) => Js.Promise.t('body),
-      requireQuery: Decco.decoder('query) => Js.Promise.t('query),
-      requireParams: Decco.decoder('params) => Js.Promise.t('params),
-      requireHeader: string => Js.Promise.t(string),
+      requireBody: Decco.decoder('body) => Async.t('body),
+      requireQuery: Decco.decoder('query) => Async.t('query),
+      requireParams: Decco.decoder('params) => Async.t('params),
+      requireHeader: string => Async.t(string),
     };
 
     type response =
@@ -81,7 +81,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       [@bs.module]
       external middlewareAsComplete:
         (Express.Middleware.t, Express.Request.t, Express.Response.t) =>
-        Js.Promise.t(Express.complete) =
+        Async.t(Express.complete) =
         "./http/middleware-as-complete.js";
     };
 
@@ -174,7 +174,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
     type endpointConfig('body_in, 'params, 'query) = {
       path: string,
       verb,
-      handler: request('body_in, 'params, 'query) => Js.Promise.t(response),
+      handler: request('body_in, 'params, 'query) => Async.t(response),
     };
 
     let verb = endpoint => endpoint.verb;
@@ -185,7 +185,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       verb,
       handler:
         (Persistence.Connection.t, request('body_in, 'params, 'query)) =>
-        Js.Promise.t(response),
+        Async.t(response),
     };
 
     type jsonEndpointConfig('body_in, 'params, 'query, 'body_out) = {
@@ -194,8 +194,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       body_in_decode: Decco.decoder('body_in),
       body_out_encode: Decco.encoder('body_out),
       handler:
-        ('body_in, request('body_in, 'params, 'query)) =>
-        Js.Promise.t('body_out),
+        ('body_in, request('body_in, 'params, 'query)) => Async.t('body_out),
     };
 
     let sendRequestedContent = (msg, req, res) => {
