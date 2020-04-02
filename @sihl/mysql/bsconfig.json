@@ -1,6 +1,6 @@
 {
   "name": "@sihl/mysql",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "sources": [
     {
       "dir": "src",
