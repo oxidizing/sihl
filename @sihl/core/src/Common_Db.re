@@ -70,7 +70,7 @@ module Config = {
   };
 };
 
-// TODO evaluate this approach
+// TODO evaluate this approach by including modules instead of setting module signatures
 module Foo = {
   type t;
   type version = t => int;

@@ -2,18 +2,9 @@ module Async = Sihl.Common.Async;
 
 module Connection = {
   type t;
-  [@bs.send] external release: t => unit = "release";
+  [@bs.send] external release: t => Async.t(unit) = "end";
   [@bs.send]
   external query_: (t, string, Js.Json.t) => Async.t(Js.Json.t) = "query";
-
-  let release = connection =>
-    try(release(connection)) {
-    | Js.Exn.Error(e) =>
-      switch (Js.Exn.message(e)) {
-      | Some(message) => Sihl.Common.Log.error(message, ())
-      | None => Sihl.Common.Log.error("Failed to release client", ())
-      }
-    };
 
   let raw = (connection, ~stmt, ~parameters) => {
     let parameters =
@@ -25,90 +16,60 @@ module Connection = {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
     let%Async result = query_(connection, stmt, parameters);
-    let rows =
-      result
-      ->Postgres_Result.Query.decode
-      ->Belt.Result.map(((rows, _)) => rows);
-    let%Async meta =
-      query_(
-        connection,
-        Postgres_Result.Query.MetaData.foundRowsQuery,
-        Js.Json.stringArray([||]),
-      );
-    let meta = meta->Postgres_Result.Query.decode;
-    let totalCount: int =
-      switch (meta) {
-      | Ok(([row], _)) =>
-        switch (
-          row
-          |> Sihl.Common.Error.Decco.stringifyDecoder(
-               Postgres_Result.Query.MetaData.t_decode,
-             )
-        ) {
-        | Ok(Postgres_Result.Query.MetaData.{totalCount}) => totalCount
-        | Error(_) =>
-          Sihl.Common.Db.abort(
-            "Error happened in DB when decoding meta "
-            ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
-          )
-        }
-      | _ =>
-        Sihl.Common.Db.abort(
-          "Error happened in DB when fetching FOUND_ROWS() "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
-        )
-      };
-    rows
-    ->Belt.Result.map(rows =>
-        Sihl.Common.Db.Result.Query.make(rows, ~rowCount=totalCount)
+    switch (Postgres_Result.decode(result)) {
+    | Ok({rows, rowCount}) =>
+      Async.async @@ Ok(Sihl.Common.Db.Result.Query.make(rows, ~rowCount))
+    | Error(msg) =>
+      Sihl.Common.Db.abort(
+        "Error happened in DB when decoding result of getMany() msg="
+        ++ msg
+        ++ " with "
+        ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
       )
-    ->Async.async;
+    };
   };
 
   let getOne = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-    let%Async result =
-      query_(connection, stmt, parameters)
-      ->Async.mapAsync(result =>
-          result
-          ->Postgres_Result.Query.decode
-          ->Belt.Result.map(((rows, _)) => rows)
-        );
-    Async.async(
-      switch (result) {
-      | Ok([row]) => Ok(row)
-      | Ok([]) =>
+    let%Async result = query_(connection, stmt, parameters);
+
+    Async.async @@
+    (
+      switch (Postgres_Result.decode(result)) {
+      | Ok({rows: [row]}) => Ok(row)
+      | Ok({rows: []}) =>
         Error(
           "No rows found in database "
           ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
         )
-      | Ok(_) =>
+      | Ok({rows: _}) =>
         Error(
           "Two or more rows found when we were expecting only one "
           ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
         )
       | Error(msg) =>
         Sihl.Common.Db.abort(
-          "Error happened in DB when getOne() msg="
+          "Error happened in DB when decoding result of getOne() msg="
           ++ msg
+          ++ " with "
           ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
         )
-      },
+      }
     );
   };
 
   let execute = (connection, ~stmt, ~parameters) => {
     let parameters =
       Belt.Option.getWithDefault(parameters, Js.Json.stringArray([||]));
-    query_(connection, stmt, parameters)
-    ->Async.mapAsync(result =>
-        result
-        ->Postgres_Result.Execution.decode
-        ->Belt.Result.map(((Postgres_Result.Execution.{affectedRows}, _)) =>
-            Sihl.Common.Db.Result.Execution.make(affectedRows)
-          )
-      );
+    let%Async result = query_(connection, stmt, parameters);
+
+    result
+    ->Postgres_Result.decode
+    ->Belt.Result.map(({rowCount}) =>
+        Sihl.Common.Db.Result.Execution.make(rowCount)
+      )
+    ->Async.async;
   };
 
   let withTransaction: (t, t => Async.t('a)) => Async.t('a) =
@@ -180,7 +141,7 @@ module Database = {
   let withConnection = (db, f) => {
     let%Async conn = connect(db);
     let%Async result = f(conn);
-    Connection.release(conn);
+    let%Async _ = Connection.release(conn);
     Async.async(result);
   };
 
@@ -188,70 +149,9 @@ module Database = {
     [@decco]
     type t = {command: string};
 
-    let stmt = ({name}) => {j|
-  SELECT
-  CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS command
-  FROM information_schema.TABLES
-  WHERE TABLE_SCHEMA = '$(name)';
-|j};
-
+    // TODO I think we need more information on how to clean the database. Maybe this should be done by the consumer after all, since we could have multiple schemas and databases, so this cleaning can happen on the repository abstraction level.
     let query = db => {
-      let stmt = stmt(db);
-      withConnection(
-        db,
-        conn => {
-          let%Async _ =
-            Connection.execute(
-              conn,
-              ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
-              ~parameters=None,
-            );
-          let%Async commands =
-            Connection.getMany(conn, ~stmt, ~parameters=None);
-          let commands =
-            switch (commands) {
-            | Ok((rows, _)) =>
-              rows
-              ->Belt.List.map(
-                  Sihl.Common.Error.Decco.stringifyDecoder(t_decode),
-                )
-              ->Belt.List.map(result =>
-                  switch (result) {
-                  | Ok(result) => result
-                  | Error(msg) =>
-                    Sihl.Common.Db.abort(
-                      "Error happened in DB when getMany() msg="
-                      ++ msg
-                      ++ Sihl.Common.Db.debug(stmt, None),
-                    )
-                  }
-                )
-            | Error(msg) =>
-              Sihl.Common.Db.abort(
-                "Error happened in DB when getMany() msg="
-                ++ msg
-                ++ Sihl.Common.Db.debug(stmt, None),
-              )
-            };
-          let%Async _ =
-            commands
-            ->Belt.List.map(({command}, ()) => {
-                command !== "TRUNCATE TABLE core_migration_status;"
-                  ? Connection.execute(conn, ~stmt=command, ~parameters=None)
-                    ->Async.mapAsync(_ => ())
-                  : Async.async()
-              })
-            ->Sihl.Common.Async.allInOrder;
-
-          let%Async _ =
-            Connection.execute(
-              conn,
-              ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
-              ~parameters=None,
-            );
-          Async.async();
-        },
-      );
+      Async.async();
     };
   };
   let clean = Clean.query;
