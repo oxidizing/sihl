@@ -106,6 +106,7 @@ module Database = {
     };
   };
 
+  type connection = Connection.t;
   type handle;
   type t = {
     name: string,

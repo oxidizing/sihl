@@ -132,6 +132,8 @@ module Connection = {
 
 module Database = {
   type handle;
+  type connection = Connection.t;
+
   type t = {
     name: string,
     handle,

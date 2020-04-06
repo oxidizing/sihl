@@ -1,5 +1,7 @@
 module Async = Sihl.Common.Async;
 
+type connection = Postgres_Persistence.Connection.t;
+
 module Status: Sihl.Common.Db.MIGRATIONSTATUS = {
   [@decco]
   type t = {
