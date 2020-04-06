@@ -131,17 +131,30 @@ module Connection = {
 };
 
 module Database = {
+  module Config = {
+    type t = {
+      .
+      "user": string,
+      "host": string,
+      "database": string,
+      "password": string,
+      "port": int,
+      "connectionTimeoutMillis": int,
+      "idleTimeoutMillis": int,
+      "max": int,
+    };
+  };
+
   type handle;
   type t = {
     name: string,
     handle,
   };
 
-  [@bs.module "mysql2/promise"]
-  external setup: Sihl.Common.Db.Config.t => handle = "createPool";
-  [@bs.send] external end_: handle => unit = "end";
-  [@bs.send]
-  external connect: handle => Async.t(Connection.t) = "getConnection";
+  [@bs.module "pg"] [@bs.new] external setup: Config.t => handle = "Pool";
+
+  [@bs.send] external end_: handle => Async.t(unit) = "end";
+  [@bs.send] external connect: handle => Async.t(Connection.t) = "connect";
 
   let setup = (databaseUrl: Sihl.Common.Config.Db.Url.t) => {
     let config: Sihl.Common.Config.Db.t =
@@ -154,22 +167,14 @@ module Database = {
         "database": config.dbName,
         "password": config.dbPassword,
         "port": config.dbPort |> int_of_string,
-        "waitForConnections": true,
-        "connectionLimit": config.connectionLimit |> int_of_string,
-        "queueLimit": config.queueLimit |> int_of_string,
+        "connectionTimeoutMillis": 0,
+        "idleTimeoutMillis": 10000,
+        "max": 10,
       });
-    {name: config.dbName, handle};
+    Async.async @@ {name: config.dbName, handle};
   };
 
-  let end_ = db =>
-    try(end_(db.handle)) {
-    | Js.Exn.Error(e) =>
-      switch (Js.Exn.message(e)) {
-      | Some(message) => Sihl.Common.Log.error(message, ())
-      | None => Sihl.Common.Log.error("Failed to end pool", ())
-      }
-    };
-
+  let end_ = db => end_(db.handle);
   let connect = db => connect(db.handle);
 
   let withConnection = (db, f) => {

@@ -70,6 +70,17 @@ module Config = {
   };
 };
 
+// TODO evaluate this approach
+module Foo = {
+  type t;
+  type version = t => int;
+  type namespace = t => string;
+  type dirty = t => bool;
+  type setVersion = (t, ~newVersion: int) => t;
+  type make = (~namespace: string) => t;
+  type t_decode = Js.Json.t => Belt.Result.t(t, string);
+};
+
 module type MIGRATIONSTATUS = {
   type t;
   let version: t => int;
@@ -100,8 +111,8 @@ module type PERSISTENCE = {
   module Connection: CONNECTION;
   module Database: {
     type t;
-    let setup: Common_Config.Db.Url.t => t;
-    let end_: t => unit;
+    let setup: Common_Config.Db.Url.t => Async.t(t);
+    let end_: t => Async.t(unit);
     let withConnection: (t, Connection.t => Async.t('a)) => Async.t('a);
     let clean: t => Async.t(unit);
   };

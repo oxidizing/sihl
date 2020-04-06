@@ -4,7 +4,7 @@ open Expect;
 module Async = Common_Async;
 
 describe("Bcrypt", () => {
-  open Sihl.Common.Crypt.Bcrypt;
+  open! Sihl.Common.Crypt.Bcrypt;
   testPromise("compares different passwords", () => {
     let%Async hash = hashAndSalt(~plain="foobar", ~rounds=1);
     let%Async isEqual = Hash.compare(~plain="123", ~hash);
