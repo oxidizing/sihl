@@ -18,14 +18,12 @@ module Status: Sihl.Common.Db.MIGRATIONSTATUS = {
 };
 
 module CreateTableIfDoesNotExist = {
-  // TODO adjust for postgres
   let stmt = "
 CREATE TABLE IF NOT EXISTS core_migration_status (
-  namespace VARCHAR(128) NOT NULL,
+  namespace VARCHAR(128) UNIQUE NOT NULL,
   version BIGINT,
   dirty BOOL,
-  CONSTRAINT unique_namespace UNIQUE KEY (namespace)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+);
 ";
 
   let query = connection => {
@@ -38,7 +36,6 @@ CREATE TABLE IF NOT EXISTS core_migration_status (
 };
 
 module Has = {
-  // TODO adjust for postgres
   let stmt = "
 SELECT
   namespace,
@@ -66,7 +63,6 @@ WHERE namespace = ?;
 };
 
 module Get = {
-  // TODO adjust for postgres
   let stmt = "
 SELECT
   namespace,
@@ -91,7 +87,6 @@ WHERE namespace = ?;
 };
 
 module Upsert = {
-  // TODO adjust for postgres
   let stmt = "
 INSERT INTO core_migration_status (
   namespace,
