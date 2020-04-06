@@ -96,27 +96,33 @@ module type CONNECTION = {
   let withTransaction: (t, t => Async.t('a)) => Async.t('a);
 };
 
+module type DATABASE = {
+  type t;
+  type connection;
+  let setup: Common_Config.Db.Url.t => Async.t(t);
+  let end_: t => Async.t(unit);
+  let withConnection: (t, connection => Async.t('a)) => Async.t('a);
+  let clean: t => Async.t(unit);
+};
+
+module type MIGRATION = {
+  type connection;
+  module Status: MIGRATIONSTATUS;
+  let setup:
+    connection => Async.t(Belt.Result.t(Result.Execution.t, string));
+  let has: (connection, ~namespace: string) => Async.t(bool);
+  let get:
+    (connection, ~namespace: string) =>
+    Async.t(Belt.Result.t(Status.t, string));
+  let upsert:
+    (connection, ~status: Status.t) =>
+    Async.t(Belt.Result.t(Result.Execution.t, string));
+};
+
 module type PERSISTENCE = {
   module Connection: CONNECTION;
-  module Database: {
-    type t;
-    let setup: Common_Config.Db.Url.t => t;
-    let end_: t => unit;
-    let withConnection: (t, Connection.t => Async.t('a)) => Async.t('a);
-    let clean: t => Async.t(unit);
-  };
-  module Migration: {
-    module Status: MIGRATIONSTATUS;
-    let setup:
-      Connection.t => Async.t(Belt.Result.t(Result.Execution.t, string));
-    let has: (Connection.t, ~namespace: string) => Async.t(bool);
-    let get:
-      (Connection.t, ~namespace: string) =>
-      Async.t(Belt.Result.t(Status.t, string));
-    let upsert:
-      (Connection.t, ~status: Status.t) =>
-      Async.t(Belt.Result.t(Result.Execution.t, string));
-  };
+  module Database: DATABASE with type connection = Connection.t;
+  module Migration: MIGRATION with type connection = Connection.t;
 };
 
 exception DatabaseException(string);

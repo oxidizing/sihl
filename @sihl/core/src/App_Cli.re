@@ -21,14 +21,15 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
   type command = Common_Http.command(Persistence.Connection.t);
 
   let runCommand = (command: command, args) => {
-    let db = Common_Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
+    let%Async db =
+      Common_Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
     let%Async _ =
       Persistence.Database.withConnection(db, conn =>
         Async.catchAsync(command.f(conn, args, command.description), err =>
           Async.async(Js.log2("Failed to run command: ", err))
         )
       );
-    Async.async(Persistence.Database.end_(db));
+    Persistence.Database.end_(db);
   };
 
   let printCommands = commands => {

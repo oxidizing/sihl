@@ -132,6 +132,8 @@ module Connection = {
 
 module Database = {
   type handle;
+  type connection = Connection.t;
+
   type t = {
     name: string,
     handle,
@@ -139,6 +141,7 @@ module Database = {
 
   [@bs.module "mysql2/promise"]
   external setup: Sihl.Common.Db.Config.t => handle = "createPool";
+
   [@bs.send] external end_: handle => unit = "end";
   [@bs.send]
   external connect: handle => Async.t(Connection.t) = "getConnection";
@@ -158,17 +161,20 @@ module Database = {
         "connectionLimit": config.connectionLimit |> int_of_string,
         "queueLimit": config.queueLimit |> int_of_string,
       });
-    {name: config.dbName, handle};
+    Async.async @@ {name: config.dbName, handle};
   };
 
   let end_ = db =>
-    try(end_(db.handle)) {
-    | Js.Exn.Error(e) =>
-      switch (Js.Exn.message(e)) {
-      | Some(message) => Sihl.Common.Log.error(message, ())
-      | None => Sihl.Common.Log.error("Failed to end pool", ())
+    Async.async @@
+    (
+      try(end_(db.handle)) {
+      | Js.Exn.Error(e) =>
+        switch (Js.Exn.message(e)) {
+        | Some(message) => Sihl.Common.Log.error(message, ())
+        | None => Sihl.Common.Log.error("Failed to end pool", ())
+        }
       }
-    };
+    );
 
   let connect = db => connect(db.handle);
 

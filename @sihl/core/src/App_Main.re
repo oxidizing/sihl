@@ -92,7 +92,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
           Common_Log.error(msg, ());
           raise(InvalidConfiguration(msg));
         };
-      let db =
+      let%Async db =
         Common_Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
       Common_Log.info("Mounting HTTP routes", ());
       let routes =
@@ -101,7 +101,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
         ->Belt.List.toArray
         ->Belt.List.concatMany;
       let http = App_Http.application(routes);
-      RunningInstance.make(~configuration, ~http, ~db, ~apps);
+      Async.async @@ RunningInstance.make(~configuration, ~http, ~db, ~apps);
     };
 
     let stop = (instance: RunningInstance.t) => {
@@ -122,7 +122,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
           InvalidState("There is already an app running, can not start"),
         );
       };
-      let project = Project.start(project);
+      let%Async project = Project.start(project);
       state := Some(project);
       // TODO this might get out of sync
       Common_Config.configuration := Some(project.configuration);
