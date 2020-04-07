@@ -80,6 +80,11 @@ module type MIGRATIONSTATUS = {
   let t_decode: Js.Json.t => Belt.Result.t(t, string);
 };
 
+module type MIGRATIONSTATUS_INSTANCE = {
+  module MigrationStatus: MIGRATIONSTATUS;
+  let this: MigrationStatus.t;
+};
+
 module type CONNECTION = {
   type t;
   let raw:
@@ -96,6 +101,11 @@ module type CONNECTION = {
   let withTransaction: (t, t => Async.t('a)) => Async.t('a);
 };
 
+module type CONNECTION_INSTANCE = {
+  module Connection: CONNECTION;
+  let this: Connection.t;
+};
+
 module type DATABASE = {
   type t;
   type connection;
@@ -103,6 +113,11 @@ module type DATABASE = {
   let end_: t => Async.t(unit);
   let withConnection: (t, connection => Async.t('a)) => Async.t('a);
   let clean: t => Async.t(unit);
+};
+
+module type DATABASE_INSTANCE = {
+  module Database: DATABASE;
+  let this: Database.t;
 };
 
 module type MIGRATION = {
@@ -118,6 +133,8 @@ module type MIGRATION = {
     (connection, ~status: Status.t) =>
     Async.t(Belt.Result.t(Result.Execution.t, string));
 };
+
+module type MIGRATION_INSTANCE = {module Migration: MIGRATION;};
 
 module type PERSISTENCE = {
   module Connection: CONNECTION;
