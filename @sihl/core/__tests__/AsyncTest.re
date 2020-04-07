@@ -12,7 +12,7 @@ describe("Async", () => {
     let third = () =>
       wait(0)->mapAsync(_ => actual := Belt.List.add(actual^, 1));
     let allInOrder = fns => allInOrder(fns)->mapAsync(_ => actual^);
-    let%Common_Async result = allInOrder([first, second, third]);
+    let%SihlCore_Common_Async result = allInOrder([first, second, third]);
     result |> expect |> toEqual([1, 2, 3]) |> async;
   })
 });

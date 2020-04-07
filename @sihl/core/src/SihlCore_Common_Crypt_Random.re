@@ -1,4 +1,4 @@
-module Async = Common_Async;
+module Async = SihlCore_Common_Async;
 
 [@bs.module]
 external random: (~nBytes: int, ~encoding: string) => Async.t(string) =

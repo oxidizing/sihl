@@ -1,18 +1,21 @@
-module Make = (Persistence: Common_Db.PERSISTENCE) => {
-  module Async = Common_Async;
+module Log = SihlCore_Common.Log;
+module Config = SihlCore_Common.Config;
+
+module Make = (Persistence: SihlCore_Common_Db.PERSISTENCE) => {
+  module Async = SihlCore_Common_Async;
 
   exception InvalidConfiguration(string);
 
-  module App_Http = App_Http.Make(Persistence);
-  module App_Cli = App_Cli.Make(Persistence);
-  module App_Migration = App_Migration.Make(Persistence);
+  module App_Http = SihlCore_App_Http.Make(Persistence);
+  module App_Cli = SihlCore_App_Cli.Make(Persistence);
+  module App_Migration = SihlCore_App_Migration.Make(Persistence);
 
   module App = {
     type t =
-      App_App.t(
+      SihlCore_App_App.t(
         Persistence.Database.t,
-        Common_Http.endpoint,
-        Common_Http.command(Persistence.Connection.t),
+        SihlCore_Common.Http.endpoint,
+        SihlCore_Common.Http.command(Persistence.Connection.t),
       );
 
     let names = (apps: list(t)) =>
@@ -42,13 +45,13 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
   module Project = {
     type t = {
-      environment: Common_Config.Environment.t,
+      environment: Config.Environment.t,
       apps: list(App.t),
     };
 
     module RunningInstance = {
       type t = {
-        configuration: Common_Config.Configuration.t,
+        configuration: Config.Configuration.t,
         http: App_Http.application,
         db: Persistence.Database.t,
         apps: list(App.t),
@@ -75,26 +78,25 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
     let start = (project: t) => {
       let apps = project.apps;
-      Common_Log.info("Starting project with apps: " ++ App.names(apps), ());
-      Common_Log.info("Loading and validating project configuration", ());
+      Log.info("Starting project with apps: " ++ App.names(apps), ());
+      Log.info("Loading and validating project configuration", ());
       let configuration =
         switch (
-          Common_Config.Environment.configuration(
+          Config.Environment.configuration(
             project.environment,
             Belt.List.map(project.apps, app => app.configurationSchema),
           )
         ) {
         | Ok(configuration) =>
-          Common_Log.info("Project configuration is valid", ());
+          Log.info("Project configuration is valid", ());
           configuration;
         | Error(msg) =>
           let msg = "Project configuration is invalid: " ++ msg;
-          Common_Log.error(msg, ());
+          Log.error(msg, ());
           raise(InvalidConfiguration(msg));
         };
-      let%Async db =
-        Common_Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
-      Common_Log.info("Mounting HTTP routes", ());
+      let%Async db = Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
+      Log.info("Mounting HTTP routes", ());
       let routes =
         apps
         ->Belt.List.map(app => app.routes(db))
@@ -105,7 +107,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
     };
 
     let stop = (instance: RunningInstance.t) => {
-      Common_Log.info("Stopping apps: " ++ App.names(instance.apps), ());
+      Log.info("Stopping apps: " ++ App.names(instance.apps), ());
       let%Async _ = App_Http.shutdown(instance.http);
       Async.async @@ Persistence.Database.end_(instance.db);
     };
@@ -125,7 +127,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       let%Async project = Project.start(project);
       state := Some(project);
       // TODO this might get out of sync
-      Common_Config.configuration := Some(project.configuration);
+      Config.configuration := Some(project.configuration);
       Project.runMigrations(project)->Async.mapAsync(_ => project);
     };
 
@@ -133,10 +135,10 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       switch (state^) {
       | Some(instance) =>
         // TODO this might get out of sync
-        Common_Config.configuration := None;
+        Config.configuration := None;
         Project.stop(instance)->Async.mapAsync(_ => {state := None});
       | _ =>
-        Common_Log.warn(
+        Log.warn(
           "Can not stop app because it was not started, ignoring stop",
           (),
         );
@@ -149,7 +151,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       | Some(instance) =>
         Persistence.Database.withConnection(instance.db, conn => f(conn))
       | _ =>
-        Common_Log.warn("Can not seed because app was not started", ());
+        Log.warn("Can not seed because app was not started", ());
         raise(InvalidState("Can not seed because app was not started"));
       };
     };
@@ -158,13 +160,13 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
       switch (state^) {
       | Some(instance) => Persistence.Database.clean(instance.db)
       | _ =>
-        Common_Log.warn("Can not clean because app was not started", ());
+        Log.warn("Can not clean because app was not started", ());
         raise(InvalidState("Can not clean because app was not started"));
       };
     };
   };
 
-  type command = Common_Http.command(Persistence.Connection.t);
+  type command = SihlCore_Common.Http.command(Persistence.Connection.t);
 
   module Cli = {
     open! App_Cli;
@@ -218,7 +220,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
   };
 
   module Test = {
-    module Async = Common_Async;
+    module Async = SihlCore_Common_Async;
     module Integration = {
       open Jest;
       [%raw "require('isomorphic-fetch')"];

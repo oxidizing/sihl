@@ -1,7 +1,7 @@
 open Jest;
 open Expect;
 
-module Async = Common_Async;
+module Async = SihlCore_Common_Async;
 
 describe("Bcrypt", () => {
   open! Sihl.Common.Crypt.Bcrypt;

@@ -1,4 +1,4 @@
-module Async = Common_Async;
+module Async = SihlCore_Common_Async;
 
 let parseAuthToken = header => {
   let parts = header |> Js.String.split(" ") |> Belt.Array.reverse;

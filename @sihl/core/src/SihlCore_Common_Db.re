@@ -1,4 +1,4 @@
-module Async = Common_Async;
+module Async = SihlCore_Common_Async;
 
 module Bool = {
   let encoder = i => i ? Js.Json.number(1.0) : Js.Json.number(0.0);
@@ -99,7 +99,7 @@ module type CONNECTION = {
 module type DATABASE = {
   type t;
   type connection;
-  let setup: Common_Config.Db.Url.t => Async.t(t);
+  let setup: SihlCore_Common_Config.Db.Url.t => Async.t(t);
   let end_: t => Async.t(unit);
   let withConnection: (t, connection => Async.t('a)) => Async.t('a);
   let clean: t => Async.t(unit);

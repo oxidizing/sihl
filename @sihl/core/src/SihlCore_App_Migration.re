@@ -1,9 +1,12 @@
-module Async = Common_Async;
+module Async = SihlCore_Common_Async;
 
-module Make = (Persistence: Common_Db.PERSISTENCE) => {
-  let applyMigration = (migration: Common_Db.Migration.t, db) => {
+module Make = (Persistence: SihlCore_Common_Db.PERSISTENCE) => {
+  let applyMigration = (migration: SihlCore_Common_Db.Migration.t, db) => {
     let namespace = migration.namespace;
-    Common_Log.info({j|Checking migrations for app $(namespace)|j}, ());
+    SihlCore_Common.Log.info(
+      {j|Checking migrations for app $(namespace)|j},
+      (),
+    );
     Persistence.Database.withConnection(
       db,
       conn => {
@@ -26,11 +29,14 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
         let status = Belt.Result.getExn(status);
         let currentVersion = Persistence.Migration.Status.version(status);
         let steps =
-          Common_Db.Migration.stepsToApply(migration, currentVersion);
-        let newVersion = Common_Db.Migration.maxVersion(steps);
+          SihlCore_Common_Db.Migration.stepsToApply(
+            migration,
+            currentVersion,
+          );
+        let newVersion = SihlCore_Common_Db.Migration.maxVersion(steps);
         let nrSteps = steps |> Belt.List.length;
         if (nrSteps > 0) {
-          Common_Log.info(
+          SihlCore_Common.Log.info(
             {j|There are $(nrSteps) unapplied migrations for app $(namespace), current version is $(currentVersion) but should be $(newVersion)|j},
             (),
           );
@@ -47,20 +53,21 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
               Persistence.Migration.Status.setVersion(status, ~newVersion),
           )
           ->Async.mapAsync(_ =>
-              Common_Log.info(
+              SihlCore_Common.Log.info(
                 {j|Applied migrations for $(namespace) to reach schema version $(newVersion)|j},
                 (),
               )
             );
         } else {
-          Common_Log.info("No migrations to apply", ());
+          SihlCore_Common.Log.info("No migrations to apply", ());
           Async.async();
         };
       },
     );
   };
 
-  let applyMigrations = (migrations: list(Common_Db.Migration.t), db) => {
+  let applyMigrations =
+      (migrations: list(SihlCore_Common_Db.Migration.t), db) => {
     migrations
     ->Belt.List.map((migration, ()) => applyMigration(migration, db))
     ->Async.allInOrder;

@@ -2,11 +2,11 @@
 // Thanks to the author Murphy Randle
 // We'll consider creating a PR once our API is more stable
 
-module Make = (Persistence: Common_Db.PERSISTENCE) => {
-  module Async = Common_Async;
+module Make = (Persistence: SihlCore_Common_Db.PERSISTENCE) => {
+  module Async = SihlCore_Common_Async;
 
   module Endpoint = {
-    open Common_Async;
+    open SihlCore_Common_Async;
 
     module Status = {
       include Express.Response.StatusCode;
@@ -54,11 +54,11 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
     };
 
     let abortIfErr = (errorResponse, result) => {
-      Common_Async.mapAsync(result, result =>
+      SihlCore_Common_Async.mapAsync(result, result =>
         switch (result) {
         | Ok(result) => result
         | Error(msg) =>
-          Common_Log.error("HTTP error=" ++ msg, ());
+          SihlCore_Common.Log.error("HTTP error=" ++ msg, ());
           raise(HttpException(errorResponse));
         }
       );
@@ -324,7 +324,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
     let endpoint =
         (~middleware=?, cfg: endpointConfig('body, 'params, 'query))
-        : Common_Http.endpoint => {
+        : SihlCore_Common_Http.endpoint => {
       let wrappedHandler = (_next, req, res) => {
         let handleOCamlError =
           [@bs.open]
@@ -408,7 +408,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
           ~middleware=?,
           cfg: jsonEndpointConfig('body_in, 'query, 'params, 'body_out),
         )
-        : Common_Http.endpoint => {
+        : SihlCore_Common.Http.endpoint => {
       endpoint(
         ~middleware?,
         {
@@ -425,7 +425,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
     let dbEndpoint =
         (~middleware=?, cfg: dbEndpointConfig('body_in, 'params, 'query))
-        : Common_Http.endpoint => {
+        : SihlCore_Common.Http.endpoint => {
       endpoint(
         ~middleware?,
         {
@@ -444,7 +444,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
   let requireAuthorizationToken =
       (request: Endpoint.request('body, 'query, 'params)) => {
     let%Async header = Endpoint.requireHeader("authorization", request.req);
-    switch (Common_Http.parseAuthToken(header)) {
+    switch (SihlCore_Common.Http.parseAuthToken(header)) {
     | Some(token) => Async.async(token)
     | None => Endpoint.abort(BadRequest("No authorization token found"))
     };
@@ -473,7 +473,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
   module Express = Express;
 
-  type endpoint = Common_Http.endpoint;
+  type endpoint = SihlCore_Common.Http.endpoint;
 
   let endpoint = Endpoint.endpoint;
   let dbEndpoint = Endpoint.dbEndpoint;
@@ -505,7 +505,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
         ~port=effectivePort,
         ~onListen=
           _ => {
-            Common_Log.info(
+            SihlCore_Common.Log.info(
               "Server listening on port " ++ string_of_int(effectivePort),
               (),
             )
@@ -515,7 +515,7 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
 
     Express.HttpServer.on(
       httpServer,
-      `close(_ => Common_Log.info("Closing http server", ())),
+      `close(_ => SihlCore_Common.Log.info("Closing http server", ())),
     );
 
     {httpServer, expressApp: app, router};
@@ -528,6 +528,6 @@ module Make = (Persistence: Common_Db.PERSISTENCE) => {
   let shutdown = app => {
     app.httpServer |> closeServer;
     // this is a hack, we are waiting for the server to shutdown
-    Common_Async.wait(500);
+    SihlCore_Common_Async.wait(500);
   };
 };
