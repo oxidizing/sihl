@@ -1,3 +1,5 @@
+module Sihl = SihlUsers_Sihl;
+
 let environment =
   Sihl.Common.Config.Environment.make(
     ~development=[
@@ -22,4 +24,5 @@ let environment =
     ],
   );
 
-let project = Sihl.App.Main.Project.make(~environment, [App.app([])]);
+let project =
+  Sihl.App.Main.Project.make(~environment, [SihlUsers_App.app([])]);

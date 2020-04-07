@@ -1,4 +1,7 @@
+module Sihl = SihlUsers_Sihl;
 module Async = Sihl.Common.Async;
+module Service = SihlUsers_Service;
+module Model = SihlUsers_Model;
 
 module GetUsers = {
   [@decco]
@@ -324,6 +327,7 @@ module UpdateUserDetails = {
 
 module AdminUi = {
   module Dashboard = {
+    open! SihlUsers_AdminUi;
     [@decco]
     type query = {session: option(string)};
 
@@ -343,8 +347,7 @@ module AdminUi = {
             if (!Model.User.isAdmin(user)) {
               abort @@ Unauthorized("User is not an admin");
             };
-            Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />));
+            Async.async @@ OkHtml(HtmlTemplate.render(<Dashboard user />));
           | Some(token) =>
             let%Async user = Service.User.authenticate(conn, token);
             if (!Model.User.isAdmin(user)) {
@@ -354,7 +357,7 @@ module AdminUi = {
               [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
             Async.async @@
             OkHtmlWithHeaders(
-              AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />),
+              HtmlTemplate.render(<Dashboard user />),
               headers,
             );
           };
@@ -363,6 +366,8 @@ module AdminUi = {
   };
 
   module Login = {
+    open! SihlUsers_AdminUi;
+
     [@decco]
     type query = {
       email: option(string),
@@ -390,12 +395,10 @@ module AdminUi = {
             let%Async isTokenValid = Service.User.isTokenValid(conn, token);
             Async.async(
               isTokenValid
-                ? OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
+                ? OkHtml(HtmlTemplate.render(<Login />))
                 : FoundRedirect("/admin?session=" ++ token),
             );
-          | _ =>
-            Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
+          | _ => Async.async @@ OkHtml(HtmlTemplate.render(<Login />))
           };
         },
       });
@@ -419,6 +422,8 @@ module AdminUi = {
   };
 
   module User = {
+    open! SihlUsers_AdminUi;
+
     [@decco]
     type query = {
       action: option(string),
@@ -445,8 +450,7 @@ module AdminUi = {
           let%Async {action, password} = req.requireQuery(query_decode);
           switch (action, password) {
           | (None, _) =>
-            Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />))
+            Async.async @@ OkHtml(HtmlTemplate.render(<User user />))
           | (Some("set-password"), Some(password)) =>
             let%Async _ =
               Service.User.setPassword(
@@ -456,8 +460,8 @@ module AdminUi = {
               );
             Async.async @@
             OkHtml(
-              AdminUi.HtmlTemplate.render(
-                <AdminUi.User user msg="Successfully set password!" />,
+              HtmlTemplate.render(
+                <User user msg="Successfully set password!" />,
               ),
             );
           | (Some(action), _) =>
@@ -465,14 +469,14 @@ module AdminUi = {
               "Invalid action=" ++ action ++ " provided",
               (),
             );
-            Async.async @@
-            OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />));
+            Async.async @@ OkHtml(HtmlTemplate.render(<User user />));
           };
         },
       });
   };
 
   module Users = {
+    open! SihlUsers_AdminUi;
     let endpoint = (root, database) =>
       Sihl.App.Http.dbEndpoint({
         database,
@@ -485,8 +489,7 @@ module AdminUi = {
           let%Async user = Service.User.authenticate(conn, token);
           let%Async users = Service.User.getAll((conn, user));
           let users = users |> Sihl.Common.Db.Result.Query.rows;
-          Async.async @@
-          OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users />));
+          Async.async @@ OkHtml(HtmlTemplate.render(<Users users />));
         },
       });
   };

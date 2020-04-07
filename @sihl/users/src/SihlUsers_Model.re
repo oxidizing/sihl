@@ -1,3 +1,5 @@
+module Sihl = SihlUsers_Sihl;
+
 module User = {
   [@decco]
   type t = {

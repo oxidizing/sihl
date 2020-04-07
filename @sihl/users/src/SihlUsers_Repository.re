@@ -1,4 +1,6 @@
+module Sihl = SihlUsers_Sihl;
 module Async = Sihl.Common.Async;
+module Model = SihlUsers_Model;
 
 module User = {
   module GetAll = {

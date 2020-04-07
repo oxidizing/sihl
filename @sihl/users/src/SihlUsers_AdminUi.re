@@ -1,3 +1,5 @@
+module Model = SihlUsers_Model;
+
 module Page = {
   type t = {
     path: string,

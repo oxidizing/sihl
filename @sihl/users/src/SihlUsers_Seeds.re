@@ -1,4 +1,6 @@
+module Sihl = SihlUsers_Sihl;
 module Async = Sihl.Common.Async;
+module Service = SihlUsers_Service;
 
 let admin = conn =>
   Service.User.createAdmin(

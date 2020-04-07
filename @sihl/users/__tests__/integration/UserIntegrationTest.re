@@ -1,3 +1,9 @@
+module Sihl = SihlUsers_Sihl;
+module Routes = SihlUsers_Routes;
+module Project = SihlUsers_Project;
+module Seeds = SihlUsers_Seeds;
+module Model = SihlUsers_Model;
+
 include Sihl.App.Test;
 Integration.setupHarness(Project.project);
 open Jest;

@@ -1,4 +1,7 @@
+module Sihl = SihlUsers_Sihl;
 module Async = Sihl.Common.Async;
+module Model = SihlUsers_Model;
+module Repository = SihlUsers_Repository;
 
 module User = {
   let isAdmin = Model.User.isAdmin;

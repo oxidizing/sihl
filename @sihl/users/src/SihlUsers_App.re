@@ -1,3 +1,9 @@
+module Sihl = SihlUsers_Sihl;
+module AdminUi = SihlUsers_AdminUi;
+module Routes = SihlUsers_Routes;
+module Migrations = SihlUsers_Migrations;
+module Cli = SihlUsers_Cli;
+
 let name = "User Management App";
 let namespace = "users";
 

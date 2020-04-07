@@ -1,3 +1,5 @@
+module Sihl = SihlUsers_Sihl;
+
 module MariaDb = {
   let steps = namespace => [
     (1, "
