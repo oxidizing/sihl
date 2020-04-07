@@ -1,3 +1,5 @@
+module Sihl = SihlMysql_Sihl;
+
 module Query = {
   [@decco]
   type t = (list(Js.Json.t), Js.Json.t);

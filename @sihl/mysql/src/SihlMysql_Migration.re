@@ -1,6 +1,8 @@
+module Sihl = SihlMysql_Sihl;
 module Async = Sihl.Common.Async;
+module Persistence = SihlMysql_Persistence;
 
-type connection = Mysql_Persistence.Connection.t;
+type connection = Persistence.Connection.t;
 
 module Status: Sihl.Common.Db.MIGRATIONSTATUS = {
   [@decco]
@@ -28,7 +30,7 @@ CREATE TABLE IF NOT EXISTS core_migration_status (
 ";
 
   let query = connection => {
-    Mysql_Persistence.Connection.execute(connection, ~stmt, ~parameters=None);
+    Persistence.Connection.execute(connection, ~stmt, ~parameters=None);
   };
 };
 
@@ -47,7 +49,7 @@ WHERE namespace = ?;
 
   let query = (connection, ~namespace) => {
     let%Async result =
-      Mysql_Persistence.Connection.getOne(
+      Persistence.Connection.getOne(
         connection,
         ~stmt,
         ~parameters=Some(parameters_encode(namespace)),
@@ -74,7 +76,7 @@ WHERE namespace = ?;
 
   let query = (connection, ~namespace) => {
     let%Async result =
-      Mysql_Persistence.Connection.getOne(
+      Persistence.Connection.getOne(
         connection,
         ~stmt,
         ~parameters=Some(parameters_encode(namespace)),
@@ -104,7 +106,7 @@ dirty = VALUES(dirty)
   type parameters = (string, int, Sihl.Common.Db.Bool.t);
 
   let query = (connection, ~status: Status.t) => {
-    Mysql_Persistence.Connection.execute(
+    Persistence.Connection.execute(
       connection,
       ~stmt,
       ~parameters=

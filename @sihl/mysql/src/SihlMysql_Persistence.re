@@ -1,3 +1,4 @@
+module Sihl = SihlMysql_Sihl;
 module Async = Sihl.Common.Async;
 
 module Connection = {
@@ -27,25 +28,25 @@ module Connection = {
     let%Async result = query_(connection, stmt, parameters);
     let rows =
       result
-      ->Mysql_Result.Query.decode
+      ->SihlMysql_Result.Query.decode
       ->Belt.Result.map(((rows, _)) => rows);
     let%Async meta =
       query_(
         connection,
-        Mysql_Result.Query.MetaData.foundRowsQuery,
+        SihlMysql_Result.Query.MetaData.foundRowsQuery,
         Js.Json.stringArray([||]),
       );
-    let meta = meta->Mysql_Result.Query.decode;
+    let meta = meta->SihlMysql_Result.Query.decode;
     let totalCount: int =
       switch (meta) {
       | Ok(([row], _)) =>
         switch (
           row
           |> Sihl.Common.Error.Decco.stringifyDecoder(
-               Mysql_Result.Query.MetaData.t_decode,
+               SihlMysql_Result.Query.MetaData.t_decode,
              )
         ) {
-        | Ok(Mysql_Result.Query.MetaData.{totalCount}) => totalCount
+        | Ok(SihlMysql_Result.Query.MetaData.{totalCount}) => totalCount
         | Error(_) =>
           Sihl.Common.Db.abort(
             "Error happened in DB when decoding meta "
@@ -72,7 +73,7 @@ module Connection = {
       query_(connection, stmt, parameters)
       ->Async.mapAsync(result =>
           result
-          ->Mysql_Result.Query.decode
+          ->SihlMysql_Result.Query.decode
           ->Belt.Result.map(((rows, _)) => rows)
         );
     Async.async(
@@ -104,8 +105,8 @@ module Connection = {
     query_(connection, stmt, parameters)
     ->Async.mapAsync(result =>
         result
-        ->Mysql_Result.Execution.decode
-        ->Belt.Result.map(((Mysql_Result.Execution.{affectedRows}, _)) =>
+        ->SihlMysql_Result.Execution.decode
+        ->Belt.Result.map(((SihlMysql_Result.Execution.{affectedRows}, _)) =>
             Sihl.Common.Db.Result.Execution.make(affectedRows)
           )
       );
