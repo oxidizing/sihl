@@ -1,5 +1,5 @@
 module Sihl = SihlUsers_Sihl;
-module Async = Sihl.Common.Async;
+module Async = Sihl.Core.Async;
 module Service = SihlUsers_Service;
 
 let admin = conn =>

@@ -33,7 +33,7 @@ let routes = database => [
 ];
 
 let configurationSchema =
-  Sihl.Common.Config.Schema.[
+  Sihl.Core.Config.Schema.[
     string_(
       ~default="console",
       ~choices=["smtp", "console", "memory"],
@@ -50,7 +50,7 @@ let configurationSchema =
 let app = externalAdminUiPages => {
   let adminUiPages = Belt.List.concat(adminUiPages, externalAdminUiPages);
   AdminUi.State.pages := adminUiPages;
-  Sihl.App.Main.App.make(
+  Sihl.Core.Main.App.make(
     ~name,
     ~namespace,
     ~routes,

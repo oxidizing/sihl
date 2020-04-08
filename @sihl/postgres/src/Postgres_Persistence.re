@@ -1,4 +1,4 @@
-module Async = Sihl.Common.Async;
+module Async = Sihl.Core.Async;
 
 module Connection = {
   type t;
@@ -18,13 +18,13 @@ module Connection = {
     let%Async result = query_(connection, stmt, parameters);
     switch (Postgres_Result.decode(result)) {
     | Ok({rows, rowCount}) =>
-      Async.async @@ Ok(Sihl.Common.Db.Result.Query.make(rows, ~rowCount))
+      Async.async @@ Ok(Sihl.Core.Db.Result.Query.make(rows, ~rowCount))
     | Error(msg) =>
-      Sihl.Common.Db.abort(
+      Sihl.Core.Db.abort(
         "Error happened in DB when decoding result of getMany() msg="
         ++ msg
         ++ " with "
-        ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+        ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
       )
     };
   };
@@ -41,19 +41,19 @@ module Connection = {
       | Ok({rows: []}) =>
         Error(
           "No rows found in database "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       | Ok({rows: _}) =>
         Error(
           "Two or more rows found when we were expecting only one "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       | Error(msg) =>
-        Sihl.Common.Db.abort(
+        Sihl.Core.Db.abort(
           "Error happened in DB when decoding result of getOne() msg="
           ++ msg
           ++ " with "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       }
     );
@@ -67,7 +67,7 @@ module Connection = {
     result
     ->Postgres_Result.decode
     ->Belt.Result.map(({rowCount}) =>
-        Sihl.Common.Db.Result.Execution.make(rowCount)
+        Sihl.Core.Db.Result.Execution.make(rowCount)
       )
     ->Async.async;
   };
@@ -80,7 +80,7 @@ module Connection = {
       let%Async _ =
         execute(connection, ~stmt="COMMIT;", ~parameters=None)
         ->Async.catchAsync(error => {
-            Sihl.Common.Log.error(
+            Sihl.Core.Log.error(
               "error happened while commiting the transaction, rolling back",
               (),
             );
@@ -118,10 +118,10 @@ module Database = {
   [@bs.send] external end_: handle => Async.t(unit) = "end";
   [@bs.send] external connect: handle => Async.t(Connection.t) = "connect";
 
-  let setup = (databaseUrl: Sihl.Common.Config.Db.Url.t) => {
-    let config: Sihl.Common.Config.Db.t =
-      Sihl.Common.Config.Db.makeFromUrl(databaseUrl)
-      |> Sihl.Common.Error.failIfError;
+  let setup = (databaseUrl: Sihl.Core.Config.Db.Url.t) => {
+    let config: Sihl.Core.Config.Db.t =
+      Sihl.Core.Config.Db.makeFromUrl(databaseUrl)
+      |> Sihl.Core.Error.failIfError;
     let handle =
       setup({
         "user": config.dbUser,

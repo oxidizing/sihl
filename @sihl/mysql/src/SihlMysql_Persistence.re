@@ -1,5 +1,5 @@
 module Sihl = SihlMysql_Sihl;
-module Async = Sihl.Common.Async;
+module Async = Sihl.Core.Async;
 
 module Connection = {
   type t;
@@ -11,8 +11,8 @@ module Connection = {
     try(release(connection)) {
     | Js.Exn.Error(e) =>
       switch (Js.Exn.message(e)) {
-      | Some(message) => Sihl.Common.Log.error(message, ())
-      | None => Sihl.Common.Log.error("Failed to release client", ())
+      | Some(message) => Sihl.Core.Log.error(message, ())
+      | None => Sihl.Core.Log.error("Failed to release client", ())
       }
     };
 
@@ -42,26 +42,26 @@ module Connection = {
       | Ok(([row], _)) =>
         switch (
           row
-          |> Sihl.Common.Error.Decco.stringifyDecoder(
+          |> Sihl.Core.Error.Decco.stringifyDecoder(
                SihlMysql_Result.Query.MetaData.t_decode,
              )
         ) {
         | Ok(SihlMysql_Result.Query.MetaData.{totalCount}) => totalCount
         | Error(_) =>
-          Sihl.Common.Db.abort(
+          Sihl.Core.Db.abort(
             "Error happened in DB when decoding meta "
-            ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+            ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
           )
         }
       | _ =>
-        Sihl.Common.Db.abort(
+        Sihl.Core.Db.abort(
           "Error happened in DB when fetching FOUND_ROWS() "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       };
     rows
     ->Belt.Result.map(rows =>
-        Sihl.Common.Db.Result.Query.make(rows, ~rowCount=totalCount)
+        Sihl.Core.Db.Result.Query.make(rows, ~rowCount=totalCount)
       )
     ->Async.async;
   };
@@ -82,18 +82,18 @@ module Connection = {
       | Ok([]) =>
         Error(
           "No rows found in database "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       | Ok(_) =>
         Error(
           "Two or more rows found when we were expecting only one "
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       | Error(msg) =>
-        Sihl.Common.Db.abort(
+        Sihl.Core.Db.abort(
           "Error happened in DB when getOne() msg="
           ++ msg
-          ++ Sihl.Common.Db.debug(stmt, Some(parameters)),
+          ++ Sihl.Core.Db.debug(stmt, Some(parameters)),
         )
       },
     );
@@ -107,7 +107,7 @@ module Connection = {
         result
         ->SihlMysql_Result.Execution.decode
         ->Belt.Result.map(((SihlMysql_Result.Execution.{affectedRows}, _)) =>
-            Sihl.Common.Db.Result.Execution.make(affectedRows)
+            Sihl.Core.Db.Result.Execution.make(affectedRows)
           )
       );
   };
@@ -120,7 +120,7 @@ module Connection = {
       let%Async _ =
         execute(connection, ~stmt="COMMIT;", ~parameters=None)
         ->Async.catchAsync(error => {
-            Sihl.Common.Log.error(
+            Sihl.Core.Log.error(
               "error happened while commiting the transaction, rolling back",
               (),
             );
@@ -141,16 +141,16 @@ module Database = {
   };
 
   [@bs.module "mysql2/promise"]
-  external setup: Sihl.Common.Db.Config.t => handle = "createPool";
+  external setup: Sihl.Core.Db.Config.t => handle = "createPool";
 
   [@bs.send] external end_: handle => unit = "end";
   [@bs.send]
   external connect: handle => Async.t(Connection.t) = "getConnection";
 
-  let setup = (databaseUrl: Sihl.Common.Config.Db.Url.t) => {
-    let config: Sihl.Common.Config.Db.t =
-      Sihl.Common.Config.Db.makeFromUrl(databaseUrl)
-      |> Sihl.Common.Error.failIfError;
+  let setup = (databaseUrl: Sihl.Core.Config.Db.Url.t) => {
+    let config: Sihl.Core.Config.Db.t =
+      Sihl.Core.Config.Db.makeFromUrl(databaseUrl)
+      |> Sihl.Core.Error.failIfError;
     let handle =
       setup({
         "user": config.dbUser,
@@ -171,8 +171,8 @@ module Database = {
       try(end_(db.handle)) {
       | Js.Exn.Error(e) =>
         switch (Js.Exn.message(e)) {
-        | Some(message) => Sihl.Common.Log.error(message, ())
-        | None => Sihl.Common.Log.error("Failed to end pool", ())
+        | Some(message) => Sihl.Core.Log.error(message, ())
+        | None => Sihl.Core.Log.error("Failed to end pool", ())
         }
       }
     );
@@ -215,24 +215,24 @@ module Database = {
             | Ok((rows, _)) =>
               rows
               ->Belt.List.map(
-                  Sihl.Common.Error.Decco.stringifyDecoder(t_decode),
+                  Sihl.Core.Error.Decco.stringifyDecoder(t_decode),
                 )
               ->Belt.List.map(result =>
                   switch (result) {
                   | Ok(result) => result
                   | Error(msg) =>
-                    Sihl.Common.Db.abort(
+                    Sihl.Core.Db.abort(
                       "Error happened in DB when getMany() msg="
                       ++ msg
-                      ++ Sihl.Common.Db.debug(stmt, None),
+                      ++ Sihl.Core.Db.debug(stmt, None),
                     )
                   }
                 )
             | Error(msg) =>
-              Sihl.Common.Db.abort(
+              Sihl.Core.Db.abort(
                 "Error happened in DB when getMany() msg="
                 ++ msg
-                ++ Sihl.Common.Db.debug(stmt, None),
+                ++ Sihl.Core.Db.debug(stmt, None),
               )
             };
           let%Async _ =
@@ -243,7 +243,7 @@ module Database = {
                     ->Async.mapAsync(_ => ())
                   : Async.async()
               })
-            ->Sihl.Common.Async.allInOrder;
+            ->Sihl.Core.Async.allInOrder;
 
           let%Async _ =
             Connection.execute(

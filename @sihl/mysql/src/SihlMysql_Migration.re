@@ -1,17 +1,17 @@
 module Sihl = SihlMysql_Sihl;
-module Async = Sihl.Common.Async;
+module Async = Sihl.Core.Async;
 module Persistence = SihlMysql_Persistence;
 
 type connection = Persistence.Connection.t;
 
-module Status: Sihl.Common.Db.MIGRATIONSTATUS = {
+module Status: Sihl.Core.Db.MIGRATIONSTATUS = {
   [@decco]
   type t = {
     namespace: string,
     version: int,
-    dirty: Sihl.Common.Db.Bool.t,
+    dirty: Sihl.Core.Db.Bool.t,
   };
-  let t_decode = Sihl.Common.Error.Decco.stringifyDecoder(t_decode);
+  let t_decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);
   let make = (~namespace) => {namespace, version: 0, dirty: false};
   let version = status => status.version;
   let namespace = status => status.namespace;
@@ -103,7 +103,7 @@ dirty = VALUES(dirty)
 ;";
 
   [@decco]
-  type parameters = (string, int, Sihl.Common.Db.Bool.t);
+  type parameters = (string, int, Sihl.Core.Db.Bool.t);
 
   let query = (connection, ~status: Status.t) => {
     Persistence.Connection.execute(

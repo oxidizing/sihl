@@ -1,5 +1,5 @@
 module Sihl = SihlUsers_Sihl;
-module Async = Sihl.Common.Async;
+module Async = Sihl.Core.Async;
 module Model = SihlUsers_Model;
 
 module User = {
@@ -20,10 +20,10 @@ FROM users_users;
 ";
 
     let query:
-      Sihl.App.Repo.Connection.t =>
-      Async.t(Sihl.Common.Db.Result.Query.t(Model.User.t)) =
+      Sihl.Core.Repo.Connection.t =>
+      Async.t(Sihl.Core.Db.Result.Query.t(Model.User.t)) =
       connection =>
-        Sihl.App.Repo.getMany(
+        Sihl.Core.Repo.getMany(
           ~connection,
           ~stmt,
           ~decode=Model.User.t_decode,
@@ -52,10 +52,10 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''));
     type parameters = string;
 
     let query:
-      (Sihl.App.Repo.Connection.t, ~userId: string) =>
+      (Sihl.Core.Repo.Connection.t, ~userId: string) =>
       Async.t(Belt.Result.t(Model.User.t, string)) = {
       (connection, ~userId) =>
-        Sihl.App.Repo.getOne(
+        Sihl.Core.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(userId),
@@ -86,10 +86,10 @@ WHERE email = ?;
     type parameters = string;
 
     let query:
-      (Sihl.App.Repo.Connection.t, ~email: string) =>
+      (Sihl.Core.Repo.Connection.t, ~email: string) =>
       Async.t(Belt.Result.t(Model.User.t, string)) =
       (connection, ~email) =>
-        Sihl.App.Repo.getOne(
+        Sihl.Core.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(email),
@@ -149,7 +149,7 @@ confirmed = VALUES(confirmed)
     );
 
     let query = (connection, ~user: Model.User.t) =>
-      Sihl.App.Repo.execute(
+      Sihl.Core.Repo.execute(
         ~parameters=
           parameters_encode((
             user.id,
@@ -196,7 +196,7 @@ kind = VALUES(kind)
     type parameters = (string, string, string, string, string);
 
     let query = (connection, ~token: Model.Token.t) => {
-      Sihl.App.Repo.execute(
+      Sihl.Core.Repo.execute(
         ~parameters=
           parameters_encode((
             token.id,
@@ -229,10 +229,10 @@ WHERE token LIKE ?;
     type parameters = string;
 
     let query:
-      (Sihl.App.Repo.Connection.t, ~token: string) =>
+      (Sihl.Core.Repo.Connection.t, ~token: string) =>
       Async.t(Belt.Result.t(Model.Token.t, string)) =
       (connection, ~token) =>
-        Sihl.App.Repo.getOne(
+        Sihl.Core.Repo.getOne(
           ~connection,
           ~stmt,
           ~parameters=parameters_encode(token),
@@ -255,7 +255,7 @@ AND users_tokens.kind LIKE ?;
     type parameters = (string, string);
 
     let query = (connection, ~userId: string, ~kind: string) => {
-      Sihl.App.Repo.execute(
+      Sihl.Core.Repo.execute(
         ~parameters=parameters_encode((userId, kind)),
         connection,
         stmt,

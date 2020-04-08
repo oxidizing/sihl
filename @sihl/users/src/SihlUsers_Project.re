@@ -1,7 +1,7 @@
 module Sihl = SihlUsers_Sihl;
 
 let environment =
-  Sihl.Common.Config.Environment.make(
+  Sihl.Core.Config.Environment.make(
     ~development=[
       ("BASE_URL", "http://localhost:3000"),
       ("EMAIL_SENDER", "josef@oxidizing.io"),
@@ -25,4 +25,4 @@ let environment =
   );
 
 let project =
-  Sihl.App.Main.Project.make(~environment, [SihlUsers_App.app([])]);
+  Sihl.Core.Main.Project.make(~environment, [SihlUsers_App.app([])]);

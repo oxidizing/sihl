@@ -1,1 +1,1 @@
-module Common = SihlCore.Common;
+module Core = SihlCore;

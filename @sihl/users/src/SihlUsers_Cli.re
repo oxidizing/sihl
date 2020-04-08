@@ -1,8 +1,8 @@
 module Sihl = SihlUsers_Sihl;
-module Async = Sihl.Common.Async;
+module Async = Sihl.Core.Async;
 module Service = SihlUsers_Service;
 
-let createAdmin: Sihl.App.Cli.command = {
+let createAdmin: Sihl.Core.Cli.command = {
   name: "createadmin",
   description: "createadmin <username> <email> <password>",
   f: (conn, args, description) => {
