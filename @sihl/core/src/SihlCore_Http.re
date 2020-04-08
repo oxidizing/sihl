@@ -420,10 +420,10 @@ module Endpoint = {
 
   let dbEndpoint =
       (
+        module I: SihlCore_Db.PERSISTENCE_INSTANCE,
         ~middleware=?,
         cfg:
           dbEndpointConfig('database, 'connection, 'body_in, 'params, 'query),
-        module I: SihlCore_Db.PERSISTENCE,
       )
       : Core.endpoint => {
     endpoint(
@@ -432,7 +432,7 @@ module Endpoint = {
         path: cfg.path,
         verb: cfg.verb,
         handler: req => {
-          I.Database.withConnection(cfg.database, conn =>
+          I.Persistence.Database.withConnection(I.database, conn =>
             cfg.handler(conn, req)
           );
         },

@@ -2,27 +2,31 @@ module Async = SihlCore_Async;
 module Db = SihlCore_Db;
 module Log = SihlCore_Log;
 
-let applyMigration = (module I: Db.PERSISTENCE, migration: Db.Migration.t, db) => {
+let applyMigration =
+    (module I: Db.PERSISTENCE_INSTANCE, migration: Db.Migration.t) => {
   let namespace = migration.namespace;
   Log.info({j|Checking migrations for app $(namespace)|j}, ());
-  I.Database.withConnection(
-    db,
+  I.Persistence.Database.withConnection(
+    I.database,
     conn => {
-      let%Async _ = I.Migration.setup(conn);
+      let%Async _ = I.Persistence.Migration.setup(conn);
       let%Async hasStatus =
-        I.Migration.has(conn, ~namespace=migration.namespace);
+        I.Persistence.Migration.has(conn, ~namespace=migration.namespace);
       let%Async _ =
         !hasStatus
-          ? I.Migration.upsert(
+          ? I.Persistence.Migration.upsert(
               conn,
-              ~status=I.Migration.Status.make(~namespace=migration.namespace),
+              ~status=
+                I.Persistence.Migration.Status.make(
+                  ~namespace=migration.namespace,
+                ),
             )
             ->Async.mapAsync(_ => ())
           : Async.async();
       let%Async status =
-        I.Migration.get(conn, ~namespace=migration.namespace);
+        I.Persistence.Migration.get(conn, ~namespace=migration.namespace);
       let status = Belt.Result.getExn(status);
-      let currentVersion = I.Migration.Status.version(status);
+      let currentVersion = I.Persistence.Migration.Status.version(status);
       let steps = Db.Migration.stepsToApply(migration, currentVersion);
       let newVersion = Db.Migration.maxVersion(steps);
       let nrSteps = steps |> Belt.List.length;
@@ -33,14 +37,15 @@ let applyMigration = (module I: Db.PERSISTENCE, migration: Db.Migration.t, db) =
         );
         let%Async _ =
           steps
-          ->Belt.List.map(((_, stmt), ()) =>
-              I.Connection.execute(conn, ~stmt, ~parameters=None)
+          ->Belt.List.map(((_, stmt), ()) => {
+              I.Persistence.Connection.execute(conn, ~stmt, ~parameters=None)
               ->Async.mapAsync(_ => ())
-            )
+            })
           ->Async.allInOrder;
-        I.Migration.upsert(
+        I.Persistence.Migration.upsert(
           conn,
-          ~status=I.Migration.Status.setVersion(status, ~newVersion),
+          ~status=
+            I.Persistence.Migration.Status.setVersion(status, ~newVersion),
         )
         ->Async.mapAsync(_ =>
             Log.info(
@@ -57,10 +62,8 @@ let applyMigration = (module I: Db.PERSISTENCE, migration: Db.Migration.t, db) =
 };
 
 let applyMigrations =
-    (module I: Db.PERSISTENCE, migrations: list(Db.Migration.t), db) => {
+    (module I: Db.PERSISTENCE_INSTANCE, migrations: list(Db.Migration.t)) => {
   migrations
-  ->Belt.List.map((migration, ()) =>
-      applyMigration((module I), migration, db)
-    )
+  ->Belt.List.map((migration, ()) => applyMigration((module I), migration))
   ->Async.allInOrder;
 };

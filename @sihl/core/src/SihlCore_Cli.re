@@ -20,36 +20,34 @@ let trimArgs = (args, command) => {
   };
 };
 
-type command = SihlCore_Cli_Core.command(SihlCore_Db.Connection.t);
+/* let runCommand = (module P: Db.PERSISTENCE, command, args) => { */
+/*   let%Async db = SihlCore_Config.Db.Url.readFromEnv() |> P.Database.setup; */
+/*   let%Async _ = */
+/*     P.Database.withConnection(db, conn => */
+/*       Async.catchAsync(command.f(conn, args, command.description), err => */
+/*         Async.async(Js.log2("Failed to run command: ", err)) */
+/*       ) */
+/*     ); */
+/*   P.Database.end_(db); */
+/* }; */
 
-let runCommand = (module P: Db.PERSISTENCE, command: command, args) => {
-  let%Async db = SihlCore_Config.Db.Url.readFromEnv() |> P.Database.setup;
-  let%Async _ =
-    P.Database.withConnection(db, conn =>
-      Async.catchAsync(command.f(conn, args, command.description), err =>
-        Async.async(Js.log2("Failed to run command: ", err))
-      )
-    );
-  P.Database.end_(db);
-};
+/* let printCommands = commands => { */
+/*   Js.log("These are all supported commands:"); */
+/*   Js.log("---------------------------------"); */
+/*   commands */
+/*   ->Js.Dict.values */
+/*   ->Belt.Array.forEach((command: command) => */
+/*       Js.log("sihl " ++ command.description) */
+/*     ); */
+/*   Js.log("---------------------------------"); */
+/* }; */
 
-let printCommands = commands => {
-  Js.log("These are all supported commands:");
-  Js.log("---------------------------------");
-  commands
-  ->Js.Dict.values
-  ->Belt.Array.forEach((command: command) =>
-      Js.log("sihl " ++ command.description)
-    );
-  Js.log("---------------------------------");
-};
-
-let getCommand = (commands, commandName) => {
-  switch (Js.Dict.get(commands, commandName)) {
-  | None =>
-    let msg = "Unsupported command provided: " ++ commandName;
-    printCommands(commands);
-    raise(InvalidCommandException(msg));
-  | Some(command) => command
-  };
-};
+/* let getCommand = (commands, commandName) => { */
+/*   switch (Js.Dict.get(commands, commandName)) { */
+/*   | None => */
+/*     let msg = "Unsupported command provided: " ++ commandName; */
+/*     printCommands(commands); */
+/*     raise(InvalidCommandException(msg)); */
+/*   | Some(command) => command */
+/*   }; */
+/* }; */
