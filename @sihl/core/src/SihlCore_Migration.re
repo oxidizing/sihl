@@ -1,16 +1,10 @@
-module Async = SihlCore_Common_Async;
+module Async = SihlCore_Async;
+module Db = SihlCore_Db;
+module Log = SihlCore_Log;
 
-let applyMigration =
-    (
-      module I: SihlCore_Common_Db.PERSISTENCE,
-      migration: SihlCore_Common_Db.Migration.t,
-      db,
-    ) => {
+let applyMigration = (module I: Db.PERSISTENCE, migration: Db.Migration.t, db) => {
   let namespace = migration.namespace;
-  SihlCore_Common.Log.info(
-    {j|Checking migrations for app $(namespace)|j},
-    (),
-  );
+  Log.info({j|Checking migrations for app $(namespace)|j}, ());
   I.Database.withConnection(
     db,
     conn => {
@@ -29,12 +23,11 @@ let applyMigration =
         I.Migration.get(conn, ~namespace=migration.namespace);
       let status = Belt.Result.getExn(status);
       let currentVersion = I.Migration.Status.version(status);
-      let steps =
-        SihlCore_Common_Db.Migration.stepsToApply(migration, currentVersion);
-      let newVersion = SihlCore_Common_Db.Migration.maxVersion(steps);
+      let steps = Db.Migration.stepsToApply(migration, currentVersion);
+      let newVersion = Db.Migration.maxVersion(steps);
       let nrSteps = steps |> Belt.List.length;
       if (nrSteps > 0) {
-        SihlCore_Common.Log.info(
+        Log.info(
           {j|There are $(nrSteps) unapplied migrations for app $(namespace), current version is $(currentVersion) but should be $(newVersion)|j},
           (),
         );
@@ -50,13 +43,13 @@ let applyMigration =
           ~status=I.Migration.Status.setVersion(status, ~newVersion),
         )
         ->Async.mapAsync(_ =>
-            SihlCore_Common.Log.info(
+            Log.info(
               {j|Applied migrations for $(namespace) to reach schema version $(newVersion)|j},
               (),
             )
           );
       } else {
-        SihlCore_Common.Log.info("No migrations to apply", ());
+        Log.info("No migrations to apply", ());
         Async.async();
       };
     },
@@ -64,11 +57,7 @@ let applyMigration =
 };
 
 let applyMigrations =
-    (
-      module I: SihlCore_Common.Db.PERSISTENCE,
-      migrations: list(SihlCore_Common_Db.Migration.t),
-      db,
-    ) => {
+    (module I: Db.PERSISTENCE, migrations: list(Db.Migration.t), db) => {
   migrations
   ->Belt.List.map((migration, ()) =>
       applyMigration((module I), migration, db)

@@ -1,4 +1,4 @@
-module Async = SihlCore_Common_Async;
+module Async = SihlCore_Async;
 
 module Salt = {
   type t = string;

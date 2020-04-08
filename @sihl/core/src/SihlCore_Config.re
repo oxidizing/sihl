@@ -23,7 +23,7 @@ module Env = {
     let env =
       processEnv()
       ->Configuration.t_decode
-      ->SihlCore_Common_Error.Decco.stringifyResult;
+      ->SihlCore_Error.Decco.stringifyResult;
     switch (env) {
     | Ok(env) => env
     | Error(msg) =>
@@ -110,7 +110,7 @@ module Schema = {
       | (Int(_, _), Some(value)) =>
         value
         ->int_of_string_opt
-        ->SihlCore_Common_Error.optionAsResult(
+        ->SihlCore_Error.optionAsResult(
             {j|provided configuration is not an int key=$(key), value=$(value)|j},
           )
         ->Belt.Result.map(_ => ())
@@ -125,7 +125,7 @@ module Schema = {
       | (Bool(_, _), Some(value)) =>
         value
         ->bool_of_string_opt
-        ->SihlCore_Common_Error.optionAsResult(
+        ->SihlCore_Error.optionAsResult(
             {j|provided configuration is not a bool key=$(key), value=$(value)|j},
           )
         ->Belt.Result.map(_ => ())

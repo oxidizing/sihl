@@ -1,18 +1,18 @@
-module Common = SihlCore_Common;
-module Log = Common.Log;
-module Config = Common.Config;
-module Async = Common.Async;
-module Http = SihlCore_App_Http;
+module Log = SihlCore_Log;
+module Config = SihlCore_Config;
+module Async = SihlCore_Async;
+module Http = SihlCore_Http;
+module Db = SihlCore_Db;
 
 // TODO centralize
 exception InvalidConfiguration(string);
 
 module App = {
   type t =
-    SihlCore_App_App.t(
-      Common.Db.Database.t,
-      SihlCore_App_Http_Core.endpoint,
-      SihlCore_App_Cli_Core.command(Common.Db.Connection.t),
+    SihlCore_App.t(
+      Db.Database.t,
+      SihlCore_Http_Core.endpoint,
+      SihlCore_Cli_Core.command(Db.Connection.t),
     );
 
   let names = (apps: list(t)) =>
@@ -44,10 +44,10 @@ module Project = {
   type t = {
     environment: Config.Environment.t,
     apps: list(App.t),
-    persistence: (module Common.Db.PERSISTENCE),
+    persistence: (module Db.PERSISTENCE),
   };
 
-  let make = (module P: Common.Db.PERSISTENCE, ~environment, apps) => {
+  let make = (module P: Db.PERSISTENCE, ~environment, apps) => {
     {environment, apps, persistence: (module P)};
   };
 
@@ -55,7 +55,7 @@ module Project = {
     type t = {
       configuration: Config.Configuration.t,
       http: Http.application,
-      db: Common.Db.Database.t,
+      db: Db.Database.t,
       apps: list(App.t),
     };
     let http = instance => instance.http;
@@ -68,14 +68,9 @@ module Project = {
     };
   };
 
-  let runMigrations =
-      (module P: Common.Db.PERSISTENCE, instance: RunningInstance.t) => {
+  let runMigrations = (module P: Db.PERSISTENCE, instance: RunningInstance.t) => {
     let migrations = instance.apps->Belt.List.map(app => app.migration);
-    SihlCore_App_Migration.applyMigrations(
-      (module P),
-      migrations,
-      instance.db,
-    );
+    SihlCore_Migration.applyMigrations((module P), migrations, instance.db);
   };
 
   let start = (project: t) => {
@@ -109,7 +104,7 @@ module Project = {
     Async.async @@ RunningInstance.make(~configuration, ~http, ~db, ~apps);
   };
 
-  let stop = (module P: Common.Db.PERSISTENCE, instance: RunningInstance.t) => {
+  let stop = (module P: Db.PERSISTENCE, instance: RunningInstance.t) => {
     Log.info("Stopping apps: " ++ App.names(instance.apps), ());
     let%Async _ = Http.shutdown(instance.http);
     Async.async @@ P.Database.end_(instance.db);
@@ -135,7 +130,7 @@ module Manager = {
     ->Async.mapAsync(_ => project);
   };
 
-  let stop = (module P: Common.Db.PERSISTENCE) => {
+  let stop = (module P: Db.PERSISTENCE) => {
     switch (state^) {
     | Some(instance) =>
       // TODO this might get out of sync
@@ -151,7 +146,7 @@ module Manager = {
     };
   };
 
-  let seed = (module P: Common.Db.PERSISTENCE, f) => {
+  let seed = (module P: Db.PERSISTENCE, f) => {
     switch (state^) {
     | Some(instance) =>
       P.Database.withConnection(instance.db, conn => f(conn))
@@ -161,7 +156,7 @@ module Manager = {
     };
   };
 
-  let clean = (module P: Common.Db.PERSISTENCE) => {
+  let clean = (module P: Db.PERSISTENCE) => {
     switch (state^) {
     | Some(instance) => P.Database.clean(instance.db)
     | _ =>
@@ -172,8 +167,8 @@ module Manager = {
 };
 
 module Cli = {
-  module Cli = SihlCore_App_Cli;
-  type command = SihlCore_App_Cli_Core.command(Common.Db.Connection.t);
+  module Cli = SihlCore_Cli;
+  type command = SihlCore_Cli_Core.command(Db.Connection.t);
 
   let version: command = {
     name: "version",

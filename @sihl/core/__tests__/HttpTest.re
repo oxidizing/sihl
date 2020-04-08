@@ -4,7 +4,7 @@ open Expect;
 describe("Http", () => {
   test("parses header", () => {
     "Bearer foobar123"
-    |> Sihl.App.Http.Core.parseAuthToken
+    |> Sihl.Core.Http.Core.parseAuthToken
     |> expect
     |> toEqual(Some("foobar123"))
   })

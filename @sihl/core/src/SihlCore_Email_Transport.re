@@ -1,7 +1,6 @@
-module Async = SihlCore_Common_Async;
+module Async = SihlCore_Async;
 
-let devInbox: Pervasives.ref(option(SihlCore_Common_Email_Core.t)) =
-  ref(None);
+let devInbox: Pervasives.ref(option(SihlCore_Email_Core.t)) = ref(None);
 
 let getLastEmail = () => devInbox^;
 
@@ -58,8 +57,8 @@ module Nodemailer = {
   };
 };
 
-let send = (email: SihlCore_Common_Email_Core.t) =>
-  switch (SihlCore_Common_Config.get(~default="console", "EMAIL_BACKEND")) {
+let send = (email: SihlCore_Email_Core.t) =>
+  switch (SihlCore_Config.get(~default="console", "EMAIL_BACKEND")) {
   | "smtp" =>
     let recipient = email.recipient;
     let email =
@@ -72,26 +71,25 @@ let send = (email: SihlCore_Common_Email_Core.t) =>
       );
     let transport =
       Nodemailer.Transport.make(
-        ~host=SihlCore_Common_Config.get("SMTP_HOST"),
-        ~port=SihlCore_Common_Config.getInt("SMTP_PORT"),
+        ~host=SihlCore_Config.get("SMTP_HOST"),
+        ~port=SihlCore_Config.getInt("SMTP_PORT"),
         ~auth={
-          "user": SihlCore_Common_Config.get("SMTP_AUTH_USERNAME"),
-          "pass": SihlCore_Common_Config.get("SMTP_AUTH_PASSWORD"),
+          "user": SihlCore_Config.get("SMTP_AUTH_USERNAME"),
+          "pass": SihlCore_Config.get("SMTP_AUTH_PASSWORD"),
         },
-        ~secure=SihlCore_Common_Config.getBool("SMTP_SECURE"),
-        ~pool=SihlCore_Common_Config.getBool(~default=false, "SMTP_POOL"),
+        ~secure=SihlCore_Config.getBool("SMTP_SECURE"),
+        ~pool=SihlCore_Config.getBool(~default=false, "SMTP_POOL"),
         (),
       );
     Nodemailer.Transport.send(transport, email)
     ->Async.mapAsync(_ =>
-        SihlCore_Common_Log.info(
+        SihlCore_Log.info(
           "email sent using smtp backend recipient=" ++ recipient,
           (),
         )
       );
   | "console" =>
-    Async.async @@
-    SihlCore_Common_Log.info(SihlCore_Common_Email_Core.toString(email), ())
+    Async.async @@ SihlCore_Log.info(SihlCore_Email_Core.toString(email), ())
   | _ =>
     devInbox := Some(email);
     Async.async();

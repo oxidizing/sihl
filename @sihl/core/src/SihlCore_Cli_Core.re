@@ -1,4 +1,4 @@
-module Async = SihlCore_Common.Async;
+module Async = SihlCore_Async;
 
 type command('a) = {
   name: string,

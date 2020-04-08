@@ -1,5 +1,8 @@
-module Repo = SihlCore_App_Repo;
-module Http = SihlCore_App_Http;
-module Main = SihlCore_App_Main;
-module Test = Main.Test;
-module Cli = SihlCore_App_Cli;
+type t('database, 'endpoint, 'cliCommand) = {
+  name: string,
+  namespace: string,
+  routes: 'database => list('endpoint),
+  migration: SihlCore_Db.Migration.t,
+  commands: list('cliCommand),
+  configurationSchema: SihlCore_Config.Schema.t,
+};

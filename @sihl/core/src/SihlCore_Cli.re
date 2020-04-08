@@ -1,5 +1,5 @@
-module Common = SihlCore_Common;
-module Async = Common.Async;
+module Async = SihlCore_Async;
+module Db = SihlCore_Db;
 
 // TODO centralize
 exception InvalidCommandException(string);
@@ -20,17 +20,17 @@ let trimArgs = (args, command) => {
   };
 };
 
-type command = SihlCore_App_Cli_Core.command(Common.Db.Connection.t);
+type command = SihlCore_Cli_Core.command(SihlCore_Db.Connection.t);
 
-let runCommand = (module I: Common.Db.PERSISTENCE, command: command, args) => {
-  let%Async db = Common.Config.Db.Url.readFromEnv() |> I.Database.setup;
+let runCommand = (module P: Db.PERSISTENCE, command: command, args) => {
+  let%Async db = SihlCore_Config.Db.Url.readFromEnv() |> P.Database.setup;
   let%Async _ =
-    I.Database.withConnection(db, conn =>
+    P.Database.withConnection(db, conn =>
       Async.catchAsync(command.f(conn, args, command.description), err =>
         Async.async(Js.log2("Failed to run command: ", err))
       )
     );
-  I.Database.end_(db);
+  P.Database.end_(db);
 };
 
 let printCommands = commands => {

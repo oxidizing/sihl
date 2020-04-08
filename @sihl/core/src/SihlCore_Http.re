@@ -2,11 +2,12 @@
 // Thanks to the author Murphy Randle
 // We'll consider creating a PR once our API is more stable
 
-module Async = SihlCore_Common.Async;
-module Core = SihlCore_App_Http_Core;
+module Async = SihlCore_Async;
+module Log = SihlCore_Log;
+module Core = SihlCore_Http_Core;
 
 module Endpoint = {
-  open SihlCore_Common_Async;
+  open SihlCore_Async;
 
   module Status = {
     include Express.Response.StatusCode;
@@ -54,11 +55,11 @@ module Endpoint = {
   };
 
   let abortIfErr = (errorResponse, result) => {
-    SihlCore_Common_Async.mapAsync(result, result =>
+    SihlCore_Async.mapAsync(result, result =>
       switch (result) {
       | Ok(result) => result
       | Error(msg) =>
-        SihlCore_Common.Log.error("HTTP error=" ++ msg, ());
+        Log.error("HTTP error=" ++ msg, ());
         raise(HttpException(errorResponse));
       }
     );
@@ -422,7 +423,7 @@ module Endpoint = {
         ~middleware=?,
         cfg:
           dbEndpointConfig('database, 'connection, 'body_in, 'params, 'query),
-        module I: SihlCore_Common_Db.PERSISTENCE,
+        module I: SihlCore_Db.PERSISTENCE,
       )
       : Core.endpoint => {
     endpoint(
@@ -502,7 +503,7 @@ let application = (~port=?, endpoints: list(Core.endpoint)) => {
       ~port=effectivePort,
       ~onListen=
         _ => {
-          SihlCore_Common.Log.info(
+          Log.info(
             "Server listening on port " ++ string_of_int(effectivePort),
             (),
           )
@@ -512,7 +513,7 @@ let application = (~port=?, endpoints: list(Core.endpoint)) => {
 
   Express.HttpServer.on(
     httpServer,
-    `close(_ => SihlCore_Common.Log.info("Closing http server", ())),
+    `close(_ => Log.info("Closing http server", ())),
   );
 
   {httpServer, expressApp: app, router};
@@ -525,5 +526,5 @@ let closeServer: Express.HttpServer.t => unit = [%bs.raw
 let shutdown = app => {
   app.httpServer |> closeServer;
   // this is a hack, we are waiting for the server to shutdown
-  SihlCore_Common_Async.wait(500);
+  SihlCore_Async.wait(500);
 };
