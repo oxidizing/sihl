@@ -1,4 +1,5 @@
 module Common = SihlCore.Common;
+module App = SihlCore.App;
 
 open Jest;
 open Expect;

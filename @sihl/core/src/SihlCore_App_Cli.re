@@ -20,7 +20,7 @@ let trimArgs = (args, command) => {
   };
 };
 
-type command = Common.Http.command(Common.Db.Connection.t);
+type command = SihlCore_App_Cli_Core.command(Common.Db.Connection.t);
 
 let runCommand = (module I: Common.Db.PERSISTENCE, command: command, args) => {
   let%Async db = Common.Config.Db.Url.readFromEnv() |> I.Database.setup;

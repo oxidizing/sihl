@@ -2,7 +2,8 @@
 // Thanks to the author Murphy Randle
 // We'll consider creating a PR once our API is more stable
 
-module Async = SihlCore_Common_Async;
+module Async = SihlCore_Common.Async;
+module Core = SihlCore_App_Http_Core;
 
 module Endpoint = {
   open SihlCore_Common_Async;
@@ -318,7 +319,7 @@ module Endpoint = {
 
   let endpoint =
       (~middleware=?, cfg: endpointConfig('body, 'params, 'query))
-      : SihlCore_Common_Http.endpoint => {
+      : Core.endpoint => {
     let wrappedHandler = (_next, req, res) => {
       let handleOCamlError =
         [@bs.open]
@@ -401,7 +402,7 @@ module Endpoint = {
         ~middleware=?,
         cfg: jsonEndpointConfig('body_in, 'query, 'params, 'body_out),
       )
-      : SihlCore_Common.Http.endpoint => {
+      : Core.endpoint => {
     endpoint(
       ~middleware?,
       {
@@ -423,7 +424,7 @@ module Endpoint = {
           dbEndpointConfig('database, 'connection, 'body_in, 'params, 'query),
         module I: SihlCore_Common_Db.PERSISTENCE,
       )
-      : SihlCore_Common.Http.endpoint => {
+      : Core.endpoint => {
     endpoint(
       ~middleware?,
       {
@@ -442,7 +443,7 @@ module Endpoint = {
 let requireAuthorizationToken =
     (request: Endpoint.request('body, 'query, 'params)) => {
   let%Async header = Endpoint.requireHeader("authorization", request.req);
-  switch (SihlCore_Common.Http.parseAuthToken(header)) {
+  switch (Core.parseAuthToken(header)) {
   | Some(token) => Async.async(token)
   | None => Endpoint.abort(BadRequest("No authorization token found"))
   };
@@ -471,8 +472,6 @@ let requireSessionCookie =
 
 module Express = Express;
 
-type endpoint = SihlCore_Common.Http.endpoint;
-
 let endpoint = Endpoint.endpoint;
 let dbEndpoint = Endpoint.dbEndpoint;
 let jsonEndpoint = Endpoint.jsonEndpoint;
@@ -483,7 +482,7 @@ type application = {
   router: Express.Router.t,
 };
 
-let application = (~port=?, endpoints: list(endpoint)) => {
+let application = (~port=?, endpoints: list(Core.endpoint)) => {
   let app = Express.App.make();
   let router = Express.Router.make();
   app->Express.App.useRouter(router);
