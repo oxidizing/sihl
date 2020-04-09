@@ -10,5 +10,5 @@ module Email = SihlCore_Email;
 module Repo = SihlCore_Repo;
 module Http = SihlCore_Http;
 module Main = SihlCore_Main;
-module Test = Main.Test;
+//module Test = Main.Test;
 module Cli = SihlCore_Cli;

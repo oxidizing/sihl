@@ -75,61 +75,49 @@ module Config = {
   };
 };
 
-module type CONNECTION = {
-  type t;
-  let raw:
-    (t, ~stmt: string, ~parameters: option(Js.Json.t)) => Async.t(Js.Json.t);
-  let getMany:
-    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Async.t(Belt.Result.t(Result.Query.t(Js.Json.t), string));
-  let getOne:
-    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Async.t(Belt.Result.t(Js.Json.t, string));
-  let execute:
-    (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
-    Async.t(Belt.Result.t(Result.Execution.t, string));
-  let withTransaction: (t, t => Async.t('a)) => Async.t('a);
-  let release: t => unit;
-  module Migration: {
-    module Status: {
-      type t;
-      let version: t => int;
-      let namespace: t => string;
-      let dirty: t => bool;
-      let setVersion: (t, ~newVersion: int) => t;
-      let make: (~namespace: string) => t;
-      let t_decode: Js.Json.t => Belt.Result.t(t, string);
-    };
-    let setup: t => Async.t(Belt.Result.t(Result.Execution.t, string));
-    let has: (t, ~namespace: string) => Async.t(bool);
-    let get:
-      (t, ~namespace: string) => Async.t(Belt.Result.t(Status.t, string));
-    let upsert:
-      (t, ~status: Status.t) =>
-      Async.t(Belt.Result.t(Result.Execution.t, string));
-  };
+type migration('t) = {
+  this: 't,
+  version: 't => int,
+  namespace: 't => string,
+  dirty: 't => bool,
+  setVersion: ('t, ~newVersion: int) => 't,
+  t_decode: Js.Json.t => Belt.Result.t('t, string),
 };
 
-module type DATABASE = {
-  type connection;
-  type t;
-  let setup: SihlCore_Config.Db.Url.t => Async.t(t);
-  let end_: t => Async.t(unit);
-  let withConnection: (t, connection => Async.t('a)) => Async.t('a);
-  let clean: t => Async.t(unit);
+type connection('t, 'migration) = {
+  this: 't,
+  raw:
+    ('t, ~stmt: string, ~parameters: option(Js.Json.t)) => Async.t(Js.Json.t),
+  getMany:
+    ('t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    Async.t(Belt.Result.t(Result.Query.t(Js.Json.t), string)),
+  getOne:
+    ('t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    Async.t(Belt.Result.t(Js.Json.t, string)),
+  execute:
+    ('t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
+    Async.t(Belt.Result.t(Result.Execution.t, string)),
+  release: 't => Async.t(unit),
+  setupMigration: 't => Async.t(Belt.Result.t(Result.Execution.t, string)),
+  hasMigration: ('t, ~namespace: string) => Async.t(bool),
+  getMigration:
+    ('t, ~namespace: string) =>
+    Async.t(Belt.Result.t(migration('migration), string)),
+  upsertMigration:
+    ('t, ~status: 'migration) =>
+    Async.t(Belt.Result.t(Result.Execution.t, string)),
+  makeMigration: (~namespace: string) => migration('migration),
 };
 
-module type CONNECTION_INSTANCE = {
-  module Connection: CONNECTION;
-  let connection: Connection.t;
+type database('t, 'connection, 'migration) = {
+  this: 't,
+  end_: 't => Async.t(unit),
+  connect: 't => Async.t(connection('connection, 'migration)),
+  clean: 't => Async.t(unit),
 };
 
-module type DATABASE_INSTANCE = {
-  module Database:
-    DATABASE with type connection = (module CONNECTION_INSTANCE);
-  let database: Database.t;
-};
-
-module type PERSISTENCE = {
-  let setup: SihlCore_Config.Db.Url.t => Async.t(module DATABASE_INSTANCE);
+type persistence('database, 'connection, 'migration) = {
+  setup:
+    SihlCore_Config.Db.Url.t =>
+    Async.t(database('database, 'connection, 'migration)),
 };

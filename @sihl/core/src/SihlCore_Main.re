@@ -8,14 +8,14 @@ module Db = SihlCore_Db;
 exception InvalidConfiguration(string);
 
 module App = {
-  type t =
+  type t('d, 'c, 'm) =
     SihlCore_App.t(
-      module Db.DATABASE_INSTANCE,
+      Db.database('d, 'c, 'm),
       SihlCore_Http_Core.endpoint,
-      SihlCore_Cli_Core.command(module Db.DATABASE_INSTANCE),
+      SihlCore_Cli_Core.command(Db.database('d, 'c, 'm)),
     );
 
-  let names = (apps: list(t)) =>
+  let names = (apps: list(t('d, 'c, 'm))) =>
     Js.Array.joinWith(
       ", ",
       apps->Belt.List.map(app => app.namespace)->Belt.List.toArray,
@@ -30,7 +30,7 @@ module App = {
         ~commands,
         ~configurationSchema,
       )
-      : t => {
+      : t('d, 'c, 'm) => {
     name,
     namespace,
     routes,
@@ -41,22 +41,22 @@ module App = {
 };
 
 module Project = {
-  type t = {
+  type t('d, 'c, 'm) = {
     environment: Config.Environment.t,
-    apps: list(App.t),
-    persistence: (module Db.PERSISTENCE),
+    apps: list(App.t('d, 'c, 'm)),
+    persistence: Db.persistence('d, 'c, 'm),
   };
 
-  let make = (module P: Db.PERSISTENCE, ~environment, apps) => {
-    {environment, apps, persistence: (module P)};
+  let make = (persistence, ~environment, apps) => {
+    {environment, apps, persistence};
   };
 
   module RunningInstance = {
-    type t = {
+    type t('d, 'c, 'm) = {
       configuration: Config.Configuration.t,
       http: Http.application,
-      db: (module Db.DATABASE_INSTANCE),
-      apps: list(App.t),
+      db: Db.database('d, 'c, 'm),
+      apps: list(App.t('d, 'c, 'm)),
     };
     let http = instance => instance.http;
     let db = instance => instance.db;
@@ -68,13 +68,12 @@ module Project = {
     };
   };
 
-  let runMigrations = (instance: RunningInstance.t) => {
-    let RunningInstance.{db: (module P)} = instance;
+  let runMigrations = (instance: RunningInstance.t('d, 'c, 'm)) => {
     let migrations = instance.apps->Belt.List.map(app => app.migration);
-    SihlCore_Migration.applyMigrations((module P), migrations);
+    SihlCore_Migration.applyMigrations(instance.db, migrations);
   };
 
-  let start = (project: t) => {
+  let start = (project: t('d, 'c, 'm)) => {
     let apps = project.apps;
     Log.info("Starting project with apps: " ++ App.names(apps), ());
     Log.info("Loading and validating project configuration", ());
@@ -93,8 +92,7 @@ module Project = {
         Log.error(msg, ());
         raise(InvalidConfiguration(msg));
       };
-    let {persistence: (module Persistence)} = project;
-    let%Async db = Config.Db.Url.readFromEnv() |> Persistence.setup;
+    let%Async db = Config.Db.Url.readFromEnv() |> project.persistence.setup;
     Log.info("Mounting HTTP routes", ());
     let routes =
       apps
@@ -105,21 +103,21 @@ module Project = {
     Async.async @@ RunningInstance.make(~configuration, ~http, ~db, ~apps);
   };
 
-  let stop = (instance: RunningInstance.t) => {
-    let RunningInstance.{db: (module I)} = instance;
+  let stop = (instance: RunningInstance.t('d, 'c, 'm)) => {
     Log.info("Stopping apps: " ++ App.names(instance.apps), ());
     let%Async _ = Http.shutdown(instance.http);
-    Async.async @@ I.Database.end_(I.database);
+    Async.async @@ instance.db.end_(instance.db.this);
   };
 };
 
-module Manager = {
+module Manager: {} = {
   // TODO centralize
   exception InvalidState(string);
 
-  let state = ref(None);
+  let state: Pervasives.ref(option(Project.RunningInstance.t('d, 'c, 'm))) =
+    ref(None);
 
-  let start = (project: Project.t) => {
+  let start = (project: Project.t('d, 'c, 'm)) => {
     if (Belt.Option.isSome(state^)) {
       raise(InvalidState("There is already an app running, can not start"));
     };
@@ -134,7 +132,6 @@ module Manager = {
   let stop = () => {
     switch (state^) {
     | Some(instance) =>
-      let Project.RunningInstance.{db: (module P)} = instance;
       // TODO this might get out of sync
       Config.configuration := None;
       Project.stop(instance)->Async.mapAsync(_ => {state := None});
@@ -150,8 +147,10 @@ module Manager = {
   let seed = f => {
     switch (state^) {
     | Some(instance) =>
-      let Project.RunningInstance.{db: (module I)} = instance;
-      I.Database.withConnection(I.database, conn => f(conn));
+      let%Async conn = instance.db.connect();
+      let%Async result = f(conn);
+      let%Async _ = conn.release(conn.this);
+      Async.async(result);
     | _ =>
       Log.warn("Can not seed because app was not started", ());
       raise(InvalidState("Can not seed because app was not started"));
@@ -160,9 +159,7 @@ module Manager = {
 
   let clean = () => {
     switch (state^) {
-    | Some(instance) =>
-      let Project.RunningInstance.{db: (module I)} = instance;
-      I.Database.clean(I.database);
+    | Some(instance) => instance.db.clean(instance.db.this)
     | _ =>
       Log.warn("Can not clean because app was not started", ());
       raise(InvalidState("Can not clean because app was not started"));
@@ -224,15 +221,15 @@ module Manager = {
 /*   }; */
 /* }; */
 
-module Test = {
-  module Integration = {
-    open Jest;
-    [%raw "require('isomorphic-fetch')"];
-    let setupHarness = (project: Project.t) => {
-      Node.Process.putEnvVar("SIHL_ENV", "test");
-      beforeAllPromise(_ => Manager.start(project));
-      beforeEachPromise(_ => Manager.clean());
-      afterAllPromise(_ => Manager.stop());
-    };
-  };
-};
+/* module Test = { */
+/*   module Integration = { */
+/*     open Jest; */
+/*     [%raw "require('isomorphic-fetch')"]; */
+/*     let setupHarness = (project: Project.t('d, 'c, 'm)) => { */
+/*       Node.Process.putEnvVar("SIHL_ENV", "test"); */
+/*       beforeAllPromise(_ => Manager.start(project)); */
+/*       beforeEachPromise(_ => Manager.clean()); */
+/*       afterAllPromise(_ => Manager.stop()); */
+/*     }; */
+/*   }; */
+/* }; */

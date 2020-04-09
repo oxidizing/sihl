@@ -1,20 +1,22 @@
 module Sihl = SihlMysql_Sihl;
 module Async = Sihl.Core.Async;
 
-module Connection: SihlCore_Db.CONNECTION = {
+module Connection = {
   type t;
   [@bs.send] external release: t => unit = "release";
   [@bs.send]
   external query_: (t, string, Js.Json.t) => Async.t(Js.Json.t) = "query";
 
   let release = connection =>
-    try(release(connection)) {
-    | Js.Exn.Error(e) =>
-      switch (Js.Exn.message(e)) {
-      | Some(message) => Sihl.Core.Log.error(message, ())
-      | None => Sihl.Core.Log.error("Failed to release client", ())
-      }
-    };
+    Async.async(
+      try(release(connection)) {
+      | Js.Exn.Error(e) =>
+        switch (Js.Exn.message(e)) {
+        | Some(message) => Sihl.Core.Log.error(message, ())
+        | None => Sihl.Core.Log.error("Failed to release client", ())
+        }
+      },
+    );
 
   let raw = (connection, ~stmt, ~parameters) => {
     let parameters =
@@ -258,9 +260,9 @@ dirty = VALUES(dirty)
   };
 };
 
-module Database: SihlCore_Db.DATABASE = {
+module Database = {
   type handle;
-  type connection = (module SihlCore_Db.CONNECTION_INSTANCE);
+  type connection = Connection.t;
 
   type t = {
     name: string,
@@ -308,15 +310,8 @@ module Database: SihlCore_Db.DATABASE = {
 
   let withConnection = (db, f) => {
     let%Async conn = connect(db);
-    module ConnectionInstance = {
-      module Connection = Connection;
-      let connection = conn;
-    };
-    let%Async result =
-      f(
-        (module ConnectionInstance): (module SihlCore_Db.CONNECTION_INSTANCE),
-      );
-    Connection.release(conn);
+    let%Async result = f(conn);
+    let%Async _ = Connection.release(conn);
     Async.async(result);
   };
 
@@ -336,15 +331,14 @@ module Database: SihlCore_Db.DATABASE = {
       withConnection(
         db,
         conn => {
-          module C = (val conn: SihlCore_Db.CONNECTION_INSTANCE);
           let%Async _ =
-            C.Connection.execute(
-              C.connection,
+            Connection.execute(
+              conn,
               ~stmt="SET FOREIGN_KEY_CHECKS = 0;",
               ~parameters=None,
             );
           let%Async commands =
-            C.Connection.getMany(C.connection, ~stmt, ~parameters=None);
+            Connection.getMany(conn, ~stmt, ~parameters=None);
           let commands =
             switch (commands) {
             | Ok((rows, _)) =>
@@ -374,19 +368,15 @@ module Database: SihlCore_Db.DATABASE = {
             commands
             ->Belt.List.map(({command}, ()) => {
                 command !== "TRUNCATE TABLE core_migration_status;"
-                  ? C.Connection.execute(
-                      C.connection,
-                      ~stmt=command,
-                      ~parameters=None,
-                    )
+                  ? Connection.execute(conn, ~stmt=command, ~parameters=None)
                     ->Async.mapAsync(_ => ())
                   : Async.async()
               })
             ->Sihl.Core.Async.allInOrder;
 
           let%Async _ =
-            C.Connection.execute(
-              C.connection,
+            Connection.execute(
+              conn,
               ~stmt="SET FOREIGN_KEY_CHECKS = 1;",
               ~parameters=None,
             );

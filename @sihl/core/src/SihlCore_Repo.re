@@ -2,8 +2,8 @@ module Async = SihlCore_Async;
 module Db = SihlCore_Db;
 
 let getOne =
-    (module I: Db.CONNECTION_INSTANCE, ~stmt, ~parameters=?, ~decode, ()) => {
-  let%Async result = I.Connection.getOne(I.connection, ~stmt, ~parameters);
+    (connection: Db.connection('a, 'b), ~stmt, ~parameters=?, ~decode, ()) => {
+  let%Async result = connection.getOne(connection.this, ~stmt, ~parameters);
   Async.async(
     switch (result) {
     | Ok(result) => result |> SihlCore_Error.Decco.stringifyDecoder(decode)
@@ -18,8 +18,8 @@ let getOne =
 };
 
 let getMany =
-    (module I: Db.CONNECTION_INSTANCE, ~stmt, ~parameters=?, ~decode, ()) => {
-  let%Async result = I.Connection.getMany(I.connection, ~stmt, ~parameters);
+    (connection: Db.connection('a, 'b), ~stmt, ~parameters=?, ~decode, ()) => {
+  let%Async result = connection.getMany(connection.this, ~stmt, ~parameters);
   switch (result) {
   | Ok((rows, meta)) =>
     let result =
@@ -46,8 +46,8 @@ let getMany =
   };
 };
 
-let execute = (module I: Db.CONNECTION_INSTANCE, ~parameters=?, stmt) => {
-  let%Async rows = I.Connection.execute(I.connection, ~stmt, ~parameters);
+let execute = (connection: Db.connection('a, 'b), ~parameters=?, stmt) => {
+  let%Async rows = connection.execute(connection.this, ~stmt, ~parameters);
   Async.async(
     switch (rows) {
     | Ok(_) => ()

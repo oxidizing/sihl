@@ -420,7 +420,7 @@ module Endpoint = {
 
   let dbEndpoint =
       (
-        module I: SihlCore_Db.DATABASE_INSTANCE,
+        database: SihlCore_Db.database('database, 'connection, 'migration),
         ~middleware=?,
         cfg:
           dbEndpointConfig('database, 'connection, 'body_in, 'params, 'query),
@@ -432,9 +432,10 @@ module Endpoint = {
         path: cfg.path,
         verb: cfg.verb,
         handler: req => {
-          I.Database.withConnection(I.database, conn =>
-            cfg.handler(conn, req)
-          );
+          let%Async connection = database.connect();
+          let%Async result = cfg.handler(connection.this, req);
+          let%Async _ = connection.release(connection.this);
+          Async.async(result);
         },
       },
     );
