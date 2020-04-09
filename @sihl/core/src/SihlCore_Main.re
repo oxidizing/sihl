@@ -10,9 +10,9 @@ exception InvalidConfiguration(string);
 module App = {
   type t =
     SihlCore_App.t(
-      module Db.PERSISTENCE_INSTANCE,
+      module Db.DATABASE_INSTANCE,
       SihlCore_Http_Core.endpoint,
-      SihlCore_Cli_Core.command(module Db.PERSISTENCE_INSTANCE),
+      SihlCore_Cli_Core.command(module Db.DATABASE_INSTANCE),
     );
 
   let names = (apps: list(t)) =>
@@ -55,7 +55,7 @@ module Project = {
     type t = {
       configuration: Config.Configuration.t,
       http: Http.application,
-      db: (module Db.PERSISTENCE_INSTANCE),
+      db: (module Db.DATABASE_INSTANCE),
       apps: list(App.t),
     };
     let http = instance => instance.http;
@@ -94,28 +94,22 @@ module Project = {
         raise(InvalidConfiguration(msg));
       };
     let {persistence: (module Persistence)} = project;
-    let%Async db = Config.Db.Url.readFromEnv() |> Persistence.Database.setup;
+    let%Async db = Config.Db.Url.readFromEnv() |> Persistence.setup;
     Log.info("Mounting HTTP routes", ());
-    module P = {
-      module Persistence = Persistence;
-      let database = db;
-    };
-
     let routes =
       apps
-      ->Belt.List.map(app => app.routes((module P)))
+      ->Belt.List.map(app => app.routes(db))
       ->Belt.List.toArray
       ->Belt.List.concatMany;
     let http = Http.application(routes);
-    Async.async @@
-    RunningInstance.make(~configuration, ~http, ~db=(module P), ~apps);
+    Async.async @@ RunningInstance.make(~configuration, ~http, ~db, ~apps);
   };
 
   let stop = (instance: RunningInstance.t) => {
-    let RunningInstance.{db: (module P)} = instance;
+    let RunningInstance.{db: (module I)} = instance;
     Log.info("Stopping apps: " ++ App.names(instance.apps), ());
     let%Async _ = Http.shutdown(instance.http);
-    Async.async @@ P.Persistence.Database.end_(P.database);
+    Async.async @@ I.Database.end_(I.database);
   };
 };
 
@@ -156,8 +150,8 @@ module Manager = {
   let seed = f => {
     switch (state^) {
     | Some(instance) =>
-      let Project.RunningInstance.{db: (module P)} = instance;
-      P.Persistence.Database.withConnection(P.database, conn => f(conn));
+      let Project.RunningInstance.{db: (module I)} = instance;
+      I.Database.withConnection(I.database, conn => f(conn));
     | _ =>
       Log.warn("Can not seed because app was not started", ());
       raise(InvalidState("Can not seed because app was not started"));
@@ -167,8 +161,8 @@ module Manager = {
   let clean = () => {
     switch (state^) {
     | Some(instance) =>
-      let Project.RunningInstance.{db: (module P)} = instance;
-      P.Persistence.Database.clean(P.database);
+      let Project.RunningInstance.{db: (module I)} = instance;
+      I.Database.clean(I.database);
     | _ =>
       Log.warn("Can not clean because app was not started", ());
       raise(InvalidState("Can not clean because app was not started"));

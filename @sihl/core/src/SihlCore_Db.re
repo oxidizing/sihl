@@ -56,6 +56,11 @@ module Migration = {
   };
 };
 
+// TODO centralize
+exception DatabaseException(string);
+
+let abort = reason => raise(DatabaseException(reason));
+
 module Config = {
   type t = {
     .
@@ -84,11 +89,25 @@ module type CONNECTION = {
     (t, ~stmt: string, ~parameters: option(Js.Json.t)) =>
     Async.t(Belt.Result.t(Result.Execution.t, string));
   let withTransaction: (t, t => Async.t('a)) => Async.t('a);
-};
-
-module type CONNECTION_INSTANCE = {
-  module Connection: CONNECTION;
-  let connection: Connection.t;
+  let release: t => unit;
+  module Migration: {
+    module Status: {
+      type t;
+      let version: t => int;
+      let namespace: t => string;
+      let dirty: t => bool;
+      let setVersion: (t, ~newVersion: int) => t;
+      let make: (~namespace: string) => t;
+      let t_decode: Js.Json.t => Belt.Result.t(t, string);
+    };
+    let setup: t => Async.t(Belt.Result.t(Result.Execution.t, string));
+    let has: (t, ~namespace: string) => Async.t(bool);
+    let get:
+      (t, ~namespace: string) => Async.t(Belt.Result.t(Status.t, string));
+    let upsert:
+      (t, ~status: Status.t) =>
+      Async.t(Belt.Result.t(Result.Execution.t, string));
+  };
 };
 
 module type DATABASE = {
@@ -100,44 +119,17 @@ module type DATABASE = {
   let clean: t => Async.t(unit);
 };
 
-module type MIGRATIONSTATUS = {
-  type t;
-  let version: t => int;
-  let namespace: t => string;
-  let dirty: t => bool;
-  let setVersion: (t, ~newVersion: int) => t;
-  let make: (~namespace: string) => t;
-  let t_decode: Js.Json.t => Belt.Result.t(t, string);
+module type CONNECTION_INSTANCE = {
+  module Connection: CONNECTION;
+  let connection: Connection.t;
 };
 
-module type MIGRATION = {
-  type connection;
-  module Status: MIGRATIONSTATUS;
-  let setup:
-    connection => Async.t(Belt.Result.t(Result.Execution.t, string));
-  let has: (connection, ~namespace: string) => Async.t(bool);
-  let get:
-    (connection, ~namespace: string) =>
-    Async.t(Belt.Result.t(Status.t, string));
-  let upsert:
-    (connection, ~status: Status.t) =>
-    Async.t(Belt.Result.t(Result.Execution.t, string));
+module type DATABASE_INSTANCE = {
+  module Database:
+    DATABASE with type connection = (module CONNECTION_INSTANCE);
+  let database: Database.t;
 };
 
 module type PERSISTENCE = {
-  module Connection: CONNECTION with type t = (module CONNECTION_INSTANCE);
-  module Database:
-    DATABASE with type connection = (module CONNECTION_INSTANCE);
-  module Migration:
-    MIGRATION with type connection = (module CONNECTION_INSTANCE);
+  let setup: SihlCore_Config.Db.Url.t => Async.t(module DATABASE_INSTANCE);
 };
-
-module type PERSISTENCE_INSTANCE = {
-  module Persistence: PERSISTENCE;
-  let database: Persistence.Database.t;
-};
-
-// TODO centralize
-exception DatabaseException(string);
-
-let abort = reason => raise(DatabaseException(reason));
