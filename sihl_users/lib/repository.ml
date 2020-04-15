@@ -180,6 +180,8 @@ module User = struct
     Sihl_core.Db.query_db (fun c -> Sql.User.get_by_email c ~email) req
 
   let insert req user =
+    let open Lwt.Infix in
+    Logs_lwt.info (fun m -> m "Inserting user") >>= fun _ ->
     Sihl_core.Db.query_db (fun c -> Sql.User.insert c user) req
 
   let update req user =

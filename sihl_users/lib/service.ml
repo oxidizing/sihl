@@ -37,15 +37,6 @@ module User = struct
   let get_all request user =
     if Model.User.is_admin user then Repository.User.get_all request
     else Lwt_result.fail "Not allowed"
-
-  (* remove once we have real tests *)
-  exception Library_exception
-
-  let exn () = raise Library_exception
-
-  let exn_lwt_toplevel () : unit Lwt.t = raise Library_exception
-
-  let exn_lwt_internal () : unit Lwt.t = Lwt.return (raise Library_exception)
 end
 
 module Middleware = Middleware

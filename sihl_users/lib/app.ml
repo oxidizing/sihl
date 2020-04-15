@@ -13,7 +13,7 @@ let app : Opium.App.t =
 let log_level = Some Logs.Debug
 
 let set_logger () =
-  Lwt.return (Logs.reporter () |> Logs.set_reporter) >|= fun () ->
+  Lwt.return (Logs_fmt.reporter () |> Logs.set_reporter) >|= fun () ->
   Logs.set_level log_level
 
 let run (app : unit Lwt.t) =
@@ -21,7 +21,7 @@ let run (app : unit Lwt.t) =
   let _ = Logs_lwt.info (fun m -> m "Running...") in
   app
 
-let start =
+let start () =
   match App.run_command' app with
   | `Ok (app : unit Lwt.t) -> run app
   | `Error -> exit 1
