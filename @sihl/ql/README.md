@@ -1,3 +1,0 @@
-# sihl-ql
-
-WIP

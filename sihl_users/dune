@@ -1,0 +1,4 @@
+(library
+ (name sihl_users)
+ (libraries sihl_core core opium caqti caqti-driver-postgresql caqti-lwt lwt.unix ppx_fields_conv yojson ppx_deriving_yojson.runtime sexplib)
+ (preprocess (pps ppx_rapper ppx_fields_conv ppx_deriving_yojson ppx_sexp_conv)))
