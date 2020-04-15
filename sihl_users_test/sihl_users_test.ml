@@ -1,10 +1,8 @@
 open Lwt.Infix
-
 open Sihl_users.Service.User
 
 (* The tests *)
-let test_exn () =
-  Alcotest.check_raises "custom exception" Library_exception exn
+let test_exn () = Alcotest.check_raises "custom exception" Library_exception exn
 
 let lwt_check_raises f =
   Lwt.catch
@@ -35,9 +33,20 @@ let test_switch_dealloc _ () =
       Alcotest.(check bool)
         "Switch is disabled after test" (Lwt_switch.is_on s) false
 
+let setup_server = Sihl_users.App.start
+
+let test_register_user _ () =
+  let open Lwt.Infix in
+  Cohttp_lwt_unix.Client.get
+    (Uri.of_string "http://localhost:3000/users/users/")
+  >>= fun (_, body) ->
+  body |> Cohttp_lwt.Body.to_string >|= fun body ->
+  Alcotest.(check string) "Found a body" "this is a list of users" body
+
 (* Run it *)
 let () =
   let open Alcotest_lwt in
+  let _ = setup_server in
   Lwt_main.run
   @@ run "LwtUtils"
        [
@@ -52,4 +61,6 @@ let () =
              test_case "Allocate resource" `Quick test_switch_alloc;
              test_case "Check resource deallocated" `Quick test_switch_dealloc;
            ] );
+         ( "user management",
+           [ test_case "Register user" `Quick test_register_user ] );
        ]

@@ -38,6 +38,7 @@
 
   ;; Logging
   (logs (>= 0.7.0))
+  (fmt (>= 0.8.8))
 
   ;; Dev dependencies
   (utop :dev)
@@ -73,6 +74,7 @@
 
   ;; Logging
   (logs (>= 0.7.0))
+  (fmt (>= 0.8.8))
 
   ;; Dev dependencies
   (utop :dev)

@@ -22,7 +22,12 @@ let get_user =
   get "/users/users/:id/" (fun _ -> `String "not implemented" |> respond')
 
 let get_users =
-  get "/users/users/" (fun _ -> `String "not implemented" |> respond')
+  get "/users/users/" (fun _ -> `String "this is a list of users" |> respond')
 
 let get_me =
   get "/users/users/me/" (fun _ -> `String "not implemented" |> respond')
+
+let routes = [ login; register; logout; get_user; get_users; get_me ]
+
+let add_handlers app =
+  Core.List.fold ~f:(fun app route -> route app) ~init:app routes

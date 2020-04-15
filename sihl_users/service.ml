@@ -47,3 +47,5 @@ module User = struct
 
   let exn_lwt_internal () : unit Lwt.t = Lwt.return (raise Library_exception)
 end
+
+module Middleware = Middleware
