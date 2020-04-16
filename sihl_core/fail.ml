@@ -10,13 +10,6 @@ module Error = struct
     | Database msg -> msg
     | NotAuthenticated msg -> msg
     | NoPermissions msg -> msg
-
-  let externalize = function
-    | BadRequest msg -> msg
-    | Database _ ->
-        "Something went wrong, our administrators have been notifiied"
-    | NotAuthenticated msg -> msg
-    | NoPermissions msg -> msg
 end
 
 module Exception = struct

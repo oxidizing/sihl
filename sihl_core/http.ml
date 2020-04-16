@@ -64,6 +64,13 @@ let with_json :
     match (encode, result) with
     | Some encode, Ok result -> result |> encode |> Yojson.Safe.to_string
     | None, Ok _ -> Msg.ok_string ()
-    | _, Error error -> Msg.msg_string @@ Fail.Error.externalize error
+    | _, Error (Fail.Error.Database msg) ->
+        let _ = Logs_lwt.err (fun m -> m "%s" msg) in
+        Msg.msg_string
+        @@ "Something went wrong, our administrators have been notified"
+    | _, Error error ->
+        let msg = Fail.Error.show error in
+        let _ = Logs_lwt.err (fun m -> m "%s" msg) in
+        Msg.msg_string @@ msg
   in
   respond' @@ `String response
