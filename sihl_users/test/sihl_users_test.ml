@@ -1,5 +1,6 @@
+let ( let* ) = Lwt.bind
+
 let test_register_user _ () =
-  let open Lwt.Infix in
   let body =
     {|
        {
@@ -10,12 +11,13 @@ let test_register_user _ () =
        }
 |}
   in
-  Cohttp_lwt_unix.Client.post
-    ~body:(Cohttp_lwt.Body.of_string body)
-    (Uri.of_string "http://localhost:3000/users/register/")
-  >>= fun (_, body) ->
-  body |> Cohttp_lwt.Body.to_string >|= fun body ->
-  Alcotest.(check string) "Found a body" "ok" body
+  let* _, body =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string "http://localhost:3000/users/register/")
+  in
+  let* body = Cohttp_lwt.Body.to_string body in
+  Lwt.return @@ Alcotest.(check string) "Found a body" "ok" body
 
 let () =
   let open Alcotest_lwt in

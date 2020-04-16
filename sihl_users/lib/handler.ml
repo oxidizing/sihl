@@ -1,12 +1,13 @@
 open Core
 open Opium.Std
 
+let ( let* ) = Lwt.bind
+
 module Login = struct
   let handler =
     get "/users/login/" (fun req ->
-        let open Lwt in
         let user = Service.User.authenticate req in
-        Service.User.token req user >>= fun token ->
+        let* token = Service.User.token req user in
         match token with
         | Ok token ->
             `String (Printf.sprintf "token=%s" (Model.Token.value token))
@@ -25,15 +26,15 @@ module Register = struct
 
   let handler =
     post "/users/register/" (fun req ->
-        let open Lwt.Infix in
-        req |> Request.body |> Cohttp_lwt.Body.to_string >>= fun body ->
+        let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
         match body |> Yojson.Safe.from_string |> body_in_of_yojson with
         | Ok body_in -> (
-            Logs_lwt.info (fun m -> m "Get HTTP request") >>= fun _ ->
-            Service.User.register req ~email:body_in.email
-              ~username:body_in.username ~password:body_in.password
-              ~name:body_in.name
-            >>= fun result ->
+            let* () = Logs_lwt.info (fun m -> m "Get HTTP request") in
+            let* result =
+              Service.User.register req ~email:body_in.email
+                ~username:body_in.username ~password:body_in.password
+                ~name:body_in.name
+            in
             match result with
             | Ok _ -> respond' @@ `String "ok"
             | Error msg -> respond' @@ `String ("failed msg=" ^ msg) )
