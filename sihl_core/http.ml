@@ -58,11 +58,7 @@ let with_json :
   let* result =
     Lwt.catch
       (fun () -> handler req)
-      (fun _ ->
-        (* TODO map to proper result type *)
-        let* () = Logs_lwt.info (fun m -> m "Caught exception on HTTP level") in
-        Lwt.return
-        @@ Error (Fail.Error.BadRequest "bad request provided but we caught it"))
+      (fun exn -> Lwt.return @@ Fail.error_of_exn exn)
   in
   let response =
     match (encode, result) with

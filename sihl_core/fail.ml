@@ -3,13 +3,13 @@ module Error = struct
     | BadRequest of string
     | Database of string
     | NotAuthenticated of string
-    | NoPermission of string
+    | NoPermissions of string
 
   let show = function
     | BadRequest msg -> msg
     | Database msg -> msg
     | NotAuthenticated msg -> msg
-    | NoPermission msg -> msg
+    | NoPermissions msg -> msg
 end
 
 module Exception = struct
@@ -19,7 +19,7 @@ module Exception = struct
 
   exception NotAuthenticated of string
 
-  exception NoPermission of string
+  exception NoPermissions of string
 end
 
 let exn_of_error = function
@@ -28,21 +28,31 @@ let exn_of_error = function
   | Error (Error.Database msg) -> raise @@ Exception.Database msg
   | Error (Error.NotAuthenticated msg) ->
       raise @@ Exception.NotAuthenticated msg
-  | Error (Error.NoPermission msg) -> raise @@ Exception.NoPermission msg
+  | Error (Error.NoPermissions msg) -> raise @@ Exception.NoPermissions msg
 
 let exn_of_error' result = result |> Lwt.map exn_of_error
 
-let error_of_exn f =
-  try f () with
+let error_of_exn : exn -> 'a = function
   | Exception.BadRequest msg -> Error (Error.BadRequest msg)
   | Exception.Database msg -> Error (Error.Database msg)
   | Exception.NotAuthenticated msg -> Error (Error.NotAuthenticated msg)
-  | Exception.NoPermission msg -> Error (Error.NoPermission msg)
+  | Exception.NoPermissions msg -> Error (Error.NoPermissions msg)
+  | _ -> Error (Error.Database "unspecified exn encountered")
 
 let raise_bad_request msg = raise @@ Exception.BadRequest msg
 
-let map_bad_request msg result =
-  result
-  |> Lwt_result.map_err (fun error -> Error.BadRequest (error ^ " msg=" ^ msg))
+let raise_no_permissions msg = raise @@ Exception.NoPermissions msg
+
+let raise_not_authenticated msg = raise @@ Exception.NotAuthenticated msg
+
+let with_bad_request msg result =
+  match result with
+  | Ok result -> result
+  | Error error -> raise @@ Exception.BadRequest (msg ^ " msg= " ^ error)
+
+let with_database msg result =
+  match result with
+  | Ok result -> result
+  | Error error -> raise @@ Exception.Database (msg ^ " msg= " ^ error)
 
 let err_database msg = Error.Database msg

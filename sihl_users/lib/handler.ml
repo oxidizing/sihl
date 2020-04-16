@@ -13,7 +13,7 @@ module Login = struct
     @@ Http.with_json ~encode:body_out_to_yojson
     @@ fun req ->
     let user = Service.User.authenticate req in
-    let* token = Fail.exn_of_error' @@ Service.User.token req user in
+    let* token = Service.User.token req user in
     Lwt.return @@ Ok { token = Model.Token.value token }
 end
 
@@ -30,8 +30,11 @@ module Register = struct
     post "/users/register/" @@ Sihl_core.Http.with_json
     @@ fun req ->
     let* body_in = Sihl_core.Http.require_body req body_in_of_yojson in
-    Service.User.register req ~email:body_in.email ~username:body_in.username
-      ~password:body_in.password ~name:body_in.name
+    let* _ =
+      Service.User.register req ~email:body_in.email ~username:body_in.username
+        ~password:body_in.password ~name:body_in.name
+    in
+    Lwt.return @@ Ok ()
 end
 
 let logout =

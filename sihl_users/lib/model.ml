@@ -20,7 +20,7 @@ module User = struct
   let is_owner user id = String.equal user.id id
 
   (* TODO use password hashing *)
-  let matches_password user password = String.equal user.password password
+  let matches_password password user = String.equal user.password password
 
   let create ~email ~password ~username ~name =
     {

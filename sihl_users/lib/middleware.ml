@@ -24,7 +24,7 @@ module Authentication = struct
   let authenticate_credentials request ~email ~password =
     let open Lwt_result.Infix in
     Repository.User.get_by_email request ~email >>= fun user ->
-    if Model.User.matches_password user password then
+    if Model.User.matches_password password user then
       Lwt_result.ok @@ Lwt.return user
     else Lwt_result.fail "Invalid password or email provided"
 
