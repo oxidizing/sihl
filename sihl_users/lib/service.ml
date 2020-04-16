@@ -8,7 +8,8 @@ module User = struct
 
   let register request ~email ~password ~username ~name =
     Repository.User.get_by_email request ~email
-    |> Lwt_result.map_err (fun _ -> "Email already taken")
+    |> Lwt_result.map_err (fun _ ->
+           Sihl_core.Fail.BadRequest "Email already taken")
     |> Lwt_result.map (fun _ ->
            Model.User.create ~email ~password ~username ~name)
     >>= fun user ->

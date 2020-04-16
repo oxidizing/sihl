@@ -1,6 +1,8 @@
 open Core
 open Opium.Std
 
+let ( let* ) = Lwt.bind
+
 let require_auth req =
   match req |> Cohttp.Header.get_authorization with
   | None -> failwith "No authorization header found"
@@ -27,8 +29,39 @@ let param2 req key1 key2 = (param req key1, param req key2)
 
 let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
 
+let require_body req decode =
+  let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
+  match body |> Yojson.Safe.from_string |> decode with
+  | Ok body -> Lwt.return body
+  | Error _ -> raise @@ Fail.Exception.BadRequest "Invalid body provided"
+
 let failwith_opt msg opt =
   match opt with None -> failwith msg | Some value -> value
 
 let failwith_result opt =
   match opt with Error msg -> failwith msg | Ok value -> value
+
+module Msg = struct
+  type t = { msg : string } [@@deriving yojson]
+
+  let ok_string () = { msg = "ok" } |> to_yojson |> Yojson.Safe.to_string
+
+  let msg_string msg = { msg } |> to_yojson |> Yojson.Safe.to_string
+end
+
+let with_json :
+    ?encode:('a -> Yojson.Safe.t) ->
+    (Request.t -> 'a Lwt.t) ->
+    Request.t ->
+    Response.t Lwt.t =
+ fun ?encode handler req ->
+  let* result = handler req in
+  let response =
+    match encode with
+    | Some encode -> result |> encode |> Yojson.Safe.to_string
+    | None -> (
+        match result with
+        | Ok _ -> Msg.ok_string ()
+        | Error msg -> Msg.msg_string @@ Fail.show msg )
+  in
+  respond' @@ `String response

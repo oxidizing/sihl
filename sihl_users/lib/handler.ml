@@ -25,20 +25,11 @@ module Register = struct
   [@@deriving yojson]
 
   let handler =
-    post "/users/register/" (fun req ->
-        let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
-        match body |> Yojson.Safe.from_string |> body_in_of_yojson with
-        | Ok body_in -> (
-            let* () = Logs_lwt.info (fun m -> m "Get HTTP request") in
-            let* result =
-              Service.User.register req ~email:body_in.email
-                ~username:body_in.username ~password:body_in.password
-                ~name:body_in.name
-            in
-            match result with
-            | Ok _ -> respond' @@ `String "ok"
-            | Error msg -> respond' @@ `String ("failed msg=" ^ msg) )
-        | Error _ -> `String "failed to decode request" |> respond')
+    post "/users/register/" @@ Sihl_core.Http.with_json
+    @@ fun req ->
+    let* body_in = Sihl_core.Http.require_body req body_in_of_yojson in
+    Service.User.register req ~email:body_in.email ~username:body_in.username
+      ~password:body_in.password ~name:body_in.name
 end
 
 let logout =
