@@ -76,7 +76,9 @@ module Migration = struct
           Lwt_io.printf "Running: %s\n" name >>= fun () ->
           query_pool (fun c -> migration c ()) pool >>= function
           | Ok () -> run migrations pool
-          | Error err -> return (Error err) )
+          | Error err ->
+              Lwt_io.printf "Failed to run migration msg=%s" err >>= fun () ->
+              return (Error err) )
     in
     return (connect ()) >>= run migrations
 
@@ -85,3 +87,15 @@ module Migration = struct
    *   | Ok () -> print_endline "Migration complete"
    *   | Error err -> failwith err *)
 end
+
+(* let clean queries =
+ *   let open Lwt in
+ *   let rec run queries pool =
+ *     match queries with
+ *     | [] -> Lwt_result.return ()
+ *     | query :: queries -> (
+ *         query_pool (fun c -> query c ()) pool >>= function
+ *         | Ok () -> run queries pool
+ *         | Error err -> return (Error err) )
+ *   in
+ *   return (connect ()) >>= run queries *)

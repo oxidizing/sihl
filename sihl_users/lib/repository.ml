@@ -6,7 +6,7 @@ module Sql = struct
         get_many
           {sql|
         SELECT 
-          @string{id}, 
+          uuid as @string{id}, 
           @string{email}, 
           @string{username}, 
           @string{password},
@@ -15,7 +15,7 @@ module Sql = struct
           @string{status},
           @bool{admin},
           @bool{confirmed}
-        FROM users
+        FROM users_users
         |sql}
           record_out]
 
@@ -25,7 +25,7 @@ module Sql = struct
         get_one
           {sql|
         SELECT 
-          @string{id}, 
+          uuid as @string{id}, 
           @string{email}, 
           @string{username}, 
           @string{password},
@@ -34,8 +34,8 @@ module Sql = struct
           @string{status},
           @bool{admin},
           @bool{confirmed}
-        FROM users
-        WHERE users.id = %string{id}
+        FROM users_users
+        WHERE users_users.id = %string{id}
         |sql}
           record_out]
 
@@ -45,7 +45,7 @@ module Sql = struct
         get_one
           {sql|
         SELECT 
-          @string{id}, 
+          uuid as @string{id}, 
           @string{email}, 
           @string{username}, 
           @string{password},
@@ -54,8 +54,8 @@ module Sql = struct
           @string{status},
           @bool{admin},
           @bool{confirmed}
-        FROM users
-        WHERE users.email = %string{email}
+        FROM users_users
+        WHERE users_users.email = %string{email}
         |sql}
           record_out]
 
@@ -64,8 +64,8 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        INSERT INTO users(
-          id, 
+        INSERT INTO users_users (
+          uuid, 
           email, 
           username, 
           password,
@@ -93,9 +93,9 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        UPDATE users 
+        UPDATE users_users
         SET 
-          id = %string{id}, 
+          uuid = %string{id}, 
           email = %string{email}, 
           username = %string{username}, 
           password = %string{password},
@@ -115,13 +115,13 @@ module Sql = struct
         get_one
           {sql|
         SELECT 
-          @string{id}, 
+          uuid as @string{id}, 
           @string{value},
           @string{kind},
           @string{token_user},
           @string{status}
-        FROM tokens
-        WHERE tokens.value = %string{value}
+        FROM users_tokens
+        WHERE users_tokens.value = %string{value}
         |sql}
           record_out]
 
@@ -130,8 +130,8 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        INSERT INTO tokens (
-          id, 
+        INSERT INTO users_tokens (
+          uuid, 
           value,
           kind,
           token_user,
@@ -151,9 +151,9 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        UPDATE tokens 
+        UPDATE users_tokens 
         SET 
-          id = %string{id}, 
+          uuid = %string{id}, 
           value = %string{value},
           kind = %string{kind},
           token_user = %string{token_user},
@@ -165,8 +165,8 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        DELETE FROM tokens 
-        WHERE tokens.id = %string{id}
+        DELETE FROM users_tokens 
+        WHERE users_tokens.id = %string{id}
         |sql}]
   end
 end

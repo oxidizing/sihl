@@ -20,6 +20,7 @@ let set_logger () =
 
 (** Sequence the app execution *)
 let run (app : unit Lwt.t) =
+  let () = Random.self_init () in
   Lwt_main.run
     ( set_logger () >>= fun () ->
       (* set logger *)

@@ -24,7 +24,7 @@ module User = struct
 
   let create ~email ~password ~username ~name =
     {
-      id = "123";
+      id = Uuidm.v `V4 |> Uuidm.to_string;
       email;
       password;
       username;

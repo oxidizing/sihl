@@ -43,7 +43,8 @@ let () =
   let open Alcotest_lwt in
   let _ = Sihl_users.App.start () in
   Lwt_main.run
-  @@ run "LwtUtils"
+    (let* _ = Sihl_core.Db.Migration.execute Sihl_users.Migration.migrations in
+     run "LwtUtils"
        [
          ( "user management",
            [
@@ -51,4 +52,4 @@ let () =
              test_case "Register user with invalid body" `Quick
                test_register_invalid_user_fails;
            ] );
-       ]
+       ])

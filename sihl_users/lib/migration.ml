@@ -7,14 +7,13 @@ CREATE TABLE users_users (
   uuid uuid NOT NULL,
   email VARCHAR(128) NOT NULL,
   password VARCHAR(128) NOT NULL,
-  given_name VARCHAR(128) NOT NULL,
-  family_name VARCHAR(128) NOT NULL,
+  name VARCHAR(256) NOT NULL,
   username VARCHAR(128),
   phone VARCHAR(128),
   status VARCHAR(128) NOT NULL,
   admin BOOLEAN,
   confirmed BOOLEAN,
-  created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE (uuid),
   UNIQUE (email)
@@ -32,7 +31,7 @@ CREATE TABLE users_tokens (
   user_ INTEGER,
   status VARCHAR(128) NOT NULL,
   kind VARCHAR(128) NOT NULL,
-  created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE (token),
   UNIQUE (uuid),
@@ -42,6 +41,6 @@ CREATE TABLE users_tokens (
 
 let migrations =
   [
-    ( ("create users table", create_users_table),
-      ("create tokens table", create_tokens_table) );
+    ("create users table", create_users_table);
+    ("create tokens table", create_tokens_table);
   ]
