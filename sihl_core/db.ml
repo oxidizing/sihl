@@ -11,11 +11,16 @@ type ('res, 'err) query =
 (** Configuration of the connection *)
 let url = "localhost"
 
+let user = "admin"
+
+let password = "password"
+
 let port = 5432
 
-let database = "ocaml_webapp"
+let database = "dev"
 
-let connection_uri = Printf.sprintf "postgresql://%s:%i/%s" url port database
+let connection_uri =
+  Printf.sprintf "postgresql://%s:%s@%s:%i/%s" user password url port database
 
 (* [connection ()] establishes a live database connection and is a pool of
    concurrent threads for accessing that connection. *)
