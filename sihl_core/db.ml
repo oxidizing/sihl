@@ -79,4 +79,9 @@ module Migration = struct
           | Error err -> return (Error err) )
     in
     return (connect ()) >>= run migrations
+
+  (* let run migrations =
+   *   match Lwt_main.run (execute migrations) with
+   *   | Ok () -> print_endline "Migration complete"
+   *   | Error err -> failwith err *)
 end
