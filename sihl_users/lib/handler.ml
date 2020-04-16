@@ -14,7 +14,7 @@ module Login = struct
     @@ fun req ->
     let user = Service.User.authenticate req in
     let* token = Service.User.token req user in
-    Lwt.return @@ Ok { token = Model.Token.value token }
+    Lwt.return @@ { token = Model.Token.value token }
 end
 
 module Register = struct
@@ -34,7 +34,7 @@ module Register = struct
       Service.User.register req ~email:body_in.email ~username:body_in.username
         ~password:body_in.password ~name:body_in.name
     in
-    Lwt.return @@ Ok ()
+    Lwt.return @@ ()
 end
 
 let logout =

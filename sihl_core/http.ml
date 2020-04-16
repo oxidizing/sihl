@@ -51,19 +51,19 @@ end
 
 let with_json :
     ?encode:('a -> Yojson.Safe.t) ->
-    (Request.t -> ('a, Fail.Error.t) result Lwt.t) ->
+    (Request.t -> 'a Lwt.t) ->
     Request.t ->
     Response.t Lwt.t =
  fun ?encode handler req ->
   let* result =
     Lwt.catch
-      (fun () -> handler req)
+      (fun () -> handler req |> Lwt.map (fun result -> Ok result))
       (fun exn -> Lwt.return @@ Fail.error_of_exn exn)
   in
   let response =
     match (encode, result) with
     | Some encode, Ok result -> result |> encode |> Yojson.Safe.to_string
     | None, Ok _ -> Msg.ok_string ()
-    | _, Error error -> Msg.msg_string @@ Fail.Error.show error
+    | _, Error error -> Msg.msg_string @@ Fail.Error.externalize error
   in
   respond' @@ `String response
