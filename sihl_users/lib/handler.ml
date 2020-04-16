@@ -4,15 +4,16 @@ open Opium.Std
 let ( let* ) = Lwt.bind
 
 module Login = struct
+  type body_out = { token : string } [@@deriving yojson]
+
   let handler =
-    get "/users/login/" (fun req ->
-        let user = Service.User.authenticate req in
-        let* token = Service.User.token req user in
-        match token with
-        | Ok token ->
-            `String (Printf.sprintf "token=%s" (Model.Token.value token))
-            |> respond'
-        | Error msg -> `String (Printf.sprintf "error=%s" msg) |> respond')
+    get "/users/login/"
+    @@ Sihl_core.Http.with_json ~encode:body_out_to_yojson
+    @@ fun req ->
+    let user = Service.User.authenticate req in
+    let* token = Service.User.token req user in
+    Lwt.return
+    @@ Result.map token ~f:(fun token -> { token = Model.Token.value token })
 end
 
 module Register = struct

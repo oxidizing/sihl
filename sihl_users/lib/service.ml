@@ -28,7 +28,10 @@ module User = struct
 
   let token request user =
     let token = Model.Token.create user in
-    Repository.Token.insert request token |> Lwt_result.map (fun _ -> token)
+    Repository.Token.insert request token
+    |> Lwt_result.map (fun _ -> token)
+    |> Lwt_result.map_err (fun _ ->
+           Sihl_core.Fail.DatabaseError "Failed to store token")
 
   let get request user ~userId =
     if Model.User.is_admin user || Model.User.is_owner user userId then

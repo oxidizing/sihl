@@ -51,17 +51,23 @@ end
 
 let with_json :
     ?encode:('a -> Yojson.Safe.t) ->
-    (Request.t -> 'a Lwt.t) ->
+    (Request.t -> ('a, Fail.t) result Lwt.t) ->
     Request.t ->
     Response.t Lwt.t =
  fun ?encode handler req ->
-  let* result = handler req in
+  let* result =
+    Lwt.catch
+      (fun () -> handler req)
+      (fun _ ->
+        (* TODO map to proper result type *)
+        let* () = Logs_lwt.info (fun m -> m "Caught exception on HTTP level") in
+        Lwt.return
+        @@ Error (Fail.BadRequest "bad request provided but we caught it"))
+  in
   let response =
-    match encode with
-    | Some encode -> result |> encode |> Yojson.Safe.to_string
-    | None -> (
-        match result with
-        | Ok _ -> Msg.ok_string ()
-        | Error msg -> Msg.msg_string @@ Fail.show msg )
+    match (encode, result) with
+    | Some encode, Ok result -> result |> encode |> Yojson.Safe.to_string
+    | None, Ok _ -> Msg.ok_string ()
+    | _, Error error -> Msg.msg_string @@ Fail.show error
   in
   respond' @@ `String response

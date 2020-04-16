@@ -39,8 +39,8 @@ let or_exn = function
 
 let or_exn' result = result |> Lwt.map or_exn
 
-let try_with f =
-  try Ok (f ()) with
+let of_exn f =
+  try f () with
   | Exception.BadRequest msg -> Error (BadRequest msg)
   | Exception.ClientError msg -> Error (ClientError msg)
   | Exception.DatabaseError msg -> Error (DatabaseError msg)
