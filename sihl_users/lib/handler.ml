@@ -13,7 +13,7 @@ module Login = struct
     @@ Http.with_json ~encode:body_out_to_yojson
     @@ fun req ->
     let user = Service.User.authenticate req in
-    let* token = Fail.or_exn' @@ Service.User.token req user in
+    let* token = Fail.exn_of_error' @@ Service.User.token req user in
     Lwt.return @@ Ok { token = Model.Token.value token }
 end
 

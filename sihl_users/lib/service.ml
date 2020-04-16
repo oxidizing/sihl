@@ -4,16 +4,16 @@ open Lwt_result.Infix
 module User = struct
   let authenticate request =
     request |> Middleware.Authentication.user
-    |> Sihl_core.Http.failwith_opt "No user provided"
+    |> Sihl_core.Http.failwith_opt "no user provided"
 
   let register request ~email ~password ~username ~name =
-    Repository.User.get_by_email request ~email
-    |> Lwt_result.map_err (fun _ ->
-           Sihl_core.Fail.BadRequest "Email already taken")
-    |> Lwt_result.map (fun _ ->
-           Model.User.create ~email ~password ~username ~name)
+    ( Repository.User.get_by_email request ~email
+    |> Sihl_core.Fail.map_bad_request "email already taken"
+    >|= fun _ -> Model.User.create ~email ~password ~username ~name )
     >>= fun user ->
-    Repository.User.insert request user |> Lwt_result.map (fun _ -> user)
+    Repository.User.insert request user
+    >|= (fun _ -> user)
+    |> Sihl_core.Fail.map_bad_request "can not insert user"
 
   let logout user request =
     let id = Model.User.id user in
@@ -31,7 +31,7 @@ module User = struct
     Repository.Token.insert request token
     |> Lwt_result.map (fun _ -> token)
     |> Lwt_result.map_err (fun _ ->
-           Sihl_core.Fail.DatabaseError "Failed to store token")
+           Sihl_core.Fail.err_database "Failed to store token")
 
   let get request user ~userId =
     if Model.User.is_admin user || Model.User.is_owner user userId then

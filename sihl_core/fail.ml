@@ -1,49 +1,48 @@
-type t =
-  | BadRequest of string
-  | ClientError of string
-  | DatabaseError of string
-  | ServerError of string
-  | NotAuthenticated of string
-  | Permission of string
+module Error = struct
+  type t =
+    | BadRequest of string
+    | Database of string
+    | NotAuthenticated of string
+    | NoPermission of string
 
-let show = function
-  | BadRequest msg -> msg
-  | ClientError msg -> msg
-  | DatabaseError msg -> msg
-  | ServerError msg -> msg
-  | NotAuthenticated msg -> msg
-  | Permission msg -> msg
+  let show = function
+    | BadRequest msg -> msg
+    | Database msg -> msg
+    | NotAuthenticated msg -> msg
+    | NoPermission msg -> msg
+end
 
 module Exception = struct
   exception BadRequest of string
 
-  exception ClientError of string
-
-  exception DatabaseError of string
-
-  exception ServerError of string
+  exception Database of string
 
   exception NotAuthenticated of string
 
-  exception Permission of string
+  exception NoPermission of string
 end
 
-let or_exn = function
+let exn_of_error = function
   | Ok value -> value
-  | Error (BadRequest msg) -> raise @@ Exception.BadRequest msg
-  | Error (ClientError msg) -> raise @@ Exception.ClientError msg
-  | Error (DatabaseError msg) -> raise @@ Exception.DatabaseError msg
-  | Error (ServerError msg) -> raise @@ Exception.ServerError msg
-  | Error (NotAuthenticated msg) -> raise @@ Exception.NotAuthenticated msg
-  | Error (Permission msg) -> raise @@ Exception.Permission msg
+  | Error (Error.BadRequest msg) -> raise @@ Exception.BadRequest msg
+  | Error (Error.Database msg) -> raise @@ Exception.Database msg
+  | Error (Error.NotAuthenticated msg) ->
+      raise @@ Exception.NotAuthenticated msg
+  | Error (Error.NoPermission msg) -> raise @@ Exception.NoPermission msg
 
-let or_exn' result = result |> Lwt.map or_exn
+let exn_of_error' result = result |> Lwt.map exn_of_error
 
-let of_exn f =
+let error_of_exn f =
   try f () with
-  | Exception.BadRequest msg -> Error (BadRequest msg)
-  | Exception.ClientError msg -> Error (ClientError msg)
-  | Exception.DatabaseError msg -> Error (DatabaseError msg)
-  | Exception.ServerError msg -> Error (ServerError msg)
-  | Exception.NotAuthenticated msg -> Error (NotAuthenticated msg)
-  | Exception.Permission msg -> Error (Permission msg)
+  | Exception.BadRequest msg -> Error (Error.BadRequest msg)
+  | Exception.Database msg -> Error (Error.Database msg)
+  | Exception.NotAuthenticated msg -> Error (Error.NotAuthenticated msg)
+  | Exception.NoPermission msg -> Error (Error.NoPermission msg)
+
+let raise_bad_request msg = raise @@ Exception.BadRequest msg
+
+let map_bad_request msg result =
+  result
+  |> Lwt_result.map_err (fun error -> Error.BadRequest (error ^ " msg=" ^ msg))
+
+let err_database msg = Error.Database msg

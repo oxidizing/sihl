@@ -181,8 +181,6 @@ module User = struct
 
   let insert req user =
     Sihl_core.Db.query_db (fun c -> Sql.User.insert c user) req
-    |> Lwt_result.map_err (fun _ ->
-           Sihl_core.Fail.DatabaseError "database error when inserting user")
 
   let update req user =
     Sihl_core.Db.query_db (fun c -> Sql.User.update c user) req

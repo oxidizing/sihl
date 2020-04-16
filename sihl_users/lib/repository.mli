@@ -8,7 +8,7 @@ module User : sig
     Opium.Std.Request.t -> email:string -> (Model.User.t, string) Lwt_result.t
 
   val insert :
-    Opium.Std.Request.t -> Model.User.t -> (unit, Sihl_core.Fail.t) Lwt_result.t
+    Opium.Std.Request.t -> Model.User.t -> (unit, string) Lwt_result.t
 
   val update :
     Opium.Std.Request.t -> Model.User.t -> (unit, string) Lwt_result.t

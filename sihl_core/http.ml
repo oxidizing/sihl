@@ -33,7 +33,7 @@ let require_body req decode =
   let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
   match body |> Yojson.Safe.from_string |> decode with
   | Ok body -> Lwt.return body
-  | Error _ -> raise @@ Fail.Exception.BadRequest "Invalid body provided"
+  | Error _ -> Fail.raise_bad_request "Invalid body provided"
 
 let failwith_opt msg opt =
   match opt with None -> failwith msg | Some value -> value
@@ -51,7 +51,7 @@ end
 
 let with_json :
     ?encode:('a -> Yojson.Safe.t) ->
-    (Request.t -> ('a, Fail.t) result Lwt.t) ->
+    (Request.t -> ('a, Fail.Error.t) result Lwt.t) ->
     Request.t ->
     Response.t Lwt.t =
  fun ?encode handler req ->
@@ -62,12 +62,12 @@ let with_json :
         (* TODO map to proper result type *)
         let* () = Logs_lwt.info (fun m -> m "Caught exception on HTTP level") in
         Lwt.return
-        @@ Error (Fail.BadRequest "bad request provided but we caught it"))
+        @@ Error (Fail.Error.BadRequest "bad request provided but we caught it"))
   in
   let response =
     match (encode, result) with
     | Some encode, Ok result -> result |> encode |> Yojson.Safe.to_string
     | None, Ok _ -> Msg.ok_string ()
-    | _, Error error -> Msg.msg_string @@ Fail.show error
+    | _, Error error -> Msg.msg_string @@ Fail.Error.show error
   in
   respond' @@ `String response
