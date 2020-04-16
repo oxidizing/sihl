@@ -46,7 +46,9 @@ module Migration : sig
 
   type 'a migration_step = string * 'a migration_operation
 
-  val execute : _ migration_step list -> (unit, string) result Lwt.t
+  type 'a migration = string * 'a migration_step list
+
+  val execute : _ migration list -> (unit, string) result Lwt.t
   (** [execute steps] is [Ok ()] if all the migration tasks in [steps] can be
       executed or [Error err] where [err] explains the reason for failure. *)
 end

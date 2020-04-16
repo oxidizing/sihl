@@ -1,5 +1,19 @@
 (library
  (name sihl_core)
- (libraries core opium caqti caqti-driver-postgresql caqti-lwt tyxml lwt.unix yojson ppx_deriving_yojson.runtime
+ (libraries
+  core
+  opium
+  caqti
+  caqti-driver-postgresql
+  caqti-lwt
+  tyxml
+  lwt.unix
+  yojson
+  ppx_deriving_yojson.runtime
 )
- (preprocess (pps ppx_rapper ppx_deriving_yojson)))
+ (preprocess
+  (pps
+   ppx_rapper
+   ppx_fields_conv
+   ppx_deriving_yojson
+  )))

@@ -1,6 +1,8 @@
 open! Core
 open Opium.Std
 
+let ( let* ) = Lwt.bind
+
 (* Type aliases for the sake of documentation and explication *)
 type 'err caqti_conn_pool =
   (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'err)) Caqti_lwt.Pool.t
@@ -59,6 +61,100 @@ let query_db query req =
   Request.env req |> Opium.Hmap.get key |> query_pool query
 
 module Migration = struct
+  module State = struct
+    module Model = struct
+      type t = { namespace : string; version : int; dirty : bool }
+      [@@deriving fields]
+
+      let create ~namespace = { namespace; version = 0; dirty = false }
+    end
+
+    module Repository = struct
+      open Model
+
+      let create_table_if_not_exists =
+        [%rapper
+          execute
+            {sql|
+CREATE TABLE IF NOT EXISTS core_migration_state (
+  namespace VARCHAR(128) NOT NULL,
+  version INTEGER,
+  dirty BOOL,
+  UNIQUE (namespace)
+);
+ |sql}]
+
+      let get =
+        [%rapper
+          get_opt
+            {sql|
+SELECT
+  @string{namespace},
+  @int{version},
+  @bool{dirty}
+FROM core_migration_state
+WHERE namespace = %string{namespace};
+|sql}
+            record_out]
+
+      let upsert =
+        [%rapper
+          execute
+            {sql|
+INSERT INTO core_migration_state (
+  namespace,
+  version,
+  dirty
+) VALUES (
+  %string{namespace},
+  %int{version},
+  %bool{dirty}
+) ON CONFLICT (namespace) DO UPDATE SET version = %int{version},
+                                        dirty = %bool{dirty}
+|sql}
+            record_in]
+    end
+
+    module Service = struct
+      let error_to_exn result =
+        match result with
+        | Ok result -> result
+        | Error msg -> Fail.raise_database msg
+
+      let setup pool =
+        let* result =
+          query_pool (fun c -> Repository.create_table_if_not_exists c ()) pool
+        in
+        result |> error_to_exn |> Lwt.return
+
+      let has pool ~namespace =
+        let* result = query_pool (fun c -> Repository.get c ~namespace) pool in
+        Lwt.return
+        @@
+        match result with
+        | Ok (Some _) -> true
+        | Ok None -> false
+        | Error msg -> Fail.raise_database msg
+
+      let get pool ~namespace =
+        let* state = query_pool (fun c -> Repository.get c ~namespace) pool in
+        Lwt.return
+        @@
+        match state with
+        | Ok (Some state) -> state
+        | Ok None ->
+            Fail.raise_database
+              (Printf.sprintf "could not get migration state for namespace=%s"
+                 namespace)
+        | Error msg -> Fail.raise_database msg
+
+      let upsert pool state =
+        let* result = query_pool (fun c -> Repository.upsert c state) pool in
+        let _ = result |> error_to_exn in
+        Lwt.return state
+    end
+  end
+
   type 'a migration_error =
     [< Caqti_error.t > `Connect_failed `Connect_rejected `Post_connect ] as 'a
 
@@ -67,35 +163,53 @@ module Migration = struct
 
   type 'a migration_step = string * 'a migration_operation
 
+  type 'a migration = string * 'a migration_step list
+
+  let execute_steps steps pool =
+    let open Lwt in
+    let rec run steps pool =
+      match steps with
+      | [] -> Lwt_result.return ()
+      | (name, query) :: steps -> (
+          Lwt_io.printf "Running: %s\n" name >>= fun () ->
+          query_pool (fun c -> query c ()) pool >>= function
+          | Ok () -> run steps pool
+          | Error err -> return (Error err) )
+    in
+    run steps pool
+
+  let execute_migration migration pool =
+    let namespace, steps = migration in
+    let* () = State.Service.setup pool in
+    let* has_state = State.Service.has pool ~namespace in
+
+    if has_state then State.Service.get pool ~namespace
+    else
+      let state = State.Model.create ~namespace in
+      State.Service.upsert pool state
+
+  (* TODO
+     setup table
+     check if there is a state
+     if there is one, mark as dirty
+     get migrations to apply and new version
+     apply migration steps
+     update state version and set dirty = false
+  *)
+
+  let _ = execute_steps [] pool
+
   let execute migrations =
     let open Lwt in
     let rec run migrations pool =
       match migrations with
-      | [] -> Lwt_result.return ()
-      | (name, migration) :: migrations -> (
-          Lwt_io.printf "Running: %s\n" name >>= fun () ->
-          query_pool (fun c -> migration c ()) pool >>= function
+      | [] ->
+          Lwt_io.printf "no migrations found, nothing to do\n" >>= fun () ->
+          Lwt_result.return ()
+      | migration :: migrations -> (
+          execute_migration migration pool >>= function
           | Ok () -> run migrations pool
-          | Error err ->
-              Lwt_io.printf "Failed to run migration msg=%s" err >>= fun () ->
-              return (Error err) )
+          | Error err -> return (Error err) )
     in
     return (connect ()) >>= run migrations
-
-  (* let run migrations =
-   *   match Lwt_main.run (execute migrations) with
-   *   | Ok () -> print_endline "Migration complete"
-   *   | Error err -> failwith err *)
 end
-
-(* let clean queries =
- *   let open Lwt in
- *   let rec run queries pool =
- *     match queries with
- *     | [] -> Lwt_result.return ()
- *     | query :: queries -> (
- *         query_pool (fun c -> query c ()) pool >>= function
- *         | Ok () -> run queries pool
- *         | Error err -> return (Error err) )
- *   in
- *   return (connect ()) >>= run queries *)

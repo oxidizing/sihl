@@ -45,6 +45,8 @@ let raise_no_permissions msg = raise @@ Exception.NoPermissions msg
 
 let raise_not_authenticated msg = raise @@ Exception.NotAuthenticated msg
 
+let raise_database msg = raise @@ Exception.Database msg
+
 let with_bad_request msg result =
   match result with
   | Ok result -> result
