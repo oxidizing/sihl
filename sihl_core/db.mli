@@ -35,11 +35,22 @@ val query_db :
 
 (** {{1} API for database migrations } *)
 
-module Migration : sig
+module Migrate : sig
   (** Interface for executing database migrations *)
 
   type 'a migration_error =
-    [< Caqti_error.t > `Connect_failed `Connect_rejected `Post_connect ] as 'a
+    [< Caqti_error.t > `Connect_failed
+    `Connect_rejected
+    `Decode_rejected
+    `Encode_failed
+    `Encode_rejected
+    `Post_connect
+    `Request_failed
+    `Request_rejected
+    `Response_failed
+    `Response_rejected ]
+    as
+    'a
 
   type 'a migration_operation =
     Caqti_lwt.connection -> unit -> (unit, 'a migration_error) result Lwt.t

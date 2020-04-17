@@ -11,8 +11,8 @@ CREATE TABLE users_users (
   username VARCHAR(128),
   phone VARCHAR(128),
   status VARCHAR(128) NOT NULL,
-  admin BOOLEAN,
-  confirmed BOOLEAN,
+  admin BOOLEAN NOT NULL DEFAULT false,
+  confirmed BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE (uuid),
@@ -40,7 +40,8 @@ CREATE TABLE users_tokens (
 |sql}]
 
 let migrations =
-  [
-    ("create users table", create_users_table);
-    ("create tokens table", create_tokens_table);
-  ]
+  ( "users",
+    [
+      ("create users table", create_users_table);
+      ("create tokens table", create_tokens_table);
+    ] )

@@ -1,4 +1,4 @@
-let ok_json_string = {|{"msg": "ok"}|}
+let ok_json_string = {|{"msg":"ok"}|}
 
 let ( let* ) = Lwt.bind
 
@@ -43,7 +43,9 @@ let () =
   let open Alcotest_lwt in
   let _ = Sihl_users.App.start () in
   Lwt_main.run
-    (let* _ = Sihl_core.Db.Migration.execute Sihl_users.Migration.migrations in
+    (let* _ =
+       Sihl_core.Db.Migrate.execute [ Sihl_users.Migration.migrations ]
+     in
      run "LwtUtils"
        [
          ( "user management",

@@ -1,7 +1,7 @@
 open! Core
 open Opium.Std
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 (* Type aliases for the sake of documentation and explication *)
 type 'err caqti_conn_pool =
@@ -60,13 +60,43 @@ let middleware app =
 let query_db query req =
   Request.env req |> Opium.Hmap.get key |> query_pool query
 
-module Migration = struct
+module Migrate = struct
+  type 'a migration_error =
+    [< Caqti_error.t > `Connect_failed
+    `Connect_rejected
+    `Decode_rejected
+    `Encode_failed
+    `Encode_rejected
+    `Post_connect
+    `Request_failed
+    `Request_rejected
+    `Response_failed
+    `Response_rejected ]
+    as
+    'a
+
+  type 'a migration_operation =
+    Caqti_lwt.connection -> unit -> (unit, 'a migration_error) result Lwt.t
+
+  type 'a migration_step = string * 'a migration_operation
+
+  type 'a migration = string * 'a migration_step list
+
   module State = struct
     module Model = struct
       type t = { namespace : string; version : int; dirty : bool }
       [@@deriving fields]
 
-      let create ~namespace = { namespace; version = 0; dirty = false }
+      let create ~namespace = { namespace; version = 0; dirty = true }
+
+      let mark_dirty state = { state with dirty = true }
+
+      let mark_clean state = { state with dirty = false }
+
+      let increment state = { state with version = state.version + 1 }
+
+      let steps_to_apply (namespace, steps) { version; _ } =
+        (namespace, List.drop steps version)
     end
 
     module Repository = struct
@@ -109,63 +139,57 @@ INSERT INTO core_migration_state (
   %string{namespace},
   %int{version},
   %bool{dirty}
-) ON CONFLICT (namespace) DO UPDATE SET version = %int{version},
-                                        dirty = %bool{dirty}
+) ON CONFLICT (namespace)
+DO UPDATE SET version = %int{version},
+dirty = %bool{dirty}
 |sql}
             record_in]
     end
 
     module Service = struct
-      let error_to_exn result =
-        match result with
-        | Ok result -> result
-        | Error msg -> Fail.raise_database msg
-
       let setup pool =
-        let* result =
-          query_pool (fun c -> Repository.create_table_if_not_exists c ()) pool
-        in
-        result |> error_to_exn |> Lwt.return
+        query_pool (fun c -> Repository.create_table_if_not_exists c ()) pool
 
       let has pool ~namespace =
         let* result = query_pool (fun c -> Repository.get c ~namespace) pool in
-        Lwt.return
-        @@
-        match result with
-        | Ok (Some _) -> true
-        | Ok None -> false
-        | Error msg -> Fail.raise_database msg
+        Lwt_result.return (Option.is_some result)
 
       let get pool ~namespace =
         let* state = query_pool (fun c -> Repository.get c ~namespace) pool in
         Lwt.return
         @@
         match state with
-        | Ok (Some state) -> state
-        | Ok None ->
-            Fail.raise_database
+        | Some state -> Ok state
+        | None ->
+            Error
               (Printf.sprintf "could not get migration state for namespace=%s"
                  namespace)
-        | Error msg -> Fail.raise_database msg
 
       let upsert pool state =
-        let* result = query_pool (fun c -> Repository.upsert c state) pool in
-        let _ = result |> error_to_exn in
-        Lwt.return state
+        query_pool (fun c -> Repository.upsert c state) pool
+
+      let mark_dirty pool ~namespace =
+        let* state = get pool ~namespace in
+        let dirty_state = Model.mark_dirty state in
+        let* () = upsert pool dirty_state in
+        Lwt.return @@ Ok dirty_state
+
+      let mark_clean pool ~namespace =
+        let* state = get pool ~namespace in
+        let clean_state = Model.mark_clean state in
+        let* () = upsert pool clean_state in
+        Lwt.return @@ Ok clean_state
+
+      let increment pool ~namespace =
+        let* state = get pool ~namespace in
+        let updated_state = Model.increment state in
+        let* () = upsert pool updated_state in
+        Lwt.return @@ Ok updated_state
     end
   end
 
-  type 'a migration_error =
-    [< Caqti_error.t > `Connect_failed `Connect_rejected `Post_connect ] as 'a
-
-  type 'a migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, 'a migration_error) result Lwt.t
-
-  type 'a migration_step = string * 'a migration_operation
-
-  type 'a migration = string * 'a migration_step list
-
-  let execute_steps steps pool =
+  let execute_steps migration pool =
+    let namespace, steps = migration in
     let open Lwt in
     let rec run steps pool =
       match steps with
@@ -173,39 +197,45 @@ INSERT INTO core_migration_state (
       | (name, query) :: steps -> (
           Lwt_io.printf "Running: %s\n" name >>= fun () ->
           query_pool (fun c -> query c ()) pool >>= function
-          | Ok () -> run steps pool
+          | Ok () ->
+              let* _ = State.Service.increment pool ~namespace in
+              run steps pool
           | Error err -> return (Error err) )
     in
-    run steps pool
+    ( match List.length steps with
+    | 0 -> Lwt_io.printf "no migrations to apply for %s\n" namespace
+    | n -> Lwt_io.printf "applying %i migrations for %s\n" n namespace )
+    >>= fun () -> run steps pool
 
   let execute_migration migration pool =
-    let namespace, steps = migration in
+    let namespace, _ = migration in
     let* () = State.Service.setup pool in
     let* has_state = State.Service.has pool ~namespace in
-
-    if has_state then State.Service.get pool ~namespace
-    else
-      let state = State.Model.create ~namespace in
-      State.Service.upsert pool state
-
-  (* TODO
-     setup table
-     check if there is a state
-     if there is one, mark as dirty
-     get migrations to apply and new version
-     apply migration steps
-     update state version and set dirty = false
-  *)
-
-  let _ = execute_steps [] pool
+    let* state =
+      if has_state then
+        let* state = State.Service.get pool ~namespace in
+        if State.Model.dirty state then
+          Lwt.return
+          @@ Error
+               (Printf.sprintf
+                  "dirty migration found for namespace %s, please fix manually"
+                  namespace)
+        else State.Service.mark_dirty pool ~namespace
+      else
+        let state = State.Model.create ~namespace in
+        let* () = State.Service.upsert pool state in
+        Lwt.return @@ Ok state
+    in
+    let migration_to_apply = State.Model.steps_to_apply migration state in
+    let* () = execute_steps migration_to_apply pool in
+    let* _ = State.Service.mark_clean pool ~namespace in
+    Lwt.return @@ Ok ()
 
   let execute migrations =
     let open Lwt in
     let rec run migrations pool =
       match migrations with
-      | [] ->
-          Lwt_io.printf "no migrations found, nothing to do\n" >>= fun () ->
-          Lwt_result.return ()
+      | [] -> Lwt_result.return ()
       | migration :: migrations -> (
           execute_migration migration pool >>= function
           | Ok () -> run migrations pool
