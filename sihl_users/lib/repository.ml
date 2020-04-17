@@ -106,6 +106,11 @@ module Sql = struct
           confirmed = %bool{confirmed}
         |sql}
           record_in]
+
+    let clean =
+      [%rapper execute {sql|
+        TRUNCATE TABLE users_users;
+        |sql}]
   end
 
   module Token = struct
@@ -168,6 +173,11 @@ module Sql = struct
         DELETE FROM users_tokens 
         WHERE users_tokens.id = %string{id}
         |sql}]
+
+    let clean =
+      [%rapper execute {sql|
+        TRUNCATE TABLE users_tokens;
+        |sql}]
   end
 end
 
@@ -184,6 +194,8 @@ module User = struct
 
   let update req user =
     Sihl_core.Db.query_db (fun c -> Sql.User.update c user) req
+
+  let clean req = Sihl_core.Db.query_db (fun c -> Sql.User.clean c ()) req
 end
 
 module Token = struct
@@ -198,4 +210,6 @@ module Token = struct
 
   let update req token =
     Sihl_core.Db.query_db (fun c -> Sql.Token.update c token) req
+
+  let clean req = Sihl_core.Db.query_db (fun c -> Sql.Token.clean c ()) req
 end

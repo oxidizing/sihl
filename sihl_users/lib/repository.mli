@@ -12,6 +12,8 @@ module User : sig
 
   val update :
     Opium.Std.Request.t -> Model.User.t -> (unit, string) Lwt_result.t
+
+  val clean : Opium.Std.Request.t -> (unit, string) Lwt_result.t
 end
 
 module Token : sig
@@ -26,4 +28,6 @@ module Token : sig
 
   val update :
     Opium.Std.Request.t -> Model.Token.t -> (unit, string) Lwt_result.t
+
+  val clean : Opium.Std.Request.t -> (unit, string) Lwt_result.t
 end
