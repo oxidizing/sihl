@@ -38,6 +38,17 @@ let connect () =
 let query_pool query pool =
   Caqti_lwt.Pool.use query pool |> Lwt_result.map_err Caqti_error.show
 
+let query_pool_with_trx query pool =
+  Caqti_lwt.Pool.use
+    (fun connection ->
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      let* () = Connection.start () in
+      let* result = query connection in
+      let* () = Connection.commit () in
+      Lwt.return @@ Ok result)
+    pool
+  |> Lwt_result.map_err Caqti_error.show
+
 (* Seal the key type with a non-exported type, so the pool cannot be retrieved
    outside of this module *)
 type 'err db_pool = 'err caqti_conn_pool
