@@ -15,11 +15,6 @@ type connection = (module Caqti_lwt.CONNECTION)
 (** {{1} API for the Opium app database middleware }*)
 
 val middleware : App.builder
-(** [middleware app] equips the [app] with the database pool needed by the
-    functions in [Update] and [Get]. It cannot (and should not) be accessed
-    except through the API in this module. *)
-
-val middleware_connection : App.builder
 
 val query_db :
   Opium_kernel.Rock.Request.t ->
