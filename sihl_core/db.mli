@@ -31,28 +31,16 @@ val query_db :
 module Migrate : sig
   (** Interface for executing database migrations *)
 
-  type 'a migration_error =
-    [< Caqti_error.t > `Connect_failed
-    `Connect_rejected
-    `Decode_rejected
-    `Encode_failed
-    `Encode_rejected
-    `Post_connect
-    `Request_failed
-    `Request_rejected
-    `Response_failed
-    `Response_rejected ]
-    as
-    'a
+  type migration_error = Caqti_error.t
 
-  type 'a migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, 'a migration_error) result Lwt.t
+  type migration_operation =
+    Caqti_lwt.connection -> unit -> (unit, migration_error) result Lwt.t
 
-  type 'a migration_step = string * 'a migration_operation
+  type migration_step = string * migration_operation
 
-  type 'a migration = string * 'a migration_step list
+  type migration = string * migration_step list
 
-  val execute : _ migration list -> (unit, string) result Lwt.t
+  val execute : migration list -> (unit, string) result Lwt.t
   (** [execute steps] is [Ok ()] if all the migration tasks in [steps] can be
       executed or [Error err] where [err] explains the reason for failure. *)
 end

@@ -113,26 +113,14 @@ let query_db request query =
   |> Lwt_result.map_err Caqti_error.show
 
 module Migrate = struct
-  type 'a migration_error =
-    [< Caqti_error.t > `Connect_failed
-    `Connect_rejected
-    `Decode_rejected
-    `Encode_failed
-    `Encode_rejected
-    `Post_connect
-    `Request_failed
-    `Request_rejected
-    `Response_failed
-    `Response_rejected ]
-    as
-    'a
+  type migration_error = Caqti_error.t
 
-  type 'a migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, 'a migration_error) result Lwt.t
+  type migration_operation =
+    Caqti_lwt.connection -> unit -> (unit, migration_error) result Lwt.t
 
-  type 'a migration_step = string * 'a migration_operation
+  type migration_step = string * migration_operation
 
-  type 'a migration = string * 'a migration_step list
+  type migration = string * migration_step list
 
   module State = struct
     module Model = struct
