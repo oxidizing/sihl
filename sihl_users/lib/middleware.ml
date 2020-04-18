@@ -1,6 +1,8 @@
-module Authentication = struct
-  open Opium.Std
+open Opium.Std
 
+let ( let* ) = Lwt_result.bind
+
+module Authentication = struct
   (* My convention is to stick the keys inside an Env sub module. By not exposing
      this module in the mli we are preventing the user or other middleware from
      meddling with our values by not using our interface *)
@@ -13,20 +15,23 @@ module Authentication = struct
   end
 
   let authenticate_token request token =
-    let open Lwt_result.Infix in
-    let result =
-      Repository.Token.get request ~value:token >>= fun token ->
-      let token_user = Model.Token.token_user token in
-      Repository.User.get request ~id:token_user
+    let* token =
+      Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
     in
-    result |> Lwt_result.map_err (fun _ -> "Not authorized")
+    let token_user = Model.Token.token_user token in
+    Repository.User.get ~id:token_user
+    |> Sihl_core.Db.query_db request
+    |> Lwt_result.map_err (fun _ -> "Not authorized")
 
   let authenticate_credentials request ~email ~password =
-    let open Lwt_result.Infix in
-    Repository.User.get_by_email request ~email >>= fun user ->
-    if Model.User.matches_password password user then
-      Lwt_result.ok @@ Lwt.return user
-    else Lwt_result.fail "Invalid password or email provided"
+    Repository.User.get_by_email ~email
+    |> Sihl_core.Db.query_db request
+    |> Lwt.map (fun user ->
+           match user with
+           | Ok user ->
+               if Model.User.matches_password password user then Ok user
+               else Error "Invalid password or email provided"
+           | Error msg -> Error msg)
 
   (* Usually middleware gets its own module so the middleware constructor function
      is usually shortened to m. For example, [Auth.m] is obvious enough.

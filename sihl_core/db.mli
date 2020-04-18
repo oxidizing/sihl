@@ -8,6 +8,10 @@ type 'err caqti_conn_pool =
 type ('res, 'err) query =
   Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) result Lwt.t
 
+type 'a db_result = ('a, Caqti_error.t) Lwt_result.t
+
+type connection = (module Caqti_lwt.CONNECTION)
+
 (** {{1} API for the Opium app database middleware }*)
 
 val middleware : App.builder
@@ -15,23 +19,12 @@ val middleware : App.builder
     functions in [Update] and [Get]. It cannot (and should not) be accessed
     except through the API in this module. *)
 
+val middleware_connection : App.builder
+
 val query_db :
-  (Caqti_lwt.connection ->
-  ( 'res,
-    [< Caqti_error.t > `Connect_failed
-    `Connect_rejected
-    `Decode_rejected
-    `Encode_failed
-    `Encode_rejected
-    `Post_connect
-    `Request_failed
-    `Request_rejected
-    `Response_failed
-    `Response_rejected ] )
-  result
-  Lwt.t) ->
   Opium_kernel.Rock.Request.t ->
-  ('res, string) Lwt_result.t
+  (connection -> 'a db_result) ->
+  ('a, string) result Lwt.t
 
 (** {{1} API for database migrations } *)
 

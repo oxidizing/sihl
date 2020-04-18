@@ -1,33 +1,38 @@
 module User : sig
-  val get_all : Opium.Std.Request.t -> (Model.User.t list, string) Lwt_result.t
+  val get_all :
+    Sihl_core.Db.connection -> Model.User.t list Sihl_core.Db.db_result
 
   val get :
-    Opium.Std.Request.t -> id:string -> (Model.User.t, string) Lwt_result.t
+    id:string -> Sihl_core.Db.connection -> Model.User.t Sihl_core.Db.db_result
 
   val get_by_email :
-    Opium.Std.Request.t -> email:string -> (Model.User.t, string) Lwt_result.t
+    email:string ->
+    Sihl_core.Db.connection ->
+    Model.User.t Sihl_core.Db.db_result
 
   val insert :
-    Opium.Std.Request.t -> Model.User.t -> (unit, string) Lwt_result.t
+    Model.User.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 
   val update :
-    Opium.Std.Request.t -> Model.User.t -> (unit, string) Lwt_result.t
+    Model.User.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 
-  val clean : Opium.Std.Request.t -> (unit, string) Lwt_result.t
+  val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 end
 
 module Token : sig
   val get :
-    Opium.Std.Request.t -> value:string -> (Model.Token.t, string) Lwt_result.t
+    value:string ->
+    Sihl_core.Db.connection ->
+    Model.Token.t Sihl_core.Db.db_result
 
   val delete_by_user :
-    Opium.Std.Request.t -> id:string -> (unit, string) Lwt_result.t
+    id:string -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 
   val insert :
-    Opium.Std.Request.t -> Model.Token.t -> (unit, string) Lwt_result.t
+    Model.Token.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 
   val update :
-    Opium.Std.Request.t -> Model.Token.t -> (unit, string) Lwt_result.t
+    Model.Token.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 
-  val clean : Opium.Std.Request.t -> (unit, string) Lwt_result.t
+  val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 end

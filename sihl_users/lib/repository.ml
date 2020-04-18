@@ -182,34 +182,27 @@ module Sql = struct
 end
 
 module User = struct
-  let get_all req = Sihl_core.Db.query_db (fun c -> Sql.User.get_all c ()) req
+  let get_all connection = Sql.User.get_all connection ()
 
-  let get req ~id = Sihl_core.Db.query_db (fun c -> Sql.User.get c ~id) req
+  let get ~id connection = Sql.User.get connection ~id
 
-  let get_by_email req ~email =
-    Sihl_core.Db.query_db (fun c -> Sql.User.get_by_email c ~email) req
+  let get_by_email ~email connection = Sql.User.get_by_email connection ~email
 
-  let insert req user =
-    Sihl_core.Db.query_db (fun c -> Sql.User.insert c user) req
+  let insert user connection = Sql.User.insert connection user
 
-  let update req user =
-    Sihl_core.Db.query_db (fun c -> Sql.User.update c user) req
+  let update user connection = Sql.User.update connection user
 
-  let clean req = Sihl_core.Db.query_db (fun c -> Sql.User.clean c ()) req
+  let clean connection = Sql.User.clean connection ()
 end
 
 module Token = struct
-  let get req ~value =
-    Sihl_core.Db.query_db (fun c -> Sql.Token.get c ~value) req
+  let get ~value connection = Sql.Token.get connection ~value
 
-  let delete_by_user req ~id =
-    Sihl_core.Db.query_db (fun c -> Sql.Token.delete_by_user c ~id) req
+  let delete_by_user ~id connection = Sql.Token.delete_by_user connection ~id
 
-  let insert req token =
-    Sihl_core.Db.query_db (fun c -> Sql.Token.insert c token) req
+  let insert token connection = Sql.Token.insert connection token
 
-  let update req token =
-    Sihl_core.Db.query_db (fun c -> Sql.Token.update c token) req
+  let update token connection = Sql.Token.update connection token
 
-  let clean req = Sihl_core.Db.query_db (fun c -> Sql.Token.clean c ()) req
+  let clean connection = Sql.Token.clean connection ()
 end
