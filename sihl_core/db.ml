@@ -53,8 +53,14 @@ let query_pool_with_trx query pool =
    outside of this module *)
 type 'err db_pool = 'err caqti_conn_pool
 
+type db_connection = (module Caqti_lwt.CONNECTION)
+
 let key : _ db_pool Opium.Hmap.key =
   Opium.Hmap.Key.create ("db pool", fun _ -> sexp_of_string "db_pool")
+
+let key_connection : db_connection Opium.Hmap.key =
+  Opium.Hmap.Key.create
+    ("db connection", fun _ -> sexp_of_string "db_connection")
 
 (* Initiate a connection pool and add it to the app environment *)
 let middleware app =
@@ -65,6 +71,35 @@ let middleware app =
   in
   let m = Rock.Middleware.create ~name:"database connection pool" ~filter in
   middleware m app
+
+let middleware_connection app =
+  let ( let* ) = Lwt.bind in
+  let pool = connect () in
+  let filter (handler : Request.t -> Response.t Lwt.t) (req : Request.t) =
+    let response_ref : Response.t Lwt.t option Pervasives.ref = ref None in
+    let result =
+      Caqti_lwt.Pool.use
+        (fun connection ->
+          let (module Connection : Caqti_lwt.CONNECTION) = connection in
+          let env =
+            Opium.Hmap.add key_connection connection (Request.env req)
+          in
+          let response = handler { req with env } in
+          (* we wait for the handler to finish before returning the connection to the pool finally *)
+          let* _ = response in
+          let _ = response_ref := Some response in
+          (* all errors are handled when querying the db and in the actual handlers *)
+          (* TODO log all errors before returning Ok () *)
+          Lwt.return @@ Ok ())
+        pool
+    in
+    Lwt.bind result (fun _ ->
+        match !response_ref with
+        | Some response -> response
+        | None -> failwith "error happened")
+  in
+  let m = Rock.Middleware.create ~name:"database connection" ~filter in
+  Opium.Std.middleware m app
 
 (* Execute a query on the database connection pool stored in the request
    environment *)
