@@ -1,10 +1,15 @@
-version: 2
+version: 2.1
 jobs:
   build:
     docker:
       - image: ocaml/opam2:4.08
         environment:
           TERM: xterm
+      - image: postgres:12.2
+        environment:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: admin
+          POSTGRES_DB: dev
     steps:
       - run:
           name: Update opam
@@ -29,7 +34,7 @@ jobs:
       - run:
           name: Install OCaml test dependencies
           # Not using opam install -y -t because it tries to run csv's tests
-          command: opam install -y alcotest alcotest-lwt
+          command: opam install -y alcotest alcotest-lwt cohttp-lwt-unix
       - run:
           name: Test
           command: opam config exec -- make test
@@ -45,3 +50,9 @@ jobs:
       #       cd _build/default
       #       shopt -s globstar
       #       opam config exec -- ocveralls **/bisect*.out --send --repo_token $COVERALLS_REPO_TOKEN --git
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build

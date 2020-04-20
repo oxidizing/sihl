@@ -26,6 +26,8 @@
 
   ;; Web toolkit
   (opium (>= 0.17.1))
+  (yojson (>= 1.7.0))
+  (ppx_deriving_yojson (>= 3.5.2))
 
   ;; Database interface
   (caqti (>= 1.2.1))
@@ -39,6 +41,11 @@
   ;; Logging
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
+
+  ;; Helpers
+  (sexplib (>= 0.13.0))
+  (ppx_fields_conv (>= 0.13.0))
+  (ppx_sexp_conv (>= 0.13.0))
 
   ;; Dev dependencies
   (utop :dev)
@@ -62,6 +69,9 @@
 
   ;; Web toolkit
   (opium (>= 0.17.1))
+  (yojson (>= 1.7.0))
+  (ppx_deriving_yojson (>= 3.5.2))
+  (uuidm (>= 0.9.7))
 
   ;; Database interface
   (caqti (>= 1.2.1))
@@ -75,6 +85,10 @@
   ;; Logging
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
+
+  ;; Helpers
+  (ppx_fields_conv (>= 0.13.0))
+  (ppx_sexp_conv (>= 0.13.0))
 
   ;; Dev dependencies
   (utop :dev)

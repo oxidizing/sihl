@@ -8,7 +8,6 @@
   caqti-driver-postgresql
   caqti-lwt
   lwt.unix
-  ppx_fields_conv
   yojson
   ppx_deriving_yojson.runtime
   sexplib
