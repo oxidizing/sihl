@@ -86,3 +86,22 @@ let with_json :
       let msg = Fail.Error.show error in
       let _ = Logs_lwt.err (fun m -> m "%s" msg) in
       respond' ~code:(code_of_error error) (`String (Msg.msg_string @@ msg))
+
+module Middleware = struct
+  let handle_error app =
+    let filter (handler : Request.t -> Response.t Lwt.t) (req : Request.t) =
+      let* response =
+        Lwt.catch
+          (fun () -> handler req |> Lwt.map (fun result -> Ok result))
+          (fun exn -> Lwt.return @@ Fail.error_of_exn exn)
+      in
+      match response with
+      | Ok response -> Lwt.return response
+      | Error error ->
+          let msg = Fail.Error.show error in
+          let _ = Logs_lwt.err (fun m -> m "%s" msg) in
+          respond' ~code:(code_of_error error) (`String (Msg.msg_string @@ msg))
+    in
+    let m = Rock.Middleware.create ~name:"error handler" ~filter in
+    Opium.Std.middleware m app
+end

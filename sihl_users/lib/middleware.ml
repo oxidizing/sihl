@@ -53,7 +53,9 @@ module Authentication = struct
               let req = { req with Request.env } in
               handler req
           (* TODO error handling *)
-          | Error msg -> failwith @@ "bad username/password pair msg" ^ msg )
+          | Error msg ->
+              Sihl_core.Fail.raise_not_authenticated
+              @@ "bad username/password pair msg" ^ msg )
       | Some (`Basic (email, password)) -> (
           authenticate_credentials req ~email ~password >>= fun result ->
           match result with
@@ -62,7 +64,9 @@ module Authentication = struct
               let req = { req with Request.env } in
               handler req
           (* TODO error handling *)
-          | Error msg -> failwith @@ "bad username/password pair msg" ^ msg )
+          | Error msg ->
+              Sihl_core.Fail.raise_not_authenticated
+              @@ "bad username/password pair msg" ^ msg )
     in
     Rock.Middleware.create ~name:"http auth" ~filter
 

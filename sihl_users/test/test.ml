@@ -23,5 +23,7 @@ let () =
                Test_login_register.test_register_invalid_user_fails;
              test_case "Register user with existing email fails" `Quick
                Test_login_register.test_register_existing_user_fails;
+             test_case "User fetched own user after logout fails" `Quick
+               Test_login_register.test_fetch_user_after_logout_fails;
            ] );
        ])

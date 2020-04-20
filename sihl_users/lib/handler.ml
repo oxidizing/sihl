@@ -68,8 +68,15 @@ module GetMe = struct
     Lwt.return @@ response
 end
 
-let logout =
-  get "/users/logout/" (fun _ -> `String "not implemented" |> respond')
+module Logout = struct
+  open Sihl_core
+
+  let handler =
+    delete "/users/logout/" @@ Http.with_json
+    @@ fun req ->
+    let user = Service.User.authenticate req in
+    Service.User.logout req user
+end
 
 let get_user =
   get "/users/users/:id/" (fun _ -> `String "not implemented" |> respond')
@@ -79,7 +86,12 @@ let get_users =
 
 let routes =
   [
-    Login.handler; Register.handler; logout; get_user; get_users; GetMe.handler;
+    Login.handler;
+    Register.handler;
+    Logout.handler;
+    get_user;
+    get_users;
+    GetMe.handler;
   ]
 
 let add_handlers app =

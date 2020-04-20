@@ -22,17 +22,17 @@ module User = struct
   (* TODO use password hashing *)
   let matches_password password user = String.equal user.password password
 
-  let create ~email ~password ~username ~name =
+  let create ~email ~password ~username ~name ~phone ~admin ~confirmed =
     {
       id = Uuidm.v `V4 |> Uuidm.to_string;
       email;
       password;
       username;
       name;
-      phone = None;
+      phone;
+      admin;
+      confirmed;
       status = "active";
-      admin = false;
-      confirmed = false;
     }
 end
 

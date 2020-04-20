@@ -174,10 +174,7 @@ module Sql = struct
         execute
           {sql|
         DELETE FROM users_tokens 
-        USING users_tokens AS tokens
-        LEFT JOIN users_users
-        ON users_users.id = users_tokens.user
-        WHERE users_users.uuid = %string{id}
+        WHERE users_tokens.token_user = (SELECT id FROM users_users WHERE users_users.uuid = %string{id})
         |sql}]
 
     let clean =

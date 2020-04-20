@@ -78,14 +78,15 @@ let test_register_invalid_user_fails _ () =
 
 let test_register_existing_user_fails _ () =
   let* () = Sihl_users.App.clean () in
-  let* () =
+  let* _ =
     Sihl_core.Test.seed
-      [ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321" ]
+    @@ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321"
   in
   let body =
     {|
        {
          "email": "foobar@example.com",
+
          "username": "foobar",
          "password": "123",
          "name": "Foo"
@@ -99,3 +100,29 @@ let test_register_existing_user_fails _ () =
   in
   let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
   Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status
+
+let test_fetch_user_after_logout_fails _ () =
+  let* () = Sihl_users.App.clean () in
+  let* token =
+    Sihl_core.Test.seed
+    @@ Sihl_users.Seed.logged_in_user ~email:"foobar@example.com"
+         ~password:"321"
+  in
+  let token = Sihl_users.Model.Token.value token in
+  let headers =
+    Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
+  in
+  let* response, _ =
+    Cohttp_lwt_unix.Client.delete ~headers (Uri.of_string @@ url "/logout/")
+  in
+  let status =
+    response |> Cohttp.Response.status |> Cohttp.Code.code_of_status
+  in
+  let _ = Alcotest.(check int) "Returns ok, logout succeeded" 200 status in
+  let* response, _ =
+    Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
+  in
+  let status =
+    response |> Cohttp.Response.status |> Cohttp.Code.code_of_status
+  in
+  Lwt.return @@ Alcotest.(check int) "Returns not authorized" 401 status

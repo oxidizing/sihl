@@ -7,6 +7,8 @@ let static = Middleware.static ~local_path:"./static" ~uri_prefix:"/static" ()
 let app : Opium.App.t =
   App.empty
   |> App.cmd_name "User Management"
+  (* TODO setup core middlewares in core, hidden from user *)
+  |> Sihl_core.Http.Middleware.handle_error
   |> middleware static |> Sihl_core.Db.middleware
   |> middleware Service.Middleware.Authentication.m
   |> Handler.add_handlers
