@@ -3,6 +3,7 @@ let ok_json_string = {|{"msg":"ok"}|}
 let ( let* ) = Lwt.bind
 
 let test_register_user _ () =
+  let* _ = Sihl_users.App.clean () in
   let body =
     {|
        {
@@ -22,6 +23,7 @@ let test_register_user _ () =
   Lwt.return @@ Alcotest.(check string) "Returns ok" ok_json_string body
 
 let test_register_invalid_user_fails _ () =
+  let* _ = Sihl_users.App.clean () in
   let body =
     {|
        {

@@ -26,3 +26,6 @@ let start () =
   | `Ok (app : unit Lwt.t) -> run app
   | `Error -> exit 1
   | `Not_running -> exit 0
+
+let clean () =
+  Sihl_core.Db.clean [ Repository.Token.clean; Repository.User.clean ]

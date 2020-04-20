@@ -16,6 +16,8 @@ type connection = (module Caqti_lwt.CONNECTION)
 
 val middleware : App.builder
 
+val clean : (connection -> unit db_result) list -> (unit, string) Lwt_result.t
+
 val query_db :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->

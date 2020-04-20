@@ -108,8 +108,9 @@ module Sql = struct
           record_in]
 
     let clean =
-      [%rapper execute {sql|
-        TRUNCATE TABLE users_users;
+      [%rapper
+        execute {sql|
+        TRUNCATE TABLE users_users CASCADE;
         |sql}]
   end
 
@@ -175,8 +176,9 @@ module Sql = struct
         |sql}]
 
     let clean =
-      [%rapper execute {sql|
-        TRUNCATE TABLE users_tokens;
+      [%rapper
+        execute {sql|
+        TRUNCATE TABLE users_tokens CASCADE;
         |sql}]
   end
 end

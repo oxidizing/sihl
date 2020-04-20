@@ -42,6 +42,20 @@ let connect () =
 let query_pool query pool =
   Caqti_lwt.Pool.use query pool |> Lwt_result.map_err Caqti_error.show
 
+let clean queries =
+  let pool = connect () in
+  let rec run_clean queries pool =
+    match queries with
+    | [] -> Lwt_result.return ()
+    | query :: queries ->
+        let* _ = query_pool query pool in
+        run_clean queries pool
+  in
+  run_clean queries pool
+  |> Lwt_result.map_err (fun error ->
+         let _ = Lwt_io.printf "failed to clean repository msg=%s" error in
+         error)
+
 (* let query_pool_with_trx query pool =
  *   query_pool
  *     (fun connection ->
