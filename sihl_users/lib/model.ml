@@ -13,7 +13,7 @@ module User = struct
     admin : bool;
     confirmed : bool;
   }
-  [@@deriving sexp, fields, to_yojson]
+  [@@deriving sexp, fields, yojson]
 
   let is_admin user = user.admin
 
@@ -41,17 +41,18 @@ module Token = struct
     id : string;
     value : string;
     kind : string;
-    token_user : string;
+    user : string;
     status : string;
   }
   [@@deriving fields]
 
   let create user =
     {
-      id = "123";
-      value = "abc123";
+      id = Uuidm.v `V4 |> Uuidm.to_string;
+      (* TODO generate more compact random token *)
+      value = Uuidm.v `V4 |> Uuidm.to_string;
       kind = "auth";
-      token_user = User.id user;
+      user = User.id user;
       status = "active";
     }
 end

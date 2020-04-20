@@ -236,7 +236,10 @@ dirty = %bool{dirty}
           | Ok () ->
               let* _ = State.Service.increment pool ~namespace in
               run steps pool
-          | Error err -> return (Error err) )
+          | Error err ->
+              Lwt_io.printf "error while running migration for %s msg=%s"
+                namespace err
+              >>= fun () -> return (Error err) )
     in
     ( match List.length steps with
     | 0 -> Lwt_io.printf "no migrations to apply for %s\n" namespace

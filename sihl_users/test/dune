@@ -1,3 +1,10 @@
 (test
- (name sihl_users_test)
- (libraries sihl_users alcotest alcotest-lwt lwt lwt.unix cohttp-lwt-unix yojson))
+ (name test)
+ (libraries
+  sihl_users
+  alcotest
+  alcotest-lwt
+  lwt
+  lwt.unix
+  cohttp-lwt-unix
+  yojson))

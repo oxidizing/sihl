@@ -27,15 +27,15 @@ let create_tokens_table =
 CREATE TABLE users_tokens (
   id serial,
   uuid uuid NOT NULL,
-  token VARCHAR(128) NOT NULL,
-  user_ INTEGER,
+  token_value VARCHAR(128) NOT NULL,
+  token_user INTEGER,
   status VARCHAR(128) NOT NULL,
   kind VARCHAR(128) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE (token),
+  UNIQUE (token_value),
   UNIQUE (uuid),
-  FOREIGN KEY (user_) REFERENCES users_users (id)
+  FOREIGN KEY (token_user) REFERENCES users_users (id)
 );
 |sql}]
 

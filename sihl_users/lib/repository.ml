@@ -35,7 +35,7 @@ module Sql = struct
           @bool{admin},
           @bool{confirmed}
         FROM users_users
-        WHERE users_users.id = %string{id}
+        WHERE users_users.uuid = %string{id}
         |sql}
           record_out]
 
@@ -121,13 +121,15 @@ module Sql = struct
         get_one
           {sql|
         SELECT 
-          uuid as @string{id}, 
-          @string{value},
-          @string{kind},
-          @string{token_user},
-          @string{status}
+          users_tokens.uuid as @string{id}, 
+          users_tokens.token_value as @string{value},
+          users_users.uuid as @string{user},
+          users_tokens.kind as @string{kind},
+          users_tokens.status as @string{status}
         FROM users_tokens
-        WHERE users_tokens.value = %string{value}
+        LEFT JOIN users_users 
+        ON users_users.id = users_tokens.token_user
+        WHERE users_tokens.token_value = %string{value}
         |sql}
           record_out]
 
@@ -138,15 +140,15 @@ module Sql = struct
           {sql|
         INSERT INTO users_tokens (
           uuid, 
-          value,
-          kind,
+          token_value,
           token_user,
+          kind,
           status
         ) VALUES (
           %string{id}, 
           %string{value},
+          (SELECT id FROM users_users WHERE users_users.uuid = %string{user}),
           %string{kind},
-          %string{token_user},
           %string{status}
         )
         |sql}
@@ -160,9 +162,9 @@ module Sql = struct
         UPDATE users_tokens 
         SET 
           uuid = %string{id}, 
-          value = %string{value},
+          token_value = %string{value},
+          token_user = (SELECT id FROM users_users WHERE users_users.uuid = %string{user}),
           kind = %string{kind},
-          token_user = %string{token_user},
           status = %string{status}
         |sql}
           record_in]
@@ -172,7 +174,10 @@ module Sql = struct
         execute
           {sql|
         DELETE FROM users_tokens 
-        WHERE users_tokens.id = %string{id}
+        USING users_tokens AS tokens
+        LEFT JOIN users_users
+        ON users_users.id = users_tokens.user
+        WHERE users_users.uuid = %string{id}
         |sql}]
 
     let clean =

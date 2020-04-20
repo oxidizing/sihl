@@ -18,7 +18,7 @@ module Authentication = struct
     let* token =
       Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
     in
-    let token_user = Model.Token.token_user token in
+    let token_user = Model.Token.user token in
     Repository.User.get ~id:token_user
     |> Sihl_core.Db.query_db request
     |> Lwt_result.map_err (fun _ -> "Not authorized")
@@ -44,6 +44,8 @@ module Authentication = struct
       match req |> Request.headers |> Cohttp.Header.get_authorization with
       | None -> handler req
       | Some (`Other token) -> (
+          (* TODO use more robust bearer token parsing *)
+          let token = token |> String.split_on_char ' ' |> List.tl |> List.hd in
           authenticate_token req token >>= fun result ->
           match result with
           | Ok user ->
@@ -51,7 +53,7 @@ module Authentication = struct
               let req = { req with Request.env } in
               handler req
           (* TODO error handling *)
-          | Error _ -> failwith "TODO: bad username/password pair" )
+          | Error msg -> failwith @@ "bad username/password pair msg" ^ msg )
       | Some (`Basic (email, password)) -> (
           authenticate_credentials req ~email ~password >>= fun result ->
           match result with
@@ -60,7 +62,7 @@ module Authentication = struct
               let req = { req with Request.env } in
               handler req
           (* TODO error handling *)
-          | Error _ -> failwith "TODO: bad username/password pair" )
+          | Error msg -> failwith @@ "bad username/password pair msg" ^ msg )
     in
     Rock.Middleware.create ~name:"http auth" ~filter
 

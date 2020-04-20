@@ -37,6 +37,37 @@ module Register = struct
     Lwt.return @@ ()
 end
 
+module GetMe = struct
+  open Sihl_core
+
+  type body_out = {
+    id : string;
+    email : string;
+    username : string;
+    name : string;
+    phone : string option;
+    status : string;
+  }
+  [@@deriving sexp, fields, yojson]
+
+  let handler =
+    get "/users/users/me/"
+    @@ Http.with_json ~encode:body_out_to_yojson
+    @@ fun req ->
+    let user = Service.User.authenticate req in
+    let response =
+      {
+        id = user.id;
+        email = user.email;
+        username = user.username;
+        name = user.name;
+        phone = user.phone;
+        status = user.status;
+      }
+    in
+    Lwt.return @@ response
+end
+
 let logout =
   get "/users/logout/" (fun _ -> `String "not implemented" |> respond')
 
@@ -46,11 +77,10 @@ let get_user =
 let get_users =
   get "/users/users/" (fun _ -> `String "this is a list of users" |> respond')
 
-let get_me =
-  get "/users/users/me/" (fun _ -> `String "not implemented" |> respond')
-
 let routes =
-  [ Login.handler; Register.handler; logout; get_user; get_users; get_me ]
+  [
+    Login.handler; Register.handler; logout; get_user; get_users; GetMe.handler;
+  ]
 
 let add_handlers app =
   Core.List.fold ~f:(fun app route -> route app) ~init:app routes
