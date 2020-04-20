@@ -7,4 +7,6 @@
   lwt
   lwt.unix
   cohttp-lwt-unix
-  yojson))
+  yojson
+  base64
+  ))

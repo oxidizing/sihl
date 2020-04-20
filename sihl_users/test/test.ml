@@ -25,5 +25,7 @@ let () =
                Test_login_register.test_register_existing_user_fails;
              test_case "User fetched own user after logout fails" `Quick
                Test_login_register.test_fetch_user_after_logout_fails;
+             test_case "User login with wrong credentials fails" `Quick
+               Test_login_register.test_login_with_wrong_credentials_fails;
            ] );
        ])

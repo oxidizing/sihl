@@ -55,7 +55,7 @@ module Authentication = struct
           (* TODO error handling *)
           | Error msg ->
               Sihl_core.Fail.raise_not_authenticated
-              @@ "bad username/password pair msg" ^ msg )
+              @@ "wrong credentials provided" ^ msg )
       | Some (`Basic (email, password)) -> (
           authenticate_credentials req ~email ~password >>= fun result ->
           match result with
@@ -66,7 +66,7 @@ module Authentication = struct
           (* TODO error handling *)
           | Error msg ->
               Sihl_core.Fail.raise_not_authenticated
-              @@ "bad username/password pair msg" ^ msg )
+              @@ "wrong credentials provided" ^ msg )
     in
     Rock.Middleware.create ~name:"http auth" ~filter
 

@@ -126,3 +126,19 @@ let test_fetch_user_after_logout_fails _ () =
     response |> Cohttp.Response.status |> Cohttp.Code.code_of_status
   in
   Lwt.return @@ Alcotest.(check int) "Returns not authorized" 401 status
+
+let test_login_with_wrong_credentials_fails _ () =
+  let* _ = Sihl_users.App.clean () in
+  let* _ =
+    Sihl_core.Test.seed
+    @@ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321"
+  in
+  let auth = "foobar@example.com:wrongpassword" |> Base64.encode_exn in
+  let headers = Cohttp.Header.of_list [ ("authorization", "Basic " ^ auth) ] in
+  let* response, _ =
+    Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
+  in
+  let status =
+    response |> Cohttp.Response.status |> Cohttp.Code.code_of_status
+  in
+  Lwt.return @@ Alcotest.(check int) "Returns not authorized status" 401 status
