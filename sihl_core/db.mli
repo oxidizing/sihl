@@ -18,6 +18,8 @@ val middleware : App.builder
 
 val clean : (connection -> unit db_result) list -> (unit, string) Lwt_result.t
 
+val request_with_connection : Opium.Std.Request.t -> Opium.Std.Request.t Lwt.t
+
 val query_db :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->

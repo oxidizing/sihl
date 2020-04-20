@@ -1,3 +1,4 @@
+open Core
 open Opium.Std
 open Lwt
 
@@ -29,3 +30,4 @@ let start () =
 
 let clean () =
   Sihl_core.Db.clean [ Repository.Token.clean; Repository.User.clean ]
+  >|= Result.ok_or_failwith

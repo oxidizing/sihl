@@ -19,7 +19,9 @@ let () =
            [
              test_case "Register user with, login and fetch own user" `Quick
                Test_login_register.test_register_user_login_and_own_user;
-             test_case "Register user with invalid body" `Quick
+             test_case "Register user with invalid body fails" `Quick
                Test_login_register.test_register_invalid_user_fails;
+             test_case "Register user with existing email fails" `Quick
+               Test_login_register.test_register_existing_user_fails;
            ] );
        ])

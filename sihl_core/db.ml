@@ -75,6 +75,17 @@ let key : db_connection Opium.Hmap.key =
   Opium.Hmap.Key.create
     ("db connection", fun _ -> sexp_of_string "db_connection")
 
+let request_with_connection request =
+  let ( let* ) = Lwt.bind in
+  let* connection = connection_uri |> Uri.of_string |> Caqti_lwt.connect in
+  let connection =
+    connection |> function
+    | Ok connection -> connection
+    | Error err -> failwith (Caqti_error.show err)
+  in
+  let env = Opium.Hmap.add key connection (Request.env request) in
+  Lwt.return @@ { request with env }
+
 let middleware app =
   let ( let* ) = Lwt.bind in
   let pool = connect () in

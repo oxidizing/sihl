@@ -75,3 +75,27 @@ let test_register_invalid_user_fails _ () =
   in
   let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
   Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status
+
+let test_register_existing_user_fails _ () =
+  let* () = Sihl_users.App.clean () in
+  let* () =
+    Sihl_core.Test.seed
+      [ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321" ]
+  in
+  let body =
+    {|
+       {
+         "email": "foobar@example.com",
+         "username": "foobar",
+         "password": "123",
+         "name": "Foo"
+       }
+|}
+  in
+  let* resp, _ =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string "http://localhost:3000/users/register/")
+  in
+  let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
+  Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status
