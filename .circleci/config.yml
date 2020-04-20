@@ -1,35 +1,47 @@
-version: 2.1
+version: 2
 jobs:
-  test:
-    branches:
-      ignore:
-        - feature/native
-    working_directory: ~/sihl
+  build:
     docker:
-      - image: circleci/node:10.16.3
-      - image: mariadb:10.1.41-bionic
+      - image: ocaml/opam2:4.08
         environment:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: dev
+          TERM: xterm
     steps:
+      - run:
+          name: Update opam
+          command: |
+            opam remote remove --all default
+            opam remote add default https://opam.ocaml.org
       - checkout
       - run:
-          name: yarn
-          command: yarn
-      - run:
-          name: sihl-core
+          name: Pin packages
           command: |
-            cd @sihl/core
-            yarn build
-            yarn test
+            opam pin add -y -n sihl_core .
+            opam pin add -y -n sihl_users .
       - run:
-          name: sihl-users
-          command: |
-            cd @sihl/users
-            yarn build
-            yarn test
-workflows:
-  version: 2
-  build_and_test:
-    jobs:
-      - test
+          name: Install system dependencies
+          command: opam depext -y sihl_core sihl_users
+      - run:
+          name: Install OCaml dependencies
+          command: opam install --deps-only -y sihl_core sihl_users
+      - run:
+          name: Build
+          command: opam config exec -- make
+      - run:
+          name: Install OCaml test dependencies
+          # Not using opam install -y -t because it tries to run csv's tests
+          command: opam install -y alcotest alcotest-lwt
+      - run:
+          name: Test
+          command: opam config exec -- make test
+      # - run:
+      #     name: Coverage
+      #     command: opam config exec -- make coverage
+      # - run:
+      #     name: Install ocveralls
+      #     command: opam install -y ocveralls
+      # - run:
+      #     name: Upload coverage report
+      #     command: |
+      #       cd _build/default
+      #       shopt -s globstar
+      #       opam config exec -- ocveralls **/bisect*.out --send --repo_token $COVERALLS_REPO_TOKEN --git
