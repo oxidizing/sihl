@@ -29,7 +29,7 @@ module Register = struct
   let handler =
     post "/users/register/" @@ Sihl_core.Http.with_json
     @@ fun req ->
-    let* body_in = Sihl_core.Http.require_body req body_in_of_yojson in
+    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
     let* _ =
       Service.User.register req ~email:body_in.email ~username:body_in.username
         ~password:body_in.password ~name:body_in.name

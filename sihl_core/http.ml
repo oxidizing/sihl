@@ -31,7 +31,11 @@ let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
 
 let require_body req decode =
   let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
-  match body |> Yojson.Safe.from_string |> decode with
+  body |> Yojson.Safe.from_string |> decode |> Lwt.return
+
+let require_body_exn req decode =
+  let* body = require_body req decode in
+  match body with
   | Ok body -> Lwt.return body
   | Error _ -> Fail.raise_bad_request "invalid body provided"
 

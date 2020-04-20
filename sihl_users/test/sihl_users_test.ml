@@ -48,7 +48,7 @@ let () =
     (let* _ =
        Sihl_core.Db.Migrate.execute [ Sihl_users.Migration.migrations ]
      in
-     run "LwtUtils"
+     run "user management"
        [
          ( "user management",
            [

@@ -1,0 +1,26 @@
+name: SihlTest
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ocaml-version: [ '4.09.0', '4.08.1' ]
+    steps:
+      - uses: actions/checkout@master
+      - uses: avsm/setup-ocaml@v1.0
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+      - name: Install dependencies
+        run: |
+          opam pin add sihl_core.dev -n .
+          opam pin add sihl_users.dev -n .
+          opam depext -yt sihl_core
+          opam depext -yt sihl_users
+          opam install -t . --deps-only
+      - name: Build
+        run: opam exec -- dune build
+      - name: Run tests
+        run: opam exec -- dune runtest
