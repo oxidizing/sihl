@@ -33,7 +33,7 @@ let require_body req decode =
   let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
   match body |> Yojson.Safe.from_string |> decode with
   | Ok body -> Lwt.return body
-  | Error _ -> Fail.raise_bad_request "Invalid body provided"
+  | Error _ -> Fail.raise_bad_request "invalid body provided"
 
 let failwith_opt msg opt =
   match opt with None -> failwith msg | Some value -> value
@@ -49,6 +49,13 @@ module Msg = struct
   let msg_string msg = { msg } |> to_yojson |> Yojson.Safe.to_string
 end
 
+let code_of_error error =
+  match error with
+  | Fail.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
+  | Fail.Error.Database _ -> 500 |> Cohttp.Code.status_of_code
+  | Fail.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
+  | Fail.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
+
 let with_json :
     ?encode:('a -> Yojson.Safe.t) ->
     (Request.t -> 'a Lwt.t) ->
@@ -60,17 +67,18 @@ let with_json :
       (fun () -> handler req |> Lwt.map (fun result -> Ok result))
       (fun exn -> Lwt.return @@ Fail.error_of_exn exn)
   in
-  let response =
-    match (encode, result) with
-    | Some encode, Ok result -> result |> encode |> Yojson.Safe.to_string
-    | None, Ok _ -> Msg.ok_string ()
-    | _, Error (Fail.Error.Database msg) ->
-        let _ = Logs_lwt.err (fun m -> m "%s" msg) in
-        Msg.msg_string
-        @@ "Something went wrong, our administrators have been notified"
-    | _, Error error ->
-        let msg = Fail.Error.show error in
-        let _ = Logs_lwt.err (fun m -> m "%s" msg) in
-        Msg.msg_string @@ msg
-  in
-  respond' @@ `String response
+  match (encode, result) with
+  | Some encode, Ok result ->
+      let response = result |> encode |> Yojson.Safe.to_string in
+      respond' @@ `String response
+  | None, Ok _ -> respond' @@ `String (Msg.ok_string ())
+  | _, Error (Fail.Error.Database msg) ->
+      let _ = Logs_lwt.err (fun m -> m "%s" msg) in
+      respond'
+      @@ `String
+           ( Msg.msg_string
+           @@ "Something went wrong, our administrators have been notified" )
+  | _, Error error ->
+      let msg = Fail.Error.show error in
+      let _ = Logs_lwt.err (fun m -> m "%s" msg) in
+      respond' ~code:(code_of_error error) (`String (Msg.msg_string @@ msg))
