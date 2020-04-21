@@ -25,9 +25,9 @@ let test_register_user_login_and_own_user _ () =
   in
   let* body = Cohttp_lwt.Body.to_string body in
   let () = Alcotest.(check string) "Returns ok" ok_json_string body in
+  let base64 = Base64.encode_exn "foobar@example.com:123" in
   let headers =
-    Cohttp.Header.of_list
-      [ ("authorization", "Basic Zm9vYmFyQGV4YW1wbGUuY29tOjEyMw==") ]
+    Cohttp.Header.of_list [ ("authorization", "Basic " ^ base64) ]
   in
   let* _, body =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")

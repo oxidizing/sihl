@@ -80,6 +80,62 @@ module GetUsers = struct
     Service.User.get_all req user
 end
 
+module UpdatePassword = struct
+  type body_in = {
+    email : string;
+    old_password : string;
+    new_password : string;
+  }
+  [@@deriving yojson]
+
+  let handler =
+    post "/users/update-password/"
+    @@ Sihl_core.Http.with_json
+    @@ fun req ->
+    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
+    let user = Service.User.authenticate req in
+    let* _ =
+      Service.User.update_password req user ~email:body_in.email
+        ~old_password:body_in.old_password ~new_password:body_in.new_password
+    in
+    Lwt.return @@ ()
+end
+
+module UpdateDetails = struct
+  type body_in = {
+    email : string;
+    username : string;
+    name : string;
+    phone : string option;
+  }
+  [@@deriving yojson]
+
+  let handler =
+    post "/users/update-details/"
+    @@ Sihl_core.Http.with_json ~encode:Model.User.to_yojson
+    @@ fun req ->
+    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
+    let user = Service.User.authenticate req in
+    Service.User.update_details req user ~email:body_in.email
+      ~username:body_in.username ~name:body_in.name ~phone:body_in.phone
+end
+
+module SetPassword = struct
+  type body_in = { user_id : string; password : string } [@@deriving yojson]
+
+  let handler =
+    post "/users/set-password/"
+    @@ Sihl_core.Http.with_json
+    @@ fun req ->
+    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
+    let user = Service.User.authenticate req in
+    let* _ =
+      Service.User.set_password req user ~user_id:body_in.user_id
+        ~password:body_in.password
+    in
+    Lwt.return @@ ()
+end
+
 let routes =
   [
     Login.handler;
@@ -88,6 +144,9 @@ let routes =
     GetUser.handler;
     GetUsers.handler;
     GetMe.handler;
+    UpdatePassword.handler;
+    UpdateDetails.handler;
+    SetPassword.handler;
   ]
 
 let add_handlers app =

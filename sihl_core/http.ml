@@ -29,9 +29,15 @@ let param2 req key1 key2 = (param req key1, param req key2)
 
 let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
 
+let parse_json str =
+  try Ok (str |> Yojson.Safe.from_string)
+  with _ -> Error "failed to parse json"
+
 let require_body req decode =
   let* body = req |> Request.body |> Cohttp_lwt.Body.to_string in
-  body |> Yojson.Safe.from_string |> decode |> Lwt.return
+  body |> parse_json |> Result.bind ~f:decode
+  |> Result.map_error ~f:(fun error -> Fail.err_bad_request error)
+  |> Lwt.return
 
 let require_body_exn req decode =
   let* body = require_body req decode in

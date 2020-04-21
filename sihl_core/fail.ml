@@ -58,3 +58,5 @@ let with_database msg result =
   | Error error -> raise @@ Exception.Database (msg ^ " msg= " ^ error)
 
 let err_database msg = Error.Database msg
+
+let err_bad_request msg = Error.BadRequest msg
