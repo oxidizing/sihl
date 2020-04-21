@@ -2,6 +2,7 @@
  (name sihl_core)
  (libraries
   core
+  str
   opium
   caqti
   caqti-driver-postgresql
@@ -19,4 +20,5 @@
    ppx_rapper
    ppx_fields_conv
    ppx_deriving_yojson
+   ppx_string_interpolation
   )))

@@ -74,4 +74,54 @@ module Token = struct
       user = User.id user;
       status = "active";
     }
+
+  let create_email_confirmation user =
+    {
+      id = Uuidm.v `V4 |> Uuidm.to_string;
+      (* TODO generate more compact random token *)
+      value = Uuidm.v `V4 |> Uuidm.to_string;
+      kind = "email_confirmation";
+      user = User.id user;
+      status = "active";
+    }
+
+  let create_password_reset user =
+    {
+      id = Uuidm.v `V4 |> Uuidm.to_string;
+      (* TODO generate more compact random token *)
+      value = Uuidm.v `V4 |> Uuidm.to_string;
+      kind = "password_reset";
+      user = User.id user;
+      status = "active";
+    }
+end
+
+module Email = struct
+  module Confirmation = struct
+    let template =
+      {|
+Hi {givenName} {familyName},
+
+Thanks for signing up.
+
+Please go to this URL to confirm your email address: {baseUrl}/app/confirm-email?token={token}
+
+Best,
+Josef
+                  |}
+
+    let create token user =
+      let text =
+        Sihl_core.Email.render
+          [
+            ("base_url", "TODO");
+            ("root", "users");
+            ("name", User.name user);
+            ("token", Token.value token);
+          ]
+          template
+      in
+      Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
+        ~subject:"Email Address Confirmation" ~text
+  end
 end

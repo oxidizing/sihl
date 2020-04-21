@@ -37,4 +37,13 @@ let () =
              test_case "user sets password" `Quick
                Test_crud.test_admin_sets_password;
            ] );
+         ( "email",
+           [
+             test_case "user registers and confirms email" `Quick
+               Test_email.test_user_registers_and_confirms_email;
+             test_case "user resets password" `Quick
+               Test_email.test_user_resets_password;
+             test_case "user uses reset token twice fails" `Quick
+               Test_email.test_user_uses_reset_token_twice_fails;
+           ] );
        ])
