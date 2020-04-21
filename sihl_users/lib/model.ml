@@ -15,6 +15,8 @@ module User = struct
   }
   [@@deriving sexp, fields, yojson]
 
+  let confirm user = { user with confirmed = true }
+
   let update_password user new_password = { user with password = new_password }
 
   let update_details user ~email ~username ~name ~phone =
@@ -65,6 +67,12 @@ module Token = struct
   }
   [@@deriving fields]
 
+  let is_valid_email_configuration token =
+    String.equal token.status "active"
+    && String.equal token.kind "email_confirmation"
+
+  let inactivate token = { token with status = "inactive" }
+
   let create user =
     {
       id = Uuidm.v `V4 |> Uuidm.to_string;
@@ -100,11 +108,11 @@ module Email = struct
   module Confirmation = struct
     let template =
       {|
-Hi {givenName} {familyName},
+Hi {name},
 
 Thanks for signing up.
 
-Please go to this URL to confirm your email address: {baseUrl}/app/confirm-email?token={token}
+Please go to this URL to confirm your email address: {base_url}/app/confirm-email?token={token}
 
 Best,
 Josef
@@ -114,8 +122,7 @@ Josef
       let text =
         Sihl_core.Email.render
           [
-            ("base_url", "TODO");
-            ("root", "users");
+            ("base_url", "http://localhost:3000");
             ("name", User.name user);
             ("token", Token.value token);
           ]

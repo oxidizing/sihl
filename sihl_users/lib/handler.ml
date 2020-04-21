@@ -136,27 +136,16 @@ module SetPassword = struct
     Lwt.return @@ ()
 end
 
-(* module ConfirmEmail = {
- *   [@decco]
- *   type query = {token: string};
- *
- *   [@decco]
- *   type body_out = {message: string};
- *
- *   let endpoint = (root, database) =>
- *     Sihl.App.Http.dbEndpoint({
- *       database,
- *       verb: GET,
- *       path: {j|/$root/confirm-email/|j},
- *       handler: (conn, req) => {
- *         open! Sihl.App.Http.Endpoint;
- *         let%Async {token} = req.requireQuery(query_decode);
- *         let%Async _ = Service.User.confirmEmail(conn, ~token);
- *         let response = {message: "Email confirmed"} |> body_out_encode;
- *         Async.async @@ OkJson(response);
- *       },
- *     });
- * }; *)
+module ConfirmEmail = struct
+  open Sihl_core
+
+  let handler =
+    get "/users/confirm-email/"
+    @@ Sihl_core.Http.with_json
+    @@ fun req ->
+    let token = Http.query req "token" in
+    Service.User.confirm_email req token
+end
 
 (* module RequestPasswordReset = {
  *   [@decco]
@@ -214,6 +203,7 @@ let routes =
     UpdatePassword.handler;
     UpdateDetails.handler;
     SetPassword.handler;
+    ConfirmEmail.handler;
   ]
 
 let add_handlers app =

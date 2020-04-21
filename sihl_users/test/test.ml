@@ -39,6 +39,8 @@ let () =
            ] );
          ( "email",
            [
+             test_case "extract token from email" `Quick
+               Test_email.test_extract_token_from_email;
              test_case "user registers and confirms email" `Quick
                Test_email.test_user_registers_and_confirms_email;
              test_case "user resets password" `Quick

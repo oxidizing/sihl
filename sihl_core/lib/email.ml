@@ -30,7 +30,10 @@ let rec render data template =
 let create ~sender ~recipient ~subject ~text =
   { sender; recipient; subject; text }
 
-let dev_inbox = ref None
+let dev_inbox : t option ref = ref None
+
+let last_dev_email () =
+  Option.value_exn ~message:"no dev email found" !dev_inbox
 
 let send email =
   let backend = "dev_inbox" in
@@ -38,4 +41,4 @@ let send email =
   | "console" -> Logs_lwt.info (fun m -> m "%s" (show email))
   | _ ->
       let _ = dev_inbox := Some email in
-      Lwt.return ()
+      Logs_lwt.info (fun m -> m "%s" (show email))

@@ -2,6 +2,7 @@
  (name test)
  (libraries
   sihl_users
+  pcre
   alcotest
   alcotest-lwt
   lwt

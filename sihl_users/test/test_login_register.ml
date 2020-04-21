@@ -7,7 +7,7 @@ let ( let* ) = Lwt.bind
 let url path = "http://localhost:3000/users" ^ path
 
 let test_register_user_login_and_own_user _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_users.App.clean () in
   let body =
     {|
        {

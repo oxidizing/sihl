@@ -5,7 +5,7 @@ let ( let* ) = Lwt.bind
 
 let require_auth req =
   match req |> Cohttp.Header.get_authorization with
-  | None -> failwith "No authorization header found"
+  | None -> Fail.raise_bad_request "No authorization header found"
   | Some token -> token
 
 let query req key =
@@ -16,7 +16,7 @@ let query req key =
     |> Option.map ~f:Tuple2.get2 |> Option.bind ~f:List.hd
   in
   match value with
-  | None -> failwith @@ "required query not found key= " ^ key
+  | None -> Fail.raise_bad_request "required query not found key= " ^ key
   | Some value -> value
 
 let query2 req key1 key2 = (query req key1, query req key2)
