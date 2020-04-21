@@ -40,32 +40,10 @@ end
 module GetMe = struct
   open Sihl_core
 
-  type body_out = {
-    id : string;
-    email : string;
-    username : string;
-    name : string;
-    phone : string option;
-    status : string;
-  }
-  [@@deriving sexp, fields, yojson]
-
   let handler =
     get "/users/users/me/"
-    @@ Http.with_json ~encode:body_out_to_yojson
-    @@ fun req ->
-    let user = Service.User.authenticate req in
-    let response =
-      {
-        id = user.id;
-        email = user.email;
-        username = user.username;
-        name = user.name;
-        phone = user.phone;
-        status = user.status;
-      }
-    in
-    Lwt.return @@ response
+    @@ Http.with_json ~encode:Model.User.to_yojson
+    @@ fun req -> Lwt.return @@ Service.User.authenticate req
 end
 
 module Logout = struct
@@ -78,19 +56,37 @@ module Logout = struct
     Service.User.logout req user
 end
 
-let get_user =
-  get "/users/users/:id/" (fun _ -> `String "not implemented" |> respond')
+module GetUser = struct
+  open Sihl_core
 
-let get_users =
-  get "/users/users/" (fun _ -> `String "this is a list of users" |> respond')
+  let handler =
+    get "/users/users/:id/" @@ Http.with_json
+    @@ fun req ->
+    let user_id = Http.param req "id" in
+    let user = Service.User.authenticate req in
+    Service.User.get req user ~user_id
+end
+
+module GetUsers = struct
+  open Sihl_core
+
+  type body_out = Model.User.t list [@@deriving yojson]
+
+  let handler =
+    get "/users/users/"
+    @@ Http.with_json ~encode:body_out_to_yojson
+    @@ fun req ->
+    let user = Service.User.authenticate req in
+    Service.User.get_all req user
+end
 
 let routes =
   [
     Login.handler;
     Register.handler;
     Logout.handler;
-    get_user;
-    get_users;
+    GetUser.handler;
+    GetUsers.handler;
     GetMe.handler;
   ]
 
