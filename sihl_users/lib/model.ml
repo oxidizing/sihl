@@ -71,6 +71,10 @@ module Token = struct
     String.equal token.status "active"
     && String.equal token.kind "email_confirmation"
 
+  let can_reset_password token =
+    String.equal token.status "active"
+    && String.equal token.kind "password_reset"
+
   let inactivate token = { token with status = "inactive" }
 
   let create user =
@@ -130,5 +134,32 @@ Josef
       in
       Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
         ~subject:"Email Address Confirmation" ~text
+  end
+
+  module PasswordReset = struct
+    let template =
+      {|
+Hi {name},
+
+You requested to reset your password.
+
+Please go to this URL to reset your password: {base_url}/app/password-reset?token={token}
+
+Best,
+Josef
+                  |}
+
+    let create token user =
+      let text =
+        Sihl_core.Email.render
+          [
+            ("base_url", "http://localhost:3000");
+            ("name", User.name user);
+            ("token", Token.value token);
+          ]
+          template
+      in
+      Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
+        ~subject:"Password Reset" ~text
   end
 end

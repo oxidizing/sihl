@@ -223,52 +223,50 @@ module User = struct
       |> Sihl_core.Fail.with_bad_request "could not confirm email"
       |> Lwt.return
 
-  (* let requestPasswordReset = (conn, ~email) => {
-   *     open! Sihl.App.Http.Endpoint;
-   *     let%Async user = Repository.User.GetByEmail.query(conn, ~email);
-   *     switch (user) {
-   *     | Ok(user) =>
-   *       let%Async tokenStr =
-   *         Sihl.Common.Crypt.Random.base64(~specialChars=false, 96);
-   *       let token = Model.Token.generatePasswordReset(~user, ~token=tokenStr);
-   *       let%Async _ = Repository.Token.Upsert.query(conn, ~token);
-   *       let email = Model.PasswordReset.make(~token, ~user);
-   *       Sihl.Common.Email.Transport.send(email);
-   *     | Error(_) =>
-   *       Sihl.Common.Log.error(
-   *         "Password reset was requested but no user was found email=" ++ email,
-   *         (),
-   *       );
-   *       // If no user was found, just send 200 ok to not expose user data
-   *       Async.async();
-   *     };
-   *   }; *)
+  let request_password_reset request email =
+    let* user =
+      Repository.User.get_by_email ~email |> Sihl_core.Db.query_db request
+    in
+    let user =
+      user |> Sihl_core.Fail.with_bad_request "invalid email provided"
+    in
+    let token = Model.Token.create_password_reset user in
+    let* result =
+      Repository.Token.insert token |> Sihl_core.Db.query_db request
+    in
+    let _ = result |> Sihl_core.Fail.with_database "failed to insert token" in
+    let email = Model.Email.PasswordReset.create token user in
+    Sihl_core.Email.send email
 
-  (* let resetPassword = (conn, ~token, ~newPassword) => {
-   *   open! Sihl.App.Http.Endpoint;
-   *   let%Async token =
-   *     Repository.Token.Get.query(conn, ~token)
-   *     |> abortIfErr(Forbidden("Invalid token provided"));
-   *   if (!Model.Token.canResetPassword(token)) {
-   *     abort @@ Forbidden("Invalid or inactive token provided");
-   *   };
-   *   let%Async user =
-   *     Repository.User.Get.query(conn, ~userId=token.user)
-   *     |> abortIfErr(Unauthorized("Invalid token provided"));
-   *   let%Async hash =
-   *     Sihl.Common.Crypt.Bcrypt.hashAndSalt(~plain=newPassword, ~rounds=12);
-   *   let user = {...user, password: hash};
-   *   Sihl.App.Repo.Connection.withTransaction(
-   *     conn,
-   *     conn => {
-   *       let%Async _ = Repository.User.Upsert.query(conn, ~user);
-   *       Repository.Token.Upsert.query(
-   *         conn,
-   *         ~token={...token, status: "inactive"},
-   *       );
-   *     },
-   *   );
-   * }; *)
+  let reset_password request token ~new_password =
+    let* token =
+      Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
+    in
+    let token =
+      token |> Sihl_core.Fail.with_bad_request "invalid token provided"
+    in
+    if not @@ Model.Token.can_reset_password token then
+      Sihl_core.Fail.raise_bad_request "invalid or inactive token provided"
+    else
+      let* user =
+        Repository.User.get ~id:token.user |> Sihl_core.Db.query_db request
+      in
+      let user =
+        user |> Sihl_core.Fail.with_bad_request "invalid user for token found"
+      in
+      (* TODO use transaction here *)
+      let updated_user = Model.User.update_password user new_password in
+      let* result =
+        Repository.User.update updated_user |> Sihl_core.Db.query_db request
+      in
+      let _ = result |> Sihl_core.Fail.with_database "could not update user" in
+      let token = Model.Token.inactivate token in
+      let* result =
+        Repository.Token.update token |> Sihl_core.Db.query_db request
+      in
+      result
+      |> Sihl_core.Fail.with_bad_request "could not inactive token"
+      |> Lwt.return
 end
 
 module Middleware = Middleware
