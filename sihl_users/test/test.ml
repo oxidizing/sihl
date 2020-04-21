@@ -30,7 +30,11 @@ let () =
                Test_crud.test_admin_fetches_all_users;
              test_case "user updated own password" `Quick
                Test_crud.test_user_updates_password;
-             test_case "user updated own details" `Quick
+             test_case "user updates own details" `Quick
                Test_crud.test_user_updates_own_details;
+             test_case "user updates others details fails" `Quick
+               Test_crud.test_user_updates_others_details_fails;
+             test_case "user sets password" `Quick
+               Test_crud.test_admin_sets_password;
            ] );
        ])

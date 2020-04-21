@@ -103,7 +103,7 @@ let test_register_existing_user_fails _ () =
 
 let test_fetch_user_after_logout_fails _ () =
   let* () = Sihl_users.App.clean () in
-  let* token =
+  let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_user ~email:"foobar@example.com"
          ~password:"321"

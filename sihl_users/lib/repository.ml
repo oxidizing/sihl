@@ -95,7 +95,6 @@ module Sql = struct
           {sql|
         UPDATE users_users
         SET 
-          uuid = %string{id}, 
           email = %string{email}, 
           username = %string{username}, 
           password = %string{password},
@@ -104,6 +103,7 @@ module Sql = struct
           status = %string{status},
           admin = %bool{admin},
           confirmed = %bool{confirmed}
+        WHERE users_users.uuid = %string{id}
         |sql}
           record_in]
 
@@ -161,11 +161,13 @@ module Sql = struct
           {sql|
         UPDATE users_tokens 
         SET 
-          uuid = %string{id}, 
           token_value = %string{value},
-          token_user = (SELECT id FROM users_users WHERE users_users.uuid = %string{user}),
+          token_user = 
+          (SELECT id FROM users_users 
+           WHERE users_users.uuid = %string{user}),
           kind = %string{kind},
           status = %string{status}
+        WHERE users_tokens.uuid = %string{id}
         |sql}
           record_in]
 
@@ -174,7 +176,9 @@ module Sql = struct
         execute
           {sql|
         DELETE FROM users_tokens 
-        WHERE users_tokens.token_user = (SELECT id FROM users_users WHERE users_users.uuid = %string{id})
+        WHERE users_tokens.token_user = 
+        (SELECT id FROM users_users 
+         WHERE users_users.uuid = %string{id})
         |sql}]
 
     let clean =

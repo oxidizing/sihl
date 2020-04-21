@@ -9,4 +9,8 @@
   cohttp-lwt-unix
   yojson
   base64
-  ))
+  )
+ (preprocess
+  (pps
+   ppx_string_interpolation
+  )))
