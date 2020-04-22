@@ -120,12 +120,23 @@ module Project : PROJECT = struct
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"
 
+  let add_default_commands project commands =
+    List.concat
+      [
+        commands;
+        [
+          My_command.Builtin.Version.command;
+          My_command.Builtin.Start.command (fun () -> start project);
+        ];
+      ]
+
   let run_command project =
     let args = Sys.get_argv () |> Array.to_list in
     let commands =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.commands)
       |> List.concat
+      |> add_default_commands project
     in
     let command = My_command.find commands args in
     match command with

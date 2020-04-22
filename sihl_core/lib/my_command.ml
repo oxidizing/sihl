@@ -17,7 +17,16 @@ let find commands args =
          |> List.find ~f:(fun command -> String.equal command.name name))
 
 let help commands =
-  commands |> List.map ~f:description |> String.concat ~sep:"\n"
+  let command_list =
+    commands |> List.map ~f:description |> String.concat ~sep:"\n"
+  in
+  [%string
+    {|
+--------------------------------------------
+This is a list of all supported commands: 
+$(command_list)
+--------------------------------------------
+|}]
 
 let execute command args =
   let* request = Test.request_with_connection () in
@@ -27,10 +36,27 @@ let execute command args =
   match result with
   | Ok _ -> Lwt.return ()
   | Error "wrong usage" ->
-      let _ =
-        Logs.warn (fun m -> m "Wrong usage of the command \n %s" description)
-      in
-      Lwt.return ()
+      Lwt.return
+      @@ Logs.warn (fun m -> m "Wrong usage of the command \n %s" description)
   | Error msg ->
-      let _ = Logs.err (fun m -> m "Failed to run command: %s" msg) in
-      Lwt.return ()
+      Lwt.return @@ Logs.err (fun m -> m "Failed to run command: %s" msg)
+
+module Builtin = struct
+  module Version = struct
+    let fn _ args =
+      match args with
+      | "version" :: _ -> Lwt.return @@ Ok (print_string "v0.0.1")
+      | _ -> Lwt.return @@ Error "wrong usage"
+
+    let command = create ~name:"version" ~description:"version" ~fn
+  end
+
+  module Start = struct
+    let fn start _ args =
+      match args with
+      | "start" :: _ -> start ()
+      | _ -> Lwt.return @@ Error "wrong usage"
+
+    let command start = create ~name:"start" ~description:"start" ~fn:(fn start)
+  end
+end
