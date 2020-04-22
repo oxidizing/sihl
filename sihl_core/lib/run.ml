@@ -133,18 +133,20 @@ module Project : PROJECT = struct
 
   let run_command project =
     let args = Sys.get_argv () |> Array.to_list in
-    let commands =
-      project.apps
-      |> List.map ~f:(fun (module App : APP) -> App.commands)
-      |> List.concat
-      |> add_default_commands project
-    in
-    let command = My_command.find commands args in
-    match command with
-    | Some command ->
-        let _ = My_command.execute command args in
-        ()
-    | None ->
-        let help = My_command.help commands in
-        print_string help
+    (* if testing, silently do nothing *)
+    if not @@ My_command.is_testing args then
+      let commands =
+        project.apps
+        |> List.map ~f:(fun (module App : APP) -> App.commands)
+        |> List.concat
+        |> add_default_commands project
+      in
+      let command = My_command.find commands args in
+      match command with
+      | Some command ->
+          let _ = My_command.execute command args in
+          ()
+      | None ->
+          let help = My_command.help commands in
+          print_string help
 end

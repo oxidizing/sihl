@@ -10,6 +10,11 @@ let description command = command.description
 
 let create ~name ~description ~fn = { name; description; fn }
 
+let is_testing args =
+  args |> List.hd
+  |> Option.map ~f:(fun str -> String.is_substring ~substring:"text.exe" str)
+  |> Option.value_map ~default:false ~f:(fun _ -> true)
+
 let find commands args =
   args |> List.hd
   |> Option.bind ~f:(fun name ->
