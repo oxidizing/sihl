@@ -1,5 +1,5 @@
 open Core
-open Sihl_core.Command
+open Sihl_core.My_command
 open Sihl_core.Fail
 
 let ( let* ) = Lwt.bind

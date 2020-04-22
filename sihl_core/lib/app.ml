@@ -32,7 +32,7 @@
  *
  * let clean () =
  *   Sihl_core.Db.clean [ Repository.Token.clean; Repository.User.clean ]
- *   >|= Result.ok_or_failwith *)
-
-(* let add_handlers app =
+ *   >|= Result.ok_or_failwith
+ *
+ * let add_handlers app =
  *   Core.List.fold ~f:(fun app route -> route app) ~init:app routes *)
