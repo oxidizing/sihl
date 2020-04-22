@@ -1,4 +1,0 @@
-(executable
- (name app)
- (libraries sihl_users)
- (modes exe))
