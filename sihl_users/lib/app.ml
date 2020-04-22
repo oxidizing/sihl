@@ -1,35 +1,29 @@
-open Core
-open Opium.Std
-open Lwt
+let name = "User Management App"
 
-let static = Middleware.static ~local_path:"./static" ~uri_prefix:"/static" ()
+let namespace = "users"
 
-let app : Opium.App.t =
-  App.empty
-  |> App.cmd_name "User Management"
-  (* TODO setup core middlewares in core, hidden from user *)
-  |> Sihl_core.Http.Middleware.handle_error
-  |> middleware static |> Sihl_core.Db.middleware
-  |> middleware Service.Middleware.Authentication.m
-  |> Handler.add_handlers
+let config = Sihl_core.Config.Schema.create ()
 
-let log_level = Some Logs.Debug
+let middlewares =
+  Handler.
+    [
+      Middleware.Authentication.middleware;
+      Login.handler;
+      Register.handler;
+      Logout.handler;
+      GetUser.handler;
+      GetUsers.handler;
+      GetMe.handler;
+      UpdatePassword.handler;
+      UpdateDetails.handler;
+      SetPassword.handler;
+      ConfirmEmail.handler;
+      RequestPasswordReset.handler;
+      ResetPassword.handler;
+    ]
 
-let set_logger () =
-  Lwt.return (Logs_fmt.reporter () |> Logs.set_reporter) >|= fun () ->
-  Logs.set_level log_level
+let migrations = Migration.migrations
 
-let run (app : unit Lwt.t) =
-  let _ = set_logger () in
-  let _ = Logs_lwt.info (fun m -> m "Running...") in
-  app
+let cleaners = [ Repository.Token.clean; Repository.User.clean ]
 
-let start () =
-  match App.run_command' app with
-  | `Ok (app : unit Lwt.t) -> run app
-  | `Error -> exit 1
-  | `Not_running -> exit 0
-
-let clean () =
-  Sihl_core.Db.clean [ Repository.Token.clean; Repository.User.clean ]
-  >|= Result.ok_or_failwith
+let commands = [ Command.create_admin ]

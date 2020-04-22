@@ -7,7 +7,7 @@ let ( let* ) = Lwt.bind
 let url path = "http://localhost:3000/users" ^ path
 
 let test_register_user_login_and_own_user _ () =
-  let* () = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let body =
     {|
        {
@@ -58,7 +58,7 @@ let test_register_user_login_and_own_user _ () =
   Lwt.return @@ ()
 
 let test_register_invalid_user_fails _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let body =
     {|
        {
@@ -77,7 +77,7 @@ let test_register_invalid_user_fails _ () =
   Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status
 
 let test_register_existing_user_fails _ () =
-  let* () = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321"
@@ -102,7 +102,7 @@ let test_register_existing_user_fails _ () =
   Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status
 
 let test_fetch_user_after_logout_fails _ () =
-  let* () = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_user ~email:"foobar@example.com"
@@ -128,7 +128,7 @@ let test_fetch_user_after_logout_fails _ () =
   Lwt.return @@ Alcotest.(check int) "Returns not authorized" 401 status
 
 let test_login_with_wrong_credentials_fails _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321"

@@ -18,7 +18,7 @@ let test_extract_token_from_email _ () =
   Lwt.return ()
 
 let test_user_registers_and_confirms_email _ () =
-  let* () = Sihl_users.App.clean () in
+  let* _ = Sihl_core.Manage.clean () in
   let body =
     {|
        {
@@ -70,7 +70,7 @@ let test_user_registers_and_confirms_email _ () =
   Lwt.return @@ ()
 
 let test_user_resets_password _ () =
-  let* () = Sihl_users.App.clean () in
+  let* _ = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"
@@ -104,7 +104,7 @@ let test_user_resets_password _ () =
   Lwt.return @@ Alcotest.(check int) "Can login with new password" 200 status
 
 let test_user_uses_reset_token_twice_fails _ () =
-  let* () = Sihl_users.App.clean () in
+  let* _ = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"

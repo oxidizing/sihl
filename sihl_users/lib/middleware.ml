@@ -38,7 +38,7 @@ module Authentication = struct
      The auth param (auth : username:string -> password:string -> user option)
      would represent our database model. E.g. it would do some lookup in the db
      and fetch the user. *)
-  let m =
+  let middleware app =
     let filter handler req =
       let open Lwt.Infix in
       match req |> Request.headers |> Cohttp.Header.get_authorization with
@@ -68,7 +68,8 @@ module Authentication = struct
               Sihl_core.Fail.raise_not_authenticated
               @@ "wrong credentials provided" ^ msg )
     in
-    Rock.Middleware.create ~name:"http auth" ~filter
+    let m = Rock.Middleware.create ~name:"http auth" ~filter in
+    Opium.Std.middleware m app
 
   let user req = Opium.Hmap.find Env.key (Request.env req)
 end

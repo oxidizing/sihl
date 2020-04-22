@@ -7,7 +7,7 @@ let ( let* ) = Lwt.bind
 let url path = "http://localhost:3000/users" ^ path
 
 let test_user_fetches_all_users_fails _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"foobar"
@@ -29,7 +29,7 @@ let test_user_fetches_all_users_fails _ () =
   Lwt.return @@ ()
 
 let test_admin_fetches_all_users _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"foobar"
@@ -56,7 +56,7 @@ let test_admin_fetches_all_users _ () =
   Lwt.return @@ ()
 
 let test_user_updates_password _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
@@ -93,7 +93,7 @@ let test_user_updates_password _ () =
   Lwt.return @@ Alcotest.(check int) "Can login" 200 status
 
 let test_user_updates_others_password_fails _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
@@ -125,7 +125,7 @@ let test_user_updates_others_password_fails _ () =
   Lwt.return @@ Alcotest.(check int) "Can not change others password" 403 status
 
 let test_user_updates_own_details _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
@@ -164,7 +164,7 @@ let test_user_updates_own_details _ () =
        "Has updated phone" (Some "123") user.phone
 
 let test_user_updates_others_details_fails _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
@@ -198,7 +198,7 @@ let test_user_updates_others_details_fails _ () =
   Lwt.return @@ Alcotest.(check int) "Not allowed to update" 403 status
 
 let test_admin_sets_password _ () =
-  let* _ = Sihl_users.App.clean () in
+  let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.logged_in_admin ~email:"admin@example.com"

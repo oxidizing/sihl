@@ -4,8 +4,9 @@ let ( let* ) = Lwt.bind
 
 module User = struct
   let authenticate request =
-    request |> Middleware.Authentication.user
-    |> Sihl_core.Http.failwith_opt "no user provided"
+    request |> Middleware.Authentication.user |> Result.of_option ~error:""
+    |> Sihl_core.Fail.with_no_permission
+         "no user found, have you applied the authentication middleware?"
 
   let send_registration_email request user =
     let token = Model.Token.create_email_confirmation user in

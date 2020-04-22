@@ -62,6 +62,13 @@ let with_database msg result =
   | Ok result -> result
   | Error error -> raise @@ Exception.Database (msg ^ " msg= " ^ error)
 
+let with_no_permission msg result =
+  match result with
+  | Ok result -> result
+  | Error _ -> raise @@ Exception.NoPermissions msg
+
 let err_database msg = Error.Database msg
 
 let err_bad_request msg = Error.BadRequest msg
+
+let err_no_permission msg = Error.NoPermissions msg

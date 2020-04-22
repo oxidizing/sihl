@@ -42,7 +42,7 @@ module Project : PROJECT = struct
   type t = { apps : (module APP) list; config : Config.t }
 
   let app_names project =
-    project.apps |> List.map ~f:(fun (module App : APP) -> App.name)
+    project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
   let create ~config apps = { apps; config }
 
@@ -79,20 +79,21 @@ module Project : PROJECT = struct
     let () = Logs.set_level log_level in
     Logs.info (fun m -> m "logger set up")
 
+  let migrate project =
+    project.apps
+    |> List.map ~f:(fun (module App : APP) -> App.migrations)
+    |> Db.Migrate.execute
+
   let start project =
     let () = setup_logger () in
     let apps = project |> app_names |> String.concat ~sep:", " in
     let () = Logs.info (fun m -> m "project starting with apps: %s" apps) in
     (* TODO check if configuration is valid *)
+    (* TODO migrate *)
     start_http_server project
 
   (* TODO implement *)
   let seed _ = Lwt.return @@ Error "not implemented"
-
-  let migrate project =
-    project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.migrations)
-    |> Db.Migrate.execute
 
   let clean project =
     let* request = Test.request_with_connection () in

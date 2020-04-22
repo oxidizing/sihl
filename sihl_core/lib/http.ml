@@ -45,12 +45,6 @@ let require_body_exn req decode =
   | Ok body -> Lwt.return body
   | Error _ -> Fail.raise_bad_request "invalid body provided"
 
-let failwith_opt msg opt =
-  match opt with None -> failwith msg | Some value -> value
-
-let failwith_result opt =
-  match opt with Error msg -> failwith msg | Ok value -> value
-
 module Msg = struct
   type t = { msg : string } [@@deriving yojson]
 
