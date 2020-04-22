@@ -88,6 +88,9 @@
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
 
+  ;; Hashing
+  (safepass (>= 3.0))
+
   ;; Helpers
   (pcre (>= 7.4.3))
   (ppx_fields_conv (>= 0.13.0))

@@ -11,10 +11,11 @@
   yojson
   ppx_deriving_yojson.runtime
   sexplib
-  logs         ;; The logs library
-  logs.fmt     ;; The logs format helper
-  logs.lwt     ;; The logs concurrency helper
+  logs
+  logs.fmt
+  logs.lwt
   uuidm
+  safepass
   )
  (preprocess
   (pps

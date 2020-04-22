@@ -17,7 +17,10 @@ module User = struct
 
   let confirm user = { user with confirmed = true }
 
-  let update_password user new_password = { user with password = new_password }
+  let update_password user new_password =
+    (* TODO use a lower count when testing *)
+    let hash = Bcrypt.hash ~count:5 new_password |> Bcrypt.string_of_hash in
+    { user with password = hash }
 
   let update_details user ~email ~username ~name ~phone =
     { user with email; username; name; phone }
@@ -26,8 +29,8 @@ module User = struct
 
   let is_owner user id = String.equal user.id id
 
-  (* TODO use password hashing *)
-  let matches_password password user = String.equal user.password password
+  let matches_password password user =
+    Bcrypt.verify password (Bcrypt.hash_of_string user.password)
 
   let validate_password password =
     (* TODO use more sophisticated policy *)
@@ -44,10 +47,12 @@ module User = struct
     Result.all_unit [ matches_password; new_password_valid ]
 
   let create ~email ~password ~username ~name ~phone ~admin ~confirmed =
+    (* TODO use a lower count when testing *)
+    let hash = Bcrypt.hash ~count:5 password |> Bcrypt.string_of_hash in
     {
       id = Uuidm.v `V4 |> Uuidm.to_string;
       email;
-      password;
+      password = hash;
       username;
       name;
       phone;
