@@ -29,11 +29,10 @@ module Register = struct
   let handler =
     post "/users/register/" @@ Sihl_core.Http.with_json
     @@ fun req ->
-    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
-    let* _ =
-      Service.User.register req ~email:body_in.email ~username:body_in.username
-        ~password:body_in.password ~name:body_in.name
+    let* { email; username; password; name } =
+      Sihl_core.Http.require_body_exn req body_in_of_yojson
     in
+    let* _ = Service.User.register req ~email ~username ~password ~name in
     Lwt.return @@ ()
 end
 
@@ -92,11 +91,12 @@ module UpdatePassword = struct
     post "/users/update-password/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
-    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
+    let* { email; old_password; new_password } =
+      Sihl_core.Http.require_body_exn req body_in_of_yojson
+    in
     let user = Service.User.authenticate req in
     let* _ =
-      Service.User.update_password req user ~email:body_in.email
-        ~old_password:body_in.old_password ~new_password:body_in.new_password
+      Service.User.update_password req user ~email ~old_password ~new_password
     in
     Lwt.return @@ ()
 end
@@ -114,10 +114,11 @@ module UpdateDetails = struct
     post "/users/update-details/"
     @@ Sihl_core.Http.with_json ~encode:Model.User.to_yojson
     @@ fun req ->
-    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
+    let* { email; username; name; phone } =
+      Sihl_core.Http.require_body_exn req body_in_of_yojson
+    in
     let user = Service.User.authenticate req in
-    Service.User.update_details req user ~email:body_in.email
-      ~username:body_in.username ~name:body_in.name ~phone:body_in.phone
+    Service.User.update_details req user ~email ~username ~name ~phone
 end
 
 module SetPassword = struct
@@ -127,12 +128,11 @@ module SetPassword = struct
     post "/users/set-password/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
-    let* body_in = Sihl_core.Http.require_body_exn req body_in_of_yojson in
-    let user = Service.User.authenticate req in
-    let* _ =
-      Service.User.set_password req user ~user_id:body_in.user_id
-        ~password:body_in.password
+    let* { user_id; password } =
+      Sihl_core.Http.require_body_exn req body_in_of_yojson
     in
+    let user = Service.User.authenticate req in
+    let* _ = Service.User.set_password req user ~user_id ~password in
     Lwt.return @@ ()
 end
 

@@ -39,6 +39,11 @@ let error_of_exn : exn -> 'a = function
   | Exception.NoPermissions msg -> Error (Error.NoPermissions msg)
   | _ -> Error (Error.Database "unspecified exn encountered")
 
+let try_to_run f =
+  Lwt.catch
+    (fun () -> f () |> Lwt.map (fun result -> Ok result))
+    (fun exn -> Lwt.return @@ error_of_exn exn)
+
 let raise_bad_request msg = raise @@ Exception.BadRequest msg
 
 let raise_no_permissions msg = raise @@ Exception.NoPermissions msg

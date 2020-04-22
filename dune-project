@@ -43,6 +43,7 @@
   (fmt (>= 0.8.8))
 
   ;; Helpers
+  (pcre (>= 7.4.3))
   (sexplib (>= 0.13.0))
   (ppx_fields_conv (>= 0.13.0))
   (ppx_sexp_conv (>= 0.13.0))
@@ -88,6 +89,7 @@
   (fmt (>= 0.8.8))
 
   ;; Helpers
+  (pcre (>= 7.4.3))
   (ppx_fields_conv (>= 0.13.0))
   (ppx_sexp_conv (>= 0.13.0))
   (ppx_string_interpolation (>= 1.0.0))

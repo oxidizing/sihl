@@ -72,11 +72,7 @@ let with_json :
     Request.t ->
     Response.t Lwt.t =
  fun ?encode handler req ->
-  let* result =
-    Lwt.catch
-      (fun () -> handler req |> Lwt.map (fun result -> Ok result))
-      (fun exn -> Lwt.return @@ Fail.error_of_exn exn)
-  in
+  let* result = Fail.try_to_run (fun () -> handler req) in
   match (encode, result) with
   | Some encode, Ok result ->
       let response = result |> encode |> Yojson.Safe.to_string in
@@ -96,11 +92,7 @@ let with_json :
 module Middleware = struct
   let handle_error app =
     let filter (handler : Request.t -> Response.t Lwt.t) (req : Request.t) =
-      let* response =
-        Lwt.catch
-          (fun () -> handler req |> Lwt.map (fun result -> Ok result))
-          (fun exn -> Lwt.return @@ Fail.error_of_exn exn)
-      in
+      let* response = Fail.try_to_run (fun () -> handler req) in
       match response with
       | Ok response -> Lwt.return response
       | Error error ->
