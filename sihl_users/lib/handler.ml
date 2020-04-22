@@ -147,50 +147,29 @@ module ConfirmEmail = struct
     Service.User.confirm_email req token
 end
 
-(* module RequestPasswordReset = {
- *   [@decco]
- *   type body_in = {email: string};
- *
- *   [@decco]
- *   type body_out = {message: string};
- *
- *   let endpoint = (root, database) =>
- *     Sihl.App.Http.dbEndpoint({
- *       database,
- *       verb: POST,
- *       path: {j|/$root/request-password-reset/|j},
- *       handler: (conn, req) => {
- *         open! Sihl.App.Http.Endpoint;
- *         let%Async {email} = req.requireBody(body_in_decode);
- *         let%Async _ = Service.User.requestPasswordReset(conn, ~email);
- *         Async.async @@ OkJson(body_out_encode({message: "ok"}));
- *       },
- *     });
- * }; *)
+module RequestPasswordReset = struct
+  type body_in = { email : string } [@@deriving yojson]
 
-(* module ResetPassword = {
- *   [@decco]
- *   type body_in = {
- *     token: string,
- *     newPassword: string,
- *   };
- *
- *   [@decco]
- *   type body_out = {message: string};
- *
- *   let endpoint = (root, database) =>
- *     Sihl.App.Http.dbEndpoint({
- *       database,
- *       verb: POST,
- *       path: {j|/$root/reset-password/|j},
- *       handler: (conn, req) => {
- *         open! Sihl.App.Http.Endpoint;
- *         let%Async {token, newPassword} = req.requireBody(body_in_decode);
- *         let%Async _ = Service.User.resetPassword(conn, ~token, ~newPassword);
- *         Async.async @@ OkJson(body_out_encode({message: "ok"}));
- *       },
- *     });
- * }; *)
+  let handler =
+    post "/users/request-password-reset/"
+    @@ Sihl_core.Http.with_json
+    @@ fun req ->
+    let* { email } = Sihl_core.Http.require_body_exn req body_in_of_yojson in
+    Service.User.request_password_reset req ~email
+end
+
+module ResetPassword = struct
+  type body_in = { token : string; new_password : string } [@@deriving yojson]
+
+  let handler =
+    post "/users/reset-password/"
+    @@ Sihl_core.Http.with_json
+    @@ fun req ->
+    let* { token; new_password } =
+      Sihl_core.Http.require_body_exn req body_in_of_yojson
+    in
+    Service.User.reset_password req ~token ~new_password
+end
 
 let routes =
   [
@@ -204,6 +183,8 @@ let routes =
     UpdateDetails.handler;
     SetPassword.handler;
     ConfirmEmail.handler;
+    RequestPasswordReset.handler;
+    ResetPassword.handler;
   ]
 
 let add_handlers app =

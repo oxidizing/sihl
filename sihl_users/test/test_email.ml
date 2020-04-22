@@ -35,9 +35,7 @@ let test_user_registers_and_confirms_email _ () =
       (Uri.of_string @@ url "/register/")
   in
   let email = Sihl_core.Email.last_dev_email () in
-  let _ = Logs.info (fun m -> m "found email: %s" email.text) in
   let token = extract_token email.text in
-  let _ = Logs.info (fun m -> m "found token: %s" token) in
   let* _ =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string @@ url ("/confirm-email/?token=" ^ token))
@@ -71,6 +69,71 @@ let test_user_registers_and_confirms_email _ () =
   let () = Alcotest.(check bool) "Has confirmed email" true confirmed in
   Lwt.return @@ ()
 
-let test_user_resets_password _ () = Lwt.return ()
+let test_user_resets_password _ () =
+  let* () = Sihl_users.App.clean () in
+  let* _ =
+    Sihl_core.Test.seed
+    @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"
+  in
+  let body = {|{"email": "user1@example.com"}|} in
+  let* _ =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string @@ url "/request-password-reset/")
+  in
+  let email = Sihl_core.Email.last_dev_email () in
+  let token = extract_token email.text in
+  let body =
+    [%string {|{"token": "$(token)", "new_password": "newpassword"}|}]
+  in
+  let* _ =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string @@ url "/reset-password/")
+  in
+  let base64 = Base64.encode_exn "user1@example.com:newpassword" in
+  let headers =
+    Cohttp.Header.of_list [ ("authorization", "Basic " ^ base64) ]
+  in
+  let* resp, _ =
+    Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
+  in
+  let status =
+    resp |> Cohttp_lwt_unix.Response.status |> Cohttp.Code.code_of_status
+  in
+  Lwt.return @@ Alcotest.(check int) "Can login with new password" 200 status
 
-let test_user_uses_reset_token_twice_fails _ () = Lwt.return ()
+let test_user_uses_reset_token_twice_fails _ () =
+  let* () = Sihl_users.App.clean () in
+  let* _ =
+    Sihl_core.Test.seed
+    @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"
+  in
+  let body = {|{"email": "user1@example.com"}|} in
+  let* _ =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string @@ url "/request-password-reset/")
+  in
+  let email = Sihl_core.Email.last_dev_email () in
+  let token = extract_token email.text in
+  let body =
+    [%string {|{"token": "$(token)", "new_password": "newpassword"}|}]
+  in
+  let* _ =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string @@ url "/reset-password/")
+  in
+  let body =
+    [%string {|{"token": "$(token)", "new_password": "anotherpassword"}|}]
+  in
+  let* resp, _ =
+    Cohttp_lwt_unix.Client.post
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Uri.of_string @@ url "/reset-password/")
+  in
+  let status =
+    resp |> Cohttp_lwt_unix.Response.status |> Cohttp.Code.code_of_status
+  in
+  Lwt.return @@ Alcotest.(check int) "Can not use token twice" 400 status

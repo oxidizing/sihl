@@ -223,7 +223,7 @@ module User = struct
       |> Sihl_core.Fail.with_bad_request "could not confirm email"
       |> Lwt.return
 
-  let request_password_reset request email =
+  let request_password_reset request ~email =
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db request
     in
@@ -238,7 +238,7 @@ module User = struct
     let email = Model.Email.PasswordReset.create token user in
     Sihl_core.Email.send email
 
-  let reset_password request token ~new_password =
+  let reset_password request ~token ~new_password =
     let* token =
       Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
     in
