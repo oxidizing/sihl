@@ -1,10 +1,9 @@
 open Core
-open Sihl_core.My_command
 open Sihl_core.Fail
 
 let ( let* ) = Lwt.bind
 
-let fn request args description =
+let fn request args =
   match args with
   | [ "createadmin"; email; password ] -> (
       let* result =
@@ -12,13 +11,18 @@ let fn request args description =
             Service.User.create_admin request ~email ~password ~username:"admin"
               ~name:"admin")
       in
+      Lwt.return
+      @@
       match result with
-      | Ok _ -> Lwt.return ()
+      | Ok _ -> Ok ()
       | Error error ->
-          Lwt.return
-          @@ Logs.info (fun m ->
-                 m "Failed to run command: %s" (Error.show error)) )
-  | _ -> Lwt.return @@ Logs.info (fun m -> m "Usage: %s" description)
+          let msg = Error.show error in
+          let _ = Logs.info (fun m -> m "Failed to run command: %s" msg) in
+          Error msg )
+  (* TODO think about a way to encapsulate that case
+     without stringly typing *)
+  | _ -> Lwt.return @@ Error "wrong usage"
 
 let create_admin =
-  { name = "createadmin"; description = "createadmin <email> <password>"; fn }
+  Sihl_core.My_command.create ~name:"createadmin"
+    ~description:"createadmin <email> <password>" ~fn

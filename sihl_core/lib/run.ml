@@ -15,7 +15,7 @@ module type APP = sig
 
   val cleaners : (Db.connection -> unit Db.db_result) list
 
-  val commands : Command.t list
+  val commands : My_command.t list
 end
 
 module type PROJECT = sig
@@ -54,7 +54,8 @@ module Project : PROJECT = struct
   let add_middlewares middlewares app =
     List.fold ~f:(fun app route -> route app) ~init:app middlewares
 
-  let start_http_server middlewares =
+  let start_http_server project =
+    let middlewares = merge_middlewares project in
     let () = Logs.info (fun m -> m "http server starting") in
     let app =
       App.empty |> App.cmd_name "Project" |> Http.Middleware.handle_error
@@ -82,9 +83,10 @@ module Project : PROJECT = struct
     let () = setup_logger () in
     let apps = project |> app_names |> String.concat ~sep:", " in
     let () = Logs.info (fun m -> m "project starting with apps: %s" apps) in
-    let middlewares = merge_middlewares project in
-    start_http_server middlewares
+    (* TODO check if configuration is valid *)
+    start_http_server project
 
+  (* TODO implement *)
   let seed _ = Lwt.return @@ Error "not implemented"
 
   let migrate project =
@@ -115,11 +117,8 @@ module Project : PROJECT = struct
     in
     execute cleaners
 
+  (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"
-
-  let execute_command _ _ =
-    let* _ = Test.request_with_connection () in
-    Lwt.return ()
 
   let run_command project =
     let args = Sys.get_argv () |> Array.to_list in
@@ -131,7 +130,7 @@ module Project : PROJECT = struct
     let command = My_command.find commands args in
     match command with
     | Some command ->
-        let _ = execute_command command args in
+        let _ = My_command.execute command args in
         ()
     | None ->
         let help = My_command.help commands in
