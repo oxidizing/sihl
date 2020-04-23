@@ -127,14 +127,42 @@ end
 
 type t = (string, string, Core.String.comparator_witness) Core.Map.t
 
+module State : sig
+  val set : t -> unit
+
+  val get : unit -> t
+end = struct
+  let state = ref None
+
+  let set config = state := Some config
+
+  let get () =
+    Option.value_exn
+      ~message:"no configuration found, have you correctly initialized it"
+      !state
+end
+
 let of_list kvs =
   match Map.of_alist (module String) kvs with
   | `Duplicate_key msg ->
       Error ("duplicate key detected while creating configuration: " ^ msg)
   | `Ok map -> Ok map
 
+(* overwrite config values with values from the environment *)
+let merge_with_env config =
+  let rec merge keys result =
+    match keys with
+    | [] -> result
+    | key :: keys -> (
+        match Sys.getenv key with
+        | Some value -> merge keys @@ Map.set ~key ~data:value result
+        | None -> merge keys result )
+  in
+  merge (Map.keys config) config
+
 let process schemas config =
   (* TODO add default values to config *)
+  let config = merge_with_env config in
   let schema = List.concat schemas in
   let rec check_types schema =
     match schema with
@@ -144,3 +172,36 @@ let process schemas config =
         |> Result.bind ~f:(fun _ -> check_types schema)
   in
   check_types schema |> Result.map ~f:(fun _ -> config)
+
+let read_string ?default key =
+  let value = Map.find (State.get ()) key in
+  Lwt.return
+  @@
+  match (default, value) with
+  | _, Some value -> value
+  | Some default, None -> default
+  | None, None -> failwith @@ "configuration " ^ key ^ " not found"
+
+let read_int ?default key =
+  let value = Map.find (State.get ()) key in
+  Lwt.return
+  @@
+  match (default, value) with
+  | _, Some value -> (
+      match int_of_string_opt value with
+      | Some value -> value
+      | None -> failwith @@ "configuration " ^ key ^ " is not a int" )
+  | Some default, None -> default
+  | None, None -> failwith @@ "configuration " ^ key ^ " not found"
+
+let read_bool ?default key =
+  Lwt.return
+  @@
+  let value = Map.find (State.get ()) key in
+  match (default, value) with
+  | _, Some value -> (
+      match bool_of_string_opt value with
+      | Some value -> value
+      | None -> failwith @@ "configuration " ^ key ^ " is not a int" )
+  | Some default, None -> default
+  | None, None -> failwith @@ "configuration " ^ key ^ " not found"
