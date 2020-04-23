@@ -21,7 +21,7 @@ end
 module type PROJECT = sig
   type t
 
-  val create : config:Config.t -> (module APP) list -> t
+  val create : config:Config.Setting.t -> (module APP) list -> t
 
   val start : t -> (unit, string) result Lwt.t
 
@@ -39,7 +39,7 @@ end
 module Project : PROJECT = struct
   open Opium.Std
 
-  type t = { apps : (module APP) list; config : Config.t }
+  type t = { apps : (module APP) list; config : Config.Setting.t }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
