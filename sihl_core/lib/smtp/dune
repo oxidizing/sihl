@@ -1,4 +1,0 @@
-(library
- (name smtp)
- (libraries ctypes)
- (foreign_stubs (language c) (names smtp)))
