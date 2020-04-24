@@ -5,4 +5,4 @@ type t = {
   rowCount: int,
   command: string,
 };
-let decode = Sihl.Common.Error.Decco.stringifyDecoder(t_decode);
+let decode = Sihl.Core.Error.Decco.stringifyDecoder(t_decode);

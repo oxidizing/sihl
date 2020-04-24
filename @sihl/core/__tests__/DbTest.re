@@ -2,7 +2,7 @@ open Jest;
 open Expect;
 
 describe("Migrations", () => {
-  open Sihl.Common.Db.Migration;
+  open Sihl.Core.Db.Migration;
   test("steps to apply returns empty list", () => {
     let migration = {steps: _ => [], namespace: "foo-namespace"};
     stepsToApply(migration, 10)
@@ -33,27 +33,25 @@ describe("Migrations", () => {
 
 describe("Parses DATABASE_URL", () => {
   test("is empty with empty string", () => {
-    Sihl.Common.Config.Db.Url.parse("")
+    Sihl.Core.Config.Db.Url.parse("")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("is empty with invalid url", () => {
-    Sihl.Common.Config.Db.Url.parse("sdfaadsf")
+    Sihl.Core.Config.Db.Url.parse("sdfaadsf")
     |> expect
     |> toEqual(Error("Invalid database url provided"))
   });
   test("returns config", () => {
     let config =
-      Sihl.Common.Config.Db.make(
+      Sihl.Core.Config.Db.make(
         ~user="username",
         ~password="password",
         ~host="host",
         ~port="port",
         ~db="db",
       );
-    Sihl.Common.Config.Db.makeFromUrl(
-      "mysql://username:password@host:port/db",
-    )
+    Sihl.Core.Config.Db.makeFromUrl("mysql://username:password@host:port/db")
     |> expect
     |> toEqual(Ok(config));
   });

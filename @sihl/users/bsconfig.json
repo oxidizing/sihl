@@ -32,6 +32,6 @@
     "error" : "+101"
   },
   "ppx-flags": ["decco/ppx", "bs-let/ppx"],
-  "namespace": true,
+  "namespace": false,
   "refmt": 3
 }
