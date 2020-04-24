@@ -25,6 +25,12 @@ val query_db :
   (connection -> 'a db_result) ->
   ('a, string) result Lwt.t
 
+val query_db_exn :
+  ?message:string ->
+  Opium_kernel.Rock.Request.t ->
+  (connection -> 'a db_result) ->
+  'a Lwt.t
+
 (** {{1} API for database migrations } *)
 
 module Migrate : sig

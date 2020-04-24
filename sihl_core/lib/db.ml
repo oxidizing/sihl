@@ -119,6 +119,13 @@ let query_db request query =
   Request.env request |> Opium.Hmap.get key |> query
   |> Lwt_result.map_err Caqti_error.show
 
+let query_db_exn ?message request query =
+  let open Lwt.Infix in
+  query_db request query >>= fun result ->
+  match result with
+  | Ok result -> Lwt.return result
+  | Error msg -> Fail.raise_database (Option.value ~default:msg message)
+
 module Migrate = struct
   type migration_error = Caqti_error.t
 

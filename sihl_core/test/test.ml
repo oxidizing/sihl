@@ -1,4 +1,4 @@
-let run_test () =
+let () =
   let open Alcotest in
   run "sihl core"
     [
