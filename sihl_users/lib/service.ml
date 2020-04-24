@@ -18,7 +18,7 @@ module User = struct
       |> Sihl_core.Fail.with_database "could not insert email confirm token"
     in
     let email = Model.Email.Confirmation.create token user in
-    Sihl_core.Email.send email
+    Sihl_core.Email.send_exn email
 
   let register ?(suppress_email = false) request ~email ~password ~username
       ~name =

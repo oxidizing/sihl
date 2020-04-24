@@ -48,6 +48,7 @@
   (ppx_fields_conv (>= 0.13.0))
   (ppx_sexp_conv (>= 0.13.0))
   (ppx_string_interpolation (>= 1.0.0))
+  (ctypes (>= 0.17.1))
 
   ;; Dev dependencies
   (utop :dev)

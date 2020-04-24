@@ -1,44 +1,18 @@
-open Core
+let ( let* ) = Lwt.bind
 
-type t = {
-  sender : string;
-  recipient : string;
-  subject : string;
-  text : string;
-}
+let create = Email_core.create
 
-let show email =
-  [%string
-    {|
------------------------
-Email sent by: $(email.sender)
-Recpient: $(email.recipient)
-Subject: $(email.subject)
-$(email.text)
------------------------
-|}]
+let render = Email_core.render
 
-let replace_element str k v =
-  let regexp = Str.regexp @@ "{" ^ k ^ "}" in
-  Str.global_replace regexp v str
-
-let rec render data template =
-  match data with
-  | [] -> template
-  | (k, v) :: data -> render data @@ replace_element template k v
-
-let create ~sender ~recipient ~subject ~text =
-  { sender; recipient; subject; text }
-
-let dev_inbox : t option ref = ref None
-
-let last_dev_email () =
-  Option.value_exn ~message:"no dev email found" !dev_inbox
+let last_dev_email = Email_transport.DevInbox.get
 
 let send email =
   let backend = "dev_inbox" in
   match backend with
-  | "console" -> Logs_lwt.info (fun m -> m "%s" (show email))
-  | _ ->
-      let _ = dev_inbox := Some email in
-      Logs_lwt.info (fun m -> m "%s" (show email))
+  | "smtp" -> Email_transport.Smtp.send email
+  | "console" -> Email_transport.Console.send email
+  | _ -> Email_transport.DevInbox.send email
+
+let send_exn email =
+  let* result = send email in
+  result |> Fail.with_email |> Lwt.return

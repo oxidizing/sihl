@@ -11,9 +11,9 @@
   lwt.unix
   yojson
   ppx_deriving_yojson.runtime
-  logs         ;; The logs library
-  logs.fmt     ;; The logs format helper
-  logs.lwt     ;; The logs concurrency helper
+  logs
+  logs.fmt
+  logs.lwt
 )
  (preprocess
   (pps
