@@ -88,8 +88,11 @@ module Project : PROJECT = struct
     let () = setup_logger () in
     let apps = project |> app_names |> String.concat ~sep:", " in
     let () = Logs.info (fun m -> m "project starting with apps: %s" apps) in
-    (* TODO check if configuration is valid *)
-    (* TODO migrate *)
+    let schemas =
+      project.apps |> List.map ~f:(fun (module App : APP) -> App.config)
+    in
+    let () = Config.load_config schemas project.config in
+    (* TODO run migrations here *)
     start_http_server project
 
   (* TODO implement *)

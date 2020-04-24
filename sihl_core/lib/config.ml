@@ -9,6 +9,12 @@ module Setting = struct
     production : key_value list;
   }
 
+  let production setting = setting.production
+
+  let development setting = setting.development
+
+  let test setting = setting.test
+
   let create ~development ~test ~production = { development; test; production }
 end
 
@@ -160,9 +166,16 @@ let merge_with_env config =
   in
   merge (Map.keys config) config
 
-let process schemas config =
+let read_by_env setting =
+  match Sys.getenv "SIHL_ENV" |> Option.value ~default:"test" with
+  | "production" -> Setting.production setting
+  | "test" -> Setting.test setting
+  | _ -> Setting.development setting
+
+let process schemas setting =
   (* TODO add default values to config *)
-  let config = merge_with_env config in
+  let setting = read_by_env setting |> of_list |> Result.ok_or_failwith in
+  let config = merge_with_env setting in
   let schema = List.concat schemas in
   let rec check_types schema =
     match schema with
@@ -172,6 +185,9 @@ let process schemas config =
         |> Result.bind ~f:(fun _ -> check_types schema)
   in
   check_types schema |> Result.map ~f:(fun _ -> config)
+
+let load_config schemas setting =
+  process schemas setting |> Fail.with_configuration |> State.set |> ignore
 
 let read_string ?default key =
   let value = Map.find (State.get ()) key in

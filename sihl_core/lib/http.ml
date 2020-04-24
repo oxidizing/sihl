@@ -56,7 +56,7 @@ end
 let code_of_error error =
   match error with
   | Fail.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
-  | Fail.Error.Email _ | Fail.Error.Database _ ->
+  | Fail.Error.Configuration _ | Fail.Error.Email _ | Fail.Error.Database _ ->
       500 |> Cohttp.Code.status_of_code
   | Fail.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
   | Fail.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code

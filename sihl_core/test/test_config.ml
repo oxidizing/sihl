@@ -148,21 +148,29 @@ module Schema = struct
 
   let test_process_valid_config () =
     let schemas = [ [ string_ "FOO"; bool_ "BAR" ] ] in
-    let config =
+    let setting =
+      Config.Setting.create
+        ~test:[ ("FOO", "value1"); ("BAR", "true") ]
+        ~development:[] ~production:[]
+    in
+    let expected =
       Config.of_list [ ("FOO", "value1"); ("BAR", "true") ]
       |> Result.ok_or_failwith
     in
-    let actual = Config.process schemas config |> Result.ok_or_failwith in
-    let are_identical = Map.equal String.equal actual config in
+    let actual = Config.process schemas setting |> Result.ok_or_failwith in
+    let are_identical = Map.equal String.equal actual expected in
     Alcotest.(check bool) "process config" true are_identical
 
   let test_process_invalid_config_fails () =
     let schemas = [ [ string_ "FOO"; bool_ "BAR" ] ] in
-    let config =
-      Config.of_list [ ("FOO", "value1"); ("BAR", "123") ]
-      |> Result.ok_or_failwith
+    let setting =
+      Config.Setting.create
+        ~test:[ ("FOO", "value1"); ("BAR", "123") ]
+        ~development:[] ~production:[]
     in
-    let actual = Config.process schemas config |> Result.map ~f:(fun _ -> ()) in
+    let actual =
+      Config.process schemas setting |> Result.map ~f:(fun _ -> ())
+    in
     Alcotest.(check @@ result unit string)
       "process invalid config fails"
       (Error "provided configuration is not a bool key=BAR, value=123") actual
