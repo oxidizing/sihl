@@ -1,0 +1,96 @@
+module Error = struct
+  type t =
+    | BadRequest of string
+    | Database of string
+    | NotAuthenticated of string
+    | NoPermissions of string
+    | Email of string
+    | Configuration of string
+
+  let show = function
+    | BadRequest msg -> msg
+    | Database msg -> msg
+    | NotAuthenticated msg -> msg
+    | NoPermissions msg -> msg
+    | Email msg -> msg
+    | Configuration msg -> msg
+end
+
+module Exception = struct
+  exception BadRequest of string
+
+  exception Database of string
+
+  exception NotAuthenticated of string
+
+  exception NoPermissions of string
+
+  exception Email of string
+
+  exception Configuration of string
+end
+
+let exn_of_error = function
+  | Ok value -> value
+  | Error (Error.BadRequest msg) -> raise @@ Exception.BadRequest msg
+  | Error (Error.Database msg) -> raise @@ Exception.Database msg
+  | Error (Error.NotAuthenticated msg) ->
+      raise @@ Exception.NotAuthenticated msg
+  | Error (Error.NoPermissions msg) -> raise @@ Exception.NoPermissions msg
+  | Error (Error.Email msg) -> raise @@ Exception.Email msg
+  | Error (Error.Configuration msg) -> raise @@ Exception.Configuration msg
+
+let exn_of_error' result = result |> Lwt.map exn_of_error
+
+let error_of_exn : exn -> 'a = function
+  | Exception.BadRequest msg -> Error (Error.BadRequest msg)
+  | Exception.Database msg -> Error (Error.Database msg)
+  | Exception.NotAuthenticated msg -> Error (Error.NotAuthenticated msg)
+  | Exception.NoPermissions msg -> Error (Error.NoPermissions msg)
+  | Exception.Email msg -> Error (Error.Email msg)
+  | Exception.Configuration msg -> Error (Error.Configuration msg)
+  | _ -> Error (Error.Database "unspecified exn encountered")
+
+let try_to_run f =
+  Lwt.catch
+    (fun () -> f () |> Lwt.map (fun result -> Ok result))
+    (fun exn -> Lwt.return @@ error_of_exn exn)
+
+let raise_bad_request msg = raise @@ Exception.BadRequest msg
+
+let raise_no_permissions msg = raise @@ Exception.NoPermissions msg
+
+let raise_not_authenticated msg = raise @@ Exception.NotAuthenticated msg
+
+let raise_database msg = raise @@ Exception.Database msg
+
+let with_bad_request msg result =
+  match result with
+  | Ok result -> result
+  | Error error -> raise @@ Exception.BadRequest (msg ^ " msg= " ^ error)
+
+let with_database msg result =
+  match result with
+  | Ok result -> result
+  | Error error -> raise @@ Exception.Database (msg ^ " msg= " ^ error)
+
+let with_no_permission msg result =
+  match result with
+  | Ok result -> result
+  | Error _ -> raise @@ Exception.NoPermissions msg
+
+let with_email result =
+  match result with
+  | Ok result -> result
+  | Error msg -> raise @@ Exception.Email msg
+
+let with_configuration result =
+  match result with
+  | Ok result -> result
+  | Error msg -> raise @@ Exception.Configuration msg
+
+let err_database msg = Error.Database msg
+
+let err_bad_request msg = Error.BadRequest msg
+
+let err_no_permission msg = Error.NoPermissions msg
