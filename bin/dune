@@ -1,0 +1,16 @@
+(executable
+ (public_name sihl_core)
+ (package sihl_core)
+ (name main)
+ (libraries
+   caqti
+   caqti-driver-postgresql
+   caqti-lwt
+   core
+   logs         ;; The logs library
+   logs.fmt     ;; The logs format helper
+   logs.lwt     ;; The logs concurrency helper
+   sihl_core
+   opium
+   tyxml
+))

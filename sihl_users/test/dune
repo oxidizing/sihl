@@ -1,0 +1,17 @@
+(test
+ (name test)
+ (libraries
+  sihl_users
+  pcre
+  alcotest
+  alcotest-lwt
+  lwt
+  lwt.unix
+  cohttp-lwt-unix
+  yojson
+  base64
+  )
+ (preprocess
+  (pps
+   ppx_string_interpolation
+  )))

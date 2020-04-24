@@ -1,0 +1,25 @@
+(library
+ (name sihl_core)
+ (libraries
+  core
+  str
+  opium
+  caqti
+  caqti-driver-postgresql
+  caqti-lwt
+  tyxml
+  lwt.unix
+  yojson
+  ppx_deriving_yojson.runtime
+  logs
+  logs.fmt
+  logs.lwt
+  sendmail
+)
+ (preprocess
+  (pps
+   ppx_rapper
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_string_interpolation
+  )))

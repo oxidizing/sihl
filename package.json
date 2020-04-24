@@ -1,9 +1,0 @@
-{
-  "private": true,
-  "workspaces": [
-    "@sihl/core",
-    "@sihl/ql",
-    "@sihl/users",
-    "@sihl/mysql"
-  ]
-}
