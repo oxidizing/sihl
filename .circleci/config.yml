@@ -1,0 +1,58 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: ocaml/opam2:4.08
+        environment:
+          TERM: xterm
+      - image: postgres:12.2
+        environment:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: admin
+          POSTGRES_DB: dev
+    steps:
+      - run:
+          name: Update opam
+          command: |
+            opam remote remove --all default
+            opam remote add default https://opam.ocaml.org
+      - checkout
+      - run:
+          name: Pin packages
+          command: |
+            opam pin add -y -n sihl_core .
+            opam pin add -y -n sihl_users .
+      - run:
+          name: Install system dependencies
+          command: opam depext -y sihl_core sihl_users
+      - run:
+          name: Install OCaml dependencies
+          command: opam install --deps-only -y sihl_core sihl_users
+      - run:
+          name: Build
+          command: opam config exec -- make
+      - run:
+          name: Install OCaml test dependencies
+          # Not using opam install -y -t because it tries to run csv's tests
+          command: opam install -y alcotest alcotest-lwt cohttp-lwt-unix
+      - run:
+          name: Test
+          command: opam config exec -- make test
+      # - run:
+      #     name: Coverage
+      #     command: opam config exec -- make coverage
+      # - run:
+      #     name: Install ocveralls
+      #     command: opam install -y ocveralls
+      # - run:
+      #     name: Upload coverage report
+      #     command: |
+      #       cd _build/default
+      #       shopt -s globstar
+      #       opam config exec -- ocveralls **/bisect*.out --send --repo_token $COVERALLS_REPO_TOKEN --git
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
