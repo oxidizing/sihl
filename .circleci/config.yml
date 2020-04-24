@@ -38,18 +38,6 @@ jobs:
       - run:
           name: Test
           command: opam config exec -- make test
-      # - run:
-      #     name: Coverage
-      #     command: opam config exec -- make coverage
-      # - run:
-      #     name: Install ocveralls
-      #     command: opam install -y ocveralls
-      # - run:
-      #     name: Upload coverage report
-      #     command: |
-      #       cd _build/default
-      #       shopt -s globstar
-      #       opam config exec -- ocveralls **/bisect*.out --send --repo_token $COVERALLS_REPO_TOKEN --git
 
 workflows:
   version: 2

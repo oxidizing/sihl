@@ -2,15 +2,9 @@
 
 # Sihl
 
-Sihl aims to be a framework like Rails or Django for [Reason](https://reasonml.github.io/). It makes web development fun and safe by turning run-time bugs into compile-time bugs.
+Sihl aims to be a framework like Rails or Django for Reason and OCaml. It makes web development fun and safe by turning run-time bugs into compile-time bugs.
 
 Documentation is in the making, check out this [example project](https://github.com/oxidizing/sihl-example-issues) meanwhile.
-
-## Installation
-
-Install Sihl from NPM: `yarn add @sihl/core`
-
-You can install the users app as well to get [user management](/@sihl/users) out of the box: `yarn add @sihl/users`
 
 ## Features
 
