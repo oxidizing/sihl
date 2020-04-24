@@ -25,11 +25,11 @@ depends: [
   "logs" {>= "0.7.0"}
   "fmt" {>= "0.8.8"}
   "pcre" {>= "7.4.3"}
+  "safepass" {>= "3.0"}
   "sexplib" {>= "0.13.0"}
   "ppx_fields_conv" {>= "0.13.0"}
   "ppx_sexp_conv" {>= "0.13.0"}
   "ppx_string_interpolation" {>= "1.0.0"}
-  "ctypes" {>= "0.17.1"}
   "utop" {dev}
   "merlin" {dev}
   "ocamlformat" {dev}

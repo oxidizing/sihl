@@ -6,9 +6,8 @@ let url path = "http://localhost:3000/users" ^ path
 
 let extract_token text =
   let regexp = Pcre.regexp {|token=([\w|\-]*)|} in
-  let result = Pcre.extract ~rex:regexp text in
   Option.value_exn ~message:"no match found"
-    (List.nth (result |> Array.to_list) 1)
+    (Sihl_core.Regex.extract_last ~rex:regexp text)
 
 let test_extract_token_from_email _ () =
   let actual = extract_token "token=abc123" in
