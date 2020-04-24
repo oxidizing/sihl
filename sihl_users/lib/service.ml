@@ -1,4 +1,4 @@
-open! Core
+open Base
 
 let ( let* ) = Lwt.bind
 

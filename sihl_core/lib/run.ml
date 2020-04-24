@@ -1,4 +1,4 @@
-open Core
+open Base
 
 let ( let* ) = Lwt.bind
 
@@ -23,15 +23,15 @@ module type PROJECT = sig
 
   val create : config:Config.Setting.t -> (module APP) list -> t
 
-  val start : t -> (unit, string) result Lwt.t
+  val start : t -> (unit, string) Result.t Lwt.t
 
-  val seed : t -> (unit, string) result Lwt.t
+  val seed : t -> (unit, string) Result.t Lwt.t
 
-  val migrate : t -> (unit, string) result Lwt.t
+  val migrate : t -> (unit, string) Result.t Lwt.t
 
-  val clean : t -> (unit, string) result Lwt.t
+  val clean : t -> (unit, string) Result.t Lwt.t
 
-  val stop : t -> (unit, string) result Lwt.t
+  val stop : t -> (unit, string) Result.t Lwt.t
 
   val run_command : t -> unit
 end
@@ -151,5 +151,5 @@ module Project : PROJECT = struct
           ()
       | None ->
           let help = My_command.help commands in
-          print_string help
+          Logs.info (fun m -> m "%s" help)
 end

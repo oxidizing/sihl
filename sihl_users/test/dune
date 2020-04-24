@@ -1,6 +1,7 @@
 (test
  (name test)
  (libraries
+  base
   sihl_users
   pcre
   alcotest

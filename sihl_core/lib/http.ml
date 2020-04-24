@@ -1,4 +1,4 @@
-open Core
+open Base
 open Opium.Std
 
 let ( let* ) = Lwt.bind
@@ -13,7 +13,8 @@ let query req key =
   let value =
     query
     |> List.find ~f:(fun (k, _) -> String.equal k key)
-    |> Option.map ~f:Tuple2.get2 |> Option.bind ~f:List.hd
+    |> Option.map ~f:(fun (_, r) -> r)
+    |> Option.bind ~f:List.hd
   in
   match value with
   | None -> Fail.raise_bad_request "required query not found key= " ^ key

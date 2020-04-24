@@ -1,9 +1,9 @@
 (test
  (name test)
  (libraries
+  base
   sihl_core
   alcotest
-  core
   str
   opium
   tyxml

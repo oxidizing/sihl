@@ -1,4 +1,4 @@
-open Core
+open Base
 
 module Setting = struct
   type key_value = string * string
@@ -75,7 +75,7 @@ module Schema = struct
       | String (_, None, _), None ->
           Error [%string {|required configuration not provided key=$(key)|}]
       | Int (_, _), Some value ->
-          value |> int_of_string_opt
+          Option.try_with (fun () -> value |> Base.Int.of_string)
           |> Result.of_option
                ~error:
                  [%string
@@ -92,7 +92,7 @@ module Schema = struct
                    {|provided configuration is not an int key=$(key), value=$(required_value)|}]
           |> Result.map ~f:(fun _ -> ())
       | Bool (_, _), Some value ->
-          value |> bool_of_string_opt
+          Option.try_with (fun () -> value |> Base.Bool.of_string)
           |> Result.of_option
                ~error:
                  [%string
@@ -131,7 +131,7 @@ module Schema = struct
     Type.Bool (key, condition required_if default)
 end
 
-type t = (string, string, Core.String.comparator_witness) Core.Map.t
+type t = (string, string, String.comparator_witness) Map.t
 
 module State : sig
   val set : t -> unit
@@ -207,7 +207,7 @@ let read_int ?default key =
   @@
   match (default, value) with
   | _, Some value -> (
-      match int_of_string_opt value with
+      match Option.try_with (fun () -> Base.Int.of_string value) with
       | Some value -> value
       | None -> failwith @@ "configuration " ^ key ^ " is not a int" )
   | Some default, None -> default
@@ -219,7 +219,7 @@ let read_bool ?default key =
   let value = Map.find (State.get ()) key in
   match (default, value) with
   | _, Some value -> (
-      match bool_of_string_opt value with
+      match Caml.bool_of_string_opt value with
       | Some value -> value
       | None -> failwith @@ "configuration " ^ key ^ " is not a int" )
   | Some default, None -> default

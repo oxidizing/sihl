@@ -1,8 +1,8 @@
 (library
  (name sihl_users)
  (libraries
+  base
   sihl_core
-  core
   opium
   caqti
   caqti-driver-postgresql

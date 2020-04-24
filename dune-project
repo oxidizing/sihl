@@ -22,7 +22,7 @@
   (ocaml (>= 4.08.0))
 
   ;; Standard library replacement
-  (core (>= v0.12.2))
+  (base (>= v0.13.1))
 
   ;; Web toolkit
   (opium (>= 0.17.1))
@@ -68,7 +68,7 @@
   (ocaml (>= 4.08.0))
 
   ;; Standard library replacement
-  (core (>= v0.12.2))
+  (base (>= v0.13.1))
 
   ;; Web toolkit
   (opium (>= 0.17.1))

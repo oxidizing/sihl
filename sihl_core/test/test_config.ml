@@ -1,4 +1,4 @@
-open Core
+open Base
 open Sihl_core
 open Config.Schema
 
