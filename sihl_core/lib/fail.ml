@@ -6,6 +6,7 @@ module Error = struct
     | NoPermissions of string
     | Email of string
     | Configuration of string
+    | Server of string
 
   let show = function
     | BadRequest msg -> msg
@@ -14,6 +15,7 @@ module Error = struct
     | NoPermissions msg -> msg
     | Email msg -> msg
     | Configuration msg -> msg
+    | Server msg -> msg
 end
 
 module Exception = struct
@@ -28,6 +30,8 @@ module Exception = struct
   exception Email of string
 
   exception Configuration of string
+
+  exception Server of string
 end
 
 let exn_of_error = function
@@ -39,6 +43,7 @@ let exn_of_error = function
   | Error (Error.NoPermissions msg) -> raise @@ Exception.NoPermissions msg
   | Error (Error.Email msg) -> raise @@ Exception.Email msg
   | Error (Error.Configuration msg) -> raise @@ Exception.Configuration msg
+  | Error (Error.Server msg) -> raise @@ Exception.Server msg
 
 let exn_of_error' result = result |> Lwt.map exn_of_error
 
@@ -49,6 +54,7 @@ let error_of_exn : exn -> 'a = function
   | Exception.NoPermissions msg -> Error (Error.NoPermissions msg)
   | Exception.Email msg -> Error (Error.Email msg)
   | Exception.Configuration msg -> Error (Error.Configuration msg)
+  | Exception.Server msg -> Error (Error.Server msg)
   | _ -> Error (Error.Database "unspecified exn encountered")
 
 let try_to_run f =
@@ -63,6 +69,8 @@ let raise_no_permissions msg = raise @@ Exception.NoPermissions msg
 let raise_not_authenticated msg = raise @@ Exception.NotAuthenticated msg
 
 let raise_database msg = raise @@ Exception.Database msg
+
+let raise_server msg = raise @@ Exception.Server msg
 
 let with_bad_request msg result =
   match result with
