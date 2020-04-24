@@ -1,3 +1,4 @@
+(* TODO think about how to make it non-blocking *)
 let hash ?count plain =
   match (count, Config.is_testing ()) with
   | _, true -> Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash

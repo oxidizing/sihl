@@ -17,22 +17,22 @@ let config =
     ]
 
 let middlewares =
-  Handler.
-    [
-      Middleware.Authentication.middleware;
-      Login.handler;
-      Register.handler;
-      Logout.handler;
-      GetUser.handler;
-      GetUsers.handler;
-      GetMe.handler;
-      UpdatePassword.handler;
-      UpdateDetails.handler;
-      SetPassword.handler;
-      ConfirmEmail.handler;
-      RequestPasswordReset.handler;
-      ResetPassword.handler;
-    ]
+  let open Handler in
+  [
+    Middleware.Authentication.middleware;
+    Login.handler;
+    Register.handler;
+    Logout.handler;
+    GetUser.handler;
+    GetUsers.handler;
+    GetMe.handler;
+    UpdatePassword.handler;
+    UpdateDetails.handler;
+    SetPassword.handler;
+    ConfirmEmail.handler;
+    RequestPasswordReset.handler;
+    ResetPassword.handler;
+  ]
 
 let migrations = Migration.migrations
 

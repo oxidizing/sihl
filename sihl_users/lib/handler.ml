@@ -170,22 +170,3 @@ module ResetPassword = struct
     in
     Service.User.reset_password req ~token ~new_password
 end
-
-let routes =
-  [
-    Login.handler;
-    Register.handler;
-    Logout.handler;
-    GetUser.handler;
-    GetUsers.handler;
-    GetMe.handler;
-    UpdatePassword.handler;
-    UpdateDetails.handler;
-    SetPassword.handler;
-    ConfirmEmail.handler;
-    RequestPasswordReset.handler;
-    ResetPassword.handler;
-  ]
-
-let add_handlers app =
-  Core.List.fold ~f:(fun app route -> route app) ~init:app routes
