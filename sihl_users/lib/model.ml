@@ -18,8 +18,7 @@ module User = struct
   let confirm user = { user with confirmed = true }
 
   let update_password user new_password =
-    (* TODO use a lower count when testing *)
-    let hash = Bcrypt.hash ~count:5 new_password |> Bcrypt.string_of_hash in
+    let hash = Sihl_core.Hashing.hash new_password in
     { user with password = hash }
 
   let update_details user ~email ~username ~name ~phone =
@@ -47,8 +46,7 @@ module User = struct
     Result.all_unit [ matches_password; new_password_valid ]
 
   let create ~email ~password ~username ~name ~phone ~admin ~confirmed =
-    (* TODO use a lower count when testing *)
-    let hash = Bcrypt.hash ~count:5 password |> Bcrypt.string_of_hash in
+    let hash = Sihl_core.Hashing.hash password in
     {
       id = Uuidm.v `V4 |> Uuidm.to_string;
       email;

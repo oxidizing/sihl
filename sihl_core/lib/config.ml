@@ -172,6 +172,9 @@ let read_by_env setting =
   | "test" -> Setting.test setting
   | _ -> Setting.development setting
 
+let is_testing () =
+  Sys.getenv "SIHL_ENV" |> Option.value ~default:"test" |> String.equal "test"
+
 let process schemas setting =
   (* TODO add default values to config *)
   let setting = read_by_env setting |> of_list |> Result.ok_or_failwith in

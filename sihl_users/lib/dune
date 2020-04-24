@@ -15,7 +15,6 @@
   logs.fmt
   logs.lwt
   uuidm
-  safepass
   )
  (preprocess
   (pps
