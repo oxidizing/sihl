@@ -20,6 +20,7 @@
   ;; General system dependencies
   (dune (>= 2))
   (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -70,6 +71,7 @@
   ;; General system dependencies
   (dune (>= 2))
   (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
 
   ;; Standard library replacement
   (base (>= v0.13.1))

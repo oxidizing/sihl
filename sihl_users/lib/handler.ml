@@ -1,5 +1,4 @@
 open Base
-open Opium.Std
 
 let ( let* ) = Lwt.bind
 
@@ -9,7 +8,7 @@ module Login = struct
   type body_out = { token : string } [@@deriving yojson]
 
   let handler =
-    get "/users/login/"
+    Sihl_core.Http.get "/users/login/"
     @@ Http.with_json ~encode:body_out_to_yojson
     @@ fun req ->
     let user = Service.User.authenticate req in
@@ -27,7 +26,8 @@ module Register = struct
   [@@deriving yojson]
 
   let handler =
-    post "/users/register/" @@ Sihl_core.Http.with_json
+    Sihl_core.Http.post "/users/register/"
+    @@ Sihl_core.Http.with_json
     @@ fun req ->
     let* { email; username; password; name } =
       Sihl_core.Http.require_body_exn req body_in_of_yojson
@@ -40,7 +40,7 @@ module GetMe = struct
   open Sihl_core
 
   let handler =
-    get "/users/users/me/"
+    Sihl_core.Http.get "/users/users/me/"
     @@ Http.with_json ~encode:Model.User.to_yojson
     @@ fun req -> Lwt.return @@ Service.User.authenticate req
 end
@@ -49,7 +49,8 @@ module Logout = struct
   open Sihl_core
 
   let handler =
-    delete "/users/logout/" @@ Http.with_json
+    Sihl_core.Http.delete "/users/logout/"
+    @@ Http.with_json
     @@ fun req ->
     let user = Service.User.authenticate req in
     Service.User.logout req user
@@ -59,7 +60,8 @@ module GetUser = struct
   open Sihl_core
 
   let handler =
-    get "/users/users/:id/" @@ Http.with_json
+    Sihl_core.Http.get "/users/users/:id/"
+    @@ Http.with_json
     @@ fun req ->
     let user_id = Http.param req "id" in
     let user = Service.User.authenticate req in
@@ -72,7 +74,7 @@ module GetUsers = struct
   type body_out = Model.User.t list [@@deriving yojson]
 
   let handler =
-    get "/users/users/"
+    Sihl_core.Http.get "/users/users/"
     @@ Http.with_json ~encode:body_out_to_yojson
     @@ fun req ->
     let user = Service.User.authenticate req in
@@ -88,7 +90,7 @@ module UpdatePassword = struct
   [@@deriving yojson]
 
   let handler =
-    post "/users/update-password/"
+    Sihl_core.Http.post "/users/update-password/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
     let* { email; old_password; new_password } =
@@ -111,7 +113,7 @@ module UpdateDetails = struct
   [@@deriving yojson]
 
   let handler =
-    post "/users/update-details/"
+    Sihl_core.Http.post "/users/update-details/"
     @@ Sihl_core.Http.with_json ~encode:Model.User.to_yojson
     @@ fun req ->
     let* { email; username; name; phone } =
@@ -125,7 +127,7 @@ module SetPassword = struct
   type body_in = { user_id : string; password : string } [@@deriving yojson]
 
   let handler =
-    post "/users/set-password/"
+    Sihl_core.Http.post "/users/set-password/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
     let* { user_id; password } =
@@ -140,7 +142,7 @@ module ConfirmEmail = struct
   open Sihl_core
 
   let handler =
-    get "/users/confirm-email/"
+    Sihl_core.Http.get "/users/confirm-email/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
     let token = Http.query req "token" in
@@ -151,7 +153,7 @@ module RequestPasswordReset = struct
   type body_in = { email : string } [@@deriving yojson]
 
   let handler =
-    post "/users/request-password-reset/"
+    Sihl_core.Http.post "/users/request-password-reset/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
     let* { email } = Sihl_core.Http.require_body_exn req body_in_of_yojson in
@@ -162,7 +164,7 @@ module ResetPassword = struct
   type body_in = { token : string; new_password : string } [@@deriving yojson]
 
   let handler =
-    post "/users/reset-password/"
+    Sihl_core.Http.post "/users/reset-password/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
     let* { token; new_password } =

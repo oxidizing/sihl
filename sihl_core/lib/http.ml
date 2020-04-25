@@ -100,3 +100,11 @@ module Middleware = struct
     let m = Rock.Middleware.create ~name:"error handler" ~filter in
     Opium.Std.middleware m app
 end
+
+let get = Opium.Std.get
+
+let post = Opium.Std.post
+
+let delete = Opium.Std.delete
+
+let put = Opium.Std.put
