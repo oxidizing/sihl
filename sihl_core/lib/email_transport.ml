@@ -1,4 +1,4 @@
-open Core
+open Base
 
 module Console : Contract.EMAILTRANSPORT = struct
   let send email =

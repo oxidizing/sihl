@@ -1,8 +1,8 @@
-open Core
+open Base
 
 let ( let* ) = Lwt.bind
 
-type fn = Opium.Std.Request.t -> string list -> (unit, string) result Lwt.t
+type fn = Opium.Std.Request.t -> string list -> (unit, string) Result.t Lwt.t
 
 type t = { name : string; description : string; fn : fn } [@@deriving fields]
 
@@ -50,7 +50,7 @@ module Builtin = struct
   module Version = struct
     let fn _ args =
       match args with
-      | "version" :: _ -> Lwt.return @@ Ok (print_string "v0.0.1")
+      | "version" :: _ -> Lwt.return @@ Ok (Logs.info (fun m -> m "v0.0.1"))
       | _ -> Lwt.return @@ Error "wrong usage"
 
     let command = create ~name:"version" ~description:"version" ~fn

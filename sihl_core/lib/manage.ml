@@ -12,10 +12,7 @@ let start project =
       Lwt.return ()
 
 let clean () =
-  let project =
-    Core.Option.value_exn ~message:"tried to clean before project was started"
-      !project_ref
-  in
+  let project = Option.get !project_ref in
   let* result = Run.Project.clean project in
   match result with
   | Ok _ -> Lwt.return ()
@@ -24,10 +21,7 @@ let clean () =
       Lwt.return ()
 
 let migrate () =
-  let project =
-    Core.Option.value_exn ~message:"tried to migrate before project was started"
-      !project_ref
-  in
+  let project = Option.get !project_ref in
   let* result = Run.Project.migrate project in
   match result with
   | Ok _ -> Lwt.return ()

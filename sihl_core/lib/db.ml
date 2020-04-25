@@ -1,4 +1,4 @@
-open! Core
+open Base
 open Opium.Std
 
 let ( let* ) = Lwt_result.bind
@@ -8,7 +8,7 @@ type 'err caqti_conn_pool =
   (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'err)) Caqti_lwt.Pool.t
 
 type ('res, 'err) query =
-  Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) result Lwt.t
+  Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) Result.t Lwt.t
 
 type 'a db_result = ('a, Caqti_error.t) Lwt_result.t
 
@@ -130,7 +130,7 @@ module Migrate = struct
   type migration_error = Caqti_error.t
 
   type migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, migration_error) result Lwt.t
+    Caqti_lwt.connection -> unit -> (unit, migration_error) Result.t Lwt.t
 
   type migration_step = string * migration_operation
 

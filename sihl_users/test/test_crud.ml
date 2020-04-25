@@ -1,4 +1,4 @@
-open Core
+open Base
 
 let ok_json_string = {|{"msg":"ok"}|}
 

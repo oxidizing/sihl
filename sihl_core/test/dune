@@ -1,23 +1,11 @@
 (test
  (name test)
  (libraries
+  base
   sihl_core
   alcotest
-  core
-  str
-  opium
-  tyxml
-  lwt.unix
-  yojson
-  ppx_deriving_yojson.runtime
-  logs         ;; The logs library
-  logs.fmt     ;; The logs format helper
-  logs.lwt     ;; The logs concurrency helper
 )
  (preprocess
   (pps
-   ppx_rapper
-   ppx_fields_conv
-   ppx_deriving_yojson
    ppx_string_interpolation
   )))

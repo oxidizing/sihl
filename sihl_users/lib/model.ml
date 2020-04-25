@@ -1,4 +1,4 @@
-open Core
+open Base
 open Sexplib.Std
 
 module User = struct
@@ -48,7 +48,7 @@ module User = struct
   let create ~email ~password ~username ~name ~phone ~admin ~confirmed =
     let hash = Sihl_core.Hashing.hash password in
     {
-      id = Uuidm.v `V4 |> Uuidm.to_string;
+      id = Sihl_core.Random.uuidv4 ();
       email;
       password = hash;
       username;
@@ -82,9 +82,9 @@ module Token = struct
 
   let create user =
     {
-      id = Uuidm.v `V4 |> Uuidm.to_string;
+      id = Sihl_core.Random.uuidv4 ();
       (* TODO generate more compact random token *)
-      value = Uuidm.v `V4 |> Uuidm.to_string;
+      value = Sihl_core.Random.uuidv4 ();
       kind = "auth";
       user = User.id user;
       status = "active";
@@ -92,9 +92,9 @@ module Token = struct
 
   let create_email_confirmation user =
     {
-      id = Uuidm.v `V4 |> Uuidm.to_string;
+      id = Sihl_core.Random.uuidv4 ();
       (* TODO generate more compact random token *)
-      value = Uuidm.v `V4 |> Uuidm.to_string;
+      value = Sihl_core.Random.uuidv4 ();
       kind = "email_confirmation";
       user = User.id user;
       status = "active";
@@ -102,9 +102,9 @@ module Token = struct
 
   let create_password_reset user =
     {
-      id = Uuidm.v `V4 |> Uuidm.to_string;
+      id = Sihl_core.Random.uuidv4 ();
       (* TODO generate more compact random token *)
-      value = Uuidm.v `V4 |> Uuidm.to_string;
+      value = Sihl_core.Random.uuidv4 ();
       kind = "password_reset";
       user = User.id user;
       status = "active";
