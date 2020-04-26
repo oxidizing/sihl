@@ -108,3 +108,5 @@ let post = Opium.Std.post
 let delete = Opium.Std.delete
 
 let put = Opium.Std.put
+
+module Request = Opium.Std.Request

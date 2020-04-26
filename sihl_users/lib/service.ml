@@ -219,5 +219,3 @@ module User = struct
       let token = Model.Token.inactivate token in
       Repository.Token.update token |> Sihl_core.Db.query_db_exn request
 end
-
-module Middleware = Middleware
