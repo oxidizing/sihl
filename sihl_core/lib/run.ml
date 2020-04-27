@@ -13,7 +13,7 @@ module type APP = sig
 
   val migrations : Db.Migrate.migration
 
-  val cleaners : (Db.connection -> unit Db.db_result) list
+  val repositories : (Db.connection -> unit Db.db_result) list
 
   val commands : My_command.t list
 end
@@ -92,7 +92,7 @@ module Project : PROJECT = struct
       project.apps |> List.map ~f:(fun (module App : APP) -> App.config)
     in
     let () = Config.load_config schemas project.config in
-    (* TODO run migrations here *)
+    (* TODO run migrations here? *)
     start_http_server project
 
   (* TODO implement *)
@@ -100,9 +100,9 @@ module Project : PROJECT = struct
 
   let clean project =
     let* request = Test.request_with_connection () in
-    let cleaners =
+    let repositories =
       project.apps
-      |> List.map ~f:(fun (module App : APP) -> App.cleaners)
+      |> List.map ~f:(fun (module App : APP) -> App.repositories)
       |> List.concat
     in
     let () = Logs.info (fun m -> m "cleaning up app database") in
@@ -119,7 +119,7 @@ module Project : PROJECT = struct
               in
               Lwt.return @@ Error msg )
     in
-    execute cleaners
+    execute repositories
 
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"

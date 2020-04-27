@@ -3,7 +3,7 @@ let ( let* ) = Lwt.bind
 let () =
   let open Alcotest_lwt in
   Lwt_main.run
-    (let* () = Sihl_core.Manage.start Sihl_users.Run.project in
+    (let* () = Sihl_core.Manage.start Run_mariadb.project in
      let* () = Sihl_core.Manage.migrate () in
      run "user management"
        [

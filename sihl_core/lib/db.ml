@@ -14,24 +14,11 @@ type 'a db_result = ('a, Caqti_error.t) Lwt_result.t
 
 type connection = (module Caqti_lwt.CONNECTION)
 
-(** Configuration of the connection *)
-let url = "localhost"
-
-let user = "admin"
-
-let password = "password"
-
-let port = 5432
-
-let database = "dev"
-
-let connection_uri =
-  Printf.sprintf "postgresql://%s:%s@%s:%i/%s" user password url port database
-
 (* [connection ()] establishes a live database connection and is a pool of
    concurrent threads for accessing that connection. *)
 let connect () =
-  connection_uri |> Uri.of_string |> Caqti_lwt.connect_pool ~max_size:10
+  "DATABASE_URL" |> Config.read_string |> Uri.of_string
+  |> Caqti_lwt.connect_pool ~max_size:10
   |> function
   | Ok pool -> pool
   | Error err -> failwith (Caqti_error.show err)
@@ -77,7 +64,9 @@ let key : db_connection Opium.Hmap.key =
 
 let request_with_connection request =
   let ( let* ) = Lwt.bind in
-  let* connection = connection_uri |> Uri.of_string |> Caqti_lwt.connect in
+  let* connection =
+    "DATABASE_URL" |> Config.read_string |> Uri.of_string |> Caqti_lwt.connect
+  in
   let connection =
     connection |> function
     | Ok connection -> connection
@@ -151,9 +140,30 @@ module Migrate = struct
 
       let steps_to_apply (namespace, steps) { version; _ } =
         (namespace, List.drop steps version)
+
+      let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
+
+      let to_tuple state = (state.namespace, state.version, state.dirty)
     end
 
-    module Repository = struct
+    module type REPOSITORY = sig
+      val create_table_if_not_exists :
+        (module Caqti_lwt.CONNECTION) ->
+        unit ->
+        (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+
+      val get :
+        (module Caqti_lwt.CONNECTION) ->
+        namespace:string ->
+        (Model.t option, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+
+      val upsert :
+        (module Caqti_lwt.CONNECTION) ->
+        Model.t ->
+        (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+    end
+
+    module PostgresRepository : REPOSITORY = struct
       open Model
 
       let create_table_if_not_exists =
@@ -161,10 +171,9 @@ module Migrate = struct
           execute
             {sql|
 CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL,
+  namespace VARCHAR(128) NOT NULL PRIMARY KEY,
   version INTEGER,
-  dirty BOOL,
-  UNIQUE (namespace)
+  dirty BOOL
 );
  |sql}]
 
@@ -199,6 +208,64 @@ dirty = %bool{dirty}
 |sql}
             record_in]
     end
+
+    module MariaDbRepository : REPOSITORY = struct
+      let create_table_if_not_exists connection =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Caqti_type.unit
+            {sql|
+CREATE TABLE IF NOT EXISTS core_migration_state (
+  namespace VARCHAR(128) NOT NULL,
+  version INTEGER,
+  dirty BOOL,
+  PRIMARY KEY (namespace)
+);
+ |sql}
+        in
+        Connection.exec request
+
+      let get connection ~namespace =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.find_opt Caqti_type.string
+            Caqti_type.(tup3 string int bool)
+            {sql|
+SELECT
+  namespace,
+  version,
+  dirty
+FROM core_migration_state
+WHERE namespace = ?;
+|sql}
+        in
+        let* result = Connection.find_opt request namespace in
+        Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
+
+      let upsert connection state =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec
+            Caqti_type.(tup3 string int bool)
+            {sql|
+INSERT INTO core_migration_state (
+  namespace,
+  version,
+  dirty
+) VALUES (
+  ?,
+  ?,
+  ?
+) ON DUPLICATE KEY UPDATE
+version = VALUES(version),
+dirty = VALUES(dirty)
+|sql}
+        in
+        Connection.exec request (Model.to_tuple state)
+    end
+
+    (* TODO make this configurable *)
+    module Repository = MariaDbRepository
 
     module Service = struct
       let setup pool =

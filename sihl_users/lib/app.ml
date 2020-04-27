@@ -36,6 +36,6 @@ let middlewares =
 
 let migrations = Migration.migrations
 
-let cleaners = [ Repository.Token.clean; Repository.User.clean ]
+let repositories = [ Repository.Token.clean; Repository.User.clean ]
 
 let commands = [ Command.create_admin ]

@@ -10,6 +10,11 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_USER: admin
           POSTGRES_DB: dev
+      - image: mariadb:10.1.41-bionic
+        environment:
+          # default user is "root"
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: dev
     steps:
       - run:
           name: Update opam

@@ -15,10 +15,15 @@ module Authentication = struct
   end
 
   let authenticate_token request token =
+    let _ = Logs_lwt.info (fun m -> m "fetch token %s" token) in
     let* token =
       Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
     in
+    let _ = Logs_lwt.info (fun m -> m "got token with id  %s" token.id) in
     let token_user = Model.Token.user token in
+    let _ =
+      Logs_lwt.info (fun m -> m "try to fetch user with id %s" token_user)
+    in
     Repository.User.get ~id:token_user
     |> Sihl_core.Db.query_db request
     |> Lwt_result.map_err (fun _ -> "Not authorized")
@@ -29,6 +34,11 @@ module Authentication = struct
     |> Lwt.map (fun user ->
            match user with
            | Ok user ->
+               let _ =
+                 Logs.info (fun m ->
+                     m "got user with hash %s and password %s"
+                       (Model.User.password user) password)
+               in
                if Model.User.matches_password password user then Ok user
                else Error "Invalid password or email provided"
            | Error msg -> Error msg)
@@ -55,7 +65,7 @@ module Authentication = struct
           (* TODO error handling *)
           | Error msg ->
               Sihl_core.Fail.raise_not_authenticated
-              @@ "wrong credentials provided" ^ msg )
+              @@ "wrong credentials provided msg=" ^ msg )
       | Some (`Basic (email, password)) -> (
           authenticate_credentials req ~email ~password >>= fun result ->
           match result with
@@ -66,7 +76,7 @@ module Authentication = struct
           (* TODO error handling *)
           | Error msg ->
               Sihl_core.Fail.raise_not_authenticated
-              @@ "wrong credentials provided" ^ msg )
+              @@ "wrong credentials provided msg=" ^ msg )
     in
     let m = Rock.Middleware.create ~name:"http auth" ~filter in
     Opium.Std.middleware m app
