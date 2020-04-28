@@ -17,8 +17,9 @@ type connection = (module Caqti_lwt.CONNECTION)
 (* [connection ()] establishes a live database connection and is a pool of
    concurrent threads for accessing that connection. *)
 let connect () =
+  let pool_size = Config.read_int ~default:10 "DATABASE_POOL_SIZE" in
   "DATABASE_URL" |> Config.read_string |> Uri.of_string
-  |> Caqti_lwt.connect_pool ~max_size:10
+  |> Caqti_lwt.connect_pool ~max_size:pool_size
   |> function
   | Ok pool -> pool
   | Error err -> failwith (Caqti_error.show err)
