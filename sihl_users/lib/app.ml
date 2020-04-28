@@ -32,6 +32,7 @@ let middlewares () =
     ConfirmEmail.handler;
     RequestPasswordReset.handler;
     ResetPassword.handler;
+    AdminUi.Dashboard.handler;
   ]
 
 let migrations () =

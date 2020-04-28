@@ -1,0 +1,12 @@
+(executable
+ (name run)
+ (libraries
+  base
+  sihl_users
+  alcotest
+  alcotest-lwt
+  )
+ (preprocess
+  (pps
+   ppx_string_interpolation
+  )))

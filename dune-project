@@ -39,6 +39,7 @@
 
   ;; HTML generation
   (tyxml (>= 4.3.0))
+  (tyxml-ppx (>= 4.3.0))
 
   ;; Logging
   (logs (>= 0.7.0))

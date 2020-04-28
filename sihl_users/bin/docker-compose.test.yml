@@ -1,0 +1,29 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres:12.2
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev
+    ports:
+      - 5432:5432
+
+  mariadb:
+    image: mariadb:10.1.41-bionic
+    command: --max_allowed_packet=629145600
+    environment:
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: dev
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+    ports:
+      - 3306:3306
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080

@@ -63,7 +63,7 @@ module User : sig
   val confirm_email : Opium_kernel.Request.t -> string -> unit Lwt.t
 
   val request_password_reset :
-    Opium_kernel.Request.t -> email:string -> (unit, string) result Lwt.t
+    Opium_kernel.Request.t -> email:string -> unit Lwt.t
 
   val reset_password :
     Opium_kernel.Request.t -> token:string -> new_password:string -> unit Lwt.t
