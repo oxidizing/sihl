@@ -9,6 +9,9 @@ module User = struct
          "no user found, have you applied the authentication middleware?"
 
   let send_registration_email request user =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
     let token = Model.Token.create_email_confirmation user in
     let* () =
       Repository.Token.insert token |> Sihl_core.Db.query_db_exn request
@@ -18,6 +21,10 @@ module User = struct
 
   let register ?(suppress_email = false) request ~email ~password ~username
       ~name =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db request
     in
@@ -38,6 +45,10 @@ module User = struct
       Lwt.return user
 
   let create_admin request ~email ~password ~username ~name =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db request
     in
@@ -54,10 +65,18 @@ module User = struct
       Lwt.return user
 
   let logout request user =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let id = Model.User.id user in
     Repository.Token.delete_by_user ~id |> Sihl_core.Db.query_db_exn request
 
   let login request ~email ~password =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db_exn request
     in
@@ -70,6 +89,10 @@ module User = struct
     else Sihl_core.Fail.raise_not_authenticated "wrong credentials provided"
 
   let token request user =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let token = Model.Token.create user in
     let* result =
       Repository.Token.insert token |> Sihl_core.Db.query_db request
@@ -78,6 +101,10 @@ module User = struct
     Lwt.return token
 
   let get request user ~user_id =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     if Model.User.is_admin user || Model.User.is_owner user user_id then
       let* user =
         Repository.User.get ~id:user_id |> Sihl_core.Db.query_db request
@@ -89,6 +116,10 @@ module User = struct
     else Sihl_core.Fail.raise_no_permissions "user is not allowed to fetch user"
 
   let get_all request user =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     if Model.User.is_admin user then
       Repository.User.get_all |> Sihl_core.Db.query_db_exn request
     else
@@ -96,6 +127,10 @@ module User = struct
         "user is not allowed to fetch all users"
 
   let update_password request current_user ~email ~old_password ~new_password =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db_exn request
     in
@@ -118,6 +153,10 @@ module User = struct
         "user is not allowed to update this user"
 
   let update_details request current_user ~email ~username ~name ~phone =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db_exn request
     in
@@ -137,6 +176,10 @@ module User = struct
         "user is not allowed to update this user"
 
   let set_password request current_user ~user_id ~password =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get ~id:user_id |> Sihl_core.Db.query_db request
     in
@@ -158,6 +201,10 @@ module User = struct
       Sihl_core.Fail.raise_no_permissions "user is not allowed to set password"
 
   let confirm_email request token =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* token =
       Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
     in
@@ -182,6 +229,10 @@ module User = struct
       |> Sihl_core.Db.query_db_exn request
 
   let request_password_reset request ~email =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* user =
       Repository.User.get_by_email ~email |> Sihl_core.Db.query_db request
     in
@@ -196,6 +247,10 @@ module User = struct
     Sihl_core.Email.send email
 
   let reset_password request ~token ~new_password =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let* token =
       Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
     in

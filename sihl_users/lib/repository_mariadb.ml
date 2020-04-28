@@ -10,10 +10,53 @@ module Sql = struct
     Connection.exec request status
 
   module User = struct
+    module Model = struct
+      open Model.User
+
+      let t =
+        let encode m =
+          Ok
+            ( m.id,
+              ( m.email,
+                ( m.username,
+                  ( m.password,
+                    (m.name, (m.phone, (m.status, (m.admin, m.confirmed)))) ) )
+              ) )
+        in
+        let decode
+            ( id,
+              ( email,
+                ( username,
+                  (password, (name, (phone, (status, (admin, confirmed))))) ) )
+            ) =
+          let _ = Logs.info (fun m -> m "received user with id %s" id) in
+          Ok
+            {
+              id;
+              email;
+              username;
+              password;
+              name;
+              phone;
+              status;
+              admin;
+              confirmed;
+            }
+        in
+        Caqti_type.(
+          custom ~encode ~decode
+            (tup2 string
+               (tup2 string
+                  (tup2 string
+                     (tup2 string
+                        (tup2 string
+                           (tup2 (option string) (tup2 string (tup2 bool bool)))))))))
+    end
+
     let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.unit Model.User.t
+        Caqti_request.find Caqti_type.unit Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -39,7 +82,7 @@ module Sql = struct
     let get connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.User.t
+        Caqti_request.find Caqti_type.string Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -66,7 +109,7 @@ module Sql = struct
     let get_by_email connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.User.t
+        Caqti_request.find Caqti_type.string Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -93,7 +136,7 @@ module Sql = struct
     let upsert connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.exec Model.User.t
+        Caqti_request.exec Model.t
           {sql|
         INSERT INTO users_users (
           uuid,
@@ -139,10 +182,23 @@ TRUNCATE users_users;
   end
 
   module Token = struct
+    module Model = struct
+      open Model.Token
+
+      let t =
+        let encode m = Ok (m.id, (m.value, (m.kind, (m.user, m.status)))) in
+        let decode (id, (value, (kind, (user, status)))) =
+          Ok { id; value; kind; user; status }
+        in
+        Caqti_type.(
+          custom ~encode ~decode
+            (tup2 string (tup2 string (tup2 string (tup2 string string)))))
+    end
+
     let get connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.Token.t
+        Caqti_request.find Caqti_type.string Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -173,7 +229,7 @@ TRUNCATE users_users;
     let upsert connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.exec Model.Token.t
+        Caqti_request.exec Model.t
           {sql|
         INSERT INTO users_tokens (
           uuid,
@@ -222,8 +278,6 @@ TRUNCATE users_users;
 end
 
 module User = struct
-  let ( let* ) = Lwt_result.bind
-
   let get_all connection = Sql.User.get_all connection
 
   let get ~id connection = Sql.User.get connection id
@@ -233,16 +287,9 @@ module User = struct
   let insert user connection = Sql.User.upsert connection user
 
   let update user connection = Sql.User.upsert connection user
-
-  let clean connection =
-    let* () = Sql.set_fk_check connection false in
-    let* () = Sql.User.clean connection in
-    Sql.set_fk_check connection true
 end
 
 module Token = struct
-  let ( let* ) = Lwt_result.bind
-
   let get ~value connection = Sql.Token.get connection value
 
   let delete_by_user ~id connection = Sql.Token.delete_by_user connection id
@@ -250,9 +297,12 @@ module Token = struct
   let insert token connection = Sql.Token.upsert connection token
 
   let update token connection = Sql.Token.upsert connection token
-
-  let clean connection =
-    let* () = Sql.set_fk_check connection false in
-    let* () = Sql.Token.clean connection in
-    Sql.set_fk_check connection true
 end
+
+let ( let* ) = Lwt_result.bind
+
+let clean connection =
+  let* () = Sql.set_fk_check connection false in
+  let* () = Sql.User.clean connection in
+  let* () = Sql.Token.clean connection in
+  Sql.set_fk_check connection true

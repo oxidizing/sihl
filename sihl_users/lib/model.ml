@@ -15,33 +15,6 @@ module User = struct
   }
   [@@deriving sexp, fields, yojson]
 
-  let t =
-    let encode m =
-      Ok
-        ( m.id,
-          ( m.email,
-            ( m.username,
-              ( m.password,
-                (m.name, (m.phone, (m.status, (m.admin, m.confirmed)))) ) ) ) )
-    in
-    let decode
-        ( id,
-          ( email,
-            (username, (password, (name, (phone, (status, (admin, confirmed))))))
-          ) ) =
-      let _ = Logs.info (fun m -> m "received user with id %s" id) in
-      Ok
-        { id; email; username; password; name; phone; status; admin; confirmed }
-    in
-    Caqti_type.(
-      custom ~encode ~decode
-        (tup2 string
-           (tup2 string
-              (tup2 string
-                 (tup2 string
-                    (tup2 string
-                       (tup2 (option string) (tup2 string (tup2 bool bool)))))))))
-
   let confirm user = { user with confirmed = true }
 
   let update_password user new_password =
@@ -96,21 +69,6 @@ module Token = struct
     status : string;
   }
   [@@deriving fields]
-
-  let t =
-    let encode m = Ok (m.id, (m.value, (m.kind, (m.user, m.status)))) in
-    let decode (id, (value, (kind, (user, status)))) =
-      Ok { id; value; kind; user; status }
-    in
-    Caqti_type.(
-      custom ~encode ~decode
-        (tup2 string (tup2 string (tup2 string (tup2 string string)))))
-
-  let to_tuple token =
-    (token.id, token.value, token.kind, token.user, token.status)
-
-  let of_tuple (id, value, kind, user, status) =
-    { id; value; kind; user; status }
 
   let is_valid_email_configuration token =
     String.equal token.status "active"

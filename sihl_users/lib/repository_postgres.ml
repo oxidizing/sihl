@@ -199,8 +199,6 @@ module User = struct
   let insert user connection = Sql.User.insert connection user
 
   let update user connection = Sql.User.update connection user
-
-  let clean connection = Sql.User.clean connection ()
 end
 
 module Token = struct
@@ -211,6 +209,10 @@ module Token = struct
   let insert token connection = Sql.Token.insert connection token
 
   let update token connection = Sql.Token.update connection token
-
-  let clean connection = Sql.Token.clean connection ()
 end
+
+let ( let* ) = Lwt_result.bind
+
+let clean connection =
+  let* () = Sql.User.clean connection () in
+  Sql.Token.clean connection ()

@@ -5,19 +5,20 @@ services:
     image: postgres:12.2
     restart: always
     environment:
+      POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
-      POSTGRES_USER: root
       POSTGRES_DB: dev
     ports:
       - 5432:5432
 
-  mysql:
+  mariadb:
     image: mariadb:10.1.41-bionic
     command: --max_allowed_packet=629145600
     environment:
-      # default user is "root"
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
       MYSQL_DATABASE: dev
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
     ports:
       - 3306:3306
 

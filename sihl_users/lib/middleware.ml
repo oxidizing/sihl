@@ -3,11 +3,7 @@ open Opium.Std
 let ( let* ) = Lwt_result.bind
 
 module Authentication = struct
-  (* My convention is to stick the keys inside an Env sub module. By not exposing
-     this module in the mli we are preventing the user or other middleware from
-     meddling with our values by not using our interface *)
   module Env = struct
-    (* or use type nonrec *)
     type user' = Model.User.t
 
     let key : user' Opium.Hmap.key =
@@ -15,6 +11,10 @@ module Authentication = struct
   end
 
   let authenticate_token request token =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     let _ = Logs_lwt.info (fun m -> m "fetch token %s" token) in
     let* token =
       Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
@@ -29,6 +29,10 @@ module Authentication = struct
     |> Lwt_result.map_err (fun _ -> "Not authorized")
 
   let authenticate_credentials request ~email ~password =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
     Repository.User.get_by_email ~email
     |> Sihl_core.Db.query_db request
     |> Lwt.map (fun user ->

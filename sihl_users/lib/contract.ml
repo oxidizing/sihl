@@ -18,8 +18,6 @@ module type REPOSITORY = sig
 
     val update :
       Model.User.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
-
-    val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
   end
 
   module Token : sig
@@ -36,14 +34,14 @@ module type REPOSITORY = sig
 
     val update :
       Model.Token.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
-
-    val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
   end
+
+  val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 end
 
-module MariaDbRepository : REPOSITORY = Repository_mariadb
+let repository : (module REPOSITORY) Sihl_core.Registry.Key.t =
+  Sihl_core.Registry.Key.create "users repository"
 
-module PostgresRepository : REPOSITORY = Repository_postgres
-
-(* TODO include based on DATABASE_URL *)
-include MariaDbRepository
+let migration :
+    (module Sihl_core.Contract.Migration.MIGRATION) Sihl_core.Registry.Key.t =
+  Sihl_core.Registry.Key.create "users migration"

@@ -40,7 +40,9 @@ let clean queries =
   in
   run_clean queries pool
   |> Lwt_result.map_err (fun error ->
-         let _ = Lwt_io.printf "failed to clean repository msg=%s" error in
+         let _ =
+           Logs.err (fun m -> m "failed to clean repository msg=%s" error)
+         in
          error)
 
 (* let query_pool_with_trx query pool =
@@ -116,54 +118,10 @@ let query_db_exn ?message request query =
   | Error msg -> Fail.raise_database (Option.value ~default:msg message)
 
 module Migrate = struct
-  type migration_error = Caqti_error.t
-
-  type migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, migration_error) Result.t Lwt.t
-
-  type migration_step = string * migration_operation
-
-  type migration = string * migration_step list
+  include Db_migration_core
 
   module State = struct
-    module Model = struct
-      type t = { namespace : string; version : int; dirty : bool }
-      [@@deriving fields]
-
-      let create ~namespace = { namespace; version = 0; dirty = true }
-
-      let mark_dirty state = { state with dirty = true }
-
-      let mark_clean state = { state with dirty = false }
-
-      let increment state = { state with version = state.version + 1 }
-
-      let steps_to_apply (namespace, steps) { version; _ } =
-        (namespace, List.drop steps version)
-
-      let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
-
-      let to_tuple state = (state.namespace, state.version, state.dirty)
-    end
-
-    module type REPOSITORY = sig
-      val create_table_if_not_exists :
-        (module Caqti_lwt.CONNECTION) ->
-        unit ->
-        (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
-
-      val get :
-        (module Caqti_lwt.CONNECTION) ->
-        namespace:string ->
-        (Model.t option, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
-
-      val upsert :
-        (module Caqti_lwt.CONNECTION) ->
-        Model.t ->
-        (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
-    end
-
-    module PostgresRepository : REPOSITORY = struct
+    module PostgresRepository : Contract.Migration.REPOSITORY = struct
       open Model
 
       let create_table_if_not_exists =
@@ -209,7 +167,7 @@ dirty = %bool{dirty}
             record_in]
     end
 
-    module MariaDbRepository : REPOSITORY = struct
+    module MariaDbRepository : Contract.Migration.REPOSITORY = struct
       let create_table_if_not_exists connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
@@ -264,18 +222,26 @@ dirty = VALUES(dirty)
         Connection.exec request (Model.to_tuple state)
     end
 
-    (* TODO make this configurable *)
-    module Repository = MariaDbRepository
-
     module Service = struct
       let setup pool =
+        let (module Repository : Contract.Migration.REPOSITORY) =
+          Registry.get Contract.Migration.repository
+        in
         query_pool (fun c -> Repository.create_table_if_not_exists c ()) pool
 
       let has pool ~namespace =
+        let (module Repository : Contract.Migration.REPOSITORY) =
+          Registry.get Contract.Migration.repository
+        in
+
         let* result = query_pool (fun c -> Repository.get c ~namespace) pool in
         Lwt_result.return (Option.is_some result)
 
       let get pool ~namespace =
+        let (module Repository : Contract.Migration.REPOSITORY) =
+          Registry.get Contract.Migration.repository
+        in
+
         let* state = query_pool (fun c -> Repository.get c ~namespace) pool in
         Lwt.return
         @@
@@ -287,6 +253,9 @@ dirty = VALUES(dirty)
                  namespace)
 
       let upsert pool state =
+        let (module Repository : Contract.Migration.REPOSITORY) =
+          Registry.get Contract.Migration.repository
+        in
         query_pool (fun c -> Repository.upsert c state) pool
 
       let mark_dirty pool ~namespace =
@@ -316,19 +285,22 @@ dirty = VALUES(dirty)
       match steps with
       | [] -> Lwt_result.return ()
       | (name, query) :: steps -> (
-          Lwt_io.printf "Running: %s\n" name >>= fun () ->
+          Logs_lwt.info (fun m -> m "Running: %s\n" name) >>= fun () ->
           query_pool (fun c -> query c ()) pool >>= function
           | Ok () ->
               let* _ = State.Service.increment pool ~namespace in
               run steps pool
           | Error err ->
-              Lwt_io.printf "error while running migration for %s msg=%s"
-                namespace err
+              Logs_lwt.err (fun m ->
+                  m "error while running migration for %s msg=%s" namespace err)
               >>= fun () -> return (Error err) )
     in
     ( match List.length steps with
-    | 0 -> Lwt_io.printf "no migrations to apply for %s\n" namespace
-    | n -> Lwt_io.printf "applying %i migrations for %s\n" n namespace )
+    | 0 ->
+        Logs_lwt.info (fun m -> m "no migrations to apply for %s\n" namespace)
+    | n ->
+        Logs_lwt.info (fun m -> m "applying %i migrations for %s\n" n namespace)
+    )
     >>= fun () -> run steps pool
 
   let execute_migration migration pool =
@@ -338,7 +310,7 @@ dirty = VALUES(dirty)
     let* state =
       if has_state then
         let* state = State.Service.get pool ~namespace in
-        if State.Model.dirty state then
+        if Model.dirty state then
           Lwt.return
           @@ Error
                (Printf.sprintf
@@ -346,14 +318,17 @@ dirty = VALUES(dirty)
                   namespace)
         else State.Service.mark_dirty pool ~namespace
       else
-        let state = State.Model.create ~namespace in
+        let state = Model.create ~namespace in
         let* () = State.Service.upsert pool state in
         Lwt.return @@ Ok state
     in
-    let migration_to_apply = State.Model.steps_to_apply migration state in
+    let migration_to_apply = Model.steps_to_apply migration state in
     let* () = execute_steps migration_to_apply pool in
     let* _ = State.Service.mark_clean pool ~namespace in
     Lwt.return @@ Ok ()
+
+  module PostgresRepository = State.PostgresRepository
+  module MariaDbRepository = State.MariaDbRepository
 
   let execute migrations =
     let open Lwt in

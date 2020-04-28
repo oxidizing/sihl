@@ -7,21 +7,24 @@ module type APP = sig
 
   val namespace : string
 
-  val config : Config.Schema.t
+  val config : unit -> Config.Schema.t
 
-  val middlewares : Opium.App.builder list
+  val middlewares : unit -> Opium.App.builder list
 
-  val migrations : Db.Migrate.migration
+  val migrations : unit -> Db.Migrate.migration
 
-  val repositories : (Db.connection -> unit Db.db_result) list
+  val repositories : unit -> (Db.connection -> unit Db.db_result) list
 
-  val commands : My_command.t list
+  val bind : Registry.bind
+
+  val commands : unit -> My_command.t list
 end
 
 module type PROJECT = sig
   type t
 
-  val create : config:Config.Setting.t -> (module APP) list -> t
+  val create :
+    ?bind:Registry.bind -> config:Config.Setting.t -> (module APP) list -> t
 
   val start : t -> (unit, string) Result.t Lwt.t
 
@@ -39,16 +42,20 @@ end
 module Project : PROJECT = struct
   open Opium.Std
 
-  type t = { apps : (module APP) list; config : Config.Setting.t }
+  type t = {
+    apps : (module APP) list;
+    config : Config.Setting.t;
+    bind : Registry.bind option;
+  }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ~config apps = { apps; config }
+  let create ?bind ~config apps = { apps; config; bind }
 
   let merge_middlewares project =
     project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.middlewares)
+    |> List.map ~f:(fun (module App : APP) -> App.middlewares ())
     |> List.concat
 
   let add_middlewares middlewares app =
@@ -81,17 +88,32 @@ module Project : PROJECT = struct
 
   let migrate project =
     project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.migrations)
+    |> List.map ~f:(fun (module App : APP) -> App.migrations ())
     |> Db.Migrate.execute
+
+  let bind_registry project =
+    (* TODO make it more explicit when binding core default implementations *)
+    let () = Logs.info (fun m -> m "binding default core implementations") in
+    let () =
+      Registry.bind Contract.Migration.repository
+        (module Db.Migrate.PostgresRepository)
+    in
+    let () = Logs.info (fun m -> m "binding default implementations of apps") in
+    let _ =
+      project.apps |> List.map ~f:(fun (module App : APP) -> App.bind ())
+    in
+    let () = Logs.info (fun m -> m "binding project implementations") in
+    project.bind |> Option.map ~f:(fun bind -> bind ()) |> ignore
 
   let start project =
     let () = setup_logger () in
     let apps = project |> app_names |> String.concat ~sep:", " in
     let () = Logs.info (fun m -> m "project starting with apps: %s" apps) in
     let schemas =
-      project.apps |> List.map ~f:(fun (module App : APP) -> App.config)
+      project.apps |> List.map ~f:(fun (module App : APP) -> App.config ())
     in
     let () = Config.load_config schemas project.config in
+    let () = bind_registry project in
     (* TODO run migrations here? *)
     start_http_server project
 
@@ -102,7 +124,7 @@ module Project : PROJECT = struct
     let* request = Test.request_with_connection () in
     let repositories =
       project.apps
-      |> List.map ~f:(fun (module App : APP) -> App.repositories)
+      |> List.map ~f:(fun (module App : APP) -> App.repositories ())
       |> List.concat
     in
     let () = Logs.info (fun m -> m "cleaning up app database") in
@@ -140,7 +162,7 @@ module Project : PROJECT = struct
     if not @@ My_command.is_testing args then
       let commands =
         project.apps
-        |> List.map ~f:(fun (module App : APP) -> App.commands)
+        |> List.map ~f:(fun (module App : APP) -> App.commands ())
         |> List.concat
         |> add_default_commands project
       in
