@@ -5,4 +5,5 @@ clean:
 	@dune clean
 
 test:
-	@dune runtest --force
+	DATABASE=mariadb dune runtest --force --no-buffer
+	DATABASE=postgres dune runtest --force --no-buffer

@@ -34,6 +34,7 @@
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
   (caqti-driver-postgresql (>= 1.2.1))
+  (caqti-driver-mariadb (>= 1.2.1))
   (ppx_rapper (>= 0.9.2))
 
   ;; HTML generation
@@ -65,8 +66,8 @@
 
 (package
  (name sihl_users)
- (synopsis "A web framework for OCaml.")
- (description "A web framework for OCaml and Reason to build web apps rapidly.")
+ (synopsis "A user management app for Sihl.")
+ (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -76,7 +77,7 @@
   ;; Standard library replacement
   (base (>= v0.13.1))
 
-  ;; Database interface
+  ;; Database
   (ppx_rapper (>= 0.9.2))
 
   ;; Dev dependencies

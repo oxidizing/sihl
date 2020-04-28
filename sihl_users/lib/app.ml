@@ -2,7 +2,7 @@ let name = "User Management App"
 
 let namespace = "users"
 
-let config =
+let config () =
   Sihl_core.Config.Schema.
     [
       string_ ~default:"console"
@@ -16,7 +16,7 @@ let config =
       bool_ ~default:false "SMTP_POOL";
     ]
 
-let middlewares =
+let middlewares () =
   let open Handler in
   [
     Middleware.Authentication.middleware;
@@ -34,8 +34,27 @@ let middlewares =
     ResetPassword.handler;
   ]
 
-let migrations = Migration.migrations
+let migrations () =
+  let (module Migration : Sihl_core.Contract.Migration.MIGRATION) =
+    Sihl_core.Registry.get Contract.migration
+  in
+  Migration.migration ()
 
-let cleaners = [ Repository.Token.clean; Repository.User.clean ]
+(* TODO make this obsolete by:
+   1. fetching all repositories from Registry.Repository
+   2. calling the clean function *)
+let repositories () =
+  let (module Repository : Contract.REPOSITORY) =
+    Sihl_core.Registry.get Contract.repository
+  in
+  [ Repository.clean ]
 
-let commands = [ Command.create_admin ]
+let bind () =
+  [
+    Sihl_core.Registry.bind Contract.repository
+      (module Database.Postgres.Repository);
+    Sihl_core.Registry.bind Contract.migration
+      (module Database.Postgres.Migration);
+  ]
+
+let commands () = [ Command.create_admin ]

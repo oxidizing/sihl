@@ -6,8 +6,9 @@
   str
   opium
   caqti
-  caqti-driver-postgresql
   caqti-lwt
+  caqti-driver-postgresql
+  caqti-driver-mariadb
   tyxml
   lwt.unix
   yojson

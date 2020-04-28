@@ -7,9 +7,15 @@ jobs:
           TERM: xterm
       - image: postgres:12.2
         environment:
-          POSTGRES_PASSWORD: password
           POSTGRES_USER: admin
+          POSTGRES_PASSWORD: password
           POSTGRES_DB: dev
+      - image: mariadb:10.1.41-bionic
+        environment:
+          MYSQL_USER: admin
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: dev
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
     steps:
       - run:
           name: Update opam

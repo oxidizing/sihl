@@ -45,6 +45,10 @@ module Migrate : sig
 
   type migration = string * migration_step list
 
+  module MariaDbRepository : Contract.Migration.REPOSITORY
+
+  module PostgresRepository : Contract.Migration.REPOSITORY
+
   val execute : migration list -> (unit, string) result Lwt.t
   (** [execute steps] is [Ok ()] if all the migration tasks in [steps] can be
       executed or [Error err] where [err] explains the reason for failure. *)

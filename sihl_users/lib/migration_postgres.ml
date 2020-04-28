@@ -39,7 +39,7 @@ CREATE TABLE users_tokens (
 );
 |sql}]
 
-let migrations =
+let migration () =
   ( "users",
     [
       ("create users table", create_users_table);

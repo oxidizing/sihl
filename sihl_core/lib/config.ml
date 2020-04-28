@@ -194,8 +194,6 @@ let load_config schemas setting =
 
 let read_string ?default key =
   let value = Map.find (State.get ()) key in
-  Lwt.return
-  @@
   match (default, value) with
   | _, Some value -> value
   | Some default, None -> default
@@ -203,8 +201,6 @@ let read_string ?default key =
 
 let read_int ?default key =
   let value = Map.find (State.get ()) key in
-  Lwt.return
-  @@
   match (default, value) with
   | _, Some value -> (
       match Option.try_with (fun () -> Base.Int.of_string value) with
@@ -214,8 +210,6 @@ let read_int ?default key =
   | None, None -> failwith @@ "configuration " ^ key ^ " not found"
 
 let read_bool ?default key =
-  Lwt.return
-  @@
   let value = Map.find (State.get ()) key in
   match (default, value) with
   | _, Some value -> (

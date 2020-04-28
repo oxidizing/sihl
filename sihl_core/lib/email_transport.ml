@@ -1,17 +1,17 @@
 open Base
 
-module Console : Contract.EMAILTRANSPORT = struct
+module Console : Contract.Email.TRANSPORT = struct
   let send email =
     let _ = Logs.info (fun m -> m "%s" (Email_core.show email)) in
     Lwt.return @@ Ok ()
 end
 
-module Smtp : Contract.EMAILTRANSPORT = struct
+module Smtp : Contract.Email.TRANSPORT = struct
   let send _ = Lwt.return @@ Error "Not implemented"
 end
 
 module DevInbox : sig
-  include Contract.EMAILTRANSPORT
+  include Contract.Email.TRANSPORT
 
   val get : unit -> Email_core.t
 end = struct
