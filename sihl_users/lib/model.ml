@@ -5,10 +5,8 @@ module User = struct
   type t = {
     id : string;
     email : string;
-    username : string;
+    username : string option;
     password : string;
-    name : string;
-    phone : string option;
     status : string;
     admin : bool;
     confirmed : bool;
@@ -21,8 +19,7 @@ module User = struct
     let hash = Sihl_core.Hashing.hash new_password in
     { user with password = hash }
 
-  let update_details user ~email ~username ~name ~phone =
-    { user with email; username; name; phone }
+  let update_details user ~email ~username = { user with email; username }
 
   let is_admin user = user.admin
 
@@ -45,15 +42,13 @@ module User = struct
     let new_password_valid = validate_password new_password in
     Result.all_unit [ matches_password; new_password_valid ]
 
-  let create ~email ~password ~username ~name ~phone ~admin ~confirmed =
+  let create ~email ~password ~username ~admin ~confirmed =
     let hash = Sihl_core.Hashing.hash password in
     {
       id = Sihl_core.Random.uuidv4 ();
       email;
       password = hash;
       username;
-      name;
-      phone;
       admin;
       confirmed;
       status = "active";
@@ -130,7 +125,8 @@ Josef
         Sihl_core.Email.render
           [
             ("base_url", "http://localhost:3000");
-            ("name", User.name user);
+            ( "name",
+              User.username user |> Option.value ~default:(User.email user) );
             ("token", Token.value token);
           ]
           template
@@ -157,7 +153,8 @@ Josef
         Sihl_core.Email.render
           [
             ("base_url", "http://localhost:3000");
-            ("name", User.name user);
+            ( "name",
+              User.username user |> Option.value ~default:(User.email user) );
             ("token", Token.value token);
           ]
           template

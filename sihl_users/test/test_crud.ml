@@ -136,9 +136,7 @@ let test_user_updates_own_details _ () =
     {|
        {
          "email": "user1@example.com",
-         "username": "newusername",
-         "name": "newname",
-         "phone": "123"
+         "username": "newusername"
        }
 |}
   in
@@ -155,13 +153,9 @@ let test_user_updates_own_details _ () =
     body |> Yojson.Safe.from_string |> Sihl_users.Model.User.of_yojson
     |> Result.ok_or_failwith
   in
-  let _ =
-    Alcotest.(check string) "Has updated username" "newusername" user.username
-  in
-  let _ = Alcotest.(check string) "Has updated name" "newname" user.name in
   Lwt.return
-  @@ Alcotest.(check @@ option string)
-       "Has updated phone" (Some "123") user.phone
+  @@ Alcotest.(check (option string))
+       "Has updated username" (Some "newusername") user.username
 
 let test_user_updates_others_details_fails _ () =
   let* () = Sihl_core.Manage.clean () in
@@ -180,9 +174,7 @@ let test_user_updates_others_details_fails _ () =
     {|
        {
          "email": "user2@example.com",
-         "username": "newusername",
-         "name": "newname",
-         "phone": "123"
+         "username": "newusername"
        }
 |}
   in

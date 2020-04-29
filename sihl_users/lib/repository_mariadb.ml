@@ -18,39 +18,20 @@ module Sql = struct
           Ok
             ( m.id,
               ( m.email,
-                ( m.username,
-                  ( m.password,
-                    (m.name, (m.phone, (m.status, (m.admin, m.confirmed)))) ) )
+                (m.username, (m.password, (m.status, (m.admin, m.confirmed))))
               ) )
         in
         let decode
-            ( id,
-              ( email,
-                ( username,
-                  (password, (name, (phone, (status, (admin, confirmed))))) ) )
-            ) =
-          let _ = Logs.info (fun m -> m "received user with id %s" id) in
-          Ok
-            {
-              id;
-              email;
-              username;
-              password;
-              name;
-              phone;
-              status;
-              admin;
-              confirmed;
-            }
+            (id, (email, (username, (password, (status, (admin, confirmed))))))
+            =
+          Ok { id; email; username; password; status; admin; confirmed }
         in
         Caqti_type.(
           custom ~encode ~decode
             (tup2 string
                (tup2 string
-                  (tup2 string
-                     (tup2 string
-                        (tup2 string
-                           (tup2 (option string) (tup2 string (tup2 bool bool)))))))))
+                  (tup2 (option string)
+                     (tup2 string (tup2 string (tup2 bool bool)))))))
     end
 
     let get_all connection =
@@ -69,8 +50,6 @@ module Sql = struct
           email,
           username,
           password,
-          name,
-          phone,
           status,
           admin,
           confirmed
@@ -95,8 +74,6 @@ module Sql = struct
           email,
           username,
           password,
-          name,
-          phone,
           status,
           admin,
           confirmed
@@ -122,8 +99,6 @@ module Sql = struct
           email,
           username,
           password,
-          name,
-          phone,
           status,
           admin,
           confirmed
@@ -143,8 +118,6 @@ module Sql = struct
           email,
           username,
           password,
-          name,
-          phone,
           status,
           admin,
           confirmed
@@ -155,15 +128,11 @@ module Sql = struct
           ?,
           ?,
           ?,
-          ?,
-          ?,
           ?
         ) ON DUPLICATE KEY UPDATE
         email = VALUES(email),
         username = VALUES(username),
         password = VALUES(password),
-        name = VALUES(name),
-        phone = VALUES(phone),
         status = VALUES(status),
         admin = VALUES(admin),
         confirmed = VALUES(confirmed)

@@ -8,8 +8,7 @@ let fn request args =
   | [ "createadmin"; email; password ] -> (
       let* result =
         try_to_run (fun () ->
-            Service.User.create_admin request ~email ~password ~username:"admin"
-              ~name:"admin")
+            Service.User.create_admin request ~email ~password ~username:None)
       in
       Lwt.return
       @@

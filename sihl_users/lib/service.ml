@@ -19,8 +19,7 @@ module User = struct
     let email = Model.Email.Confirmation.create token user in
     Sihl_core.Email.send_exn email
 
-  let register ?(suppress_email = false) request ~email ~password ~username
-      ~name =
+  let register ?(suppress_email = false) request ~email ~password ~username =
     let (module Repository : Contract.REPOSITORY) =
       Sihl_core.Registry.get Contract.repository
     in
@@ -32,8 +31,8 @@ module User = struct
       Sihl_core.Fail.raise_bad_request "email already taken"
     else
       let user =
-        Model.User.create ~email ~password ~username ~name ~phone:None
-          ~admin:false ~confirmed:false
+        Model.User.create ~email ~password ~username ~admin:false
+          ~confirmed:false
       in
       let* () =
         Repository.User.insert user |> Sihl_core.Db.query_db_exn request
@@ -44,7 +43,7 @@ module User = struct
       in
       Lwt.return user
 
-  let create_admin request ~email ~password ~username ~name =
+  let create_admin request ~email ~password ~username =
     let (module Repository : Contract.REPOSITORY) =
       Sihl_core.Registry.get Contract.repository
     in
@@ -56,8 +55,7 @@ module User = struct
       Sihl_core.Fail.raise_bad_request "email already taken"
     else
       let user =
-        Model.User.create ~email ~password ~username ~name ~phone:None
-          ~admin:true ~confirmed:true
+        Model.User.create ~email ~password ~username ~admin:true ~confirmed:true
       in
       let* () =
         Repository.User.insert user |> Sihl_core.Db.query_db_exn request
@@ -152,7 +150,7 @@ module User = struct
       Sihl_core.Fail.raise_no_permissions
         "user is not allowed to update this user"
 
-  let update_details request current_user ~email ~username ~name ~phone =
+  let update_details request current_user ~email ~username =
     let (module Repository : Contract.REPOSITORY) =
       Sihl_core.Registry.get Contract.repository
     in
@@ -164,9 +162,7 @@ module User = struct
       Model.User.is_admin current_user
       || Model.User.is_owner current_user user.id
     then
-      let updated_user =
-        Model.User.update_details user ~email ~username ~name ~phone
-      in
+      let updated_user = Model.User.update_details user ~email ~username in
       let* () =
         Repository.User.update updated_user |> Sihl_core.Db.query_db_exn request
       in

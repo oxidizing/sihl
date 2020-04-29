@@ -8,10 +8,8 @@ module Sql = struct
         SELECT 
           uuid as @string{id}, 
           @string{email}, 
-          @string{username}, 
+          @string?{username}, 
           @string{password},
-          @string{name},
-          @string?{phone},
           @string{status},
           @bool{admin},
           @bool{confirmed}
@@ -27,10 +25,8 @@ module Sql = struct
         SELECT 
           uuid as @string{id}, 
           @string{email}, 
-          @string{username}, 
+          @string?{username}, 
           @string{password},
-          @string{name},
-          @string?{phone},
           @string{status},
           @bool{admin},
           @bool{confirmed}
@@ -47,10 +43,8 @@ module Sql = struct
         SELECT 
           uuid as @string{id}, 
           @string{email}, 
-          @string{username}, 
+          @string?{username}, 
           @string{password},
-          @string{name},
-          @string?{phone},
           @string{status},
           @bool{admin},
           @bool{confirmed}
@@ -69,18 +63,14 @@ module Sql = struct
           email, 
           username, 
           password,
-          name,
-          phone,
           status,
           admin,
           confirmed
         ) VALUES (
           %string{id}, 
           %string{email}, 
-          %string{username}, 
+          %string?{username}, 
           %string{password},
-          %string{name},
-          %string?{phone},
           %string{status},
           %bool{admin},
           %bool{confirmed}
@@ -96,10 +86,8 @@ module Sql = struct
         UPDATE users_users
         SET 
           email = %string{email}, 
-          username = %string{username}, 
+          username = %string?{username}, 
           password = %string{password},
-          name = %string{name},
-          phone = %string?{phone},
           status = %string{status},
           admin = %bool{admin},
           confirmed = %bool{confirmed}
