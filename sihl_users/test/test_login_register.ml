@@ -13,8 +13,7 @@ let test_register_user_login_and_own_user _ () =
        {
          "email": "foobar@example.com",
          "username": "foobar",
-         "password": "123",
-         "name": "Foo"
+         "password": "123"
        }
 |}
   in
@@ -59,15 +58,11 @@ let test_register_user_login_and_own_user _ () =
 
 let test_register_invalid_user_fails _ () =
   let* () = Sihl_core.Manage.clean () in
-  let body =
-    {|
+  let body = {|
        {
-         "email": "foobar@example.com",
-         "password": "123",
-         "name": "Foo"
+         "email": "foobar@example.com"
        }
-|}
-  in
+|} in
   let* resp, _ =
     Cohttp_lwt_unix.Client.post
       ~body:(Cohttp_lwt.Body.of_string body)
@@ -86,10 +81,8 @@ let test_register_existing_user_fails _ () =
     {|
        {
          "email": "foobar@example.com",
-
          "username": "foobar",
-         "password": "123",
-         "name": "Foo"
+         "password": "123"
        }
 |}
   in

@@ -23,8 +23,7 @@ let test_user_registers_and_confirms_email _ () =
        {
          "email": "user1@example.com",
          "username": "user1",
-         "password": "123",
-         "name": "User 1"
+         "password": "123"
        }
 |}
   in

@@ -17,22 +17,17 @@ module Login = struct
 end
 
 module Register = struct
-  type body_in = {
-    email : string;
-    username : string;
-    password : string;
-    name : string;
-  }
+  type body_in = { email : string; username : string option; password : string }
   [@@deriving yojson]
 
   let handler =
     Sihl_core.Http.post "/users/register/"
     @@ Sihl_core.Http.with_json
     @@ fun req ->
-    let* { email; username; password; name } =
+    let* { email; username; password } =
       Sihl_core.Http.require_body_exn req body_in_of_yojson
     in
-    let* _ = Service.User.register req ~email ~username ~password ~name in
+    let* _ = Service.User.register req ~email ~username ~password in
     Lwt.return @@ ()
 end
 
@@ -104,23 +99,18 @@ module UpdatePassword = struct
 end
 
 module UpdateDetails = struct
-  type body_in = {
-    email : string;
-    username : string;
-    name : string;
-    phone : string option;
-  }
+  type body_in = { email : string; username : string option }
   [@@deriving yojson]
 
   let handler =
     Sihl_core.Http.post "/users/update-details/"
     @@ Sihl_core.Http.with_json ~encode:Model.User.to_yojson
     @@ fun req ->
-    let* { email; username; name; phone } =
+    let* { email; username } =
       Sihl_core.Http.require_body_exn req body_in_of_yojson
     in
     let user = Service.User.authenticate req in
-    Service.User.update_details req user ~email ~username ~name ~phone
+    Service.User.update_details req user ~email ~username
 end
 
 module SetPassword = struct
