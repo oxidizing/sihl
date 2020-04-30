@@ -9,7 +9,7 @@ module Login = struct
 
   let handler =
     Http.get "/users/login/" @@ fun req ->
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* token = Service.User.token req user in
     let response = { token = Model.Token.value token } in
     response |> body_out_to_yojson |> Yojson.Safe.to_string
@@ -38,9 +38,9 @@ module GetMe = struct
 
   let handler =
     Http.get "/users/users/me/" @@ fun req ->
-    let response = Service.User.authenticate req in
-    response |> body_out_to_yojson |> Yojson.Safe.to_string
-    |> Http.Response.json |> Lwt.return
+    let user = Middleware.Authn.authenticate req in
+    user |> body_out_to_yojson |> Yojson.Safe.to_string |> Http.Response.json
+    |> Lwt.return
 end
 
 module Logout = struct
@@ -48,7 +48,7 @@ module Logout = struct
 
   let handler =
     Http.delete "/users/logout/" @@ fun req ->
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* () = Service.User.logout req user in
     Http.Response.empty |> Lwt.return
 end
@@ -61,7 +61,7 @@ module GetUser = struct
   let handler =
     Http.get "/users/users/:id/" @@ fun req ->
     let user_id = Http.param req "id" in
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* response = Service.User.get req user ~user_id in
     response |> body_out_to_yojson |> Yojson.Safe.to_string
     |> Http.Response.json |> Lwt.return
@@ -74,7 +74,7 @@ module GetUsers = struct
 
   let handler =
     Http.get "/users/users/" @@ fun req ->
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* response = Service.User.get_all req user in
     response |> body_out_to_yojson |> Yojson.Safe.to_string
     |> Http.Response.json |> Lwt.return
@@ -95,7 +95,7 @@ module UpdatePassword = struct
     let* { email; old_password; new_password } =
       Http.require_body_exn req body_in_of_yojson
     in
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* _ =
       Service.User.update_password req user ~email ~old_password ~new_password
     in
@@ -115,7 +115,7 @@ module UpdateDetails = struct
     let* { email; username } =
       Sihl_core.Http.require_body_exn req body_in_of_yojson
     in
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* user = Service.User.update_details req user ~email ~username in
     user |> body_out_to_yojson |> Yojson.Safe.to_string |> Http.Response.json
     |> Lwt.return
@@ -129,7 +129,7 @@ module SetPassword = struct
   let handler =
     Http.post "/users/set-password/" @@ fun req ->
     let* { user_id; password } = Http.require_body_exn req body_in_of_yojson in
-    let user = Service.User.authenticate req in
+    let user = Middleware.Authn.authenticate req in
     let* _ = Service.User.set_password req user ~user_id ~password in
     Http.Response.empty |> Lwt.return
 end
@@ -172,119 +172,67 @@ end
 
 module AdminUi = struct
   module Dashboard = struct
-    open Tyxml.Html
     open Sihl_core
 
-    let mycontent =
-      div
-        ~a:[ a_class [ "content" ] ]
-        [ h1 [ txt "A fabulous title" ]; txt "This is a fabulous content." ]
+    let handler =
+      Sihl_core.Http.get "/admin/dashboard/" @@ fun req ->
+      let user = Middleware.Authn.authenticate req in
+      Admin_ui.dashboard user |> Admin_ui.render |> Http.Response.html
+      |> Lwt.return
+  end
 
-    let mytitle = title (txt "A Fabulous Web Page")
+  module Login = struct
+    open Sihl_core
 
-    let page = html (head mytitle []) (body [ mycontent ])
+    let get =
+      Sihl_core.Http.get "/admin/login/" @@ fun _ ->
+      Admin_ui.login |> Admin_ui.render |> Http.Response.html |> Lwt.return
+
+    let post =
+      Sihl_core.Http.post "/admin/login/" @@ fun req ->
+      let* body = req |> Opium.Std.Request.body |> Opium.Std.Body.to_string in
+      let query = body |> Uri.query_of_encoded in
+      let email = query |> Http.find_in_query "email" in
+      let password = query |> Http.find_in_query "password" in
+      match (email, password) with
+      | Some email, Some password ->
+          let* token = Service.User.login req ~email ~password in
+          (* TODO set success flash message *)
+          Http.Response.empty
+          |> Http.Response.start_session (Model.Token.value token)
+          |> Http.Response.redirect "/admin/dashboard/"
+          |> Lwt.return
+      | _ ->
+          (* TODO set error flash message *)
+          Http.Response.empty
+          |> Http.Response.redirect "/admin/login/"
+          |> Lwt.return
+  end
+
+  module Logout = struct
+    open Sihl_core
 
     let handler =
-      Sihl_core.Http.get "/users/admin/" @@ fun _ ->
-      Caml.Format.asprintf "%a" (pp ()) page |> Http.Response.html |> Lwt.return
+      Sihl_core.Http.post "/admin/logout/" @@ fun req ->
+      let user = Middleware.Authn.authenticate req in
+      let* () = Service.User.logout req user in
+      Http.Response.empty |> Http.Response.stop_session
+      |> Http.Response.redirect "/admin/login/"
+      |> Lwt.return
+  end
+
+  module Catch = struct
+    open Sihl_core
+
+    let handler =
+      Sihl_core.Http.get "/admin/**" @@ fun _ ->
+      Http.Response.empty
+      |> Http.Response.redirect "/admin/dashboard/"
+      |> Lwt.return
   end
 end
 
 (* module AdminUi = {
- *   module Dashboard = {
- *     [@decco]
- *     type query = {session: option(string)};
- *
- *     let endpoint = (_, database) =>
- *       Sihl.App.Http.dbEndpoint({
- *         database,
- *         verb: GET,
- *         path: {j|/admin/|j},
- *         handler: (conn, req) => {
- *           open! Sihl.App.Http.Endpoint;
- *           let%Async {session} = req.requireQuery(query_decode);
- *           switch (session) {
- *           | None =>
- *             let%Async token =
- *               Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
- *             let%Async user = Service.User.authenticate(conn, token);
- *             if (!Model.User.isAdmin(user)) {
- *               abort @@ Unauthorized("User is not an admin");
- *             };
- *             Async.async @@
- *             OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />));
- *           | Some(token) =>
- *             let%Async user = Service.User.authenticate(conn, token);
- *             if (!Model.User.isAdmin(user)) {
- *               abort @@ Unauthorized("User is not an admin");
- *             };
- *             let headers =
- *               [Model.Token.setCookieHeader(token)] |> Js.Dict.fromList;
- *             Async.async @@
- *             OkHtmlWithHeaders(
- *               AdminUi.HtmlTemplate.render(<AdminUi.Dashboard user />),
- *               headers,
- *             );
- *           };
- *         },
- *       });
- *   };
- *
- *   module Login = {
- *     [@decco]
- *     type query = {
- *       email: option(string),
- *       password: option(string),
- *     };
- *
- *     let endpoint = (_, database) =>
- *       Sihl.App.Http.dbEndpoint({
- *         database,
- *         verb: GET,
- *         path: {j|/admin/login/|j},
- *         handler: (conn, req) => {
- *           open! Sihl.App.Http.Endpoint;
- *           let%Async token = Sihl.App.Http.sessionCookie(req);
- *           let%Async {email, password} = req.requireQuery(query_decode);
- *           switch (token, email, password) {
- *           | (_, Some(email), Some(password)) =>
- *             let%Async (user, token) =
- *               Service.User.login(conn, ~email, ~password);
- *             if (!Model.User.isAdmin(user)) {
- *               abort @@ Unauthorized("User is not an admin");
- *             };
- *             Async.async @@ FoundRedirect("/admin?session=" ++ token.token);
- *           | (Some(token), _, _) =>
- *             let%Async isTokenValid = Service.User.isTokenValid(conn, token);
- *             Async.async(
- *               isTokenValid
- *                 ? OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
- *                 : FoundRedirect("/admin?session=" ++ token),
- *             );
- *           | _ =>
- *             Async.async @@
- *             OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Login />))
- *           };
- *         },
- *       });
- *   };
- *
- *   module Logout = {
- *     let endpoint = (_, database) =>
- *       Sihl.App.Http.dbEndpoint({
- *         database,
- *         verb: POST,
- *         path: {j|/admin/logout/|j},
- *         handler: (conn, req) => {
- *           open! Sihl.App.Http.Endpoint;
- *           let%Async token =
- *             Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
- *           let%Async currentUser = Service.User.authenticate(conn, token);
- *           let%Async _ = Service.User.logout((conn, currentUser));
- *           Async.async @@ FoundRedirect("/admin/login");
- *         },
- *       });
- *   };
  *
  *   module User = {
  *     [@decco]

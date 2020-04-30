@@ -107,6 +107,10 @@ let test_user_uses_reset_token_twice_fails _ () =
     Sihl_core.Test.seed
     @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"
   in
+  let* _ =
+    Sihl_core.Test.seed
+    @@ Sihl_users.Seed.admin ~email:"admin@example.com" ~password:"password"
+  in
   let body = {|{"email": "user1@example.com"}|} in
   let* _ =
     Cohttp_lwt_unix.Client.post

@@ -65,8 +65,9 @@ module Project : PROJECT = struct
     let middlewares = merge_middlewares project in
     let () = Logs.info (fun m -> m "http server starting") in
     let app =
-      App.empty |> App.cmd_name "Project" |> Http.Middleware.handle_error
-      |> Db.middleware
+      App.empty |> App.cmd_name "Project"
+      |> middleware Opium.Std.Cookie.m
+      |> Http.handle_error_m |> Db.middleware
       |> add_middlewares middlewares
     in
     (* detaching from the thread so tests can run in the same process *)

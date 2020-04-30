@@ -43,7 +43,7 @@ jobs:
           command: opam install -y alcotest alcotest-lwt cohttp-lwt-unix
       - run:
           name: Test
-          command: opam config exec -- make test
+          command: opam config exec -- make test-all
 
 workflows:
   version: 2

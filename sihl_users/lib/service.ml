@@ -3,10 +3,52 @@ open Base
 let ( let* ) = Lwt.bind
 
 module User = struct
-  let authenticate request =
-    request |> Middleware.Authentication.user |> Result.of_option ~error:""
-    |> Sihl_core.Fail.with_no_permission
-         "no user found, have you applied the authentication middleware?"
+  let get request user ~user_id =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
+    if Model.User.is_admin user || Model.User.is_owner user user_id then
+      let* user =
+        Repository.User.get ~id:user_id |> Sihl_core.Db.query_db request
+      in
+      user
+      |> Sihl_core.Fail.with_bad_request
+           ("could not find user with id " ^ user_id)
+      |> Lwt.return
+    else Sihl_core.Fail.raise_no_permissions "user is not allowed to fetch user"
+
+  let get_by_token request token =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
+    let* token =
+      Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
+    in
+    let token_user =
+      token |> Sihl_core.Fail.with_not_authenticated |> Model.Token.user
+    in
+    Repository.User.get ~id:token_user
+    |> Sihl_core.Db.query_db request
+    |> Lwt.map Sihl_core.Fail.with_not_authenticated
+
+  let get_all request user =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
+    if Model.User.is_admin user then
+      Repository.User.get_all |> Sihl_core.Db.query_db_exn request
+    else
+      Sihl_core.Fail.raise_no_permissions
+        "user is not allowed to fetch all users"
+
+  let get_by_email request ~email =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+    Repository.User.get_by_email ~email |> Sihl_core.Db.query_db_exn request
 
   let send_registration_email request user =
     let (module Repository : Contract.REPOSITORY) =
@@ -86,6 +128,11 @@ module User = struct
       Lwt.return token
     else Sihl_core.Fail.raise_not_authenticated "wrong credentials provided"
 
+  let authenticate_credentials request ~email ~password =
+    let* user = get_by_email request ~email in
+    if Model.User.matches_password password user then Lwt.return user
+    else Sihl_core.Fail.raise_not_authenticated @@ "wrong credentials provided"
+
   let token request user =
     let (module Repository : Contract.REPOSITORY) =
       Sihl_core.Registry.get Contract.repository
@@ -98,40 +145,12 @@ module User = struct
     let () = result |> Sihl_core.Fail.with_database "failed to store token" in
     Lwt.return token
 
-  let get request user ~user_id =
-    let (module Repository : Contract.REPOSITORY) =
-      Sihl_core.Registry.get Contract.repository
-    in
-
-    if Model.User.is_admin user || Model.User.is_owner user user_id then
-      let* user =
-        Repository.User.get ~id:user_id |> Sihl_core.Db.query_db request
-      in
-      user
-      |> Sihl_core.Fail.with_bad_request
-           ("could not find user with id " ^ user_id)
-      |> Lwt.return
-    else Sihl_core.Fail.raise_no_permissions "user is not allowed to fetch user"
-
-  let get_all request user =
-    let (module Repository : Contract.REPOSITORY) =
-      Sihl_core.Registry.get Contract.repository
-    in
-
-    if Model.User.is_admin user then
-      Repository.User.get_all |> Sihl_core.Db.query_db_exn request
-    else
-      Sihl_core.Fail.raise_no_permissions
-        "user is not allowed to fetch all users"
-
   let update_password request current_user ~email ~old_password ~new_password =
     let (module Repository : Contract.REPOSITORY) =
       Sihl_core.Registry.get Contract.repository
     in
 
-    let* user =
-      Repository.User.get_by_email ~email |> Sihl_core.Db.query_db_exn request
-    in
+    let* user = get_by_email request ~email in
     let _ =
       Model.User.is_valid user ~old_password ~new_password
       |> Sihl_core.Fail.with_bad_request
@@ -155,9 +174,7 @@ module User = struct
       Sihl_core.Registry.get Contract.repository
     in
 
-    let* user =
-      Repository.User.get_by_email ~email |> Sihl_core.Db.query_db_exn request
-    in
+    let* user = get_by_email request ~email in
     if
       Model.User.is_admin current_user
       || Model.User.is_owner current_user user.id
@@ -228,12 +245,7 @@ module User = struct
       Sihl_core.Registry.get Contract.repository
     in
 
-    let* user =
-      Repository.User.get_by_email ~email |> Sihl_core.Db.query_db request
-    in
-    let user =
-      user |> Sihl_core.Fail.with_bad_request "invalid email provided"
-    in
+    let* user = get_by_email request ~email in
     let token = Model.Token.create_password_reset user in
     let* () =
       Repository.Token.insert token |> Sihl_core.Db.query_db_exn request
