@@ -46,16 +46,6 @@ let clean queries =
          in
          error)
 
-(* let query_pool_with_trx query pool =
- *   query_pool
- *     (fun connection ->
- *       let (module Connection : Caqti_lwt.CONNECTION) = connection in
- *       let* () = Connection.start () in
- *       let* result = query connection in
- *       let* () = Connection.commit () in
- *       Lwt.return @@ Ok result)
- *     pool *)
-
 (* Seal the key type with a non-exported type, so the pool cannot be retrieved
    outside of this module *)
 
@@ -105,8 +95,17 @@ let middleware app =
   let m = Rock.Middleware.create ~name:"database connection" ~filter in
   Opium.Std.middleware m app
 
-(* Execute a query on the database connection stored in the request
-   environment *)
+let query_db_with_trx request query =
+  let ( let* ) = Lwt.bind in
+  let connection = Request.env request |> Opium.Hmap.get key in
+  (fun connection ->
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    let* _ = Connection.start () in
+    let* result = query connection in
+    let* _ = Connection.commit () in
+    result |> Result.map_error ~f:Caqti_error.show |> Lwt.return)
+    connection
+
 let query_db request query =
   Request.env request |> Opium.Hmap.get key |> query
   |> Lwt_result.map_err Caqti_error.show
