@@ -11,7 +11,7 @@ let test_rotate () =
   let current = Store.find_current id in
   let () =
     Alcotest.(check @@ option testable_flash)
-      "current flash is None initially" None current
+      "current flash in None initially" None current
   in
   let () = Store.rotate id in
   let current = Store.find_current id in
