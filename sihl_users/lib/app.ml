@@ -38,6 +38,9 @@ let middlewares () =
     AdminUi.Login.get;
     AdminUi.Login.post;
     AdminUi.Logout.handler;
+    AdminUi.User.handler;
+    AdminUi.Users.handler;
+    AdminUi.UserSetPassword.handler;
   ]
 
 let migrations () =

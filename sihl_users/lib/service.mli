@@ -1,4 +1,6 @@
 module User : sig
+  val is_valid_auth_token : Opium_kernel.Request.t -> string -> bool Lwt.t
+
   val get :
     Opium_kernel.Request.t ->
     Model.User.t ->

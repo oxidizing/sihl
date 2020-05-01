@@ -177,8 +177,8 @@ module AdminUi = struct
     let handler =
       Sihl_core.Http.get "/admin/dashboard/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      Admin_ui.dashboard user |> Admin_ui.render |> Http.Response.html
-      |> Lwt.return
+      Admin_ui.dashboard_page user
+      |> Admin_ui.render |> Http.Response.html |> Lwt.return
   end
 
   module Login = struct
@@ -186,7 +186,7 @@ module AdminUi = struct
 
     let get =
       Sihl_core.Http.get "/admin/login/" @@ fun _ ->
-      Admin_ui.login |> Admin_ui.render |> Http.Response.html |> Lwt.return
+      Admin_ui.login_page |> Admin_ui.render |> Http.Response.html |> Lwt.return
 
     let post =
       Sihl_core.Http.post "/admin/login/" @@ fun req ->
@@ -221,88 +221,65 @@ module AdminUi = struct
       |> Lwt.return
   end
 
+  module Users = struct
+    open Sihl_core
+
+    let handler =
+      Sihl_core.Http.get "/admin/users/users/" @@ fun req ->
+      let user = Middleware.Authn.authenticate req in
+      let* users = Service.User.get_all req user in
+      Admin_ui.users_page users |> Admin_ui.render |> Http.Response.html
+      |> Lwt.return
+  end
+
+  module User = struct
+    open Sihl_core
+
+    let handler =
+      Sihl_core.Http.get "/admin/users/users/:id/" @@ fun req ->
+      let user_id = Http.param req "id" in
+      let user = Middleware.Authn.authenticate req in
+      let* user = Service.User.get req user ~user_id in
+      Admin_ui.user_page user |> Admin_ui.render |> Http.Response.html
+      |> Lwt.return
+  end
+
+  module UserSetPassword = struct
+    open Sihl_core
+
+    let handler =
+      Sihl_core.Http.post "/admin/users/users/:id/set-password/" @@ fun req ->
+      let user_id = Http.param req "id" in
+      let user = Middleware.Authn.authenticate req in
+      let* body = req |> Opium.Std.Request.body |> Opium.Std.Body.to_string in
+      let password =
+        body |> Uri.query_of_encoded |> Http.find_in_query "password"
+      in
+      match password with
+      | Some password ->
+          Logs.info (fun m -> m "found a new password %s" password);
+          let* _ = Service.User.set_password req user ~user_id ~password in
+          (* TODO set success flash message *)
+          Http.Response.empty
+          |> Http.Response.redirect
+             @@ [%string "/admin/users/users/$(user_id)/"]
+          |> Lwt.return
+      | _ ->
+          Logs.info (fun m -> m "no password found");
+          (* TODO set error flash message *)
+          Http.Response.empty
+          |> Http.Response.redirect "/admin/login/"
+          |> Lwt.return
+  end
+
   module Catch = struct
     open Sihl_core
 
     let handler =
-      Sihl_core.Http.get "/admin/**" @@ fun _ ->
+      Sihl_core.Http.all "/admin/**" @@ fun _ ->
+      (* TODO flash error with requested page *)
       Http.Response.empty
       |> Http.Response.redirect "/admin/dashboard/"
       |> Lwt.return
   end
 end
-
-(* module AdminUi = {
- *
- *   module User = {
- *     [@decco]
- *     type query = {
- *       action: option(string),
- *       password: option(string),
- *     };
- *
- *     [@decco]
- *     type params = {userId: string};
- *
- *     let endpoint = (root, database) =>
- *       Sihl.App.Http.dbEndpoint({
- *         database,
- *         verb: GET,
- *         path: {j|/admin/$root/users/:userId/|j},
- *         handler: (conn, req) => {
- *           open! Sihl.App.Http.Endpoint;
- *           let%Async token =
- *             Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
- *           let%Async currentUser = Service.User.authenticate(conn, token);
- *           let%Async {userId} = req.requireParams(params_decode);
- *           let%Async user =
- *             Service.User.get((conn, currentUser), ~userId)
- *             |> abortIfErr(NotFound("User not found"));
- *           let%Async {action, password} = req.requireQuery(query_decode);
- *           switch (action, password) {
- *           | (None, _) =>
- *             Async.async @@
- *             OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />))
- *           | (Some("set-password"), Some(password)) =>
- *             let%Async _ =
- *               Service.User.setPassword(
- *                 (conn, currentUser),
- *                 ~userId,
- *                 ~newPassword=password,
- *               );
- *             Async.async @@
- *             OkHtml(
- *               AdminUi.HtmlTemplate.render(
- *                 <AdminUi.User user msg="Successfully set password!" />,
- *               ),
- *             );
- *           | (Some(action), _) =>
- *             Sihl.Core.Log.error(
- *               "Invalid action=" ++ action ++ " provided",
- *               (),
- *             );
- *             Async.async @@
- *             OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.User user />));
- *           };
- *         },
- *       });
- *   };
- *
- *   module Users = {
- *     let endpoint = (root, database) =>
- *       Sihl.App.Http.dbEndpoint({
- *         database,
- *         verb: GET,
- *         path: {j|/admin/$root/users/|j},
- *         handler: (conn, req) => {
- *           open! Sihl.App.Http.Endpoint;
- *           let%Async token =
- *             Sihl.App.Http.requireSessionCookie(req, "/admin/login/");
- *           let%Async user = Service.User.authenticate(conn, token);
- *           let%Async users = Service.User.getAll((conn, user));
- *           let users = users |> Sihl.Core.Db.Result.Query.rows;
- *           Async.async @@
- *           OkHtml(AdminUi.HtmlTemplate.render(<AdminUi.Users users />));
- *         },
- *       });
- *   }; *)

@@ -216,4 +216,6 @@ let delete path handler = Opium.Std.delete path (handle handler)
 
 let put path handler = Opium.Std.put path (handle handler)
 
+let all path handler = Opium.Std.all path (handle handler)
+
 module Request = Opium.Std.Request

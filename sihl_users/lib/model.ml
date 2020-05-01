@@ -25,6 +25,8 @@ module User = struct
 
   let is_owner user id = String.equal user.id id
 
+  let is_confirmed user = user.confirmed
+
   let matches_password password user =
     Bcrypt.verify password (Bcrypt.hash_of_string user.password)
 
@@ -68,6 +70,9 @@ module Token = struct
   let is_valid_email_configuration token =
     String.equal token.status "active"
     && String.equal token.kind "email_confirmation"
+
+  let is_valid_auth token =
+    String.equal token.status "active" && String.equal token.kind "auth"
 
   let can_reset_password token =
     String.equal token.status "active"

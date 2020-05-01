@@ -3,6 +3,18 @@ open Base
 let ( let* ) = Lwt.bind
 
 module User = struct
+  let is_valid_auth_token request token =
+    let (module Repository : Contract.REPOSITORY) =
+      Sihl_core.Registry.get Contract.repository
+    in
+
+    let* token =
+      Repository.Token.get ~value:token |> Sihl_core.Db.query_db request
+    in
+    token |> Result.ok
+    |> Option.value_map ~default:false ~f:Model.Token.is_valid_auth
+    |> Lwt.return
+
   let get request user ~user_id =
     let (module Repository : Contract.REPOSITORY) =
       Sihl_core.Registry.get Contract.repository
