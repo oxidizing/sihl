@@ -3,14 +3,6 @@ open Tyxml.Html
 
 let empty = span []
 
-module C = struct
-  let title text = h1 ~a:[ a_class [ "title" ] ] [ txt text ]
-
-  let sub_title text = h2 ~a:[ a_class [ "subtitle" ] ] [ txt text ]
-
-  let container content = div ~a:[ a_class [ "container" ] ] content
-end
-
 let stylesheet_uri =
   "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css"
 
@@ -30,7 +22,31 @@ let logout =
         [ txt "Logout" ];
     ]
 
-let layout ~is_logged_in content =
+let flash_section ~flash =
+  match flash with
+  | Some (Sihl_core.Flash.Error msg) ->
+      section
+        ~a:[ a_class [ "hero is-small is-danger" ]; a_style "margin-top: 2em;" ]
+        [ div ~a:[ a_class [ "hero-body" ] ] [ txt msg ] ]
+  | Some (Sihl_core.Flash.Warning msg) ->
+      section
+        ~a:
+          [
+            a_class [ "hero"; "is-small"; "is-warning" ];
+            a_style "margin-top: 2em;";
+          ]
+        [ div ~a:[ a_class [ "hero-body" ] ] [ txt msg ] ]
+  | Some (Sihl_core.Flash.Success msg) ->
+      section
+        ~a:
+          [
+            a_class [ "hero"; "is-small"; "is-success" ];
+            a_style "margin-top: 2em;";
+          ]
+        [ div ~a:[ a_class [ "hero-body" ] ] [ txt msg ] ]
+  | None -> div []
+
+let layout ~flash ~is_logged_in content =
   [
     section
       ~a:[ a_class [ "hero"; "is-small"; "is-primary"; "is-bold" ] ]
@@ -39,9 +55,15 @@ let layout ~is_logged_in content =
           ~a:[ a_class [ "hero-body" ] ]
           [
             (if is_logged_in then logout else empty);
-            C.container [ C.title "Sihl"; C.sub_title "Admin UI" ];
+            div
+              ~a:[ a_class [ "container is-pulled-left" ] ]
+              [
+                h1 ~a:[ a_class [ "title" ] ] [ txt "Sihl" ];
+                h2 ~a:[ a_class [ "subtitle" ] ] [ txt "Admin UI" ];
+              ];
           ];
       ];
+    flash_section ~flash;
     section ~a:[ a_class [ "section" ]; a_style "min-heigth: 40em" ] content;
     footer
       ~a:[ a_class [ "footer" ] ]
@@ -73,8 +95,8 @@ let navigation pages =
              li [ a ~a:[ a_href (Page.path page) ] [ txt (Page.label page) ] ]));
     ]
 
-let navigation_layout ~title ~pages content =
-  layout ~is_logged_in:true
+let navigation_layout ~flash ~title ~pages content =
+  layout ~flash ~is_logged_in:true
     [
       div
         ~a:[ a_class [ "columns" ] ]
@@ -84,15 +106,15 @@ let navigation_layout ~title ~pages content =
             [ navigation pages ];
           div
             ~a:[ a_class [ "column"; "is-10" ] ]
-            (List.cons (C.title title) content);
+            (List.cons (h1 ~a:[ a_class [ "title" ] ] [ txt title ]) content);
         ];
     ]
 
 let render page = Caml.Format.asprintf "%a" (pp ()) page
 
-let login_page =
+let login_page ~flash =
   html_page ~title:"Login"
-    (layout ~is_logged_in:false
+    (layout ~flash ~is_logged_in:false
        [
          div
            ~a:[ a_class [ "columns" ] ]
@@ -164,10 +186,14 @@ let login_page =
 (* TODO make this configurable so that each app can contribute to it *)
 let pages = [ Page.create ~label:"Users" ~path:"/admin/users/users/" ]
 
-let dashboard_page user =
+let dashboard_page ~flash user =
   html_page ~title:"Dashboard"
-    (navigation_layout ~pages ~title:"Dashboard"
-       [ C.sub_title ("Have a great day, " ^ Model.User.email user) ])
+    (navigation_layout ~flash ~pages ~title:"Dashboard"
+       [
+         h1
+           ~a:[ a_class [ "subtitle" ] ]
+           [ txt @@ "Have a great day, " ^ Model.User.email user ];
+       ])
 
 let user_row user =
   tr
@@ -183,9 +209,9 @@ let user_row user =
       td [ txt (Model.User.status user) ];
     ]
 
-let users_page users =
+let users_page ~flash users =
   html_page ~title:"Users"
-    (navigation_layout ~pages ~title:"Users"
+    (navigation_layout ~flash ~pages ~title:"Users"
        [
          table
            ~a:
@@ -251,18 +277,11 @@ let set_password user =
       ];
   ]
 
-let user_page user =
+let user_page ~flash user =
   html_page ~title:"User"
-    (navigation_layout ~pages
+    (navigation_layout ~flash ~pages
        ~title:("User: " ^ Model.User.email user)
        [
-         div
-           ~a:[ a_class [ "columns" ] ]
-           [
-             div
-               ~a:[ a_class [ "column"; "is-one-third" ] ]
-               [ span [ txt "This is a flash text" ] ];
-           ];
          div
            ~a:[ a_class [ "columns" ] ]
            [

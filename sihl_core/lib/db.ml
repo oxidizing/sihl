@@ -96,7 +96,7 @@ let middleware app =
 
 let query_db_with_trx request query =
   let ( let* ) = Lwt.bind in
-  let connection = Request.env request |> Opium.Hmap.get key in
+  let connection = request |> Request.env |> Opium.Hmap.get key in
   let (module Connection : Caqti_lwt.CONNECTION) = connection in
   let* result = query connection in
   let* trx_result =
