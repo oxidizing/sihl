@@ -104,6 +104,11 @@ let query_db_with_trx request query =
   let* _ = Connection.commit () in
   result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
 
+let query_db_with_trx_exn request query =
+  Lwt.map
+    (Fail.with_database "failed to query with transaction")
+    (query_db_with_trx request query)
+
 let query_db request query =
   Request.env request |> Opium.Hmap.get key |> query
   |> Lwt_result.map_err Caqti_error.show

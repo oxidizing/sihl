@@ -25,6 +25,9 @@ val query_db_with_trx :
   (connection -> 'a db_result) ->
   ('a, string) result Lwt.t
 
+val query_db_with_trx_exn :
+  Opium_kernel.Rock.Request.t -> (connection -> 'a db_result) -> 'a Lwt.t
+
 val query_db :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->
