@@ -46,16 +46,6 @@ let clean queries =
          in
          error)
 
-(* let query_pool_with_trx query pool =
- *   query_pool
- *     (fun connection ->
- *       let (module Connection : Caqti_lwt.CONNECTION) = connection in
- *       let* () = Connection.start () in
- *       let* result = query connection in
- *       let* () = Connection.commit () in
- *       Lwt.return @@ Ok result)
- *     pool *)
-
 (* Seal the key type with a non-exported type, so the pool cannot be retrieved
    outside of this module *)
 
@@ -81,32 +71,55 @@ let request_with_connection request =
 let middleware app =
   let ( let* ) = Lwt.bind in
   let pool = connect () in
-  let filter (handler : Request.t -> Response.t Lwt.t) (req : Request.t) =
-    let response_ref : Response.t Lwt.t option ref = ref None in
-    let result =
+  let filter handler req =
+    let response_ref : Response.t option ref = ref None in
+    let* _ =
       Caqti_lwt.Pool.use
         (fun connection ->
           let (module Connection : Caqti_lwt.CONNECTION) = connection in
           let env = Opium.Hmap.add key connection (Request.env req) in
           let response = handler { req with env } in
-          (* we wait for the handler to finish before finally returning the connection to the pool *)
-          let* _ = response in
+          let* response = response in
+          (* using a ref here is dangerous because we might escape the scope of
+             the pool handler. we wait for the response, so all db handling is
+             done here *)
           let _ = response_ref := Some response in
-          (* all errors are handled when querying the db and in the actual handlers *)
-          (* TODO log all errors before returning Ok () *)
           Lwt.return @@ Ok ())
         pool
     in
-    Lwt.bind result (fun _ ->
-        match !response_ref with
-        | Some response -> response
-        | None -> failwith "error happened")
+    match !response_ref with
+    | Some response -> Lwt.return response
+    | None -> failwith "error happened"
   in
   let m = Rock.Middleware.create ~name:"database connection" ~filter in
   Opium.Std.middleware m app
 
-(* Execute a query on the database connection stored in the request
-   environment *)
+let query_db_with_trx request query =
+  let ( let* ) = Lwt.bind in
+  let connection = Request.env request |> Opium.Hmap.get key in
+  let (module Connection : Caqti_lwt.CONNECTION) = connection in
+  let* result = query connection in
+  let* trx_result =
+    match result with
+    | Ok _ -> Connection.commit ()
+    | Error error ->
+        Logs.warn (fun m ->
+            m "failed to run transaction, rolling back %s"
+              (Caqti_error.show error));
+        Connection.rollback ()
+  in
+  let () =
+    match trx_result with
+    | Ok _ -> ()
+    | Error _ -> Fail.raise_database "failed to commit or rollback transaction"
+  in
+  result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
+
+let query_db_with_trx_exn request query =
+  Lwt.map
+    (Fail.with_database "failed to query with transaction")
+    (query_db_with_trx request query)
+
 let query_db request query =
   Request.env request |> Opium.Hmap.get key |> query
   |> Lwt_result.map_err Caqti_error.show

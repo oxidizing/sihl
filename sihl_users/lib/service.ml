@@ -209,20 +209,19 @@ module User = struct
     in
     if not @@ Model.Token.is_valid_email_configuration token then
       Sihl_core.Fail.raise_bad_request "invalid confirmation token provided"
-      (* TODO do this with transaction *)
     else
-      let* () =
-        Repository.Token.update (Model.Token.inactivate token)
-        |> Sihl_core.Db.query_db_exn request
-      in
-      let* user =
-        Repository.User.get ~id:token.user |> Sihl_core.Db.query_db request
-      in
-      let user =
-        user |> Sihl_core.Fail.with_bad_request "invalid token provided"
-      in
-      Repository.User.update (Model.User.confirm user)
-      |> Sihl_core.Db.query_db_exn request
+      Sihl_core.Db.query_db_with_trx_exn request (fun connection ->
+          let* () =
+            Repository.Token.update (Model.Token.inactivate token)
+            |> Sihl_core.Db.query_db_exn request
+          in
+          let* user =
+            Repository.User.get ~id:token.user |> Sihl_core.Db.query_db request
+          in
+          let user =
+            user |> Sihl_core.Fail.with_bad_request "invalid token provided"
+          in
+          Repository.User.update (Model.User.confirm user) connection)
 
   let request_password_reset request ~email =
     let (module Repository : Contract.REPOSITORY) =
