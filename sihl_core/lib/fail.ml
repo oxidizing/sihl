@@ -72,6 +72,8 @@ let raise_database msg = raise @@ Exception.Database msg
 
 let raise_server msg = raise @@ Exception.Server msg
 
+let raise_configuration msg = raise @@ Exception.Configuration msg
+
 let with_bad_request msg result =
   match result with
   | Ok result -> result

@@ -22,7 +22,7 @@ let connect () =
   |> Caqti_lwt.connect_pool ~max_size:pool_size
   |> function
   | Ok pool -> pool
-  | Error err -> failwith (Caqti_error.show err)
+  | Error err -> Fail.raise_database (Caqti_error.show err)
 
 (* [query_pool query pool] is the [Ok res] of the [res] obtained by executing
    the database [query], or else the [Error err] reporting the error causing
@@ -63,7 +63,7 @@ let request_with_connection request =
   let connection =
     connection |> function
     | Ok connection -> connection
-    | Error err -> failwith (Caqti_error.show err)
+    | Error err -> Fail.raise_database (Caqti_error.show err)
   in
   let env = Opium.Hmap.add key connection (Request.env request) in
   Lwt.return @@ { request with env }
@@ -89,7 +89,7 @@ let middleware app =
     in
     match !response_ref with
     | Some response -> Lwt.return response
-    | None -> failwith "error happened"
+    | None -> Fail.raise_database "error happened"
   in
   let m = Rock.Middleware.create ~name:"database connection" ~filter in
   Opium.Std.middleware m app

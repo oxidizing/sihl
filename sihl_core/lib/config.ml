@@ -197,7 +197,8 @@ let read_string ?default key =
   match (default, value) with
   | _, Some value -> value
   | Some default, None -> default
-  | None, None -> failwith @@ "configuration " ^ key ^ " not found"
+  | None, None ->
+      Fail.raise_configuration @@ "configuration " ^ key ^ " not found"
 
 let read_int ?default key =
   let value = Map.find (State.get ()) key in
@@ -205,9 +206,11 @@ let read_int ?default key =
   | _, Some value -> (
       match Option.try_with (fun () -> Base.Int.of_string value) with
       | Some value -> value
-      | None -> failwith @@ "configuration " ^ key ^ " is not a int" )
+      | None ->
+          Fail.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
   | Some default, None -> default
-  | None, None -> failwith @@ "configuration " ^ key ^ " not found"
+  | None, None ->
+      Fail.raise_configuration @@ "configuration " ^ key ^ " not found"
 
 let read_bool ?default key =
   let value = Map.find (State.get ()) key in
@@ -215,6 +218,8 @@ let read_bool ?default key =
   | _, Some value -> (
       match Caml.bool_of_string_opt value with
       | Some value -> value
-      | None -> failwith @@ "configuration " ^ key ^ " is not a int" )
+      | None ->
+          Fail.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
   | Some default, None -> default
-  | None, None -> failwith @@ "configuration " ^ key ^ " not found"
+  | None, None ->
+      Fail.raise_configuration @@ "configuration " ^ key ^ " not found"
