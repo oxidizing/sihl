@@ -98,13 +98,11 @@ let middleware app =
 let query_db_with_trx request query =
   let ( let* ) = Lwt.bind in
   let connection = Request.env request |> Opium.Hmap.get key in
-  (fun connection ->
-    let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    let* _ = Connection.start () in
-    let* result = query connection in
-    let* _ = Connection.commit () in
-    result |> Result.map_error ~f:Caqti_error.show |> Lwt.return)
-    connection
+  let (module Connection : Caqti_lwt.CONNECTION) = connection in
+  let* _ = Connection.start () in
+  let* result = query connection in
+  let* _ = Connection.commit () in
+  result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
 
 let query_db request query =
   Request.env request |> Opium.Hmap.get key |> query
