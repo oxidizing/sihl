@@ -227,7 +227,7 @@ module AdminUi = struct
       let user = Middleware.Authn.authenticate req in
       let flash = Sihl_core.Flash.current req in
       let* users = Service.User.get_all req user in
-      Admin_ui.users_page ~flash users
+      Admin_ui_users.users_page ~flash users
       |> Admin_ui.render |> Response.html |> Lwt.return
   end
 
@@ -240,7 +240,7 @@ module AdminUi = struct
       let user = Middleware.Authn.authenticate req in
       let flash = Sihl_core.Flash.current req in
       let* user = Service.User.get req user ~user_id in
-      Admin_ui.user_page ~flash user
+      Admin_ui_users.user_page ~flash user
       |> Admin_ui.render |> Response.html |> Lwt.return
   end
 

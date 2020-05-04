@@ -67,3 +67,10 @@ let bind () =
   ]
 
 let commands () = [ Command.create_admin ]
+
+let start () =
+  Ok
+    (Admin_ui.register_page
+       (Admin_ui.Page.create ~label:"Users" ~path:"/admin/users/users/"))
+
+let stop () = Ok ()

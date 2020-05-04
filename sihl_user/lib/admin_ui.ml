@@ -3,6 +3,32 @@ open Tyxml.Html
 
 let empty = span []
 
+module Page = struct
+  type t = { path : string; label : string }
+
+  let path page = page.path
+
+  let label page = page.label
+
+  let create ~path ~label = { path; label }
+end
+
+module Store = struct
+  let pages : Page.t list ref = ref []
+
+  let register page =
+    Logs.info (fun m -> m "registering admin ui page: %s" (Page.label page));
+    pages :=
+      !pages |> List.cons page
+      |> List.sort ~compare:(fun p1 p2 ->
+             String.compare (Page.path p1) (Page.path p2));
+    ()
+
+  let get_all () = !pages
+end
+
+let register_page = Store.register
+
 let stylesheet_uri =
   "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css"
 
@@ -74,17 +100,8 @@ let layout ~flash ~is_logged_in content =
       ];
   ]
 
-module Page = struct
-  type t = { path : string; label : string }
-
-  let path page = page.path
-
-  let label page = page.label
-
-  let create ~path ~label = { path; label }
-end
-
-let navigation pages =
+let navigation () =
+  let pages = Store.get_all () in
   aside
     ~a:[ a_class [ "menu" ] ]
     [
@@ -95,7 +112,7 @@ let navigation pages =
              li [ a ~a:[ a_href (Page.path page) ] [ txt (Page.label page) ] ]));
     ]
 
-let navigation_layout ~flash ~title ~pages content =
+let navigation_layout ~flash ~title content =
   layout ~flash ~is_logged_in:true
     [
       div
@@ -103,7 +120,7 @@ let navigation_layout ~flash ~title ~pages content =
         [
           div
             ~a:[ a_class [ "column"; "is-2"; "is-desktop" ] ]
-            [ navigation pages ];
+            [ navigation () ];
           div
             ~a:[ a_class [ "column"; "is-10" ] ]
             (List.cons (h1 ~a:[ a_class [ "title" ] ] [ txt title ]) content);
@@ -183,130 +200,11 @@ let login_page ~flash =
            ];
        ])
 
-(* TODO make this configurable so that each app can contribute to it *)
-let pages = [ Page.create ~label:"Users" ~path:"/admin/users/users/" ]
-
 let dashboard_page ~flash user =
   html_page ~title:"Dashboard"
-    (navigation_layout ~flash ~pages ~title:"Dashboard"
+    (navigation_layout ~flash ~title:"Dashboard"
        [
          h1
            ~a:[ a_class [ "subtitle" ] ]
            [ txt @@ "Have a great day, " ^ Model.User.email user ];
-       ])
-
-let user_row user =
-  tr
-    [
-      td
-        [
-          a
-            ~a:[ a_href ("/admin/users/users/" ^ Model.User.id user ^ "/") ]
-            [ txt (Model.User.email user) ];
-        ];
-      td [ txt (user |> Model.User.is_admin |> Bool.to_string) ];
-      td [ txt (user |> Model.User.is_confirmed |> Bool.to_string) ];
-      td [ txt (Model.User.status user) ];
-    ]
-
-let users_page ~flash users =
-  html_page ~title:"Users"
-    (navigation_layout ~flash ~pages ~title:"Users"
-       [
-         table
-           ~a:
-             [
-               a_class
-                 [
-                   "table";
-                   "is-striped";
-                   "is-narrow";
-                   "is-hoverable";
-                   "is-fullwidth";
-                 ];
-             ]
-           (List.cons
-              (tr
-                 [
-                   th [ txt "Email" ];
-                   th [ txt "Admin?" ];
-                   th [ txt "Email confirmed?" ];
-                   th [ txt "Status" ];
-                 ])
-              (List.map users ~f:user_row));
-       ])
-
-let set_password user =
-  [
-    form
-      ~a:
-        [
-          a_action
-            ("/admin/users/users/" ^ Model.User.id user ^ "/set-password/");
-          a_method `Post;
-        ]
-      [
-        div
-          ~a:[ a_class [ "field" ] ]
-          [
-            label ~a:[ a_class [ "label" ] ] [ txt "New Password" ];
-            div
-              ~a:[ a_class [ "control" ] ]
-              [
-                input
-                  ~a:
-                    [
-                      a_class [ "input" ];
-                      a_name "password";
-                      a_input_type `Password;
-                    ]
-                  ();
-              ];
-          ];
-        div
-          ~a:[ a_class [ "field is-grouped" ] ]
-          [
-            div
-              ~a:[ a_class [ "control" ] ]
-              [
-                button
-                  ~a:[ a_class [ "button is-link" ]; a_button_type `Submit ]
-                  [ txt "Set" ];
-              ];
-          ];
-      ];
-  ]
-
-let user_page ~flash user =
-  html_page ~title:"User"
-    (navigation_layout ~flash ~pages
-       ~title:("User: " ^ Model.User.email user)
-       [
-         div
-           ~a:[ a_class [ "columns" ] ]
-           [
-             div ~a:[ a_class [ "column"; "is-one-third" ] ] (set_password user);
-           ];
-         table
-           ~a:
-             [
-               a_class
-                 [
-                   "table";
-                   "is-striped";
-                   "is-narrow";
-                   "is-hoverable";
-                   "is-fullwidth";
-                 ];
-             ]
-           [
-             tr
-               [
-                 th [ txt "Email" ];
-                 th [ txt "Admin?" ];
-                 th [ txt "Email confirmed?" ];
-                 th [ txt "Status" ];
-               ];
-             user_row user;
-           ];
        ])
