@@ -103,7 +103,7 @@ let handle_error_m app =
         |> Opium.Std.Cookie.set
              ~expiration:(`Max_age (Int64.of_int 0))
              ~http_only:true ~secure:false ~key:"session_id"
-             ~data:"session_stopped"
+             ~data:"session_ended"
         |> Lwt.return
     | ( true,
         Error
@@ -130,7 +130,7 @@ let handle_error_m app =
 module Response = struct
   type headers = (string * string) list
 
-  type change_session = Nothing | SetSession of string | StopSession
+  type change_session = Nothing | SetSession of string | EndSession
 
   type t = {
     content_type : content_type;
@@ -157,7 +157,7 @@ module Response = struct
 
   let start_session token resp = { resp with session = SetSession token }
 
-  let stop_session resp = { resp with session = StopSession }
+  let stop_session resp = { resp with session = EndSession }
 
   let empty =
     {
@@ -199,11 +199,11 @@ module Response = struct
     | SetSession token ->
         Opium.Std.Cookie.set ~http_only:true ~secure:false ~key:"session_id"
           ~data:token co_resp
-    | StopSession ->
+    | EndSession ->
         Opium.Std.Cookie.set
           ~expiration:(`Max_age (Int64.of_int 0))
-          ~http_only:true ~secure:false ~key:"session_id"
-          ~data:"session_stopped" co_resp
+          ~http_only:true ~secure:false ~key:"session_id" ~data:"session_ended"
+          co_resp
 end
 
 let handle handler req = req |> handler |> Lwt.map Response.to_cohttp
