@@ -23,7 +23,7 @@ services:
       - 3306:3306
 
   adminer:
-    image: adminer
+    image: adminer:4.7.6-standalone
     restart: always
     ports:
       - 8080:8080

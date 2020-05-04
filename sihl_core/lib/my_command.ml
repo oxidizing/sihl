@@ -12,7 +12,7 @@ let create ~name ~description ~fn = { name; description; fn }
 
 let is_testing args =
   args |> List.hd
-  |> Option.map ~f:(fun str -> String.is_substring ~substring:"text.exe" str)
+  |> Option.map ~f:(fun str -> String.is_substring ~substring:"test.exe" str)
   |> Option.value_map ~default:false ~f:(fun _ -> true)
 
 let find commands args =
@@ -37,7 +37,8 @@ let execute command args =
   let* request = Test.request_with_connection () in
   let fn = fn command in
   let description = description command in
-  let* result = fn request args in
+  (* wait for the execution to end *)
+  let result = Lwt_main.run (fn request args) in
   match result with
   | Ok _ -> Lwt.return ()
   | Error "wrong usage" ->
@@ -57,9 +58,17 @@ module Builtin = struct
   end
 
   module Start = struct
+    (* wait so that the server stays online *)
+    let rec wait () =
+      let* () = Lwt_unix.sleep 60.0 in
+      wait ()
+
     let fn start _ args =
       match args with
-      | "start" :: _ -> start ()
+      | "start" :: _ ->
+          let* _ = start () in
+          let* () = wait () in
+          Lwt.return @@ Ok ()
       | _ -> Lwt.return @@ Error "wrong usage"
 
     let command start = create ~name:"start" ~description:"start" ~fn:(fn start)

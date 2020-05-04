@@ -65,20 +65,15 @@ module Project : PROJECT = struct
     let middlewares = merge_middlewares project in
     let () = Logs.info (fun m -> m "http server starting") in
     let app =
-      App.empty |> App.cmd_name "Project" |> Http.Middleware.handle_error
-      |> Db.middleware
+      App.empty |> App.cmd_name "Project"
+      |> middleware Opium.Std.Cookie.m
+      |> Http.handle_error_m |> Db.middleware
       |> add_middlewares middlewares
     in
-    match App.run_command' app with
-    | `Ok (_ : unit Lwt.t) ->
-        let () = Logs.info (fun m -> m "http server started") in
-        Lwt.return @@ Ok ()
-    | `Error ->
-        let () = Logs.err (fun m -> m "http server failed to start") in
-        Lwt.return @@ Error "http server failed to start"
-    | `Not_running ->
-        let () = Logs.err (fun m -> m "http server failed to start") in
-        Lwt.return @@ Error "http server failed to start"
+    (* detaching from the thread so tests can run in the same process *)
+    let _ = App.start app in
+    let () = Logs.info (fun m -> m "http server started") in
+    Lwt.return @@ Ok ()
 
   let setup_logger () =
     let log_level = Some Logs.Debug in
@@ -105,14 +100,17 @@ module Project : PROJECT = struct
     let () = Logs.info (fun m -> m "binding project implementations") in
     project.bind |> Option.map ~f:(fun bind -> bind ()) |> ignore
 
+  let setup_config project =
+    let schemas =
+      project.apps |> List.map ~f:(fun (module App : APP) -> App.config ())
+    in
+    Config.load_config schemas project.config
+
   let start project =
     let () = setup_logger () in
     let apps = project |> app_names |> String.concat ~sep:", " in
     let () = Logs.info (fun m -> m "project starting with apps: %s" apps) in
-    let schemas =
-      project.apps |> List.map ~f:(fun (module App : APP) -> App.config ())
-    in
-    let () = Config.load_config schemas project.config in
+    let () = setup_config project in
     let () = bind_registry project in
     (* TODO run migrations here? *)
     start_http_server project
@@ -156,10 +154,22 @@ module Project : PROJECT = struct
         ];
       ]
 
+  let is_testing () =
+    Sys.getenv "SIHL_ENV"
+    |> Option.value ~default:"development"
+    |> String.equal "test"
+
   let run_command project =
-    let args = Sys.get_argv () |> Array.to_list in
+    let args =
+      Sys.get_argv () |> Array.to_list |> List.tl |> Option.value ~default:[]
+    in
     (* if testing, silently do nothing *)
-    if not @@ My_command.is_testing args then
+    if not @@ is_testing () then
+      let () =
+        Caml.print_string @@ "running command with args "
+        ^ String.concat ~sep:", " args
+      in
+      let () = setup_config project in
       let commands =
         project.apps
         |> List.map ~f:(fun (module App : APP) -> App.commands ())
@@ -174,4 +184,7 @@ module Project : PROJECT = struct
       | None ->
           let help = My_command.help commands in
           Logs.info (fun m -> m "%s" help)
+    else
+      Caml.print_string
+      @@ "running with SIHL_ENV=test, ignore command line arguments"
 end

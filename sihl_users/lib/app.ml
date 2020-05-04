@@ -19,7 +19,9 @@ let config () =
 let middlewares () =
   let open Handler in
   [
-    Middleware.Authentication.middleware;
+    Middleware.Authn.token_m;
+    Middleware.Authn.session_m;
+    AdminUi.Catch.handler;
     Login.handler;
     Register.handler;
     Logout.handler;
@@ -32,6 +34,13 @@ let middlewares () =
     ConfirmEmail.handler;
     RequestPasswordReset.handler;
     ResetPassword.handler;
+    AdminUi.Dashboard.handler;
+    AdminUi.Login.get;
+    AdminUi.Login.post;
+    AdminUi.Logout.handler;
+    AdminUi.User.handler;
+    AdminUi.Users.handler;
+    AdminUi.UserSetPassword.handler;
   ]
 
 let migrations () =

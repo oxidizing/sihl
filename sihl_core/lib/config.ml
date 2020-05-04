@@ -144,8 +144,7 @@ end = struct
 
   let get () =
     Option.value_exn
-      ~message:"no configuration found, have you correctly initialized it"
-      !state
+      ~message:"no configuration found, have you called Project.start()?" !state
 end
 
 let of_list kvs =
@@ -167,13 +166,15 @@ let merge_with_env config =
   merge (Map.keys config) config
 
 let read_by_env setting =
-  match Sys.getenv "SIHL_ENV" |> Option.value ~default:"test" with
+  match Sys.getenv "SIHL_ENV" |> Option.value ~default:"development" with
   | "production" -> Setting.production setting
   | "test" -> Setting.test setting
   | _ -> Setting.development setting
 
 let is_testing () =
-  Sys.getenv "SIHL_ENV" |> Option.value ~default:"test" |> String.equal "test"
+  Sys.getenv "SIHL_ENV"
+  |> Option.value ~default:"development"
+  |> String.equal "test"
 
 let process schemas setting =
   (* TODO add default values to config *)

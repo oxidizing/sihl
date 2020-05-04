@@ -3,6 +3,7 @@
  (libraries
   base
   sihl_core
+  tyxml
   )
  (preprocess
   (pps
@@ -10,6 +11,8 @@
    ppx_fields_conv
    ppx_deriving_yojson
    ppx_sexp_conv
+   tyxml-ppx
+   ppx_string_interpolation
    )
   )
  )

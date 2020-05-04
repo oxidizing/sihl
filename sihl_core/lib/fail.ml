@@ -99,6 +99,11 @@ let with_configuration result =
   | Ok result -> result
   | Error msg -> raise @@ Exception.Configuration msg
 
+let with_not_authenticated result =
+  match result with
+  | Ok result -> result
+  | Error msg -> raise @@ Exception.NotAuthenticated msg
+
 let err_database msg = Error.Database msg
 
 let err_bad_request msg = Error.BadRequest msg
