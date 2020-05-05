@@ -1,21 +1,22 @@
 (lang dune 2.0)
 (generate_opam_files true)
 
-(name sihl)
-(version 0.1.0)
+(name sihl_core)
+(version 0.0.19)
 
 (authors "Josef Erben")
 (license MIT)
 (source (uri "git@github.com:oxidizing/sihl.git"))
 (maintainers "josef@oxidizing.io")
-(homepage "https://github.com/oxidizing/sihl/")
+(homepage "https://github.com/oxidizing/sihl")
 (bug_reports "https://github.com/oxidizing/sihl/issues")
-(documentation "A web framework for Reason and OCaml.")
+(documentation "https://github.com/oxidizing/sihl")
 
 (package
  (name sihl_core)
- (synopsis "A web framework for Reason and OCaml.")
+ (synopsis "A web framework for Reason and OCaml")
  (description "A web framework for Reason and OCaml to build web apps rapidly.")
+ (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -51,6 +52,9 @@
   ;; Hashing
   (safepass (>= 3.0))
 
+  ;; UUID
+  (uuidm (>= 0.9.7))
+
   ;; Helpers & Generation
   (sexplib (>= 0.13.0))
   (ppx_fields_conv (>= 0.13.0))
@@ -67,8 +71,9 @@
 
 (package
  (name sihl_users)
- (synopsis "A user management app for Sihl.")
+ (synopsis "A user management app for Sihl")
  (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
+ (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
