@@ -10,12 +10,12 @@
 (maintainers "josef@oxidizing.io")
 (homepage "https://github.com/oxidizing/sihl/")
 (bug_reports "https://github.com/oxidizing/sihl/issues")
-(documentation "") ; TODO
+(documentation "A web framework for Reason and OCaml.")
 
 (package
  (name sihl_core)
- (synopsis "A web framework for OCaml.")
- (description "A web framework for OCaml and Reason to build web apps rapidly.")
+ (synopsis "A web framework for Reason and OCaml.")
+ (description "A web framework for Reason and OCaml to build web apps rapidly.")
  (depends
   ;; General system dependencies
   (dune (>= 2))

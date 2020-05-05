@@ -8,7 +8,7 @@ maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben"]
 license: "MIT"
 homepage: "https://github.com/oxidizing/sihl/"
-doc: ""
+doc: "A web framework for Reason and OCaml."
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "dune" {>= "2"}
