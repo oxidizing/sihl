@@ -2,11 +2,10 @@
 (generate_opam_files true)
 
 (name sihl_core)
-(version 0.0.19)
+(version 0.0.20)
 
 (authors "Josef Erben")
 (license MIT)
-(source (uri "git@github.com:oxidizing/sihl.git"))
 (maintainers "josef@oxidizing.io")
 (homepage "https://github.com/oxidizing/sihl")
 (bug_reports "https://github.com/oxidizing/sihl/issues")
@@ -79,6 +78,7 @@
   (dune (>= 2))
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
+  (sihl_core (>= 0.0.20))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
