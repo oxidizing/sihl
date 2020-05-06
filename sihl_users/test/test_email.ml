@@ -46,7 +46,7 @@ let test_user_registers_and_confirms_email _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
   in
   let* body = Cohttp_lwt.Body.to_string body in
-  let Sihl_users.Handler.Login.{ token } =
+  let Sihl_users.Handler.Login.{ token; _ } =
     body |> Yojson.Safe.from_string
     |> Sihl_users.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
   in

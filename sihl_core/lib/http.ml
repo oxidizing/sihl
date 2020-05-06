@@ -138,6 +138,7 @@ module Response = struct
     headers : headers;
     status : int;
     session : change_session;
+    file : string option;
   }
 
   let status status resp = { resp with status }
@@ -166,6 +167,7 @@ module Response = struct
       headers = [];
       status = 200;
       session = Nothing;
+      file = None;
     }
 
   let json body =
@@ -175,6 +177,7 @@ module Response = struct
       headers = [];
       status = 200;
       session = Nothing;
+      file = None;
     }
 
   let html body =
@@ -184,6 +187,17 @@ module Response = struct
       headers = [];
       status = 200;
       session = Nothing;
+      file = None;
+    }
+
+  let file path =
+    {
+      content_type = Html;
+      body = None;
+      headers = [];
+      status = 200;
+      session = Nothing;
+      file = Some path;
     }
 
   let to_cohttp resp =
@@ -192,8 +206,13 @@ module Response = struct
       Cohttp.Header.add headers "Content-Type" (content_type resp.content_type)
     in
     let code = Cohttp.Code.status_of_code resp.status in
-    let body = resp.body |> Option.value ~default:Msg.ok_string in
-    let co_resp = Opium.Std.respond ~headers ~code (`String body) in
+    let body =
+      match (resp.body, resp.file) with
+      | Some body, _ -> `String body
+      | _, Some path -> `String path
+      | _ -> `String Msg.ok_string
+    in
+    let co_resp = Opium.Std.respond ~headers ~code body in
     match resp.session with
     | Nothing -> co_resp
     | SetSession token ->

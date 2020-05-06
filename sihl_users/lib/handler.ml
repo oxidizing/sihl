@@ -5,13 +5,13 @@ let ( let* ) = Lwt.bind
 module Login = struct
   open Sihl_core
 
-  type body_out = { token : string } [@@deriving yojson]
+  type body_out = { token : string; user_id : string } [@@deriving yojson]
 
   let handler =
     Http.get "/users/login/" @@ fun req ->
     let user = Middleware.Authn.authenticate req in
     let* token = Service.User.token req user in
-    let response = { token = Model.Token.value token } in
+    let response = { token = Model.Token.value token; user_id = user.id } in
     response |> body_out_to_yojson |> Yojson.Safe.to_string
     |> Http.Response.json |> Lwt.return
 end
