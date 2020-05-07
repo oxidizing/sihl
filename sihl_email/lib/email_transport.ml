@@ -1,20 +1,16 @@
 open Base
 
-module Console : Contract.Email.TRANSPORT = struct
+module Console = struct
   let send email =
     let _ = Logs.info (fun m -> m "%s" (Email_core.show email)) in
     Lwt.return @@ Ok ()
 end
 
-module Smtp : Contract.Email.TRANSPORT = struct
+module Smtp = struct
   let send _ = Lwt.return @@ Error "Not implemented"
 end
 
-module DevInbox : sig
-  include Contract.Email.TRANSPORT
-
-  val get : unit -> Email_core.t
-end = struct
+module DevInbox = struct
   let dev_inbox : Email_core.t option ref = ref None
 
   let get () = Option.value_exn ~message:"no dev email found" !dev_inbox

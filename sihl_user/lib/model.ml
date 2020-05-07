@@ -127,7 +127,7 @@ Josef
 
     let create token user =
       let text =
-        Sihl_core.Email.render
+        Sihl_email.Email.render
           [
             ("base_url", "http://localhost:3000");
             ( "name",
@@ -136,7 +136,7 @@ Josef
           ]
           template
       in
-      Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
+      Sihl_email.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
         ~subject:"Email Address Confirmation" ~text
   end
 
@@ -155,7 +155,7 @@ Josef
 
     let create token user =
       let text =
-        Sihl_core.Email.render
+        Sihl_email.Email.render
           [
             ("base_url", "http://localhost:3000");
             ( "name",
@@ -164,7 +164,7 @@ Josef
           ]
           template
       in
-      Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
+      Sihl_email.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
         ~subject:"Password Reset" ~text
   end
 end
