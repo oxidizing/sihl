@@ -10,14 +10,14 @@ let test_user_fetches_all_users_fails _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"foobar"
+    @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"foobar"
   in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user2@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user2@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
   in
@@ -32,14 +32,14 @@ let test_admin_fetches_all_users _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"foobar"
+    @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"foobar"
   in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_admin ~email:"admin@example.com"
+    @@ Sihl_user.Seed.logged_in_admin ~email:"admin@example.com"
          ~password:"password"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
   in
@@ -49,7 +49,7 @@ let test_admin_fetches_all_users _ () =
   let* body = Cohttp_lwt.Body.to_string body in
   let users_length =
     body |> Yojson.Safe.from_string
-    |> Sihl_users.Handler.GetUsers.body_out_of_yojson |> Result.ok_or_failwith
+    |> Sihl_user.Handler.GetUsers.body_out_of_yojson |> Result.ok_or_failwith
     |> List.length
   in
   let () = Alcotest.(check int) "Returns two users" 2 users_length in
@@ -59,10 +59,10 @@ let test_user_updates_password _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let body =
     {|
        {
@@ -96,14 +96,14 @@ let test_user_updates_others_password_fails _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar1"
   in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"user2@example.com" ~password:"foobar2"
+    @@ Sihl_user.Seed.user ~email:"user2@example.com" ~password:"foobar2"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let body =
     {|
        {
@@ -128,10 +128,10 @@ let test_user_updates_own_details _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let body =
     {|
        {
@@ -150,7 +150,7 @@ let test_user_updates_own_details _ () =
   in
   let* body = Cohttp_lwt.Body.to_string body in
   let user =
-    body |> Yojson.Safe.from_string |> Sihl_users.Model.User.of_yojson
+    body |> Yojson.Safe.from_string |> Sihl_user.Model.User.of_yojson
     |> Result.ok_or_failwith
   in
   Lwt.return
@@ -161,15 +161,15 @@ let test_user_updates_others_details_fails _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar1"
   in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user2@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user2@example.com"
          ~password:"foobar2"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let body =
     {|
        {
@@ -193,15 +193,15 @@ let test_admin_sets_password _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_admin ~email:"admin@example.com"
+    @@ Sihl_user.Seed.logged_in_admin ~email:"admin@example.com"
          ~password:"password"
   in
   let* user, _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"user1@example.com"
+    @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let user_id = user.id in
   let body =
     [%string

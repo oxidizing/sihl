@@ -1,6 +1,6 @@
 (library
- (name sihl_users)
- (public_name sihl_users)
+ (name sihl_user)
+ (public_name sihl_user)
  (libraries
   base
   sihl_core

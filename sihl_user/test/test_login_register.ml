@@ -32,9 +32,9 @@ let test_register_user_login_and_own_user _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
   in
   let* body = Cohttp_lwt.Body.to_string body in
-  let Sihl_users.Handler.Login.{ token; _ } =
+  let Sihl_user.Handler.Login.{ token; _ } =
     body |> Yojson.Safe.from_string
-    |> Sihl_users.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
+    |> Sihl_user.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
   in
   let () =
     Alcotest.(check bool) "Returns token" true (not @@ String.is_empty token)
@@ -46,8 +46,8 @@ let test_register_user_login_and_own_user _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
   in
   let* body = body |> Cohttp_lwt.Body.to_string in
-  let Sihl_users.Model.User.{ email; _ } =
-    body |> Yojson.Safe.from_string |> Sihl_users.Model.User.of_yojson
+  let Sihl_user.Model.User.{ email; _ } =
+    body |> Yojson.Safe.from_string |> Sihl_user.Model.User.of_yojson
     |> Result.ok_or_failwith
   in
 
@@ -75,7 +75,7 @@ let test_register_existing_user_fails _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321"
+    @@ Sihl_user.Seed.user ~email:"foobar@example.com" ~password:"321"
   in
   let body =
     {|
@@ -98,10 +98,9 @@ let test_fetch_user_after_logout_fails _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _, token =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.logged_in_user ~email:"foobar@example.com"
-         ~password:"321"
+    @@ Sihl_user.Seed.logged_in_user ~email:"foobar@example.com" ~password:"321"
   in
-  let token = Sihl_users.Model.Token.value token in
+  let token = Sihl_user.Model.Token.value token in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
   in
@@ -124,7 +123,7 @@ let test_login_with_wrong_credentials_fails _ () =
   let* () = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"foobar@example.com" ~password:"321"
+    @@ Sihl_user.Seed.user ~email:"foobar@example.com" ~password:"321"
   in
   let auth = "foobar@example.com:wrongpassword" |> Base64.encode_exn in
   let headers = Cohttp.Header.of_list [ ("authorization", "Basic " ^ auth) ] in

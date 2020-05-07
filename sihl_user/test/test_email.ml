@@ -46,9 +46,9 @@ let test_user_registers_and_confirms_email _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
   in
   let* body = Cohttp_lwt.Body.to_string body in
-  let Sihl_users.Handler.Login.{ token; _ } =
+  let Sihl_user.Handler.Login.{ token; _ } =
     body |> Yojson.Safe.from_string
-    |> Sihl_users.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
+    |> Sihl_user.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
   in
   let () =
     Alcotest.(check bool) "Returns token" true (not @@ String.is_empty token)
@@ -60,8 +60,8 @@ let test_user_registers_and_confirms_email _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
   in
   let* body = body |> Cohttp_lwt.Body.to_string in
-  let Sihl_users.Model.User.{ confirmed; _ } =
-    body |> Yojson.Safe.from_string |> Sihl_users.Model.User.of_yojson
+  let Sihl_user.Model.User.{ confirmed; _ } =
+    body |> Yojson.Safe.from_string |> Sihl_user.Model.User.of_yojson
     |> Result.ok_or_failwith
   in
   let () = Alcotest.(check bool) "Has confirmed email" true confirmed in
@@ -71,7 +71,7 @@ let test_user_resets_password _ () =
   let* _ = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"
+    @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"password"
   in
   let body = {|{"email": "user1@example.com"}|} in
   let* _ =
@@ -105,11 +105,11 @@ let test_user_uses_reset_token_twice_fails _ () =
   let* _ = Sihl_core.Manage.clean () in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.user ~email:"user1@example.com" ~password:"password"
+    @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"password"
   in
   let* _ =
     Sihl_core.Test.seed
-    @@ Sihl_users.Seed.admin ~email:"admin@example.com" ~password:"password"
+    @@ Sihl_user.Seed.admin ~email:"admin@example.com" ~password:"password"
   in
   let body = {|{"email": "user1@example.com"}|} in
   let* _ =

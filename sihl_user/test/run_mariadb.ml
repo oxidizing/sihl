@@ -4,14 +4,14 @@ let config =
       [
         ("BASE_URL", "http://localhost:3000");
         ("EMAIL_SENDER", "josef@oxidizing.io");
-        ("DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev");
+        ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev");
         ("EMAIL_BACKEND", "console");
       ]
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
         ("EMAIL_SENDER", "josef@oxidizing.io");
-        ("DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev");
+        ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev");
         ("EMAIL_BACKEND", "memory");
       ]
     ~production:
@@ -24,6 +24,17 @@ let config =
         ("SMTP_AUTH_USERNAME", "apikey");
       ]
 
-let project = Sihl_core.Run.Project.create ~config [ (module Sihl_users.App) ]
+let bind () =
+  [
+    Sihl_core.Registry.bind Sihl_user.Contract.repository
+      (module Sihl_user.Database.MariaDb.Repository);
+    Sihl_core.Registry.bind Sihl_user.Contract.migration
+      (module Sihl_user.Database.MariaDb.Migration);
+    Sihl_core.Registry.bind Sihl_core.Contract.Migration.repository
+      (module Sihl_core.Db.Migrate.MariaDbRepository);
+  ]
+
+let project =
+  Sihl_core.Run.Project.create ~bind ~config [ (module Sihl_user.App) ]
 
 let () = Sihl_core.Run.Project.run_command project

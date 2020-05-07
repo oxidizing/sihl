@@ -69,7 +69,7 @@
 ))
 
 (package
- (name sihl_users)
+ (name sihl_user)
  (synopsis "A user management app for Sihl")
  (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
  (license MIT)

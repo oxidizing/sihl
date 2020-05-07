@@ -2,7 +2,7 @@
  (name run)
  (libraries
   base
-  sihl_users
+  sihl_user
   alcotest
   alcotest-lwt
   )
