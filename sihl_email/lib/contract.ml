@@ -7,6 +7,10 @@ module type REPOSITORY = sig
   val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 end
 
+let migration :
+    (module Sihl_core.Contract.Migration.MIGRATION) Sihl_core.Registry.Key.t =
+  Sihl_core.Registry.Key.create "emails migration"
+
 let repository : (module REPOSITORY) Sihl_core.Registry.Key.t =
   Sihl_core.Registry.Key.create "email template repository"
 

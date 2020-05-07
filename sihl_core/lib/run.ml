@@ -85,7 +85,7 @@ module Project : PROJECT = struct
     Lwt.return @@ Ok ()
 
   let setup_logger () =
-    let log_level = Some Logs.Debug in
+    let log_level = Some Logs.Error in
     let () = Logs_fmt.reporter () |> Logs.set_reporter in
     let () = Logs.set_level log_level in
     Logs.info (fun m -> m "logger set up")

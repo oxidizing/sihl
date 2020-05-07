@@ -18,7 +18,11 @@ let config () =
 
 let middlewares () = []
 
-let migrations () = Migration_postgres.migration ()
+let migrations () =
+  let (module Migration : Sihl_core.Contract.Migration.MIGRATION) =
+    Sihl_core.Registry.get Contract.migration
+  in
+  Migration.migration ()
 
 let repositories () = []
 

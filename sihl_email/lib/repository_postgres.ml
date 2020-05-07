@@ -15,7 +15,7 @@ module Sql = struct
         |sql}
         record_out]
 
-  let insert =
+  let upsert =
     [%rapper
       execute
         {sql|
