@@ -27,9 +27,14 @@ let migrations () =
 let repositories () = []
 
 let bind () =
+  (* TODO this is not lazy evaluated, make it lazy *)
   [
     Sihl_core.Registry.bind Contract.repository (module Repository_postgres);
     Service.bind ();
   ]
 
 let commands () = []
+
+let start () = Ok ()
+
+let stop () = Ok ()

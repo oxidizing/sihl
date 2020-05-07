@@ -59,6 +59,7 @@ let repositories () =
   [ Repository.clean ]
 
 let bind () =
+  (* TODO this is not lazy evaluated, make it lazy *)
   [
     Sihl_core.Registry.bind Contract.repository
       (module Database.Postgres.Repository);
