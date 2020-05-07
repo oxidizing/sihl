@@ -9,3 +9,8 @@ end
 
 let repository : (module REPOSITORY) Sihl_core.Registry.Key.t =
   Sihl_core.Registry.Key.create "email template repository"
+
+let transport :
+    (module Sihl_core.Contract.Email.EMAIL with type email = Model.Email.t)
+    Sihl_core.Registry.Key.t =
+  Sihl_core.Registry.Key.create "email transport"

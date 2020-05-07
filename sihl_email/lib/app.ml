@@ -23,6 +23,9 @@ let migrations () = Migration_postgres.migration ()
 let repositories () = []
 
 let bind () =
-  [ Sihl_core.Registry.bind Contract.repository (module Repository_postgres) ]
+  [
+    Sihl_core.Registry.bind Contract.repository (module Repository_postgres);
+    Service.bind ();
+  ]
 
 let commands () = []

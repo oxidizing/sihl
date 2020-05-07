@@ -1,44 +1,7 @@
 open Base
+open Model.Email
 
 let ( let* ) = Lwt.bind
-
-type t = {
-  sender : string;
-  recipient : string;
-  subject : string;
-  content : string;
-  cc : string list;
-  bcc : string list;
-  html : bool;
-  template_id : string option;
-  template_data : (string * string) list;
-}
-
-let create ~sender ~recipient ~subject ~content ~cc ~bcc ~html ~template_id
-    ~template_data =
-  {
-    sender;
-    recipient;
-    subject;
-    content;
-    cc;
-    bcc;
-    html;
-    template_id;
-    template_data;
-  }
-
-let replace_element str k v =
-  let regexp = Str.regexp @@ "{" ^ k ^ "}" in
-  Str.global_replace regexp v str
-
-let render data template =
-  let rec render_value data value =
-    match data with
-    | [] -> value
-    | (k, v) :: data -> render_value data @@ replace_element value k v
-  in
-  render_value data (Model.Template.value template)
 
 module Console : Sihl_core.Contract.Email.EMAIL with type email = t = struct
   type email = t
@@ -123,7 +86,7 @@ module Smtp : Sihl_core.Contract.Email.EMAIL with type email = t = struct
     Lwt.return @@ Error "Not implemented"
 end
 
-module DevInbox : sig
+module Memory : sig
   include Sihl_core.Contract.Email.EMAIL
 
   val get : unit -> t
@@ -170,3 +133,18 @@ with type email = t = struct
     dev_inbox := Some email;
     Lwt.return @@ Ok ()
 end
+
+let send request email =
+  let (module Email : Sihl_core.Contract.Email.EMAIL with type email = t) =
+    Sihl_core.Registry.get Contract.transport
+  in
+  Email.send request email
+
+let bind () =
+  let backend =
+    Sihl_core.Config.read_string ~default:"devinbox" "EMAIL_BACKEND"
+  in
+  match backend with
+  | "smtp" -> Sihl_core.Registry.bind Contract.transport (module Smtp)
+  | "console" -> Sihl_core.Registry.bind Contract.transport (module Console)
+  | _ -> Sihl_core.Registry.bind Contract.transport (module Memory)
