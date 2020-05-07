@@ -1,28 +1,10 @@
 module Email = struct
   module type EMAIL = sig
-    val send :
-      sender:string ->
-      ?cc:string list ->
-      ?bcc:string list ->
-      recipient:string ->
-      subject:string ->
-      content:string ->
-      ?html:bool ->
-      ?template_id:string ->
-      ?template_data:(string * string) list ->
-      (unit, string) result Lwt.t
+    type email
 
-    val queue :
-      sender:string ->
-      ?cc:string list ->
-      ?bcc:string list ->
-      recipient:string ->
-      content:string ->
-      subject:string ->
-      ?html:bool ->
-      ?template_id:string ->
-      ?template_data:(string * string) list ->
-      (unit, string) result Lwt.t
+    val send : Opium.Std.Request.t -> email -> (unit, string) result Lwt.t
+
+    (* val queue : Opium.Std.Request.t -> email -> (unit, string) result Lwt.t *)
   end
 
   module type REPOSITORY = sig

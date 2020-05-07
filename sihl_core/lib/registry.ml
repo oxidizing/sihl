@@ -21,7 +21,7 @@ let get key =
   | Some implementation -> implementation
   | None ->
       let _ =
-        Logs.info (fun m -> m "implementation not found for %s" (Key.info key))
+        Logs.err (fun m -> m "implementation not found for %s" (Key.info key))
       in
       failwith @@ "implementation not found for " ^ Key.info key
 

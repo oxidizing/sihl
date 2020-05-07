@@ -145,7 +145,7 @@ module Migrate = struct
 CREATE TABLE IF NOT EXISTS core_migration_state (
   namespace VARCHAR(128) NOT NULL PRIMARY KEY,
   version INTEGER,
-  dirty BOOL
+  dirty BOOL NOT NULL
 );
  |sql}]
 
@@ -190,7 +190,7 @@ dirty = %bool{dirty}
 CREATE TABLE IF NOT EXISTS core_migration_state (
   namespace VARCHAR(128) NOT NULL,
   version INTEGER,
-  dirty BOOL,
+  dirty BOOL NOT NULL,
   PRIMARY KEY (namespace)
 );
  |sql}
@@ -299,9 +299,10 @@ dirty = VALUES(dirty)
       match steps with
       | [] -> Lwt_result.return ()
       | (name, query) :: steps -> (
-          Logs_lwt.info (fun m -> m "Running: %s\n" name) >>= fun () ->
+          Logs.info (fun m -> m "running: %s\n" name);
           query_pool (fun c -> query c ()) pool >>= function
           | Ok () ->
+              Logs.info (fun m -> m "ran: %s\n" name);
               let* _ = State.Service.increment pool ~namespace in
               run steps pool
           | Error err ->

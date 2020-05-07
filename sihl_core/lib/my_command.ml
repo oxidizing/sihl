@@ -71,6 +71,18 @@ module Builtin = struct
           Lwt.return @@ Ok ()
       | _ -> Lwt.return @@ Error "wrong usage"
 
-    let command start = create ~name:"start" ~description:"start" ~fn:(fn start)
+    let command start =
+      create ~name:"start" ~description:"starts the project" ~fn:(fn start)
+  end
+
+  module Migrate = struct
+    let fn migrate _ args =
+      match args with
+      | "migrate" :: _ -> migrate ()
+      | _ -> Lwt.return @@ Error "wrong usage"
+
+    let command migrate =
+      create ~name:"migrate" ~description:"applies all migrations"
+        ~fn:(fn migrate)
   end
 end

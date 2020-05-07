@@ -24,6 +24,8 @@ let config =
         ("SMTP_AUTH_USERNAME", "apikey");
       ]
 
-let project = Sihl_core.Run.Project.create ~config [ (module Sihl_user.App) ]
+let project =
+  Sihl_core.Run.Project.create ~config
+    [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl_core.Run.Project.run_command project

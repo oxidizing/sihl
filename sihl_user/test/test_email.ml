@@ -32,8 +32,8 @@ let test_user_registers_and_confirms_email _ () =
       ~body:(Cohttp_lwt.Body.of_string body)
       (Uri.of_string @@ url "/register/")
   in
-  let email = Sihl_email.Email.last_dev_email () in
-  let token = extract_token email.text in
+  let email = Sihl_email.Service.DevInbox.get () in
+  let token = extract_token email.content in
   let* _ =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string @@ url ("/confirm-email/?token=" ^ token))
@@ -79,8 +79,8 @@ let test_user_resets_password _ () =
       ~body:(Cohttp_lwt.Body.of_string body)
       (Uri.of_string @@ url "/request-password-reset/")
   in
-  let email = Sihl_email.Email.last_dev_email () in
-  let token = extract_token email.text in
+  let email = Sihl_email.Service.DevInbox.get () in
+  let token = extract_token email.content in
   let body =
     [%string {|{"token": "$(token)", "new_password": "newpassword"}|}]
   in
@@ -117,8 +117,8 @@ let test_user_uses_reset_token_twice_fails _ () =
       ~body:(Cohttp_lwt.Body.of_string body)
       (Uri.of_string @@ url "/request-password-reset/")
   in
-  let email = Sihl_email.Email.last_dev_email () in
-  let token = extract_token email.text in
+  let email = Sihl_email.Service.DevInbox.get () in
+  let token = extract_token email.content in
   let body =
     [%string {|{"token": "$(token)", "new_password": "newpassword"}|}]
   in

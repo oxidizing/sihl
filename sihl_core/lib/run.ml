@@ -178,6 +178,7 @@ module Project : PROJECT = struct
         [
           My_command.Builtin.Version.command;
           My_command.Builtin.Start.command (fun () -> start project);
+          My_command.Builtin.Migrate.command (fun () -> migrate project);
         ];
       ]
 
@@ -197,6 +198,8 @@ module Project : PROJECT = struct
         ^ String.concat ~sep:", " args
       in
       let () = setup_config project in
+      let () = bind_registry project in
+
       let commands =
         project.apps
         |> List.map ~f:(fun (module App : APP) -> App.commands ())
