@@ -64,9 +64,14 @@ module Project : PROJECT = struct
   let start_http_server project =
     let middlewares = merge_middlewares project in
     let () = Logs.info (fun m -> m "http server starting") in
+    let static_files_path =
+      Config.read_string ~default:"./static" "STATIC_FILES_DIR"
+    in
     let app =
-      App.empty |> App.cmd_name "Project"
-      |> middleware Opium.Std.Cookie.m
+      App.empty |> App.cmd_name "Project" |> middleware Cookie.m
+      |> middleware
+         @@ Middleware.static ~local_path:static_files_path
+              ~uri_prefix:"/assets" ()
       |> Http.handle_error_m |> Db.middleware
       |> add_middlewares middlewares
     in
