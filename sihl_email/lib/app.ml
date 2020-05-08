@@ -6,8 +6,9 @@ let config () =
   Sihl_core.Config.Schema.
     [
       string_ ~default:"console"
-        ~choices:[ "smtp"; "console"; "memory" ]
+        ~choices:[ "smtp"; "console"; "memory"; "sendgrid" ]
         "EMAIL_BACKEND";
+      string_ ~required_if:("EMAIL_BACKEND", "sendgrid") "SENDGRID_API_KEY";
       string_ ~required_if:("EMAIL_BACKEND", "smtp") "SMTP_HOST";
       int_ ~required_if:("EMAIL_BACKEND", "smtp") "SMTP_PORT";
       string_ ~required_if:("EMAIL_BACKEND", "smtp") "SMTP_AUTH_USERNAME";
