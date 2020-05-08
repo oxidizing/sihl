@@ -6,6 +6,11 @@ type content_type = Html | Json
 
 let content_type = function Html -> "text/html" | Json -> "application/json"
 
+let accepts_html req =
+  Cohttp.Header.get (Opium.Std.Request.headers req) "Accept"
+  |> Option.value_map ~default:false ~f:(fun a ->
+         String.is_substring a ~substring:"text/html")
+
 let require_auth req =
   match req |> Cohttp.Header.get_authorization with
   | None -> Fail.raise_bad_request "No authorization header found"
@@ -22,7 +27,7 @@ let query_opt req key =
 
 let query req key =
   match query_opt req key with
-  | None -> Fail.raise_bad_request "required query not found key= " ^ key
+  | None -> Fail.raise_bad_request [%string "Please provide a key $(key)"]
   | Some value -> value
 
 let query2_opt req key1 key2 = (query_opt req key1, query_opt req key2)
@@ -33,6 +38,25 @@ let query3_opt req key1 key2 key3 =
   (query_opt req key1, query_opt req key2, query_opt req key3)
 
 let query3 req key1 key2 key3 = (query req key1, query req key2, query req key3)
+
+let url_encoded ?body req key =
+  (* we need to be able to pass in the body because Opium.Std.Request.body drains
+     the body stream from the request *)
+  let* body =
+    match body with
+    | Some body -> Lwt.return body
+    | None -> req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+  in
+  match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
+  | None ->
+      Lwt.return @@ Fail.raise_bad_request [%string "Please provide a $(key)."]
+  | Some value -> Lwt.return value
+
+let url_encoded2 req key1 key2 =
+  let* body = req |> Opium.Std.Request.body |> Opium.Std.Body.to_string in
+  let* value1 = url_encoded ~body req key1 in
+  let* value2 = url_encoded ~body req key2 in
+  Lwt.return (value1, value2)
 
 let param = Opium.Std.param
 
@@ -68,64 +92,6 @@ let code_of_error error =
   | Fail.Error.Configuration _ | Fail.Error.Email _ | Fail.Error.Database _
   | Fail.Error.Server _ ->
       500 |> Cohttp.Code.status_of_code
-
-let handle_error_m app =
-  let filter handler req =
-    let* response = Fail.try_to_run (fun () -> handler req) in
-    let accepts_html =
-      Cohttp.Header.get (Opium.Std.Request.headers req) "Accept"
-      |> Option.value_map ~default:false ~f:(fun a ->
-             String.is_substring a ~substring:"text/html")
-    in
-    match (accepts_html, response) with
-    | _, Ok response -> Lwt.return response
-    | false, Error error ->
-        let msg = Fail.Error.show error in
-        Logs.err (fun m -> m "%s" msg);
-        let headers =
-          Cohttp.Header.of_list [ ("Content-Type", "application/json") ]
-        in
-        let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
-        Opium.Std.Response.create ~headers ~body ~code:(code_of_error error) ()
-        |> Lwt.return
-    | ( true,
-        Error (Fail.Error.NotAuthenticated msg | Fail.Error.NoPermissions msg) )
-      ->
-        (* TODO set flash to msg, redirect to some default location *)
-        Logs.err (fun m -> m "%s" msg);
-        (* TODO evaluate whether the error handler should really remove invalid cookies *)
-        let headers =
-          Cohttp.Header.of_list
-            [ ("Content-Type", "text/html"); ("Location", "/admin/login/") ]
-        in
-        let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
-        Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
-        |> Opium.Std.Cookie.set
-             ~expiration:(`Max_age (Int64.of_int 0))
-             ~http_only:true ~secure:false ~key:"session_id"
-             ~data:"session_ended"
-        |> Lwt.return
-    | ( true,
-        Error
-          ( Fail.Error.BadRequest msg
-          | Fail.Error.Configuration msg
-          | Fail.Error.Database msg
-          | Fail.Error.Email msg
-          | Fail.Error.Server msg ) ) ->
-        (* TODO set flash to msg, redirect to some default location *)
-        Logs.err (fun m -> m "%s" msg);
-        let headers =
-          Cohttp.Header.of_list
-            (* TODO forward to custom error page *)
-            [ ("Content-Type", "text/html"); ("Location", "/admin/dashboard/") ]
-        in
-        let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
-        Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
-        |> Lwt.return
-  in
-
-  let m = Opium.Std.Rock.Middleware.create ~name:"error handler" ~filter in
-  Opium.Std.middleware m app
 
 module Response = struct
   type headers = (string * string) list

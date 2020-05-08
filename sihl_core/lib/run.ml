@@ -40,8 +40,6 @@ module type PROJECT = sig
 end
 
 module Project : PROJECT = struct
-  open Opium.Std
-
   type t = {
     apps : (module APP) list;
     config : Config.Setting.t;
@@ -68,15 +66,17 @@ module Project : PROJECT = struct
       Config.read_string ~default:"./static" "STATIC_FILES_DIR"
     in
     let app =
-      App.empty |> App.cmd_name "Project" |> middleware Cookie.m
-      |> middleware
-         @@ Middleware.static ~local_path:static_files_path
+      Opium.Std.App.empty
+      |> Opium.Std.App.cmd_name "Project"
+      |> Opium.Std.middleware Opium.Std.Cookie.m
+      |> Opium.Std.middleware
+         @@ Opium.Std.Middleware.static ~local_path:static_files_path
               ~uri_prefix:"/assets" ()
-      |> Http.handle_error_m |> Db.middleware
+      |> Middleware.flash |> Middleware.error |> Db.middleware
       |> add_middlewares middlewares
     in
     (* detaching from the thread so tests can run in the same process *)
-    let _ = App.start app in
+    let _ = Opium.Std.App.start app in
     let () = Logs.info (fun m -> m "http server started") in
     Lwt.return @@ Ok ()
 

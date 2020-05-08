@@ -63,18 +63,3 @@ module Authn = struct
     let m = Rock.Middleware.create ~name:"http token authn" ~filter in
     middleware m app
 end
-
-module Flash = struct
-  (* TODO implement flash
-     if accept is not text/html, do nothing (so json API doesn't care)
-     a. request comes in and flash cookie is not set
-     a1. create and store token
-     a2. create and store flash {token: string; color: string; text: string} in memory
-     a3. create flash cookie with token
-     a4. set Set-Cookie header
-     b. request comes in a flash cookie is set, there is no next flash stored
-     b1. if there is a current flash, remove it
-     c. request comes in and flash cookie is set, there is a next flash stored
-     c1. set current flash to next flash, set next flash to empty
-  *)
-end
