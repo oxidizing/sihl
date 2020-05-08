@@ -58,12 +58,11 @@ let repositories () =
   in
   [ Repository.clean ]
 
-let bind () =
-  (* TODO this is not lazy evaluated, make it lazy *)
+let bindings () =
   [
-    Sihl_core.Registry.bind Contract.repository
+    Sihl_core.Registry.Binding.create Contract.repository
       (module Database.Postgres.Repository);
-    Sihl_core.Registry.bind Contract.migration
+    Sihl_core.Registry.Binding.create Contract.migration
       (module Database.Postgres.Migration);
   ]
 

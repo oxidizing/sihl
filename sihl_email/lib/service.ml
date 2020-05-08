@@ -145,6 +145,7 @@ let bind () =
     Sihl_core.Config.read_string ~default:"devinbox" "EMAIL_BACKEND"
   in
   match backend with
-  | "smtp" -> Sihl_core.Registry.bind Contract.transport (module Smtp)
-  | "console" -> Sihl_core.Registry.bind Contract.transport (module Console)
-  | _ -> Sihl_core.Registry.bind Contract.transport (module Memory)
+  | "smtp" -> Sihl_core.Registry.Binding.create Contract.transport (module Smtp)
+  | "console" ->
+      Sihl_core.Registry.Binding.create Contract.transport (module Console)
+  | _ -> Sihl_core.Registry.Binding.create Contract.transport (module Memory)

@@ -24,7 +24,7 @@ let config =
         ("SMTP_AUTH_USERNAME", "apikey");
       ]
 
-let bind () =
+let bindings =
   [
     Sihl_core.Registry.bind Sihl_email.Contract.repository
       (module Sihl_email.Repository_mariadb);
@@ -39,7 +39,7 @@ let bind () =
   ]
 
 let project =
-  Sihl_core.Run.Project.create ~bind ~config
+  Sihl_core.Run.Project.create ~bindings ~config
     [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl_core.Run.Project.run_command project

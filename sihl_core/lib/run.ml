@@ -15,7 +15,7 @@ module type APP = sig
 
   val repositories : unit -> (Db.connection -> unit Db.db_result) list
 
-  val bind : Registry.bind
+  val bindings : unit -> Registry.Binding.t list
 
   val commands : unit -> My_command.t list
 
@@ -28,7 +28,10 @@ module type PROJECT = sig
   type t
 
   val create :
-    ?bind:Registry.bind -> config:Config.Setting.t -> (module APP) list -> t
+    ?bindings:Registry.Binding.t list ->
+    config:Config.Setting.t ->
+    (module APP) list ->
+    t
 
   val start : t -> (unit, string) Result.t Lwt.t
 
@@ -47,13 +50,13 @@ module Project : PROJECT = struct
   type t = {
     apps : (module APP) list;
     config : Config.Setting.t;
-    bind : Registry.bind option;
+    bindings : Registry.Binding.t list option;
   }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ?bind ~config apps = { apps; config; bind }
+  let create ?bindings ~config apps = { apps; config; bindings }
 
   let merge_middlewares project =
     project.apps
@@ -68,7 +71,7 @@ module Project : PROJECT = struct
     let static_files_path =
       Config.read_string ~default:"./static" "STATIC_FILES_DIR"
     in
-    Logs.info (fun m -> m "http server starting");
+    Logs.debug (fun m -> m "http server starting");
     let app =
       Opium.Std.App.empty
       |> Opium.Std.App.cmd_name "Project"
@@ -81,14 +84,14 @@ module Project : PROJECT = struct
     in
     (* detaching from the thread so tests can run in the same process *)
     let _ = Opium.Std.App.start app in
-    Logs.info (fun m -> m "http server started");
+    Logs.debug (fun m -> m "http server started");
     Lwt.return @@ Ok ()
 
   let setup_logger () =
-    let log_level = Some Logs.Error in
+    let log_level = Some Logs.Debug in
     Logs_fmt.reporter () |> Logs.set_reporter;
     Logs.set_level log_level;
-    Logs.info (fun m -> m "logger set up")
+    Logs.debug (fun m -> m "logger set up")
 
   let migrate project =
     project.apps
@@ -97,15 +100,19 @@ module Project : PROJECT = struct
 
   let bind_registry project =
     (* TODO make it more explicit when binding core default implementations *)
-    Logs.info (fun m -> m "binding default core implementations");
-    Registry.bind Contract.Migration.repository
+    Logs.debug (fun m -> m "binding default core implementations");
+    Registry.Binding.register Contract.Migration.repository
       (module Db.Migrate.PostgresRepository);
-    Logs.info (fun m -> m "binding default implementations of apps");
+    Logs.debug (fun m -> m "binding default implementations of apps");
     project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.bind ())
+    |> List.map ~f:(fun (module App : APP) ->
+           List.map (App.bindings ()) ~f:Registry.Binding.apply)
     |> ignore;
-    Logs.info (fun m -> m "binding project implementations");
-    project.bind |> Option.map ~f:(fun bind -> bind ()) |> ignore
+    Logs.debug (fun m -> m "binding project implementations");
+    project.bindings
+    |> Option.map ~f:(fun bindings ->
+           List.map bindings ~f:Registry.Binding.apply)
+    |> ignore
 
   let setup_config project =
     let schemas =
@@ -133,7 +140,7 @@ module Project : PROJECT = struct
   let start project =
     setup_logger ();
     let apps = project |> app_names |> String.concat ~sep:", " in
-    Logs.info (fun m -> m "project starting with apps: %s" apps);
+    Logs.debug (fun m -> m "project starting with apps: %s" apps);
     setup_config project;
     bind_registry project;
     call_start_hooks project;
@@ -150,7 +157,7 @@ module Project : PROJECT = struct
       |> List.map ~f:(fun (module App : APP) -> App.repositories ())
       |> List.concat
     in
-    Logs.info (fun m -> m "cleaning up app database");
+    Logs.debug (fun m -> m "cleaning up app database");
     let rec execute cleaners =
       match cleaners with
       | [] -> Lwt.return @@ Ok ()
@@ -210,7 +217,7 @@ module Project : PROJECT = struct
           ()
       | None ->
           let help = My_command.help commands in
-          Logs.info (fun m -> m "%s" help)
+          Logs.debug (fun m -> m "%s" help)
     else
       Caml.print_string
       @@ "running with SIHL_ENV=test, ignore command line arguments \n"
