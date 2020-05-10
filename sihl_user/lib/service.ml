@@ -70,8 +70,9 @@ module User = struct
     let* () =
       Repository.Token.insert token |> Sihl_core.Db.query_db_exn request
     in
-    let email = Model.Email.Confirmation.create token user in
-    Sihl_core.Email.send_exn email
+    let email = Model.Email.create_confirmation token user in
+    let* result = Sihl_email.Service.send request email in
+    result |> Sihl_core.Fail.with_email |> Lwt.return
 
   let register ?(suppress_email = false) request ~email ~password ~username =
     let (module Repository : Contract.REPOSITORY) =
@@ -262,8 +263,8 @@ module User = struct
     let* () =
       Repository.Token.insert token |> Sihl_core.Db.query_db_exn request
     in
-    let email = Model.Email.PasswordReset.create token user in
-    let* result = Sihl_core.Email.send email in
+    let email = Model.Email.create_password_reset token user in
+    let* result = Sihl_email.Service.send request email in
     result |> Sihl_core.Fail.with_email |> Lwt.return
 
   let reset_password request ~token ~new_password =

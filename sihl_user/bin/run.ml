@@ -16,14 +16,12 @@ let config =
       ]
     ~production:
       [
-        ("EMAIL_BACKEND", "smtp");
+        ("EMAIL_BACKEND", "sendgrid");
         ("BASE_URL", "https://sihl-example-issues.oxidizing.io");
-        ("SMTP_SECURE", "false");
-        ("SMTP_HOST", "smtp.sendgrid.net");
-        ("SMTP_PORT", "587");
-        ("SMTP_AUTH_USERNAME", "apikey");
       ]
 
-let project = Sihl_core.Run.Project.create ~config [ (module Sihl_user.App) ]
+let project =
+  Sihl_core.Run.Project.create ~config
+    [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl_core.Run.Project.run_command project

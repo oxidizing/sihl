@@ -112,59 +112,29 @@ module Token = struct
 end
 
 module Email = struct
-  module Confirmation = struct
-    let template =
-      {|
-Hi {name},
+  let create_confirmation token user =
+    let name = User.username user |> Option.value ~default:(User.email user) in
+    Sihl_email.Model.Email.create ~sender:"josef@oxdizing.io"
+      ~recipient:(User.email user) ~subject:"Email Address Confirmation"
+      ~content:"" ~cc:[] ~bcc:[] ~html:false
+      ~template_id:(Some "fb7aec3f-2178-4166-beb4-79a3a663e093")
+      ~template_data:
+        [
+          ("base_url", "http://localhost:3000");
+          ("name", name);
+          ("token", Token.value token);
+        ]
 
-Thanks for signing up.
-
-Please go to this URL to confirm your email address: {base_url}/app/confirm-email?token={token}
-
-Best,
-Josef
-                  |}
-
-    let create token user =
-      let text =
-        Sihl_core.Email.render
-          [
-            ("base_url", "http://localhost:3000");
-            ( "name",
-              User.username user |> Option.value ~default:(User.email user) );
-            ("token", Token.value token);
-          ]
-          template
-      in
-      Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
-        ~subject:"Email Address Confirmation" ~text
-  end
-
-  module PasswordReset = struct
-    let template =
-      {|
-Hi {name},
-
-You requested to reset your password.
-
-Please go to this URL to reset your password: {base_url}/app/password-reset?token={token}
-
-Best,
-Josef
-                  |}
-
-    let create token user =
-      let text =
-        Sihl_core.Email.render
-          [
-            ("base_url", "http://localhost:3000");
-            ( "name",
-              User.username user |> Option.value ~default:(User.email user) );
-            ("token", Token.value token);
-          ]
-          template
-      in
-      Sihl_core.Email.create ~sender:"josef@oxdizing.io" ~recipient:user.email
-        ~subject:"Password Reset" ~text
-  end
+  let create_password_reset token user =
+    let name = User.username user |> Option.value ~default:(User.email user) in
+    Sihl_email.Model.Email.create ~sender:"josef@oxdizing.io"
+      ~recipient:(User.email user) ~subject:"Password Reset" ~content:"" ~cc:[]
+      ~bcc:[] ~html:false
+      ~template_id:(Some "fb7aec3f-2178-4166-beb4-79a3a663e092")
+      ~template_data:
+        [
+          ("base_url", "http://localhost:3000");
+          ("name", name);
+          ("token", Token.value token);
+        ]
 end

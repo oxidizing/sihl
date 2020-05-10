@@ -14,15 +14,35 @@ end
 
 let state = ref Hmap.empty
 
-let bind key implementation = state := Hmap.add key implementation !state
+module Binding : sig
+  type t
+
+  val create : 'a Hmap.key -> 'a -> t
+
+  val apply : t -> unit
+
+  val register : 'a Hmap.key -> 'a -> unit
+end = struct
+  type t = unit -> unit
+
+  let create key impl () =
+    state := Hmap.add key impl !state;
+    ()
+
+  let apply binding = binding ()
+
+  let register key impl = create key impl |> apply
+end
 
 let get key =
   match Hmap.find key !state with
   | Some implementation -> implementation
   | None ->
       let _ =
-        Logs.info (fun m -> m "implementation not found for %s" (Key.info key))
+        Logs.err (fun m -> m "implementation not found for %s" (Key.info key))
       in
       failwith @@ "implementation not found for " ^ Key.info key
 
-type bind = unit -> unit list
+let register = Binding.register
+
+let bind = Binding.create

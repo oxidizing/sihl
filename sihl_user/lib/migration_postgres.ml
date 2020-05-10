@@ -37,9 +37,59 @@ CREATE TABLE users_tokens (
 );
 |sql}]
 
+let add_confirmation_template =
+  [%rapper
+    execute
+      {sql|
+        INSERT INTO emails_templates (
+          uuid,
+          label,
+          value,
+          status
+        ) VALUES (
+          'fb7aec3f-2178-4166-beb4-79a3a663e093',
+          'registration_confirmation',
+          'Hi {name},
+
+Thanks for signing up.
+
+Please go to this URL to confirm your email address: {base_url}/app/confirm-email?token={token}
+
+Best,
+Josef',
+          'active'
+        )
+|sql}]
+
+let add_password_reset_template =
+  [%rapper
+    execute
+      {sql|
+        INSERT INTO emails_templates (
+          uuid,
+          label,
+          value,
+          status
+        ) VALUES (
+          'fb7aec3f-2178-4166-beb4-79a3a663e092',
+          'registration_confirmation',
+          'Hi {name},
+
+You requested to reset your password.
+
+Please go to this URL to reset your password: {base_url}/app/password-reset?token={token}
+
+Best,
+Josef',
+          'active'
+        )
+|sql}]
+
 let migration () =
   ( "users",
     [
       ("create users table", create_users_table);
       ("create tokens table", create_tokens_table);
+      ("add confirmation email template", add_confirmation_template);
+      ("add password reset email template", add_password_reset_template);
     ] )
