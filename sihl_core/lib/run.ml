@@ -71,9 +71,10 @@ module Project : PROJECT = struct
     let static_files_path =
       Config.read_string ~default:"./static" "STATIC_FILES_DIR"
     in
-    Logs.debug (fun m -> m "http server starting");
+    let port = Config.read_int ~default:3000 "PORT" in
+    Logs.debug (fun m -> m "http server starting on port %i" port);
     let app =
-      Opium.Std.App.empty
+      Opium.Std.App.empty |> Opium.Std.App.port port
       |> Opium.Std.App.cmd_name "Project"
       |> Opium.Std.middleware Opium.Std.Cookie.m
       |> Opium.Std.middleware
