@@ -71,6 +71,8 @@ module Project : PROJECT = struct
     let static_files_path =
       Config.read_string ~default:"./static" "STATIC_FILES_DIR"
     in
+    Logs.debug (fun m ->
+        m "http server starting with static folder set to %s" static_files_path);
     let port = Config.read_int ~default:3000 "PORT" in
     Logs.debug (fun m -> m "http server starting on port %i" port);
     let app =
