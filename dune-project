@@ -33,9 +33,6 @@
   ;; Database interface
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
-  (caqti-driver-postgresql (>= 1.2.1))
-  (caqti-driver-mariadb (>= 1.2.1))
-  (ppx_rapper (>= 0.9.2))
 
   ;; HTML generation
   (tyxml (>= 4.3.0))
