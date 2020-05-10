@@ -18,6 +18,10 @@ module type APP = sig
   val bind : Registry.bind
 
   val commands : unit -> My_command.t list
+
+  val start : unit -> (unit, string) Result.t
+
+  val stop : unit -> (unit, string) Result.t
 end
 
 module type PROJECT = sig
@@ -111,12 +115,30 @@ module Project : PROJECT = struct
     in
     Config.load_config schemas project.config
 
+  let call_start_hooks project =
+    let result =
+      project.apps
+      |> List.map ~f:(fun (module App : APP) ->
+             App.start ()
+             |> Result.map_error ~f:(fun err ->
+                    [%string
+                      "failure while calling start hook of app $(App.name) \
+                       with $(err)"]))
+      |> Result.all
+    in
+    match result with
+    | Ok _ -> ()
+    | Error msg ->
+        Logs.err (fun m -> m "%s" msg);
+        failwith msg
+
   let start project =
     let () = setup_logger () in
     let apps = project |> app_names |> String.concat ~sep:", " in
     let () = Logs.info (fun m -> m "project starting with apps: %s" apps) in
     let () = setup_config project in
     let () = bind_registry project in
+    let () = call_start_hooks project in
     (* TODO run migrations here? *)
     start_http_server project
 
