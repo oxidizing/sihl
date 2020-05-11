@@ -90,11 +90,12 @@ module User = struct
           ~confirmed:false
       in
       let* () =
-        Repository.User.insert user |> Sihl_core.Db.query_db_exn request
-      in
-      let* () =
-        if suppress_email then Lwt.return ()
-        else send_registration_email request user
+        Sihl_core.Db.query_db_with_trx_exn request (fun connection ->
+            let* () =
+              if suppress_email then Lwt.return ()
+              else send_registration_email request user
+            in
+            Repository.User.insert user connection)
       in
       Lwt.return user
 
