@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl_core)
-(version 0.0.20)
+(version 0.0.21)
 
 (authors "Josef Erben")
 (license MIT)
@@ -33,6 +33,9 @@
   ;; Database interface
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
+
+  ;; Database
+  (ppx_rapper (>= 0.9.2))
 
   ;; HTML generation
   (tyxml (>= 4.3.0))
