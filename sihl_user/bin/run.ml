@@ -18,6 +18,9 @@ let config =
       [
         ("EMAIL_BACKEND", "sendgrid");
         ("BASE_URL", "https://sihl-example-issues.oxidizing.io");
+        ("EMAIL_SENDER", "josef@oxidizing.io");
+        ("DATABASE_URL", "");
+        ("SENDGRID_API_KEY", "");
       ]
 
 let project =
