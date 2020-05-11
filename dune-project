@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl_core)
-(version 0.0.20)
+(version 0.0.21)
 
 (authors "Josef Erben")
 (license MIT)
@@ -33,6 +33,9 @@
   ;; Database interface
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
+
+  ;; Database
+  (ppx_rapper (>= 0.9.2))
 
   ;; HTML generation
   (tyxml (>= 4.3.0))
@@ -66,16 +69,18 @@
 ))
 
 (package
- (name sihl_user)
- (synopsis "A user management app for Sihl")
- (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
+ (name sihl_email)
+ (synopsis "An email management app for Sihl")
+ (description "Use this app to send single emails and schedule sending over various email backends.")
  (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
-  (sihl_core (>= 0.0.20))
+
+  ;; Sihl
+  (sihl_core (>= 0.0.21))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -92,16 +97,19 @@
 ))
 
 (package
- (name sihl_email)
- (synopsis "An email management app for Sihl")
- (description "Use this app to send single emails and schedule sending over various email backends.")
+ (name sihl_user)
+ (synopsis "A user management app for Sihl")
+ (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
  (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
-  (sihl_core (>= 0.0.20))
+
+  ;; Sihl
+  (sihl_core (>= 0.0.21))
+  (sihl_email (>= 0.0.21))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
