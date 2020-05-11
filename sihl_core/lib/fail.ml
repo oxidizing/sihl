@@ -1,3 +1,5 @@
+let ( let* ) = Lwt.bind
+
 module Error = struct
   type t =
     | BadRequest of string
@@ -109,3 +111,13 @@ let err_database msg = Error.Database msg
 let err_bad_request msg = Error.BadRequest msg
 
 let err_no_permission msg = Error.NoPermissions msg
+
+let database ?msg result =
+  let* result = result in
+  match result with
+  | Ok result -> Lwt.return result
+  | Error error ->
+      Logs.err (fun m -> m "%s" (Caqti_error.show error));
+      raise
+      @@ Exception.Database
+           (Option.value msg ~default:"a database error occurred")

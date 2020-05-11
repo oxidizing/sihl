@@ -94,14 +94,27 @@ let middleware app =
   let m = Rock.Middleware.create ~name:"database connection" ~filter in
   Opium.Std.middleware m app
 
+(* TODO a transaction should return a request and not a connection so it nicely composes with other service calls *)
 let query_db_with_trx request query =
   let ( let* ) = Lwt.bind in
   let connection = request |> Request.env |> Opium.Hmap.get key in
   let (module Connection : Caqti_lwt.CONNECTION) = connection in
+  let* start_result = Connection.start () in
+  let () =
+    match start_result with
+    | Ok _ -> ()
+    | Error error ->
+        Logs.err (fun m ->
+            m "failed to start transaction %s" (Caqti_error.show error));
+        Fail.raise_database
+          "failed to start transaction %s (Caqti_error.show error)"
+  in
   let* result = query connection in
   let* trx_result =
     match result with
-    | Ok _ -> Connection.commit ()
+    | Ok _ ->
+        Logs.info (fun m -> m "committing connection");
+        Connection.commit ()
     | Error error ->
         Logs.warn (fun m ->
             m "failed to run transaction, rolling back %s"

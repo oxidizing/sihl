@@ -90,12 +90,11 @@ module User = struct
           ~confirmed:false
       in
       let* () =
-        Sihl_core.Db.query_db_with_trx_exn request (fun connection ->
-            let* () =
-              if suppress_email then Lwt.return ()
-              else send_registration_email request user
-            in
-            Repository.User.insert user connection)
+        Repository.User.insert user |> Sihl_core.Db.query_db_exn request
+      in
+      let* () =
+        if suppress_email then Lwt.return ()
+        else send_registration_email request user
       in
       Lwt.return user
 
@@ -166,7 +165,7 @@ module User = struct
 
     let* user = get_by_email request ~email in
     let _ =
-      Model.User.is_valid user ~old_password ~new_password
+      Model.User.validate user ~old_password ~new_password
       |> Sihl_core.Fail.with_bad_request
            "invalid password provided TODO: make this msg optional"
     in
@@ -243,14 +242,12 @@ module User = struct
     else
       Sihl_core.Db.query_db_with_trx_exn request (fun connection ->
           let* () =
-            Repository.Token.update (Model.Token.inactivate token)
-            |> Sihl_core.Db.query_db_exn request
+            Repository.Token.update (Model.Token.inactivate token) connection
+            |> Sihl_core.Fail.database
           in
           let* user =
-            Repository.User.get ~id:token.user |> Sihl_core.Db.query_db request
-          in
-          let user =
-            user |> Sihl_core.Fail.with_bad_request "invalid token provided"
+            Repository.User.get ~id:token.user connection
+            |> Sihl_core.Fail.database
           in
           Repository.User.update (Model.User.confirm user) connection)
 

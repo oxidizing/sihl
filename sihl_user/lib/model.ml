@@ -35,7 +35,7 @@ module User = struct
     if String.length password > 8 then Ok ()
     else Error "new password has to be longer than 8"
 
-  let is_valid user ~old_password ~new_password =
+  let validate user ~old_password ~new_password =
     let matches_password =
       match matches_password old_password user with
       | true -> Ok ()
