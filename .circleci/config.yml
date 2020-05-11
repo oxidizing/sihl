@@ -27,15 +27,17 @@ jobs:
           name: Pin packages
           command: |
             opam pin add -y -n sihl_core .
+            opam pin add -y -n sihl_email .
             opam pin add -y -n sihl_user .
       - run:
           name: Install system dependencies
           command: |
-            sudo apt-get install libmariadbclient-dev libpq-dev
-            opam depext -y sihl_core sihl_user
+            sudo apt-get update -y
+            sudo apt-get install -y libmariadbclient-dev libpq-dev
+            opam depext -y sihl_core sihl_email sihl_user
       - run:
           name: Install OCaml dependencies
-          command: opam install --deps-only -y sihl_core sihl_user
+          command: opam install --deps-only -y sihl_core sihl_email sihl_user
       - run:
           name: Build
           command: opam config exec -- make
