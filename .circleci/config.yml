@@ -30,7 +30,9 @@ jobs:
             opam pin add -y -n sihl_user .
       - run:
           name: Install system dependencies
-          command: opam depext -y sihl_core sihl_user
+          command: |
+            sudo apt-get install libmariadbclient-dev libpq-dev
+            opam depext -y sihl_core sihl_user
       - run:
           name: Install OCaml dependencies
           command: opam install --deps-only -y sihl_core sihl_user
@@ -39,8 +41,7 @@ jobs:
           command: opam config exec -- make
       - run:
           name: Install OCaml test dependencies
-          # Not using opam install -y -t because it tries to run csv's tests
-          command: opam install -y alcotest alcotest-lwt cohttp-lwt-unix
+          command: opam install -y alcotest alcotest-lwt cohttp-lwt-unix caqti-driver-postgresql caqti-driver-mariadb
       - run:
           name: Test
           command: opam config exec -- make test-all

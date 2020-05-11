@@ -8,8 +8,6 @@
   opium
   caqti
   caqti-lwt
-  caqti-driver-postgresql
-  caqti-driver-mariadb
   tyxml
   lwt.unix
   yojson
