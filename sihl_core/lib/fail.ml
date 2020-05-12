@@ -57,7 +57,9 @@ let error_of_exn : exn -> 'a = function
   | Exception.Email msg -> Error (Error.Email msg)
   | Exception.Configuration msg -> Error (Error.Configuration msg)
   | Exception.Server msg -> Error (Error.Server msg)
-  | _ -> Error (Error.Database "unspecified exn encountered")
+  | exn ->
+      Logs.err (fun m -> m "Unspecified exception: %s" (Printexc.to_string exn));
+      Error (Error.Database "unspecified exn encountered")
 
 let try_to_run f =
   Lwt.catch
