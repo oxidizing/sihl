@@ -23,5 +23,5 @@ let fn request args =
   | _ -> Lwt.return @@ Error "wrong usage"
 
 let create_admin =
-  Sihl_core.My_command.create ~name:"createadmin"
+  Sihl_core.Cmd.create ~name:"createadmin"
     ~description:"createadmin <email> <password>" ~fn

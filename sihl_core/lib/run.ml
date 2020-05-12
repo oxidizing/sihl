@@ -17,7 +17,7 @@ module type APP = sig
 
   val bindings : unit -> Registry.Binding.t list
 
-  val commands : unit -> My_command.t list
+  val commands : unit -> Cmd.t list
 
   val start : unit -> (unit, string) Result.t
 
@@ -180,9 +180,9 @@ module Project : PROJECT = struct
       [
         commands;
         [
-          My_command.Builtin.Version.command;
-          My_command.Builtin.Start.command (fun () -> start project);
-          My_command.Builtin.Migrate.command (fun () -> migrate project);
+          Cmd.Builtin.Version.command;
+          Cmd.Builtin.Start.command (fun () -> start project);
+          Cmd.Builtin.Migrate.command (fun () -> migrate project);
         ];
       ]
 
@@ -211,13 +211,13 @@ module Project : PROJECT = struct
         |> List.concat
         |> add_default_commands project
       in
-      let command = My_command.find commands args in
+      let command = Cmd.find commands args in
       match command with
       | Some command ->
-          let _ = My_command.execute command args in
+          let _ = Cmd.execute command args in
           ()
       | None ->
-          let help = My_command.help commands in
+          let help = Cmd.help commands in
           Logs.debug (fun m -> m "%s" help)
     else
       Caml.print_string
