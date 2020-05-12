@@ -2,7 +2,9 @@ let name = "User Management App"
 
 let namespace = "users"
 
-let config () = []
+let config () =
+  Sihl_core.Config.Schema.
+    [ string_ ~default:"http://localhost:3000" "BASE_URL" ]
 
 let middlewares () =
   let open Handler in

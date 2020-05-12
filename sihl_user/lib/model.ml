@@ -113,28 +113,28 @@ end
 
 module Email = struct
   let create_confirmation token user =
-    let name = User.username user |> Option.value ~default:(User.email user) in
     Sihl_email.Model.Email.create ~sender:"josef@oxdizing.io"
       ~recipient:(User.email user) ~subject:"Email Address Confirmation"
       ~content:"" ~cc:[] ~bcc:[] ~html:false
       ~template_id:(Some "fb7aec3f-2178-4166-beb4-79a3a663e093")
       ~template_data:
         [
-          ("base_url", "http://localhost:3000");
-          ("name", name);
+          ( "base_url",
+            Sihl_core.Config.read_string ~default:"http://localhost:3000"
+              "BASE_URL" );
           ("token", Token.value token);
         ]
 
   let create_password_reset token user =
-    let name = User.username user |> Option.value ~default:(User.email user) in
     Sihl_email.Model.Email.create ~sender:"josef@oxdizing.io"
       ~recipient:(User.email user) ~subject:"Password Reset" ~content:"" ~cc:[]
       ~bcc:[] ~html:false
       ~template_id:(Some "fb7aec3f-2178-4166-beb4-79a3a663e092")
       ~template_data:
         [
-          ("base_url", "http://localhost:3000");
-          ("name", name);
+          ( "base_url",
+            Sihl_core.Config.read_string ~default:"http://localhost:3000"
+              "BASE_URL" );
           ("token", Token.value token);
         ]
 end
