@@ -4,7 +4,10 @@ let namespace = "users"
 
 let config () =
   Sihl_core.Config.Schema.
-    [ string_ ~default:"http://localhost:3000" "BASE_URL" ]
+    [
+      string_ ~default:"http://localhost:3000" "BASE_URL";
+      string_ ~default:"hello@oxidizing.io" "EMAIL_SENDER";
+    ]
 
 let middlewares () =
   let open Handler in

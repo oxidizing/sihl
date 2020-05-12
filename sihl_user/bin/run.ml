@@ -3,14 +3,14 @@ let config =
     ~development:
       [
         ("BASE_URL", "http://localhost:3000");
-        ("EMAIL_SENDER", "josef@oxidizing.io");
+        ("EMAIL_SENDER", "hello@oxidizing.io");
         ("DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev");
         ("EMAIL_BACKEND", "console");
       ]
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
-        ("EMAIL_SENDER", "josef@oxidizing.io");
+        ("EMAIL_SENDER", "hello@oxidizing.io");
         ("DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev");
         ("EMAIL_BACKEND", "memory");
       ]
@@ -18,7 +18,7 @@ let config =
       [
         ("EMAIL_BACKEND", "sendgrid");
         ("BASE_URL", "https://sihl-example-issues.oxidizing.io");
-        ("EMAIL_SENDER", "josef@oxidizing.io");
+        ("EMAIL_SENDER", "hello@oxidizing.io");
         ("DATABASE_URL", "");
         ("SENDGRID_API_KEY", "");
       ]

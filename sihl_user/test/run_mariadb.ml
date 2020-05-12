@@ -3,7 +3,7 @@ let config =
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
-        ("EMAIL_SENDER", "josef@oxidizing.io");
+        ("EMAIL_SENDER", "hello@oxidizing.io");
         ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev");
         ("EMAIL_BACKEND", "memory");
       ]

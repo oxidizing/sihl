@@ -3,7 +3,7 @@ let config =
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
-        ("EMAIL_SENDER", "josef@oxidizing.io");
+        ("EMAIL_SENDER", "hello@oxidizing.io");
         ("DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev");
         ("EMAIL_BACKEND", "memory");
       ]
