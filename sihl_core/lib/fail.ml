@@ -64,17 +64,32 @@ let try_to_run f =
     (fun () -> f () |> Lwt.map (fun result -> Ok result))
     (fun exn -> Lwt.return @@ error_of_exn exn)
 
-let raise_bad_request msg = raise @@ Exception.BadRequest msg
+let admin_notified_text =
+  "Something went wrong, our administrators have been notified"
 
-let raise_no_permissions msg = raise @@ Exception.NoPermissions msg
+let raise_bad_request msg =
+  Logs.warn (fun m -> m "SERVICE Bad Request: %s" msg);
+  raise @@ Exception.BadRequest msg
 
-let raise_not_authenticated msg = raise @@ Exception.NotAuthenticated msg
+let raise_no_permissions msg =
+  Logs.warn (fun m -> m "SERVICE No Permissions: %s" msg);
+  raise @@ Exception.NoPermissions "Not allowed"
 
-let raise_database msg = raise @@ Exception.Database msg
+let raise_not_authenticated msg =
+  Logs.warn (fun m -> m "SERVICE Not Authenticated: %s" msg);
+  raise @@ Exception.NotAuthenticated "Not authenticated"
 
-let raise_server msg = raise @@ Exception.Server msg
+let raise_database msg =
+  Logs.err (fun m -> m "SERVICE Database: %s" msg);
+  raise @@ Exception.Database admin_notified_text
 
-let raise_configuration msg = raise @@ Exception.Configuration msg
+let raise_server msg =
+  Logs.err (fun m -> m "SERVICE Server: %s" msg);
+  raise @@ Exception.Server admin_notified_text
+
+let raise_configuration msg =
+  Logs.err (fun m -> m "SERVICE Configuration: %s" msg);
+  raise @@ Exception.Configuration msg
 
 let with_bad_request msg result =
   match result with

@@ -25,10 +25,11 @@ module User = struct
         Repository.User.get ~id:user_id |> Sihl_core.Db.query_db request
       in
       user
-      |> Sihl_core.Fail.with_bad_request
-           ("could not find user with id " ^ user_id)
+      |> Sihl_core.Fail.with_bad_request ("Can not find user with id " ^ user_id)
       |> Lwt.return
-    else Sihl_core.Fail.raise_no_permissions "user is not allowed to fetch user"
+    else
+      Sihl_core.Fail.raise_no_permissions
+        ("Not allowed to fetch user with id " ^ user_id)
 
   let get_by_token request token =
     let (module Repository : Contract.REPOSITORY) =
