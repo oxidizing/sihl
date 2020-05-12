@@ -13,7 +13,7 @@ let accepts_html req =
 
 let require_auth req =
   match req |> Cohttp.Header.get_authorization with
-  | None -> Fail.raise_bad_request "No authorization header found"
+  | None -> Err.raise_bad_request "No authorization header found"
   | Some token -> token
 
 let find_in_query key query =
@@ -27,7 +27,7 @@ let query_opt req key =
 
 let query req key =
   match query_opt req key with
-  | None -> Fail.raise_bad_request [%string "Please provide a key $(key)"]
+  | None -> Err.raise_bad_request [%string "Please provide a key $(key)"]
   | Some value -> value
 
 let query2_opt req key1 key2 = (query_opt req key1, query_opt req key2)
@@ -49,7 +49,7 @@ let url_encoded ?body req key =
   in
   match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
   | None ->
-      Lwt.return @@ Fail.raise_bad_request [%string "Please provide a $(key)."]
+      Lwt.return @@ Err.raise_bad_request [%string "Please provide a $(key)."]
   | Some value -> Lwt.return value
 
 let url_encoded2 req key1 key2 =
@@ -67,14 +67,14 @@ let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
 let require_body req decode =
   let* body = req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string in
   body |> Json.parse |> Result.bind ~f:decode
-  |> Result.map_error ~f:(fun error -> Fail.err_bad_request error)
+  |> Result.map_error ~f:(fun error -> Err.err_bad_request error)
   |> Lwt.return
 
 let require_body_exn req decode =
   let* body = require_body req decode in
   match body with
   | Ok body -> Lwt.return body
-  | Error _ -> Fail.raise_bad_request "invalid body provided"
+  | Error _ -> Err.raise_bad_request "invalid body provided"
 
 module Msg = struct
   type t = { msg : string } [@@deriving yojson]
@@ -86,11 +86,11 @@ end
 
 let code_of_error error =
   match error with
-  | Fail.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
-  | Fail.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
-  | Fail.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
-  | Fail.Error.Configuration _ | Fail.Error.Email _ | Fail.Error.Database _
-  | Fail.Error.Server _ ->
+  | Err.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
+  | Err.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
+  | Err.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
+  | Err.Error.Configuration _ | Err.Error.Email _ | Err.Error.Database _
+  | Err.Error.Server _ ->
       500 |> Cohttp.Code.status_of_code
 
 module Response = struct
