@@ -30,6 +30,11 @@
   (yojson (>= 1.7.0))
   (ppx_deriving_yojson (>= 3.5.2))
 
+  ;; SSL && TLS
+  (tls (>= 0.11.1))
+  (ssl (>= 0.5.9))
+  (lwt_ssl (>= 1.1.3))
+
   ;; Database interface
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
