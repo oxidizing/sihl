@@ -53,7 +53,7 @@ end
 module SendGrid : Sihl_core.Contract.Email.EMAIL with type email = t = struct
   type email = t
 
-  let body ~recipient ~subject ~sender ~content:_ =
+  let body ~recipient ~subject ~sender ~content =
     [%string
       {|
   {
@@ -73,7 +73,7 @@ module SendGrid : Sihl_core.Contract.Email.EMAIL with type email = t = struct
     "content": [
        {
          "type": "text/plain",
-         "value": "123"
+         "value": "$(content)"
        }
     ]
   }
