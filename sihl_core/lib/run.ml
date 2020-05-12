@@ -11,7 +11,7 @@ module type APP = sig
 
   val middlewares : unit -> Opium.App.builder list
 
-  val migrations : unit -> Db.Migrate.migration
+  val migrations : unit -> Contract.Migration.migration
 
   val repositories : unit -> (Db.connection -> unit Db.db_result) list
 
@@ -97,13 +97,13 @@ module Project : PROJECT = struct
   let migrate project =
     project.apps
     |> List.map ~f:(fun (module App : APP) -> App.migrations ())
-    |> Db.Migrate.execute
+    |> Migration.execute
 
   let bind_registry project =
     (* TODO make it more explicit when binding core default implementations *)
     Logs.debug (fun m -> m "binding default core implementations");
     Registry.Binding.register Contract.Migration.repository
-      (module Db.Migrate.PostgresRepository);
+      (module Migration.PostgresRepository);
     Logs.debug (fun m -> m "binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->

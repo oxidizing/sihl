@@ -39,25 +39,9 @@ val query_db_exn :
   (connection -> 'a db_result) ->
   'a Lwt.t
 
-(** {{1} API for database migrations } *)
+val query_pool :
+  ('a -> ('b, ([< Caqti_error.t ] as 'c)) result Lwt.t) ->
+  ('a, 'c) Caqti_lwt.Pool.t ->
+  ('b, string) Lwt_result.t
 
-module Migrate : sig
-  (** Interface for executing database migrations *)
-
-  type migration_error = Caqti_error.t
-
-  type migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, migration_error) result Lwt.t
-
-  type migration_step = string * migration_operation
-
-  type migration = string * migration_step list
-
-  module MariaDbRepository : Contract.Migration.REPOSITORY
-
-  module PostgresRepository : Contract.Migration.REPOSITORY
-
-  val execute : migration list -> (unit, string) result Lwt.t
-  (** [execute steps] is [Ok ()] if all the migration tasks in [steps] can be
-      executed or [Error err] where [err] explains the reason for failure. *)
-end
+val connect : unit -> 'err caqti_conn_pool
