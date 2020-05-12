@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl_core)
-(version 0.0.24)
+(version 0.0.25)
 
 (authors "Josef Erben")
 (license MIT)
@@ -85,7 +85,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl_core (>= 0.0.24))
+  (sihl_core (>= 0.0.25))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -113,8 +113,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl_core (>= 0.0.24))
-  (sihl_email (>= 0.0.24))
+  (sihl_core (>= 0.0.25))
+  (sihl_email (>= 0.0.25))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
