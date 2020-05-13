@@ -45,6 +45,30 @@ module Sql = struct
         |sql}]
 end
 
+module Migration = struct
+  let create_templates_table =
+    [%rapper
+      execute
+        {sql|
+CREATE TABLE emails_templates (
+  id serial,
+  uuid uuid NOT NULL,
+  label VARCHAR(128) NOT NULL,
+  value VARCHAR(1000) NOT NULL,
+  status VARCHAR(128) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (uuid)
+);
+|sql}]
+
+  let migration () =
+    ("emails", [ ("create templates table", create_templates_table) ])
+end
+
+let migrate = Migration.migration
+
 let get ~id connection = Sql.get connection ~id
 
-let clean connection = Sql.clean connection ()
+(* TODO sihl_user has to seed templates properly
+let clean connection = Sql.clean connection () *)
+let clean _ = Lwt.return @@ Ok ()

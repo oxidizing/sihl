@@ -22,14 +22,10 @@ let middlewares =
 
 let bindings =
   [
-    Sihl_core.Registry.bind Sihl_email.Contract.repository
+    Sihl_core.Registry.bind Sihl_email.Binding.Repository.key
       (module Sihl_email.Repository_mariadb);
-    Sihl_core.Registry.bind Sihl_email.Contract.migration
-      (module Sihl_email.Migration_mariadb);
-    Sihl_core.Registry.bind Sihl_user.Contract.repository
-      (module Sihl_user.Database.MariaDb.Repository);
-    Sihl_core.Registry.bind Sihl_user.Contract.migration
-      (module Sihl_user.Database.MariaDb.Migration);
+    Sihl_core.Registry.bind Sihl_user.Binding.Repository.key
+      (module Sihl_user.Repository_mariadb);
     Sihl_core.Registry.bind Sihl_core.Contract.Migration.repository
       (module Sihl_core.Migration.MariaDbRepository);
   ]
