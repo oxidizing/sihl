@@ -9,7 +9,7 @@ let render request email =
     match template_id with
     | Some template_id ->
         let (module Repository : Contract.REPOSITORY) =
-          Sihl_core.Registry.get Contract.repository
+          Sihl_core.Registry.get Binding.Repository.key
         in
         let* template =
           Repository.get ~id:template_id |> Sihl_core.Db.query_db_exn request
@@ -139,18 +139,6 @@ end
 
 let send request email =
   let (module Email : Sihl_core.Contract.Email.EMAIL with type email = t) =
-    Sihl_core.Registry.get Contract.transport
+    Sihl_core.Registry.get Binding.Transport.key
   in
   Email.send request email
-
-let bind () =
-  let backend =
-    Sihl_core.Config.read_string ~default:"memory" "EMAIL_BACKEND"
-  in
-  match backend with
-  | "smtp" -> Sihl_core.Registry.Binding.create Contract.transport (module Smtp)
-  | "sendgrid" ->
-      Sihl_core.Registry.Binding.create Contract.transport (module SendGrid)
-  | "console" ->
-      Sihl_core.Registry.Binding.create Contract.transport (module Console)
-  | _ -> Sihl_core.Registry.Binding.create Contract.transport (module Memory)

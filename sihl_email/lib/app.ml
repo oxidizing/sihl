@@ -19,21 +19,28 @@ let config () =
 
 let endpoints () = []
 
-let migrations () =
-  let (module Migration : Sihl_core.Contract.Migration.MIGRATION) =
-    Sihl_core.Registry.get Contract.migration
-  in
-  Migration.migration ()
-
-let repos () = []
+let repos () = Binding.Repository.default ()
 
 let bindings () =
+  let backend =
+    Sihl_core.Config.read_string ~default:"memory" "EMAIL_BACKEND"
+  in
   [
-    Sihl_core.Registry.Binding.create Contract.repository
+    Sihl_core.Registry.Binding.create Binding.Repository.key
       (module Repository_postgres);
-    Sihl_core.Registry.Binding.create Contract.migration
-      (module Migration_postgres);
-    Service.bind ();
+    ( match backend with
+    | "smtp" ->
+        Sihl_core.Registry.Binding.create Binding.Transport.key
+          (module Service.Smtp)
+    | "sendgrid" ->
+        Sihl_core.Registry.Binding.create Binding.Transport.key
+          (module Service.SendGrid)
+    | "console" ->
+        Sihl_core.Registry.Binding.create Binding.Transport.key
+          (module Service.Console)
+    | _ ->
+        Sihl_core.Registry.Binding.create Binding.Transport.key
+          (module Service.Memory) );
   ]
 
 let commands () = []
