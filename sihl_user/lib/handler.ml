@@ -193,7 +193,7 @@ module AdminUi = struct
       Sihl_core.Http.post "/admin/login/" @@ fun req ->
       let* email, password = url_encoded2 req "email" "password" in
       let* token =
-        Sihl_core.Fail.try_to_run (fun () ->
+        Sihl_core.Err.try_to_run (fun () ->
             Service.User.login req ~email ~password)
       in
       match token with
@@ -254,7 +254,7 @@ module AdminUi = struct
       let user = Middleware.Authn.authenticate req in
       let* password = url_encoded req "password" in
       let* result =
-        Sihl_core.Fail.try_to_run (fun () ->
+        Sihl_core.Err.try_to_run (fun () ->
             Service.User.set_password req user ~user_id ~password)
       in
       match result with
@@ -262,9 +262,9 @@ module AdminUi = struct
           Sihl_core.Flash.redirect_with_success req ~path:user_page
             "New password successfully set"
       | Error error ->
-          Logs.err (fun m -> m "%s" (Sihl_core.Fail.Error.show error));
+          Logs.err (fun m -> m "%s" (Sihl_core.Err.Error.show error));
           Sihl_core.Flash.redirect_with_error req ~path:user_page
-            (Sihl_core.Fail.Error.show error)
+            (Sihl_core.Err.Error.show error)
   end
 
   module Catch = struct

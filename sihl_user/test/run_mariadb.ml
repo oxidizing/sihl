@@ -20,7 +20,7 @@ let bindings =
     Sihl_core.Registry.bind Sihl_user.Contract.migration
       (module Sihl_user.Database.MariaDb.Migration);
     Sihl_core.Registry.bind Sihl_core.Contract.Migration.repository
-      (module Sihl_core.Db.Migrate.MariaDbRepository);
+      (module Sihl_core.Migration.MariaDbRepository);
   ]
 
 let project =

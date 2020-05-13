@@ -22,7 +22,7 @@ let connect () =
   |> Caqti_lwt.connect_pool ~max_size:pool_size
   |> function
   | Ok pool -> pool
-  | Error err -> Fail.raise_database (Caqti_error.show err)
+  | Error err -> Err.raise_database (Caqti_error.show err)
 
 (* [query_pool query pool] is the [Ok res] of the [res] obtained by executing
    the database [query], or else the [Error err] reporting the error causing
@@ -63,7 +63,7 @@ let request_with_connection request =
   let connection =
     connection |> function
     | Ok connection -> connection
-    | Error err -> Fail.raise_database (Caqti_error.show err)
+    | Error err -> Err.raise_database (Caqti_error.show err)
   in
   let env = Opium.Hmap.add key connection (Request.env request) in
   Lwt.return @@ { request with env }
@@ -89,7 +89,7 @@ let middleware app =
     in
     match !response_ref with
     | Some response -> Lwt.return response
-    | None -> Fail.raise_database "error happened"
+    | None -> Err.raise_database "error happened"
   in
   let m = Rock.Middleware.create ~name:"database connection" ~filter in
   Opium.Std.middleware m app
@@ -106,7 +106,7 @@ let query_db_with_trx request query =
     | Error error ->
         Logs.err (fun m ->
             m "failed to start transaction %s" (Caqti_error.show error));
-        Fail.raise_database
+        Err.raise_database
           "failed to start transaction %s (Caqti_error.show error)"
   in
   let* result = query connection in
@@ -124,13 +124,13 @@ let query_db_with_trx request query =
   let () =
     match trx_result with
     | Ok _ -> ()
-    | Error _ -> Fail.raise_database "failed to commit or rollback transaction"
+    | Error _ -> Err.raise_database "failed to commit or rollback transaction"
   in
   result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
 
 let query_db_with_trx_exn request query =
   Lwt.map
-    (Fail.with_database "failed to query with transaction")
+    (Err.with_database "failed to query with transaction")
     (query_db_with_trx request query)
 
 let query_db request query =
@@ -142,231 +142,4 @@ let query_db_exn ?message request query =
   query_db request query >>= fun result ->
   match result with
   | Ok result -> Lwt.return result
-  | Error msg -> Fail.raise_database (Option.value ~default:msg message)
-
-module Migrate = struct
-  include Db_migration_core
-
-  module State = struct
-    module PostgresRepository : Contract.Migration.REPOSITORY = struct
-      open Model
-
-      let create_table_if_not_exists =
-        [%rapper
-          execute
-            {sql|
-CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL PRIMARY KEY,
-  version INTEGER,
-  dirty BOOL NOT NULL
-);
- |sql}]
-
-      let get =
-        [%rapper
-          get_opt
-            {sql|
-SELECT
-  @string{namespace},
-  @int{version},
-  @bool{dirty}
-FROM core_migration_state
-WHERE namespace = %string{namespace};
-|sql}
-            record_out]
-
-      let upsert =
-        [%rapper
-          execute
-            {sql|
-INSERT INTO core_migration_state (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  %string{namespace},
-  %int{version},
-  %bool{dirty}
-) ON CONFLICT (namespace)
-DO UPDATE SET version = %int{version},
-dirty = %bool{dirty}
-|sql}
-            record_in]
-    end
-
-    module MariaDbRepository : Contract.Migration.REPOSITORY = struct
-      let create_table_if_not_exists connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Caqti_type.unit
-            {sql|
-CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL,
-  version INTEGER,
-  dirty BOOL NOT NULL,
-  PRIMARY KEY (namespace)
-);
- |sql}
-        in
-        Connection.exec request
-
-      let get connection ~namespace =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.find_opt Caqti_type.string
-            Caqti_type.(tup3 string int bool)
-            {sql|
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_state
-WHERE namespace = ?;
-|sql}
-        in
-        let* result = Connection.find_opt request namespace in
-        Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
-
-      let upsert connection state =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec
-            Caqti_type.(tup3 string int bool)
-            {sql|
-INSERT INTO core_migration_state (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  ?,
-  ?,
-  ?
-) ON DUPLICATE KEY UPDATE
-version = VALUES(version),
-dirty = VALUES(dirty)
-|sql}
-        in
-        Connection.exec request (Model.to_tuple state)
-    end
-
-    module Service = struct
-      let setup pool =
-        let (module Repository : Contract.Migration.REPOSITORY) =
-          Registry.get Contract.Migration.repository
-        in
-        query_pool (fun c -> Repository.create_table_if_not_exists c ()) pool
-
-      let has pool ~namespace =
-        let (module Repository : Contract.Migration.REPOSITORY) =
-          Registry.get Contract.Migration.repository
-        in
-
-        let* result = query_pool (fun c -> Repository.get c ~namespace) pool in
-        Lwt_result.return (Option.is_some result)
-
-      let get pool ~namespace =
-        let (module Repository : Contract.Migration.REPOSITORY) =
-          Registry.get Contract.Migration.repository
-        in
-
-        let* state = query_pool (fun c -> Repository.get c ~namespace) pool in
-        Lwt.return
-        @@
-        match state with
-        | Some state -> Ok state
-        | None ->
-            Error
-              (Printf.sprintf "could not get migration state for namespace=%s"
-                 namespace)
-
-      let upsert pool state =
-        let (module Repository : Contract.Migration.REPOSITORY) =
-          Registry.get Contract.Migration.repository
-        in
-        query_pool (fun c -> Repository.upsert c state) pool
-
-      let mark_dirty pool ~namespace =
-        let* state = get pool ~namespace in
-        let dirty_state = Model.mark_dirty state in
-        let* () = upsert pool dirty_state in
-        Lwt.return @@ Ok dirty_state
-
-      let mark_clean pool ~namespace =
-        let* state = get pool ~namespace in
-        let clean_state = Model.mark_clean state in
-        let* () = upsert pool clean_state in
-        Lwt.return @@ Ok clean_state
-
-      let increment pool ~namespace =
-        let* state = get pool ~namespace in
-        let updated_state = Model.increment state in
-        let* () = upsert pool updated_state in
-        Lwt.return @@ Ok updated_state
-    end
-  end
-
-  let execute_steps migration pool =
-    let namespace, steps = migration in
-    let open Lwt in
-    let rec run steps pool =
-      match steps with
-      | [] -> Lwt_result.return ()
-      | (name, query) :: steps -> (
-          Logs.info (fun m -> m "running: %s\n" name);
-          query_pool (fun c -> query c ()) pool >>= function
-          | Ok () ->
-              Logs.info (fun m -> m "ran: %s\n" name);
-              let* _ = State.Service.increment pool ~namespace in
-              run steps pool
-          | Error err ->
-              Logs_lwt.err (fun m ->
-                  m "error while running migration for %s msg=%s" namespace err)
-              >>= fun () -> return (Error err) )
-    in
-    ( match List.length steps with
-    | 0 ->
-        Logs_lwt.info (fun m -> m "no migrations to apply for %s\n" namespace)
-    | n ->
-        Logs_lwt.info (fun m -> m "applying %i migrations for %s\n" n namespace)
-    )
-    >>= fun () -> run steps pool
-
-  let execute_migration migration pool =
-    let namespace, _ = migration in
-    let* () = State.Service.setup pool in
-    let* has_state = State.Service.has pool ~namespace in
-    let* state =
-      if has_state then
-        let* state = State.Service.get pool ~namespace in
-        if Model.dirty state then
-          Lwt.return
-          @@ Error
-               (Printf.sprintf
-                  "dirty migration found for namespace %s, please fix manually"
-                  namespace)
-        else State.Service.mark_dirty pool ~namespace
-      else
-        let state = Model.create ~namespace in
-        let* () = State.Service.upsert pool state in
-        Lwt.return @@ Ok state
-    in
-    let migration_to_apply = Model.steps_to_apply migration state in
-    let* () = execute_steps migration_to_apply pool in
-    let* _ = State.Service.mark_clean pool ~namespace in
-    Lwt.return @@ Ok ()
-
-  module PostgresRepository = State.PostgresRepository
-  module MariaDbRepository = State.MariaDbRepository
-
-  let execute migrations =
-    let open Lwt in
-    let rec run migrations pool =
-      match migrations with
-      | [] -> Lwt_result.return ()
-      | migration :: migrations -> (
-          execute_migration migration pool >>= function
-          | Ok () -> run migrations pool
-          | Error err -> return (Error err) )
-    in
-    return (connect ()) >>= run migrations
-end
+  | Error msg -> Err.raise_database (Option.value ~default:msg message)
