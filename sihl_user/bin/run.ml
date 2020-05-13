@@ -23,8 +23,19 @@ let config =
         ("SENDGRID_API_KEY", "");
       ]
 
+let middlewares =
+  [
+    Sihl_core.Middleware.cookie;
+    Sihl_core.Middleware.static;
+    Sihl_core.Middleware.flash;
+    Sihl_core.Middleware.error;
+    Sihl_core.Middleware.db;
+    Sihl_user.Middleware.Authn.token;
+    Sihl_user.Middleware.Authn.session;
+  ]
+
 let project =
-  Sihl_core.Run.Project.create ~config
+  Sihl_core.Run.Project.create ~config middlewares
     [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl_core.Run.Project.run_command project

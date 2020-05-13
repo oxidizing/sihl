@@ -3,9 +3,9 @@ open Http
 
 let ( let* ) = Lwt.bind
 
-let flash = Flash.m
+let flash () = Flash.m
 
-let error app =
+let error () app =
   let filter handler req =
     let* response = Err.try_to_run (fun () -> handler req) in
     match (accepts_html req, response) with
@@ -59,3 +59,15 @@ let error app =
 
   let m = Opium.Std.Rock.Middleware.create ~name:"error handler" ~filter in
   Opium.Std.middleware m app
+
+let static () =
+  let static_files_path =
+    Config.read_string ~default:"./static" "STATIC_FILES_DIR"
+  in
+  Opium.Std.middleware
+  @@ Opium.Std.Middleware.static ~local_path:static_files_path
+       ~uri_prefix:"/assets" ()
+
+let cookie () = Opium.Std.middleware Opium.Std.Cookie.m
+
+let db = Db.middleware
