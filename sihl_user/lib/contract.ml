@@ -1,4 +1,6 @@
 module type REPOSITORY = sig
+  include Sihl_core.Contract.REPOSITORY
+
   module User : sig
     val get_all :
       Sihl_core.Db.connection -> Model.User.t list Sihl_core.Db.db_result
@@ -36,12 +38,7 @@ module type REPOSITORY = sig
       Model.Token.t -> Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
   end
 
+  val migrate : unit -> Sihl_core.Contract.Migration.migration
+
   val clean : Sihl_core.Db.connection -> unit Sihl_core.Db.db_result
 end
-
-let repository : (module REPOSITORY) Sihl_core.Registry.Key.t =
-  Sihl_core.Registry.Key.create "users repository"
-
-let migration :
-    (module Sihl_core.Contract.Migration.MIGRATION) Sihl_core.Registry.Key.t =
-  Sihl_core.Registry.Key.create "users migration"

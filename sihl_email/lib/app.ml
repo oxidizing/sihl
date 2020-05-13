@@ -25,7 +25,7 @@ let migrations () =
   in
   Migration.migration ()
 
-let repositories () = []
+let repos () = []
 
 let bindings () =
   [

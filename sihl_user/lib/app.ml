@@ -34,27 +34,12 @@ let endpoints () =
     AdminUi.UserSetPassword.handler;
   ]
 
-let migrations () =
-  let (module Migration : Sihl_core.Contract.Migration.MIGRATION) =
-    Sihl_core.Registry.get Contract.migration
-  in
-  Migration.migration ()
-
-(* TODO make this obsolete by:
-   1. fetching all repositories from Registry.Repository
-   2. calling the clean function *)
-let repositories () =
-  let (module Repository : Contract.REPOSITORY) =
-    Sihl_core.Registry.get Contract.repository
-  in
-  [ Repository.clean ]
+let repos () = Binding.Repository.default ()
 
 let bindings () =
   [
-    Sihl_core.Registry.Binding.create Contract.repository
-      (module Database.Postgres.Repository);
-    Sihl_core.Registry.Binding.create Contract.migration
-      (module Database.Postgres.Migration);
+    Sihl_core.Registry.Binding.create Binding.Repository.key
+      (module Repository_postgres);
   ]
 
 let commands () = [ Command.create_admin ]

@@ -11,9 +11,7 @@ module type APP = sig
 
   val endpoints : unit -> Opium.App.builder list
 
-  val migrations : unit -> Contract.Migration.migration
-
-  val repositories : unit -> (Db.connection -> unit Db.db_result) list
+  val repos : unit -> (module Contract.REPOSITORY) list
 
   val bindings : unit -> Registry.Binding.t list
 
@@ -93,7 +91,9 @@ module Project : PROJECT = struct
 
   let migrate project =
     project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.migrations ())
+    |> List.map ~f:(fun (module App : APP) -> App.repos ())
+    |> List.concat
+    |> List.map ~f:(fun (module Repo : Contract.REPOSITORY) -> Repo.migrate ())
     |> Migration.execute
 
   let bind_registry project =
@@ -152,22 +152,22 @@ module Project : PROJECT = struct
     let* request = Test.request_with_connection () in
     let repositories =
       project.apps
-      |> List.map ~f:(fun (module App : APP) -> App.repositories ())
+      |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
     in
     Logs.debug (fun m -> m "cleaning up app database");
-    let rec execute cleaners =
-      match cleaners with
+    let rec clean_repos repos =
+      match repos with
       | [] -> Lwt.return @@ Ok ()
-      | cleaner :: cleaners -> (
-          let* result = cleaner |> Db.query_db request in
+      | (module Repo : Contract.REPOSITORY) :: cleaners -> (
+          let* result = Repo.clean |> Db.query_db request in
           match result with
-          | Ok _ -> execute cleaners
+          | Ok _ -> clean_repos cleaners
           | Error msg ->
               Logs.err (fun m -> m "cleaning up app database failed: %s" msg);
               Lwt.return @@ Error msg )
     in
-    execute repositories
+    clean_repos repositories
 
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"
