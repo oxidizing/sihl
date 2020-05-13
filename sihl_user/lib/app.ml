@@ -36,11 +36,7 @@ let endpoints () =
 
 let repos () = Binding.Repository.default ()
 
-let bindings () =
-  [
-    Sihl_core.Registry.Binding.create Binding.Repository.key
-      (module Repository_postgres);
-  ]
+let bindings () = Binding.default
 
 let commands () = [ Command.create_admin ]
 
