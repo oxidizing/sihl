@@ -17,7 +17,7 @@ let config () =
       bool_ ~default:false "SMTP_POOL";
     ]
 
-let middlewares () = []
+let endpoints () = []
 
 let migrations () =
   let (module Migration : Sihl_core.Contract.Migration.MIGRATION) =

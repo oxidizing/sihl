@@ -9,7 +9,7 @@ module type APP = sig
 
   val config : unit -> Config.Schema.t
 
-  val middlewares : unit -> Opium.App.builder list
+  val endpoints : unit -> Opium.App.builder list
 
   val migrations : unit -> Contract.Migration.migration
 
@@ -30,6 +30,7 @@ module type PROJECT = sig
   val create :
     ?bindings:Registry.Binding.t list ->
     config:Config.Setting.t ->
+    (unit -> Opium.App.builder) list ->
     (module APP) list ->
     t
 
@@ -49,6 +50,7 @@ end
 module Project : PROJECT = struct
   type t = {
     apps : (module APP) list;
+    middlewares : (unit -> Opium.App.builder) list;
     config : Config.Setting.t;
     bindings : Registry.Binding.t list option;
   }
@@ -56,32 +58,27 @@ module Project : PROJECT = struct
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ?bindings ~config apps = { apps; config; bindings }
+  let create ?bindings ~config middlewares apps =
+    { apps; config; bindings; middlewares }
 
-  let merge_middlewares project =
+  let merge_endpoints project =
     project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.middlewares ())
+    |> List.map ~f:(fun (module App : APP) -> App.endpoints ())
     |> List.concat
 
   let add_middlewares middlewares app =
     List.fold ~f:(fun app route -> route app) ~init:app middlewares
 
   let start_http_server project =
-    let middlewares = merge_middlewares project in
-    let static_files_path =
-      Config.read_string ~default:"./static" "STATIC_FILES_DIR"
-    in
+    let endpoints = merge_endpoints project in
+    let middlewares = List.map ~f:(fun m -> m ()) project.middlewares in
     let port = Config.read_int ~default:3000 "PORT" in
     Logs.debug (fun m -> m "http server starting on port %i" port);
     let app =
       Opium.Std.App.empty |> Opium.Std.App.port port
-      |> Opium.Std.App.cmd_name "Project"
-      |> Opium.Std.middleware Opium.Std.Cookie.m
-      |> Opium.Std.middleware
-         @@ Opium.Std.Middleware.static ~local_path:static_files_path
-              ~uri_prefix:"/assets" ()
-      |> Middleware.flash |> Middleware.error |> Db.middleware
+      |> Opium.Std.App.cmd_name "Sihl Project"
       |> add_middlewares middlewares
+      |> add_middlewares endpoints
     in
     (* detaching from the thread so tests can run in the same process *)
     let _ = Opium.Std.App.start app in

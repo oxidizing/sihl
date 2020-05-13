@@ -9,11 +9,9 @@ let config () =
       string_ ~default:"hello@oxidizing.io" "EMAIL_SENDER";
     ]
 
-let middlewares () =
+let endpoints () =
   let open Handler in
   [
-    Middleware.Authn.token_m;
-    Middleware.Authn.session_m;
     AdminUi.Catch.handler;
     Login.handler;
     Register.handler;

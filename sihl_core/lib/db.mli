@@ -14,7 +14,7 @@ type connection = (module Caqti_lwt.CONNECTION)
 
 (** {{1} API for the Opium app database middleware }*)
 
-val middleware : App.builder
+val middleware : unit -> App.builder
 
 val clean : (connection -> unit db_result) list -> (unit, string) Lwt_result.t
 

@@ -68,7 +68,7 @@ let request_with_connection request =
   let env = Opium.Hmap.add key connection (Request.env request) in
   Lwt.return @@ { request with env }
 
-let middleware app =
+let middleware () app =
   let ( let* ) = Lwt.bind in
   let pool = connect () in
   let filter handler req =
