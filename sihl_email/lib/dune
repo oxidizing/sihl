@@ -4,6 +4,7 @@
  (libraries
   base
   sihl_core
+  netstring
 )
  (preprocess
   (pps

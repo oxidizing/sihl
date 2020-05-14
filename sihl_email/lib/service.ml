@@ -45,9 +45,13 @@ module Smtp : Sihl_core.Contract.Email.EMAIL with type email = t = struct
   type email = t
 
   let send request email =
-    let* _ = render request email in
-    (* TODO implement SMTP *)
-    Lwt.return @@ Error "Not implemented"
+    let* email = render request email in
+    let to_send =
+      Netsendmail.compose ~from_addr:("", email.sender)
+        ~to_addrs:[ ("", email.recipient) ] ~subject:email.subject email.content
+    in
+    (* TODO install sendmail and configure SMTP server *)
+    Lwt.return @@ Ok (Netsendmail.sendmail ~mailer:"sendmail" to_send)
 end
 
 module SendGrid : Sihl_core.Contract.Email.EMAIL with type email = t = struct
