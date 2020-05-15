@@ -1,5 +1,3 @@
-open Opium.Std
-
 (** {{1} Type aliases for clearer documentation and explication} *)
 
 type 'err caqti_conn_pool =
@@ -14,9 +12,11 @@ type connection = (module Caqti_lwt.CONNECTION)
 
 (** {{1} API for the Opium app database middleware }*)
 
-val middleware : unit -> App.builder
-
 val clean : (connection -> unit db_result) list -> (unit, string) Lwt_result.t
+
+type db_connection = (module Caqti_lwt.CONNECTION)
+
+val key : db_connection Opium.Hmap.key
 
 val request_with_connection : Opium.Std.Request.t -> Opium.Std.Request.t Lwt.t
 
