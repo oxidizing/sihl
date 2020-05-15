@@ -51,6 +51,7 @@ let clean queries =
 
 type db_connection = (module Caqti_lwt.CONNECTION)
 
+(* TODO move key including query_db ... functions to db middleware *)
 let key : db_connection Opium.Hmap.key =
   Opium.Hmap.Key.create
     ("db connection", fun _ -> sexp_of_string "db_connection")
@@ -58,7 +59,8 @@ let key : db_connection Opium.Hmap.key =
 let request_with_connection request =
   let ( let* ) = Lwt.bind in
   let* connection =
-    "DATABASE_URL" |> Core_config.read_string |> Uri.of_string |> Caqti_lwt.connect
+    "DATABASE_URL" |> Core_config.read_string |> Uri.of_string
+    |> Caqti_lwt.connect
   in
   let connection =
     connection |> function
@@ -67,32 +69,6 @@ let request_with_connection request =
   in
   let env = Opium.Hmap.add key connection (Request.env request) in
   Lwt.return @@ { request with env }
-
-let middleware () app =
-  let ( let* ) = Lwt.bind in
-  let pool = connect () in
-  let filter handler req =
-    let response_ref : Response.t option ref = ref None in
-    let* _ =
-      Caqti_lwt.Pool.use
-        (fun connection ->
-          let (module Connection : Caqti_lwt.CONNECTION) = connection in
-          let env = Opium.Hmap.add key connection (Request.env req) in
-          let response = handler { req with env } in
-          let* response = response in
-          (* using a ref here is dangerous because we might escape the scope of
-             the pool handler. we wait for the response, so all db handling is
-             done here *)
-          let _ = response_ref := Some response in
-          Lwt.return @@ Ok ())
-        pool
-    in
-    match !response_ref with
-    | Some response -> Lwt.return response
-    | None -> Core_err.raise_database "error happened"
-  in
-  let m = Rock.Middleware.create ~name:"database connection" ~filter in
-  Opium.Std.middleware m app
 
 (* TODO a transaction should return a request and not a connection so it nicely composes with other service calls *)
 let query_db_with_trx request query =
@@ -124,7 +100,8 @@ let query_db_with_trx request query =
   let () =
     match trx_result with
     | Ok _ -> ()
-    | Error _ -> Core_err.raise_database "failed to commit or rollback transaction"
+    | Error _ ->
+        Core_err.raise_database "failed to commit or rollback transaction"
   in
   result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
 
