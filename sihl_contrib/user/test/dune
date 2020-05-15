@@ -3,6 +3,8 @@
  (libraries
   base
   sihl_user
+  sihl_email_repo_postgres
+  sihl_email_repo_mariadb
   caqti-driver-postgresql
   caqti-driver-mariadb
   alcotest

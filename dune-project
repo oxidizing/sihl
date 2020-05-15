@@ -102,6 +102,61 @@
 ))
 
 (package
+ (name sihl_email_repo_mariadb)
+ (synopsis "TODO")
+ (description "TODO")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.27))
+  (sihl_email (>= 0.0.27))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+
+  ;; Database
+  (ppx_rapper (>= 0.9.2))
+
+  ;; Dev dependencies
+  (utop :dev)
+  (merlin :dev)
+  (ocamlformat :dev)
+  (ocp-indent :dev)
+  (tuareg :dev) ;; rm if not using emacs
+))
+
+(package
+ (name sihl_email_repo_postgres)
+ (synopsis "TODO")
+ (description "TODO")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.27))
+  (sihl_email (>= 0.0.27))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+
+  ;; Dev dependencies
+  (utop :dev)
+  (merlin :dev)
+  (ocamlformat :dev)
+  (ocp-indent :dev)
+  (tuareg :dev) ;; rm if not using emacs
+))
+
+(package
  (name sihl_user)
  (synopsis "A user management app for Sihl")
  (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
