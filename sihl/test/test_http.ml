@@ -1,4 +1,4 @@
-open Sihl_core.Http
+open Sihl.Http
 
 let test_require_url_encoded_body () =
   let req =

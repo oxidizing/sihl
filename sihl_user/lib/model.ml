@@ -16,7 +16,7 @@ module User = struct
   let confirm user = { user with confirmed = true }
 
   let update_password user new_password =
-    let hash = Sihl_core.Hashing.hash new_password in
+    let hash = Sihl.Hashing.hash new_password in
     { user with password = hash }
 
   let update_details user ~email ~username = { user with email; username }
@@ -45,9 +45,9 @@ module User = struct
     Result.all_unit [ matches_password; new_password_valid ]
 
   let create ~email ~password ~username ~admin ~confirmed =
-    let hash = Sihl_core.Hashing.hash password in
+    let hash = Sihl.Hashing.hash password in
     {
-      id = Sihl_core.Random.uuidv4 ();
+      id = Sihl.Random.uuidv4 ();
       email;
       password = hash;
       username;
@@ -82,9 +82,9 @@ module Token = struct
 
   let create user =
     {
-      id = Sihl_core.Random.uuidv4 ();
+      id = Sihl.Random.uuidv4 ();
       (* TODO generate more compact random token *)
-      value = Sihl_core.Random.uuidv4 ();
+      value = Sihl.Random.uuidv4 ();
       kind = "auth";
       user = User.id user;
       status = "active";
@@ -92,9 +92,9 @@ module Token = struct
 
   let create_email_confirmation user =
     {
-      id = Sihl_core.Random.uuidv4 ();
+      id = Sihl.Random.uuidv4 ();
       (* TODO generate more compact random token *)
-      value = Sihl_core.Random.uuidv4 ();
+      value = Sihl.Random.uuidv4 ();
       kind = "email_confirmation";
       user = User.id user;
       status = "active";
@@ -102,9 +102,9 @@ module Token = struct
 
   let create_password_reset user =
     {
-      id = Sihl_core.Random.uuidv4 ();
+      id = Sihl.Random.uuidv4 ();
       (* TODO generate more compact random token *)
-      value = Sihl_core.Random.uuidv4 ();
+      value = Sihl.Random.uuidv4 ();
       kind = "password_reset";
       user = User.id user;
       status = "active";
@@ -113,10 +113,10 @@ end
 
 module Email = struct
   let sender () =
-    Sihl_core.Config.read_string ~default:"hello@oxidizing.io" "EMAIL_SENDER"
+    Sihl.Config.read_string ~default:"hello@oxidizing.io" "EMAIL_SENDER"
 
   let base_url () =
-    Sihl_core.Config.read_string ~default:"http://localhost:3000" "BASE_URL"
+    Sihl.Config.read_string ~default:"http://localhost:3000" "BASE_URL"
 
   let create_confirmation token user =
     Sihl_email.Model.Email.create ~sender:(sender ())

@@ -3,19 +3,17 @@ module Repository = struct
 
   module Postgres : Contract.REPOSITORY = Repository_postgres
 
-  let key : (module Contract.REPOSITORY) Sihl_core.Registry.Key.t =
-    Sihl_core.Registry.Key.create "emails repository"
+  let key : (module Contract.REPOSITORY) Sihl.Registry.Key.t =
+    Sihl.Registry.Key.create "emails repository"
 
   let default () =
-    let (module Repository : Contract.REPOSITORY) =
-      Sihl_core.Registry.get key
-    in
-    [ (module Repository : Sihl_core.Contract.REPOSITORY) ]
+    let (module Repository : Contract.REPOSITORY) = Sihl.Registry.get key in
+    [ (module Repository : Sihl.Contract.REPOSITORY) ]
 end
 
 module Transport = struct
   let key :
-      (module Sihl_core.Contract.Email.EMAIL with type email = Model.Email.t)
-      Sihl_core.Registry.Key.t =
-    Sihl_core.Registry.Key.create "emails transport"
+      (module Sihl.Contract.Email.EMAIL with type email = Model.Email.t)
+      Sihl.Registry.Key.t =
+    Sihl.Registry.Key.create "emails transport"
 end

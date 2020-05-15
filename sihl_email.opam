@@ -14,7 +14,7 @@ depends: [
   "dune" {>= "2"}
   "ocaml" {>= "4.08.0"}
   "lwt" {>= "5.3.0"}
-  "sihl_core" {>= "0.0.27"}
+  "sihl" {>= "0.0.27"}
   "base" {>= "v0.13.1"}
   "ppx_rapper" {>= "0.9.2"}
   "utop" {dev}

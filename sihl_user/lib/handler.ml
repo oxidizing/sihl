@@ -3,7 +3,7 @@ open Base
 let ( let* ) = Lwt.bind
 
 module Login = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_out = { token : string; user_id : string } [@@deriving yojson]
 
@@ -17,7 +17,7 @@ module Login = struct
 end
 
 module Register = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_in = { email : string; username : string option; password : string }
   [@@deriving yojson]
@@ -32,7 +32,7 @@ module Register = struct
 end
 
 module GetMe = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_out = Model.User.t [@@deriving yojson]
 
@@ -44,7 +44,7 @@ module GetMe = struct
 end
 
 module Logout = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   let handler =
     delete "/users/logout/" @@ fun req ->
@@ -54,7 +54,7 @@ module Logout = struct
 end
 
 module GetUser = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_out = Model.User.t [@@deriving yojson]
 
@@ -68,7 +68,7 @@ module GetUser = struct
 end
 
 module GetUsers = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_out = Model.User.t list [@@deriving yojson]
 
@@ -81,7 +81,7 @@ module GetUsers = struct
 end
 
 module UpdatePassword = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_in = {
     email : string;
@@ -103,7 +103,7 @@ module UpdatePassword = struct
 end
 
 module UpdateDetails = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_in = { email : string; username : string option }
   [@@deriving yojson]
@@ -113,7 +113,7 @@ module UpdateDetails = struct
   let handler =
     post "/users/update-details/" @@ fun req ->
     let* { email; username } =
-      Sihl_core.Http.require_body_exn req body_in_of_yojson
+      Sihl.Http.require_body_exn req body_in_of_yojson
     in
     let user = Middleware.Authn.authenticate req in
     let* user = Service.User.update_details req user ~email ~username in
@@ -122,7 +122,7 @@ module UpdateDetails = struct
 end
 
 module SetPassword = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_in = { user_id : string; password : string } [@@deriving yojson]
 
@@ -135,7 +135,7 @@ module SetPassword = struct
 end
 
 module ConfirmEmail = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   let handler =
     get "/users/confirm-email/" @@ fun req ->
@@ -145,7 +145,7 @@ module ConfirmEmail = struct
 end
 
 module RequestPasswordReset = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_in = { email : string } [@@deriving yojson]
 
@@ -157,7 +157,7 @@ module RequestPasswordReset = struct
 end
 
 module ResetPassword = struct
-  open Sihl_core.Http
+  open Sihl.Http
 
   type body_in = { token : string; new_password : string } [@@deriving yojson]
 
@@ -170,31 +170,30 @@ end
 
 module AdminUi = struct
   module Dashboard = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let handler =
       get "/admin/dashboard/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl_core.Flash.current req in
+      let flash = Sihl.Flash.current req in
       Admin_ui.dashboard_page ~flash user
       |> Admin_ui.render |> Response.html |> Lwt.return
   end
 
   module Login = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let get =
       get "/admin/login/" @@ fun req ->
-      let flash = Sihl_core.Flash.current req in
+      let flash = Sihl.Flash.current req in
       Admin_ui.login_page ~flash |> Admin_ui.render |> Response.html
       |> Lwt.return
 
     let post =
-      Sihl_core.Http.post "/admin/login/" @@ fun req ->
+      Sihl.Http.post "/admin/login/" @@ fun req ->
       let* email, password = url_encoded2 req "email" "password" in
       let* token =
-        Sihl_core.Err.try_to_run (fun () ->
-            Service.User.login req ~email ~password)
+        Sihl.Err.try_to_run (fun () -> Service.User.login req ~email ~password)
       in
       match token with
       | Ok token ->
@@ -203,12 +202,12 @@ module AdminUi = struct
           |> Response.redirect "/admin/dashboard/"
           |> Lwt.return
       | Error _ ->
-          Sihl_core.Flash.redirect_with_error req ~path:"/admin/login/"
+          Sihl.Flash.redirect_with_error req ~path:"/admin/login/"
             "Provided email or password is wrong."
   end
 
   module Logout = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let handler =
       post "/admin/logout/" @@ fun req ->
@@ -220,32 +219,32 @@ module AdminUi = struct
   end
 
   module Users = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let handler =
       get "/admin/users/users/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl_core.Flash.current req in
+      let flash = Sihl.Flash.current req in
       let* users = Service.User.get_all req user in
       Admin_ui_users.users_page ~flash users
       |> Admin_ui.render |> Response.html |> Lwt.return
   end
 
   module User = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let handler =
       get "/admin/users/users/:id/" @@ fun req ->
       let user_id = param req "id" in
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl_core.Flash.current req in
+      let flash = Sihl.Flash.current req in
       let* user = Service.User.get req user ~user_id in
       Admin_ui_users.user_page ~flash user
       |> Admin_ui.render |> Response.html |> Lwt.return
   end
 
   module UserSetPassword = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let handler =
       post "/admin/users/users/:id/set-password/" @@ fun req ->
@@ -254,26 +253,26 @@ module AdminUi = struct
       let user = Middleware.Authn.authenticate req in
       let* password = url_encoded req "password" in
       let* result =
-        Sihl_core.Err.try_to_run (fun () ->
+        Sihl.Err.try_to_run (fun () ->
             Service.User.set_password req user ~user_id ~password)
       in
       match result with
       | Ok _ ->
-          Sihl_core.Flash.redirect_with_success req ~path:user_page
+          Sihl.Flash.redirect_with_success req ~path:user_page
             "New password successfully set"
       | Error error ->
-          Logs.err (fun m -> m "%s" (Sihl_core.Err.Error.show error));
-          Sihl_core.Flash.redirect_with_error req ~path:user_page
-            (Sihl_core.Err.Error.show error)
+          Logs.err (fun m -> m "%s" (Sihl.Err.Error.show error));
+          Sihl.Flash.redirect_with_error req ~path:user_page
+            (Sihl.Err.Error.show error)
   end
 
   module Catch = struct
-    open Sihl_core.Http
+    open Sihl.Http
 
     let handler =
       all "/admin/**" @@ fun req ->
       let path = req |> Opium.Std.Request.uri |> Uri.to_string in
-      Sihl_core.Flash.redirect_with_error req ~path:"/admin/dashboard/"
+      Sihl.Flash.redirect_with_error req ~path:"/admin/dashboard/"
         [%string "Path $(path) not found :("]
   end
 end

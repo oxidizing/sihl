@@ -2,7 +2,7 @@
  (name test)
  (libraries
   base
-  sihl_core
+  sihl
   alcotest
 )
  (preprocess

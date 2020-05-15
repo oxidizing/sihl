@@ -7,7 +7,7 @@ let url path = "http://localhost:3000/users" ^ path
 let extract_token text =
   let regexp = Pcre.regexp {|token=([\w|\-]*)|} in
   Option.value_exn ~message:"no match found"
-    (Sihl_core.Regex.extract_last ~rex:regexp text)
+    (Sihl.Regex.extract_last ~rex:regexp text)
 
 let test_extract_token_from_email _ () =
   let actual = extract_token "token=abc123" in
@@ -17,7 +17,7 @@ let test_extract_token_from_email _ () =
   Lwt.return ()
 
 let test_user_registers_and_confirms_email _ () =
-  let* _ = Sihl_core.Manage.clean () in
+  let* _ = Sihl.Manage.clean () in
   let body =
     {|
        {
@@ -68,9 +68,9 @@ let test_user_registers_and_confirms_email _ () =
   Lwt.return @@ ()
 
 let test_user_resets_password _ () =
-  let* _ = Sihl_core.Manage.clean () in
+  let* _ = Sihl.Manage.clean () in
   let* _ =
-    Sihl_core.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"password"
   in
   let body = {|{"email": "user1@example.com"}|} in
@@ -102,13 +102,13 @@ let test_user_resets_password _ () =
   Lwt.return @@ Alcotest.(check int) "Can login with new password" 200 status
 
 let test_user_uses_reset_token_twice_fails _ () =
-  let* _ = Sihl_core.Manage.clean () in
+  let* _ = Sihl.Manage.clean () in
   let* _ =
-    Sihl_core.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"password"
   in
   let* _ =
-    Sihl_core.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.admin ~email:"admin@example.com" ~password:"password"
   in
   let body = {|{"email": "user1@example.com"}|} in

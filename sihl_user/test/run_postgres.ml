@@ -1,5 +1,5 @@
 let config =
-  Sihl_core.Config.Setting.create ~development:[]
+  Sihl.Config.Setting.create ~development:[]
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
@@ -11,17 +11,17 @@ let config =
 
 let middlewares =
   [
-    Sihl_core.Middleware.cookie;
-    Sihl_core.Middleware.static;
-    Sihl_core.Middleware.flash;
-    Sihl_core.Middleware.error;
-    Sihl_core.Middleware.db;
+    Sihl.Middleware.cookie;
+    Sihl.Middleware.static;
+    Sihl.Middleware.flash;
+    Sihl.Middleware.error;
+    Sihl.Middleware.db;
     Sihl_user.Middleware.Authn.token;
     Sihl_user.Middleware.Authn.session;
   ]
 
 let project =
-  Sihl_core.Run.Project.create ~config middlewares
+  Sihl.Run.Project.create ~config middlewares
     [ (module Sihl_email.App); (module Sihl_user.App) ]
 
-let () = Sihl_core.Run.Project.run_command project
+let () = Sihl.Run.Project.run_command project

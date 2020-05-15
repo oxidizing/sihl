@@ -1,5 +1,5 @@
 open Base
-open Sihl_core.Err
+open Sihl.Err
 
 let ( let* ) = Lwt.bind
 
@@ -23,5 +23,5 @@ let fn request args =
   | _ -> Lwt.return @@ Error "wrong usage"
 
 let create_admin =
-  Sihl_core.Core.Cmd.create ~name:"createadmin"
+  Sihl.Core.Cmd.create ~name:"createadmin"
     ~description:"createadmin <email> <password>" ~fn

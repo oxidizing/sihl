@@ -1,5 +1,5 @@
 let config =
-  Sihl_core.Config.Setting.create ~development:[]
+  Sihl.Config.Setting.create ~development:[]
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
@@ -11,27 +11,27 @@ let config =
 
 let middlewares =
   [
-    Sihl_core.Middleware.cookie;
-    Sihl_core.Middleware.static;
-    Sihl_core.Middleware.flash;
-    Sihl_core.Middleware.error;
-    Sihl_core.Middleware.db;
+    Sihl.Middleware.cookie;
+    Sihl.Middleware.static;
+    Sihl.Middleware.flash;
+    Sihl.Middleware.error;
+    Sihl.Middleware.db;
     Sihl_user.Middleware.Authn.token;
     Sihl_user.Middleware.Authn.session;
   ]
 
 let bindings =
   [
-    Sihl_core.Registry.bind Sihl_email.Binding.Repository.key
+    Sihl.Registry.bind Sihl_email.Binding.Repository.key
       (module Sihl_email.Repository_mariadb);
-    Sihl_core.Registry.bind Sihl_user.Binding.Repository.key
+    Sihl.Registry.bind Sihl_user.Binding.Repository.key
       (module Sihl_user.Repository_mariadb);
-    Sihl_core.Registry.bind Sihl_core.Contract.Migration.repository
-      (module Sihl_core.Migration.MariaDbRepository);
+    Sihl.Registry.bind Sihl.Contract.Migration.repository
+      (module Sihl.Migration.MariaDbRepository);
   ]
 
 let project =
-  Sihl_core.Run.Project.create ~bindings ~config middlewares
+  Sihl.Run.Project.create ~bindings ~config middlewares
     [ (module Sihl_email.App); (module Sihl_user.App) ]
 
-let () = Sihl_core.Run.Project.run_command project
+let () = Sihl.Run.Project.run_command project

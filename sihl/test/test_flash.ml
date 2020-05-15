@@ -1,9 +1,9 @@
 open Base
 
 let testable_flash =
-  (module Sihl_core.Flash : Alcotest.TESTABLE with type t = Sihl_core.Flash.t)
+  (module Sihl.Flash : Alcotest.TESTABLE with type t = Sihl.Flash.t)
 
-open Sihl_core.Flash
+open Sihl.Flash
 
 let test_rotate () =
   let id = Uuidm.v `V4 |> Uuidm.to_string in
