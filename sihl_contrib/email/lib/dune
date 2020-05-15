@@ -12,3 +12,5 @@
    ppx_deriving_yojson
    ppx_string_interpolation
   )))
+(include_subdirs unqualified)
+

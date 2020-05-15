@@ -19,27 +19,26 @@ let config () =
 
 let endpoints () = []
 
-let repos () = Binding.Repository.default ()
+let repos () = Bind.Repository.default ()
 
 let bindings () =
   let backend =
     Sihl.Core.Config.read_string ~default:"memory" "EMAIL_BACKEND"
   in
   [
-    Sihl.Core.Registry.Binding.create Binding.Repository.key
-      (module Repository_postgres);
+    Sihl.Core.Registry.Binding.create Bind.Repository.key (module Repo.Postgres);
     ( match backend with
     | "smtp" ->
-        Sihl.Core.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Bind.Transport.key
           (module Service.Smtp)
     | "sendgrid" ->
-        Sihl.Core.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Bind.Transport.key
           (module Service.SendGrid)
     | "console" ->
-        Sihl.Core.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Bind.Transport.key
           (module Service.Console)
     | _ ->
-        Sihl.Core.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Bind.Transport.key
           (module Service.Memory) );
   ]
 

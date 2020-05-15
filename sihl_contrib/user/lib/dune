@@ -3,7 +3,7 @@
  (public_name sihl_user)
  (libraries
   base
-  sihl_core
+  sihl
   sihl_email
   tyxml
   )

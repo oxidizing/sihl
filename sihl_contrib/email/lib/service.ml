@@ -8,8 +8,8 @@ let render request email =
   let* content =
     match template_id with
     | Some template_id ->
-        let (module Repository : Contract.REPOSITORY) =
-          Sihl.Core.Registry.get Binding.Repository.key
+        let (module Repository : Repo_sig.REPOSITORY) =
+          Sihl.Core.Registry.get Bind.Repository.key
         in
         let* template =
           Repository.get ~id:template_id |> Sihl.Core.Db.query_db_exn request
@@ -139,6 +139,6 @@ end
 
 let send request email =
   let (module Email : Sihl.Core.Contract.Email.EMAIL with type email = t) =
-    Sihl.Core.Registry.get Binding.Transport.key
+    Sihl.Core.Registry.get Bind.Transport.key
   in
   Email.send request email
