@@ -1,5 +1,5 @@
 open Base
-open Sihl.Err
+open Sihl.Core.Err
 
 let ( let* ) = Lwt.bind
 

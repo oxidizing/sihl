@@ -17,7 +17,7 @@ module Authn = struct
     match request |> user with
     | Some user -> user
     | None ->
-        Sihl.Err.raise_not_authenticated
+        Sihl.Core.Err.raise_not_authenticated
           "no user found, have you applied authentication middlewares?"
 
   let session () app =

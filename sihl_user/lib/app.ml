@@ -3,7 +3,7 @@ let name = "User Management App"
 let namespace = "users"
 
 let config () =
-  Sihl.Config.Schema.
+  Sihl.Core.Config.Schema.
     [
       string_ ~default:"http://localhost:3000" "BASE_URL";
       string_ ~default:"hello@oxidizing.io" "EMAIL_SENDER";

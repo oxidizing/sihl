@@ -175,7 +175,7 @@ module AdminUi = struct
     let handler =
       get "/admin/dashboard/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl.Flash.current req in
+      let flash = Sihl.Middleware.Flash.current req in
       Admin_ui.dashboard_page ~flash user
       |> Admin_ui.render |> Response.html |> Lwt.return
   end
@@ -185,7 +185,7 @@ module AdminUi = struct
 
     let get =
       get "/admin/login/" @@ fun req ->
-      let flash = Sihl.Flash.current req in
+      let flash = Sihl.Middleware.Flash.current req in
       Admin_ui.login_page ~flash |> Admin_ui.render |> Response.html
       |> Lwt.return
 
@@ -193,7 +193,8 @@ module AdminUi = struct
       Sihl.Http.post "/admin/login/" @@ fun req ->
       let* email, password = url_encoded2 req "email" "password" in
       let* token =
-        Sihl.Err.try_to_run (fun () -> Service.User.login req ~email ~password)
+        Sihl.Core.Err.try_to_run (fun () ->
+            Service.User.login req ~email ~password)
       in
       match token with
       | Ok token ->
@@ -202,7 +203,7 @@ module AdminUi = struct
           |> Response.redirect "/admin/dashboard/"
           |> Lwt.return
       | Error _ ->
-          Sihl.Flash.redirect_with_error req ~path:"/admin/login/"
+          Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/login/"
             "Provided email or password is wrong."
   end
 
@@ -224,7 +225,7 @@ module AdminUi = struct
     let handler =
       get "/admin/users/users/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl.Flash.current req in
+      let flash = Sihl.Middleware.Flash.current req in
       let* users = Service.User.get_all req user in
       Admin_ui_users.users_page ~flash users
       |> Admin_ui.render |> Response.html |> Lwt.return
@@ -237,7 +238,7 @@ module AdminUi = struct
       get "/admin/users/users/:id/" @@ fun req ->
       let user_id = param req "id" in
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl.Flash.current req in
+      let flash = Sihl.Middleware.Flash.current req in
       let* user = Service.User.get req user ~user_id in
       Admin_ui_users.user_page ~flash user
       |> Admin_ui.render |> Response.html |> Lwt.return
@@ -253,17 +254,17 @@ module AdminUi = struct
       let user = Middleware.Authn.authenticate req in
       let* password = url_encoded req "password" in
       let* result =
-        Sihl.Err.try_to_run (fun () ->
+        Sihl.Core.Err.try_to_run (fun () ->
             Service.User.set_password req user ~user_id ~password)
       in
       match result with
       | Ok _ ->
-          Sihl.Flash.redirect_with_success req ~path:user_page
+          Sihl.Middleware.Flash.redirect_with_success req ~path:user_page
             "New password successfully set"
       | Error error ->
-          Logs.err (fun m -> m "%s" (Sihl.Err.Error.show error));
-          Sihl.Flash.redirect_with_error req ~path:user_page
-            (Sihl.Err.Error.show error)
+          Logs.err (fun m -> m "%s" (Sihl.Core.Err.Error.show error));
+          Sihl.Middleware.Flash.redirect_with_error req ~path:user_page
+            (Sihl.Core.Err.Error.show error)
   end
 
   module Catch = struct
@@ -272,7 +273,7 @@ module AdminUi = struct
     let handler =
       all "/admin/**" @@ fun req ->
       let path = req |> Opium.Std.Request.uri |> Uri.to_string in
-      Sihl.Flash.redirect_with_error req ~path:"/admin/dashboard/"
+      Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/dashboard/"
         [%string "Path $(path) not found :("]
   end
 end

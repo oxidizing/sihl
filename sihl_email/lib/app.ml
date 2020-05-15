@@ -3,7 +3,7 @@ let name = "Email Management App"
 let namespace = "emails"
 
 let config () =
-  Sihl.Config.Schema.
+  Sihl.Core.Config.Schema.
     [
       string_ ~default:"console"
         ~choices:[ "smtp"; "console"; "memory"; "sendgrid" ]
@@ -22,21 +22,24 @@ let endpoints () = []
 let repos () = Binding.Repository.default ()
 
 let bindings () =
-  let backend = Sihl.Config.read_string ~default:"memory" "EMAIL_BACKEND" in
+  let backend =
+    Sihl.Core.Config.read_string ~default:"memory" "EMAIL_BACKEND"
+  in
   [
-    Sihl.Registry.Binding.create Binding.Repository.key
+    Sihl.Core.Registry.Binding.create Binding.Repository.key
       (module Repository_postgres);
     ( match backend with
     | "smtp" ->
-        Sihl.Registry.Binding.create Binding.Transport.key (module Service.Smtp)
+        Sihl.Core.Registry.Binding.create Binding.Transport.key
+          (module Service.Smtp)
     | "sendgrid" ->
-        Sihl.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Binding.Transport.key
           (module Service.SendGrid)
     | "console" ->
-        Sihl.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Binding.Transport.key
           (module Service.Console)
     | _ ->
-        Sihl.Registry.Binding.create Binding.Transport.key
+        Sihl.Core.Registry.Binding.create Binding.Transport.key
           (module Service.Memory) );
   ]
 

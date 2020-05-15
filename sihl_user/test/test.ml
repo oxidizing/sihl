@@ -52,7 +52,7 @@ let () =
     | _ -> ("Postgres", Run_postgres.project)
   in
   Lwt_main.run
-    (let* () = Sihl.Manage.start project in
-     let* () = Sihl.Manage.migrate () in
+    (let* () = Sihl.Run.Manage.start project in
+     let* () = Sihl.Run.Manage.migrate () in
      let* () = run ("user management with " ^ db_name) suite in
-     Sihl.Manage.stop ())
+     Sihl.Run.Manage.stop ())

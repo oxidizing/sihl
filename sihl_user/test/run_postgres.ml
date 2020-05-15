@@ -1,5 +1,5 @@
 let config =
-  Sihl.Config.Setting.create ~development:[]
+  Sihl.Core.Config.Setting.create ~development:[]
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
@@ -21,7 +21,7 @@ let middlewares =
   ]
 
 let project =
-  Sihl.Run.Project.create ~config middlewares
+  Sihl.Run.Project.Project.create ~config middlewares
     [ (module Sihl_email.App); (module Sihl_user.App) ]
 
-let () = Sihl.Run.Project.run_command project
+let () = Sihl.Run.Project.Project.run_command project

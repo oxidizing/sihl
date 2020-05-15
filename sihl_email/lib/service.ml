@@ -9,10 +9,10 @@ let render request email =
     match template_id with
     | Some template_id ->
         let (module Repository : Contract.REPOSITORY) =
-          Sihl.Registry.get Binding.Repository.key
+          Sihl.Core.Registry.get Binding.Repository.key
         in
         let* template =
-          Repository.get ~id:template_id |> Sihl.Db.query_db_exn request
+          Repository.get ~id:template_id |> Sihl.Core.Db.query_db_exn request
         in
         let content = render template_data template in
         Lwt.return content
@@ -20,7 +20,7 @@ let render request email =
   in
   { email with content } |> Lwt.return
 
-module Console : Sihl.Contract.Email.EMAIL with type email = t = struct
+module Console : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
   type email = t
 
   let show email =
@@ -41,7 +41,7 @@ $(email.content)
     Lwt.return @@ Ok (Logs.info (fun m -> m "%s" to_print))
 end
 
-module Smtp : Sihl.Contract.Email.EMAIL with type email = t = struct
+module Smtp : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
   type email = t
 
   let send request email =
@@ -50,7 +50,7 @@ module Smtp : Sihl.Contract.Email.EMAIL with type email = t = struct
     Lwt.return @@ Error "Not implemented"
 end
 
-module SendGrid : Sihl.Contract.Email.EMAIL with type email = t = struct
+module SendGrid : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
   type email = t
 
   let body ~recipient ~subject ~sender ~content =
@@ -83,7 +83,7 @@ module SendGrid : Sihl.Contract.Email.EMAIL with type email = t = struct
     "https://api.sendgrid.com/v3/mail/send" |> Uri.of_string
 
   let send request email =
-    let token = Sihl.Config.read_string "SENDGRID_API_KEY" in
+    let token = Sihl.Core.Config.read_string "SENDGRID_API_KEY" in
     let headers =
       Cohttp.Header.of_list
         [
@@ -117,7 +117,7 @@ module SendGrid : Sihl.Contract.Email.EMAIL with type email = t = struct
 end
 
 module Memory : sig
-  include Sihl.Contract.Email.EMAIL
+  include Sihl.Core.Contract.Email.EMAIL
 
   val get : unit -> t
 end
@@ -138,7 +138,7 @@ with type email = t = struct
 end
 
 let send request email =
-  let (module Email : Sihl.Contract.Email.EMAIL with type email = t) =
-    Sihl.Registry.get Binding.Transport.key
+  let (module Email : Sihl.Core.Contract.Email.EMAIL with type email = t) =
+    Sihl.Core.Registry.get Binding.Transport.key
   in
   Email.send request email
