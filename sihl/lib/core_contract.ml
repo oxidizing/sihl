@@ -49,12 +49,12 @@ module Migration = struct
       (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
   end
 
-  let repository : (module REPOSITORY) Registry.Key.t =
-    Registry.Key.create "migration repository"
+  let repository : (module REPOSITORY) Core_registry.Key.t =
+    Core_registry.Key.create "migration repository"
 end
 
 module type REPOSITORY = sig
   val migrate : unit -> Migration.migration
 
-  val clean : Db.connection -> unit Db.db_result
+  val clean : Core_db.connection -> unit Core_db.db_result
 end

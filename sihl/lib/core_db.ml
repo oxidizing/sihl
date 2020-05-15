@@ -17,12 +17,12 @@ type connection = (module Caqti_lwt.CONNECTION)
 (* [connection ()] establishes a live database connection and is a pool of
    concurrent threads for accessing that connection. *)
 let connect () =
-  let pool_size = Config.read_int ~default:10 "DATABASE_POOL_SIZE" in
-  "DATABASE_URL" |> Config.read_string |> Uri.of_string
+  let pool_size = Core_config.read_int ~default:10 "DATABASE_POOL_SIZE" in
+  "DATABASE_URL" |> Core_config.read_string |> Uri.of_string
   |> Caqti_lwt.connect_pool ~max_size:pool_size
   |> function
   | Ok pool -> pool
-  | Error err -> Err.raise_database (Caqti_error.show err)
+  | Error err -> Core_err.raise_database (Caqti_error.show err)
 
 (* [query_pool query pool] is the [Ok res] of the [res] obtained by executing
    the database [query], or else the [Error err] reporting the error causing
@@ -58,12 +58,12 @@ let key : db_connection Opium.Hmap.key =
 let request_with_connection request =
   let ( let* ) = Lwt.bind in
   let* connection =
-    "DATABASE_URL" |> Config.read_string |> Uri.of_string |> Caqti_lwt.connect
+    "DATABASE_URL" |> Core_config.read_string |> Uri.of_string |> Caqti_lwt.connect
   in
   let connection =
     connection |> function
     | Ok connection -> connection
-    | Error err -> Err.raise_database (Caqti_error.show err)
+    | Error err -> Core_err.raise_database (Caqti_error.show err)
   in
   let env = Opium.Hmap.add key connection (Request.env request) in
   Lwt.return @@ { request with env }
@@ -89,7 +89,7 @@ let middleware () app =
     in
     match !response_ref with
     | Some response -> Lwt.return response
-    | None -> Err.raise_database "error happened"
+    | None -> Core_err.raise_database "error happened"
   in
   let m = Rock.Middleware.create ~name:"database connection" ~filter in
   Opium.Std.middleware m app
@@ -106,7 +106,7 @@ let query_db_with_trx request query =
     | Error error ->
         Logs.err (fun m ->
             m "failed to start transaction %s" (Caqti_error.show error));
-        Err.raise_database
+        Core_err.raise_database
           "failed to start transaction %s (Caqti_error.show error)"
   in
   let* result = query connection in
@@ -124,13 +124,13 @@ let query_db_with_trx request query =
   let () =
     match trx_result with
     | Ok _ -> ()
-    | Error _ -> Err.raise_database "failed to commit or rollback transaction"
+    | Error _ -> Core_err.raise_database "failed to commit or rollback transaction"
   in
   result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
 
 let query_db_with_trx_exn request query =
   Lwt.map
-    (Err.with_database "failed to query with transaction")
+    (Core_err.with_database "failed to query with transaction")
     (query_db_with_trx request query)
 
 let query_db request query =
@@ -142,4 +142,4 @@ let query_db_exn ?message request query =
   query_db request query >>= fun result ->
   match result with
   | Ok result -> Lwt.return result
-  | Error msg -> Err.raise_database (Option.value ~default:msg message)
+  | Error msg -> Core_err.raise_database (Option.value ~default:msg message)

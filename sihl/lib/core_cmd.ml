@@ -33,8 +33,13 @@ $(command_list)
 --------------------------------------------
 |}]
 
+(* TODO move to correct place *)
+let request_with_connection () =
+  "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
+  |> Opium.Std.Request.create |> Core_db.request_with_connection
+
 let execute command args =
-  let* request = Test.request_with_connection () in
+  let* request = request_with_connection () in
   let fn = fn command in
   let description = description command in
   (* wait for the execution to end *)

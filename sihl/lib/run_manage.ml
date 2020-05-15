@@ -4,7 +4,7 @@ let project_ref = ref None
 
 let start project =
   let () = project_ref := Some project in
-  let* result = Run.Project.start project in
+  let* result = Run_project.Project.start project in
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
@@ -13,7 +13,7 @@ let start project =
 
 let stop () =
   let project = Option.get !project_ref in
-  let* result = Run.Project.stop project in
+  let* result = Run_project.Project.stop project in
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
@@ -22,7 +22,7 @@ let stop () =
 
 let clean () =
   let project = Option.get !project_ref in
-  let* result = Run.Project.clean project in
+  let* result = Run_project.Project.clean project in
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
@@ -31,7 +31,7 @@ let clean () =
 
 let migrate () =
   let project = Option.get !project_ref in
-  let* result = Run.Project.migrate project in
+  let* result = Run_project.Project.migrate project in
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->

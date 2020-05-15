@@ -38,7 +38,7 @@ module Store = struct
     | `Duplicate ->
         Logs.err (fun m ->
             m "failed to create unique key to store flash message");
-        Err.raise_server "failed to create unique key to store flash message"
+        Core_err.raise_server "failed to create unique key to store flash message"
     | `Ok map ->
         state := map;
         ()

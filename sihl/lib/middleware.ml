@@ -1,17 +1,18 @@
 open Base
 open Http
 
+module Flash = Middleware_flash
 let ( let* ) = Lwt.bind
 
-let flash () = Flash.m
+let flash () = Middleware_flash.m
 
 let error () app =
   let filter handler req =
-    let* response = Err.try_to_run (fun () -> handler req) in
+    let* response = Core_err.try_to_run (fun () -> handler req) in
     match (accepts_html req, response) with
     | _, Ok response -> Lwt.return response
     | false, Error error ->
-        let msg = Err.Error.show error in
+        let msg = Core_err.Error.show error in
         Logs.err (fun m -> m "%s" msg);
         let headers =
           Cohttp.Header.of_list [ ("Content-Type", content_type Json) ]
@@ -19,10 +20,10 @@ let error () app =
         let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
         Opium.Std.Response.create ~headers ~body ~code:(code_of_error error) ()
         |> Lwt.return
-    | true, Error (Err.Error.NotAuthenticated msg | Err.Error.NoPermissions msg)
+    | true, Error (Core_err.Error.NotAuthenticated msg | Core_err.Error.NoPermissions msg)
       ->
         (* TODO evaluate whether the error handler should really remove invalid cookies *)
-        Flash.set_error req msg;
+        Middleware_flash.set_error req msg;
         Logs.err (fun m -> m "%s" msg);
         (* TODO make custom permission/not authenticated error page configurable *)
         let headers =
@@ -40,12 +41,12 @@ let error () app =
         |> Lwt.return
     | ( true,
         Error
-          ( Err.Error.BadRequest msg
-          | Err.Error.Configuration msg
-          | Err.Error.Database msg
-          | Err.Error.Email msg
-          | Err.Error.Server msg ) ) ->
-        Flash.set_error req msg;
+          ( Core_err.Error.BadRequest msg
+          | Core_err.Error.Configuration msg
+          | Core_err.Error.Database msg
+          | Core_err.Error.Email msg
+          | Core_err.Error.Server msg ) ) ->
+        Middleware_flash.set_error req msg;
         Logs.err (fun m -> m "%s" msg);
         let headers =
           Cohttp.Header.of_list
@@ -62,7 +63,7 @@ let error () app =
 
 let static () =
   let static_files_path =
-    Config.read_string ~default:"./static" "STATIC_FILES_DIR"
+    Core_config.read_string ~default:"./static" "STATIC_FILES_DIR"
   in
   Opium.Std.middleware
   @@ Opium.Std.Middleware.static ~local_path:static_files_path
@@ -70,4 +71,4 @@ let static () =
 
 let cookie () = Opium.Std.middleware Opium.Std.Cookie.m
 
-let db = Db.middleware
+let db = Core_db.middleware

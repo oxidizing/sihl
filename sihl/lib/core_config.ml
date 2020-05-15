@@ -191,7 +191,7 @@ let process schemas setting =
   check_types schema |> Result.map ~f:(fun _ -> config)
 
 let load_config schemas setting =
-  process schemas setting |> Err.with_configuration |> State.set |> ignore
+  process schemas setting |> Core_err.with_configuration |> State.set |> ignore
 
 let read_string ?default key =
   let value =
@@ -201,7 +201,7 @@ let read_string ?default key =
   | _, Some value -> value
   | Some default, None -> default
   | None, None ->
-      Err.raise_configuration @@ "configuration " ^ key ^ " not found"
+      Core_err.raise_configuration @@ "configuration " ^ key ^ " not found"
 
 let read_int ?default key =
   let value =
@@ -212,10 +212,10 @@ let read_int ?default key =
       match Option.try_with (fun () -> Base.Int.of_string value) with
       | Some value -> value
       | None ->
-          Err.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
+          Core_err.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
   | Some default, None -> default
   | None, None ->
-      Err.raise_configuration @@ "configuration " ^ key ^ " not found"
+      Core_err.raise_configuration @@ "configuration " ^ key ^ " not found"
 
 let read_bool ?default key =
   let value =
@@ -226,7 +226,7 @@ let read_bool ?default key =
       match Caml.bool_of_string_opt value with
       | Some value -> value
       | None ->
-          Err.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
+          Core_err.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
   | Some default, None -> default
   | None, None ->
-      Err.raise_configuration @@ "configuration " ^ key ^ " not found"
+      Core_err.raise_configuration @@ "configuration " ^ key ^ " not found"

@@ -13,7 +13,7 @@ let accepts_html req =
 
 let require_auth req =
   match req |> Cohttp.Header.get_authorization with
-  | None -> Err.raise_bad_request "No authorization header found"
+  | None -> Core_err.raise_bad_request "No authorization header found"
   | Some token -> token
 
 let find_in_query key query =
@@ -27,7 +27,7 @@ let query_opt req key =
 
 let query req key =
   match query_opt req key with
-  | None -> Err.raise_bad_request [%string "Please provide a key $(key)"]
+  | None -> Core_err.raise_bad_request [%string "Please provide a key $(key)"]
   | Some value -> value
 
 let query2_opt req key1 key2 = (query_opt req key1, query_opt req key2)
@@ -49,7 +49,7 @@ let url_encoded ?body req key =
   in
   match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
   | None ->
-      Lwt.return @@ Err.raise_bad_request [%string "Please provide a $(key)."]
+      Lwt.return @@ Core_err.raise_bad_request [%string "Please provide a $(key)."]
   | Some value -> Lwt.return value
 
 let url_encoded2 req key1 key2 =
@@ -66,31 +66,31 @@ let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
 
 let require_body req decode =
   let* body = req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string in
-  body |> Json.parse |> Result.bind ~f:decode
-  |> Result.map_error ~f:(fun error -> Err.err_bad_request error)
+  body |> Core_json.parse |> Result.bind ~f:decode
+  |> Result.map_error ~f:(fun error -> Core_err.err_bad_request error)
   |> Lwt.return
 
 let require_body_exn req decode =
   let* body = require_body req decode in
   match body with
   | Ok body -> Lwt.return body
-  | Error _ -> Err.raise_bad_request "invalid body provided"
+  | Error _ -> Core_err.raise_bad_request "invalid body provided"
 
 module Msg = struct
   type t = { msg : string } [@@deriving yojson]
 
-  let ok_string = { msg = "ok" } |> to_yojson |> Json.to_string
+  let ok_string = { msg = "ok" } |> to_yojson |> Core_json.to_string
 
-  let msg_string msg = { msg } |> to_yojson |> Json.to_string
+  let msg_string msg = { msg } |> to_yojson |> Core_json.to_string
 end
 
 let code_of_error error =
   match error with
-  | Err.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
-  | Err.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
-  | Err.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
-  | Err.Error.Configuration _ | Err.Error.Email _ | Err.Error.Database _
-  | Err.Error.Server _ ->
+  | Core_err.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
+  | Core_err.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
+  | Core_err.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
+  | Core_err.Error.Configuration _ | Core_err.Error.Email _ | Core_err.Error.Database _
+  | Core_err.Error.Server _ ->
       500 |> Cohttp.Code.status_of_code
 
 module Response = struct

@@ -1,5 +1,5 @@
+module Config = Sihl.Core.Config
 open Base
-open Sihl
 open Config.Schema
 
 module Schema = struct
