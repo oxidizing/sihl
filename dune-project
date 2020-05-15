@@ -1,7 +1,7 @@
 (lang dune 2.0)
 (generate_opam_files true)
 
-(name sihl_core)
+(name sihl)
 (version 0.0.27)
 
 (authors "Josef Erben")
