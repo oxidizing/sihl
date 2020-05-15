@@ -1,0 +1,17 @@
+(library
+ (name sihl_email_repo_postgres)
+ (public_name sihl_email_repo_postgres)
+ (libraries
+  base
+  sihl
+  sihl_email
+)
+ (preprocess
+  (pps
+   ppx_rapper
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_string_interpolation
+  )))
+(include_subdirs unqualified)
+

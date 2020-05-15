@@ -1,5 +1,5 @@
 module Sql = struct
-  open Model.Template
+  open Sihl_email.Model.Template
 
   let get =
     [%rapper

@@ -1,6 +1,6 @@
 module Sql = struct
   module Model = struct
-    open Model.Template
+    open Sihl_email.Model.Template
 
     let t =
       let encode m = Ok (m.id, m.label, m.value, m.status) in

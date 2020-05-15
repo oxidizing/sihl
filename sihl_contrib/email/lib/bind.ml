@@ -1,8 +1,4 @@
 module Repository = struct
-  module MariaDb : Repo_sig.REPOSITORY = Repo.Mariadb
-
-  module Postgres : Repo_sig.REPOSITORY = Repo.Postgres
-
   let key : (module Repo_sig.REPOSITORY) Sihl.Core.Registry.Key.t =
     Sihl.Core.Registry.Key.create "emails repository"
 

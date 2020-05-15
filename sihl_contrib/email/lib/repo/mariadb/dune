@@ -1,0 +1,17 @@
+(library
+ (name sihl_email_repo_mariadb)
+ (public_name sihl_email_repo_mariadb)
+ (libraries
+  base
+  sihl
+  sihl_email
+)
+ (preprocess
+  (pps
+   ppx_rapper
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_string_interpolation
+  )))
+(include_subdirs unqualified)
+
