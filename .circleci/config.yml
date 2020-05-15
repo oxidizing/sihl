@@ -36,11 +36,7 @@ jobs:
           command: |
             sudo apt-get update -y
             sudo apt-get install -y libmariadbclient-dev libpq-dev
-            opam depext -y sihl
-                           sihl_email
-                           sihl_email_repo_mariadb
-                           sihl_email_repo_postgres
-                           sihl_user
+            opam depext -y sihl sihl_email sihl_email_repo_mariadb sihl_email_repo_postgres sihl_user
       - run:
           name: Install OCaml dependencies
           command: opam install --deps-only -y sihl sihl_email sihl_user
