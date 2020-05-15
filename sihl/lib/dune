@@ -1,0 +1,29 @@
+(library
+ (name sihl)
+ (public_name sihl)
+ (libraries
+  base
+  pcre
+  str
+  opium
+  caqti
+  caqti-lwt
+  tyxml
+  lwt.unix
+  yojson
+  ppx_deriving_yojson.runtime
+  logs
+  logs.fmt
+  logs.lwt
+  safepass
+  uuidm
+)
+ (preprocess
+  (pps
+   ppx_rapper
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_sexp_conv
+   ppx_string_interpolation
+  )))
+(include_subdirs unqualified)

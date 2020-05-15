@@ -12,7 +12,7 @@
 (documentation "https://github.com/oxidizing/sihl")
 
 (package
- (name sihl_core)
+ (name sihl)
  (synopsis "A web framework for Reason and OCaml")
  (description "A web framework for Reason and OCaml to build web apps rapidly.")
  (license MIT)
@@ -85,7 +85,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl_core (>= 0.0.27))
+  (sihl (>= 0.0.27))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -113,7 +113,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl_core (>= 0.0.27))
+  (sihl (>= 0.0.27))
   (sihl_email (>= 0.0.27))
 
   ;; Standard library replacement

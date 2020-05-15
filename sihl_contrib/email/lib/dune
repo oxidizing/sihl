@@ -1,0 +1,14 @@
+(library
+ (name sihl_email)
+ (public_name sihl_email)
+ (libraries
+  base
+  sihl
+)
+ (preprocess
+  (pps
+   ppx_rapper
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_string_interpolation
+  )))
