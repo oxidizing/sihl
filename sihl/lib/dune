@@ -26,3 +26,4 @@
    ppx_sexp_conv
    ppx_string_interpolation
   )))
+(include_subdirs unqualified)
