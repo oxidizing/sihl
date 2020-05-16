@@ -39,7 +39,7 @@ jobs:
             opam depext -y sihl sihl_email sihl_email_repo_mariadb sihl_email_repo_postgres sihl_user
       - run:
           name: Install OCaml dependencies
-          command: opam install --deps-only -y sihl sihl_email sihl_user
+          command: opam install --deps-only -y sihl sihl_email sihl_email_mariadb sihl_email_postgres sihl_user
       - run:
           name: Build
           command: opam config exec -- make

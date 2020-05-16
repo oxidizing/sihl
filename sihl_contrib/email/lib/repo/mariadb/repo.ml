@@ -54,12 +54,15 @@ module Sql = struct
     in
     Connection.exec request
 
-  let clean =
-    [%rapper
-      execute
+  let clean connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Caqti_type.unit
         {sql|
         TRUNCATE TABLE emails_templates CASCADE;
-        |sql}]
+         |sql}
+    in
+    Connection.exec request
 end
 
 module Migration = struct
