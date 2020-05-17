@@ -114,7 +114,7 @@
 ))
 
 (package
- (name sihl_email_repo_postgres)
+ (name sihl_email_repo_postgresql)
  (synopsis "TODO")
  (description "TODO")
  (license MIT)

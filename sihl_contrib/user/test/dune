@@ -5,7 +5,7 @@
   sihl_user
   sihl_user_repo_postgresql
   sihl_user_repo_mariadb
-  sihl_email_repo_postgres
+  sihl_email_repo_postgresql
   sihl_email_repo_mariadb
   alcotest
   alcotest-lwt

@@ -1,6 +1,6 @@
 (library
- (name sihl_email_repo_postgres)
- (public_name sihl_email_repo_postgres)
+ (name sihl_email_repo_postgresql)
+ (public_name sihl_email_repo_postgresql)
  (libraries
   base
   sihl
@@ -9,5 +9,5 @@
  (preprocess
   (pps ppx_rapper)))
 
-(include_subdirs unqualified)
+(include_subdirs no)
 
