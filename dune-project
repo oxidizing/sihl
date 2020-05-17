@@ -89,16 +89,6 @@
 
   ;; Standard library replacement
   (base (>= v0.13.1))
-
-  ;; Database
-  (ppx_rapper (>= 0.9.2))
-
-  ;; Dev dependencies
-  (utop :dev)
-  (merlin :dev)
-  (ocamlformat :dev)
-  (ocp-indent :dev)
-  (tuareg :dev) ;; rm if not using emacs
 ))
 
 (package
@@ -120,7 +110,7 @@
   (base (>= v0.13.1))
 
   ;; Database
-  (ppx_rapper (>= 0.9.2))
+  (caqti-driver-mariadb (>= 1.2.1))
 
   ;; Dev dependencies
   (utop :dev)
@@ -148,12 +138,9 @@
   ;; Standard library replacement
   (base (>= v0.13.1))
 
-  ;; Dev dependencies
-  (utop :dev)
-  (merlin :dev)
-  (ocamlformat :dev)
-  (ocp-indent :dev)
-  (tuareg :dev) ;; rm if not using emacs
+  ;; Database
+  (caqti-driver-postgresql (>= 1.2.1))
+  (ppx_rapper (>= 0.9.2))
 ))
 
 (package
@@ -176,11 +163,4 @@
 
   ;; Database
   (ppx_rapper (>= 0.9.2))
-
-  ;; Dev dependencies
-  (utop :dev)
-  (merlin :dev)
-  (ocamlformat :dev)
-  (ocp-indent :dev)
-  (tuareg :dev) ;; rm if not using emacs
 ))
