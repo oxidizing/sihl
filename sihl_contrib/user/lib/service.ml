@@ -4,7 +4,7 @@ let ( let* ) = Lwt.bind
 
 module User = struct
   let is_valid_auth_token request token =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -16,7 +16,7 @@ module User = struct
     |> Lwt.return
 
   let get request user ~user_id =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -31,7 +31,7 @@ module User = struct
     else Sihl.Core.Err.raise_no_permissions "user is not allowed to fetch user"
 
   let get_by_token request token =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -46,7 +46,7 @@ module User = struct
     |> Lwt.map Sihl.Core.Err.with_not_authenticated
 
   let get_all request user =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -57,13 +57,13 @@ module User = struct
         "user is not allowed to fetch all users"
 
   let get_by_email request ~email =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
     Repository.User.get_by_email ~email |> Sihl.Core.Db.query_db_exn request
 
   let send_registration_email request user =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
     let token = Model.Token.create_email_confirmation user in
@@ -75,7 +75,7 @@ module User = struct
     result |> Sihl.Core.Err.with_email |> Lwt.return
 
   let register ?(suppress_email = false) request ~email ~password ~username =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -99,7 +99,7 @@ module User = struct
       Lwt.return user
 
   let create_admin request ~email ~password ~username =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -118,7 +118,7 @@ module User = struct
       Lwt.return user
 
   let logout request user =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -126,7 +126,7 @@ module User = struct
     Repository.Token.delete_by_user ~id |> Sihl.Core.Db.query_db_exn request
 
   let login request ~email ~password =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -147,7 +147,7 @@ module User = struct
     else Sihl.Core.Err.raise_not_authenticated @@ "wrong credentials provided"
 
   let token request user =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -159,7 +159,7 @@ module User = struct
     Lwt.return token
 
   let update_password request current_user ~email ~old_password ~new_password =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -183,7 +183,7 @@ module User = struct
         "user is not allowed to update this user"
 
   let update_details request current_user ~email ~username =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -202,7 +202,7 @@ module User = struct
         "user is not allowed to update this user"
 
   let set_password request current_user ~user_id ~password =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -227,7 +227,7 @@ module User = struct
       Sihl.Core.Err.raise_no_permissions "user is not allowed to set password"
 
   let confirm_email request token =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -252,7 +252,7 @@ module User = struct
           Repository.User.update (Model.User.confirm user) connection)
 
   let request_password_reset request ~email =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 
@@ -266,7 +266,7 @@ module User = struct
     result |> Sihl.Core.Err.with_email |> Lwt.return
 
   let reset_password request ~token ~new_password =
-    let (module Repository : Contract.REPOSITORY) =
+    let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Binding.Repository.key
     in
 

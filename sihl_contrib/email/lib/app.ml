@@ -26,7 +26,6 @@ let bindings () =
     Sihl.Core.Config.read_string ~default:"memory" "EMAIL_BACKEND"
   in
   [
-    (* Sihl.Core.Registry.Binding.create Bind.Repository.key (module Repo.Postgres); *)
     ( match backend with
     | "smtp" ->
         Sihl.Core.Registry.Binding.create Bind.Transport.key

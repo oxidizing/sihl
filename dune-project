@@ -111,13 +111,6 @@
 
   ;; Database
   (caqti-driver-mariadb (>= 1.2.1))
-
-  ;; Dev dependencies
-  (utop :dev)
-  (merlin :dev)
-  (ocamlformat :dev)
-  (ocp-indent :dev)
-  (tuareg :dev) ;; rm if not using emacs
 ))
 
 (package
@@ -162,5 +155,50 @@
   (base (>= v0.13.1))
 
   ;; Database
+  (ppx_rapper (>= 0.9.2))
+))
+
+(package
+ (name sihl_user_repo_mariadb)
+ (synopsis "TODO")
+ (description "TODO")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.27))
+  (sihl_user (>= 0.0.27))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+
+  ;; Database
+  (caqti-driver-mariadb (>= 1.2.1))
+))
+
+(package
+ (name sihl_user_repo_postgresql)
+ (synopsis "TODO")
+ (description "TODO")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.27))
+  (sihl_user (>= 0.0.27))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+
+  ;; Database
+  (caqti-driver-postgresql (>= 1.2.1))
   (ppx_rapper (>= 0.9.2))
 ))

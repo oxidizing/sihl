@@ -36,7 +36,7 @@ let endpoints () =
 
 let repos () = Binding.Repository.default ()
 
-let bindings () = Binding.default
+let bindings () = []
 
 let commands () = [ Command.create_admin ]
 

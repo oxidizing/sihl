@@ -24,6 +24,8 @@ let bindings =
   [
     Sihl.Core.Registry.bind Sihl_email.Bind.Repository.key
       (module Sihl_email_repo_postgres.Repo);
+    Sihl.Core.Registry.bind Sihl_user.Binding.Repository.key
+      (module Sihl_user_repo_postgresql.Repo);
   ]
 
 let project =
