@@ -93,14 +93,11 @@ module Project : PROJECT = struct
     project.apps
     |> List.map ~f:(fun (module App : APP) -> App.repos ())
     |> List.concat
-    |> List.map ~f:(fun (module Repo : Core.Contract.REPOSITORY) -> Repo.migrate ())
+    |> List.map ~f:(fun (module Repo : Core.Contract.REPOSITORY) ->
+           Repo.migrate ())
     |> Repo.Migration.execute
 
   let bind_registry project =
-    (* TODO make it more explicit when binding core default implementations *)
-    Logs.debug (fun m -> m "binding default core implementations");
-    Core.Registry.Binding.register Core.Contract.Migration.repository
-      (module Repo.Migration.PostgresRepository);
     Logs.debug (fun m -> m "binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->

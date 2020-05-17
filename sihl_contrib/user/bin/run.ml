@@ -34,8 +34,14 @@ let middlewares =
     Sihl_user.Middleware.Authn.session;
   ]
 
+let bindings =
+  [
+    Sihl.Core.Registry.bind Sihl.Core.Contract.Migration.repository
+      (module Sihl_repo_postgresql.Repo);
+  ]
+
 let project =
-  Sihl.Run.Project.Project.create ~config middlewares
+  Sihl.Run.Project.Project.create ~config ~bindings middlewares
     [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project

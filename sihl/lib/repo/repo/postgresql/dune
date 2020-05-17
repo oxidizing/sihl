@@ -1,0 +1,11 @@
+(library
+ (name sihl_repo_postgresql)
+ (public_name sihl_repo_postgresql)
+ (libraries
+  base
+  sihl
+  caqti-driver-postgresql)
+ (preprocess
+  (pps ppx_rapper)))
+
+(include_subdirs no)

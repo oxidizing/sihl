@@ -1,0 +1,9 @@
+(library
+ (name sihl_repo_mariadb)
+ (public_name sihl_repo_mariadb)
+ (libraries
+  base
+  sihl
+  caqti-driver-mariadb))
+
+(include_subdirs no)

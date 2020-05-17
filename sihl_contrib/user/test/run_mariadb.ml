@@ -27,7 +27,7 @@ let bindings =
     Sihl.Core.Registry.bind Sihl_user.Binding.Repository.key
       (module Sihl_user_repo_mariadb.Repo);
     Sihl.Core.Registry.bind Sihl.Core.Contract.Migration.repository
-      (module Sihl.Repo.Migration.MariaDbRepository);
+      (module Sihl_repo_mariadb.Repo);
   ]
 
 let project =

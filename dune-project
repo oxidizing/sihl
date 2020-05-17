@@ -74,6 +74,49 @@
 ))
 
 (package
+ (name sihl_repo_postgresql)
+ (synopsis "TODO")
+ (description "TODO")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.27))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+
+  ;; Database
+  (caqti-driver-postgresql (>= 1.2.1))
+  (ppx_rapper (>= 0.9.2))
+))
+
+(package
+ (name sihl_repo_mariadb)
+ (synopsis "TODO")
+ (description "TODO")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.27))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+
+  ;; Database
+  (caqti-driver-mariadb (>= 1.2.1))
+))
+
+(package
  (name sihl_email)
  (synopsis "An email management app for Sihl")
  (description "Use this app to send single emails and schedule sending over various email backends.")
