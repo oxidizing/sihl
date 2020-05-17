@@ -2,6 +2,8 @@
  (name test)
  (libraries
   base
+  sihl_repo_postgresql
+  sihl_repo_mariadb
   sihl_user
   sihl_user_repo_postgresql
   sihl_user_repo_mariadb

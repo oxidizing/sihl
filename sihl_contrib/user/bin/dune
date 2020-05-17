@@ -2,9 +2,9 @@
  (name run)
  (libraries
   base
+  sihl_repo_postgresql
   sihl_user
-  caqti-driver-postgresql
-  caqti-driver-mariadb
+  sihl_user_repo_postgresql
   alcotest
   alcotest-lwt
   )
