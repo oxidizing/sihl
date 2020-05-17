@@ -1,7 +1,8 @@
 module Sql = struct
   module User = struct
+    open Sihl_user.Model.User
+
     let get_all =
-      let open Model.User in
       [%rapper
         get_many
           {sql|
@@ -18,7 +19,6 @@ module Sql = struct
           record_out]
 
     let get =
-      let open Model.User in
       [%rapper
         get_one
           {sql|
@@ -36,7 +36,6 @@ module Sql = struct
           record_out]
 
     let get_by_email =
-      let open Model.User in
       [%rapper
         get_one
           {sql|
@@ -54,7 +53,6 @@ module Sql = struct
           record_out]
 
     let insert =
-      let open Model.User in
       [%rapper
         execute
           {sql|
@@ -79,7 +77,6 @@ module Sql = struct
           record_in]
 
     let update =
-      let open Model.User in
       [%rapper
         execute
           {sql|
@@ -103,8 +100,9 @@ module Sql = struct
   end
 
   module Token = struct
+    open Sihl_user.Model.Token
+
     let get =
-      let open Model.Token in
       [%rapper
         get_one
           {sql|
@@ -122,7 +120,6 @@ module Sql = struct
           record_out]
 
     let insert =
-      let open Model.Token in
       [%rapper
         execute
           {sql|
@@ -143,7 +140,6 @@ module Sql = struct
           record_in]
 
     let update =
-      let open Model.Token in
       [%rapper
         execute
           {sql|

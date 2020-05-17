@@ -29,17 +29,24 @@ jobs:
             opam pin add -y -n sihl .
             opam pin add -y -n sihl_email .
             opam pin add -y -n sihl_email_repo_mariadb .
-            opam pin add -y -n sihl_email_repo_postgres .
+            opam pin add -y -n sihl_email_repo_postgresql .
             opam pin add -y -n sihl_user .
+            opam pin add -y -n sihl_user_repo_mariadb .
+            opam pin add -y -n sihl_user_repo_postgresql .
       - run:
           name: Install system dependencies
           command: |
             sudo apt-get update -y
             sudo apt-get install -y libmariadbclient-dev libpq-dev
-            opam depext -y sihl sihl_email sihl_email_repo_mariadb sihl_email_repo_postgres sihl_user
+            opam depext -y sihl
+            opam depext -y sihl_email sihl_email_repo_mariadb sihl_email_repo_postgresql
+            opam depext -y sihl_user sihl_user_repo_mariadb sihl_user_repo_postgresql
       - run:
           name: Install OCaml dependencies
-          command: opam install --deps-only -y sihl sihl_email sihl_email_mariadb sihl_email_postgres sihl_user
+          command: |
+            opam install --deps-only -y sihl
+            opam install --deps-only -y sihl_email sihl_email_repo_mariadb sihl_email_repo_postgresql
+            opam install --deps-only -y sihl_user sihl_user_repo_mariadb sihl_user_repo_postgresql
       - run:
           name: Build
           command: opam config exec -- make

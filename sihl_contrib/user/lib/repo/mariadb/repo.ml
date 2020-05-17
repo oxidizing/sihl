@@ -11,7 +11,7 @@ module Sql = struct
 
   module User = struct
     module Model = struct
-      open Model.User
+      open Sihl_user.Model.User
 
       let t =
         let encode m =
@@ -152,7 +152,7 @@ TRUNCATE users_users;
 
   module Token = struct
     module Model = struct
-      open Model.Token
+      open Sihl_user.Model.Token
 
       let t =
         let encode m = Ok (m.id, (m.value, (m.kind, (m.user, m.status)))) in
