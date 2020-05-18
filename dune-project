@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.0.27)
+(version 0.0.28)
 
 (authors "Josef Erben")
 (license MIT)
@@ -85,7 +85,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
+  (sihl (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -107,7 +107,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
+  (sihl (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -128,7 +128,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
+  (sihl (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -146,8 +146,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
-  (sihl_email (>= 0.0.27))
+  (sihl (>= 0.0.28))
+  (sihl_email (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -168,8 +168,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
-  (sihl_email (>= 0.0.27))
+  (sihl (>= 0.0.28))
+  (sihl_email (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -191,8 +191,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
-  (sihl_email (>= 0.0.27))
+  (sihl (>= 0.0.28))
+  (sihl_email (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -213,8 +213,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
-  (sihl_user (>= 0.0.27))
+  (sihl (>= 0.0.28))
+  (sihl_user (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -235,8 +235,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.27))
-  (sihl_user (>= 0.0.27))
+  (sihl (>= 0.0.28))
+  (sihl_user (>= 0.0.28))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
