@@ -154,7 +154,10 @@ let of_list kvs =
   | `Ok map -> Ok map
 
 (* overwrite config values with values from the environment *)
-let merge_with_env config =
+let merge_with_env config schema =
+  let config_keys = Map.keys config in
+  let schema_keys = schema |> List.map ~f:Schema.Type.key in
+  let keys = List.concat [ config_keys; schema_keys ] in
   let rec merge keys result =
     match keys with
     | [] -> result
@@ -163,7 +166,7 @@ let merge_with_env config =
         | Some value -> merge keys @@ Map.set ~key ~data:value result
         | None -> merge keys result )
   in
-  merge (Map.keys config) config
+  merge keys config
 
 let read_by_env setting =
   match Sys.getenv "SIHL_ENV" |> Option.value ~default:"development" with
@@ -179,8 +182,8 @@ let is_testing () =
 let process schemas setting =
   (* TODO add default values to config *)
   let setting = read_by_env setting |> of_list |> Result.ok_or_failwith in
-  let config = merge_with_env setting in
   let schema = List.concat schemas in
+  let config = merge_with_env setting schema in
   let rec check_types schema =
     match schema with
     | [] -> Ok ()
@@ -212,7 +215,8 @@ let read_int ?default key =
       match Option.try_with (fun () -> Base.Int.of_string value) with
       | Some value -> value
       | None ->
-          Core_err.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
+          Core_err.raise_configuration @@ "configuration " ^ key
+          ^ " is not a int" )
   | Some default, None -> default
   | None, None ->
       Core_err.raise_configuration @@ "configuration " ^ key ^ " not found"
@@ -226,7 +230,8 @@ let read_bool ?default key =
       match Caml.bool_of_string_opt value with
       | Some value -> value
       | None ->
-          Core_err.raise_configuration @@ "configuration " ^ key ^ " is not a int" )
+          Core_err.raise_configuration @@ "configuration " ^ key
+          ^ " is not a int" )
   | Some default, None -> default
   | None, None ->
       Core_err.raise_configuration @@ "configuration " ^ key ^ " not found"
