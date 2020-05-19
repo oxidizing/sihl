@@ -19,8 +19,6 @@ let config =
         ("EMAIL_BACKEND", "sendgrid");
         ("BASE_URL", "https://sihl-example-issues.oxidizing.io");
         ("EMAIL_SENDER", "hello@oxidizing.io");
-        ("DATABASE_URL", "");
-        ("SENDGRID_API_KEY", "");
       ]
 
 let middlewares =
