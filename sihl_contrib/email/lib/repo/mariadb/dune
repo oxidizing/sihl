@@ -1,6 +1,6 @@
 (library
- (name sihl_email_repo_mariadb)
- (public_name sihl_email_repo_mariadb)
+ (name sihl_email_mariadb)
+ (public_name sihl_email_mariadb)
  (libraries
   base
   sihl

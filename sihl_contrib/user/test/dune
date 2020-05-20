@@ -2,13 +2,13 @@
  (name test)
  (libraries
   base
-  sihl_repo_postgresql
-  sihl_repo_mariadb
+  sihl_postgresql
+  sihl_mariadb
   sihl_user
-  sihl_user_repo_postgresql
-  sihl_user_repo_mariadb
-  sihl_email_repo_postgresql
-  sihl_email_repo_mariadb
+  sihl_user_postgresql
+  sihl_user_mariadb
+  sihl_email_postgresql
+  sihl_email_mariadb
   alcotest
   alcotest-lwt
   )

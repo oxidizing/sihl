@@ -2,9 +2,9 @@
  (name run)
  (libraries
   base
-  sihl_repo_postgresql
+  sihl_postgresql
   sihl_user
-  sihl_user_repo_postgresql
+  sihl_user_postgresql
   alcotest
   alcotest-lwt
   )
