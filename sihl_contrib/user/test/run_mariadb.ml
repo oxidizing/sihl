@@ -21,14 +21,7 @@ let middlewares =
   ]
 
 let bindings =
-  [
-    Sihl.Core.Registry.bind Sihl_email.Bind.Repository.key
-      (module Sihl_email_mariadb.Repo);
-    Sihl.Core.Registry.bind Sihl_user.Binding.Repository.key
-      (module Sihl_user_mariadb.Repo);
-    Sihl.Core.Registry.bind Sihl.Core.Contract.Migration.repository
-      (module Sihl_mariadb.Repo);
-  ]
+  [ Sihl_mariadb.bind; Sihl_email_mariadb.bind; Sihl_user_mariadb.bind ]
 
 let project =
   Sihl.Run.Project.Project.create ~bindings ~config middlewares

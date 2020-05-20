@@ -22,12 +22,7 @@ let middlewares =
 
 let bindings =
   [
-    Sihl.Core.Registry.bind Sihl_email.Bind.Repository.key
-      (module Sihl_email_postgresql.Repo);
-    Sihl.Core.Registry.bind Sihl_user.Binding.Repository.key
-      (module Sihl_user_postgresql.Repo);
-    Sihl.Core.Registry.bind Sihl.Core.Contract.Migration.repository
-      (module Sihl_postgresql.Repo);
+    Sihl_postgresql.bind; Sihl_email_postgresql.bind; Sihl_user_postgresql.bind;
   ]
 
 let project =
