@@ -1,5 +1,4 @@
 open Base
-open Http
 
 let ( let* ) = Lwt.bind
 
@@ -38,7 +37,8 @@ module Store = struct
     | `Duplicate ->
         Logs.err (fun m ->
             m "failed to create unique key to store flash message");
-        Core_err.raise_server "failed to create unique key to store flash message"
+        Core_err.raise_server
+          "failed to create unique key to store flash message"
     | `Ok map ->
         state := map;
         ()
@@ -78,7 +78,7 @@ let key : string Opium.Hmap.key =
 
 let current req =
   let flash_id =
-    Option.try_with (fun () -> req |> Request.env |> Opium.Hmap.get key)
+    Option.try_with (fun () -> req |> Http.Req.env |> Opium.Hmap.get key)
   in
   match flash_id with
   | None ->
@@ -91,7 +91,7 @@ let current req =
 
 let set req flash =
   let flash_id =
-    Option.try_with (fun () -> req |> Request.env |> Opium.Hmap.get key)
+    Option.try_with (fun () -> req |> Http.Req.env |> Opium.Hmap.get key)
   in
   match flash_id with
   | None ->
@@ -120,14 +120,14 @@ let m app =
     match flash_id with
     | None ->
         let flash_id = Uuidm.v `V4 |> Uuidm.to_string in
-        let env = Opium.Hmap.add key flash_id (Request.env req) in
+        let env = Opium.Hmap.add key flash_id (Http.Req.env req) in
         let* resp = handler { req with env } in
         if Store.is_next_set flash_id then
           resp |> set_cookie flash_id |> Lwt.return
         else resp |> Lwt.return
     | Some flash_id ->
         if Store.has flash_id then
-          let env = Opium.Hmap.add key flash_id (Request.env req) in
+          let env = Opium.Hmap.add key flash_id (Http.Req.env req) in
           let () = Store.rotate flash_id in
           let* resp = handler { req with env } in
           if Store.is_next_set flash_id then
@@ -147,8 +147,8 @@ let m app =
 
 let redirect_with_error req ~path txt =
   set_error req txt;
-  Response.empty |> Response.redirect path |> Lwt.return
+  Http.Res.empty |> Http.Res.redirect path |> Lwt.return
 
 let redirect_with_success req ~path txt =
   set_success req txt;
-  Response.empty |> Response.redirect path |> Lwt.return
+  Http.Res.empty |> Http.Res.redirect path |> Lwt.return

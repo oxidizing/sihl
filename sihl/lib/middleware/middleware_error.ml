@@ -1,4 +1,3 @@
-open Base
 open Http
 
 let ( let* ) = Lwt.bind
@@ -6,16 +5,17 @@ let ( let* ) = Lwt.bind
 let m app =
   let filter handler req =
     let* response = Core_err.try_to_run (fun () -> handler req) in
-    match (accepts_html req, response) with
+    match (Req.accepts_html req, response) with
     | _, Ok response -> Lwt.return response
     | false, Error error ->
         let msg = Core_err.Error.show error in
         Logs.err (fun m -> m "%s" msg);
         let headers =
-          Cohttp.Header.of_list [ ("Content-Type", content_type Json) ]
+          Cohttp.Header.of_list [ ("Content-Type", Req.content_type Json) ]
         in
-        let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
-        Opium.Std.Response.create ~headers ~body ~code:(code_of_error error) ()
+        let body = Cohttp_lwt.Body.of_string @@ Res.Msg.msg_string msg in
+        Opium.Std.Response.create ~headers ~body ~code:(Res.code_of_error error)
+          ()
         |> Lwt.return
     | ( true,
         Error
@@ -28,10 +28,11 @@ let m app =
         let headers =
           Cohttp.Header.of_list
             [
-              ("Content-Type", content_type Html); ("Location", "/admin/login/");
+              ("Content-Type", Req.content_type Html);
+              ("Location", "/admin/login/");
             ]
         in
-        let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
+        let body = Cohttp_lwt.Body.of_string @@ Res.Msg.msg_string msg in
         Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
         |> Opium.Std.Cookie.set
              ~expiration:(`Max_age (Int64.of_int 0))
@@ -52,7 +53,7 @@ let m app =
             (* TODO make custom error page configurable *)
             [ ("Content-Type", "text/html"); ("Location", "/admin/login/") ]
         in
-        let body = Cohttp_lwt.Body.of_string @@ Msg.msg_string msg in
+        let body = Cohttp_lwt.Body.of_string @@ Res.Msg.msg_string msg in
         Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
         |> Lwt.return
   in
