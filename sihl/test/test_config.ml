@@ -147,14 +147,23 @@ module Schema = struct
       (Error "provided configuration is not an int key=BAR, value=123f") actual
 
   let test_process_valid_config () =
-    let schemas = [ [ string_ "FOO"; bool_ "BAR" ] ] in
+    let schemas =
+      [
+        [
+          string_ "FOO" ~default:"default1";
+          bool_ "BAR";
+          string_ "FOOZ" ~default:"default2";
+        ];
+      ]
+    in
     let setting =
       Config.Setting.create
         ~test:[ ("FOO", "value1"); ("BAR", "true") ]
         ~development:[] ~production:[]
     in
     let expected =
-      Config.of_list [ ("FOO", "value1"); ("BAR", "true") ]
+      Config.of_list
+        [ ("FOO", "value1"); ("BAR", "true"); ("FOOZ", "default2") ]
       |> Result.ok_or_failwith
     in
     let actual = Config.process schemas setting |> Result.ok_or_failwith in
