@@ -180,7 +180,6 @@ let is_testing () =
   |> String.equal "test"
 
 let process schemas setting =
-  (* TODO add default values to config *)
   let setting = read_by_env setting |> of_list |> Result.ok_or_failwith in
   let schema = List.concat schemas in
   let config = merge_with_env setting schema in
