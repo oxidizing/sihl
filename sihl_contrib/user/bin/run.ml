@@ -32,11 +32,7 @@ let middlewares =
     Sihl_user.Middleware.Authn.session;
   ]
 
-let bindings =
-  [
-    Sihl.Core.Registry.bind Sihl.Core.Contract.Migration.repository
-      (module Sihl_postgresql.Repo);
-  ]
+let bindings = [ Sihl_postgresql.bind ]
 
 let project =
   Sihl.Run.Project.Project.create ~config ~bindings middlewares
