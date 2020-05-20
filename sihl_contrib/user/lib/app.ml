@@ -34,7 +34,7 @@ let endpoints () =
     AdminUi.UserSetPassword.handler;
   ]
 
-let repos () = Binding.Repository.default ()
+let repos () = Bind.Repository.default ()
 
 let bindings () = []
 
