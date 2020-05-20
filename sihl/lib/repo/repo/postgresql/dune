@@ -1,6 +1,6 @@
 (library
- (name sihl_repo_postgresql)
- (public_name sihl_repo_postgresql)
+ (name sihl_postgresql)
+ (public_name sihl_postgresql)
  (libraries
   base
   sihl

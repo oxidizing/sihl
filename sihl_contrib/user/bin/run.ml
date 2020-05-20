@@ -35,7 +35,7 @@ let middlewares =
 let bindings =
   [
     Sihl.Core.Registry.bind Sihl.Core.Contract.Migration.repository
-      (module Sihl_repo_postgresql.Repo);
+      (module Sihl_postgresql.Repo);
   ]
 
 let project =

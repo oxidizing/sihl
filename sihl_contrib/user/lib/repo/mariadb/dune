@@ -1,6 +1,6 @@
 (library
- (name sihl_user_repo_mariadb)
- (public_name sihl_user_repo_mariadb)
+ (name sihl_user_mariadb)
+ (public_name sihl_user_mariadb)
  (libraries
   base
   sihl

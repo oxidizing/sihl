@@ -1,6 +1,6 @@
 (library
- (name sihl_email_repo_postgresql)
- (public_name sihl_email_repo_postgresql)
+ (name sihl_email_postgresql)
+ (public_name sihl_email_postgresql)
  (libraries
   base
   sihl

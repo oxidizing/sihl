@@ -2,7 +2,7 @@
 opam-version: "2.0"
 version: "0.0.29"
 synopsis: "An implementation of the session store using MariaDB"
-description: ""
+description: "An implementation of the session store using MariaDB."
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben"]
 license: "MIT"
