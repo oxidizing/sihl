@@ -25,7 +25,7 @@ module Register = struct
   let handler =
     post "/users/register/" @@ fun req ->
     let* { email; username; password } =
-      require_body_exn req body_in_of_yojson
+      Req.require_body_exn req body_in_of_yojson
     in
     let* _ = Service.User.register req ~email ~username ~password in
     Res.empty |> Lwt.return
@@ -60,7 +60,7 @@ module GetUser = struct
 
   let handler =
     get "/users/users/:id/" @@ fun req ->
-    let user_id = param req "id" in
+    let user_id = Req.param req "id" in
     let user = Middleware.Authn.authenticate req in
     let* response = Service.User.get req user ~user_id in
     response |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
@@ -93,7 +93,7 @@ module UpdatePassword = struct
   let handler =
     post "/users/update-password/" @@ fun req ->
     let* { email; old_password; new_password } =
-      require_body_exn req body_in_of_yojson
+      Req.require_body_exn req body_in_of_yojson
     in
     let user = Middleware.Authn.authenticate req in
     let* _ =
@@ -112,9 +112,7 @@ module UpdateDetails = struct
 
   let handler =
     post "/users/update-details/" @@ fun req ->
-    let* { email; username } =
-      Sihl.Http.require_body_exn req body_in_of_yojson
-    in
+    let* { email; username } = Req.require_body_exn req body_in_of_yojson in
     let user = Middleware.Authn.authenticate req in
     let* user = Service.User.update_details req user ~email ~username in
     user |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
@@ -128,7 +126,7 @@ module SetPassword = struct
 
   let handler =
     post "/users/set-password/" @@ fun req ->
-    let* { user_id; password } = require_body_exn req body_in_of_yojson in
+    let* { user_id; password } = Req.require_body_exn req body_in_of_yojson in
     let user = Middleware.Authn.authenticate req in
     let* _ = Service.User.set_password req user ~user_id ~password in
     Res.empty |> Lwt.return
@@ -139,7 +137,7 @@ module ConfirmEmail = struct
 
   let handler =
     get "/users/confirm-email/" @@ fun req ->
-    let token = query req "token" in
+    let token = Req.query req "token" in
     let* () = Service.User.confirm_email req token in
     Res.empty |> Lwt.return
 end
@@ -151,7 +149,7 @@ module RequestPasswordReset = struct
 
   let handler =
     post "/users/request-password-reset/" @@ fun req ->
-    let* { email } = require_body_exn req body_in_of_yojson in
+    let* { email } = Req.require_body_exn req body_in_of_yojson in
     let* () = Service.User.request_password_reset req ~email in
     Res.empty |> Lwt.return
 end
@@ -163,7 +161,7 @@ module ResetPassword = struct
 
   let handler =
     post "/users/reset-password/" @@ fun req ->
-    let* { token; new_password } = require_body_exn req body_in_of_yojson in
+    let* { token; new_password } = Req.require_body_exn req body_in_of_yojson in
     let* () = Service.User.reset_password req ~token ~new_password in
     Res.empty |> Lwt.return
 end
@@ -190,7 +188,7 @@ module AdminUi = struct
 
     let post =
       Sihl.Http.post "/admin/login/" @@ fun req ->
-      let* email, password = url_encoded2 req "email" "password" in
+      let* email, password = Req.url_encoded2 req "email" "password" in
       let* token =
         Sihl.Core.Err.try_to_run (fun () ->
             Service.User.login req ~email ~password)
@@ -235,7 +233,7 @@ module AdminUi = struct
 
     let handler =
       get "/admin/users/users/:id/" @@ fun req ->
-      let user_id = param req "id" in
+      let user_id = Req.param req "id" in
       let user = Middleware.Authn.authenticate req in
       let flash = Sihl.Middleware.Flash.current req in
       let* user = Service.User.get req user ~user_id in
@@ -248,10 +246,10 @@ module AdminUi = struct
 
     let handler =
       post "/admin/users/users/:id/set-password/" @@ fun req ->
-      let user_id = param req "id" in
+      let user_id = Req.param req "id" in
       let user_page = [%string "/admin/users/users/$(user_id)/"] in
       let user = Middleware.Authn.authenticate req in
-      let* password = url_encoded req "password" in
+      let* password = Req.url_encoded req "password" in
       let* result =
         Sihl.Core.Err.try_to_run (fun () ->
             Service.User.set_password req user ~user_id ~password)

@@ -10,6 +10,15 @@ module Msg = struct
   let msg_string msg = { msg } |> to_yojson |> Core_json.to_string
 end
 
+let code_of_error error =
+  match error with
+  | Core_err.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
+  | Core_err.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
+  | Core_err.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
+  | Core_err.Error.Configuration _ | Core_err.Error.Email _
+  | Core_err.Error.Database _ | Core_err.Error.Server _ ->
+      500 |> Cohttp.Code.status_of_code
+
 type headers = (string * string) list
 
 type change_session = Nothing | SetSession of string | EndSession
