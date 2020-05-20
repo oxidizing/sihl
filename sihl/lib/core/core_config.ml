@@ -29,11 +29,16 @@ module Schema = struct
       | Int of string * int condition
       | Bool of string * bool condition
 
-    let key type_ =
-      match type_ with
+    let key = function
       | String (key, _, _) -> key
       | Int (key, _) -> key
       | Bool (key, _) -> key
+
+    let default = function
+      | String (_, Default value, _) -> Some value
+      | Int (_, Default value) -> Some (Int.to_string value)
+      | Bool (_, Default value) -> Some (Bool.to_string value)
+      | _ -> None
 
     let validate_string ~key ~value ~choices =
       let is_in_choices =
@@ -147,27 +152,6 @@ end = struct
       ~message:"no configuration found, have you called Project.start()?" !state
 end
 
-let of_list kvs =
-  match Map.of_alist (module String) kvs with
-  | `Duplicate_key msg ->
-      Error ("duplicate key detected while creating configuration: " ^ msg)
-  | `Ok map -> Ok map
-
-(* overwrite config values with values from the environment *)
-let merge_with_env config schema =
-  let config_keys = Map.keys config in
-  let schema_keys = schema |> List.map ~f:Schema.Type.key in
-  let keys = List.concat [ config_keys; schema_keys ] in
-  let rec merge keys result =
-    match keys with
-    | [] -> result
-    | key :: keys -> (
-        match Sys.getenv key with
-        | Some value -> merge keys @@ Map.set ~key ~data:value result
-        | None -> merge keys result )
-  in
-  merge keys config
-
 let read_by_env setting =
   match Sys.getenv "SIHL_ENV" |> Option.value ~default:"development" with
   | "production" -> Setting.production setting
@@ -179,19 +163,56 @@ let is_testing () =
   |> Option.value ~default:"development"
   |> String.equal "test"
 
+let of_list kvs =
+  match Map.of_alist (module String) kvs with
+  | `Duplicate_key msg ->
+      Error ("duplicate key detected while creating configuration: " ^ msg)
+  | `Ok map -> Ok map
+
+(* overwrite config values with values from the environment *)
+let merge_with_env setting schema =
+  let setting_keys = Map.keys setting in
+  let schema_keys = schema |> List.map ~f:Schema.Type.key in
+  let keys = List.concat [ setting_keys; schema_keys ] in
+  let rec merge keys result =
+    match keys with
+    | [] -> result
+    | key :: keys -> (
+        (* always prefer the env variable values over anything else *)
+        match Sys.getenv key with
+        | Some value -> merge keys @@ Map.set ~key ~data:value result
+        | None -> (
+            let default_value =
+              schema
+              |> List.find ~f:(fun type_ ->
+                     String.equal (Schema.Type.key type_) key)
+              |> Option.bind ~f:Schema.Type.default
+            in
+            let setting_value = Map.find setting key in
+            (* always prefer the value in the provided settings over the default value *)
+            match (default_value, setting_value) with
+            | _, Some _ -> merge keys result
+            | Some value, None -> merge keys @@ Map.set ~key ~data:value result
+            | None, None -> merge keys result ) )
+  in
+  merge keys setting
+
+let check_schema schema config =
+  let rec check schema =
+    match schema with
+    | [] -> Ok ()
+    | type_ :: schema ->
+        Schema.Type.validate type_ config
+        |> Result.bind ~f:(fun _ -> check schema)
+  in
+  check schema
+
 let process schemas setting =
   (* TODO add default values to config *)
   let setting = read_by_env setting |> of_list |> Result.ok_or_failwith in
   let schema = List.concat schemas in
   let config = merge_with_env setting schema in
-  let rec check_types schema =
-    match schema with
-    | [] -> Ok ()
-    | type_ :: schema ->
-        Schema.Type.validate type_ config
-        |> Result.bind ~f:(fun _ -> check_types schema)
-  in
-  check_types schema |> Result.map ~f:(fun _ -> config)
+  check_schema schema config |> Result.map ~f:(fun _ -> config)
 
 let load_config schemas setting =
   process schemas setting |> Core_err.with_configuration |> State.set |> ignore
