@@ -117,6 +117,45 @@
 ))
 
 (package
+ (name sihl_session)
+ (synopsis "A Sihl app for anonymous sessions")
+ (description "This app provides a generic interface to store and retrieve anonymous session data. It is mainly used to build other apps on top.")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.29))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+))
+
+(package
+ (name sihl_session_mariadb)
+ (synopsis "An implementation of the session store using MariaDB")
+ (description "")
+ (license MIT)
+ (depends
+  (sihl_email (>= 0.0.29))
+  (caqti-driver-mariadb (>= 1.2.1))
+  ))
+
+(package
+ (name sihl_session_postgresql)
+ (synopsis "An implementatoin of the session store using PostgreSQL")
+ (description "")
+ (license MIT)
+ (depends
+  (sihl_session (>= 0.0.29))
+  (caqti-driver-postgresql (>= 1.2.1))
+  (ppx_rapper (>= 0.9.2))
+))
+
+(package
  (name sihl_email)
  (synopsis "An email management app for Sihl")
  (description "Use this app to send single emails and schedule sending over various email backends.")

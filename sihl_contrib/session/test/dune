@@ -1,0 +1,11 @@
+(test
+ (name test)
+ (libraries
+  base
+  sihl_session
+  alcotest
+)
+ (preprocess
+  (pps
+   ppx_string_interpolation
+  )))

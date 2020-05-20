@@ -1,0 +1,13 @@
+(library
+ (name sihl_session_postgresql)
+ (public_name sihl_session_postgresql)
+ (libraries
+  base
+  sihl
+  sihl_session
+  caqti-driver-postgresql)
+ (preprocess
+  (pps ppx_rapper)))
+
+(include_subdirs no)
+
