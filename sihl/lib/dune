@@ -17,6 +17,7 @@
   logs.lwt
   safepass
   uuidm
+  base64
 )
  (preprocess
   (pps

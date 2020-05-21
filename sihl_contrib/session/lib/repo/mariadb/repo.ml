@@ -20,10 +20,10 @@ module Sql = struct
         Caqti_type.(custom ~encode ~decode (tup3 string string pdate))
     end
 
-    let get connection =
+    let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.t
+        Caqti_request.find Caqti_type.unit Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -36,15 +36,14 @@ module Sql = struct
           data,
           expire_date
         FROM sessions_sessions
-        WHERE sessions_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
       in
-      Connection.find request
+      Connection.collect_list request
 
-    let get_opt connection =
+    let get connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.t
+        Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -128,8 +127,7 @@ CREATE TABLE sessions_sessions (
     ("sessions", [ ("create sessions table", create_sessions_table) ])
 end
 
-let exists ~id connection =
-  Sql.Session.get_opt connection id |> Lwt_result.map Option.is_some
+let get_all connection = Sql.Session.get_all connection ()
 
 let get ~id connection = Sql.Session.get connection id
 

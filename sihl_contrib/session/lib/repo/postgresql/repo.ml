@@ -2,20 +2,19 @@ module Sql = struct
   module Session = struct
     open Sihl_session.Model.Session
 
-    let get =
+    let get_all =
       [%rapper
-        get_one
+        get_many
           {sql|
         SELECT
           uuid as @string{id},
           session_data as @string{data},
           @pdate{expire_date}
         FROM sessions_sessions
-        WHERE session_sessions.uuid = %string{id}
         |sql}
           record_out]
 
-    let get_opt =
+    let get =
       [%rapper
         get_opt
           {sql|
@@ -81,8 +80,7 @@ CREATE TABLE sessions_sessions (
     ("sessions", [ ("create sessions table", create_sessions_table) ])
 end
 
-let exists ~id connection =
-  Sql.Session.get_opt connection ~id |> Lwt_result.map Option.is_some
+let get_all connection = Sql.Session.get_all connection ()
 
 let get ~id connection = Sql.Session.get connection ~id
 
