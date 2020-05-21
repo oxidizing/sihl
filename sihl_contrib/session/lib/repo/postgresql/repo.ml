@@ -81,10 +81,10 @@ CREATE TABLE sessions_sessions (
     ("sessions", [ ("create sessions table", create_sessions_table) ])
 end
 
-let get ~id connection = Sql.Session.get connection ~id
-
 let exists ~id connection =
   Sql.Session.get_opt connection ~id |> Lwt_result.map Option.is_some
+
+let get ~id connection = Sql.Session.get connection ~id
 
 let insert session connection = Sql.Session.upsert connection session
 

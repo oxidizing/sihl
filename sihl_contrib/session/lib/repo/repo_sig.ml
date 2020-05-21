@@ -10,14 +10,10 @@ module type REPOSITORY = sig
     Model.Session.t Sihl.Core.Db.db_result
 
   val insert :
-    session:Model.Session.t ->
-    Sihl.Core.Db.connection ->
-    unit Sihl.Core.Db.db_result
+    Model.Session.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
 
   val update :
-    session:Model.Session.t ->
-    Sihl.Core.Db.connection ->
-    unit Sihl.Core.Db.db_result
+    Model.Session.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
 
   val delete :
     id:string -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result

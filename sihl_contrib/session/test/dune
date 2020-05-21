@@ -2,8 +2,14 @@
  (name test)
  (libraries
   base
+  sihl
+  sihl_postgresql
+  sihl_mariadb
   sihl_session
+  sihl_session_postgresql
+  sihl_session_mariadb
   alcotest
+  alcotest-lwt
 )
  (preprocess
   (pps
