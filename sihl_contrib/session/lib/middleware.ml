@@ -4,14 +4,13 @@ let cookie_key = "sessions_session_id"
 
 let session () app =
   let filter handler req =
-    Logs.warn (fun m -> m "session middleware is not implemented");
     let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Bind.Repository.key
     in
     match Opium.Std.Cookie.get req ~key:cookie_key with
-    | Some session_id -> (
+    | Some session_key -> (
         let* session =
-          Repository.get ~id:session_id |> Sihl.Core.Db.query_db_exn req
+          Repository.get ~key:session_key |> Sihl.Core.Db.query_db_exn req
         in
         match session with
         | Some _ ->
@@ -37,12 +36,15 @@ let session () app =
                  ~data:(Model.Session.key session)
             |> Lwt.return )
     | None ->
+        Logs.debug (fun m -> m "no session cookie found");
         (* TODO
                1. generate new session, store it in db
                2. send cookie with session id
         *)
         let session = Model.Session.create () in
+        Logs.debug (fun m -> m "inserting session");
         let* () = Repository.insert session |> Sihl.Core.Db.query_db_exn req in
+        Logs.debug (fun m -> m "session inserted");
         handler req
   in
   let m = Opium.Std.Rock.Middleware.create ~name:"session" ~filter in

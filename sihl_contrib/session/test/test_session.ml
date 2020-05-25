@@ -11,6 +11,7 @@ let test_fetch_any_endpoint_creates_anonymous_session _ () =
   let (module Repository : Sihl_session.Repo_sig.REPOSITORY) =
     Sihl.Core.Registry.get Sihl_session.Bind.Repository.key
   in
+  Logs.debug (fun m -> m "fetching all sessions");
   let* sessions = Repository.get_all |> Sihl.Core.Db.query_db request in
   let sessions = sessions |> Result.ok_or_failwith in
   let () =

@@ -7,7 +7,7 @@ module Sql = struct
         get_many
           {sql|
         SELECT
-          uuid as @string{id},
+          session_key as @string{key},
           session_data as @string{data},
           @pdate{expire_date}
         FROM sessions_sessions
@@ -19,11 +19,11 @@ module Sql = struct
         get_opt
           {sql|
         SELECT
-          uuid as @string{id},
+          session_key as @string{key},
           session_data as @string{data},
           @pdate{expire_date}
         FROM sessions_sessions
-        WHERE session_sessions.uuid = %string{id}
+        WHERE session_sessions.key = %string{key}
         |sql}
           record_out]
 
@@ -32,15 +32,15 @@ module Sql = struct
         execute
           {sql|
         INSERT INTO sessions_sessions (
-          uuid,
+          session_key,
           session_data,
           expire_date
         ) VALUES (
-          %string{id},
+          %string{key},
           %string{data},
           %pdate{expire_date}
-        ) ON CONFLICT (uuid) DO UPDATE SET
-        session_date = %string{data}
+        ) ON CONFLICT (key) DO UPDATE SET
+        session_data = %string{data}
         |sql}
           record_in]
 
@@ -49,7 +49,7 @@ module Sql = struct
         execute
           {sql|
       DELETE FROM sessions_sessions
-      WHERE sessions_sessions.uuid = %string{id}
+      WHERE sessions_sessions.key = %string{key}
       |sql}]
 
     let clean =
@@ -68,11 +68,11 @@ module Migration = struct
         {sql|
 CREATE TABLE sessions_sessions (
   id serial,
-  uuid uuid NOT NULL,
+  session_key VARCHAR NOT NULL,
   session_data TEXT NOT NULL,
   expire_date TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE (uuid)
+  UNIQUE (session_key)
 );
 |sql}]
 
@@ -82,13 +82,16 @@ end
 
 let get_all connection = Sql.Session.get_all connection ()
 
-let get ~id connection = Sql.Session.get connection ~id
+let get ~key connection = Sql.Session.get connection ~key
 
-let insert session connection = Sql.Session.upsert connection session
+let insert session connection =
+  Logs.debug (fun m ->
+      m "upserting session with key %s" (Sihl_session.Model.Session.key session));
+  Sql.Session.upsert connection session
 
 let update session connection = Sql.Session.upsert connection session
 
-let delete ~id connection = Sql.Session.delete connection ~id
+let delete ~key connection = Sql.Session.delete connection ~key
 
 let migrate = Migration.migration
 

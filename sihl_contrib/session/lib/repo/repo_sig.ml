@@ -5,7 +5,7 @@ module type REPOSITORY = sig
     Sihl.Core.Db.connection -> Model.Session.t list Sihl.Core.Db.db_result
 
   val get :
-    id:string ->
+    key:string ->
     Sihl.Core.Db.connection ->
     Model.Session.t option Sihl.Core.Db.db_result
 
@@ -16,5 +16,5 @@ module type REPOSITORY = sig
     Model.Session.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
 
   val delete :
-    id:string -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
+    key:string -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
 end

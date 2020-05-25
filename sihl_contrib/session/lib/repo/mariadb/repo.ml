@@ -15,8 +15,8 @@ module Sql = struct
       open Sihl_session.Model.Session
 
       let t =
-        let encode m = Ok (m.id, m.data, m.expire_date) in
-        let decode (id, data, expire_date) = Ok { id; data; expire_date } in
+        let encode m = Ok (m.key, m.data, m.expire_date) in
+        let decode (key, data, expire_date) = Ok { key; data; expire_date } in
         Caqti_type.(custom ~encode ~decode (tup3 string string pdate))
     end
 
@@ -26,14 +26,8 @@ module Sql = struct
         Caqti_request.find Caqti_type.unit Model.t
           {sql|
         SELECT
-          LOWER(CONCAT(
-           SUBSTR(HEX(uuid), 1, 8), '-',
-           SUBSTR(HEX(uuid), 9, 4), '-',
-           SUBSTR(HEX(uuid), 13, 4), '-',
-           SUBSTR(HEX(uuid), 17, 4), '-',
-           SUBSTR(HEX(uuid), 21)
-           )),
-          data,
+          session_key,
+          session_data,
           expire_date
         FROM sessions_sessions
         |sql}
@@ -46,17 +40,11 @@ module Sql = struct
         Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
-          LOWER(CONCAT(
-           SUBSTR(HEX(uuid), 1, 8), '-',
-           SUBSTR(HEX(uuid), 9, 4), '-',
-           SUBSTR(HEX(uuid), 13, 4), '-',
-           SUBSTR(HEX(uuid), 17, 4), '-',
-           SUBSTR(HEX(uuid), 21)
-           )),
-          data,
+          session_key,
+          session_data,
           expire_date
         FROM sessions_sessions
-        WHERE sessions_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+        WHERE sessions_sessions.key = ?
         |sql}
       in
       Connection.find_opt request
@@ -67,15 +55,15 @@ module Sql = struct
         Caqti_request.exec Model.t
           {sql|
         INSERT INTO sessions_sessions (
-          uuid,
+          session_key,
           session_data,
           expire_date
         ) VALUES (
           ?,
           ?,
           ?
-        ) ON CONFLICT (uuid) DO UPDATE SET
-        session_date = ?
+        ) ON CONFLICT (key) DO UPDATE SET
+        session_data = ?
         |sql}
       in
       Connection.exec request
@@ -86,7 +74,7 @@ module Sql = struct
         Caqti_request.exec Caqti_type.string
           {sql|
       DELETE FROM sessions_sessions
-      WHERE sessions_sessions.uuid = ?
+      WHERE sessions_sessions.key = ?
       |sql}
       in
       Connection.exec request
@@ -115,11 +103,11 @@ module Migration = struct
       {sql|
 CREATE TABLE sessions_sessions (
   id serial,
-  uuid uuid NOT NULL,
+  session_key VARCHAR NOT NULL,
   session_data TEXT NOT NULL,
   expire_date TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE (uuid)
+  UNIQUE (session_key)
 );
 |sql}
 
@@ -129,13 +117,13 @@ end
 
 let get_all connection = Sql.Session.get_all connection ()
 
-let get ~id connection = Sql.Session.get connection id
+let get ~key connection = Sql.Session.get connection key
 
 let insert session connection = Sql.Session.upsert connection session
 
 let update session connection = Sql.Session.upsert connection session
 
-let delete ~id connection = Sql.Session.delete connection id
+let delete ~key connection = Sql.Session.delete connection key
 
 let migrate = Migration.migration
 

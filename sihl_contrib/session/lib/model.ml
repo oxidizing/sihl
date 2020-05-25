@@ -1,7 +1,8 @@
 module Session = struct
-  type t = { id : string; data : string; expire_date : Ptime.t }
+  type t = { key : string; data : string; expire_date : Ptime.t }
 
-  let create () = { id = "TODO"; data = "{}"; expire_date = Ptime_clock.now () }
+  let create () =
+    { key = "TODO"; data = "{}"; expire_date = Ptime_clock.now () }
 
-  let key _ = "TODO"
+  let key session = session.key
 end
