@@ -3,7 +3,7 @@ let config =
     ~test:
       [
         ("BASE_URL", "http://localhost:3000");
-        ("DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev");
+        ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev");
       ]
     ~production:[]
 

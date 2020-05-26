@@ -28,6 +28,7 @@ end
 
 module Service = struct
   let setup pool =
+    Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     let (module Repository : Contract.Migration.REPOSITORY) =
       Registry.get Contract.Migration.repository
     in
@@ -88,43 +89,50 @@ let execute_steps migration pool =
     match steps with
     | [] -> Lwt_result.return ()
     | (name, query) :: steps -> (
-        Logs.debug (fun m -> m "MIGRATION: running %s\n" name);
+        Logs.debug (fun m -> m "MIGRATION: Running %s\n" name);
         Db.query_pool (fun c -> query c ()) pool >>= function
         | Ok () ->
-            Logs.debug (fun m -> m "MIGRATION: ran %s\n" name);
+            Logs.debug (fun m -> m "MIGRATION: Ran %s\n" name);
             let* _ = Service.increment pool ~namespace in
             run steps pool
         | Error err ->
             Logs.err (fun m ->
-                m "MIGRATION: error while running migration for %s %s" namespace
+                m "MIGRATION: Error while running migration for %s %s" namespace
                   err);
             failwith "Error while running migrations" )
   in
-  ( match List.length steps with
-  | 0 -> Logs_lwt.info (fun m -> m "no migrations to apply for %s\n" namespace)
-  | n ->
-      Logs_lwt.info (fun m -> m "applying %i migrations for %s\n" n namespace)
-  )
-  >>= fun () -> run steps pool
+  let () =
+    match List.length steps with
+    | 0 ->
+        Logs.debug (fun m ->
+            m "MIGRATION: No migrations to apply for %s\n" namespace)
+    | n ->
+        Logs.debug (fun m ->
+            m "MIGRATION: Applying %i migrations for %s\n" n namespace)
+  in
+  run steps pool
 
 let execute_migration migration pool =
   let namespace, _ = migration in
+  Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s app" namespace);
   let* () = Service.setup pool in
   let* has_state = Service.has pool ~namespace in
   let* state =
     if has_state then
       let* state = Service.get pool ~namespace in
-      if Model.dirty state then
-        Lwt.return
-        @@ Error
-             (Printf.sprintf
-                "dirty migration found for namespace %s, please fix manually"
-                namespace)
+      if Model.dirty state then (
+        let msg =
+          "Dirty migration found for app " ^ namespace
+          ^ ", has to be fixed manually"
+        in
+        Logs.err (fun m -> m "MIGRATION: %s" msg);
+        failwith msg )
       else Service.mark_dirty pool ~namespace
-    else
+    else (
+      Logs.debug (fun m -> m "MIGRATION: Setting up table for %s app" namespace);
       let state = Model.create ~namespace in
       let* () = Service.upsert pool state in
-      Lwt.return @@ Ok state
+      Lwt.return @@ Ok state )
   in
   let migration_to_apply = Model.steps_to_apply migration state in
   let* () = execute_steps migration_to_apply pool in

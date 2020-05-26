@@ -18,6 +18,7 @@ type connection = (module Caqti_lwt.CONNECTION)
    concurrent threads for accessing that connection. *)
 let connect () =
   let pool_size = Core_config.read_int ~default:10 "DATABASE_POOL_SIZE" in
+  Logs.debug (fun m -> m "DB: Create pool with size %i" pool_size);
   "DATABASE_URL" |> Core_config.read_string |> Uri.of_string
   |> Caqti_lwt.connect_pool ~max_size:pool_size
   |> function
@@ -44,9 +45,7 @@ let clean queries =
   in
   run_clean queries pool
   |> Lwt_result.map_err (fun error ->
-         let _ =
-           Logs.err (fun m -> m "DB: Failed to clean repository msg=%s" error)
-         in
+         Logs.err (fun m -> m "DB: Failed to clean repository msg=%s" error);
          error)
 
 (* Seal the key type with a non-exported type, so the pool cannot be retrieved

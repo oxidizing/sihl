@@ -38,10 +38,9 @@ let get key =
   match Hmap.find key !state with
   | Some implementation -> implementation
   | None ->
-      let _ =
-        Logs.err (fun m -> m "implementation not found for %s" (Key.info key))
-      in
-      failwith @@ "implementation not found for " ^ Key.info key
+      let msg = "Implementation not found for " ^ Key.info key in
+      let () = Logs.err (fun m -> m "REGISTRY: %s" msg) in
+      failwith msg
 
 let register = Binding.register
 

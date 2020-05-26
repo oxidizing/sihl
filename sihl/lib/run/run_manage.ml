@@ -8,17 +8,18 @@ let start project =
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
-      let _ = Logs.err (fun m -> m "failed to start project: %s" msg) in
-      Lwt.return ()
+      Logs.err (fun m -> m "MANAGER: Failed to start project %s" msg);
+      failwith msg
 
 let stop () =
   let project = Option.get !project_ref in
   let* result = Run_project.Project.stop project in
+  let () = project_ref := None in
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
-      let _ = Logs.err (fun m -> m "failed to stop project: %s" msg) in
-      Lwt.return ()
+      Logs.err (fun m -> m "MANAGER: Failed to stop project %s" msg);
+      failwith msg
 
 let clean () =
   let project = Option.get !project_ref in
@@ -26,8 +27,8 @@ let clean () =
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
-      let _ = Logs.err (fun m -> m "failed to clean project: %s" msg) in
-      Lwt.return ()
+      Logs.err (fun m -> m "MANAGER: Failed to clean project %s" msg);
+      failwith msg
 
 let migrate () =
   let project = Option.get !project_ref in
@@ -35,5 +36,5 @@ let migrate () =
   match result with
   | Ok _ -> Lwt.return ()
   | Error msg ->
-      let _ = Logs.err (fun m -> m "failed to migrate project: %s" msg) in
-      Lwt.return ()
+      Logs.err (fun m -> m "MANAGER: Failed to migrate project: %s" msg);
+      failwith msg
