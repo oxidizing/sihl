@@ -62,7 +62,7 @@ module Sql = struct
           ?,
           ?,
           ?
-        ) ON CONFLICT (key) DO UPDATE SET
+        ) ON DUPLICATE KEY UPDATE
         session_data = ?
         |sql}
       in
@@ -103,11 +103,11 @@ module Migration = struct
       {sql|
 CREATE TABLE sessions_sessions (
   id serial,
-  session_key VARCHAR NOT NULL,
-  session_data TEXT NOT NULL,
-  expire_date TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE (session_key)
+  session_key VARCHAR(64) NOT NULL,
+  session_data VARCHAR(1024) NOT NULL,
+  expire_date TIMESTAMP NOT NULL,
+  PRIMARY KEY(id),
+  CONSTRAINT unique_key UNIQUE(session_key)
 );
 |sql}
 

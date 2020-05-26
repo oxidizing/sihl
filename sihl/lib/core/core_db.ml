@@ -42,7 +42,7 @@ let clean queries =
   run_clean queries pool
   |> Lwt_result.map_err (fun error ->
          let _ =
-           Logs.err (fun m -> m "failed to clean repository msg=%s" error)
+           Logs.err (fun m -> m "DB: Failed to clean repository msg=%s" error)
          in
          error)
 
@@ -77,9 +77,12 @@ let query_db_with_trx request query =
     match request |> Request.env |> Opium.Hmap.find key with
     | Some connection -> connection
     | None ->
-        failwith
-          "CORE: Failed to fetch DB connection from Request.env, was the DB \
+        let msg =
+          "DB: Failed to fetch DB connection from Request.env, was the DB \
            middleware applied?"
+        in
+        Logs.err (fun m -> m "%s" msg);
+        failwith msg
   in
   let (module Connection : Caqti_lwt.CONNECTION) = connection in
   let* start_result = Connection.start () in
@@ -122,9 +125,12 @@ let query_db request query =
     match request |> Request.env |> Opium.Hmap.find key with
     | Some connection -> connection
     | None ->
-        failwith
-          "CORE: Failed to fetch DB connection from Request.env, was the DB \
+        let msg =
+          "DB: Failed to fetch DB connection from Request.env, was the DB \
            middleware applied?"
+        in
+        Logs.err (fun m -> m "%s" msg);
+        failwith msg
   in
   connection |> query |> Lwt_result.map_err Caqti_error.show
 

@@ -133,6 +133,8 @@ module Project : PROJECT = struct
         failwith msg
 
   let start project =
+    (* Initialize random number generator *)
+    Random.self_init ();
     setup_logger ();
     let apps = project |> app_names |> String.concat ~sep:", " in
     Logs.debug (fun m -> m "project starting with apps: %s" apps);

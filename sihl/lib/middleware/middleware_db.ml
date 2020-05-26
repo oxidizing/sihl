@@ -14,7 +14,7 @@ let m () =
           in
           let response = handler { req with env } in
           let* response = response in
-          (* using a ref here is dangerous because we might escape the scope of
+          (* Using a ref here is dangerous because we might escape the scope of
              the pool handler. we wait for the response, so all db handling is
              done here *)
           let _ = response_ref := Some response in
