@@ -88,16 +88,17 @@ let execute_steps migration pool =
     match steps with
     | [] -> Lwt_result.return ()
     | (name, query) :: steps -> (
-        Logs.info (fun m -> m "running: %s\n" name);
+        Logs.debug (fun m -> m "MIGRATION: running %s\n" name);
         Db.query_pool (fun c -> query c ()) pool >>= function
         | Ok () ->
-            Logs.info (fun m -> m "ran: %s\n" name);
+            Logs.debug (fun m -> m "MIGRATION: ran %s\n" name);
             let* _ = Service.increment pool ~namespace in
             run steps pool
         | Error err ->
-            Logs_lwt.err (fun m ->
-                m "error while running migration for %s msg=%s" namespace err)
-            >>= fun () -> return (Error err) )
+            Logs.err (fun m ->
+                m "MIGRATION: error while running migration for %s %s" namespace
+                  err);
+            failwith "Error while running migrations" )
   in
   ( match List.length steps with
   | 0 -> Logs_lwt.info (fun m -> m "no migrations to apply for %s\n" namespace)

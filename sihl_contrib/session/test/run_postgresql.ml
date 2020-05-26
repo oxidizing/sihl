@@ -7,7 +7,10 @@ let config =
       ]
     ~production:[]
 
-let middlewares = [ Sihl.Middleware.cookie; Sihl_session.Middleware.session ]
+let middlewares =
+  [
+    Sihl.Middleware.db; Sihl.Middleware.cookie; Sihl_session.Middleware.session;
+  ]
 
 let bindings = [ Sihl_postgresql.bind; Sihl_session_postgresql.bind ]
 

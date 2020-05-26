@@ -69,10 +69,11 @@ module Project : PROJECT = struct
 
   let start_http_server project =
     let endpoints = merge_endpoints project in
-    let middlewares = List.map ~f:(fun m -> m ()) project.middlewares in
+    let middlewares =
+      List.map ~f:(fun m -> Opium.Std.middleware @@ m ()) project.middlewares
+    in
     let port = Core.Config.read_int ~default:3000 "PORT" in
     Logs.debug (fun m -> m "http server starting on port %i" port);
-    let middlewares = middlewares |> List.map ~f:Opium.Std.middleware in
     let app =
       Opium.Std.App.empty |> Opium.Std.App.port port
       |> Opium.Std.App.cmd_name "Sihl Project"

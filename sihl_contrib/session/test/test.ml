@@ -6,10 +6,9 @@ let ( let* ) = Lwt.bind
 let suite =
   [
     ( "sessions",
-      [
-        test_case "create session for anonymous http request without cookie"
-          `Quick Test_session.test_fetch_any_endpoint_creates_anonymous_session;
-      ] );
+      [ (* test_case "create session for anonymous http request without cookie"
+         *   `Quick Test_session.test_fetch_any_endpoint_creates_anonymous_session; *) ]
+    );
   ]
 
 let () =
@@ -21,5 +20,5 @@ let () =
   Lwt_main.run
     (let* () = Sihl.Run.Manage.start project in
      let* () = Sihl.Run.Manage.migrate () in
-     let* () = run ("user management with " ^ db_name) suite in
+     let* () = run ("session app with " ^ db_name) suite in
      Sihl.Run.Manage.stop ())

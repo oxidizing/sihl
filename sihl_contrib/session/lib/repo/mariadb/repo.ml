@@ -84,8 +84,8 @@ module Sql = struct
       let request =
         Caqti_request.exec Caqti_type.unit
           {sql|
-TRUNCATE sessions_session;
-|sql}
+           TRUNCATE sessions_session;
+          |sql}
       in
       Connection.exec request ()
   end
