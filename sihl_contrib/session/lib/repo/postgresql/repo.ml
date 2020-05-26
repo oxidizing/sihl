@@ -9,7 +9,7 @@ module Sql = struct
         SELECT
           session_key as @string{key},
           session_data as @string{data},
-          @pdate{expire_date}
+          @ptime{expire_date}
         FROM sessions_sessions
         |sql}
           record_out]
@@ -21,7 +21,7 @@ module Sql = struct
         SELECT
           session_key as @string{key},
           session_data as @string{data},
-          @pdate{expire_date}
+          @ptime{expire_date}
         FROM sessions_sessions
         WHERE session_sessions.key = %string{key}
         |sql}
@@ -38,8 +38,8 @@ module Sql = struct
         ) VALUES (
           %string{key},
           %string{data},
-          %pdate{expire_date}
-        ) ON CONFLICT (key) DO UPDATE SET
+          %ptime{expire_date}
+        ) ON CONFLICT (session_key) DO UPDATE SET
         session_data = %string{data}
         |sql}
           record_in]

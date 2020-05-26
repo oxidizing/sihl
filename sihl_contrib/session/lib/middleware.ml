@@ -36,15 +36,13 @@ let session () =
                  ~data:(Model.Session.key session)
             |> Lwt.return )
     | None ->
-        Logs.debug (fun m -> m "no session cookie found");
         (* TODO
                1. generate new session, store it in db
                2. send cookie with session id
         *)
         let session = Model.Session.create () in
-        Logs.debug (fun m -> m "inserting session");
         let* () = Repository.insert session |> Sihl.Core.Db.query_db_exn req in
-        Logs.debug (fun m -> m "session inserted");
-        handler req
+        let* result = handler req in
+        Lwt.return result
   in
   Opium.Std.Rock.Middleware.create ~name:"session" ~filter
