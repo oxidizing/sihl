@@ -8,7 +8,7 @@
     your project's Django settings to 'DENY'.
  *)
 
-let m =
+let m () =
   let filter handler req =
     Logs.warn (fun m -> m "clickjacking middleware is not implemented");
     handler req

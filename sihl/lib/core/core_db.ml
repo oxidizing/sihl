@@ -22,7 +22,10 @@ let connect () =
   |> Caqti_lwt.connect_pool ~max_size:pool_size
   |> function
   | Ok pool -> pool
-  | Error err -> Core_err.raise_database (Caqti_error.show err)
+  | Error err ->
+      let msg = "DB: Failed to connect to DB pool" in
+      Logs.err (fun m -> m "%s %s" msg (Caqti_error.show err));
+      failwith msg
 
 (* [query_pool query pool] is the [Ok res] of the [res] obtained by executing
    the database [query], or else the [Error err] reporting the error causing
