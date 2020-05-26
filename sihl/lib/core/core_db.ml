@@ -73,7 +73,14 @@ let request_with_connection request =
 (* TODO a transaction should return a request and not a connection so it nicely composes with other service calls *)
 let query_db_with_trx request query =
   let ( let* ) = Lwt.bind in
-  let connection = request |> Request.env |> Opium.Hmap.get key in
+  let connection =
+    match request |> Request.env |> Opium.Hmap.find key with
+    | Some connection -> connection
+    | None ->
+        failwith
+          "CORE: Failed to fetch DB connection from Request.env, was the DB \
+           middleware applied?"
+  in
   let (module Connection : Caqti_lwt.CONNECTION) = connection in
   let* start_result = Connection.start () in
   let () =
@@ -111,8 +118,15 @@ let query_db_with_trx_exn request query =
     (query_db_with_trx request query)
 
 let query_db request query =
-  Request.env request |> Opium.Hmap.get key |> query
-  |> Lwt_result.map_err Caqti_error.show
+  let connection =
+    match request |> Request.env |> Opium.Hmap.find key with
+    | Some connection -> connection
+    | None ->
+        failwith
+          "CORE: Failed to fetch DB connection from Request.env, was the DB \
+           middleware applied?"
+  in
+  connection |> query |> Lwt_result.map_err Caqti_error.show
 
 let query_db_exn ?message request query =
   let open Lwt.Infix in

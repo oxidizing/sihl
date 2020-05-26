@@ -77,9 +77,7 @@ let key : string Opium.Hmap.key =
   Opium.Hmap.Key.create ("flash id", fun _ -> sexp_of_string "flash id")
 
 let current req =
-  let flash_id =
-    Option.try_with (fun () -> req |> Http.Req.env |> Opium.Hmap.get key)
-  in
+  let flash_id = req |> Http.Req.env |> Opium.Hmap.find key in
   match flash_id with
   | None ->
       Logs.warn (fun m ->
@@ -90,9 +88,7 @@ let current req =
   | Some flash_id -> Store.find_current flash_id
 
 let set req flash =
-  let flash_id =
-    Option.try_with (fun () -> req |> Http.Req.env |> Opium.Hmap.get key)
-  in
+  let flash_id = req |> Http.Req.env |> Opium.Hmap.find key in
   match flash_id with
   | None ->
       let flash_id = Uuidm.v `V4 |> Uuidm.to_string in
