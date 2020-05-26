@@ -2,7 +2,7 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-let test_fetch_any_endpoint_creates_anonymous_session _ () =
+let test_anonymous_request_returns_cookie _ () =
   let* () = Sihl.Run.Manage.clean () in
   (* Create request with injected database into request env *)
   let* req =

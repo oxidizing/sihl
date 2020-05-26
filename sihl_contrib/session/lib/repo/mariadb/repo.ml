@@ -17,7 +17,7 @@ module Sql = struct
       let t =
         let encode m = Ok (m.key, m.data, m.expire_date) in
         let decode (key, data, expire_date) = Ok { key; data; expire_date } in
-        Caqti_type.(custom ~encode ~decode (tup3 string string pdate))
+        Caqti_type.(custom ~encode ~decode (tup3 string string ptime))
     end
 
     let get_all connection =
@@ -63,7 +63,7 @@ module Sql = struct
           ?,
           ?
         ) ON DUPLICATE KEY UPDATE
-        session_data = ?
+        session_data = VALUES(session_data)
         |sql}
       in
       Connection.exec request
@@ -84,7 +84,7 @@ module Sql = struct
       let request =
         Caqti_request.exec Caqti_type.unit
           {sql|
-           TRUNCATE sessions_session;
+           TRUNCATE sessions_sessions;
           |sql}
       in
       Connection.exec request ()

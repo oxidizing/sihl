@@ -6,9 +6,10 @@ let ( let* ) = Lwt.bind
 let suite =
   [
     ( "sessions",
-      [ (* test_case "create session for anonymous http request without cookie"
-         *   `Quick Test_session.test_fetch_any_endpoint_creates_anonymous_session; *) ]
-    );
+      [
+        test_case "create session for anonymous http request without cookie"
+          `Quick Test_session.test_anonymous_request_returns_cookie;
+      ] );
   ]
 
 let () =
