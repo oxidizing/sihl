@@ -42,7 +42,9 @@ let session () =
         *)
         let session = Model.Session.create () in
         let* () = Repository.insert session |> Sihl.Core.Db.query_db_exn req in
-        let* result = handler req in
-        Lwt.return result
+        let* resp = handler req in
+        resp
+        |> Sihl.Http.Cookie.set ~key:cookie_key ~data:session.key
+        |> Lwt.return
   in
   Opium.Std.Rock.Middleware.create ~name:"session" ~filter

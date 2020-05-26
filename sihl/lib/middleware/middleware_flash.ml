@@ -101,15 +101,6 @@ let set_error req txt = set req (Error txt)
 
 let cookie_key = "flash_id"
 
-let set_cookie flash_id resp =
-  Opium.Std.Cookie.set ~http_only:true ~secure:false ~key:cookie_key
-    ~data:flash_id resp
-
-let unset_cookie flash_id resp =
-  Opium.Std.Cookie.set
-    ~expiration:(`Max_age (Int64.of_int 0))
-    ~http_only:true ~secure:false ~key:cookie_key ~data:flash_id resp
-
 let m () =
   let filter handler req =
     let flash_id = Opium.Std.Cookie.get req ~key:cookie_key in
@@ -119,7 +110,7 @@ let m () =
         let env = Opium.Hmap.add key flash_id (Http.Req.env req) in
         let* resp = handler { req with env } in
         if Store.is_next_set flash_id then
-          resp |> set_cookie flash_id |> Lwt.return
+          resp |> Http.Cookie.set ~key:cookie_key ~data:flash_id |> Lwt.return
         else resp |> Lwt.return
     | Some flash_id ->
         if Store.has flash_id then
@@ -127,13 +118,13 @@ let m () =
           let () = Store.rotate flash_id in
           let* resp = handler { req with env } in
           if Store.is_next_set flash_id then
-            resp |> set_cookie flash_id |> Lwt.return
+            resp |> Http.Cookie.set ~key:cookie_key ~data:flash_id |> Lwt.return
           else
             let () = Store.remove flash_id in
-            resp |> unset_cookie flash_id |> Lwt.return
+            resp |> Http.Cookie.unset ~key:cookie_key |> Lwt.return
         else
           let* resp = handler req in
-          resp |> unset_cookie flash_id |> Lwt.return
+          resp |> Http.Cookie.unset ~key:cookie_key |> Lwt.return
   in
 
   Opium.Std.Rock.Middleware.create ~name:"flash" ~filter
