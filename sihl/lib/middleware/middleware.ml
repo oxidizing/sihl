@@ -8,12 +8,12 @@ module Gzip = Middleware_gzip
 module Security = Middleware_security
 module Static = Middleware_static
 
-let flash () = Flash.m
+let flash = Flash.m
 
-let error () = Error.m
+let error = Error.m
 
 let static = Static.m
 
-let cookie () = Cookie.m
+let cookie = Cookie.m
 
 let db = Db.m

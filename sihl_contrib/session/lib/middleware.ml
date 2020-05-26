@@ -2,7 +2,7 @@ let ( let* ) = Lwt.bind
 
 let cookie_key = "sessions_session_id"
 
-let session () app =
+let session () =
   let filter handler req =
     let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Bind.Repository.key
@@ -47,5 +47,4 @@ let session () app =
         Logs.debug (fun m -> m "session inserted");
         handler req
   in
-  let m = Opium.Std.Rock.Middleware.create ~name:"session" ~filter in
-  Opium.Std.middleware m app
+  Opium.Std.Rock.Middleware.create ~name:"session" ~filter

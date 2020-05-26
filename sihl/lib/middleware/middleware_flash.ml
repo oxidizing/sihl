@@ -114,7 +114,7 @@ let unset_cookie flash_id resp =
     ~expiration:(`Max_age (Int64.of_int 0))
     ~http_only:true ~secure:false ~key:cookie_key ~data:flash_id resp
 
-let m app =
+let m () =
   let filter handler req =
     let flash_id = Opium.Std.Cookie.get req ~key:cookie_key in
     match flash_id with
@@ -140,8 +140,7 @@ let m app =
           resp |> unset_cookie flash_id |> Lwt.return
   in
 
-  let m = Opium.Std.Rock.Middleware.create ~name:"flash" ~filter in
-  Opium.Std.middleware m app
+  Opium.Std.Rock.Middleware.create ~name:"flash" ~filter
 
 (* convenience helper functions *)
 

@@ -1,6 +1,6 @@
 open Base
 
-let m () app =
+let m () =
   let ( let* ) = Lwt.bind in
   let pool = Core.Db.connect () in
   let filter handler req =
@@ -25,7 +25,4 @@ let m () app =
     | Some response -> Lwt.return response
     | None -> Core_err.raise_database "error happened"
   in
-  let m =
-    Opium.Std.Rock.Middleware.create ~name:"database connection" ~filter
-  in
-  Opium.Std.middleware m app
+  Opium.Std.Rock.Middleware.create ~name:"database connection" ~filter

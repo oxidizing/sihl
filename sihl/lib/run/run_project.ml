@@ -28,7 +28,7 @@ module type PROJECT = sig
   val create :
     ?bindings:Core.Registry.Binding.t list ->
     config:Core.Config.Setting.t ->
-    (unit -> Opium.App.builder) list ->
+    (unit -> Opium_kernel.Rock.Middleware.t) list ->
     (module APP) list ->
     t
 
@@ -48,7 +48,7 @@ end
 module Project : PROJECT = struct
   type t = {
     apps : (module APP) list;
-    middlewares : (unit -> Opium.App.builder) list;
+    middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
     bindings : Core.Registry.Binding.t list option;
   }
@@ -64,19 +64,19 @@ module Project : PROJECT = struct
     |> List.map ~f:(fun (module App : APP) -> App.endpoints ())
     |> List.concat
 
-  let add_middlewares middlewares app =
-    List.fold ~f:(fun app route -> route app) ~init:app middlewares
+  let add_builders builders app =
+    List.fold ~f:(fun app builder -> builder app) ~init:app builders
 
   let start_http_server project =
     let endpoints = merge_endpoints project in
     let middlewares = List.map ~f:(fun m -> m ()) project.middlewares in
     let port = Core.Config.read_int ~default:3000 "PORT" in
     Logs.debug (fun m -> m "http server starting on port %i" port);
+    let middlewares = middlewares |> List.map ~f:Opium.Std.middleware in
     let app =
       Opium.Std.App.empty |> Opium.Std.App.port port
       |> Opium.Std.App.cmd_name "Sihl Project"
-      |> add_middlewares middlewares
-      |> add_middlewares endpoints
+      |> add_builders middlewares |> add_builders endpoints
     in
     (* detaching from the thread so tests can run in the same process *)
     let _ = Opium.Std.App.start app in
