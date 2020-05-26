@@ -1,3 +1,5 @@
+open Base
+
 module Session = struct
   type t = { key : string; data : string; expire_date : Ptime.t }
 
@@ -13,7 +15,7 @@ module Session = struct
         Logs.err (fun m -> m "%s" msg);
         failwith msg
 
-  let empty_data = "{}"
+  let empty_data = {json| {} |json}
 
   let create () =
     {
@@ -23,4 +25,28 @@ module Session = struct
     }
 
   let key session = session.key
+
+  let data session = session.data
+
+  type map = (string * string) list [@@deriving yojson]
+
+  let get key session =
+    session.data |> Sihl.Core.Json.parse_opt
+    |> Option.map ~f:Yojson.Safe.Util.to_assoc
+    |> Option.map
+         ~f:
+           (List.map ~f:(fun (key, value) -> (key, Yojson.Safe.to_string value)))
+    |> Option.map ~f:(Map.of_alist_exn (module String))
+    |> Option.bind ~f:(fun map -> Map.find map key)
+
+  let set ~key ~value session =
+    {
+      session with
+      data =
+        session.data |> Sihl.Core.Json.parse_exn |> Yojson.Safe.Util.to_assoc
+        |> List.map ~f:(fun (key, value) -> (key, Yojson.Safe.to_string value))
+        |> Map.of_alist_exn (module String)
+        |> Map.set ~key ~data:value |> Map.to_alist |> map_to_yojson
+        |> Yojson.Safe.to_string;
+    }
 end

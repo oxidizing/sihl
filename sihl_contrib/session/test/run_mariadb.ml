@@ -8,9 +8,7 @@ let config =
     ~production:[]
 
 let middlewares =
-  [
-    Sihl.Middleware.db; Sihl.Middleware.cookie; Sihl_session.Middleware.session;
-  ]
+  [ Sihl.Middleware.db; Sihl.Middleware.cookie; Sihl_session.middleware ]
 
 let bindings = [ Sihl_mariadb.bind; Sihl_session_mariadb.bind ]
 
