@@ -49,7 +49,7 @@ let () =
   let db_name, project =
     match Sys.getenv "DATABASE" with
     | Some "mariadb" -> ("MariaDB", Run_mariadb.project)
-    | _ -> ("Postgres", Run_postgres.project)
+    | _ -> ("Postgres", Run_postgresql.project)
   in
   Lwt_main.run
     (let* () = Sihl.Run.Manage.start project in
