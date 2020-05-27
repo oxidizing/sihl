@@ -56,7 +56,7 @@ let test_requests_persist_session_variables _ () =
 
 let test_set_session_variable _ () =
   let open Sihl_session.Model.Session in
-  let session = create () in
+  let session = create (Ptime_clock.now ()) in
   Alcotest.(check (option string))
     "Has no session variable" None (get "foo" session);
   let session = set ~key:"foo" ~value:"bar" session in

@@ -7,21 +7,19 @@ module Session = struct
 
   let one_week = 60 * 60 * 24 * 7
 
-  let default_expiration_date () =
-    match
-      one_week |> Ptime.Span.of_int_s |> Ptime.add_span (Ptime_clock.now ())
-    with
+  let default_expiration_date now =
+    match one_week |> Ptime.Span.of_int_s |> Ptime.add_span now with
     | Some date -> date
     | None ->
         let msg = "SESSION APP: Setting default expiration went wrong" in
         Logs.err (fun m -> m "%s" msg);
         failwith msg
 
-  let create () =
+  let create now =
     {
       key = Sihl.Core.Random.base64 ~bytes:10;
       data = Map.empty (module String);
-      expire_date = default_expiration_date ();
+      expire_date = default_expiration_date now;
     }
 
   let key session = session.key

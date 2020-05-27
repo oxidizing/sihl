@@ -24,7 +24,7 @@ let session () =
             in
             handler { req with env }
         | None ->
-            let session = Model.Session.create () in
+            let session = Model.Session.create (Ptime_clock.now ()) in
             let* () =
               Repository.insert session |> Sihl.Core.Db.query_db_exn req
             in
@@ -33,7 +33,7 @@ let session () =
             |> Sihl.Http.Cookie.set ~key:cookie_key ~data:session.key
             |> Lwt.return )
     | None ->
-        let session = Model.Session.create () in
+        let session = Model.Session.create (Ptime_clock.now ()) in
         let* () = Repository.insert session |> Sihl.Core.Db.query_db_exn req in
         let env = Opium.Hmap.add hmap_key session (Opium.Std.Request.env req) in
         let* resp = handler { req with env } in
