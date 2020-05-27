@@ -1,7 +1,13 @@
 open Base
 
 module Session = struct
-  type t = { key : string; data : string; expire_date : Ptime.t }
+  type data_map = (string * string) list [@@deriving yojson]
+
+  type t = {
+    key : string;
+    data : (string, string, String.comparator_witness) Map.t;
+    expire_date : Ptime.t;
+  }
 
   let one_week = 60 * 60 * 24 * 7
 
@@ -20,7 +26,7 @@ module Session = struct
   let create () =
     {
       key = Sihl.Core.Random.base64 ~bytes:10;
-      data = empty_data;
+      data = Map.empty (module String);
       expire_date = default_expiration_date ();
     }
 
@@ -30,21 +36,8 @@ module Session = struct
 
   type map = (string * string) list [@@deriving yojson]
 
-  let get key session =
-    session.data |> Sihl.Core.Json.parse_opt
-    |> Option.map ~f:map_of_yojson
-    |> Option.map ~f:Result.ok_or_failwith
-    |> Option.map ~f:(Map.of_alist_exn (module String))
-    |> Option.bind ~f:(fun map -> Map.find map key)
+  let get key session = Map.find session.data key
 
   let set ~key ~value session =
-    {
-      session with
-      data =
-        session.data |> Sihl.Core.Json.parse_exn |> map_of_yojson
-        |> Result.ok_or_failwith
-        |> Map.of_alist_exn (module String)
-        |> Map.set ~key ~data:value |> Map.to_alist |> map_to_yojson
-        |> Yojson.Safe.to_string;
-    }
+    { session with data = Map.set ~key ~data:value session.data }
 end
