@@ -15,7 +15,7 @@ module Session = struct
         Logs.err (fun m -> m "%s" msg);
         failwith msg
 
-  let empty_data = {json| {} |json}
+  let empty_data = {json| [] |json}
 
   let create () =
     {
@@ -32,10 +32,8 @@ module Session = struct
 
   let get key session =
     session.data |> Sihl.Core.Json.parse_opt
-    |> Option.map ~f:Yojson.Safe.Util.to_assoc
-    |> Option.map
-         ~f:
-           (List.map ~f:(fun (key, value) -> (key, Yojson.Safe.to_string value)))
+    |> Option.map ~f:map_of_yojson
+    |> Option.map ~f:Result.ok_or_failwith
     |> Option.map ~f:(Map.of_alist_exn (module String))
     |> Option.bind ~f:(fun map -> Map.find map key)
 
@@ -43,8 +41,8 @@ module Session = struct
     {
       session with
       data =
-        session.data |> Sihl.Core.Json.parse_exn |> Yojson.Safe.Util.to_assoc
-        |> List.map ~f:(fun (key, value) -> (key, Yojson.Safe.to_string value))
+        session.data |> Sihl.Core.Json.parse_exn |> map_of_yojson
+        |> Result.ok_or_failwith
         |> Map.of_alist_exn (module String)
         |> Map.set ~key ~data:value |> Map.to_alist |> map_to_yojson
         |> Yojson.Safe.to_string;

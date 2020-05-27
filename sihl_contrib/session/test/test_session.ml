@@ -32,6 +32,7 @@ let test_set_session_variable _ () =
   Alcotest.(check (option string))
     "Has no session variable" None (get "foo" session);
   let session = set ~key:"foo" ~value:"bar" session in
+  Logs.debug (fun m -> m "got new session");
   Alcotest.(check (option string))
     "Has a session variable" (Some "bar") (get "foo" session);
   let session = set ~key:"foo" ~value:"baz" session in
