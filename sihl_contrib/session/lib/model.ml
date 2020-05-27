@@ -1,13 +1,9 @@
 open Base
 
 module Session = struct
-  type data_map = (string * string) list [@@deriving yojson]
+  type data = (string, string, String.comparator_witness) Map.t
 
-  type t = {
-    key : string;
-    data : (string, string, String.comparator_witness) Map.t;
-    expire_date : Ptime.t;
-  }
+  type t = { key : string; data : data; expire_date : Ptime.t }
 
   let one_week = 60 * 60 * 24 * 7
 
@@ -21,8 +17,6 @@ module Session = struct
         Logs.err (fun m -> m "%s" msg);
         failwith msg
 
-  let empty_data = {json| [] |json}
-
   let create () =
     {
       key = Sihl.Core.Random.base64 ~bytes:10;
@@ -33,6 +27,15 @@ module Session = struct
   let key session = session.key
 
   let data session = session.data
+
+  type data_map = (string * string) list [@@deriving yojson]
+
+  let string_of_data data =
+    data |> Map.to_alist |> data_map_to_yojson |> Yojson.Safe.to_string
+
+  let data_of_string str =
+    str |> Yojson.Safe.from_string |> data_map_of_yojson
+    |> Result.map ~f:(Map.of_alist_exn (module String))
 
   type map = (string * string) list [@@deriving yojson]
 
