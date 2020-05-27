@@ -1,4 +1,5 @@
 module Sql = struct
+  (* TODO move to some common mariadb namespace *)
   let set_fk_check connection status =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =

@@ -20,7 +20,7 @@ module Authn = struct
         Sihl.Core.Err.raise_not_authenticated
           "no user found, have you applied authentication middlewares?"
 
-  let session () app =
+  let session () =
     let filter handler req =
       match Opium.Hmap.find Env.key (Request.env req) with
       (* user has been authenticated somewhere else already, nothing to do *)
@@ -36,10 +36,9 @@ module Authn = struct
               let req = { req with Request.env } in
               handler req )
     in
-    let m = Rock.Middleware.create ~name:"http session authn" ~filter in
-    middleware m app
+    Rock.Middleware.create ~name:"http session authn" ~filter
 
-  let token () app =
+  let token () =
     let filter handler req =
       match req |> Request.headers |> Cohttp.Header.get_authorization with
       | None -> handler req
@@ -60,6 +59,5 @@ module Authn = struct
           let req = { req with Request.env } in
           handler req
     in
-    let m = Rock.Middleware.create ~name:"http token authn" ~filter in
-    middleware m app
+    Rock.Middleware.create ~name:"http token authn" ~filter
 end

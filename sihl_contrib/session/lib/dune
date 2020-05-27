@@ -4,6 +4,7 @@
  (libraries
   base
   sihl
+  lwt
 )
  (preprocess
   (pps

@@ -1,1 +1,1 @@
-let m = Opium.Std.middleware Opium.Std.Cookie.m
+let m () = Opium.Std.Cookie.m

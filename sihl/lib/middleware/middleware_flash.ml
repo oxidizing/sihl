@@ -77,9 +77,7 @@ let key : string Opium.Hmap.key =
   Opium.Hmap.Key.create ("flash id", fun _ -> sexp_of_string "flash id")
 
 let current req =
-  let flash_id =
-    Option.try_with (fun () -> req |> Http.Req.env |> Opium.Hmap.get key)
-  in
+  let flash_id = req |> Http.Req.env |> Opium.Hmap.find key in
   match flash_id with
   | None ->
       Logs.warn (fun m ->
@@ -90,9 +88,7 @@ let current req =
   | Some flash_id -> Store.find_current flash_id
 
 let set req flash =
-  let flash_id =
-    Option.try_with (fun () -> req |> Http.Req.env |> Opium.Hmap.get key)
-  in
+  let flash_id = req |> Http.Req.env |> Opium.Hmap.find key in
   match flash_id with
   | None ->
       let flash_id = Uuidm.v `V4 |> Uuidm.to_string in
@@ -105,16 +101,7 @@ let set_error req txt = set req (Error txt)
 
 let cookie_key = "flash_id"
 
-let set_cookie flash_id resp =
-  Opium.Std.Cookie.set ~http_only:true ~secure:false ~key:cookie_key
-    ~data:flash_id resp
-
-let unset_cookie flash_id resp =
-  Opium.Std.Cookie.set
-    ~expiration:(`Max_age (Int64.of_int 0))
-    ~http_only:true ~secure:false ~key:cookie_key ~data:flash_id resp
-
-let m app =
+let m () =
   let filter handler req =
     let flash_id = Opium.Std.Cookie.get req ~key:cookie_key in
     match flash_id with
@@ -123,7 +110,7 @@ let m app =
         let env = Opium.Hmap.add key flash_id (Http.Req.env req) in
         let* resp = handler { req with env } in
         if Store.is_next_set flash_id then
-          resp |> set_cookie flash_id |> Lwt.return
+          resp |> Http.Cookie.set ~key:cookie_key ~data:flash_id |> Lwt.return
         else resp |> Lwt.return
     | Some flash_id ->
         if Store.has flash_id then
@@ -131,17 +118,16 @@ let m app =
           let () = Store.rotate flash_id in
           let* resp = handler { req with env } in
           if Store.is_next_set flash_id then
-            resp |> set_cookie flash_id |> Lwt.return
+            resp |> Http.Cookie.set ~key:cookie_key ~data:flash_id |> Lwt.return
           else
             let () = Store.remove flash_id in
-            resp |> unset_cookie flash_id |> Lwt.return
+            resp |> Http.Cookie.unset ~key:cookie_key |> Lwt.return
         else
           let* resp = handler req in
-          resp |> unset_cookie flash_id |> Lwt.return
+          resp |> Http.Cookie.unset ~key:cookie_key |> Lwt.return
   in
 
-  let m = Opium.Std.Rock.Middleware.create ~name:"flash" ~filter in
-  Opium.Std.middleware m app
+  Opium.Std.Rock.Middleware.create ~name:"flash" ~filter
 
 (* convenience helper functions *)
 

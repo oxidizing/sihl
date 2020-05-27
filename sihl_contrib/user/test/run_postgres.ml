@@ -11,11 +11,11 @@ let config =
 
 let middlewares =
   [
+    Sihl.Middleware.db;
     Sihl.Middleware.cookie;
     Sihl.Middleware.static;
     Sihl.Middleware.flash;
     Sihl.Middleware.error;
-    Sihl.Middleware.db;
     Sihl_user.Middleware.Authn.token;
     Sihl_user.Middleware.Authn.session;
   ]

@@ -2,7 +2,7 @@ open Http
 
 let ( let* ) = Lwt.bind
 
-let m app =
+let m () =
   let filter handler req =
     let* response = Core_err.try_to_run (fun () -> handler req) in
     match (Req.accepts_html req, response) with
@@ -58,5 +58,4 @@ let m app =
         |> Lwt.return
   in
 
-  let m = Opium.Std.Rock.Middleware.create ~name:"error handler" ~filter in
-  Opium.Std.middleware m app
+  Opium.Std.Rock.Middleware.create ~name:"error handler" ~filter

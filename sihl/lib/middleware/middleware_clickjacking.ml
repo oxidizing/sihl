@@ -8,10 +8,9 @@
     your project's Django settings to 'DENY'.
  *)
 
-let m app =
+let m () =
   let filter handler req =
     Logs.warn (fun m -> m "clickjacking middleware is not implemented");
     handler req
   in
-  let m = Opium.Std.Rock.Middleware.create ~name:"clickjacking" ~filter in
-  Opium.Std.middleware m app
+  Opium.Std.Rock.Middleware.create ~name:"clickjacking" ~filter
