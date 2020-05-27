@@ -11,6 +11,8 @@ module Session : sig
 
   val data : t -> (string, string, Base.String.comparator_witness) Base.Map.t
 
+  val is_expired : Ptime.t -> t -> bool
+
   val data_of_string : string -> (data, string) Result.t
 
   val string_of_data : data -> string

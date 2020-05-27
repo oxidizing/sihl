@@ -19,6 +19,15 @@ let session () =
         in
         match session with
         | Some session ->
+            let* session =
+              if Model.Session.is_expired (Ptime_clock.now ()) session then
+                let session = Model.Session.create (Ptime_clock.now ()) in
+                let* () =
+                  Repository.insert session |> Sihl.Core.Db.query_db_exn req
+                in
+                Lwt.return session
+              else Lwt.return session
+            in
             let env =
               Opium.Hmap.add hmap_key session (Opium.Std.Request.env req)
             in

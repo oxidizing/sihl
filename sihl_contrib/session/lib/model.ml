@@ -26,6 +26,8 @@ module Session = struct
 
   let data session = session.data
 
+  let is_expired now session = Ptime.is_later session.expire_date ~than:now
+
   type data_map = (string * string) list [@@deriving yojson]
 
   let string_of_data data =
