@@ -32,6 +32,7 @@ module Sql = struct
       Connection.find_opt request
 
     let upsert connection =
+      (* TODO split up into insert and update *)
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
         Caqti_request.exec Model.t
