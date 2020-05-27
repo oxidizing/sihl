@@ -16,7 +16,7 @@ let test_anonymous_request_returns_cookie _ () =
       req
   in
   let* request = Sihl.Run.Test.request_with_connection () in
-  let (module Repository : Sihl_session.REPOSITORY) =
+  let (module Repository : Sihl_session.Repo.REPOSITORY) =
     Sihl.Core.Registry.get Sihl_session.Bind.Repository.key
   in
   let* sessions = Repository.get_all |> Sihl.Core.Db.query_db request in

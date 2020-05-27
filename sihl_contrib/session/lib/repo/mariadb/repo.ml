@@ -1,25 +1,3 @@
-module Model = struct
-  open Base
-  open Sihl_session.Model.Session
-
-  let t =
-    let encode m =
-      let data =
-        m.data |> Map.to_alist |> map_to_yojson |> Yojson.Safe.to_string
-      in
-      Ok (m.key, data, m.expire_date)
-    in
-    let decode (key, data, expire_date) =
-      let data =
-        data |> Yojson.Safe.from_string |> map_of_yojson
-        |> Result.ok_or_failwith
-        |> Map.of_alist_exn (module String)
-      in
-      Ok { key; data; expire_date }
-    in
-    Caqti_type.(custom ~encode ~decode (tup3 string string ptime))
-end
-
 module Sql = struct
   (* TODO move to some common mariadb namespace *)
   let set_fk_check connection status =
@@ -33,6 +11,8 @@ module Sql = struct
     Connection.exec request status
 
   module Session = struct
+    module Model = Sihl_session.Repo.Session
+
     let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =

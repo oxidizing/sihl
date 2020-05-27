@@ -1,8 +1,7 @@
 module Model = Model
 module Bind = Bind
 module App = App
-
-module type REPOSITORY = Repo_sig.REPOSITORY
+module Repo = Repo
 
 let middleware = Middleware.session
 

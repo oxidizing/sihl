@@ -9,7 +9,7 @@ let hmap_key : Model.Session.t Opium.Hmap.key =
 
 let session () =
   let filter handler req =
-    let (module Repository : Repo_sig.REPOSITORY) =
+    let (module Repository : Repo.REPOSITORY) =
       Sihl.Core.Registry.get Bind.Repository.key
     in
     match Opium.Std.Cookie.get req ~key:cookie_key with
@@ -52,7 +52,7 @@ let session () =
   Opium.Std.Rock.Middleware.create ~name:"session" ~filter
 
 let set ~key ~value req =
-  let (module Repository : Repo_sig.REPOSITORY) =
+  let (module Repository : Repo.REPOSITORY) =
     Sihl.Core.Registry.get Bind.Repository.key
   in
   let session =
