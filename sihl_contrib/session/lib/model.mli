@@ -18,4 +18,6 @@ module Session : sig
   val get : string -> t -> string option
 
   val set : key:string -> value:string -> t -> t
+
+  val pp : Format.formatter -> t -> unit
 end

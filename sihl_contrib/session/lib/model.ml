@@ -43,4 +43,7 @@ module Session = struct
 
   let set ~key ~value session =
     { session with data = Map.set ~key ~data:value session.data }
+
+  let pp ppf { key; data; _ } =
+    Caml.Format.fprintf ppf "key: %s data: %s " key (string_of_data data)
 end

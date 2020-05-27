@@ -45,7 +45,7 @@ module Sql = struct
           ?,
           ?
         ) ON CONFLICT (session_key) DO UPDATE SET
-        session_data = sessions_sessions.session_data
+        session_data = EXCLUDED.session_data
         |sql}
       in
       Connection.exec request

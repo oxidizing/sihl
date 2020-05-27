@@ -9,6 +9,8 @@ let suite =
       [
         test_case "create session for anonymous http request without cookie"
           `Quick Test_session.test_anonymous_request_returns_cookie;
+        test_case "persist session across multiple requests" `Quick
+          Test_session.test_requests_persist_session_variables;
         test_case "set session variable" `Quick
           Test_session.test_set_session_variable;
       ] );
