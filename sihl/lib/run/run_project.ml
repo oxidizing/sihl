@@ -108,7 +108,8 @@ module Project : PROJECT = struct
     project.bindings
     |> Option.map ~f:(fun bindings ->
            List.map bindings ~f:Core.Registry.Binding.apply)
-    |> ignore
+    |> ignore;
+    Core.Registry.set_initialized ()
 
   let setup_config project =
     let schemas =
