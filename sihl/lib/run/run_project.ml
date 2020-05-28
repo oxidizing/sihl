@@ -138,11 +138,14 @@ module Project : PROJECT = struct
     Random.self_init ();
     setup_logger ();
     let apps = project |> app_names |> String.concat ~sep:", " in
-    Logs.debug (fun m -> m "project starting with apps: %s" apps);
+    Logs.debug (fun m -> m "START: Setting up project with apps: %s" apps);
+    Logs.debug (fun m -> m "START: Setting up configuration");
     setup_config project;
+    Logs.debug (fun m -> m "START: Binding registry");
     bind_registry project;
+    Logs.debug (fun m -> m "START: Calling app start hooks");
     call_start_hooks project;
-    (* TODO run migrations here? *)
+    Logs.debug (fun m -> m "START: Starting HTTP server");
     start_http_server project
 
   (* TODO implement *)

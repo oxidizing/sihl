@@ -50,11 +50,11 @@ let logout =
 
 let flash_section ~flash =
   match flash with
-  | Some (Sihl.Middleware.Flash.Error msg) ->
+  | Some (Sihl.Middleware.Flash.Message.Error msg) ->
       section
         ~a:[ a_class [ "hero is-small is-danger" ]; a_style "margin-top: 2em;" ]
         [ div ~a:[ a_class [ "hero-body" ] ] [ txt msg ] ]
-  | Some (Sihl.Middleware.Flash.Warning msg) ->
+  | Some (Sihl.Middleware.Flash.Message.Warning msg) ->
       section
         ~a:
           [
@@ -62,7 +62,7 @@ let flash_section ~flash =
             a_style "margin-top: 2em;";
           ]
         [ div ~a:[ a_class [ "hero-body" ] ] [ txt msg ] ]
-  | Some (Sihl.Middleware.Flash.Success msg) ->
+  | Some (Sihl.Middleware.Flash.Message.Success msg) ->
       section
         ~a:
           [

@@ -4,12 +4,14 @@ module type SESSION_SERVICE = sig
   val get : string -> Opium_kernel.Request.t -> string option Lwt.t
 end
 
-let key : (module SESSION_SERVICE) Core.Registry.Key.t =
+let registry_key : (module SESSION_SERVICE) Core.Registry.Key.t =
   Core.Registry.Key.create "/sessions/service"
 
-let set =
-  match Core.Registry.get_opt key with
-  | Some (module Service : SESSION_SERVICE) -> Service.set
+let key = registry_key
+
+let set ~key ~value req =
+  match Core.Registry.get_opt registry_key with
+  | Some (module Service : SESSION_SERVICE) -> Service.set ~key ~value req
   | None ->
       let msg =
         "SESSION: Could not find session service, have you installed the \
@@ -18,9 +20,9 @@ let set =
       Logs.err (fun m -> m "%s" msg);
       failwith msg
 
-let get =
-  match Core.Registry.get_opt key with
-  | Some (module Service : SESSION_SERVICE) -> Service.get
+let get key req =
+  match Core.Registry.get_opt registry_key with
+  | Some (module Service : SESSION_SERVICE) -> Service.get key req
   | None ->
       let msg =
         "SESSION: Could not find session service, have you installed the \
