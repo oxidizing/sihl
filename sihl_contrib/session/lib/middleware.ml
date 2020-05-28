@@ -43,7 +43,10 @@ let session () =
             let* () =
               Repository.insert session |> Sihl.Core.Db.query_db_exn req
             in
-            let* res = handler req in
+            let env =
+              Opium.Hmap.add hmap_key session (Opium.Std.Request.env req)
+            in
+            let* res = handler { req with env } in
             res
             |> Sihl.Http.Cookie.set ~key:cookie_key ~data:session.key
             |> Lwt.return )

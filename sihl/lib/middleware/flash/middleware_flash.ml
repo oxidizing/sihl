@@ -19,12 +19,7 @@ let m () =
 let current req =
   let* entry = Store.find_current req in
   match entry with
-  | None ->
-      Logs.warn (fun m ->
-          m
-            "FLASH: No flash message found, have you applied the flash \
-             middleware?");
-      Lwt.return None
+  | None -> Lwt.return None
   | Some message -> Lwt.return @@ Some message
 
 let set req message = Store.set_next req message

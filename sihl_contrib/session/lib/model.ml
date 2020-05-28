@@ -27,7 +27,7 @@ module Session = struct
 
   let data session = session.data
 
-  let is_expired now session = Ptime.is_later session.expire_date ~than:now
+  let is_expired now session = Ptime.is_later now ~than:session.expire_date
 
   type data_map = (string * string) list [@@deriving yojson]
 
@@ -52,5 +52,11 @@ end
 (* Tests *)
 
 let%test "session not expired" =
-  let session = Session.create (Ptime_clock.now ()) in
+  let expire_date =
+    Option.value_exn
+      ( 60 * 60 * 24
+      |> Ptime.Span.of_int_s
+      |> Ptime.add_span (Ptime_clock.now ()) )
+  in
+  let session = Session.create ~expire_date (Ptime_clock.now ()) in
   not @@ Session.is_expired (Ptime_clock.now ()) session
