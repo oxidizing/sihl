@@ -173,7 +173,7 @@ module AdminUi = struct
     let handler =
       get "/admin/dashboard/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl.Middleware.Flash.current req in
+      let* flash = Sihl.Middleware.Flash.current req in
       Admin_ui.dashboard_page ~flash user
       |> Admin_ui.render |> Res.html |> Lwt.return
   end
@@ -183,7 +183,7 @@ module AdminUi = struct
 
     let get =
       get "/admin/login/" @@ fun req ->
-      let flash = Sihl.Middleware.Flash.current req in
+      let* flash = Sihl.Middleware.Flash.current req in
       Admin_ui.login_page ~flash |> Admin_ui.render |> Res.html |> Lwt.return
 
     let post =
@@ -222,7 +222,7 @@ module AdminUi = struct
     let handler =
       get "/admin/users/users/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl.Middleware.Flash.current req in
+      let* flash = Sihl.Middleware.Flash.current req in
       let* users = Service.User.get_all req user in
       Admin_ui_users.users_page ~flash users
       |> Admin_ui.render |> Res.html |> Lwt.return
@@ -235,7 +235,7 @@ module AdminUi = struct
       get "/admin/users/users/:id/" @@ fun req ->
       let user_id = Req.param req "id" in
       let user = Middleware.Authn.authenticate req in
-      let flash = Sihl.Middleware.Flash.current req in
+      let* flash = Sihl.Middleware.Flash.current req in
       let* user = Service.User.get req user ~user_id in
       Admin_ui_users.user_page ~flash user
       |> Admin_ui.render |> Res.html |> Lwt.return

@@ -10,6 +10,12 @@ module Message : sig
   val to_yojson : t -> Yojson.Safe.t
 
   val of_yojson : Yojson.Safe.t -> (t, string) Result.t
+
+  val success : string -> t
+
+  val warning : string -> t
+
+  val error : string -> t
 end
 
 module Entry : sig
@@ -19,11 +25,15 @@ module Entry : sig
 
   val equal : t -> t -> bool
 
+  val empty : t
+
   val create : Message.t -> t
 
   val current : t -> Message.t option
 
   val next : t -> Message.t option
+
+  val set_next : t -> Message.t -> t
 
   val rotate : t -> t
 
