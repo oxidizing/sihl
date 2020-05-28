@@ -33,7 +33,9 @@ module Entry : sig
 
   val next : t -> Message.t option
 
-  val set_next : t -> Message.t -> t
+  val set_next : Message.t -> t -> t
+
+  val set_current : Message.t -> t -> t
 
   val rotate : t -> t
 

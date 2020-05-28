@@ -15,11 +15,12 @@ module Session = struct
         Logs.err (fun m -> m "%s" msg);
         failwith msg
 
-  let create now =
+  let create ?expire_date now =
     {
       key = Sihl.Core.Random.base64 ~bytes:10;
       data = Map.empty (module String);
-      expire_date = default_expiration_date now;
+      expire_date =
+        Option.value ~default:(default_expiration_date now) expire_date;
     }
 
   let key session = session.key
@@ -47,3 +48,9 @@ module Session = struct
   let pp ppf { key; data; _ } =
     Caml.Format.fprintf ppf "key: %s data: %s " key (string_of_data data)
 end
+
+(* Tests *)
+
+let%test "session not expired" =
+  let session = Session.create (Ptime_clock.now ()) in
+  not @@ Session.is_expired (Ptime_clock.now ()) session

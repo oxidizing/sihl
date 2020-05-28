@@ -5,7 +5,7 @@ module Session : sig
 
   type t = { key : string; data : data; expire_date : Ptime.t }
 
-  val create : Ptime.t -> t
+  val create : ?expire_date:Ptime.t -> Ptime.t -> t
 
   val key : t -> string
 

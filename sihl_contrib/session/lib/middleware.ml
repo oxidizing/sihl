@@ -21,6 +21,10 @@ let session () =
         | Some session ->
             let* session =
               if Model.Session.is_expired (Ptime_clock.now ()) session then
+                let () =
+                  Logs.debug (fun m ->
+                      m "SESSION: Session expired, creating new one")
+                in
                 let session = Model.Session.create (Ptime_clock.now ()) in
                 (* TODO try to create new session if key is already taken *)
                 let* () =

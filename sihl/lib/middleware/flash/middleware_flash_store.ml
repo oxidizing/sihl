@@ -25,9 +25,13 @@ let find_current req =
 let set_next req message =
   let* entry = fetch_entry req in
   match entry with
-  | None -> Lwt.return ()
+  | None ->
+      (* No entry found, creating new one *)
+      let entry = Entry.create message |> Entry.to_string in
+      Http.Session.set ~key:"flash" ~value:entry req
   | Some entry ->
-      let entry = Entry.set_next entry message |> Entry.to_string in
+      (* Overriding next message in existing entry *)
+      let entry = Entry.set_next message entry |> Entry.to_string in
       Http.Session.set ~key:"flash" ~value:entry req
 
 let rotate req =
