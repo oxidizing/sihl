@@ -27,7 +27,7 @@ module Entry = struct
 
   let set_current message entry = { entry with current = Some message }
 
-  let rotate entry = { next = entry.current; current = None }
+  let rotate entry = { current = entry.next; next = None }
 
   let to_string entry = entry |> to_yojson |> Yojson.Safe.to_string
 
@@ -44,15 +44,15 @@ let%test "entry to and from string" =
 
 let%test "rotate once" =
   let msg = Message.Success "foo" in
-  let entry = Entry.empty |> Entry.set_current msg |> Entry.rotate in
-  let is_current_none = Option.is_none (entry |> Entry.current) in
-  let is_next_set =
-    entry |> Entry.next
+  let entry = Entry.create msg |> Entry.rotate in
+  let is_current_set =
+    entry |> Entry.current
     |> Option.map ~f:(Message.equal msg)
     |> Option.value ~default:false
   in
-  is_current_none && is_next_set
+  let is_next_none = Option.is_none (entry |> Entry.next) in
+  is_current_set && is_next_none
 
 let%test "rotate twice" =
-  let entry = Entry.empty |> Entry.set_current (Success "foo") in
+  let entry = Entry.create (Success "foo") in
   Entry.equal Entry.empty (entry |> Entry.rotate |> Entry.rotate)
