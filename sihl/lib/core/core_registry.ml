@@ -42,6 +42,8 @@ let get key =
       let () = Logs.err (fun m -> m "REGISTRY: %s" msg) in
       failwith msg
 
+let get_opt key = Hmap.find key !state
+
 let register = Binding.register
 
 let bind = Binding.create

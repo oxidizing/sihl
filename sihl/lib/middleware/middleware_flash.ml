@@ -82,7 +82,7 @@ let current req =
   | None ->
       Logs.warn (fun m ->
           m
-            "no flash id found in current request, have you applied the flash \
+            "FLASH: No flash message found, have you applied the flash \
              middleware?");
       None
   | Some flash_id -> Store.find_current flash_id
