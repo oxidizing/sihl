@@ -1,8 +1,10 @@
+let ( let* ) = Lwt.bind
+
 let set ~key ~value req =
   let (module Repository : Repo.REPOSITORY) =
     Sihl.Core.Registry.get Bind.Repository.key
   in
-  let session =
+  let session_key =
     match Opium.Hmap.find Middleware.hmap_key (Opium.Std.Request.env req) with
     | Some session -> session
     | None ->
@@ -10,11 +12,23 @@ let set ~key ~value req =
           "Session not found in Request.env, have you applied the \
            Sihl_session.middleware?"
   in
-  let session = Model.Session.set ~key ~value session in
-  Repository.insert session |> Sihl.Core.Db.query_db_exn req
+  let* session =
+    Repository.get ~key:session_key |> Sihl.Core.Db.query_db_exn req
+  in
+  match session with
+  | None ->
+      Lwt.return
+      @@ Logs.warn (fun m ->
+             m "SESSION: Provided session key has no session in DB")
+  | Some session ->
+      let session = Model.Session.set ~key ~value session in
+      Repository.insert session |> Sihl.Core.Db.query_db_exn req
 
 let get key req =
-  let session =
+  let (module Repository : Repo.REPOSITORY) =
+    Sihl.Core.Registry.get Bind.Repository.key
+  in
+  let session_key =
     match Opium.Hmap.find Middleware.hmap_key (Opium.Std.Request.env req) with
     | Some session -> session
     | None ->
@@ -22,4 +36,12 @@ let get key req =
           "Session not found in Request.env, have you applied the \
            Sihl_session.middleware?"
   in
-  Model.Session.get key session |> Lwt.return
+  let* session =
+    Repository.get ~key:session_key |> Sihl.Core.Db.query_db_exn req
+  in
+  match session with
+  | None ->
+      Logs.warn (fun m ->
+          m "SESSION: Provided session key has no session in DB");
+      Lwt.return None
+  | Some session -> Model.Session.get key session |> Lwt.return
