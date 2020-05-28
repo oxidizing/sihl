@@ -3,21 +3,17 @@ open Base
 let ( let* ) = Lwt.bind
 
 module Message = Middleware_flash_model.Message
+module Entry = Middleware_flash_model.Entry
 
 module Store = struct
-  type entry = { current : Message.t option; next : Message.t option }
-  [@@deriving sexp]
-
-  type t = (string, entry, String.comparator_witness) Map.t
+  type t = (string, Entry.t, String.comparator_witness) Map.t
 
   (* TODO consider using bounded Hashtable or the database
      instead of an unbounded immutable map *)
   let state = ref @@ Map.empty (module String)
 
-  let add ~id flash =
-    match
-      Map.add !state ~key:id ~data:{ current = None; next = Some flash }
-    with
+  let add ~id message =
+    match Map.add !state ~key:id ~data:(Entry.create message) with
     | `Duplicate ->
         Logs.err (fun m ->
             m "failed to create unique key to store flash message");
@@ -32,7 +28,7 @@ module Store = struct
     match entry with
     | None -> ()
     | Some entry ->
-        let entry = { current = entry.next; next = None } in
+        let entry = Entry.rotate entry in
         state := Map.set !state ~key:id ~data:entry
 
   let remove id =
@@ -41,13 +37,12 @@ module Store = struct
 
   let has id = Map.find !state id |> Option.is_some
 
-  let find_current id =
-    Map.find !state id |> Option.bind ~f:(fun flash -> flash.current)
+  let find_current id = Map.find !state id |> Option.bind ~f:Entry.current
 
   let is_next_set id =
     Map.find !state id
     |> Option.value_map ~default:false ~f:(fun entry ->
-           Option.is_some entry.next)
+           Option.is_some (Entry.next entry))
 
   let set_next ~id flash =
     state :=

@@ -2,7 +2,6 @@ open Base
 
 module Message = struct
   type t = Error of string | Warning of string | Success of string
-  [@@deriving sexp]
 
   let pp fmt (flash : t) =
     let s =
@@ -19,4 +18,16 @@ module Message = struct
     | Warning msg1, Warning msg2 -> String.equal msg1 msg2
     | Error msg1, Error msg2 -> String.equal msg1 msg2
     | _ -> false
+end
+
+module Entry = struct
+  type t = { current : Message.t option; next : Message.t option }
+
+  let create message = { current = None; next = Some message }
+
+  let current entry = entry.current
+
+  let next entry = entry.next
+
+  let rotate entry = { current = entry.next; next = None }
 end

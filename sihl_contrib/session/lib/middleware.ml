@@ -22,6 +22,7 @@ let session () =
             let* session =
               if Model.Session.is_expired (Ptime_clock.now ()) session then
                 let session = Model.Session.create (Ptime_clock.now ()) in
+                (* TODO try to create new session if key is already taken *)
                 let* () =
                   Repository.insert session |> Sihl.Core.Db.query_db_exn req
                 in
@@ -34,6 +35,7 @@ let session () =
             handler { req with env }
         | None ->
             let session = Model.Session.create (Ptime_clock.now ()) in
+            (* TODO try to create new session if key is already taken *)
             let* () =
               Repository.insert session |> Sihl.Core.Db.query_db_exn req
             in
@@ -43,6 +45,7 @@ let session () =
             |> Lwt.return )
     | None ->
         let session = Model.Session.create (Ptime_clock.now ()) in
+        (* TODO try to create new session if key is already taken *)
         let* () = Repository.insert session |> Sihl.Core.Db.query_db_exn req in
         let env = Opium.Hmap.add hmap_key session (Opium.Std.Request.env req) in
         let* resp = handler { req with env } in
