@@ -26,20 +26,8 @@ module Logout = {
 };
 
 module FlashMessage = {
-  type message =
-    | Success(string)
-    | Warning(string)
-    | Error(string);
-
-  let extract = color =>
-    switch (color) {
-    | Success(msg) => ("is-success", msg)
-    | Warning(msg) => ("is-warning", msg)
-    | Error(msg) => ("is-danger", msg)
-    };
-
-  let createElement = (~message, ()) => {
-    let (color, msg) = extract(message);
+  let createElement = (~ctx, ()) => {
+    let (color, msg) = Sihl.Admin.Context.message(ctx);
     let class_ = ["hero", "is-small", color];
     <section class_ style="margin-top: 2em;">
       <div class_="hero-body"> {Html.txt(msg)} </div>
@@ -48,7 +36,7 @@ module FlashMessage = {
 };
 
 module Layout = {
-  let createElement = (~message, ~isLoggedIn, ~children, ()) =>
+  let createElement = (~ctx, ~isLoggedIn, ~children, ()) =>
     <div>
       <section class_="hero is-small is-primary is-bold">
         <div class_="hero-body">
@@ -59,7 +47,7 @@ module Layout = {
           </div>
         </div>
       </section>
-      <FlashMessage message />
+      <FlashMessage ctx />
       <section class_="section" style="min-height: 40em;">
         ...children
       </section>
@@ -72,13 +60,14 @@ module Layout = {
 };
 
 module Navigation = {
-  let createElement = (~pages, ()) => {
+  let createElement = (~ctx, ()) => {
     let elems =
-      pages
+      ctx
+      |> Sihl.Admin.Context.pages
       |> List.map(~f=page =>
            <li>
-             <a href={Admin.Page.path(page)}>
-               {Html.txt(Admin.Page.label(page))}
+             <a href={Sihl.Admin.Page.path(page)}>
+               {Html.txt(Sihl.Admin.Page.label(page))}
              </a>
            </li>
          );
@@ -90,10 +79,10 @@ module Navigation = {
 };
 
 module NavigationLayout = {
-  let createElement = (~message, ~title, ~pages, ~children, ()) => {
-    <Layout message isLoggedIn=true>
+  let createElement = (~ctx, ~title, ~children, ()) => {
+    <Layout ctx isLoggedIn=true>
       <div class_="columns">
-        <div class_="column is-2 is-desktop"> <Navigation pages /> </div>
+        <div class_="column is-2 is-desktop"> <Navigation ctx /> </div>
         <div class_="column is-10">
           ...{List.cons(
             <h1 class_="title"> {Html.txt(title)} </h1>,
@@ -106,7 +95,7 @@ module NavigationLayout = {
 };
 
 module LoginPage = {
-  let createElement = (~message, ()) => {
+  let createElement = (ctx, ()) => {
     let form =
       <form action="/admin/login/" method="Post">
         <div class_="field">
@@ -129,7 +118,7 @@ module LoginPage = {
       </form>;
 
     <Page title="login">
-      <Layout message isLoggedIn=false>
+      <Layout ctx isLoggedIn=false>
         <div class_="columns">
           <div class_="column is-one-quarter" />
           <div class_="column is-two-quarters"> form </div>
@@ -141,10 +130,10 @@ module LoginPage = {
 };
 
 module DashboardPage = {
-  let createElement = (~pages, ~message, ~user, ()) => {
+  let createElement = (ctx, user) => {
     let welcomeText = "Have a great day, " ++ Model.User.email(user);
     <Page title="Dashbpard">
-      <NavigationLayout pages message title="Dashboard">
+      <NavigationLayout ctx title="Dashboard">
         <h1 class_="subtitle"> {Html.txt(welcomeText)} </h1>
       </NavigationLayout>
     </Page>;

@@ -14,10 +14,10 @@ module Row = {
 };
 
 module UserListPage = {
-  let createElement = (~pages, ~message, ~users, ()) => {
+  let createElement = (ctx, users) => {
     let elems = List.map(users, ~f=user => <Row user />);
     <Admin_component.Page title="Users">
-      <Admin_component.NavigationLayout pages message title="Users">
+      <Admin_component.NavigationLayout ctx title="Users">
         <table class_="table is-striped is-narrow is-hoverable is-fullwidth">
           <tbody>
             ...{List.cons(
@@ -57,10 +57,10 @@ module SetPassword = {
 };
 
 module UserPage = {
-  let createElement = (~pages, ~message, ~user) => {
+  let createElement = (ctx, user) => {
     let title = "User: " ++ Model.User.email(user);
     <Admin_component.Page title>
-      <Admin_component.NavigationLayout pages message title>
+      <Admin_component.NavigationLayout ctx title>
         <div class_="columns">
           <div class_="column is-one-third"> <SetPassword user /> </div>
           <table class_="table is-striped is-narrow is-hoverable is-fullwidth">
