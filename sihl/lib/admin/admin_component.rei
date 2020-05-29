@@ -13,7 +13,8 @@ module Page: {
 module Logout: {let createElement: unit => Html.elt([> Html_types.form]);};
 module FlashMessage: {
   let createElement:
-    (~ctx: Admin_context.t, unit) => Html.elt([> Html_types.section]);
+    (~ctx: Admin_context.t, unit) =>
+    Html.elt([> Html_types.section | Html_types.div]);
 };
 module Layout: {
   let createElement:

@@ -27,11 +27,14 @@ module Logout = {
 
 module FlashMessage = {
   let createElement = (~ctx, ()) => {
-    let (color, msg) = Admin_context.message(ctx);
-    let class_ = ["hero", "is-small", color];
-    <section class_ style="margin-top: 2em;">
-      <div class_="hero-body"> {Html.txt(msg)} </div>
-    </section>;
+    switch (Admin_context.message(ctx)) {
+    | Some((color, msg)) =>
+      let class_ = ["hero", "is-small", color];
+      <section class_ style="margin-top: 2em;">
+        <div class_="hero-body"> {Html.txt(msg)} </div>
+      </section>;
+    | None => <Empty />
+    };
   };
 };
 
@@ -117,13 +120,13 @@ module LoginPage = {
         </div>
       </form>;
 
-    <Page title="login">
+    <Page title="Login">
       <Layout ctx isLoggedIn=false>
         <div class_="columns">
           <div class_="column is-one-quarter" />
           <div class_="column is-two-quarters"> form </div>
+          <div class_="column is-one-quarter" />
         </div>
-        <div class_="column is-one-quarter" />
       </Layout>
     </Page>;
   };
