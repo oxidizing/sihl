@@ -1,15 +1,5 @@
 module Component = Admin_component
-
-module Page : sig
-  type t
-
-  val path : t -> string
-
-  val label : t -> string
-
-  val create : path:string -> label:string -> t
-end
-
+module Page = Admin_page
 module Context = Admin_context
 
 type 'a admin_page = Context.t -> 'a -> Template.Document.t
