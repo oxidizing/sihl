@@ -63,18 +63,18 @@ module UserPage = {
       <Sihl.Admin.Component.NavigationLayout ctx title>
         <div class_="columns">
           <div class_="column is-one-third"> <SetPassword user /> </div>
-          <table class_="table is-striped is-narrow is-hoverable is-fullwidth">
-            <tbody>
-              <tr>
-                <th> "Email" </th>
-                <th> "Admin?" </th>
-                <th> "Email confirmed?" </th>
-                <th> "Status" </th>
-              </tr>
-              <Row user />
-            </tbody>
-          </table>
         </div>
+        <table class_="table is-striped is-narrow is-hoverable is-fullwidth">
+          <tbody>
+            <tr>
+              <th> "Email" </th>
+              <th> "Admin?" </th>
+              <th> "Email confirmed?" </th>
+              <th> "Status" </th>
+            </tr>
+            <Row user />
+          </tbody>
+        </table>
       </Sihl.Admin.Component.NavigationLayout>
     </Sihl.Admin.Component.Page>;
   };
