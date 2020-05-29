@@ -69,8 +69,13 @@ module Navigation = {
       |> Admin_context.pages
       |> List.map(~f=page =>
            <li>
+<<<<<<< HEAD:sihl/lib/admin/admin_component.re
+             <a href={Admin_page.path(page)}>
+               {Html.txt(Admin_page.label(page))}
+=======
              <a href={Admin.Page.path(page)}>
                {Html.txt(Admin.Page.label(page))}
+>>>>>>> 01a4518... Rewrite Admin UI user components to use Reason:sihl_contrib/user/lib/admin_component.re
              </a>
            </li>
          );
