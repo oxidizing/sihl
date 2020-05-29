@@ -77,8 +77,8 @@ module Navigation = {
       pages
       |> List.map(~f=page =>
            <li>
-             <a href={Admin_ui.Page.path(page)}>
-               {Html.txt(Admin_ui.Page.label(page))}
+             <a href={Admin.Page.path(page)}>
+               {Html.txt(Admin.Page.label(page))}
              </a>
            </li>
          );
