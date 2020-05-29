@@ -13,7 +13,6 @@
    ppx_fields_conv
    ppx_deriving_yojson
    ppx_sexp_conv
-   tyxml-ppx
    tyxml-jsx
    ppx_string_interpolation
    )

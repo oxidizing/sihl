@@ -16,8 +16,8 @@ module Row = {
 module UserListPage = {
   let createElement = (ctx, users) => {
     let elems = List.map(users, ~f=user => <Row user />);
-    <Admin_component.Page title="Users">
-      <Admin_component.NavigationLayout ctx title="Users">
+    <Sihl.Admin.Component.Page title="Users">
+      <Sihl.Admin.Component.NavigationLayout ctx title="Users">
         <table class_="table is-striped is-narrow is-hoverable is-fullwidth">
           <tbody>
             ...{List.cons(
@@ -31,8 +31,8 @@ module UserListPage = {
             )}
           </tbody>
         </table>
-      </Admin_component.NavigationLayout>
-    </Admin_component.Page>;
+      </Sihl.Admin.Component.NavigationLayout>
+    </Sihl.Admin.Component.Page>;
   };
 };
 
@@ -59,8 +59,8 @@ module SetPassword = {
 module UserPage = {
   let createElement = (ctx, user) => {
     let title = "User: " ++ Model.User.email(user);
-    <Admin_component.Page title>
-      <Admin_component.NavigationLayout ctx title>
+    <Sihl.Admin.Component.Page title>
+      <Sihl.Admin.Component.NavigationLayout ctx title>
         <div class_="columns">
           <div class_="column is-one-third"> <SetPassword user /> </div>
           <table class_="table is-striped is-narrow is-hoverable is-fullwidth">
@@ -75,7 +75,7 @@ module UserPage = {
             </tbody>
           </table>
         </div>
-      </Admin_component.NavigationLayout>
-    </Admin_component.Page>;
+      </Sihl.Admin.Component.NavigationLayout>
+    </Sihl.Admin.Component.Page>;
   };
 };

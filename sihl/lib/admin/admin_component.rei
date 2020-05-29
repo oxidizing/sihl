@@ -13,12 +13,12 @@ module Page: {
 module Logout: {let createElement: unit => Html.elt([> Html_types.form]);};
 module FlashMessage: {
   let createElement:
-    (~ctx: Sihl.Admin.Context.t, unit) => Html.elt([> Html_types.section]);
+    (~ctx: Admin_context.t, unit) => Html.elt([> Html_types.section]);
 };
 module Layout: {
   let createElement:
     (
-      ~ctx: Sihl.Admin.Context.t,
+      ~ctx: Admin_context.t,
       ~isLoggedIn: bool,
       ~children: list(Html.elt([< Html_types.section_content_fun])),
       unit
@@ -27,12 +27,12 @@ module Layout: {
 };
 module Navigation: {
   let createElement:
-    (~ctx: Sihl.Admin.Context.t, unit) => Html.elt([> Html_types.aside]);
+    (~ctx: Admin_context.t, unit) => Html.elt([> Html_types.aside]);
 };
 module NavigationLayout: {
   let createElement:
     (
-      ~ctx: Sihl.Admin.Context.t,
+      ~ctx: Admin_context.t,
       ~title: string,
       ~children: list(Html.elt([< Html_types.div_content_fun > `H1])),
       unit
@@ -40,7 +40,6 @@ module NavigationLayout: {
     Html.elt([> Html_types.div]);
 };
 
-module LoginPage: {let createElement: Sihl.Admin.admin_page(unit);};
+module LoginPage: {let createElement: Admin_context.admin_page(unit);};
 
-module DashboardPage: {let createElement: Sihl.Admin.admin_page(Model.User.t);
-};
+module DashboardPage: {let createElement: Admin_context.admin_page(string);};

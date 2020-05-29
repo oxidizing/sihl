@@ -27,7 +27,7 @@ module Logout = {
 
 module FlashMessage = {
   let createElement = (~ctx, ()) => {
-    let (color, msg) = Sihl.Admin.Context.message(ctx);
+    let (color, msg) = Admin_context.message(ctx);
     let class_ = ["hero", "is-small", color];
     <section class_ style="margin-top: 2em;">
       <div class_="hero-body"> {Html.txt(msg)} </div>
@@ -63,11 +63,11 @@ module Navigation = {
   let createElement = (~ctx, ()) => {
     let elems =
       ctx
-      |> Sihl.Admin.Context.pages
+      |> Admin_context.pages
       |> List.map(~f=page =>
            <li>
-             <a href={Sihl.Admin.Page.path(page)}>
-               {Html.txt(Sihl.Admin.Page.label(page))}
+             <a href={Admin_page.path(page)}>
+               {Html.txt(Admin_page.label(page))}
              </a>
            </li>
          );
@@ -130,9 +130,9 @@ module LoginPage = {
 };
 
 module DashboardPage = {
-  let createElement = (ctx, user) => {
-    let welcomeText = "Have a great day, " ++ Model.User.email(user);
-    <Page title="Dashbpard">
+  let createElement = (ctx, email) => {
+    let welcomeText = "Have a great day, " ++ email;
+    <Page title="Dashboard">
       <NavigationLayout ctx title="Dashboard">
         <h1 class_="subtitle"> {Html.txt(welcomeText)} </h1>
       </NavigationLayout>

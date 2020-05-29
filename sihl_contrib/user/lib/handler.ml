@@ -172,10 +172,11 @@ module AdminUi = struct
 
     let handler =
       get "/admin/dashboard/" @@ fun req ->
-      let user = Middleware.Authn.authenticate req in
+      let email = Middleware.Authn.authenticate req |> Model.User.email in
       let* flash = Sihl.Middleware.Flash.current req in
       let ctx = Sihl.Template.context ~flash () in
-      Sihl.Admin.render ctx Admin_component.DashboardPage.createElement user
+      Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement
+        email
       |> Res.html |> Lwt.return
   end
 
@@ -186,7 +187,7 @@ module AdminUi = struct
       get "/admin/login/" @@ fun req ->
       let* flash = Sihl.Middleware.Flash.current req in
       let ctx = Sihl.Template.context ~flash () in
-      Sihl.Admin.render ctx Admin_component.LoginPage.createElement ()
+      Sihl.Admin.render ctx Sihl.Admin.Component.LoginPage.createElement ()
       |> Res.html |> Lwt.return
 
     let post =
