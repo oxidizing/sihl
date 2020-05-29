@@ -37,7 +37,8 @@ module Context = struct
 
   let pages ctx = ctx.pages
 
-  let of_template_context template_context = { template_context; pages = [] }
+  let of_template_context template_context =
+    { template_context; pages = Store.get_all () }
 end
 
 type 'a admin_page = Context.t -> 'a -> Template.Document.t
