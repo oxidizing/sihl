@@ -1,4 +1,5 @@
 open Base
+open Tyxml
 open Tyxml.Html
 
 let empty = span []
@@ -40,13 +41,14 @@ let html_page ~title:title_text content =
     (body content)
 
 let logout =
-  form
-    ~a:[ a_action "/admin/logout/"; a_method `Post ]
-    [
-      button
-        ~a:[ a_class [ "button"; "is-danger"; "is-pulled-right" ] ]
-        [ txt "Logout" ];
-    ]
+  [%html
+    {|
+<form action="/admin/logout/" method="Post">
+  <button class="button is-danger is-pulled-right">
+     Logout
+  </button>
+</form>
+|}]
 
 let flash_section ~flash =
   match flash with
