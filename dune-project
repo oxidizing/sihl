@@ -45,6 +45,7 @@
   ;; HTML generation
   (tyxml (>= 4.3.0))
   (tyxml-jsx (>= 4.3.0))
+  (reason (>= 3.0.0))
 
   ;; Logging
   (logs (>= 0.7.0))
