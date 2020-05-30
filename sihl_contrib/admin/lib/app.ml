@@ -4,7 +4,9 @@ let namespace = "admin"
 
 let config () = []
 
-let endpoints () = []
+let endpoints () =
+  let open Handler in
+  [ Dashboard.handler ]
 
 let repos () = []
 

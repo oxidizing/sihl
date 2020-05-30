@@ -2,6 +2,7 @@
  (name run)
  (libraries
   base
+  sihl_admin
   sihl_postgresql
   sihl_session
   sihl_session_postgresql

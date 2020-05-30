@@ -1,1 +1,2 @@
-let authenticate _ = failwith "implement Authn.authenticate"
+(* TODO implement this *)
+let authenticate _ = failwith "TODO implement Authn.authenticate"
