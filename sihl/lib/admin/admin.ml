@@ -1,10 +1,11 @@
 module Component = Admin_component
 module Page = Admin_page
 module Context = Admin_context
+module Bind = Admin_bind
 
-let register_page = Context.Store.register
+let register_page = Bind.Service.register_page
 
-let get_all = Context.Store.get_all
+let get_all = Bind.Service.get_all_pages
 
 type 'a admin_page = 'a Admin_context.admin_page
 

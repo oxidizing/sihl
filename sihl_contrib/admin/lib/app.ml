@@ -8,7 +8,11 @@ let endpoints () = []
 
 let repos () = []
 
-let bindings () = []
+let bindings () =
+  [
+    Sihl.Core.Registry.Binding.create Sihl.Admin.Bind.registry_key
+      (module Service);
+  ]
 
 let commands () = []
 

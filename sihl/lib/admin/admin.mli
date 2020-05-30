@@ -1,6 +1,7 @@
 module Component = Admin_component
 module Page = Admin_page
 module Context = Admin_context
+module Bind = Admin_bind
 
 type 'a admin_page = Context.t -> 'a -> Template.Document.t
 
