@@ -12,7 +12,6 @@ let config () =
 let endpoints () =
   let open Handler in
   [
-    AdminUi.Catch.handler;
     Login.handler;
     Register.handler;
     Logout.handler;
@@ -35,7 +34,13 @@ let endpoints () =
 
 let repos () = Bind.Repository.default ()
 
-let bindings () = []
+let bindings () =
+  [
+    Sihl.Core.Registry.bind Sihl.Authn.registry_key
+      ( module struct
+        let authenticate = Middleware.Authn.authenticate
+      end );
+  ]
 
 let commands () = [ Command.create_admin ]
 

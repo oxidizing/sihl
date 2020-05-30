@@ -6,7 +6,7 @@ let config () = []
 
 let endpoints () =
   let open Handler in
-  [ Dashboard.handler ]
+  [ Catch.handler; Dashboard.handler ]
 
 let repos () = []
 

@@ -13,3 +13,13 @@ module Dashboard = struct
     Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement email
     |> Res.html |> Lwt.return
 end
+
+module Catch = struct
+  open Sihl.Http
+
+  let handler =
+    all "/admin/**" @@ fun req ->
+    let path = req |> Opium.Std.Request.uri |> Uri.to_string in
+    Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/dashboard/"
+      [%string "Path $(path) not found :("]
+end
