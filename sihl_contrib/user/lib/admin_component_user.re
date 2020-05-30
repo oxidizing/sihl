@@ -3,12 +3,12 @@ open Tyxml;
 
 module Row = {
   let createElement = (~user, ()) => {
-    let url = "/admin/users/users/" ++ Model.User.id(user) ++ "/";
+    let url = "/admin/users/users/" ++ Sihl.User.id(user) ++ "/";
     <tr>
-      <td> <a href=url> {Html.txt(Model.User.email(user))} </a> </td>
-      <td> {Html.txt(user |> Model.User.is_admin |> Bool.to_string)} </td>
-      <td> {Html.txt(user |> Model.User.is_confirmed |> Bool.to_string)} </td>
-      <td> {Html.txt(user |> Model.User.status)} </td>
+      <td> <a href=url> {Html.txt(Sihl.User.email(user))} </a> </td>
+      <td> {Html.txt(user |> Sihl.User.is_admin |> Bool.to_string)} </td>
+      <td> {Html.txt(user |> Sihl.User.is_confirmed |> Bool.to_string)} </td>
+      <td> {Html.txt(user |> Sihl.User.status)} </td>
     </tr>;
   };
 };
@@ -39,7 +39,7 @@ module UserListPage = {
 module SetPassword = {
   let createElement = (~user, ()) => {
     let action =
-      "/admin/users/users/" ++ Model.User.id(user) ++ "/set-password/";
+      "/admin/users/users/" ++ Sihl.User.id(user) ++ "/set-password/";
     <form action method="Post">
       <div class_="field">
         <label class_="label"> "New Password" </label>
@@ -58,7 +58,7 @@ module SetPassword = {
 
 module UserPage = {
   let createElement = (ctx, user) => {
-    let title = "User: " ++ Model.User.email(user);
+    let title = "User: " ++ Sihl.User.email(user);
     <Sihl.Admin.Component.Page title>
       <Sihl.Admin.Component.NavigationLayout ctx title>
         <div class_="columns">

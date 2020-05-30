@@ -5,10 +5,10 @@ let ( let* ) = Lwt.bind
 
 module Authn = struct
   module Env = struct
-    type user' = Model.User.t
+    type user' = Sihl.User.t
 
     let key : user' Opium.Hmap.key =
-      Opium.Hmap.Key.create ("user", [%sexp_of: Model.User.t])
+      Opium.Hmap.Key.create ("user", [%sexp_of: Sihl.User.t])
   end
 
   let user req = Opium.Hmap.find Env.key (Request.env req)

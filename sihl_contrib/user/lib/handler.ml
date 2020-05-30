@@ -34,7 +34,7 @@ end
 module GetMe = struct
   open Sihl.Http
 
-  type body_out = Model.User.t [@@deriving yojson]
+  type body_out = Sihl.User.t [@@deriving yojson]
 
   let handler =
     get "/users/users/me/" @@ fun req ->
@@ -56,7 +56,7 @@ end
 module GetUser = struct
   open Sihl.Http
 
-  type body_out = Model.User.t [@@deriving yojson]
+  type body_out = Sihl.User.t [@@deriving yojson]
 
   let handler =
     get "/users/users/:id/" @@ fun req ->
@@ -70,7 +70,7 @@ end
 module GetUsers = struct
   open Sihl.Http
 
-  type body_out = Model.User.t list [@@deriving yojson]
+  type body_out = Sihl.User.t list [@@deriving yojson]
 
   let handler =
     get "/users/users/" @@ fun req ->
@@ -108,7 +108,7 @@ module UpdateDetails = struct
   type body_in = { email : string; username : string option }
   [@@deriving yojson]
 
-  type body_out = Model.User.t [@@deriving yojson]
+  type body_out = Sihl.User.t [@@deriving yojson]
 
   let handler =
     post "/users/update-details/" @@ fun req ->
@@ -167,19 +167,6 @@ module ResetPassword = struct
 end
 
 module AdminUi = struct
-  module Dashboard = struct
-    open Sihl.Http
-
-    let handler =
-      get "/admin/dashboard/" @@ fun req ->
-      let email = Middleware.Authn.authenticate req |> Model.User.email in
-      let* flash = Sihl.Middleware.Flash.current req in
-      let ctx = Sihl.Template.context ~flash () in
-      Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement
-        email
-      |> Res.html |> Lwt.return
-  end
-
   module Login = struct
     open Sihl.Http
 

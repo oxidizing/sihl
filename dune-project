@@ -96,6 +96,25 @@
 ))
 
 (package
+ (name sihl_admin)
+ (synopsis "A Sihl app to build backoffice web applications for administrators.")
+ (description "This app provides a building blocks to build and register admin pages to increase visibility and provide administrators with internal tools..")
+ (license MIT)
+ (depends
+  ;; General system dependencies
+  (dune (>= 2))
+  (ocaml (>= 4.08.0))
+  (lwt (>= 5.3.0))
+
+  ;; Sihl
+  (sihl (>= 0.0.29))
+
+  ;; Standard library replacement
+  (base (>= v0.13.1))
+))
+
+
+(package
  (name sihl_session)
  (synopsis "A Sihl app for anonymous sessions")
  (description "This app provides a generic interface to store and retrieve anonymous session data. It is mainly used to build other apps on top.")

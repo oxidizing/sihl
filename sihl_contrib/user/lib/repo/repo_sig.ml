@@ -3,23 +3,21 @@ module type REPOSITORY = sig
 
   module User : sig
     val get_all :
-      Sihl.Core.Db.connection -> Model.User.t list Sihl.Core.Db.db_result
+      Sihl.Core.Db.connection -> Sihl.User.t list Sihl.Core.Db.db_result
 
     val get :
-      id:string ->
-      Sihl.Core.Db.connection ->
-      Model.User.t Sihl.Core.Db.db_result
+      id:string -> Sihl.Core.Db.connection -> Sihl.User.t Sihl.Core.Db.db_result
 
     val get_by_email :
       email:string ->
       Sihl.Core.Db.connection ->
-      Model.User.t Sihl.Core.Db.db_result
+      Sihl.User.t Sihl.Core.Db.db_result
 
     val insert :
-      Model.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
+      Sihl.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
 
     val update :
-      Model.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
+      Sihl.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
   end
 
   module Token : sig

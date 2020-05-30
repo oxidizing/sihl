@@ -20,7 +20,7 @@ module User = struct
       Sihl.Core.Registry.get Bind.Repository.key
     in
 
-    if Model.User.is_admin user || Model.User.is_owner user user_id then
+    if Sihl.User.is_admin user || Sihl.User.is_owner user user_id then
       let* user =
         Repository.User.get ~id:user_id |> Sihl.Core.Db.query_db request
       in
@@ -50,7 +50,7 @@ module User = struct
       Sihl.Core.Registry.get Bind.Repository.key
     in
 
-    if Model.User.is_admin user then
+    if Sihl.User.is_admin user then
       Repository.User.get_all |> Sihl.Core.Db.query_db_exn request
     else
       Sihl.Core.Err.raise_no_permissions
@@ -86,7 +86,7 @@ module User = struct
       Sihl.Core.Err.raise_bad_request "email already taken"
     else
       let user =
-        Model.User.create ~email ~password ~username ~admin:false
+        Sihl.User.create ~email ~password ~username ~admin:false
           ~confirmed:false
       in
       let* () =
@@ -110,7 +110,7 @@ module User = struct
       Sihl.Core.Err.raise_bad_request "email already taken"
     else
       let user =
-        Model.User.create ~email ~password ~username ~admin:true ~confirmed:true
+        Sihl.User.create ~email ~password ~username ~admin:true ~confirmed:true
       in
       let* () =
         Repository.User.insert user |> Sihl.Core.Db.query_db_exn request
@@ -122,7 +122,7 @@ module User = struct
       Sihl.Core.Registry.get Bind.Repository.key
     in
 
-    let id = Model.User.id user in
+    let id = Sihl.User.id user in
     Repository.Token.delete_by_user ~id |> Sihl.Core.Db.query_db_exn request
 
   let login request ~email ~password =
@@ -133,7 +133,7 @@ module User = struct
     let* user =
       Repository.User.get_by_email ~email |> Sihl.Core.Db.query_db_exn request
     in
-    if Model.User.matches_password password user then
+    if Sihl.User.matches_password password user then
       let token = Model.Token.create user in
       let* () =
         Repository.Token.insert token |> Sihl.Core.Db.query_db_exn request
@@ -143,7 +143,7 @@ module User = struct
 
   let authenticate_credentials request ~email ~password =
     let* user = get_by_email request ~email in
-    if Model.User.matches_password password user then Lwt.return user
+    if Sihl.User.matches_password password user then Lwt.return user
     else Sihl.Core.Err.raise_not_authenticated @@ "wrong credentials provided"
 
   let token request user =
@@ -165,15 +165,14 @@ module User = struct
 
     let* user = get_by_email request ~email in
     let _ =
-      Model.User.validate user ~old_password ~new_password
+      Sihl.User.validate user ~old_password ~new_password
       |> Sihl.Core.Err.with_bad_request
            "invalid password provided TODO: make this msg optional"
     in
     if
-      Model.User.is_admin current_user
-      || Model.User.is_owner current_user user.id
+      Sihl.User.is_admin current_user || Sihl.User.is_owner current_user user.id
     then
-      let updated_user = Model.User.update_password user new_password in
+      let updated_user = Sihl.User.update_password user new_password in
       let* () =
         Repository.User.update updated_user |> Sihl.Core.Db.query_db_exn request
       in
@@ -189,10 +188,9 @@ module User = struct
 
     let* user = get_by_email request ~email in
     if
-      Model.User.is_admin current_user
-      || Model.User.is_owner current_user user.id
+      Sihl.User.is_admin current_user || Sihl.User.is_owner current_user user.id
     then
-      let updated_user = Model.User.update_details user ~email ~username in
+      let updated_user = Sihl.User.update_details user ~email ~username in
       let* () =
         Repository.User.update updated_user |> Sihl.Core.Db.query_db_exn request
       in
@@ -213,12 +211,12 @@ module User = struct
       user |> Sihl.Core.Err.with_bad_request "user to set password not found"
     in
     let _ =
-      Model.User.validate_password password
+      Sihl.User.validate_password password
       |> Sihl.Core.Err.with_bad_request
            "invalid password provided TODO: make this msg optional"
     in
-    if Model.User.is_admin current_user then
-      let updated_user = Model.User.update_password user password in
+    if Sihl.User.is_admin current_user then
+      let updated_user = Sihl.User.update_password user password in
       let* () =
         Repository.User.update updated_user |> Sihl.Core.Db.query_db_exn request
       in
@@ -249,7 +247,7 @@ module User = struct
             Repository.User.get ~id:token.user connection
             |> Sihl.Core.Err.database
           in
-          Repository.User.update (Model.User.confirm user) connection)
+          Repository.User.update (Sihl.User.confirm user) connection)
 
   let request_password_reset request ~email =
     let (module Repository : Repo_sig.REPOSITORY) =
@@ -286,7 +284,7 @@ module User = struct
         user |> Sihl.Core.Err.with_bad_request "invalid user for token found"
       in
       (* TODO use transaction here *)
-      let updated_user = Model.User.update_password user new_password in
+      let updated_user = Sihl.User.update_password user new_password in
       let* () =
         Repository.User.update updated_user |> Sihl.Core.Db.query_db_exn request
       in

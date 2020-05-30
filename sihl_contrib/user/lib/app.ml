@@ -25,7 +25,6 @@ let endpoints () =
     ConfirmEmail.handler;
     RequestPasswordReset.handler;
     ResetPassword.handler;
-    AdminUi.Dashboard.handler;
     AdminUi.Login.get;
     AdminUi.Login.post;
     AdminUi.Logout.handler;

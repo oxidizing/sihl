@@ -1,6 +1,6 @@
 module Sql = struct
   module User = struct
-    open Sihl_user.Model.User
+    open Sihl.User
 
     let get_all =
       [%rapper

@@ -1,0 +1,9 @@
+(library
+ (name sihl_admin)
+ (public_name sihl_admin)
+ (libraries
+  base
+  sihl
+  lwt
+))
+
