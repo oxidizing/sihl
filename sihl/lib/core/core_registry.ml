@@ -13,7 +13,7 @@ module Key = struct
 end
 
 module State = struct
-  type state = { map : Hmap.t; is_initialized : bool }
+  type t = { map : Hmap.t; is_initialized : bool }
 
   let state = ref { map = Hmap.empty; is_initialized = false }
 
