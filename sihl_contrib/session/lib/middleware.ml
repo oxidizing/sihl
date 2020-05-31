@@ -2,10 +2,11 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-let cookie_key = "sessions_session_id"
+let cookie_key = "/sessions/id"
 
-let hmap_key : Model.Session.t Opium.Hmap.key =
-  Opium.Hmap.Key.create ("session", fun _ -> sexp_of_string "session")
+let hmap_key : string Opium.Hmap.key =
+  Opium.Hmap.Key.create
+    ("/sessions/key", fun _ -> sexp_of_string "/sessions/key")
 
 let session () =
   let filter handler req =
@@ -21,7 +22,12 @@ let session () =
         | Some session ->
             let* session =
               if Model.Session.is_expired (Ptime_clock.now ()) session then
+                let () =
+                  Logs.debug (fun m ->
+                      m "SESSION: Session expired, creating new one")
+                in
                 let session = Model.Session.create (Ptime_clock.now ()) in
+                (* TODO try to create new session if key is already taken *)
                 let* () =
                   Repository.insert session |> Sihl.Core.Db.query_db_exn req
                 in
@@ -29,22 +35,35 @@ let session () =
               else Lwt.return session
             in
             let env =
-              Opium.Hmap.add hmap_key session (Opium.Std.Request.env req)
+              Opium.Hmap.add hmap_key
+                (Model.Session.key session)
+                (Opium.Std.Request.env req)
             in
             handler { req with env }
         | None ->
             let session = Model.Session.create (Ptime_clock.now ()) in
+            (* TODO try to create new session if key is already taken *)
             let* () =
               Repository.insert session |> Sihl.Core.Db.query_db_exn req
             in
-            let* res = handler req in
+            let env =
+              Opium.Hmap.add hmap_key
+                (Model.Session.key session)
+                (Opium.Std.Request.env req)
+            in
+            let* res = handler { req with env } in
             res
             |> Sihl.Http.Cookie.set ~key:cookie_key ~data:session.key
             |> Lwt.return )
     | None ->
         let session = Model.Session.create (Ptime_clock.now ()) in
+        (* TODO try to create new session if key is already taken *)
         let* () = Repository.insert session |> Sihl.Core.Db.query_db_exn req in
-        let env = Opium.Hmap.add hmap_key session (Opium.Std.Request.env req) in
+        let env =
+          Opium.Hmap.add hmap_key
+            (Model.Session.key session)
+            (Opium.Std.Request.env req)
+        in
         let* resp = handler { req with env } in
         resp
         |> Sihl.Http.Cookie.set ~key:cookie_key ~data:session.key

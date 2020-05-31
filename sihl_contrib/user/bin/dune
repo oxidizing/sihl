@@ -3,6 +3,10 @@
  (libraries
   base
   sihl_postgresql
+  sihl_session
+  sihl_session_postgresql
+  sihl_email
+  sihl_email_postgresql
   sihl_user
   sihl_user_postgresql
   alcotest

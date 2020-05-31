@@ -1,6 +1,7 @@
 module Req = Http_req
 module Res = Http_res
 module Cookie = Http_cookie
+module Session = Http_session
 
 let handle handler req = req |> handler |> Lwt.map Res.to_cohttp
 

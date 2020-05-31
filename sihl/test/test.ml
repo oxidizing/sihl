@@ -37,7 +37,6 @@ let () =
           test_case "process invalid config fails" `Quick
             Test_config.Schema.test_process_invalid_config_fails;
         ] );
-      ("flash", [ test_case "rotate" `Quick Test_flash.test_rotate ]);
       ( "http",
         [
           test_case "require url encoded body" `Quick

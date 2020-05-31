@@ -22,7 +22,8 @@ let m () =
           ( Core_err.Error.NotAuthenticated msg
           | Core_err.Error.NoPermissions msg ) ) ->
         (* TODO evaluate whether the error handler should really remove invalid cookies *)
-        Middleware_flash.set_error req msg;
+        Logs.err (fun m -> m "Setting error %s" msg);
+        let* () = Middleware_flash.set_error req msg in
         Logs.err (fun m -> m "%s" msg);
         (* TODO make custom permission/not authenticated error page configurable *)
         let headers =
@@ -46,7 +47,8 @@ let m () =
           | Core_err.Error.Database msg
           | Core_err.Error.Email msg
           | Core_err.Error.Server msg ) ) ->
-        Middleware_flash.set_error req msg;
+        Logs.err (fun m -> m "Setting error %s" msg);
+        let* () = Middleware_flash.set_error req msg in
         Logs.err (fun m -> m "%s" msg);
         let headers =
           Cohttp.Header.of_list

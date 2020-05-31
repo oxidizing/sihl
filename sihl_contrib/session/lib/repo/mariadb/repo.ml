@@ -37,7 +37,7 @@ module Sql = struct
           session_data,
           expire_date
         FROM sessions_sessions
-        WHERE sessions_sessions.key = ?
+        WHERE sessions_sessions.session_key = ?
         |sql}
       in
       Connection.find_opt request
@@ -68,7 +68,7 @@ module Sql = struct
         Caqti_request.exec Caqti_type.string
           {sql|
       DELETE FROM sessions_sessions
-      WHERE sessions_sessions.key = ?
+      WHERE sessions_sessions.session_key = ?
       |sql}
       in
       Connection.exec request

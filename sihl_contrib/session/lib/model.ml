@@ -15,18 +15,19 @@ module Session = struct
         Logs.err (fun m -> m "%s" msg);
         failwith msg
 
-  let create now =
+  let create ?expire_date now =
     {
       key = Sihl.Core.Random.base64 ~bytes:10;
       data = Map.empty (module String);
-      expire_date = default_expiration_date now;
+      expire_date =
+        Option.value ~default:(default_expiration_date now) expire_date;
     }
 
   let key session = session.key
 
   let data session = session.data
 
-  let is_expired now session = Ptime.is_later session.expire_date ~than:now
+  let is_expired now session = Ptime.is_later now ~than:session.expire_date
 
   type data_map = (string * string) list [@@deriving yojson]
 
@@ -47,3 +48,15 @@ module Session = struct
   let pp ppf { key; data; _ } =
     Caml.Format.fprintf ppf "key: %s data: %s " key (string_of_data data)
 end
+
+(* Tests *)
+
+let%test "session not expired" =
+  let expire_date =
+    Option.value_exn
+      ( 60 * 60 * 24
+      |> Ptime.Span.of_int_s
+      |> Ptime.add_span (Ptime_clock.now ()) )
+  in
+  let session = Session.create ~expire_date (Ptime_clock.now ()) in
+  not @@ Session.is_expired (Ptime_clock.now ()) session
