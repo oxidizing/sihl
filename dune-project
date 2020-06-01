@@ -97,7 +97,7 @@
 
 (package
  (name sihl_admin)
- (synopsis "A Sihl app to build backoffice web applications for administrators.")
+ (synopsis "A Sihl app to build backoffice web applications for administrators")
  (description "This app provides a building blocks to build and register admin pages to increase visibility and provide administrators with internal tools..")
  (license MIT)
  (depends
