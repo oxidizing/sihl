@@ -30,5 +30,6 @@
    ppx_sexp_conv
    ppx_string_interpolation
    ppx_inline_test
+   tyxml-jsx
   )))
 (include_subdirs unqualified)

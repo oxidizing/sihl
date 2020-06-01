@@ -172,10 +172,12 @@ module AdminUi = struct
 
     let handler =
       get "/admin/dashboard/" @@ fun req ->
-      let user = Middleware.Authn.authenticate req in
+      let email = Middleware.Authn.authenticate req |> Model.User.email in
       let* flash = Sihl.Middleware.Flash.current req in
-      Admin_ui.dashboard_page ~flash user
-      |> Admin_ui.render |> Res.html |> Lwt.return
+      let ctx = Sihl.Template.context ~flash () in
+      Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement
+        email
+      |> Res.html |> Lwt.return
   end
 
   module Login = struct
@@ -184,7 +186,9 @@ module AdminUi = struct
     let get =
       get "/admin/login/" @@ fun req ->
       let* flash = Sihl.Middleware.Flash.current req in
-      Admin_ui.login_page ~flash |> Admin_ui.render |> Res.html |> Lwt.return
+      let ctx = Sihl.Template.context ~flash () in
+      Sihl.Admin.render ctx Sihl.Admin.Component.LoginPage.createElement ()
+      |> Res.html |> Lwt.return
 
     let post =
       Sihl.Http.post "/admin/login/" @@ fun req ->
@@ -223,9 +227,11 @@ module AdminUi = struct
       get "/admin/users/users/" @@ fun req ->
       let user = Middleware.Authn.authenticate req in
       let* flash = Sihl.Middleware.Flash.current req in
+      let ctx = Sihl.Template.context ~flash () in
       let* users = Service.User.get_all req user in
-      Admin_ui_users.users_page ~flash users
-      |> Admin_ui.render |> Res.html |> Lwt.return
+      Sihl.Admin.render ctx Admin_component_user.UserListPage.createElement
+        users
+      |> Res.html |> Lwt.return
   end
 
   module User = struct
@@ -236,9 +242,10 @@ module AdminUi = struct
       let user_id = Req.param req "id" in
       let user = Middleware.Authn.authenticate req in
       let* flash = Sihl.Middleware.Flash.current req in
+      let ctx = Sihl.Template.context ~flash () in
       let* user = Service.User.get req user ~user_id in
-      Admin_ui_users.user_page ~flash user
-      |> Admin_ui.render |> Res.html |> Lwt.return
+      Sihl.Admin.render ctx Admin_component_user.UserPage.createElement user
+      |> Res.html |> Lwt.return
   end
 
   module UserSetPassword = struct
