@@ -54,7 +54,7 @@ module Service = struct
     | Some state -> Ok state
     | None ->
         Error
-          (Printf.sprintf "could not get migration state for namespace=%s"
+          (Printf.sprintf "could not get migration state for namespace %s"
              namespace)
 
   let upsert pool state =
@@ -89,10 +89,10 @@ let execute_steps migration pool =
     match steps with
     | [] -> Lwt_result.return ()
     | (name, query) :: steps -> (
-        Logs.debug (fun m -> m "MIGRATION: Running %s\n" name);
+        Logs.debug (fun m -> m "MIGRATION: Running %s" name);
         Db.query_pool (fun c -> query c ()) pool >>= function
         | Ok () ->
-            Logs.debug (fun m -> m "MIGRATION: Ran %s\n" name);
+            Logs.debug (fun m -> m "MIGRATION: Ran %s" name);
             let* _ = Service.increment pool ~namespace in
             run steps pool
         | Error err ->
@@ -105,10 +105,10 @@ let execute_steps migration pool =
     match List.length steps with
     | 0 ->
         Logs.debug (fun m ->
-            m "MIGRATION: No migrations to apply for %s\n" namespace)
+            m "MIGRATION: No migrations to apply for %s" namespace)
     | n ->
         Logs.debug (fun m ->
-            m "MIGRATION: Applying %i migrations for %s\n" n namespace)
+            m "MIGRATION: Applying %i migrations for %s" n namespace)
   in
   run steps pool
 
