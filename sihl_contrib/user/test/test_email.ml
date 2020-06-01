@@ -60,8 +60,8 @@ let test_user_registers_and_confirms_email _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
   in
   let* body = body |> Cohttp_lwt.Body.to_string in
-  let Sihl_user.Model.User.{ confirmed; _ } =
-    body |> Yojson.Safe.from_string |> Sihl_user.Model.User.of_yojson
+  let Sihl.User.{ confirmed; _ } =
+    body |> Yojson.Safe.from_string |> Sihl.User.of_yojson
     |> Result.ok_or_failwith
   in
   let () = Alcotest.(check bool) "Has confirmed email" true confirmed in

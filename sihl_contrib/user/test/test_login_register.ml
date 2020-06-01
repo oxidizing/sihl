@@ -46,8 +46,8 @@ let test_register_user_login_and_own_user _ () =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
   in
   let* body = body |> Cohttp_lwt.Body.to_string in
-  let Sihl_user.Model.User.{ email; _ } =
-    body |> Yojson.Safe.from_string |> Sihl_user.Model.User.of_yojson
+  let Sihl.User.{ email; _ } =
+    body |> Yojson.Safe.from_string |> Sihl.User.of_yojson
     |> Result.ok_or_failwith
   in
 

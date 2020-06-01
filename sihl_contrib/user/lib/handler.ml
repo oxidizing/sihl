@@ -9,7 +9,7 @@ module Login = struct
 
   let handler =
     get "/users/login/" @@ fun req ->
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* token = Service.User.token req user in
     let response = { token = Model.Token.value token; user_id = user.id } in
     response |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
@@ -34,11 +34,11 @@ end
 module GetMe = struct
   open Sihl.Http
 
-  type body_out = Model.User.t [@@deriving yojson]
+  type body_out = Sihl.User.t [@@deriving yojson]
 
   let handler =
     get "/users/users/me/" @@ fun req ->
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     user |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
     |> Lwt.return
 end
@@ -48,7 +48,7 @@ module Logout = struct
 
   let handler =
     delete "/users/logout/" @@ fun req ->
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* () = Service.User.logout req user in
     Res.empty |> Lwt.return
 end
@@ -56,12 +56,12 @@ end
 module GetUser = struct
   open Sihl.Http
 
-  type body_out = Model.User.t [@@deriving yojson]
+  type body_out = Sihl.User.t [@@deriving yojson]
 
   let handler =
     get "/users/users/:id/" @@ fun req ->
     let user_id = Req.param req "id" in
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* response = Service.User.get req user ~user_id in
     response |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
     |> Lwt.return
@@ -70,11 +70,11 @@ end
 module GetUsers = struct
   open Sihl.Http
 
-  type body_out = Model.User.t list [@@deriving yojson]
+  type body_out = Sihl.User.t list [@@deriving yojson]
 
   let handler =
     get "/users/users/" @@ fun req ->
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* response = Service.User.get_all req user in
     response |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
     |> Lwt.return
@@ -95,7 +95,7 @@ module UpdatePassword = struct
     let* { email; old_password; new_password } =
       Req.require_body_exn req body_in_of_yojson
     in
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* _ =
       Service.User.update_password req user ~email ~old_password ~new_password
     in
@@ -108,12 +108,12 @@ module UpdateDetails = struct
   type body_in = { email : string; username : string option }
   [@@deriving yojson]
 
-  type body_out = Model.User.t [@@deriving yojson]
+  type body_out = Sihl.User.t [@@deriving yojson]
 
   let handler =
     post "/users/update-details/" @@ fun req ->
     let* { email; username } = Req.require_body_exn req body_in_of_yojson in
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* user = Service.User.update_details req user ~email ~username in
     user |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
     |> Lwt.return
@@ -127,7 +127,7 @@ module SetPassword = struct
   let handler =
     post "/users/set-password/" @@ fun req ->
     let* { user_id; password } = Req.require_body_exn req body_in_of_yojson in
-    let user = Middleware.Authn.authenticate req in
+    let user = Sihl.Authn.authenticate req in
     let* _ = Service.User.set_password req user ~user_id ~password in
     Res.empty |> Lwt.return
 end
@@ -167,19 +167,6 @@ module ResetPassword = struct
 end
 
 module AdminUi = struct
-  module Dashboard = struct
-    open Sihl.Http
-
-    let handler =
-      get "/admin/dashboard/" @@ fun req ->
-      let email = Middleware.Authn.authenticate req |> Model.User.email in
-      let* flash = Sihl.Middleware.Flash.current req in
-      let ctx = Sihl.Template.context ~flash () in
-      Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement
-        email
-      |> Res.html |> Lwt.return
-  end
-
   module Login = struct
     open Sihl.Http
 
@@ -213,7 +200,7 @@ module AdminUi = struct
 
     let handler =
       post "/admin/logout/" @@ fun req ->
-      let user = Middleware.Authn.authenticate req in
+      let user = Sihl.Authn.authenticate req in
       let* () = Service.User.logout req user in
       Res.empty |> Res.stop_session
       |> Res.redirect "/admin/login/"
@@ -225,7 +212,7 @@ module AdminUi = struct
 
     let handler =
       get "/admin/users/users/" @@ fun req ->
-      let user = Middleware.Authn.authenticate req in
+      let user = Sihl.Authn.authenticate req in
       let* flash = Sihl.Middleware.Flash.current req in
       let ctx = Sihl.Template.context ~flash () in
       let* users = Service.User.get_all req user in
@@ -240,7 +227,7 @@ module AdminUi = struct
     let handler =
       get "/admin/users/users/:id/" @@ fun req ->
       let user_id = Req.param req "id" in
-      let user = Middleware.Authn.authenticate req in
+      let user = Sihl.Authn.authenticate req in
       let* flash = Sihl.Middleware.Flash.current req in
       let ctx = Sihl.Template.context ~flash () in
       let* user = Service.User.get req user ~user_id in
@@ -255,7 +242,7 @@ module AdminUi = struct
       post "/admin/users/users/:id/set-password/" @@ fun req ->
       let user_id = Req.param req "id" in
       let user_page = [%string "/admin/users/users/$(user_id)/"] in
-      let user = Middleware.Authn.authenticate req in
+      let user = Sihl.Authn.authenticate req in
       let* password = Req.url_encoded req "password" in
       let* result =
         Sihl.Core.Err.try_to_run (fun () ->
@@ -269,15 +256,5 @@ module AdminUi = struct
           Logs.err (fun m -> m "%s" (Sihl.Core.Err.Error.show error));
           Sihl.Middleware.Flash.redirect_with_error req ~path:user_page
             (Sihl.Core.Err.Error.show error)
-  end
-
-  module Catch = struct
-    open Sihl.Http
-
-    let handler =
-      all "/admin/**" @@ fun req ->
-      let path = req |> Opium.Std.Request.uri |> Uri.to_string in
-      Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/dashboard/"
-        [%string "Path $(path) not found :("]
   end
 end

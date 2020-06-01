@@ -150,7 +150,7 @@ let test_user_updates_own_details _ () =
   in
   let* body = Cohttp_lwt.Body.to_string body in
   let user =
-    body |> Yojson.Safe.from_string |> Sihl_user.Model.User.of_yojson
+    body |> Yojson.Safe.from_string |> Sihl.User.of_yojson
     |> Result.ok_or_failwith
   in
   Lwt.return

@@ -5,3 +5,5 @@ module Repo = Repo
 module Run = Run
 module Admin = Admin
 module Template = Template
+module Authn = Authn
+module User = User

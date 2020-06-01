@@ -44,7 +44,10 @@ let bindings =
 let project =
   Sihl.Run.Project.Project.create ~config ~bindings middlewares
     [
-      (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
+      (module Sihl_session.App);
+      (module Sihl_admin.App);
+      (module Sihl_email.App);
+      (module Sihl_user.App);
     ]
 
 let () = Sihl.Run.Project.Project.run_command project

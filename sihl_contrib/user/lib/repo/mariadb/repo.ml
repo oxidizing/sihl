@@ -12,7 +12,7 @@ module Sql = struct
 
   module User = struct
     module Model = struct
-      open Sihl_user.Model.User
+      open Sihl.User
 
       let t =
         let encode m =
