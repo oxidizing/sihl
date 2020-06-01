@@ -27,11 +27,14 @@ module Logout = {
 
 module FlashMessage = {
   let createElement = (~ctx, ()) => {
-    let (color, msg) = Admin_context.message(ctx);
-    let class_ = ["hero", "is-small", color];
-    <section class_ style="margin-top: 2em;">
-      <div class_="hero-body"> {Html.txt(msg)} </div>
-    </section>;
+    switch (Admin_context.message(ctx)) {
+    | Some((color, msg)) =>
+      let class_ = ["hero", "is-small", color];
+      <section class_ style="margin-top: 2em;">
+        <div class_="hero-body"> {Html.txt(msg)} </div>
+      </section>;
+    | None => <Empty />
+    };
   };
 };
 

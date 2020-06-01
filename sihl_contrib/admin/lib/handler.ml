@@ -8,7 +8,7 @@ module Dashboard = struct
   let handler =
     get "/admin/dashboard/" @@ fun req ->
     let email = Sihl.Authn.authenticate req |> Sihl.User.email in
-    let flash = Sihl.Middleware.Flash.current req in
+    let* flash = Sihl.Middleware.Flash.current req in
     let ctx = Sihl.Template.context ~flash () in
     Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement email
     |> Res.html |> Lwt.return
