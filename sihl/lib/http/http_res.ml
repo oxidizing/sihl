@@ -107,9 +107,11 @@ let to_cohttp resp =
   match resp.session with
   | Nothing -> co_resp
   | SetSession token ->
+      (* TODO move session cookie into http_session.ml *)
       Opium.Std.Cookie.set ~http_only:true ~secure:false ~key:"session_id"
         ~data:token co_resp
   | EndSession ->
+      (* TODO move session cookie into http_session.ml *)
       Opium.Std.Cookie.set
         ~expiration:(`Max_age (Int64.of_int 0))
         ~http_only:true ~secure:false ~key:"session_id" ~data:"session_ended"

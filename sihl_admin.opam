@@ -2,7 +2,7 @@
 opam-version: "2.0"
 version: "0.0.30"
 synopsis:
-  "A Sihl app to build backoffice web applications for administrators."
+  "A Sihl app to build backoffice web applications for administrators"
 description:
   "This app provides a building blocks to build and register admin pages to increase visibility and provide administrators with internal tools.."
 maintainer: ["josef@oxidizing.io"]

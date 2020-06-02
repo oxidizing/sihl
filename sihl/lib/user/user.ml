@@ -53,3 +53,6 @@ let create ~email ~password ~username ~admin ~confirmed =
     confirmed;
     status = "active";
   }
+
+let system =
+  create ~email:"system" ~password:"" ~username:None ~admin:true ~confirmed:true
