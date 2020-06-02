@@ -34,6 +34,7 @@ let m () =
         in
         let body = Cohttp_lwt.Body.of_string @@ Res.Msg.msg_string msg in
         Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
+        (* TODO move session cookie into http_session.ml *)
         |> Opium.Std.Cookie.set
              ~expiration:(`Max_age (Int64.of_int 0))
              ~http_only:true ~secure:false ~key:"session_id"

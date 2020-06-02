@@ -180,16 +180,14 @@ module AdminUi = struct
     let post =
       Sihl.Http.post "/admin/login/" @@ fun req ->
       let* email, password = Req.url_encoded2 req "email" "password" in
-      let* token =
+      let* user =
         Sihl.Core.Err.try_to_run (fun () ->
-            Service.User.login req ~email ~password)
+            Service.User.authenticate_credentials req ~email ~password)
       in
-      match token with
-      | Ok token ->
-          Res.empty
-          |> Res.start_session (Model.Token.value token)
-          |> Res.redirect "/admin/dashboard/"
-          |> Lwt.return
+      match user with
+      | Ok user ->
+          let* () = Middleware.Authn.create_session req user in
+          Res.empty |> Res.redirect "/admin/dashboard/" |> Lwt.return
       | Error _ ->
           Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/login/"
             "Provided email or password is wrong."

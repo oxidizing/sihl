@@ -456,3 +456,5 @@ val create :
   admin:bool ->
   confirmed:bool ->
   t
+
+val system : t
