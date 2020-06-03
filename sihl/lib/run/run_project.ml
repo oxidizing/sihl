@@ -73,7 +73,8 @@ module Project : PROJECT = struct
       List.map ~f:(fun m -> Opium.Std.middleware @@ m ()) project.middlewares
     in
     let port = Core.Config.read_int ~default:3000 "PORT" in
-    Logs.debug (fun m -> m "http server starting on port %i" port);
+    Logs.debug (fun m -> m "START: Http server starting on port %i" port);
+
     let app =
       Opium.Std.App.empty |> Opium.Std.App.port port
       |> Opium.Std.App.cmd_name "Sihl Project"
@@ -81,14 +82,14 @@ module Project : PROJECT = struct
     in
     (* detaching from the thread so tests can run in the same process *)
     let _ = Opium.Std.App.start app in
-    Logs.debug (fun m -> m "http server started");
+    Logs.debug (fun m -> m "START: Http server started");
     Lwt.return @@ Ok ()
 
   let setup_logger () =
-    let log_level = Some Logs.Debug in
+    let log_level = Some Logs.Warning in
     Logs_fmt.reporter () |> Logs.set_reporter;
     Logs.set_level log_level;
-    Logs.debug (fun m -> m "logger set up")
+    Logs.debug (fun m -> m "START: logger set up")
 
   let migrate project =
     project.apps
@@ -99,12 +100,12 @@ module Project : PROJECT = struct
     |> Repo.Migration.execute
 
   let bind_registry project =
-    Logs.debug (fun m -> m "binding default implementations of apps");
+    Logs.debug (fun m -> m "START: binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->
            List.map (App.bindings ()) ~f:Core.Registry.Binding.apply)
     |> ignore;
-    Logs.debug (fun m -> m "binding project implementations");
+    Logs.debug (fun m -> m "START: binding project implementations");
     project.bindings
     |> Option.map ~f:(fun bindings ->
            List.map bindings ~f:Core.Registry.Binding.apply)
@@ -153,13 +154,14 @@ module Project : PROJECT = struct
   let seed _ = Lwt.return @@ Error "not implemented"
 
   let clean project =
+    (* TODO move this into some repo related module *)
     let* request = Run_test.request_with_connection () in
     let repositories =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
     in
-    Logs.debug (fun m -> m "cleaning up app database");
+    Logs.debug (fun m -> m "REPO: Cleaning up app database");
     let rec clean_repos repos =
       match repos with
       | [] -> Lwt.return @@ Ok ()
@@ -168,7 +170,8 @@ module Project : PROJECT = struct
           match result with
           | Ok _ -> clean_repos cleaners
           | Error msg ->
-              Logs.err (fun m -> m "cleaning up app database failed: %s" msg);
+              Logs.err (fun m ->
+                  m "REPO: Cleaning up app database failed %s" msg);
               Lwt.return @@ Error msg )
     in
     clean_repos repositories
@@ -222,5 +225,5 @@ module Project : PROJECT = struct
           Logs.debug (fun m -> m "%s" help)
     else
       Caml.print_string
-      @@ "running with SIHL_ENV=test, ignore command line arguments \n"
+      @@ "Running with SIHL_ENV=test, ignore command line arguments\n"
 end

@@ -27,10 +27,7 @@ module Authn = struct
           let* user_id = Sihl.Http.Session.get "users.id" req in
           match user_id with
           (* there is no user_id, nothing to do *)
-          | None ->
-              Logs.warn (fun m ->
-                  m "AUTHN: Current session has no user associated to it");
-              handler req
+          | None -> handler req
           | Some user_id ->
               let* user = Service.User.get req Sihl.User.system ~user_id in
               let env = Opium.Hmap.add key user (Request.env req) in
