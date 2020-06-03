@@ -121,7 +121,7 @@ module User = struct
     let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get Bind.Repository.key
     in
-
+    let* () = Sihl.Http.Session.remove ~key:"users.id" request in
     let id = Sihl.User.id user in
     Repository.Token.delete_by_user ~id |> Sihl.Core.Db.query_db_exn request
 

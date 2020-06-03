@@ -21,5 +21,7 @@ module Session : sig
 
   val set : key:string -> value:string -> t -> t
 
+  val remove : key:string -> t -> t
+
   val pp : Format.formatter -> t -> unit
 end
