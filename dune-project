@@ -138,7 +138,7 @@
  (description "An implementation of the session store using MariaDB.")
  (license MIT)
  (depends
-  (sihl_email (>= 0.0.31))
+  (sihl_session (>= 0.0.31))
   (caqti-driver-mariadb (>= 1.2.1))
   ))
 
