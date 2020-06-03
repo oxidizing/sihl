@@ -147,6 +147,9 @@ module Project : PROJECT = struct
     bind_registry project;
     Logs.debug (fun m -> m "START: Calling app start hooks");
     call_start_hooks project;
+    Logs.debug (fun m -> m "START: Migrating");
+    let* migrate_result = migrate project in
+    let () = Result.ok_or_failwith migrate_result in
     Logs.debug (fun m -> m "START: Starting HTTP server");
     start_http_server project
 
