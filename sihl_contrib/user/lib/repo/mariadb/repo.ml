@@ -270,18 +270,14 @@ module Token = struct
 end
 
 module Migration = struct
-  let migrate str connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request = Caqti_request.exec Caqti_type.unit str in
-    Connection.exec request
-
   let fix_collation =
-    migrate {sql|
+    Sihl.Repo.Migration.Mariadb.migrate
+      {sql|
 SET collation_connection = 'utf8mb4_unicode_ci';
 |sql}
 
   let create_users_table =
-    migrate
+    Sihl.Repo.Migration.Mariadb.migrate
       {sql|
 CREATE TABLE users_users (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -300,7 +296,7 @@ CREATE TABLE users_users (
          |sql}
 
   let create_tokens_table =
-    migrate
+    Sihl.Repo.Migration.Mariadb.migrate
       {sql|
 CREATE TABLE users_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -318,7 +314,7 @@ CREATE TABLE users_tokens (
 |sql}
 
   let add_confirmation_template =
-    migrate
+    Sihl.Repo.Migration.Mariadb.migrate
       {sql|
     INSERT INTO emails_templates (
         uuid,
@@ -334,7 +330,7 @@ CREATE TABLE users_tokens (
 |sql}
 
   let add_password_reset_template =
-    migrate
+    Sihl.Repo.Migration.Mariadb.migrate
       {sql|
     INSERT INTO emails_templates (
         uuid,

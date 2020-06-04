@@ -175,9 +175,8 @@ end
 
 module Migration = struct
   let create_users_table =
-    [%rapper
-      execute
-        {sql|
+    Sihl.Repo.Migration.Postgresql.migrate
+      {sql|
 CREATE TABLE users_users (
   id serial,
   uuid uuid NOT NULL,
@@ -192,12 +191,11 @@ CREATE TABLE users_users (
   UNIQUE (uuid),
   UNIQUE (email)
 );
-|sql}]
+|sql}
 
   let create_tokens_table =
-    [%rapper
-      execute
-        {sql|
+    Sihl.Repo.Migration.Postgresql.migrate
+      {sql|
 CREATE TABLE users_tokens (
   id serial,
   uuid uuid NOT NULL,
@@ -211,12 +209,11 @@ CREATE TABLE users_tokens (
   UNIQUE (uuid),
   FOREIGN KEY (token_user) REFERENCES users_users (id)
 );
-|sql}]
+|sql}
 
   let add_confirmation_template =
-    [%rapper
-      execute
-        {sql|
+    Sihl.Repo.Migration.Postgresql.migrate
+      {sql|
         INSERT INTO emails_templates (
           uuid,
           label,
@@ -228,12 +225,11 @@ CREATE TABLE users_tokens (
           'Hi, \n\n Thanks for signing up. \n\n Please go to this URL to confirm your email address: {base_url}/app/confirm-email?token={token} \n\n Best, \n Josef',
           'active'
         )
-|sql}]
+|sql}
 
   let add_password_reset_template =
-    [%rapper
-      execute
-        {sql|
+    Sihl.Repo.Migration.Postgresql.migrate
+      {sql|
         INSERT INTO emails_templates (
           uuid,
           label,
@@ -245,7 +241,7 @@ CREATE TABLE users_tokens (
           'Hi, \n\n You requested to reset your password. \n\n Please go to this URL to reset your password: {base_url}/app/password-reset?token={token} \n\n Best, \n Josef',
           'active'
         )
-|sql}]
+|sql}
 
   let migration () =
     ( "users",

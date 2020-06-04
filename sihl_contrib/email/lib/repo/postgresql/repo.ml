@@ -47,9 +47,8 @@ end
 
 module Migration = struct
   let create_templates_table =
-    [%rapper
-      execute
-        {sql|
+    Sihl.Repo.Migration.Postgresql.migrate
+      {sql|
 CREATE TABLE emails_templates (
   id serial,
   uuid uuid NOT NULL,
@@ -59,7 +58,7 @@ CREATE TABLE emails_templates (
   PRIMARY KEY (id),
   UNIQUE (uuid)
 );
-|sql}]
+|sql}
 
   let migration () =
     ("emails", [ ("create templates table", create_templates_table) ])

@@ -90,7 +90,7 @@ let execute_steps migration pool =
     | [] -> Lwt_result.return ()
     | (name, query) :: steps -> (
         Logs.debug (fun m -> m "MIGRATION: Running %s" name);
-        Db.query_pool (fun c -> query c ()) pool >>= function
+        Db.query_pool (fun c -> query c) pool >>= function
         | Ok () ->
             Logs.debug (fun m -> m "MIGRATION: Ran %s" name);
             let* _ = Service.increment pool ~namespace in
@@ -114,7 +114,7 @@ let execute_steps migration pool =
 
 let execute_migration migration pool =
   let namespace, _ = migration in
-  Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s app" namespace);
+  Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
   let* () = Service.setup pool in
   let* has_state = Service.has pool ~namespace in
   let* state =
@@ -150,3 +150,36 @@ let execute migrations =
         | Error err -> return (Error err) )
   in
   return (Db.connect ()) >>= run migrations
+
+module Mariadb = struct
+  let set_fk_check connection status =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Caqti_type.bool
+        {sql|
+        SET FOREIGN_KEY_CHECKS = ?;
+           |sql}
+    in
+    Connection.exec request status
+
+  let migrate ?disable_fk_check str connection =
+    let ( let* ) = Lwt_result.bind in
+    let disable_fk_check = disable_fk_check |> Option.value ~default:true in
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    if disable_fk_check then
+      let* () = set_fk_check connection false in
+      let request = Caqti_request.exec Caqti_type.unit str in
+      let* result = Connection.exec request () in
+      let* () = set_fk_check connection true in
+      Lwt.return @@ Ok result
+    else
+      let request = Caqti_request.exec Caqti_type.unit str in
+      Connection.exec request ()
+end
+
+module Postgresql = struct
+  let migrate str connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request = Caqti_request.exec Caqti_type.unit str in
+    Connection.exec request ()
+end
