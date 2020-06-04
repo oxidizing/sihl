@@ -150,3 +150,29 @@ let execute migrations =
         | Error err -> return (Error err) )
   in
   return (Db.connect ()) >>= run migrations
+
+module Mariadb = struct
+  let set_fk_check connection status =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Caqti_type.bool
+        {sql|
+        SET FOREIGN_KEY_CHECKS = ?;
+           |sql}
+    in
+    Connection.exec request status
+
+  let migrate ?disable_fk_check str connection =
+    let ( let* ) = Lwt_result.bind in
+    let disable_fk_check = disable_fk_check |> Option.value ~default:true in
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    if disable_fk_check then
+      let* () = set_fk_check connection false in
+      let request = Caqti_request.exec Caqti_type.unit str in
+      let* result = Connection.exec request () in
+      let* () = set_fk_check connection true in
+      Lwt.return @@ Ok result
+    else
+      let request = Caqti_request.exec Caqti_type.unit str in
+      Connection.exec request ()
+end

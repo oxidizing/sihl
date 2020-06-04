@@ -6,3 +6,11 @@ end
 
 val execute :
   Core.Contract.Migration.migration list -> (unit, string) result Lwt.t
+
+module Mariadb : sig
+  val migrate :
+    ?disable_fk_check:bool ->
+    string ->
+    (module Caqti_lwt.CONNECTION) ->
+    unit Core.Db.db_result
+end
