@@ -1,7 +1,7 @@
+open Base
 module Contract = Core.Contract
 module Registry = Core.Registry
 module Db = Core.Db
-open Base
 
 let ( let* ) = Lwt_result.bind
 
