@@ -75,14 +75,8 @@ module Sql = struct
 end
 
 module Migration = struct
-  (* TODO move in some mariadb common module *)
-  let migrate str connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request = Caqti_request.exec Caqti_type.unit str in
-    Connection.exec request
-
   let create_sessions_table =
-    migrate
+    Sihl.Repo.Migration.Postgresql.migrate
       {sql|
 CREATE TABLE sessions_sessions (
   id serial,

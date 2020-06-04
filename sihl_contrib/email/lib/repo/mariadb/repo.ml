@@ -66,18 +66,14 @@ module Sql = struct
 end
 
 module Migration = struct
-  let migrate str connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request = Caqti_request.exec Caqti_type.unit str in
-    Connection.exec request
-
   let fix_collation =
-    migrate {sql|
+    Sihl.Repo.Migration.Mariadb.migrate
+      {sql|
 SET collation_connection = 'utf8mb4_unicode_ci';
 |sql}
 
   let create_templates_table =
-    migrate
+    Sihl.Repo.Migration.Mariadb.migrate
       {sql|
 CREATE TABLE emails_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,

@@ -14,3 +14,8 @@ module Mariadb : sig
     (module Caqti_lwt.CONNECTION) ->
     unit Core.Db.db_result
 end
+
+module Postgresql : sig
+  val migrate :
+    string -> (module Caqti_lwt.CONNECTION) -> unit Core.Db.db_result
+end

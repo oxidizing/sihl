@@ -18,7 +18,7 @@ module Migration = struct
   type migration_error = Caqti_error.t
 
   type migration_operation =
-    Caqti_lwt.connection -> unit -> (unit, migration_error) Result.t Lwt.t
+    Caqti_lwt.connection -> (unit, migration_error) Result.t Lwt.t
 
   type migration_step = string * migration_operation
 
