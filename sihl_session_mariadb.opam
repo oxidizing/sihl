@@ -11,7 +11,7 @@ doc: "https://github.com/oxidizing/sihl"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "dune" {>= "2.0"}
-  "sihl_email" {>= "0.0.31"}
+  "sihl_session" {>= "0.0.31"}
   "caqti-driver-mariadb" {>= "1.2.1"}
 ]
 build: [
