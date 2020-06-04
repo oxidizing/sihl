@@ -1,10 +1,8 @@
-[![CircleCI](https://circleci.com/gh/oxidizing/sihl.svg?style=svg&circle-token=1bd6f0745de660fcdd463dbe017a67d6c8229447)](https://circleci.com/gh/oxidizing/sihl)
-
-# Sihl
+# 🌊 Sihl &middot; [![CircleCI](https://circleci.com/gh/oxidizing/sihl.svg?style=shield&circle-token=1bd6f0745de660fcdd463dbe017a67d6c8229447)](https://circleci.com/gh/oxidizing/sihl) ![GitHub](https://img.shields.io/github/license/oxidizing/sihl)
 
 Sihl aims to be a framework like Rails or Django for Reason and OCaml. It makes web development fun and safe by turning run-time bugs into compile-time bugs.
 
-Documentation is in the making, check out this [example project](https://github.com/oxidizing/sihl-example-issues) meanwhile.
+We are working on the first public release. Documentation is in the making as well, check out this [example project](https://github.com/oxidizing/sihl-example-issues) meanwhile.
 
 ## Features
 
