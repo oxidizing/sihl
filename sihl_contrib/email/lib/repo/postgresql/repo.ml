@@ -10,8 +10,8 @@ module Sql = struct
           @string{label},
           @string{value},
           @string{status}
-        FROM emails_templates
-        WHERE emails_templates.uuid = %string{id}
+        FROM email_templates
+        WHERE email_templates.uuid = %string{id}
         |sql}
         record_out]
 
@@ -19,7 +19,7 @@ module Sql = struct
     [%rapper
       execute
         {sql|
-        INSERT INTO emails_templates (
+        INSERT INTO email_templates (
           uuid,
           label,
           value,
@@ -41,7 +41,7 @@ module Sql = struct
     [%rapper
       execute
         {sql|
-        TRUNCATE TABLE emails_templates CASCADE;
+        TRUNCATE TABLE email_templates CASCADE;
         |sql}]
 end
 
@@ -49,7 +49,7 @@ module Migration = struct
   let create_templates_table =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
-CREATE TABLE emails_templates (
+CREATE TABLE email_templates (
   id serial,
   uuid uuid NOT NULL,
   label VARCHAR(128) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE emails_templates (
 |sql}
 
   let migration () =
-    ("emails", [ ("create templates table", create_templates_table) ])
+    ("email", [ ("create templates table", create_templates_table) ])
 end
 
 let migrate = Migration.migration

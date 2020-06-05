@@ -24,8 +24,8 @@ module Sql = struct
           label,
           value,
           status
-        FROM emails_templates
-        WHERE emails_templates.uuid = UNHEX(REPLACE(?, '-', ''))
+        FROM email_templates
+        WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
     in
     Connection.find request
@@ -35,7 +35,7 @@ module Sql = struct
     let request =
       Caqti_request.exec Model.t
         {sql|
-        INSERT INTO emails_templates (
+        INSERT INTO email_templates (
           uuid,
           label,
           value,
@@ -59,7 +59,7 @@ module Sql = struct
     let request =
       Caqti_request.exec Caqti_type.unit
         {sql|
-        TRUNCATE TABLE emails_templates CASCADE;
+        TRUNCATE TABLE email_templates CASCADE;
          |sql}
     in
     Connection.exec request
@@ -75,7 +75,7 @@ SET collation_connection = 'utf8mb4_unicode_ci';
   let create_templates_table =
     Sihl.Repo.Migration.Mariadb.migrate
       {sql|
-CREATE TABLE emails_templates (
+CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   label VARCHAR(128) NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE emails_templates (
 |sql}
 
   let migration () =
-    ( "emails",
+    ( "email",
       [
         ("fix collation", fix_collation);
         ("create templates table", create_templates_table);

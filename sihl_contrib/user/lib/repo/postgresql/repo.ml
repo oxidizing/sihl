@@ -214,7 +214,7 @@ CREATE TABLE users_tokens (
   let add_confirmation_template =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
-        INSERT INTO emails_templates (
+        INSERT INTO email_templates (
           uuid,
           label,
           value,
@@ -230,7 +230,7 @@ CREATE TABLE users_tokens (
   let add_password_reset_template =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
-        INSERT INTO emails_templates (
+        INSERT INTO email_templates (
           uuid,
           label,
           value,
