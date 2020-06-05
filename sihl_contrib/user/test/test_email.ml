@@ -7,14 +7,7 @@ let url path = "http://localhost:3000/users" ^ path
 let extract_token text =
   let regexp = Pcre.regexp {|token=([\w|\-]*)|} in
   Option.value_exn ~message:"no match found"
-    (Sihl.Core.Regex.extract_last ~rex:regexp text)
-
-let test_extract_token_from_email _ () =
-  let actual = extract_token "token=abc123" in
-  let _ = Alcotest.(check string) "Extract token 1" "abc123" actual in
-  let actual = extract_token "foo token=abc123 bar" in
-  let _ = Alcotest.(check string) "Extract token 2" "abc123" actual in
-  Lwt.return ()
+    (Sihl.Core.Regex.extract_last regexp text)
 
 let test_user_registers_and_confirms_email _ () =
   let* _ = Sihl.Run.Manage.clean () in

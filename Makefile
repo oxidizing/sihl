@@ -15,3 +15,6 @@ test-all:
 
 test-dev:
 	SIHL_ENV=test DATABASE=postgres dune runtest --no-buffer -w
+
+test-core:
+	SIHL_ENV=test dune runtest --no-buffer -w sihl
