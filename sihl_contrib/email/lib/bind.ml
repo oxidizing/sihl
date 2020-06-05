@@ -1,6 +1,6 @@
 module Repository = struct
   let key : (module Repo_sig.REPOSITORY) Sihl.Core.Registry.Key.t =
-    Sihl.Core.Registry.Key.create "emails repository"
+    Sihl.Core.Registry.Key.create "email.repository"
 
   let default () =
     let (module Repository : Repo_sig.REPOSITORY) =
@@ -13,5 +13,5 @@ module Transport = struct
   let key :
       (module Sihl.Core.Contract.Email.EMAIL with type email = Model.Email.t)
       Sihl.Core.Registry.Key.t =
-    Sihl.Core.Registry.Key.create "emails transport"
+    Sihl.Core.Registry.Key.create "email.transport"
 end

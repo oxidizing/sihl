@@ -1,6 +1,6 @@
 let name = "Email Management App"
 
-let namespace = "emails"
+let namespace = "email"
 
 let config () =
   Sihl.Core.Config.Schema.

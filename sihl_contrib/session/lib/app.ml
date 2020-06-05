@@ -1,6 +1,6 @@
 let name = "Session App"
 
-let namespace = "sessions"
+let namespace = "session"
 
 let config () = []
 

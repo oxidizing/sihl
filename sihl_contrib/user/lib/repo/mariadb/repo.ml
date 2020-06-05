@@ -54,7 +54,7 @@ module Sql = struct
           status,
           admin,
           confirmed
-        FROM users_users
+        FROM user_users
            |sql}
       in
       Connection.collect_list request ()
@@ -78,8 +78,8 @@ module Sql = struct
           status,
           admin,
           confirmed
-        FROM users_users
-        WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))
+        FROM user_users
+        WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
       in
       Connection.find request
@@ -103,8 +103,8 @@ module Sql = struct
           status,
           admin,
           confirmed
-        FROM users_users
-        WHERE users_users.email = ?
+        FROM user_users
+        WHERE user_users.email = ?
         |sql}
       in
       Connection.find request
@@ -114,7 +114,7 @@ module Sql = struct
       let request =
         Caqti_request.exec Model.t
           {sql|
-        INSERT INTO users_users (
+        INSERT INTO user_users (
           uuid,
           email,
           username,
@@ -145,7 +145,7 @@ module Sql = struct
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
         Caqti_request.exec Caqti_type.unit {sql|
-TRUNCATE users_users;
+TRUNCATE user_users;
 |sql}
       in
       Connection.exec request ()
@@ -172,26 +172,26 @@ TRUNCATE users_users;
           {sql|
         SELECT
           LOWER(CONCAT(
-           SUBSTR(HEX(users_tokens.uuid), 1, 8), '-',
-           SUBSTR(HEX(users_tokens.uuid), 9, 4), '-',
-           SUBSTR(HEX(users_tokens.uuid), 13, 4), '-',
-           SUBSTR(HEX(users_tokens.uuid), 17, 4), '-',
-           SUBSTR(HEX(users_tokens.uuid), 21)
+           SUBSTR(HEX(user_tokens.uuid), 1, 8), '-',
+           SUBSTR(HEX(user_tokens.uuid), 9, 4), '-',
+           SUBSTR(HEX(user_tokens.uuid), 13, 4), '-',
+           SUBSTR(HEX(user_tokens.uuid), 17, 4), '-',
+           SUBSTR(HEX(user_tokens.uuid), 21)
            )),
-          users_tokens.token_value,
-          users_tokens.kind,
+          user_tokens.token_value,
+          user_tokens.kind,
           LOWER(CONCAT(
-           SUBSTR(HEX(users_users.uuid), 1, 8), '-',
-           SUBSTR(HEX(users_users.uuid), 9, 4), '-',
-           SUBSTR(HEX(users_users.uuid), 13, 4), '-',
-           SUBSTR(HEX(users_users.uuid), 17, 4), '-',
-           SUBSTR(HEX(users_users.uuid), 21)
+           SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+           SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+           SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+           SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+           SUBSTR(HEX(user_users.uuid), 21)
            )),
-          users_tokens.status
-        FROM users_tokens
-        LEFT JOIN users_users
-        ON users_users.id = users_tokens.token_user
-        WHERE users_tokens.token_value = ?
+          user_tokens.status
+        FROM user_tokens
+        LEFT JOIN user_users
+        ON user_users.id = user_tokens.token_user
+        WHERE user_tokens.token_value = ?
         |sql}
       in
       Connection.find request
@@ -201,7 +201,7 @@ TRUNCATE users_users;
       let request =
         Caqti_request.exec Model.t
           {sql|
-        INSERT INTO users_tokens (
+        INSERT INTO user_tokens (
           uuid,
           token_value,
           kind,
@@ -211,7 +211,7 @@ TRUNCATE users_users;
           UNHEX(REPLACE(?, '-', '')),
           ?,
           ?,
-          (SELECT id FROM users_users WHERE users_users.uuid = UNHEX(REPLACE(?, '-', ''))),
+          (SELECT id FROM user_users WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))),
           ?
         ) ON DUPLICATE KEY UPDATE
         token_value = VALUES(token_value),
@@ -227,10 +227,10 @@ TRUNCATE users_users;
       let request =
         Caqti_request.exec Caqti_type.string
           {sql|
-        DELETE FROM users_tokens
-        WHERE users_tokens.token_user =
-        (SELECT id FROM users_users
-         WHERE users_users.uuid = UNHEX(REPLACE(?, '-', '')))
+        DELETE FROM user_tokens
+        WHERE user_tokens.token_user =
+        (SELECT id FROM user_users
+         WHERE user_users.uuid = UNHEX(REPLACE(?, '-', '')))
         |sql}
       in
       Connection.exec request
@@ -240,7 +240,7 @@ TRUNCATE users_users;
       let request =
         Caqti_request.exec Caqti_type.unit
           {sql|
-        TRUNCATE users_tokens;
+        TRUNCATE user_tokens;
            |sql}
       in
       Connection.exec request ()
@@ -279,7 +279,7 @@ SET collation_connection = 'utf8mb4_unicode_ci';
   let create_users_table =
     Sihl.Repo.Migration.Mariadb.migrate
       {sql|
-CREATE TABLE users_users (
+CREATE TABLE user_users (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   email VARCHAR(128) NOT NULL,
@@ -298,7 +298,7 @@ CREATE TABLE users_users (
   let create_tokens_table =
     Sihl.Repo.Migration.Mariadb.migrate
       {sql|
-CREATE TABLE users_tokens (
+CREATE TABLE user_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   token_value VARCHAR(128) NOT NULL,
@@ -309,14 +309,14 @@ CREATE TABLE users_tokens (
   PRIMARY KEY (id),
   CONSTRAINT unqiue_uuid UNIQUE KEY (uuid),
   CONSTRAINT unique_value UNIQUE KEY (token_value),
-  FOREIGN KEY (token_user) REFERENCES users_users (id)
+  FOREIGN KEY (token_user) REFERENCES user_users (id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 |sql}
 
   let add_confirmation_template =
     Sihl.Repo.Migration.Mariadb.migrate
       {sql|
-    INSERT INTO emails_templates (
+    INSERT INTO email_templates (
         uuid,
         label,
         value,
@@ -332,7 +332,7 @@ CREATE TABLE users_tokens (
   let add_password_reset_template =
     Sihl.Repo.Migration.Mariadb.migrate
       {sql|
-    INSERT INTO emails_templates (
+    INSERT INTO email_templates (
         uuid,
         label,
         value,
@@ -346,7 +346,7 @@ CREATE TABLE users_tokens (
 |sql}
 
   let migration () =
-    ( "users",
+    ( "user",
       [
         ("fix collation", fix_collation);
         ("create users table", create_users_table);
