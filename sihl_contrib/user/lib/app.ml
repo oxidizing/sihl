@@ -1,6 +1,6 @@
 let name = "User Management App"
 
-let namespace = "users"
+let namespace = "user"
 
 let config () =
   Sihl.Core.Config.Schema.

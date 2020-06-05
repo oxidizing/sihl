@@ -14,7 +14,7 @@ module Sql = struct
           @string{status},
           @bool{admin},
           @bool{confirmed}
-        FROM users_users
+        FROM user_users
         |sql}
           record_out]
 
@@ -30,8 +30,8 @@ module Sql = struct
           @string{status},
           @bool{admin},
           @bool{confirmed}
-        FROM users_users
-        WHERE users_users.uuid = %string{id}
+        FROM user_users
+        WHERE user_users.uuid = %string{id}
         |sql}
           record_out]
 
@@ -47,8 +47,8 @@ module Sql = struct
           @string{status},
           @bool{admin},
           @bool{confirmed}
-        FROM users_users
-        WHERE users_users.email = %string{email}
+        FROM user_users
+        WHERE user_users.email = %string{email}
         |sql}
           record_out]
 
@@ -56,7 +56,7 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        INSERT INTO users_users (
+        INSERT INTO user_users (
           uuid, 
           email, 
           username, 
@@ -80,7 +80,7 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        UPDATE users_users
+        UPDATE user_users
         SET 
           email = %string{email}, 
           username = %string?{username}, 
@@ -88,14 +88,14 @@ module Sql = struct
           status = %string{status},
           admin = %bool{admin},
           confirmed = %bool{confirmed}
-        WHERE users_users.uuid = %string{id}
+        WHERE user_users.uuid = %string{id}
         |sql}
           record_in]
 
     let clean =
       [%rapper
         execute {sql|
-        TRUNCATE TABLE users_users CASCADE;
+        TRUNCATE TABLE user_users CASCADE;
         |sql}]
   end
 
@@ -107,15 +107,15 @@ module Sql = struct
         get_one
           {sql|
         SELECT 
-          users_tokens.uuid as @string{id}, 
-          users_tokens.token_value as @string{value},
-          users_users.uuid as @string{user},
-          users_tokens.kind as @string{kind},
-          users_tokens.status as @string{status}
-        FROM users_tokens
-        LEFT JOIN users_users 
-        ON users_users.id = users_tokens.token_user
-        WHERE users_tokens.token_value = %string{value}
+          user_tokens.uuid as @string{id}, 
+          user_tokens.token_value as @string{value},
+          user_users.uuid as @string{user},
+          user_tokens.kind as @string{kind},
+          user_tokens.status as @string{status}
+        FROM user_tokens
+        LEFT JOIN user_users 
+        ON user_users.id = user_tokens.token_user
+        WHERE user_tokens.token_value = %string{value}
         |sql}
           record_out]
 
@@ -123,7 +123,7 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        INSERT INTO users_tokens (
+        INSERT INTO user_tokens (
           uuid, 
           token_value,
           token_user,
@@ -132,7 +132,7 @@ module Sql = struct
         ) VALUES (
           %string{id}, 
           %string{value},
-          (SELECT id FROM users_users WHERE users_users.uuid = %string{user}),
+          (SELECT id FROM user_users WHERE user_users.uuid = %string{user}),
           %string{kind},
           %string{status}
         )
@@ -143,15 +143,15 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        UPDATE users_tokens 
+        UPDATE user_tokens 
         SET 
           token_value = %string{value},
           token_user = 
-          (SELECT id FROM users_users 
-           WHERE users_users.uuid = %string{user}),
+          (SELECT id FROM user_users 
+           WHERE user_users.uuid = %string{user}),
           kind = %string{kind},
           status = %string{status}
-        WHERE users_tokens.uuid = %string{id}
+        WHERE user_tokens.uuid = %string{id}
         |sql}
           record_in]
 
@@ -159,16 +159,16 @@ module Sql = struct
       [%rapper
         execute
           {sql|
-        DELETE FROM users_tokens 
-        WHERE users_tokens.token_user = 
-        (SELECT id FROM users_users 
-         WHERE users_users.uuid = %string{id})
+        DELETE FROM user_tokens 
+        WHERE user_tokens.token_user = 
+        (SELECT id FROM user_users 
+         WHERE user_users.uuid = %string{id})
         |sql}]
 
     let clean =
       [%rapper
         execute {sql|
-        TRUNCATE TABLE users_tokens CASCADE;
+        TRUNCATE TABLE user_tokens CASCADE;
         |sql}]
   end
 end
@@ -177,7 +177,7 @@ module Migration = struct
   let create_users_table =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
-CREATE TABLE users_users (
+CREATE TABLE user_users (
   id serial,
   uuid uuid NOT NULL,
   email VARCHAR(128) NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE users_users (
   let create_tokens_table =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
-CREATE TABLE users_tokens (
+CREATE TABLE user_tokens (
   id serial,
   uuid uuid NOT NULL,
   token_value VARCHAR(128) NOT NULL,
@@ -207,10 +207,11 @@ CREATE TABLE users_tokens (
   PRIMARY KEY (id),
   UNIQUE (token_value),
   UNIQUE (uuid),
-  FOREIGN KEY (token_user) REFERENCES users_users (id)
+  FOREIGN KEY (token_user) REFERENCES user_users (id)
 );
 |sql}
 
+  (* TODO this should be a seed that this app call on startup *)
   let add_confirmation_template =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
@@ -227,6 +228,7 @@ CREATE TABLE users_tokens (
         )
 |sql}
 
+  (* TODO this should be a seed that this app call on startup *)
   let add_password_reset_template =
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
@@ -244,7 +246,7 @@ CREATE TABLE users_tokens (
 |sql}
 
   let migration () =
-    ( "users",
+    ( "user",
       [
         ("create users table", create_users_table);
         ("create tokens table", create_tokens_table);
