@@ -1,3 +1,5 @@
+(* TODO get rid of ppx_rapper and use common encoding/decoding *)
+
 module Sql = struct
   module User = struct
     open Sihl.User
@@ -218,7 +220,7 @@ CREATE TABLE user_tokens (
         INSERT INTO email_templates (
           uuid,
           label,
-          value,
+          content,
           status
         ) VALUES (
           'fb7aec3f-2178-4166-beb4-79a3a663e093',
@@ -235,7 +237,7 @@ CREATE TABLE user_tokens (
         INSERT INTO email_templates (
           uuid,
           label,
-          value,
+          content,
           status
         ) VALUES (
           'fb7aec3f-2178-4166-beb4-79a3a663e092',

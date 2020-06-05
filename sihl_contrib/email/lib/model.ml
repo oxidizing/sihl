@@ -1,9 +1,33 @@
 module Template = struct
-  type t = { id : string; label : string; value : string; status : string }
+  type t = {
+    id : string;
+    label : string;
+    content : string;
+    status : string;
+    created_at : Ptime.t;
+  }
 
-  let value template = template.value
+  let t =
+    let encode m =
+      Ok (m.id, (m.label, (m.content, (m.status, m.created_at))))
+    in
+    let decode (id, (label, (content, (status, created_at)))) =
+      Ok { id; label; content; status; created_at }
+    in
+    Caqti_type.(
+      custom ~encode ~decode
+        (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
 
-  let create ~label ~value = { id = "TODO"; label; value; status = "active" }
+  let value template = template.content
+
+  let create ~label ~content =
+    {
+      id = "TODO";
+      label;
+      content;
+      status = "active";
+      created_at = Ptime_clock.now ();
+    }
 end
 
 module Email = struct

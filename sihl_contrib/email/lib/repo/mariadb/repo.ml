@@ -1,12 +1,5 @@
 module Sql = struct
-  module Model = struct
-    open Sihl_email.Model.Template
-
-    let t =
-      let encode m = Ok (m.id, m.label, m.value, m.status) in
-      let decode (id, label, value, status) = Ok { id; label; value; status } in
-      Caqti_type.(custom ~encode ~decode (tup4 string string string string))
-  end
+  module Model = Sihl_email.Model.Template
 
   let get connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -22,14 +15,16 @@ module Sql = struct
            SUBSTR(HEX(uuid), 21)
            )),
           label,
-          value,
-          status
+          content,
+          status,
+          created_at
         FROM email_templates
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
     in
     Connection.find request
 
+  (* TODO split into insert and update *)
   let upsert connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
@@ -38,18 +33,21 @@ module Sql = struct
         INSERT INTO email_templates (
           uuid,
           label,
-          value,
-          status
+          content,
+          status,
+          created_at
         ) VALUES (
           UNHEX(REPLACE(?, '-', '')),
+          ?,
+          ?,
           ?,
           ?,
           ?
         ) ON DUPLICATE KEY UPDATE
         DO UPDATE SET
           label = VALUES(label),
-          value = VALUES(username),
-          status = VALUES(password)
+          content = VALUES(content),
+          status = VALUES(status)
         |sql}
     in
     Connection.exec request
@@ -78,9 +76,10 @@ SET collation_connection = 'utf8mb4_unicode_ci';
 CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
-  label VARCHAR(128) NOT NULL,
-  value VARCHAR(1000) NOT NULL,
+  label VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
   status VARCHAR(128) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

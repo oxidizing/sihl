@@ -1,48 +1,60 @@
 module Sql = struct
-  open Sihl_email.Model.Template
+  module Model = Sihl_email.Model.Template
 
-  let get =
-    [%rapper
-      get_one
+  let get connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.find Caqti_type.string Model.t
         {sql|
         SELECT
-          uuid as @string{id},
-          @string{label},
-          @string{value},
-          @string{status}
+          uuid,
+          label,
+          content,
+          status,
+          created_at
         FROM email_templates
-        WHERE email_templates.uuid = %string{id}
+        WHERE email_templates.uuid = ?
         |sql}
-        record_out]
+    in
+    Connection.find request
 
-  let upsert =
-    [%rapper
-      execute
+  (* TODO split into insert and update *)
+  let upsert connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Model.t
         {sql|
         INSERT INTO email_templates (
           uuid,
           label,
-          value,
-          status
+          content,
+          status,
+          created_at
         ) VALUES (
-          %string{id},
-          %string{label},
-          %string{value},
-          %string{status}
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
         ) ON CONFLICT (id)
         DO UPDATE SET
-          label = %string{label},
-          value = %string{value},
-          status = %string{status}
+          label = EXCLUDED.label,
+          content = EXCLUDED.content,
+          status = EXCLUDED.status
         |sql}
-        record_in]
+    in
+    Connection.exec request
 
-  let clean =
-    [%rapper
-      execute
+  let clean connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Caqti_type.unit
         {sql|
         TRUNCATE TABLE email_templates CASCADE;
-        |sql}]
+         |sql}
+    in
+    Connection.exec request
 end
 
 module Migration = struct
@@ -50,11 +62,12 @@ module Migration = struct
     Sihl.Repo.Migration.Postgresql.migrate
       {sql|
 CREATE TABLE email_templates (
-  id serial,
-  uuid uuid NOT NULL,
-  label VARCHAR(128) NOT NULL,
-  value VARCHAR(1000) NOT NULL,
+  id SERIAL,
+  uuid UUID NOT NULL,
+  label VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
   status VARCHAR(128) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (id),
   UNIQUE (uuid)
 );
@@ -66,7 +79,7 @@ end
 
 let migrate = Migration.migration
 
-let get ~id connection = Sql.get connection ~id
+let get ~id connection = Sql.get connection id
 
 (* TODO sihl_user has to seed templates properly
 let clean connection = Sql.clean connection () *)

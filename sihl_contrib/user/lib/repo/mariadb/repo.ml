@@ -319,7 +319,7 @@ CREATE TABLE user_tokens (
     INSERT INTO email_templates (
         uuid,
         label,
-        value,
+        content,
         status
     ) VALUES (
         UNHEX(REPLACE('fb7aec3f-2178-4166-beb4-79a3a663e093', '-', '')),
@@ -335,7 +335,7 @@ CREATE TABLE user_tokens (
     INSERT INTO email_templates (
         uuid,
         label,
-        value,
+        content,
         status
     ) VALUES (
         UNHEX(REPLACE('fb7aec3f-2178-4166-beb4-79a3a663e092', '-', '')),
