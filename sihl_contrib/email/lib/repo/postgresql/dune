@@ -5,9 +5,7 @@
   base
   sihl
   sihl_email
-  caqti-driver-postgresql)
- (preprocess
-  (pps ppx_rapper)))
+  caqti-driver-postgresql))
 
 (include_subdirs no)
 
