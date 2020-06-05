@@ -9,7 +9,8 @@ module Sql = struct
         SELECT
           uuid,
           label,
-          content,
+          content_text,
+          content_html,
           status,
           created_at
         FROM email_templates
@@ -27,7 +28,8 @@ module Sql = struct
         INSERT INTO email_templates (
           uuid,
           label,
-          content,
+          content_text,
+          content_html,
           status,
           created_at
         ) VALUES (
@@ -40,7 +42,8 @@ module Sql = struct
         ) ON CONFLICT (id)
         DO UPDATE SET
           label = EXCLUDED.label,
-          content = EXCLUDED.content,
+          content_text = EXCLUDED.content_text,
+          content_html = EXCLUDED.content_html,
           status = EXCLUDED.status
         |sql}
     in
@@ -65,7 +68,8 @@ CREATE TABLE email_templates (
   id SERIAL,
   uuid UUID NOT NULL,
   label VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
+  content_text TEXT NOT NULL,
+  content_html TEXT NOT NULL,
   status VARCHAR(128) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (id),

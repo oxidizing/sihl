@@ -5,7 +5,7 @@ module Template : sig
 
   val value : t -> string
 
-  val create : label:string -> content:string -> t
+  val create : ?text:string -> ?html:string -> string -> t
 end
 
 module Email : sig

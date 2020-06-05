@@ -15,7 +15,8 @@ module Sql = struct
            SUBSTR(HEX(uuid), 21)
            )),
           label,
-          content,
+          content_text,
+          content_html,
           status,
           created_at
         FROM email_templates
@@ -33,7 +34,8 @@ module Sql = struct
         INSERT INTO email_templates (
           uuid,
           label,
-          content,
+          content_text,
+          content_html,
           status,
           created_at
         ) VALUES (
@@ -77,7 +79,8 @@ CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   label VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
+  content_text TEXT NOT NULL,
+  content_html TEXT NOT NULL,
   status VARCHAR(128) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

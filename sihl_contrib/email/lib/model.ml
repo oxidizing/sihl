@@ -1,30 +1,39 @@
+open Base
+
 module Template = struct
   type t = {
     id : string;
     label : string;
-    content : string;
+    content_text : string;
+    content_html : string;
     status : string;
     created_at : Ptime.t;
   }
 
   let t =
     let encode m =
-      Ok (m.id, (m.label, (m.content, (m.status, m.created_at))))
+      Ok
+        ( m.id,
+          (m.label, (m.content_text, (m.content_html, (m.status, m.created_at))))
+        )
     in
-    let decode (id, (label, (content, (status, created_at)))) =
-      Ok { id; label; content; status; created_at }
+    let decode
+        (id, (label, (content_text, (content_html, (status, created_at))))) =
+      Ok { id; label; content_text; content_html; status; created_at }
     in
     Caqti_type.(
       custom ~encode ~decode
-        (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
+        (tup2 string
+           (tup2 string (tup2 string (tup2 string (tup2 string ptime))))))
 
-  let value template = template.content
+  let value template = template.content_text
 
-  let create ~label ~content =
+  let create ?text ?html label =
     {
       id = "TODO";
       label;
-      content;
+      content_text = text |> Option.value ~default:"";
+      content_html = html |> Option.value ~default:"";
       status = "active";
       created_at = Ptime_clock.now ();
     }
