@@ -22,7 +22,7 @@ module Sql = struct
           session_key,
           session_data,
           expire_date
-        FROM sessions_sessions
+        FROM session_sessions
         |sql}
       in
       Connection.collect_list request
@@ -36,8 +36,8 @@ module Sql = struct
           session_key,
           session_data,
           expire_date
-        FROM sessions_sessions
-        WHERE sessions_sessions.session_key = ?
+        FROM session_sessions
+        WHERE session_sessions.session_key = ?
         |sql}
       in
       Connection.find_opt request
@@ -48,7 +48,7 @@ module Sql = struct
       let request =
         Caqti_request.exec Model.t
           {sql|
-        INSERT INTO sessions_sessions (
+        INSERT INTO session_sessions (
           session_key,
           session_data,
           expire_date
@@ -67,8 +67,8 @@ module Sql = struct
       let request =
         Caqti_request.exec Caqti_type.string
           {sql|
-      DELETE FROM sessions_sessions
-      WHERE sessions_sessions.session_key = ?
+      DELETE FROM session_sessions
+      WHERE session_sessions.session_key = ?
       |sql}
       in
       Connection.exec request
@@ -78,7 +78,7 @@ module Sql = struct
       let request =
         Caqti_request.exec Caqti_type.unit
           {sql|
-           TRUNCATE sessions_sessions;
+           TRUNCATE session_sessions;
           |sql}
       in
       Connection.exec request ()
@@ -89,7 +89,7 @@ module Migration = struct
   let create_sessions_table =
     Sihl.Repo.Migration.Mariadb.migrate
       {sql|
-CREATE TABLE sessions_sessions (
+CREATE TABLE session_sessions (
   id serial,
   session_key VARCHAR(64) NOT NULL,
   session_data VARCHAR(1024) NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE sessions_sessions (
 |sql}
 
   let migration () =
-    ("sessions", [ ("create sessions table", create_sessions_table) ])
+    ("session", [ ("create sessions table", create_sessions_table) ])
 end
 
 let get_all connection = Sql.Session.get_all connection ()

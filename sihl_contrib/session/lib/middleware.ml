@@ -2,10 +2,10 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-let cookie_key = "sessions.key"
+let cookie_key = "session.key"
 
 let hmap_key : string Opium.Hmap.key =
-  Opium.Hmap.Key.create ("sessions.key", fun _ -> sexp_of_string "sessions.key")
+  Opium.Hmap.Key.create ("session.key", fun _ -> sexp_of_string "session.key")
 
 let session () =
   let filter handler req =

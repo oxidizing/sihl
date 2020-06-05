@@ -7,7 +7,7 @@ module type SESSION_SERVICE = sig
 end
 
 let registry_key : (module SESSION_SERVICE) Core.Registry.Key.t =
-  Core.Registry.Key.create "sessions.service"
+  Core.Registry.Key.create "session.service"
 
 let key = registry_key
 
@@ -17,7 +17,7 @@ let set ~key ~value req =
   | None ->
       let msg =
         "SESSION: Could not find session service, have you installed the \
-         sessions app?"
+         session app?"
       in
       Logs.err (fun m -> m "%s" msg);
       failwith msg
@@ -28,7 +28,7 @@ let remove ~key req =
   | None ->
       let msg =
         "SESSION: Could not find session service, have you installed the \
-         sessions app?"
+         session app?"
       in
       Logs.err (fun m -> m "%s" msg);
       failwith msg
@@ -39,7 +39,7 @@ let get key req =
   | None ->
       let msg =
         "SESSION: Could not find session service, have you installed the \
-         sessions app?"
+         session app?"
       in
       Logs.err (fun m -> m "%s" msg);
       failwith msg
