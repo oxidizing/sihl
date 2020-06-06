@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.0.33)
+(version 0.0.32)
 
 (authors "Josef Erben")
 (source (github oxidizing/sihl))
@@ -84,7 +84,7 @@
  (synopsis "Provides support for migrations using PostgreSQL")
  (description "Provides support for migrations using PostgreSQL.")
  (depends
-  (sihl (>= 0.0.33))
+  (sihl (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
   (ppx_rapper (>= 0.9.2))
 ))
@@ -94,7 +94,7 @@
  (synopsis "Provides support for migrations using MariaDB")
  (description "Provides support for migrations using MariaDB.")
  (depends
-  (sihl (>= 0.0.33))
+  (sihl (>= 0.0.32))
   (caqti-driver-mariadb (>= 1.2.1))
 ))
 
@@ -109,7 +109,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.33))
+  (sihl (>= 0.0.32))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -127,7 +127,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.33))
+  (sihl (>= 0.0.32))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -138,7 +138,7 @@
  (synopsis "An implementation of the session store using MariaDB")
  (description "An implementation of the session store using MariaDB.")
  (depends
-  (sihl_session (>= 0.0.33))
+  (sihl_session (>= 0.0.32))
   (caqti-driver-mariadb (>= 1.2.1))
   ))
 
@@ -147,7 +147,7 @@
  (synopsis "An implementation of the session store using PostgreSQL")
  (description "An implementation of the session store using PostgreSQL.")
  (depends
-  (sihl_session (>= 0.0.33))
+  (sihl_session (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
   (ppx_rapper (>= 0.9.2))
 ))
@@ -163,7 +163,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.33))
+  (sihl (>= 0.0.32))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -174,7 +174,7 @@
  (synopsis "A storage for emails, templates and email queues using MariaDB")
  (description "A storage for emails, templates and email queues using MariaDB.")
  (depends
-  (sihl_email (>= 0.0.33))
+  (sihl_email (>= 0.0.32))
   (caqti-driver-mariadb (>= 1.2.1))
 ))
 
@@ -183,7 +183,7 @@
  (synopsis "A storage for emails, templates and email queues using PostgreSQL")
  (description "A storage for emails, templates and email queues using PostgreSQL.")
  (depends
-  (sihl_email (>= 0.0.33))
+  (sihl_email (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
   (ppx_rapper (>= 0.9.2))
 ))
@@ -199,8 +199,8 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.33))
-  (sihl_email (>= 0.0.33))
+  (sihl (>= 0.0.32))
+  (sihl_email (>= 0.0.32))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -214,7 +214,7 @@
  (synopsis "A storage for users using MariaDB")
  (description "A storage for users using MariaDB.")
  (depends
-  (sihl_user (>= 0.0.33))
+  (sihl_user (>= 0.0.32))
   (caqti-driver-mariadb (>= 1.2.1))
 ))
 
@@ -223,7 +223,7 @@
  (synopsis "A storage for users using PostgreSQL")
  (description "A storage for users using PostgreSQL.")
  (depends
-  (sihl_user (>= 0.0.33))
+  (sihl_user (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
   (ppx_rapper (>= 0.9.2))
 ))
