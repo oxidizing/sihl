@@ -11,7 +11,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://github.com/oxidizing/sihl"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "dune" {>= "2.0"}
+  "dune" {>= "2.1"}
   "sihl_email" {>= "0.0.33"}
   "caqti-driver-mariadb" {>= "1.2.1"}
 ]
@@ -29,3 +29,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+dev-repo: "git+https://github.com/oxidizing/sihl.git"

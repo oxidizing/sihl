@@ -1,10 +1,11 @@
-(lang dune 2.0)
+(lang dune 2.1)
 (generate_opam_files true)
 
 (name sihl)
 (version 0.0.33)
 
 (authors "Josef Erben")
+(source (github oxidizing/sihl))
 (license MIT)
 (maintainers "josef@oxidizing.io")
 (homepage "https://github.com/oxidizing/sihl")
@@ -15,7 +16,6 @@
  (name sihl)
  (synopsis "A web framework for Reason and OCaml")
  (description "A web framework for Reason and OCaml to build apps rapidly.")
- (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -71,14 +71,18 @@
   (merlin :dev)
   (ocamlformat :dev)
   (ocp-indent :dev)
-  (tuareg :dev) ;; rm if not using emacs
+  (tuareg :dev)
+
+  ;; Test dependencies
+  (alcotest (and (>= 1.1.0) :with-test))
+  (alcotest-lwt (and (>= 1.1.0) :with-test))
+  (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
 ))
 
 (package
  (name sihl_postgresql)
  (synopsis "Provides support for migrations using PostgreSQL")
  (description "Provides support for migrations using PostgreSQL.")
- (license MIT)
  (depends
   (sihl (>= 0.0.33))
   (caqti-driver-postgresql (>= 1.2.1))
@@ -89,7 +93,6 @@
  (name sihl_mariadb)
  (synopsis "Provides support for migrations using MariaDB")
  (description "Provides support for migrations using MariaDB.")
- (license MIT)
  (depends
   (sihl (>= 0.0.33))
   (caqti-driver-mariadb (>= 1.2.1))
@@ -99,7 +102,6 @@
  (name sihl_admin)
  (synopsis "A Sihl app to build backoffice web applications for administrators")
  (description "This app provides a building blocks to build and register admin pages to increase visibility and provide administrators with internal tools..")
- (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -118,7 +120,6 @@
  (name sihl_session)
  (synopsis "A Sihl app for anonymous sessions")
  (description "This app provides a generic interface to store and retrieve anonymous session data. It is mainly used to build other apps on top.")
- (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -136,7 +137,6 @@
  (name sihl_session_mariadb)
  (synopsis "An implementation of the session store using MariaDB")
  (description "An implementation of the session store using MariaDB.")
- (license MIT)
  (depends
   (sihl_session (>= 0.0.33))
   (caqti-driver-mariadb (>= 1.2.1))
@@ -146,7 +146,6 @@
  (name sihl_session_postgresql)
  (synopsis "An implementation of the session store using PostgreSQL")
  (description "An implementation of the session store using PostgreSQL.")
- (license MIT)
  (depends
   (sihl_session (>= 0.0.33))
   (caqti-driver-postgresql (>= 1.2.1))
@@ -157,7 +156,6 @@
  (name sihl_email)
  (synopsis "A Sihl app for email management")
  (description "Use this app to send single emails and schedule sending over various email backends.")
- (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -175,7 +173,6 @@
  (name sihl_email_mariadb)
  (synopsis "A storage for emails, templates and email queues using MariaDB")
  (description "A storage for emails, templates and email queues using MariaDB.")
- (license MIT)
  (depends
   (sihl_email (>= 0.0.33))
   (caqti-driver-mariadb (>= 1.2.1))
@@ -185,7 +182,6 @@
  (name sihl_email_postgresql)
  (synopsis "A storage for emails, templates and email queues using PostgreSQL")
  (description "A storage for emails, templates and email queues using PostgreSQL.")
- (license MIT)
  (depends
   (sihl_email (>= 0.0.33))
   (caqti-driver-postgresql (>= 1.2.1))
@@ -196,7 +192,6 @@
  (name sihl_user)
  (synopsis "A user management app for Sihl")
  (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
- (license MIT)
  (depends
   ;; General system dependencies
   (dune (>= 2))
@@ -218,7 +213,6 @@
  (name sihl_user_mariadb)
  (synopsis "A storage for users using MariaDB")
  (description "A storage for users using MariaDB.")
- (license MIT)
  (depends
   (sihl_user (>= 0.0.33))
   (caqti-driver-mariadb (>= 1.2.1))
@@ -228,7 +222,6 @@
  (name sihl_user_postgresql)
  (synopsis "A storage for users using PostgreSQL")
  (description "A storage for users using PostgreSQL.")
- (license MIT)
  (depends
   (sihl_user (>= 0.0.33))
   (caqti-driver-postgresql (>= 1.2.1))

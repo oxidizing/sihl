@@ -40,6 +40,9 @@ depends: [
   "ocamlformat" {dev}
   "ocp-indent" {dev}
   "tuareg" {dev}
+  "alcotest" {>= "1.1.0" & with-test}
+  "alcotest-lwt" {>= "1.1.0" & with-test}
+  "cohttp-lwt-unix" {>= "2.5.1" & with-test}
 ]
 build: [
   ["dune" "subst"] {pinned}
@@ -55,3 +58,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+dev-repo: "git+https://github.com/oxidizing/sihl.git"

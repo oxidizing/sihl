@@ -50,7 +50,7 @@ jobs:
       - run:
           name: Install OCaml dependencies
           command: |
-            opam install --deps-only -y sihl
+            opam install --deps-only -y sihl --with-test
             opam install --deps-only -y sihl_admin
             opam install --deps-only -y sihl_session sihl_session_mariadb sihl_session_postgresql
             opam install --deps-only -y sihl_email sihl_email_mariadb sihl_email_postgresql
@@ -59,8 +59,8 @@ jobs:
           name: Build
           command: opam config exec -- make
       - run:
-          name: Install OCaml test dependencies
-          command: opam install -y alcotest alcotest-lwt cohttp-lwt-unix caqti-driver-postgresql caqti-driver-mariadb
+          name: Install OCaml runtime dependencies
+          command: opam install -y caqti-driver-postgresql caqti-driver-mariadb
       - run:
           name: Test
           command: opam config exec -- make test-all
