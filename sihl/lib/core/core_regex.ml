@@ -33,3 +33,7 @@ let%test "test 1" =
 let%test "test 2" =
   let regexp = of_string {|token=([\w|\-]*)|} in
   not @@ test regexp "token123"
+
+let%test "test 3" =
+  let regexp = of_string "Yes$|No$" in
+  test regexp "Yes"
