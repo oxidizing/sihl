@@ -168,18 +168,18 @@ module Mariadb = struct
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     if disable_fk_check then
       let* () = set_fk_check connection false in
-      let request = Caqti_request.exec Caqti_type.unit str in
+      let request = Caqti_request.exec ~oneshot:true Caqti_type.unit str in
       let* result = Connection.exec request () in
       let* () = set_fk_check connection true in
       Lwt.return @@ Ok result
     else
-      let request = Caqti_request.exec Caqti_type.unit str in
+      let request = Caqti_request.exec ~oneshot:true Caqti_type.unit str in
       Connection.exec request ()
 end
 
 module Postgresql = struct
   let migrate str connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request = Caqti_request.exec Caqti_type.unit str in
+    let request = Caqti_request.exec ~oneshot:true Caqti_type.unit str in
     Connection.exec request ()
 end
