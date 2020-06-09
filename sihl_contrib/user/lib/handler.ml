@@ -11,7 +11,9 @@ module Login = struct
     get "/users/login/" @@ fun req ->
     let user = Sihl.Authn.authenticate req in
     let* token = Service.User.token req user in
-    let response = { token = Model.Token.value token; user_id = user.id } in
+    let response =
+      { token = Model.Token.value token; user_id = Sihl.User.id user }
+    in
     response |> body_out_to_yojson |> Yojson.Safe.to_string |> Res.json
     |> Lwt.return
 end

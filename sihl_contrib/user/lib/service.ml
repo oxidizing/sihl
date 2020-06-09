@@ -170,7 +170,8 @@ module User = struct
            "invalid password provided TODO: make this msg optional"
     in
     if
-      Sihl.User.is_admin current_user || Sihl.User.is_owner current_user user.id
+      Sihl.User.is_admin current_user
+      || Sihl.User.is_owner current_user (Sihl.User.id user)
     then
       let updated_user = Sihl.User.update_password user new_password in
       let* () =
@@ -188,7 +189,8 @@ module User = struct
 
     let* user = get_by_email request ~email in
     if
-      Sihl.User.is_admin current_user || Sihl.User.is_owner current_user user.id
+      Sihl.User.is_admin current_user
+      || Sihl.User.is_owner current_user (Sihl.User.id user)
     then
       let updated_user = Sihl.User.update_details user ~email ~username in
       let* () =

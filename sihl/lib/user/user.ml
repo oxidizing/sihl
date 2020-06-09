@@ -9,7 +9,7 @@ type t = {
   admin : bool;
   confirmed : bool;
 }
-[@@deriving sexp, fields, yojson]
+[@@deriving sexp, fields, yojson, show, eq, make]
 
 let confirm user = { user with confirmed = true }
 
