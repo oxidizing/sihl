@@ -92,9 +92,9 @@ let to_sql = Sql.to_string
 
 let empty = { filter = None; sort = None; limit = None; offset = None }
 
-let filter filter query = { query with filter = Some filter }
+let set_filter filter query = { query with filter = Some filter }
 
-let filter_and criterion query =
+let set_filter_and criterion query =
   let open Filter in
   let new_filter =
     match query.filter with
@@ -103,8 +103,12 @@ let filter_and criterion query =
   in
   { query with filter = Some new_filter }
 
-let sort sort query = { query with sort = Some sort }
+let set_sort sort query = { query with sort = Some sort }
 
-let limit limit query = { query with limit = Some limit }
+let set_limit limit query = { query with limit = Some limit }
 
-let offset offset query = { query with offset = Some offset }
+let set_offset offset query = { query with offset = Some offset }
+
+let limit query = query.limit
+
+let offset query = query.offset

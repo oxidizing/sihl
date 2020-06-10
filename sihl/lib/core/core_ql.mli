@@ -31,12 +31,16 @@ val to_string : t -> string
 
 val empty : t
 
-val filter : Filter.t -> t -> t
+val set_filter : Filter.t -> t -> t
 
-val filter_and : Filter.criterion -> t -> t
+val set_filter_and : Filter.criterion -> t -> t
 
-val sort : Sort.t -> t -> t
+val set_sort : Sort.t -> t -> t
 
-val limit : int -> t -> t
+val set_limit : int -> t -> t
 
-val offset : int -> t -> t
+val set_offset : int -> t -> t
+
+val limit : t -> int option
+
+val offset : t -> int option
