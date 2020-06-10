@@ -94,6 +94,15 @@ let empty = { filter = None; sort = None; limit = None; offset = None }
 
 let filter filter query = { query with filter = Some filter }
 
+let filter_and criterion query =
+  let open Filter in
+  let new_filter =
+    match query.filter with
+    | Some filter -> And (List.append [ filter ] [ C criterion ])
+    | None -> C criterion
+  in
+  { query with filter = Some new_filter }
+
 let sort sort query = { query with sort = Some sort }
 
 let limit limit query = { query with limit = Some limit }

@@ -33,6 +33,8 @@ val empty : t
 
 val filter : Filter.t -> t -> t
 
+val filter_and : Filter.criterion -> t -> t
+
 val sort : Sort.t -> t -> t
 
 val limit : int -> t -> t
