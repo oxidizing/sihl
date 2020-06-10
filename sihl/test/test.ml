@@ -44,4 +44,22 @@ let () =
           test_case "require tuple url encoded body" `Quick
             Test_http.test_require_tuple_url_encoded_body;
         ] );
+      ( "query language",
+        [
+          test_case "to string limit offset" `Quick
+            Test_ql.to_string_limit_offset;
+          test_case "to string sort" `Quick Test_ql.to_string_sort;
+          test_case "to string filter" `Quick Test_ql.to_string_filter;
+          test_case "to string" `Quick Test_ql.to_string;
+          test_case "to sql limit offset" `Quick Test_ql.to_sql_limit_offset;
+          test_case "to sql sort" `Quick Test_ql.to_sql_sort;
+          test_case "to sql filter" `Quick Test_ql.to_sql_filter;
+          test_case "to sql" `Quick Test_ql.to_sql;
+          test_case "of string empty sort" `Quick Test_ql.of_string_empty_sort;
+          test_case "of string limit offset" `Quick
+            Test_ql.of_string_limit_offset;
+          test_case "of string sort" `Quick Test_ql.of_string_sort;
+          test_case "of string filter" `Quick Test_ql.of_string_filter;
+          test_case "of string" `Quick Test_ql.of_string;
+        ] );
     ]
