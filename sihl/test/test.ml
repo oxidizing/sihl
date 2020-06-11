@@ -62,4 +62,11 @@ let () =
           test_case "of string filter" `Quick Test_ql.of_string_filter;
           test_case "of string" `Quick Test_ql.of_string;
         ] );
+      ( "email",
+        [
+          test_case "render email simple" `Quick
+            Test_email.test_email_rendering_simple;
+          test_case "render email complex" `Quick
+            Test_email.test_email_rendering_complex;
+        ] );
     ]
