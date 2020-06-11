@@ -1,5 +1,6 @@
 module Core = Core
 module Ql = Core.Ql
+module Hashing = Core.Hashing
 module Http = Http
 module Middleware = Middleware
 module Repo = Repo
