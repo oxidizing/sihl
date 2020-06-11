@@ -72,3 +72,5 @@ type t = {
   template_data : (string * string) list;
 }
 [@@deriving show, eq, make, fields]
+
+let set_content content email = { email with content }

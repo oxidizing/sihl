@@ -53,11 +53,11 @@ val make :
   ?bcc:string list ->
   html:bool ->
   ?template_id:string ->
-  ?template_data:(string * string) list ->
+  ?template_data:TemplateData.t ->
   unit ->
   t
 
-val template_data : t -> (string * string) list
+val template_data : t -> TemplateData.t
 
 val template_id : t -> string option
 
@@ -74,6 +74,8 @@ val subject : t -> string
 val recipient : t -> string
 
 val sender : t -> string
+
+val set_content : string -> t -> t
 
 val pp : Format.formatter -> t -> unit
 

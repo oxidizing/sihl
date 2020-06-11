@@ -1,5 +1,5 @@
 module Sql = struct
-  module Model = Sihl_email.Model.Template
+  module Model = Sihl.Email.Template
 
   let get connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in

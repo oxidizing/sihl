@@ -11,7 +11,7 @@ end
 
 module Transport = struct
   let key :
-      (module Sihl.Core.Contract.Email.EMAIL with type email = Model.Email.t)
+      (module Sihl.Core.Contract.Email.EMAIL with type email = Sihl.Email.t)
       Sihl.Core.Registry.Key.t =
     Sihl.Core.Registry.Key.create "email.transport"
 end
