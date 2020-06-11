@@ -39,9 +39,6 @@
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
 
-  ;; Database
-  (ppx_rapper (>= 0.9.2))
-
   ;; HTML generation
   (tyxml (>= 4.3.0))
   (tyxml-jsx (>= 4.3.0))
@@ -85,7 +82,6 @@
  (depends
   (sihl (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
-  (ppx_rapper (>= 0.9.2))
 ))
 
 (package
@@ -148,7 +144,6 @@
  (depends
   (sihl_session (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
-  (ppx_rapper (>= 0.9.2))
 ))
 
 (package
@@ -184,7 +179,6 @@
  (depends
   (sihl_email (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
-  (ppx_rapper (>= 0.9.2))
 ))
 
 (package
@@ -203,9 +197,6 @@
 
   ;; Standard library replacement
   (base (>= v0.13.1))
-
-  ;; Database
-  (ppx_rapper (>= 0.9.2))
 ))
 
 (package
@@ -224,5 +215,4 @@
  (depends
   (sihl_user (>= 0.0.32))
   (caqti-driver-postgresql (>= 1.2.1))
-  (ppx_rapper (>= 0.9.2))
 ))

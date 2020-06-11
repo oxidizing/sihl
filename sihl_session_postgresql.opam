@@ -13,7 +13,6 @@ depends: [
   "dune" {>= "2.1"}
   "sihl_session" {>= "0.0.32"}
   "caqti-driver-postgresql" {>= "1.2.1"}
-  "ppx_rapper" {>= "0.9.2"}
 ]
 build: [
   ["dune" "subst"] {pinned}
