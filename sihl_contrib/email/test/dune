@@ -4,8 +4,4 @@
   base
   sihl_email
   alcotest
-)
- (preprocess
-  (pps
-   ppx_string_interpolation
-  )))
+))

@@ -25,13 +25,14 @@ let help commands =
   let command_list =
     commands |> List.map ~f:description |> String.concat ~sep:"\n"
   in
-  [%string
+  Printf.sprintf
     {|
 --------------------------------------------
 This is a list of all supported commands: 
-$(command_list)
+%s
 --------------------------------------------
-|}]
+|}
+    command_list
 
 (* TODO move to correct place *)
 let request_with_connection () =

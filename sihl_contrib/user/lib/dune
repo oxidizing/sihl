@@ -14,7 +14,6 @@
    ppx_deriving_yojson
    ppx_sexp_conv
    tyxml-jsx
-   ppx_string_interpolation
    )
   )
  )
