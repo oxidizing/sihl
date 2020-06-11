@@ -24,8 +24,10 @@ jobs:
             opam remote add default https://opam.ocaml.org
       - checkout
       - run:
+          # Remove jwto once 0.3.0 is in OPAM
           name: Pin packages
           command: |
+            opam pin add jwto.0.3.0 git://github.com/sporto/jwto.git#0.3.0
             opam pin add -y -n sihl .
             opam pin add -y -n sihl_admin .
             opam pin add -y -n sihl_session .

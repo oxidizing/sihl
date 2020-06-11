@@ -9,3 +9,4 @@ module Random = Core_random
 module Regex = Core_regex
 module Registry = Core_registry
 module Ql = Core_ql
+module Jwt = Core_jwt

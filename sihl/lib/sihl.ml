@@ -1,6 +1,7 @@
 module Core = Core
 module Ql = Core.Ql
 module Hashing = Core.Hashing
+module Jwt = Core.Jwt
 module Http = Http
 module Middleware = Middleware
 module Repo = Repo
