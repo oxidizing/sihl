@@ -1,6 +1,6 @@
 module Sql = struct
   module Session = struct
-    module Model = Sihl_session.Repo.Session
+    module Model = Sihl.Session
 
     let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in

@@ -21,7 +21,7 @@ let set ~key ~value req =
       @@ Logs.warn (fun m ->
              m "SESSION: Provided session key has no session in DB")
   | Some session ->
-      let session = Model.Session.set ~key ~value session in
+      let session = Sihl.Session.set ~key ~value session in
       Repository.insert session |> Sihl.Core.Db.query_db_exn req
 
 let remove ~key req =
@@ -45,7 +45,7 @@ let remove ~key req =
       @@ Logs.warn (fun m ->
              m "SESSION: Provided session key has no session in DB")
   | Some session ->
-      let session = Model.Session.remove ~key session in
+      let session = Sihl.Session.remove ~key session in
       Repository.insert session |> Sihl.Core.Db.query_db_exn req
 
 let get key req =
@@ -68,4 +68,4 @@ let get key req =
       Logs.warn (fun m ->
           m "SESSION: Provided session key has no session in DB");
       Lwt.return None
-  | Some session -> Model.Session.get key session |> Lwt.return
+  | Some session -> Sihl.Session.get key session |> Lwt.return

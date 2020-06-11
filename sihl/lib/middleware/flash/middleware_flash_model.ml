@@ -33,26 +33,3 @@ module Entry = struct
 
   let of_string str = str |> Yojson.Safe.from_string |> of_yojson
 end
-
-(* Tests *)
-
-let%test "entry to and from string" =
-  let entry = Entry.create (Error "foo") in
-  Entry.equal
-    (entry |> Entry.to_string |> Entry.of_string |> Result.ok_or_failwith)
-    entry
-
-let%test "rotate once" =
-  let msg = Message.Success "foo" in
-  let entry = Entry.create msg |> Entry.rotate in
-  let is_current_set =
-    entry |> Entry.current
-    |> Option.map ~f:(Message.equal msg)
-    |> Option.value ~default:false
-  in
-  let is_next_none = Option.is_none (entry |> Entry.next) in
-  is_current_set && is_next_none
-
-let%test "rotate twice" =
-  let entry = Entry.create (Success "foo") in
-  Entry.equal Entry.empty (entry |> Entry.rotate |> Entry.rotate)

@@ -9,3 +9,4 @@ module Template = Template
 module Authn = Authn
 module User = User
 module Email = Email
+module Session = Session

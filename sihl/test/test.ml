@@ -69,4 +69,24 @@ let () =
           test_case "render email complex" `Quick
             Test_email.test_email_rendering_complex;
         ] );
+      ( "regex",
+        [
+          test_case "extract" `Quick Test_regex.extract;
+          test_case "extract complex" `Quick Test_regex.extract_complex;
+          test_case "test 1" `Quick Test_regex.test1;
+          test_case "test 2" `Quick Test_regex.test2;
+          test_case "test 3" `Quick Test_regex.test3;
+        ] );
+      ( "flash",
+        [
+          test_case "entry to and from string" `Quick
+            Test_flash.entry_to_and_from_string;
+          test_case "rotate once" `Quick Test_flash.rotate_once;
+          test_case "rotate twice" `Quick Test_flash.rotate_twice;
+        ] );
+      ( "session",
+        [
+          test_case "session not expired" `Quick
+            Test_session.session_not_expired;
+        ] );
     ]

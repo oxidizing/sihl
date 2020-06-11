@@ -1,4 +1,3 @@
-module Model = Model
 module Bind = Bind
 module App = App
 module Repo = Repo
