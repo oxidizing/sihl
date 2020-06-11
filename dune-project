@@ -54,6 +54,9 @@
   ;; Hashing
   (safepass (>= 3.0))
 
+  ;; JWT
+  (jwto (>= 0.3.0))
+
   ;; UUID
   (uuidm (>= 0.9.7))
 

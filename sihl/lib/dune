@@ -18,6 +18,7 @@
   safepass
   uuidm
   base64
+  jwto
 )
  (preprocess
   (pps
