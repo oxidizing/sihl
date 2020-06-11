@@ -1,17 +1,6 @@
 module Sql = struct
-  (* TODO move to some common mariadb namespace *)
-  let set_fk_check connection status =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request =
-      Caqti_request.exec Caqti_type.bool
-        {sql|
-        SET FOREIGN_KEY_CHECKS = ?;
-           |sql}
-    in
-    Connection.exec request status
-
   module Session = struct
-    module Model = Sihl_session.Repo.Session
+    module Model = Sihl.Session
 
     let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -117,6 +106,6 @@ let migrate = Migration.migration
 
 let clean connection =
   let ( let* ) = Lwt_result.bind in
-  let* () = Sql.set_fk_check connection false in
+  let* () = Sihl.Repo.Migration.Mariadb.set_fk_check connection false in
   let* () = Sql.Session.clean connection in
-  Sql.set_fk_check connection true
+  Sihl.Repo.Migration.Mariadb.set_fk_check connection true

@@ -1,7 +1,6 @@
 (library
  (name sihl_session)
  (public_name sihl_session)
- (inline_tests)
  (libraries
   base
   sihl
@@ -11,7 +10,6 @@
   (pps
    ppx_fields_conv
    ppx_deriving_yojson
-   ppx_inline_test
   )))
 
 (include_subdirs unqualified)

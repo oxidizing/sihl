@@ -1,4 +1,5 @@
 module Message = Middleware_flash_model.Message
+module Entry = Middleware_flash_model.Entry
 
 val key : string Opium.Hmap.key
 
