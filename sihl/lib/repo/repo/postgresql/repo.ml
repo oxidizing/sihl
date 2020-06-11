@@ -24,11 +24,11 @@ let get connection ~namespace =
       Caqti_type.(tup3 string int bool)
       {sql|
 SELECT
-  @string{namespace},
-  @int{version},
-  @bool{dirty}
+  namespace,
+  version,
+  dirty
 FROM core_migration_state
-WHERE namespace = %string{namespace};
+WHERE namespace = ?;
 |sql}
   in
   let* result = Connection.find_opt request namespace in
@@ -45,12 +45,12 @@ INSERT INTO core_migration_state (
   version,
   dirty
 ) VALUES (
-  %string{namespace},
-  %int{version},
-  %bool{dirty}
+  ?,
+  ?,
+  ?
 ) ON CONFLICT (namespace)
-DO UPDATE SET version = %int{version},
-dirty = %bool{dirty}
+DO UPDATE SET version = EXCLUDED.version,
+dirty = EXCLUDED.dirty
 |sql}
   in
   Connection.exec request (Model.to_tuple state)

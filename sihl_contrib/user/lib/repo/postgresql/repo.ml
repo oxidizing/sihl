@@ -5,16 +5,16 @@ module Sql = struct
     let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.unit Model.t
+        Caqti_request.collect Caqti_type.unit Model.t
           {sql|
         SELECT 
-          uuid as @string{id}, 
-          @string{email}, 
-          @string?{username}, 
-          @string{password},
-          @string{status},
-          @bool{admin},
-          @bool{confirmed}
+          uuid as id, 
+          email, 
+          username, 
+          password,
+          status,
+          admin,
+          confirmed
         FROM user_users
         |sql}
       in
@@ -26,15 +26,15 @@ module Sql = struct
         Caqti_request.find Caqti_type.string Model.t
           {sql|
         SELECT 
-          uuid as @string{id}, 
-          @string{email}, 
-          @string?{username}, 
-          @string{password},
-          @string{status},
-          @bool{admin},
-          @bool{confirmed}
+          uuid as id, 
+          email, 
+          username, 
+          password,
+          status,
+          admin,
+          confirmed
         FROM user_users
-        WHERE user_users.uuid = %string{id}
+        WHERE user_users.uuid = ?::uuid
         |sql}
       in
       Connection.find request
@@ -45,15 +45,15 @@ module Sql = struct
         Caqti_request.find Caqti_type.string Model.t
           {sql|
         SELECT 
-          uuid as @string{id}, 
-          @string{email}, 
-          @string?{username}, 
-          @string{password},
-          @string{status},
-          @bool{admin},
-          @bool{confirmed}
+          uuid as id, 
+          email, 
+          username, 
+          password,
+          status,
+          admin,
+          confirmed
         FROM user_users
-        WHERE user_users.email = %string{email}
+        WHERE user_users.email = ?
         |sql}
       in
       Connection.find request
@@ -72,13 +72,13 @@ module Sql = struct
           admin,
           confirmed
         ) VALUES (
-          %string{id}, 
-          %string{email}, 
-          %string?{username}, 
-          %string{password},
-          %string{status},
-          %bool{admin},
-          %bool{confirmed}
+          ?, 
+          ?, 
+          ?, 
+          ?,
+          ?,
+          ?,
+          ?
         )
         |sql}
       in
@@ -91,13 +91,13 @@ module Sql = struct
           {sql|
         UPDATE user_users
         SET 
-          email = %string{email}, 
-          username = %string?{username}, 
-          password = %string{password},
-          status = %string{status},
-          admin = %bool{admin},
-          confirmed = %bool{confirmed}
-        WHERE user_users.uuid = %string{id}
+          email = $2, 
+          username = $3, 
+          password = $4,
+          status = $5,
+          admin = $6,
+          confirmed = $7
+        WHERE user_users.uuid = $1
         |sql}
       in
       Connection.exec request
@@ -105,11 +105,9 @@ module Sql = struct
     let clean connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
-        TRUNCATE TABLE user_users CASCADE;
-                                            |sql}
+        Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE user_users CASCADE;"
       in
+
       Connection.exec request ()
   end
 
@@ -122,15 +120,15 @@ module Sql = struct
         Caqti_request.find Caqti_type.string Model.t
           {sql|
         SELECT 
-          user_tokens.uuid as @string{id}, 
-          user_tokens.token_value as @string{value},
-          user_users.uuid as @string{user},
-          user_tokens.kind as @string{kind},
-          user_tokens.status as @string{status}
+          user_tokens.uuid as id, 
+          user_tokens.token_value as value,
+          user_tokens.kind as kind,
+          user_users.uuid as user,
+          user_tokens.status as status
         FROM user_tokens
         LEFT JOIN user_users 
         ON user_users.id = user_tokens.token_user
-        WHERE user_tokens.token_value = %string{value}
+        WHERE user_tokens.token_value = ?
         |sql}
       in
       Connection.find request
@@ -143,15 +141,15 @@ module Sql = struct
         INSERT INTO user_tokens (
           uuid, 
           token_value,
-          token_user,
           kind,
+          token_user,
           status
         ) VALUES (
-          %string{id}, 
-          %string{value},
-          (SELECT id FROM user_users WHERE user_users.uuid = %string{user}),
-          %string{kind},
-          %string{status}
+          ?, 
+          ?,
+          ?,
+          (SELECT id FROM user_users WHERE user_users.uuid = ?),
+          ?
         )
         |sql}
       in
@@ -164,13 +162,13 @@ module Sql = struct
           {sql|
         UPDATE user_tokens 
         SET 
-          token_value = %string{value},
+          token_value = $2,
           token_user = 
           (SELECT id FROM user_users 
-           WHERE user_users.uuid = %string{user}),
-          kind = %string{kind},
-          status = %string{status}
-        WHERE user_tokens.uuid = %string{id}
+           WHERE user_users.uuid = $4),
+          kind = $3,
+          status = $5
+        WHERE user_tokens.uuid = $1
         |sql}
       in
       Connection.exec request
@@ -183,7 +181,7 @@ module Sql = struct
         DELETE FROM user_tokens 
         WHERE user_tokens.token_user = 
         (SELECT id FROM user_users 
-         WHERE user_users.uuid = %string{id})
+         WHERE user_users.uuid = ?)
         |sql}
       in
       Connection.exec request
@@ -191,10 +189,7 @@ module Sql = struct
     let clean connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
-        TRUNCATE TABLE user_tokens CASCADE;
-        |sql}
+        Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE user_tokens CASCADE;"
       in
       Connection.exec request ()
   end
