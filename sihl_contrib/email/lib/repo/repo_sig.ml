@@ -4,5 +4,5 @@ module type REPOSITORY = sig
   val get :
     id:string ->
     Sihl.Core.Db.connection ->
-    Model.Template.t Sihl.Core.Db.db_result
+    Sihl.Email.Template.t Sihl.Core.Db.db_result
 end

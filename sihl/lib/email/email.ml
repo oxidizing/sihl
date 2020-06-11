@@ -1,5 +1,15 @@
 open Base
 
+module TemplateData = struct
+  type t = (string * string) list [@@deriving show, eq]
+
+  let empty = []
+
+  let add ~key ~value data = List.cons (key, value) data
+
+  let make data = data
+end
+
 module Template = struct
   type t = {
     id : string;
@@ -9,6 +19,7 @@ module Template = struct
     status : string;
     created_at : Ptime.t;
   }
+  [@@deriving show, eq, fields]
 
   let t =
     let encode m =
@@ -26,9 +37,7 @@ module Template = struct
         (tup2 string
            (tup2 string (tup2 string (tup2 string (tup2 string ptime))))))
 
-  let value template = template.content_text
-
-  let create ?text ?html label =
+  let make ?text ?html label =
     {
       id = "TODO";
       label;
@@ -36,34 +45,6 @@ module Template = struct
       content_html = html |> Option.value ~default:"";
       status = "active";
       created_at = Ptime_clock.now ();
-    }
-end
-
-module Email = struct
-  type t = {
-    sender : string;
-    recipient : string;
-    subject : string;
-    content : string;
-    cc : string list;
-    bcc : string list;
-    html : bool;
-    template_id : string option;
-    template_data : (string * string) list;
-  }
-
-  let create ~sender ~recipient ~subject ~content ~cc ~bcc ~html ~template_id
-      ~template_data =
-    {
-      sender;
-      recipient;
-      subject;
-      content;
-      cc;
-      bcc;
-      html;
-      template_id;
-      template_data;
     }
 
   let replace_element str k v =
@@ -76,5 +57,20 @@ module Email = struct
       | [] -> value
       | (k, v) :: data -> render_value data @@ replace_element value k v
     in
-    render_value data (Template.value template)
+    render_value data template.content_text
 end
+
+type t = {
+  sender : string;
+  recipient : string;
+  subject : string;
+  content : string;
+  cc : string list;
+  bcc : string list;
+  html : bool;
+  template_id : string option;
+  template_data : (string * string) list;
+}
+[@@deriving show, eq, make, fields]
+
+let set_content content email = { email with content }

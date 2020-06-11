@@ -26,7 +26,7 @@ let test_user_registers_and_confirms_email _ () =
       (Uri.of_string @@ url "/register/")
   in
   let email = Sihl_email.Service.Memory.get () in
-  let token = extract_token email.content in
+  let token = email |> Sihl.Email.content |> extract_token in
   let* _ =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string @@ url ("/confirm-email/?token=" ^ token))
@@ -73,9 +73,9 @@ let test_user_resets_password _ () =
       (Uri.of_string @@ url "/request-password-reset/")
   in
   let email = Sihl_email.Service.Memory.get () in
-  let token = extract_token email.content in
+  let token = email |> Sihl.Email.content |> extract_token in
   let body =
-    [%string {|{"token": "$(token)", "new_password": "newpassword"}|}]
+    Printf.sprintf {|{"token": "%s", "new_password": "newpassword"}|} token
   in
   let* _ =
     Cohttp_lwt_unix.Client.post
@@ -111,7 +111,7 @@ let test_user_uses_reset_token_twice_fails _ () =
       (Uri.of_string @@ url "/request-password-reset/")
   in
   let email = Sihl_email.Service.Memory.get () in
-  let token = extract_token email.content in
+  let token = email |> Sihl.Email.content |> extract_token in
   let body =
     [%string {|{"token": "$(token)", "new_password": "newpassword"}|}]
   in
