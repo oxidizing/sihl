@@ -1,11 +1,12 @@
-(* TODO think about how to make it non-blocking *)
 let hash ?count plain =
   match (count, Core_config.is_testing ()) with
-  | _, true -> Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash
+  | _, true -> Ok (Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash)
   | Some count, false ->
       if count < 4 || count > 31 then
-        Core_err.raise_server "password hashing count has to be between 4 and 31 "
-      else Bcrypt.hash ~count plain |> Bcrypt.string_of_hash
-  | None, false -> Bcrypt.hash ~count:10 plain |> Bcrypt.string_of_hash
+        Error "Password hashing count has to be between 4 and 31"
+      else Ok (Bcrypt.hash ~count plain |> Bcrypt.string_of_hash)
+  | None, false -> Ok (Bcrypt.hash ~count:10 plain |> Bcrypt.string_of_hash)
 
-module Bcrypt_ = Bcrypt
+let does_match ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
+
+module Bcrypt = Bcrypt

@@ -14,7 +14,7 @@ type t = {
 let confirm user = { user with confirmed = true }
 
 let update_password user new_password =
-  let hash = Core.Hashing.hash new_password in
+  let hash = new_password |> Core.Hashing.hash |> Result.ok_or_failwith in
   { user with password = hash }
 
 let update_details user ~email ~username = { user with email; username }
@@ -26,7 +26,7 @@ let is_owner user id = String.equal user.id id
 let is_confirmed user = user.confirmed
 
 let matches_password password user =
-  Bcrypt.verify password (Bcrypt.hash_of_string user.password)
+  Core.Hashing.does_match ~hash:user.password ~plain:password
 
 let validate_password password =
   (* TODO use more sophisticated policy *)
@@ -43,7 +43,7 @@ let validate user ~old_password ~new_password =
   Result.all_unit [ matches_password; new_password_valid ]
 
 let create ~email ~password ~username ~admin ~confirmed =
-  let hash = Core.Hashing.hash password in
+  let hash = password |> Core.Hashing.hash |> Result.ok_or_failwith in
   {
     id = Core.Random.uuidv4 ();
     email;
