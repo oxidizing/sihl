@@ -13,3 +13,5 @@ module Meta : sig
 end
 
 module Migration = Repo_migration
+
+val hex_to_uuid : string -> string
