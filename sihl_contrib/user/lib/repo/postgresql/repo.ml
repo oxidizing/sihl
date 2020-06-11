@@ -1,5 +1,5 @@
 module Sql = struct
-  module Model = Sihl_user.Repo_sig.User
+  module Model = Sihl.User
 
   module User = struct
     let get_all connection =

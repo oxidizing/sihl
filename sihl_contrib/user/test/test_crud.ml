@@ -155,7 +155,7 @@ let test_user_updates_own_details _ () =
   in
   Lwt.return
   @@ Alcotest.(check (option string))
-       "Has updated username" (Some "newusername") user.username
+       "Has updated username" (Some "newusername") (Sihl.User.username user)
 
 let test_user_updates_others_details_fails _ () =
   let* () = Sihl.Run.Manage.clean () in
@@ -202,7 +202,7 @@ let test_admin_sets_password _ () =
          ~password:"foobar"
   in
   let token = Sihl_user.Model.Token.value token in
-  let user_id = user.id in
+  let user_id = Sihl.User.id user in
   let body =
     Printf.sprintf
       {|

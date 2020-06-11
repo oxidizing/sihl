@@ -56,3 +56,20 @@ let create ~email ~password ~username ~admin ~confirmed =
 
 let system =
   create ~email:"system" ~password:"" ~username:None ~admin:true ~confirmed:true
+
+let t =
+  let encode m =
+    Ok
+      ( m.id,
+        (m.email, (m.username, (m.password, (m.status, (m.admin, m.confirmed)))))
+      )
+  in
+  let decode (id, (email, (username, (password, (status, (admin, confirmed))))))
+      =
+    Ok { id; email; username; password; status; admin; confirmed }
+  in
+  Caqti_type.(
+    custom ~encode ~decode
+      (tup2 string
+         (tup2 string
+            (tup2 (option string) (tup2 string (tup2 string (tup2 bool bool)))))))

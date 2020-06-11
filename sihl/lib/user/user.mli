@@ -1,17 +1,7 @@
 open Base
 open Sexplib
 
-(* TODO remove once we remove ppx_rapper usage, so we don't
-   expose type internals *)
-type t = {
-  id : string;
-  email : string;
-  username : string option;
-  password : string;
-  status : string;
-  admin : bool;
-  confirmed : bool;
-}
+type t
 
 val t_of_sexp : Sexp.t -> t
 
@@ -80,3 +70,5 @@ val create :
   t
 
 val system : t
+
+val t : t Caqti_type.t
