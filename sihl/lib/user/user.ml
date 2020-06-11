@@ -26,7 +26,7 @@ let is_owner user id = String.equal user.id id
 let is_confirmed user = user.confirmed
 
 let matches_password password user =
-  Core.Hashing.does_match ~hash:user.password ~plain:password
+  Core.Hashing.matches ~hash:user.password ~plain:password
 
 let validate_password password =
   (* TODO use more sophisticated policy *)

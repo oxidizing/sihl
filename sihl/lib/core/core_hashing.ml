@@ -7,6 +7,6 @@ let hash ?count plain =
       else Ok (Bcrypt.hash ~count plain |> Bcrypt.string_of_hash)
   | None, false -> Ok (Bcrypt.hash ~count:10 plain |> Bcrypt.string_of_hash)
 
-let does_match ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
+let matches ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
 
 module Bcrypt = Bcrypt
