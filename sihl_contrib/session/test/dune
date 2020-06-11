@@ -10,8 +10,4 @@
   sihl_session_mariadb
   alcotest
   alcotest-lwt
-  )
- (preprocess
-  (pps
-   ppx_string_interpolation
-  )))
+  ))

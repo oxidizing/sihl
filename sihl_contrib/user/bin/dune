@@ -12,8 +12,4 @@
   sihl_user_postgresql
   alcotest
   alcotest-lwt
-  )
- (preprocess
-  (pps
-   ppx_string_interpolation
-  )))
+  ))

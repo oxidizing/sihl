@@ -27,7 +27,8 @@ let query_opt req key =
 
 let query req key =
   match query_opt req key with
-  | None -> Core_err.raise_bad_request [%string "Please provide a key $(key)"]
+  | None ->
+      Core_err.raise_bad_request @@ Printf.sprintf "Please provide a key %s" key
   | Some value -> value
 
 let query2_opt req key1 key2 = (query_opt req key1, query_opt req key2)
@@ -50,8 +51,8 @@ let url_encoded ?body req key =
   in
   match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
   | None ->
-      Lwt.return
-      @@ Core_err.raise_bad_request [%string "Please provide a $(key)."]
+      Lwt.return @@ Core_err.raise_bad_request
+      @@ Printf.sprintf "Please provide a %s." key
   | Some value -> Lwt.return value
 
 let url_encoded2 req key1 key2 =

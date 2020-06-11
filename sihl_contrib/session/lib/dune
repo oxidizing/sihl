@@ -12,8 +12,8 @@
    ppx_rapper
    ppx_fields_conv
    ppx_deriving_yojson
-   ppx_string_interpolation
    ppx_inline_test
   )))
+
 (include_subdirs unqualified)
 

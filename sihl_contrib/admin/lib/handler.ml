@@ -21,5 +21,5 @@ module Catch = struct
     all "/admin/**" @@ fun req ->
     let path = req |> Opium.Std.Request.uri |> Uri.to_string in
     Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/dashboard/"
-      [%string "Path $(path) not found :("]
+      (Printf.sprintf "Path %s not found :(" path)
 end

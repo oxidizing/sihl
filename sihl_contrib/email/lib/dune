@@ -10,7 +10,7 @@
    ppx_rapper
    ppx_fields_conv
    ppx_deriving_yojson
-   ppx_string_interpolation
   )))
+
 (include_subdirs unqualified)
 

@@ -241,7 +241,7 @@ module AdminUi = struct
     let handler =
       post "/admin/users/users/:id/set-password/" @@ fun req ->
       let user_id = Req.param req "id" in
-      let user_page = [%string "/admin/users/users/$(user_id)/"] in
+      let user_page = Printf.sprintf "/admin/users/users/%s/" user_id in
       let user = Sihl.Authn.authenticate req in
       let* password = Req.url_encoded req "password" in
       let* result =

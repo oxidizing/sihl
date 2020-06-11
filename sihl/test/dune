@@ -4,8 +4,4 @@
   base
   sihl
   alcotest
-)
- (preprocess
-  (pps
-   ppx_string_interpolation
-  )))
+))

@@ -204,13 +204,14 @@ let test_admin_sets_password _ () =
   let token = Sihl_user.Model.Token.value token in
   let user_id = user.id in
   let body =
-    [%string
+    Printf.sprintf
       {|
        {
-         "user_id": "$user_id",
+         "user_id": "%s",
          "password": "newpassword"
        }
-|}]
+|}
+      user_id
   in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]

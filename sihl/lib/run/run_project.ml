@@ -124,9 +124,9 @@ module Project : PROJECT = struct
       |> List.map ~f:(fun (module App : APP) ->
              App.start ()
              |> Result.map_error ~f:(fun err ->
-                    [%string
-                      "failure while calling start hook of app $(App.name) \
-                       with $(err)"]))
+                    Printf.sprintf
+                      "failure while calling start hook of app %s with %s"
+                      App.name err))
       |> Result.all
     in
     match result with

@@ -50,8 +50,9 @@ module Schema = struct
       if is_choices_valid then Ok ()
       else
         Error
-          [%string
-            {|value not found in choices key=$(key), value=$(value), choices=$(choices)|}]
+          (Printf.sprintf
+             {|value not found in choices key=%s, value=%s, choices=%s|} key
+             value choices)
 
     let does_required_config_exist ~required_key ~required_value ~config =
       Option.value_map (Map.find config required_key) ~default:false
@@ -72,47 +73,56 @@ module Schema = struct
           | true, Some value -> validate_string ~key ~value ~choices
           | true, None ->
               Error
-                [%string
-                  {|required configuration because of dependency not found required_config=($(required_key), $(required_value)), key=$(key)|}]
+                (Printf.sprintf
+                   "required configuration because of dependency not found \
+                    required_config=(%s, %s), key=%s"
+                   required_key required_value key)
           | false, _ -> Ok () )
       | String (_, None, choices), Some value ->
           validate_string ~key ~value ~choices
       | String (_, None, _), None ->
-          Error [%string {|required configuration not provided key=$(key)|}]
+          Error
+            (Printf.sprintf "required configuration not provided key=%s" key)
       | Int (_, _), Some value ->
           Option.try_with (fun () -> value |> Base.Int.of_string)
           |> Result.of_option
                ~error:
-                 [%string
-                   {|provided configuration is not an int key=$(key), value=$(value)|}]
+                 (Printf.sprintf
+                    "provided configuration is not an int key=%s, value=%s" key
+                    value)
           |> Result.map ~f:(fun _ -> ())
       | Int (_, None), None ->
-          Error [%string {|required configuration not provided key=$(key)|}]
+          Error
+            (Printf.sprintf "required configuration not provided key=%s" key)
       | Int (_, Default _), None -> Ok ()
       | Int (_, RequiredIf (required_key, required_value)), _ ->
           Map.find config required_key
           |> Result.of_option
                ~error:
-                 [%string
-                   {|provided configuration is not an int key=$(key), value=$(required_value)|}]
+                 (Printf.sprintf
+                    "provided configuration is not an int key=%s, value=%s" key
+                    required_value)
           |> Result.map ~f:(fun _ -> ())
       | Bool (_, _), Some value ->
           Option.try_with (fun () -> value |> Base.Bool.of_string)
           |> Result.of_option
                ~error:
-                 [%string
-                   {|provided configuration is not a bool key=$(key), value=$(value)|}]
+                 (Printf.sprintf
+                    "provided configuration is not a bool key=%s, value=%s" key
+                    value)
           |> Result.map ~f:(fun _ -> ())
       | Bool (_, Default _), None -> Ok ()
       | Bool (_, RequiredIf (required_key, required_value)), None ->
           Map.find config required_key
           |> Result.of_option
                ~error:
-                 [%string
-                   {|provided configuration is not an int key=$(key), value=$(required_value)|}]
+                 (Printf.sprintf
+                    "provided configuration is not an int key=%s, value=%s" key
+                    required_value)
           |> Result.map ~f:(fun _ -> ())
       | Bool (_, None), None ->
-          Error [%string {|required configuration is not provided key=$(key)|}]
+          Error
+            (Printf.sprintf "required configuration is not provided key=%s" key)
   end
 
   type t = Type.t list
