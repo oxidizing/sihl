@@ -38,7 +38,7 @@ jobs:
             opam pin add -y -n sihl_user_mariadb .
             opam pin add -y -n sihl_user_postgresql .
       - run:
-          # Remove jwto once 0.3.0 is in OPAM
+          # TODO Remove jwto once 0.3.0 is in OPAM
           name: Install system dependencies
           command: |
             sudo apt-get update -y
