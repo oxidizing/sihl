@@ -1,40 +1,7 @@
 module Sql = struct
-  (* TODO move to some common mariadb namespace *)
-  let set_fk_check connection status =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request =
-      Caqti_request.exec Caqti_type.bool
-        {sql|
-        SET FOREIGN_KEY_CHECKS = ?;
-           |sql}
-    in
-    Connection.exec request status
+  module Model = Sihl_user.Repo_sig.User
 
   module User = struct
-    module Model = struct
-      open Sihl.User
-
-      let t =
-        let encode m =
-          Ok
-            ( m.id,
-              ( m.email,
-                (m.username, (m.password, (m.status, (m.admin, m.confirmed))))
-              ) )
-        in
-        let decode
-            (id, (email, (username, (password, (status, (admin, confirmed))))))
-            =
-          Ok { id; email; username; password; status; admin; confirmed }
-        in
-        Caqti_type.(
-          custom ~encode ~decode
-            (tup2 string
-               (tup2 string
-                  (tup2 (option string)
-                     (tup2 string (tup2 string (tup2 bool bool)))))))
-    end
-
     let get_all connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
@@ -152,18 +119,7 @@ TRUNCATE user_users;
   end
 
   module Token = struct
-    module Model = struct
-      open Sihl_user.Model.Token
-
-      let t =
-        let encode m = Ok (m.id, (m.value, (m.kind, (m.user, m.status)))) in
-        let decode (id, (value, (kind, (user, status)))) =
-          Ok { id; value; kind; user; status }
-        in
-        Caqti_type.(
-          custom ~encode ~decode
-            (tup2 string (tup2 string (tup2 string (tup2 string string)))))
-    end
+    module Model = Sihl_user.Repo_sig.Token
 
     let get connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -364,7 +320,7 @@ let migrate = Migration.migration
 
 let clean connection =
   let ( let* ) = Lwt_result.bind in
-  let* () = Sql.set_fk_check connection false in
+  let* () = Sihl.Repo.Migration.Mariadb.set_fk_check connection false in
   let* () = Sql.User.clean connection in
   let* () = Sql.Token.clean connection in
-  Sql.set_fk_check connection true
+  Sihl.Repo.Migration.Mariadb.set_fk_check connection true

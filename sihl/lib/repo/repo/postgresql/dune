@@ -4,8 +4,6 @@
  (libraries
   base
   sihl
-  caqti-driver-postgresql)
- (preprocess
-  (pps ppx_rapper)))
+  caqti-driver-postgresql))
 
 (include_subdirs no)

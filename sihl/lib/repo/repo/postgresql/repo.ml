@@ -1,43 +1,56 @@
-open Sihl.Core.Contract.Migration.State
+open Base
+module Model = Sihl.Repo.Migration.Model
 
-let create_table_if_not_exists =
-  [%rapper
-    execute
+let ( let* ) = Lwt_result.bind
+
+let create_table_if_not_exists connection =
+  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+  let request =
+    Caqti_request.exec Caqti_type.unit
       {sql|
 CREATE TABLE IF NOT EXISTS core_migration_state (
   namespace VARCHAR(128) NOT NULL PRIMARY KEY,
   version INTEGER,
   dirty BOOL NOT NULL
 );
- |sql}]
+ |sql}
+  in
+  Connection.exec request
 
-let get =
-  [%rapper
-    get_opt
+let get connection ~namespace =
+  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+  let request =
+    Caqti_request.find_opt Caqti_type.string
+      Caqti_type.(tup3 string int bool)
       {sql|
 SELECT
-  @string{namespace},
-  @int{version},
-  @bool{dirty}
+  namespace,
+  version,
+  dirty
 FROM core_migration_state
-WHERE namespace = %string{namespace};
+WHERE namespace = ?;
 |sql}
-      record_out]
+  in
+  let* result = Connection.find_opt request namespace in
+  Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
 
-let upsert =
-  [%rapper
-    execute
+let upsert connection state =
+  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+  let request =
+    Caqti_request.exec
+      Caqti_type.(tup3 string int bool)
       {sql|
 INSERT INTO core_migration_state (
   namespace,
   version,
   dirty
 ) VALUES (
-  %string{namespace},
-  %int{version},
-  %bool{dirty}
+  ?,
+  ?,
+  ?
 ) ON CONFLICT (namespace)
-DO UPDATE SET version = %int{version},
-dirty = %bool{dirty}
+DO UPDATE SET version = EXCLUDED.version,
+dirty = EXCLUDED.dirty
 |sql}
-      record_in]
+  in
+  Connection.exec request (Model.to_tuple state)

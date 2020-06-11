@@ -22,7 +22,6 @@
 )
  (preprocess
   (pps
-   ppx_rapper
    ppx_fields_conv
    ppx_deriving_yojson
    ppx_deriving.eq
