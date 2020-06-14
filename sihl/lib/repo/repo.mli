@@ -12,6 +12,6 @@ module Meta : sig
   val make : total:int -> t
 end
 
-module Migration = Repo_migration
-
 val hex_to_uuid : string -> string
+
+val set_fk_check : Core.Db.connection -> bool -> unit Core.Db.db_result

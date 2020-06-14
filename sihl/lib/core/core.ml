@@ -1,6 +1,5 @@
 module Cmd = Core_cmd
 module Config = Core_config
-module Contract = Core_contract
 module Db = Core_db
 module Err = Core_err
 module Hashing = Core_hashing

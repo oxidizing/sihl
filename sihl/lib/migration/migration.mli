@@ -117,6 +117,16 @@ module PostgreSql : SERVICE
 
 module MariaDb : SERVICE
 
+type step
+
 type t
 
-val execute : t list -> (unit, string) result Lwt.t
+val empty : string -> t
+
+val create_step : label:string -> string -> step
+
+val add_step : step -> t -> t
+
+val execute_migration : t -> (unit, string) Result.t Lwt.t
+
+val execute : t list -> (unit, string) Result.t Lwt.t

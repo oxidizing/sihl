@@ -11,7 +11,7 @@ module type APP = sig
 
   val endpoints : unit -> Opium.App.builder list
 
-  val repos : unit -> (module Core.Contract.REPOSITORY) list
+  val repos : unit -> (module Sig.REPO) list
 
   val bindings : unit -> Core.Registry.Binding.t list
 
@@ -95,9 +95,8 @@ module Project : PROJECT = struct
     project.apps
     |> List.map ~f:(fun (module App : APP) -> App.repos ())
     |> List.concat
-    |> List.map ~f:(fun (module Repo : Core.Contract.REPOSITORY) ->
-           Repo.migrate ())
-    |> Repo.Migration.execute
+    |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
+    |> Migration.execute
 
   let bind_registry project =
     Logs.debug (fun m -> m "START: binding default implementations of apps");
@@ -168,7 +167,7 @@ module Project : PROJECT = struct
     let rec clean_repos repos =
       match repos with
       | [] -> Lwt.return @@ Ok ()
-      | (module Repo : Core.Contract.REPOSITORY) :: cleaners -> (
+      | (module Repo : Sig.REPO) :: cleaners -> (
           let* result = Repo.clean |> Core.Db.query_db request in
           match result with
           | Ok _ -> clean_repos cleaners

@@ -1,5 +1,5 @@
 module type REPOSITORY = sig
-  include Sihl.Core.Contract.REPOSITORY
+  include Sihl.Sig.REPO
 
   val get :
     id:string ->

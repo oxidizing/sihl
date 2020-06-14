@@ -76,7 +76,7 @@ end
 
 module Migration = struct
   let create_sessions_table =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step
       {sql|
 CREATE TABLE session_sessions (
   id serial,

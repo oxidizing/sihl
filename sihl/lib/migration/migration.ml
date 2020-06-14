@@ -288,17 +288,19 @@ end
 module PostgreSql = Make (RepoPostgreSql)
 module MariaDb = Make (RepoMariaDb)
 
-type migration_error = Caqti_error.t
+type step = string * string
 
-type migration_operation =
-  Caqti_lwt.connection -> (unit, migration_error) Result.t Lwt.t
+type t = string * step list
 
-type migration_step = string * migration_operation
+let empty label = (label, [])
 
-type t = string * migration_step list
+let create_step ~label query = (label, query)
 
-let execute_steps migration pool =
+let add_step step (label, steps) = (label, List.cons step steps)
+
+let execute_steps migration connection =
   let (module Service : SERVICE) = Core.Registry.get key in
+  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
   let namespace, steps = migration in
   let open Lwt in
   let rec run steps pool =
@@ -306,7 +308,8 @@ let execute_steps migration pool =
     | [] -> Lwt_result.return ()
     | (name, query) :: steps -> (
         Logs.debug (fun m -> m "MIGRATION: Running %s" name);
-        Core.Db.query_pool (fun c -> query c) pool >>= function
+        let req = Caqti_request.exec Caqti_type.unit query in
+        Connection.exec req () >>= function
         | Ok () ->
             Logs.debug (fun m -> m "MIGRATION: Ran %s" name);
             let* _ = Service.increment pool ~namespace in
@@ -314,7 +317,7 @@ let execute_steps migration pool =
         | Error err ->
             Logs.err (fun m ->
                 m "MIGRATION: Error while running migration for %s %s" namespace
-                  err);
+                  (Caqti_error.show err));
             failwith "Error while running migrations" )
   in
   let () =
@@ -328,7 +331,7 @@ let execute_steps migration pool =
   in
   run steps pool
 
-let execute_migration migration pool =
+let execute_migration migration connection =
   let (module Service : SERVICE) = Core.Registry.get key in
   let namespace, _ = migration in
   Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
@@ -356,6 +359,7 @@ let execute_migration migration pool =
   let* _ = Service.mark_clean pool ~namespace in
   Lwt.return @@ Ok ()
 
+(* TODO gracefully try to disable and enable fk keys *)
 let execute migrations =
   let open Lwt in
   let rec run migrations pool =
