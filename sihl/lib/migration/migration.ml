@@ -288,16 +288,14 @@ end
 module PostgreSql = Make (RepoPostgreSql)
 module MariaDb = Make (RepoMariaDb)
 
-module Migration = struct
-  type migration_error = Caqti_error.t
+type migration_error = Caqti_error.t
 
-  type migration_operation =
-    Caqti_lwt.connection -> (unit, migration_error) Result.t Lwt.t
+type migration_operation =
+  Caqti_lwt.connection -> (unit, migration_error) Result.t Lwt.t
 
-  type migration_step = string * migration_operation
+type migration_step = string * migration_operation
 
-  type t = string * migration_step list
-end
+type t = string * migration_step list
 
 let execute_steps migration pool =
   let (module Service : SERVICE) = Core.Registry.get key in

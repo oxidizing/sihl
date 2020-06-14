@@ -117,8 +117,6 @@ module PostgreSql : SERVICE
 
 module MariaDb : SERVICE
 
-module Migration : sig
-  type t
-end
+type t
 
-val execute : Migration.t list -> (unit, string) result Lwt.t
+val execute : t list -> (unit, string) result Lwt.t
