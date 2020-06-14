@@ -1,5 +1,5 @@
 open Base
-module Model = Sihl.Repo.Migration.Model
+module Model = Repo_migration_model
 
 let ( let* ) = Lwt_result.bind
 
@@ -9,10 +9,9 @@ let create_table_if_not_exists connection =
     Caqti_request.exec Caqti_type.unit
       {sql|
 CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL,
+  namespace VARCHAR(128) NOT NULL PRIMARY KEY,
   version INTEGER,
-  dirty BOOL NOT NULL,
-  PRIMARY KEY (namespace)
+  dirty BOOL NOT NULL
 );
  |sql}
   in
@@ -49,9 +48,9 @@ INSERT INTO core_migration_state (
   ?,
   ?,
   ?
-) ON DUPLICATE KEY UPDATE
-version = VALUES(version),
-dirty = VALUES(dirty)
+) ON CONFLICT (namespace)
+DO UPDATE SET version = EXCLUDED.version,
+dirty = EXCLUDED.dirty
 |sql}
   in
   Connection.exec request (Model.to_tuple state)

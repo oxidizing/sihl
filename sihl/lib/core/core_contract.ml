@@ -50,7 +50,7 @@ module Migration = struct
   end
 
   let repository : (module REPOSITORY) Core_registry.Key.t =
-    Core_registry.Key.create "migration repository"
+    Core_registry.Key.create "repository.migration"
 end
 
 module type REPOSITORY = sig

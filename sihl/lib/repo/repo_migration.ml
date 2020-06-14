@@ -1,42 +1,38 @@
 open Base
 module Contract = Core.Contract
-module Registry = Core.Registry
 module Db = Core.Db
+module Model = Repo_migration_model
 
 let ( let* ) = Lwt_result.bind
 
-module Model = struct
-  open Contract.Migration.State
-
-  let create ~namespace = { namespace; version = 0; dirty = true }
-
-  let mark_dirty state = { state with dirty = true }
-
-  let mark_clean state = { state with dirty = false }
-
-  let increment state = { state with version = state.version + 1 }
-
-  let steps_to_apply (namespace, steps) { version; _ } =
-    (namespace, List.drop steps version)
-
-  let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
-
-  let to_tuple state = (state.namespace, state.version, state.dirty)
-
-  let dirty state = state.dirty
-end
+let get_repo_by_database () =
+  let database_url_scheme =
+    Core.Config.read_string "DATABASE_URL" |> Uri.of_string |> Uri.scheme
+  in
+  match database_url_scheme with
+  | Some "mariadb" ->
+      (module Repo_migration_mariadb : Core.Contract.Migration.REPOSITORY)
+  | Some "postgres" ->
+      (module Repo_migration_postgresql : Core.Contract.Migration.REPOSITORY)
+  | Some database ->
+      failwith
+      @@ Printf.sprintf
+           "Unsupported DATABASE_URL provided, database %s is not supported. \
+            Please choose either \"mariadb\" or \"postgres\""
+           database
+  | _ -> failwith "Invalid DATABASE_URL provided"
 
 module Service = struct
   let setup pool =
     Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     let (module Repository : Contract.Migration.REPOSITORY) =
-      Registry.get Contract.Migration.repository
+      get_repo_by_database ()
     in
     Db.query_pool (fun c -> Repository.create_table_if_not_exists c ()) pool
 
   let has pool ~namespace =
     let (module Repository : Contract.Migration.REPOSITORY) =
-      Registry.get Contract.Migration.repository
+      get_repo_by_database ()
     in
 
     let* result = Db.query_pool (fun c -> Repository.get c ~namespace) pool in
@@ -44,7 +40,7 @@ module Service = struct
 
   let get pool ~namespace =
     let (module Repository : Contract.Migration.REPOSITORY) =
-      Registry.get Contract.Migration.repository
+      get_repo_by_database ()
     in
 
     let* state = Db.query_pool (fun c -> Repository.get c ~namespace) pool in
@@ -59,7 +55,7 @@ module Service = struct
 
   let upsert pool state =
     let (module Repository : Contract.Migration.REPOSITORY) =
-      Registry.get Contract.Migration.repository
+      get_repo_by_database ()
     in
     Db.query_pool (fun c -> Repository.upsert c state) pool
 
