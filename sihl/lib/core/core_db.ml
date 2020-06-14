@@ -4,8 +4,7 @@ open Opium.Std
 let ( let* ) = Lwt_result.bind
 
 (* Type aliases for the sake of documentation and explication *)
-type 'err caqti_conn_pool =
-  (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'err)) Caqti_lwt.Pool.t
+type caqti_conn_pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 
 type ('res, 'err) query =
   Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) Result.t Lwt.t

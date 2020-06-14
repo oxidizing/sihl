@@ -1,7 +1,6 @@
 (** {{1} Type aliases for clearer documentation and explication} *)
 
-type 'err caqti_conn_pool =
-  (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'err)) Caqti_lwt.Pool.t
+type caqti_conn_pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 
 type ('res, 'err) query =
   Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) result Lwt.t
@@ -44,4 +43,4 @@ val query_pool :
   ('a, 'c) Caqti_lwt.Pool.t ->
   ('b, string) Lwt_result.t
 
-val connect : unit -> 'err caqti_conn_pool
+val connect : unit -> caqti_conn_pool

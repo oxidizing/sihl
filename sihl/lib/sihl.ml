@@ -5,6 +5,7 @@ module Jwt = Core.Jwt
 module Http = Http
 module Middleware = Middleware
 module Repo = Repo
+module Migration = Migration
 module Run = Run
 module Admin = Admin
 module Template = Template
