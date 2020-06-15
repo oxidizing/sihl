@@ -135,6 +135,9 @@ let query_db request query =
   in
   connection |> query |> Lwt_result.map_err Caqti_error.show
 
+let query_db_connection connection query =
+  query connection |> Lwt_result.map_err Caqti_error.show
+
 let query_db_exn ?message request query =
   let open Lwt.Infix in
   query_db request query >>= fun result ->

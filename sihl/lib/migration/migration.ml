@@ -24,95 +24,24 @@ module Model = struct
 end
 
 module type SERVICE = sig
-  val setup :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    (unit, string) Lwt_result.t
+  val setup : Core.Db.connection -> (unit, string) Lwt_result.t
 
   val has :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (bool, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (bool, string) Lwt_result.t
 
   val get :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 
-  val upsert :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    Model.t ->
-    (unit, string) Lwt_result.t
+  val upsert : Core.Db.connection -> Model.t -> (unit, string) Lwt_result.t
 
   val mark_dirty :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 
   val mark_clean :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 
   val increment :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 end
 
 let key : (module SERVICE) Core_registry.Key.t =
@@ -120,32 +49,31 @@ let key : (module SERVICE) Core_registry.Key.t =
 
 module type REPO = sig
   val create_table_if_not_exists :
-    (module Caqti_lwt.CONNECTION) ->
-    unit ->
+    Core.Db.connection ->
     (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
 
   val get :
-    (module Caqti_lwt.CONNECTION) ->
+    Core.Db.connection ->
     namespace:string ->
     (Model.t option, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
 
   val upsert :
-    (module Caqti_lwt.CONNECTION) ->
-    Model.t ->
+    Core.Db.connection ->
+    state:Model.t ->
     (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
 end
 
 module Make (Repo : REPO) : SERVICE = struct
-  let setup pool =
+  let setup c =
     Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
-    Core.Db.query_pool (fun c -> Repo.create_table_if_not_exists c ()) pool
+    Repo.create_table_if_not_exists |> Core.Db.query_db_connection c
 
-  let has pool ~namespace =
-    let* result = Core.Db.query_pool (fun c -> Repo.get c ~namespace) pool in
+  let has c ~namespace =
+    let* result = Repo.get ~namespace |> Core.Db.query_db_connection c in
     Lwt_result.return (Option.is_some result)
 
-  let get pool ~namespace =
-    let* state = Core.Db.query_pool (fun c -> Repo.get c ~namespace) pool in
+  let get c ~namespace =
+    let* state = Repo.get ~namespace |> Core.Db.query_db_connection c in
     Lwt.return
     @@
     match state with
@@ -155,24 +83,24 @@ module Make (Repo : REPO) : SERVICE = struct
           (Printf.sprintf "could not get migration state for namespace %s"
              namespace)
 
-  let upsert pool state = Core.Db.query_pool (fun c -> Repo.upsert c state) pool
+  let upsert c state = Repo.upsert ~state |> Core.Db.query_db_connection c
 
-  let mark_dirty pool ~namespace =
-    let* state = get pool ~namespace in
+  let mark_dirty c ~namespace =
+    let* state = get c ~namespace in
     let dirty_state = Model.mark_dirty state in
-    let* () = upsert pool dirty_state in
+    let* () = upsert c dirty_state in
     Lwt.return @@ Ok dirty_state
 
-  let mark_clean pool ~namespace =
-    let* state = get pool ~namespace in
+  let mark_clean c ~namespace =
+    let* state = get c ~namespace in
     let clean_state = Model.mark_clean state in
-    let* () = upsert pool clean_state in
+    let* () = upsert c clean_state in
     Lwt.return @@ Ok clean_state
 
-  let increment pool ~namespace =
-    let* state = get pool ~namespace in
+  let increment c ~namespace =
+    let* state = get c ~namespace in
     let updated_state = Model.increment state in
-    let* () = upsert pool updated_state in
+    let* () = upsert c updated_state in
     Lwt.return @@ Ok updated_state
 end
 
@@ -190,7 +118,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
 );
  |sql}
     in
-    Connection.exec request
+    Connection.exec request ()
 
   let get connection ~namespace =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -209,7 +137,7 @@ WHERE namespace = ?;
     let* result = Connection.find_opt request namespace in
     Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
 
-  let upsert connection state =
+  let upsert connection ~state =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
       Caqti_request.exec
@@ -244,7 +172,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
 );
  |sql}
     in
-    Connection.exec request
+    Connection.exec request ()
 
   let get connection ~namespace =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -263,7 +191,7 @@ WHERE namespace = ?;
     let* result = Connection.find_opt request namespace in
     Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
 
-  let upsert connection state =
+  let upsert connection ~state =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
       Caqti_request.exec
@@ -298,12 +226,12 @@ let create_step ~label query = (label, query)
 
 let add_step step (label, steps) = (label, List.cons step steps)
 
-let execute_steps migration connection =
+let execute_steps migration conn =
   let (module Service : SERVICE) = Core.Registry.get key in
-  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+  let module Connection = (val conn : Caqti_lwt.CONNECTION) in
   let namespace, steps = migration in
   let open Lwt in
-  let rec run steps pool =
+  let rec run steps conn =
     match steps with
     | [] -> Lwt_result.return ()
     | (name, query) :: steps -> (
@@ -312,8 +240,8 @@ let execute_steps migration connection =
         Connection.exec req () >>= function
         | Ok () ->
             Logs.debug (fun m -> m "MIGRATION: Ran %s" name);
-            let* _ = Service.increment pool ~namespace in
-            run steps pool
+            let* _ = Service.increment conn ~namespace in
+            run steps conn
         | Error err ->
             Logs.err (fun m ->
                 m "MIGRATION: Error while running migration for %s %s" namespace
@@ -329,45 +257,57 @@ let execute_steps migration connection =
         Logs.debug (fun m ->
             m "MIGRATION: Applying %i migrations for %s" n namespace)
   in
-  run steps pool
+  run steps conn
 
-let execute_migration migration connection =
+let execute_migration migration conn =
   let (module Service : SERVICE) = Core.Registry.get key in
   let namespace, _ = migration in
   Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
-  let* () = Service.setup pool in
-  let* has_state = Service.has pool ~namespace in
+  let* () = Service.setup conn in
+  let* has_state = Service.has conn ~namespace in
   let* state =
     if has_state then
-      let* state = Service.get pool ~namespace in
+      let* state = Service.get conn ~namespace in
       if Model.dirty state then (
         let msg =
-          "Dirty migration found for app " ^ namespace
-          ^ ", has to be fixed manually"
+          Printf.sprintf
+            "Dirty migration found for app %s, has to be fixed manually"
+            namespace
         in
         Logs.err (fun m -> m "MIGRATION: %s" msg);
         failwith msg )
-      else Service.mark_dirty pool ~namespace
+      else Service.mark_dirty conn ~namespace
     else (
       Logs.debug (fun m -> m "MIGRATION: Setting up table for %s app" namespace);
       let state = Model.create ~namespace in
-      let* () = Service.upsert pool state in
+      let* () = Service.upsert conn state in
       Lwt.return @@ Ok state )
   in
   let migration_to_apply = Model.steps_to_apply migration state in
-  let* () = execute_steps migration_to_apply pool in
-  let* _ = Service.mark_clean pool ~namespace in
+  let* () = execute_steps migration_to_apply conn in
+  let* _ = Service.mark_clean conn ~namespace in
   Lwt.return @@ Ok ()
+
+(* TODO We just need this because we leak caqti_errors everywhere. Once we hide
+different caqti_errors, we can get rid of it and use ('a, string) Result.t everywhere *)
+let to_caqti_error result =
+  result
+  |> Result.map_error ~f:(fun err ->
+         Caqti_error.connect_failed ~uri:Uri.empty (Caqti_error.Msg err))
 
 (* TODO gracefully try to disable and enable fk keys *)
 let execute migrations =
   let open Lwt in
-  let rec run migrations pool =
+  let rec run migrations conn =
     match migrations with
     | [] -> Lwt_result.return ()
     | migration :: migrations -> (
-        execute_migration migration pool >>= function
-        | Ok () -> run migrations pool
+        execute_migration migration conn >>= function
+        | Ok () -> run migrations conn
         | Error err -> return (Error err) )
   in
-  return (Core.Db.connect ()) >>= run migrations
+  let pool = Core.Db.connect () in
+  let result =
+    Caqti_lwt.Pool.use (fun conn -> run migrations conn >|= to_caqti_error) pool
+  in
+  result |> Lwt_result.map_err Caqti_error.show

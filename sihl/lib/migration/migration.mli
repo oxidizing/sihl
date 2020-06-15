@@ -3,111 +3,39 @@ module Model : sig
 end
 
 module type SERVICE = sig
-  val setup :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    (unit, string) Lwt_result.t
+  val setup : Core.Db.connection -> (unit, string) Lwt_result.t
 
   val has :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (bool, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (bool, string) Lwt_result.t
 
   val get :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 
-  val upsert :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    Model.t ->
-    (unit, string) Lwt_result.t
+  val upsert : Core.Db.connection -> Model.t -> (unit, string) Lwt_result.t
 
   val mark_dirty :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 
   val mark_clean :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 
   val increment :
-    ( (module Caqti_lwt.CONNECTION),
-      [< Caqti_error.t > `Decode_rejected
-      `Encode_failed
-      `Encode_rejected
-      `Request_failed
-      `Request_rejected
-      `Response_failed
-      `Response_rejected ] )
-    Caqti_lwt.Pool.t ->
-    namespace:string ->
-    (Model.t, string) Lwt_result.t
+    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
 end
 
 module type REPO = sig
   val create_table_if_not_exists :
-    (module Caqti_lwt.CONNECTION) ->
-    unit ->
+    Core.Db.connection ->
     (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
 
   val get :
-    (module Caqti_lwt.CONNECTION) ->
+    Core.Db.connection ->
     namespace:string ->
     (Model.t option, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
 
   val upsert :
-    (module Caqti_lwt.CONNECTION) ->
-    Model.t ->
+    Core.Db.connection ->
+    state:Model.t ->
     (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
 end
 
@@ -127,6 +55,6 @@ val create_step : label:string -> string -> step
 
 val add_step : step -> t -> t
 
-val execute_migration : t -> (unit, string) Result.t Lwt.t
+val execute_migration : t -> Core.Db.connection -> (unit, string) Result.t Lwt.t
 
 val execute : t list -> (unit, string) Result.t Lwt.t
