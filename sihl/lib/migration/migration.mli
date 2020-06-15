@@ -43,6 +43,10 @@ module Make : functor (Repo : REPO) -> SERVICE
 
 module PostgreSql : SERVICE
 
+val postgresql : Core.Registry.Binding.t
+
+val mariadb : Core.Registry.Binding.t
+
 module MariaDb : SERVICE
 
 type step

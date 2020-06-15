@@ -214,7 +214,12 @@ dirty = EXCLUDED.dirty
 end
 
 module PostgreSql = Make (RepoPostgreSql)
+
+let postgresql = Core.Registry.bind key (module PostgreSql)
+
 module MariaDb = Make (RepoMariaDb)
+
+let mariadb = Core.Registry.bind key (module MariaDb)
 
 type step = string * string
 
@@ -224,7 +229,8 @@ let empty label = (label, [])
 
 let create_step ~label query = (label, query)
 
-let add_step step (label, steps) = (label, List.cons step steps)
+(* Append the migration step to the list of steps *)
+let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
 
 let execute_steps migration conn =
   let (module Service : SERVICE) = Core.Registry.get key in

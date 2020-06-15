@@ -48,8 +48,10 @@ let bindings =
     Sihl_user_postgresql.bind;
   ]
 
+let services = [ Sihl.Migration.postgresql ]
+
 let project =
-  Sihl.Run.Project.Project.create ~config ~bindings middlewares
+  Sihl.Run.Project.Project.create ~config ~services ~bindings middlewares
     [
       (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
     ]

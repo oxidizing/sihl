@@ -24,8 +24,10 @@ let middlewares =
 let bindings =
   [ Sihl_session_mariadb.bind; Sihl_email_mariadb.bind; Sihl_user_mariadb.bind ]
 
+let services = [ Sihl.Migration.mariadb ]
+
 let project =
-  Sihl.Run.Project.Project.create ~bindings ~config middlewares
+  Sihl.Run.Project.Project.create ~services ~bindings ~config middlewares
     [
       (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
     ]
