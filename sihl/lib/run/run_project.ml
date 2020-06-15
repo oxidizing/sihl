@@ -132,7 +132,8 @@ module Project : PROJECT = struct
              App.start ()
              |> Result.map_error ~f:(fun err ->
                     Printf.sprintf
-                      "failure while calling start hook of app %s with %s"
+                      "START: Failure while calling start hook of app %s with \
+                       %s"
                       App.name err))
       |> Result.all
     in
@@ -212,9 +213,9 @@ module Project : PROJECT = struct
     (* if testing, silently do nothing *)
     if not @@ is_testing () then
       let () =
-        Caml.print_string @@ "running command with args "
-        ^ String.concat ~sep:", " args
-        ^ "\n"
+        Caml.print_string
+        @@ Printf.sprintf "START: Running command with args %s\n"
+             (String.concat ~sep:", " args)
       in
       let () = setup_config project in
       let () = bind_registry project in
@@ -235,5 +236,5 @@ module Project : PROJECT = struct
           Logs.debug (fun m -> m "%s" help)
     else
       Caml.print_string
-      @@ "Running with SIHL_ENV=test, ignore command line arguments\n"
+      @@ "START: Running with SIHL_ENV=test, ignore command line arguments\n"
 end
