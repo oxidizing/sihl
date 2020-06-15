@@ -227,13 +227,13 @@ end
 
 module Migration = struct
   let fix_collation =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"fix collation"
       {sql|
 SET collation_connection = 'utf8mb4_unicode_ci';
 |sql}
 
   let create_users_table =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"create users table"
       {sql|
 CREATE TABLE user_users (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -252,7 +252,7 @@ CREATE TABLE user_users (
          |sql}
 
   let create_tokens_table =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"create tokens table"
       {sql|
 CREATE TABLE user_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -270,7 +270,7 @@ CREATE TABLE user_tokens (
 |sql}
 
   let add_confirmation_template =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"create default email templates"
       {sql|
     INSERT INTO email_templates (
         uuid,
@@ -288,7 +288,7 @@ CREATE TABLE user_tokens (
 |sql}
 
   let add_password_reset_template =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"create default email templates"
       {sql|
     INSERT INTO email_templates (
         uuid,
@@ -306,21 +306,19 @@ CREATE TABLE user_tokens (
 |sql}
 
   let migration () =
-    ( "user",
-      [
-        ("fix collation", fix_collation);
-        ("create users table", create_users_table);
-        ("create tokens table", create_tokens_table);
-        ("add confirmation email template", add_confirmation_template);
-        ("add password reset email template", add_password_reset_template);
-      ] )
+    Sihl.Migration.(
+      empty "users" |> add_step fix_collation
+      |> add_step create_users_table
+      |> add_step create_tokens_table
+      |> add_step add_confirmation_template
+      |> add_step add_password_reset_template)
 end
 
 let migrate = Migration.migration
 
 let clean connection =
   let ( let* ) = Lwt_result.bind in
-  let* () = Sihl.Repo.Migration.Mariadb.set_fk_check connection false in
+  let* () = Sihl.Repo.set_fk_check connection false in
   let* () = Sql.User.clean connection in
   let* () = Sql.Token.clean connection in
-  Sihl.Repo.Migration.Mariadb.set_fk_check connection true
+  Sihl.Repo.set_fk_check connection true

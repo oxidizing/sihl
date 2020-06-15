@@ -4,5 +4,5 @@ module Repository = struct
 
   let default () =
     let (module Repository : Repo.REPOSITORY) = Sihl.Core.Registry.get key in
-    [ (module Repository : Sihl.Core.Contract.REPOSITORY) ]
+    [ (module Repository : Sihl.Sig.REPO) ]
 end

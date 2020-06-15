@@ -1,5 +1,5 @@
 module type REPOSITORY = sig
-  include Sihl.Core.Contract.REPOSITORY
+  include Sihl.Sig.REPO
 
   val get_all :
     Sihl.Core.Db.connection -> Sihl.Session.t list Sihl.Core.Db.db_result

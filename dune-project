@@ -79,24 +79,6 @@
 ))
 
 (package
- (name sihl_postgresql)
- (synopsis "Provides support for migrations using PostgreSQL")
- (description "Provides support for migrations using PostgreSQL.")
- (depends
-  (sihl (>= 0.0.33))
-  (caqti-driver-postgresql (>= 1.2.1))
-))
-
-(package
- (name sihl_mariadb)
- (synopsis "Provides support for migrations using MariaDB")
- (description "Provides support for migrations using MariaDB.")
- (depends
-  (sihl (>= 0.0.33))
-  (caqti-driver-mariadb (>= 1.2.1))
-))
-
-(package
  (name sihl_admin)
  (synopsis "A Sihl app to build backoffice web applications for administrators")
  (description "This app provides a building blocks to build and register admin pages to increase visibility and provide administrators with internal tools..")

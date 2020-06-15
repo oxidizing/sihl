@@ -62,7 +62,7 @@ end
 
 module Migration = struct
   let create_templates_table =
-    Sihl.Repo.Migration.Postgresql.migrate
+    Sihl.Migration.create_step ~label:"create templates table"
       {sql|
 CREATE TABLE email_templates (
   id SERIAL,
@@ -78,7 +78,7 @@ CREATE TABLE email_templates (
 |sql}
 
   let migration () =
-    ("email", [ ("create templates table", create_templates_table) ])
+    Sihl.Migration.(empty "email" |> add_step create_templates_table)
 end
 
 let migrate = Migration.migration

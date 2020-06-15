@@ -76,7 +76,7 @@ end
 
 module Migration = struct
   let create_sessions_table =
-    Sihl.Repo.Migration.Postgresql.migrate
+    Sihl.Migration.create_step ~label:"create sessions table"
       {sql|
 CREATE TABLE session_sessions (
   id serial,
@@ -89,7 +89,7 @@ CREATE TABLE session_sessions (
 |sql}
 
   let migration () =
-    ("session", [ ("create sessions table", create_sessions_table) ])
+    Sihl.Migration.(empty "session" |> add_step create_sessions_table)
 end
 
 let get_all connection = Sql.Session.get_all connection ()

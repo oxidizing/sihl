@@ -197,7 +197,7 @@ end
 
 module Migration = struct
   let create_users_table =
-    Sihl.Repo.Migration.Postgresql.migrate
+    Sihl.Migration.create_step ~label:"create users table"
       {sql|
 CREATE TABLE user_users (
   id serial,
@@ -216,7 +216,7 @@ CREATE TABLE user_users (
 |sql}
 
   let create_tokens_table =
-    Sihl.Repo.Migration.Postgresql.migrate
+    Sihl.Migration.create_step ~label:"create tokens table"
       {sql|
 CREATE TABLE user_tokens (
   id serial,
@@ -235,7 +235,7 @@ CREATE TABLE user_tokens (
 
   (* TODO this should be a seed that this app call on startup *)
   let add_confirmation_template =
-    Sihl.Repo.Migration.Postgresql.migrate
+    Sihl.Migration.create_step ~label:"create default email templates"
       {sql|
         INSERT INTO email_templates (
           uuid,
@@ -254,7 +254,7 @@ CREATE TABLE user_tokens (
 
   (* TODO this should be a seed that this app call on startup *)
   let add_password_reset_template =
-    Sihl.Repo.Migration.Postgresql.migrate
+    Sihl.Migration.create_step ~label:"create default email templates"
       {sql|
         INSERT INTO email_templates (
           uuid,
@@ -272,13 +272,12 @@ CREATE TABLE user_tokens (
 |sql}
 
   let migration () =
-    ( "user",
-      [
-        ("create users table", create_users_table);
-        ("create tokens table", create_tokens_table);
-        ("add confirmation email template", add_confirmation_template);
-        ("add password reset email template", add_password_reset_template);
-      ] )
+    Sihl.Migration.(
+      empty "users"
+      |> add_step create_users_table
+      |> add_step create_tokens_table
+      |> add_step add_confirmation_template
+      |> add_step add_password_reset_template)
 end
 
 module User = struct

@@ -6,5 +6,5 @@ module Repository = struct
     let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Registry.get key
     in
-    [ (module Repository : Sihl.Core.Contract.REPOSITORY) ]
+    [ (module Repository : Sihl.Sig.REPO) ]
 end
