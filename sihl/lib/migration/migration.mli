@@ -55,7 +55,7 @@ type t
 
 val empty : string -> t
 
-val create_step : label:string -> string -> step
+val create_step : label:string -> ?check_fk:bool -> string -> step
 
 val add_step : step -> t -> t
 

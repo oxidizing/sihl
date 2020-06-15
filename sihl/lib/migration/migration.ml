@@ -221,13 +221,14 @@ module MariaDb = Make (RepoMariaDb)
 
 let mariadb = Core.Registry.bind key (module MariaDb)
 
-type step = string * string
+type step = { label : string; statement : string; check_fk : bool }
 
 type t = string * step list
 
 let empty label = (label, [])
 
-let create_step ~label query = (label, query)
+let create_step ~label ?(check_fk = true) statement =
+  { label; statement; check_fk }
 
 (* Append the migration step to the list of steps *)
 let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
@@ -240,19 +241,42 @@ let execute_steps migration conn =
   let rec run steps conn =
     match steps with
     | [] -> Lwt_result.return ()
-    | (name, query) :: steps -> (
-        Logs.debug (fun m -> m "MIGRATION: Running %s" name);
-        let req = Caqti_request.exec Caqti_type.unit query in
+    | { label; statement; check_fk = true } :: steps -> (
+        Logs.debug (fun m -> m "MIGRATION: Running %s" label);
+        let req = Caqti_request.exec Caqti_type.unit statement in
         Connection.exec req () >>= function
         | Ok () ->
-            Logs.debug (fun m -> m "MIGRATION: Ran %s" name);
+            Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
             let* _ = Service.increment conn ~namespace in
             run steps conn
         | Error err ->
-            Logs.err (fun m ->
-                m "MIGRATION: Error while running migration for %s %s" namespace
-                  (Caqti_error.show err));
-            failwith "Error while running migrations" )
+            let msg =
+              Printf.sprintf
+                "MIGRATION: Error while running migration for %s %s" namespace
+                (Caqti_error.show err)
+            in
+            Logs.err (fun m -> m "%s" msg);
+            Lwt.return @@ Error msg )
+    | { label; statement; check_fk = false } :: steps -> (
+        let ( let* ) = Lwt.bind in
+        let* _ = Repo.set_fk_check conn false in
+        Logs.debug (fun m -> m "MIGRATION: Running %s without fk checks" label);
+        let req = Caqti_request.exec Caqti_type.unit statement in
+        Connection.exec req () >>= function
+        | Ok () ->
+            let* _ = Repo.set_fk_check conn true in
+            Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
+            let* _ = Service.increment conn ~namespace in
+            run steps conn
+        | Error err ->
+            let* _ = Repo.set_fk_check conn true in
+            let msg =
+              Printf.sprintf
+                "MIGRATION: Error while running migration for %s %s" namespace
+                (Caqti_error.show err)
+            in
+            Logs.err (fun m -> m "%s" msg);
+            Lwt.return @@ Error msg )
   in
   let () =
     match List.length steps with
