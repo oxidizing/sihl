@@ -1,7 +1,6 @@
 (** {{1} Type aliases for clearer documentation and explication} *)
 
-type 'err caqti_conn_pool =
-  (Caqti_lwt.connection, ([> Caqti_error.connect ] as 'err)) Caqti_lwt.Pool.t
+type caqti_conn_pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 
 type ('res, 'err) query =
   Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) result Lwt.t
@@ -28,6 +27,9 @@ val query_db_with_trx :
 val query_db_with_trx_exn :
   Opium_kernel.Rock.Request.t -> (connection -> 'a db_result) -> 'a Lwt.t
 
+val query_db_connection :
+  connection -> (connection -> 'a db_result) -> ('a, string) result Lwt.t
+
 val query_db :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->
@@ -39,9 +41,4 @@ val query_db_exn :
   (connection -> 'a db_result) ->
   'a Lwt.t
 
-val query_pool :
-  ('a -> ('b, ([< Caqti_error.t ] as 'c)) result Lwt.t) ->
-  ('a, 'c) Caqti_lwt.Pool.t ->
-  ('b, string) Lwt_result.t
-
-val connect : unit -> 'err caqti_conn_pool
+val connect : unit -> caqti_conn_pool

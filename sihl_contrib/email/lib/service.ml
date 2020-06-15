@@ -22,9 +22,7 @@ let render request email =
   in
   set_content content email |> Lwt.return
 
-module Console : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
-  type email = t
-
+module Console : Sihl.Email.SERVICE = struct
   let show email =
     let sender = sender email in
     let recipient = recipient email in
@@ -48,18 +46,14 @@ Subject: %s
     Lwt.return @@ Ok (Logs.info (fun m -> m "%s" to_print))
 end
 
-module Smtp : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
-  type email = t
-
+module Smtp : Sihl.Email.SERVICE = struct
   let send request email =
     let* _ = render request email in
     (* TODO implement SMTP *)
     Lwt.return @@ Error "Not implemented"
 end
 
-module SendGrid : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
-  type email = t
-
+module SendGrid : Sihl.Email.SERVICE = struct
   let body ~recipient ~subject ~sender ~content =
     Printf.sprintf
       {|
@@ -126,13 +120,10 @@ module SendGrid : Sihl.Core.Contract.Email.EMAIL with type email = t = struct
 end
 
 module Memory : sig
-  include Sihl.Core.Contract.Email.EMAIL
+  include Sihl.Email.SERVICE
 
   val get : unit -> t
-end
-with type email = t = struct
-  type email = t
-
+end = struct
   let dev_inbox : t option ref = ref None
 
   let get () =
@@ -147,7 +138,7 @@ with type email = t = struct
 end
 
 let send request email =
-  let (module Email : Sihl.Core.Contract.Email.EMAIL with type email = t) =
+  let (module Email : Sihl.Email.SERVICE) =
     Sihl.Core.Registry.get Bind.Transport.key
   in
   Email.send request email

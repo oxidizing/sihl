@@ -35,7 +35,6 @@ let middlewares =
 
 let bindings =
   [
-    Sihl_postgresql.bind;
     Sihl_session_postgresql.bind;
     Sihl_email_postgresql.bind;
     Sihl_user_postgresql.bind;

@@ -67,13 +67,13 @@ end
 
 module Migration = struct
   let fix_collation =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"fix collation"
       {sql|
 SET collation_connection = 'utf8mb4_unicode_ci';
 |sql}
 
   let create_templates_table =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"create templates table"
       {sql|
 CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -89,11 +89,8 @@ CREATE TABLE email_templates (
 |sql}
 
   let migration () =
-    ( "email",
-      [
-        ("fix collation", fix_collation);
-        ("create templates table", create_templates_table);
-      ] )
+    Sihl.Migration.(
+      empty "email" |> add_step fix_collation |> add_step create_templates_table)
 end
 
 let migrate = Migration.migration

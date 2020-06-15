@@ -11,7 +11,7 @@ module type APP = sig
 
   val endpoints : unit -> Opium.App.builder list
 
-  val repos : unit -> (module Core.Contract.REPOSITORY) list
+  val repos : unit -> (module Sig.REPO) list
 
   val bindings : unit -> Core.Registry.Binding.t list
 
@@ -22,10 +22,12 @@ module type APP = sig
   val stop : unit -> (unit, string) Result.t
 end
 
+(* TODO replace bindings with services *)
 module type PROJECT = sig
   type t
 
   val create :
+    ?services:Core.Registry.Binding.t list ->
     ?bindings:Core.Registry.Binding.t list ->
     config:Core.Config.Setting.t ->
     (unit -> Opium_kernel.Rock.Middleware.t) list ->
@@ -51,13 +53,14 @@ module Project : PROJECT = struct
     middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
     bindings : Core.Registry.Binding.t list option;
+    services : Core.Registry.Binding.t list option;
   }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ?bindings ~config middlewares apps =
-    { apps; config; bindings; middlewares }
+  let create ?services ?bindings ~config middlewares apps =
+    { apps; config; services; bindings; middlewares }
 
   let merge_endpoints project =
     project.apps
@@ -95,17 +98,21 @@ module Project : PROJECT = struct
     project.apps
     |> List.map ~f:(fun (module App : APP) -> App.repos ())
     |> List.concat
-    |> List.map ~f:(fun (module Repo : Core.Contract.REPOSITORY) ->
-           Repo.migrate ())
-    |> Repo.Migration.execute
+    |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
+    |> Migration.execute
 
   let bind_registry project =
-    Logs.debug (fun m -> m "START: binding default implementations of apps");
+    Logs.debug (fun m -> m "START: Binding services to service container");
+    project.services
+    |> Option.map ~f:(fun bindings ->
+           List.map bindings ~f:Core.Registry.Binding.apply)
+    |> ignore;
+    Logs.debug (fun m -> m "START: Binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->
            List.map (App.bindings ()) ~f:Core.Registry.Binding.apply)
     |> ignore;
-    Logs.debug (fun m -> m "START: binding project implementations");
+    Logs.debug (fun m -> m "START: Binding project implementations");
     project.bindings
     |> Option.map ~f:(fun bindings ->
            List.map bindings ~f:Core.Registry.Binding.apply)
@@ -168,7 +175,7 @@ module Project : PROJECT = struct
     let rec clean_repos repos =
       match repos with
       | [] -> Lwt.return @@ Ok ()
-      | (module Repo : Core.Contract.REPOSITORY) :: cleaners -> (
+      | (module Repo : Sig.REPO) :: cleaners -> (
           let* result = Repo.clean |> Core.Db.query_db request in
           match result with
           | Ok _ -> clean_repos cleaners

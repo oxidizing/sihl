@@ -76,7 +76,7 @@ end
 
 module Migration = struct
   let create_sessions_table =
-    Sihl.Repo.Migration.Mariadb.migrate
+    Sihl.Migration.create_step ~label:"create sessions table"
       {sql|
 CREATE TABLE session_sessions (
   id serial,
@@ -89,7 +89,7 @@ CREATE TABLE session_sessions (
 |sql}
 
   let migration () =
-    ("session", [ ("create sessions table", create_sessions_table) ])
+    Sihl.Migration.(empty "session" |> add_step create_sessions_table)
 end
 
 let get_all connection = Sql.Session.get_all connection ()
@@ -106,6 +106,6 @@ let migrate = Migration.migration
 
 let clean connection =
   let ( let* ) = Lwt_result.bind in
-  let* () = Sihl.Repo.Migration.Mariadb.set_fk_check connection false in
+  let* () = Sihl.Repo.set_fk_check connection false in
   let* () = Sql.Session.clean connection in
-  Sihl.Repo.Migration.Mariadb.set_fk_check connection true
+  Sihl.Repo.set_fk_check connection true

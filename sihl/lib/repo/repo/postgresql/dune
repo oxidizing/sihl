@@ -1,9 +1,0 @@
-(library
- (name sihl_postgresql)
- (public_name sihl_postgresql)
- (libraries
-  base
-  sihl
-  caqti-driver-postgresql))
-
-(include_subdirs no)

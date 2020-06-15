@@ -10,10 +10,12 @@ let config =
 let middlewares =
   [ Sihl.Middleware.db; Sihl.Middleware.cookie; Sihl_session.middleware ]
 
-let bindings = [ Sihl_mariadb.bind; Sihl_session_mariadb.bind ]
+let bindings = [ Sihl_session_mariadb.bind ]
+
+let services = [ Sihl.Migration.mariadb ]
 
 let project =
-  Sihl.Run.Project.Project.create ~config ~bindings middlewares
+  Sihl.Run.Project.Project.create ~config ~services ~bindings middlewares
     [ (module Sihl_session.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project

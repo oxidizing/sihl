@@ -21,16 +21,37 @@ let middlewares =
     Sihl_user.Middleware.Authn.session;
   ]
 
+(* module MigrationService = Sihl.Migration.PostgreSql
+ * module SessionService = Shil.Session.PostgresSql
+ *
+ * module EmailTransport = Sihl.Email.Transport.Smtp.Make (struct
+ *   (\* Configs could be fetched from some external place *\)
+ *   let smtp_host = Lwt.return "foo"
+ *
+ *   let smtp_port = Lwt.return 876
+ *
+ *   let smtp_secure = Lwt.return false
+ * end)
+ *
+ * module EmailService =
+ *   Shil.Email.Make (EmailTransport) (Sihl.Email.Repo.Postgresql)
+ * module UserService =
+ *   Sihl.User.Make (Sihl.Authn.Default) (Sihl.User.Repo.Postgresql)
+ *
+ * let register_services =
+ *   [ MigrationService; SessionService; EmailService; UserService ] *)
+
 let bindings =
   [
-    Sihl_postgresql.bind;
     Sihl_session_postgresql.bind;
     Sihl_email_postgresql.bind;
     Sihl_user_postgresql.bind;
   ]
 
+let services = [ Sihl.Migration.postgresql ]
+
 let project =
-  Sihl.Run.Project.Project.create ~config ~bindings middlewares
+  Sihl.Run.Project.Project.create ~config ~services ~bindings middlewares
     [
       (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
     ]
