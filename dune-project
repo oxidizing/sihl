@@ -63,6 +63,7 @@
   (sexplib (>= 0.13.0))
   (ppx_fields_conv (>= 0.13.0))
   (ppx_sexp_conv (>= 0.13.0))
+  (alcotest (>= 1.1.0))
 
   ;; Dev dependencies
   (utop :dev)
@@ -72,7 +73,6 @@
   (tuareg :dev)
 
   ;; Test dependencies
-  (alcotest (and (>= 1.1.0) :with-test))
   (alcotest-lwt (and (>= 1.1.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
 ))

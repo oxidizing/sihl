@@ -27,14 +27,40 @@ let fail = function
   | `Authorization msg -> raise @@ Authorization msg
   | `Internal msg -> raise @@ Internal msg
 
-let code_of_error error =
-  match error with
-  | Core_err.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code
-  | Core_err.Error.NoPermissions _ -> 403 |> Cohttp.Code.status_of_code
-  | Core_err.Error.NotAuthenticated _ -> 401 |> Cohttp.Code.status_of_code
-  | Core_err.Error.Configuration _ | Core_err.Error.Email _
-  | Core_err.Error.Database _ | Core_err.Error.Server _ ->
-      500 |> Cohttp.Code.status_of_code
+let of_exn = function
+  | BadRequest (Some msg) -> Core_error.bad_request ~msg ()
+  | BadRequest None -> Core_error.bad_request ()
+  | NotFound (Some msg) -> Core_error.not_found ~msg ()
+  | NotFound None -> Core_error.not_found ()
+  | Authentication _ -> Core_error.authentication ()
+  | Authorization _ -> Core_error.authorization ()
+  | Internal (Some msg) -> Core_error.authorization ~msg ()
+  | exn ->
+      Logs.err (fun m -> m "Unspecified exception: %s" (Printexc.to_string exn));
+      Core_error.internal ()
+
+let try_run f =
+  Lwt.catch
+    (fun () -> f () |> Lwt.map (fun result -> Ok result))
+    (fun exn -> Lwt.return @@ Error (of_exn exn))
+
+let code_of_error = function
+  | `BadRequest _ -> 400 |> Cohttp.Code.status_of_code
+  | `NotFound _ -> 404 |> Cohttp.Code.status_of_code
+  | `Authentication _ -> 401 |> Cohttp.Code.status_of_code
+  | `Authorization _ -> 403 |> Cohttp.Code.status_of_code
+  | _ -> 500 |> Cohttp.Code.status_of_code
+
+let error_to_msg = function
+  | `BadRequest (Some msg) -> msg
+  | `BadRequest None -> "Bad request"
+  | `NotFound (Some msg) -> msg
+  | `NotFound None -> "Not found"
+  | `Authentication (Some msg) -> msg
+  | `Authentication None -> "Not authenticated"
+  | `Authorization (Some msg) -> msg
+  | `Authorization None -> "Not allowed"
+  | _ -> "An error occurred, our administrators have been notified"
 
 type headers = (string * string) list
 

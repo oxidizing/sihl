@@ -1,9 +1,17 @@
 module type SESSION_SERVICE = sig
-  val set : key:string -> value:string -> Opium_kernel.Request.t -> unit Lwt.t
+  val set :
+    key:string ->
+    value:string ->
+    Opium_kernel.Request.t ->
+    (unit, Core_error.t) Result.t Lwt.t
 
-  val remove : key:string -> Opium_kernel.Request.t -> unit Lwt.t
+  val remove :
+    key:string -> Opium_kernel.Request.t -> (unit, Core_error.t) Result.t Lwt.t
 
-  val get : string -> Opium_kernel.Request.t -> string option Lwt.t
+  val get :
+    string ->
+    Opium_kernel.Request.t ->
+    (string option, Core_error.t) Result.t Lwt.t
 end
 
 let registry_key : (module SESSION_SERVICE) Core.Registry.Key.t =
@@ -20,7 +28,7 @@ let set ~key ~value req =
          session app?"
       in
       Logs.err (fun m -> m "%s" msg);
-      failwith msg
+      Core_error.internal () |> Result.error |> Lwt.return
 
 let remove ~key req =
   match Core.Registry.get_opt registry_key with
@@ -31,7 +39,7 @@ let remove ~key req =
          session app?"
       in
       Logs.err (fun m -> m "%s" msg);
-      failwith msg
+      Core_error.internal () |> Result.error |> Lwt.return
 
 let get key req =
   match Core.Registry.get_opt registry_key with
@@ -42,4 +50,4 @@ let get key req =
          session app?"
       in
       Logs.err (fun m -> m "%s" msg);
-      failwith msg
+      Core_error.internal () |> Result.error |> Lwt.return

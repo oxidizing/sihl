@@ -15,3 +15,5 @@ let authentication _ = `Authentication None
 let authorization ?msg () = `Authorization msg
 
 let internal _ = `Internal None
+
+let testable = Alcotest.testable pp equal

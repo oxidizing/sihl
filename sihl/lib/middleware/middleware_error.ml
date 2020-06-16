@@ -1,14 +1,16 @@
 open Http
+open Base
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 let m () =
   let filter handler req =
-    let* response = Core_err.try_to_run (fun () -> handler req) in
-    match (Req.accepts_html req, response) with
-    | _, Ok response -> Lwt.return response
+    let ( let* ) = Lwt.bind in
+    let* res = Http.Res.try_run (fun () -> handler req) in
+    match (Req.accepts_html req, res) with
+    | _, Ok res -> Lwt.return @@ Ok res
     | false, Error error ->
-        let msg = Core_err.Error.show error in
+        let msg = Core.Error.show error in
         Logs.err (fun m -> m "%s" msg);
         let headers =
           Cohttp.Header.of_list [ ("Content-Type", Req.content_type Json) ]
@@ -16,15 +18,16 @@ let m () =
         let body = Cohttp_lwt.Body.of_string @@ Res.Msg.msg_string msg in
         Opium.Std.Response.create ~headers ~body ~code:(Res.code_of_error error)
           ()
-        |> Lwt.return
-    | ( true,
-        Error
-          ( Core_err.Error.NotAuthenticated msg
-          | Core_err.Error.NoPermissions msg ) ) ->
-        (* TODO evaluate whether the error handler should really remove invalid cookies *)
+        |> Result.return |> Lwt.return
+    | true, Error ((`Authentication _ | `Authorization _) as error) ->
+        let ( let* ) = Lwt_result.bind in
+        (* TODO evaluate whether the error handler
+           should really remove invalid cookies *)
+        (* TODO make custom permission/not authenticated
+           error page configurable *)
+        let msg = Http.Res.error_to_msg error in
         let* () = Middleware_flash.set_error req msg in
         Logs.err (fun m -> m "%s" msg);
-        (* TODO make custom permission/not authenticated error page configurable *)
         let headers =
           Cohttp.Header.of_list
             [
@@ -39,14 +42,10 @@ let m () =
              ~expiration:(`Max_age (Int64.of_int 0))
              ~http_only:true ~secure:false ~key:"session_id"
              ~data:"session_stopped"
-        |> Lwt.return
-    | ( true,
-        Error
-          ( Core_err.Error.BadRequest msg
-          | Core_err.Error.Configuration msg
-          | Core_err.Error.Database msg
-          | Core_err.Error.Email msg
-          | Core_err.Error.Server msg ) ) ->
+        |> Result.return |> Lwt.return
+    | true, Error ((`BadRequest _ | `NotFound _ | `Internal _) as error) ->
+        let ( let* ) = Lwt_result.bind in
+        let msg = Http.Res.error_to_msg error in
         let* () = Middleware_flash.set_error req msg in
         Logs.err (fun m -> m "%s" msg);
         let headers =
@@ -56,7 +55,6 @@ let m () =
         in
         let body = Cohttp_lwt.Body.of_string @@ Res.Msg.msg_string msg in
         Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
-        |> Lwt.return
+        |> Result.return |> Lwt.return
   in
-
-  Opium.Std.Rock.Middleware.create ~name:"error handler" ~filter
+  Http.Middleware.create ~name:"error" ~filter

@@ -20,3 +20,5 @@ val authentication : 'a -> [> `Authentication of 'b option ]
 val authorization : ?msg:string -> unit -> [> `Authorization of string option ]
 
 val internal : 'a -> [> `Internal of 'b option ]
+
+val testable : t Alcotest.testable

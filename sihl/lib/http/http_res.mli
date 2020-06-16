@@ -2,7 +2,17 @@ type content_type = Html | Json
 
 val content_type : content_type -> string
 
-val fail : Core_error.t -> exn
+val fail : Core.Error.t -> exn
+
+val of_exn : exn -> Core.Error.t
+
+val try_run :
+  (unit -> Opium_kernel.Response.t Lwt.t) ->
+  (Opium_kernel.Response.t, Core.Error.t) result Lwt.t
+
+val code_of_error : Core.Error.t -> Cohttp.Code.status_code
+
+val error_to_msg : Core.Error.t -> string
 
 module Msg : sig
   type t = { msg : string }
@@ -15,8 +25,6 @@ module Msg : sig
 
   val msg_string : string -> string
 end
-
-val code_of_error : Core_err.Error.t -> Cohttp.Code.status_code
 
 type headers = (string * string) list
 
