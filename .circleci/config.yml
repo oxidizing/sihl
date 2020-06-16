@@ -38,12 +38,10 @@ jobs:
             opam pin add -y -n sihl_user_mariadb .
             opam pin add -y -n sihl_user_postgresql .
       - run:
-          # TODO Remove jwto once 0.3.0 is in OPAM
           name: Install system dependencies
           command: |
             sudo apt-get update -y
-            sudo apt-get install -y libmariadbclient-dev libpq-dev pkg-config m4
-            opam pin add jwto.0.3.0 git://github.com/sporto/jwto.git#0.3.0
+            sudo apt-get install -y libmariadbclient-dev libpq-dev
             opam depext -y sihl
             opam depext -y sihl_admin
             opam depext -y sihl_session sihl_session_mariadb sihl_session_postgresql
