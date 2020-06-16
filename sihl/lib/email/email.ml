@@ -76,7 +76,7 @@ type t = {
 let set_content content email = { email with content }
 
 module type SERVICE = sig
-  val send : Opium.Std.Request.t -> t -> (unit, string) Result.t Lwt.t
+  val send : Opium.Std.Request.t -> t -> (unit, Core_error.t) Result.t Lwt.t
 end
 
 let key : (module SERVICE) Core.Registry.Key.t =

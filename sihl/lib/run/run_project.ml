@@ -182,8 +182,9 @@ module Project : PROJECT = struct
           | Ok _ -> clean_repos cleaners
           | Error msg ->
               Logs.err (fun m ->
-                  m "REPO: Cleaning up app database failed %s" msg);
-              Lwt.return @@ Error msg )
+                  m "REPO: Cleaning up app database failed %s"
+                    (Core.Error.show msg));
+              Lwt.return @@ Error (Core.Error.show msg) )
     in
     clean_repos repositories
 

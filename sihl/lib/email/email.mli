@@ -84,7 +84,7 @@ val show : t -> string
 val equal : t -> t -> bool
 
 module type SERVICE = sig
-  val send : Opium.Std.Request.t -> t -> (unit, string) Result.t Lwt.t
+  val send : Opium.Std.Request.t -> t -> (unit, Core_error.t) Result.t Lwt.t
 end
 
-val send : Http.Req.t -> t -> (unit, string) Result.t Lwt.t
+val send : Http.Req.t -> t -> (unit, Core_error.t) Result.t Lwt.t

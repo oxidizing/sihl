@@ -325,7 +325,6 @@ let to_caqti_error result =
   |> Result.map_error ~f:(fun err ->
          Caqti_error.connect_failed ~uri:Uri.empty (Caqti_error.Msg err))
 
-(* TODO gracefully try to disable and enable fk keys *)
 let execute migrations =
   let open Lwt in
   let rec run migrations conn =

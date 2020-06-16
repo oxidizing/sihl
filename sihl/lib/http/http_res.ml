@@ -10,6 +10,23 @@ module Msg = struct
   let msg_string msg = { msg } |> to_yojson |> Core_json.to_string
 end
 
+exception BadRequest of string option
+
+exception NotFound of string option
+
+exception Authentication of string option
+
+exception Authorization of string option
+
+exception Internal of string option
+
+let fail = function
+  | `BadRequest msg -> raise @@ BadRequest msg
+  | `NotFound msg -> raise @@ NotFound msg
+  | `Authentication msg -> raise @@ Authentication msg
+  | `Authorization msg -> raise @@ Authorization msg
+  | `Internal msg -> raise @@ Internal msg
+
 let code_of_error error =
   match error with
   | Core_err.Error.BadRequest _ -> 400 |> Cohttp.Code.status_of_code

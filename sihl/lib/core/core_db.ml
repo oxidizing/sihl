@@ -116,6 +116,7 @@ let query_db_with_trx request query =
   in
   result |> Result.map_error ~f:Caqti_error.show |> Lwt.return
 
+(* TODO remove this, we don't want to support exceptions anymore *)
 let query_db_with_trx_exn request query =
   Lwt.map
     (Core_err.with_database "failed to query with transaction")
@@ -124,23 +125,21 @@ let query_db_with_trx_exn request query =
 let query_db request query =
   let connection =
     match request |> Request.env |> Opium.Hmap.find key with
-    | Some connection -> connection
+    | Some connection -> Ok connection
     | None ->
         let msg =
           "DB: Failed to fetch DB connection from Request.env, was the DB \
            middleware applied?"
         in
         Logs.err (fun m -> m "%s" msg);
-        failwith msg
+        Error (Core_error.internal ())
   in
-  connection |> query |> Lwt_result.map_err Caqti_error.show
+  match connection with
+  | Ok connection ->
+      query connection
+      |> Lwt_result.map_err Caqti_error.show
+      |> Lwt_result.map_err Core_error.internal
+  | Error msg -> Lwt.return (Error msg)
 
 let query_db_connection connection query =
   query connection |> Lwt_result.map_err Caqti_error.show
-
-let query_db_exn ?message request query =
-  let open Lwt.Infix in
-  query_db request query >>= fun result ->
-  match result with
-  | Ok result -> Lwt.return result
-  | Error msg -> Core_err.raise_database (Option.value ~default:msg message)
