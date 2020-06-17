@@ -11,7 +11,7 @@ module type REPOSITORY = sig
     val get_by_email :
       email:string ->
       Sihl.Core.Db.connection ->
-      Sihl.User.t Sihl.Core.Db.db_result
+      Sihl.User.t option Sihl.Core.Db.db_result
 
     val insert :
       Sihl.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result

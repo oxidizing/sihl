@@ -1,4 +1,6 @@
-let ( let* ) = Lwt.bind
+open Base
+
+let ( let* ) = Lwt_result.bind
 
 let set ~key ~value req =
   let (module Repository : Repo.REPOSITORY) =
@@ -12,17 +14,15 @@ let set ~key ~value req =
           "Session not found in Request.env, have you applied the \
            Sihl_session.middleware?"
   in
-  let* session =
-    Repository.get ~key:session_key |> Sihl.Core.Db.query_db_exn req
-  in
+  let* session = Repository.get ~key:session_key |> Sihl.Core.Db.query_db req in
   match session with
   | None ->
-      Lwt.return
-      @@ Logs.warn (fun m ->
-             m "SESSION: Provided session key has no session in DB")
+      Logs.warn (fun m ->
+          m "SESSION: Provided session key has no session in DB");
+      Lwt.return @@ Error (Sihl.Error.authentication ())
   | Some session ->
       let session = Sihl.Session.set ~key ~value session in
-      Repository.insert session |> Sihl.Core.Db.query_db_exn req
+      Repository.insert session |> Sihl.Core.Db.query_db req
 
 let remove ~key req =
   let (module Repository : Repo.REPOSITORY) =
@@ -36,17 +36,15 @@ let remove ~key req =
           "Session not found in Request.env, have you applied the \
            Sihl_session.middleware?"
   in
-  let* session =
-    Repository.get ~key:session_key |> Sihl.Core.Db.query_db_exn req
-  in
+  let* session = Repository.get ~key:session_key |> Sihl.Core.Db.query_db req in
   match session with
   | None ->
-      Lwt.return
-      @@ Logs.warn (fun m ->
-             m "SESSION: Provided session key has no session in DB")
+      Logs.warn (fun m ->
+          m "SESSION: Provided session key has no session in DB");
+      Lwt.return @@ Error (Sihl.Error.authentication ())
   | Some session ->
       let session = Sihl.Session.remove ~key session in
-      Repository.insert session |> Sihl.Core.Db.query_db_exn req
+      Repository.insert session |> Sihl.Core.Db.query_db req
 
 let get key req =
   let (module Repository : Repo.REPOSITORY) =
@@ -60,12 +58,10 @@ let get key req =
           "Session not found in Request.env, have you applied the \
            Sihl_session.middleware?"
   in
-  let* session =
-    Repository.get ~key:session_key |> Sihl.Core.Db.query_db_exn req
-  in
+  let* session = Repository.get ~key:session_key |> Sihl.Core.Db.query_db req in
   match session with
   | None ->
       Logs.warn (fun m ->
           m "SESSION: Provided session key has no session in DB");
-      Lwt.return None
-  | Some session -> Sihl.Session.get key session |> Lwt.return
+      Lwt.return @@ Ok None
+  | Some session -> Sihl.Session.get key session |> Result.return |> Lwt.return

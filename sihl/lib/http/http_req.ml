@@ -1,6 +1,6 @@
 open Base
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 type content_type = Html | Json
 
@@ -46,20 +46,28 @@ let url_encoded ?body req key =
      the body stream from the request *)
   let* body =
     match body with
-    | Some body -> Lwt.return body
-    | None -> req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+    | Some body -> Lwt.return @@ Ok body
+    | None ->
+        req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+        |> Lwt.map Result.return
   in
   match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
   | None ->
-      Lwt.return @@ Core_err.raise_bad_request
-      @@ Printf.sprintf "Please provide a %s." key
-  | Some value -> Lwt.return value
+      Lwt.return
+      @@ Error
+           (Core_error.bad_request
+              ~msg:(Printf.sprintf "Please provide a %s." key)
+              ())
+  | Some value -> Lwt.return @@ Ok value
 
 let url_encoded2 req key1 key2 =
-  let* body = req |> Opium.Std.Request.body |> Opium.Std.Body.to_string in
+  let* body =
+    req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+    |> Lwt.map Result.return
+  in
   let* value1 = url_encoded ~body req key1 in
   let* value2 = url_encoded ~body req key2 in
-  Lwt.return (value1, value2)
+  Lwt.return @@ Ok (value1, value2)
 
 let param = Opium.Std.param
 
@@ -68,9 +76,12 @@ let param2 req key1 key2 = (param req key1, param req key2)
 let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
 
 let require_body req decode =
-  let* body = req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string in
+  let* body =
+    req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string
+    |> Lwt.map Result.return
+  in
   body |> Core_json.parse |> Result.bind ~f:decode
-  |> Result.map_error ~f:(fun error -> Core_err.err_bad_request error)
+  |> Result.map_error ~f:(fun msg -> Core_error.bad_request ~msg ())
   |> Lwt.return
 
 let require_body_exn req decode =

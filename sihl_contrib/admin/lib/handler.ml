@@ -1,6 +1,6 @@
 open Base
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 module Dashboard = struct
   open Sihl.Http
@@ -11,7 +11,7 @@ module Dashboard = struct
     let* flash = Sihl.Middleware.Flash.current req in
     let ctx = Sihl.Template.context ~flash () in
     Sihl.Admin.render ctx Sihl.Admin.Component.DashboardPage.createElement email
-    |> Res.html |> Lwt.return
+    |> Res.html |> Result.return |> Lwt.return
 end
 
 module Catch = struct

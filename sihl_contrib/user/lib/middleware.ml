@@ -1,7 +1,7 @@
 open Base
 open Opium.Std
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 module Authn = struct
   type user = Sihl.User.t
@@ -22,19 +22,19 @@ module Authn = struct
     let filter handler req =
       match Opium.Hmap.find key (Request.env req) with
       (* user has been authenticated somewhere else already, nothing to do *)
-      | Some _ -> handler req
+      | Some _ -> handler req |> Lwt.map Result.return
       | None -> (
           let* user_id = Sihl.Http.Session.get "users.id" req in
           match user_id with
           (* there is no user_id, nothing to do *)
-          | None -> handler req
+          | None -> handler req |> Lwt.map Result.return
           | Some user_id ->
               let* user = Service.User.get req Sihl.User.system ~user_id in
               let env = Opium.Hmap.add key user (Request.env req) in
               let req = { req with Request.env } in
-              handler req )
+              handler req |> Lwt.map Result.return )
     in
-    Rock.Middleware.create ~name:"users.session" ~filter
+    Sihl.Http.Middleware.create ~name:"users.session" ~filter
 
   let create_session req user =
     Sihl.Http.Session.set ~key:"users.id" ~value:(Sihl.User.id user) req
@@ -42,7 +42,7 @@ module Authn = struct
   let token () =
     let filter handler req =
       match req |> Request.headers |> Cohttp.Header.get_authorization with
-      | None -> handler req
+      | None -> handler req |> Lwt.map Result.return
       | Some (`Other token) ->
           (* TODO use more robust bearer token parsing *)
           let token =
@@ -51,14 +51,14 @@ module Authn = struct
           let* user = Service.User.get_by_token req token in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in
-          handler req
+          handler req |> Lwt.map Result.return
       | Some (`Basic (email, password)) ->
           let* user =
             Service.User.authenticate_credentials req ~email ~password
           in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in
-          handler req
+          handler req |> Lwt.map Result.return
     in
-    Rock.Middleware.create ~name:"users.token" ~filter
+    Sihl.Http.Middleware.create ~name:"users.token" ~filter
 end

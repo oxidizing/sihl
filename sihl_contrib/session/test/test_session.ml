@@ -20,9 +20,10 @@ let test_anonymous_request_returns_cookie _ () =
     Sihl.Core.Registry.get Sihl_session.Bind.Repository.key
   in
   let* sessions = Repository.get_all |> Sihl.Core.Db.query_db request in
-  let sessions = sessions |> Result.ok_or_failwith in
+  let length = sessions |> Result.map ~f:List.length in
   let () =
-    Alcotest.(check int) "Has created session" 1 (List.length sessions)
+    Alcotest.(check (result int Sihl.Error.testable))
+      "Has created session" (Ok 1) length
   in
   Lwt.return ()
 
@@ -37,7 +38,7 @@ let test_requests_persist_session_variables _ () =
   let* _ =
     Opium_kernel.Rock.Middleware.apply middleware_to_test
       (fun req ->
-        let* () = Sihl_session.set ~key:"foo" ~value:"bar" req in
+        let* _ = Sihl_session.set ~key:"foo" ~value:"bar" req in
         Lwt.return @@ Opium_kernel.Response.create ())
       req
   in
@@ -46,11 +47,13 @@ let test_requests_persist_session_variables _ () =
     Sihl.Core.Registry.get Sihl_session.Bind.Repository.key
   in
   let* sessions = Repository.get_all |> Sihl.Core.Db.query_db request in
-  let session = sessions |> Result.ok_or_failwith |> List.hd_exn in
+  let session =
+    sessions |> Result.map ~f:List.hd_exn
+    |> Result.map ~f:(fun session -> Sihl.Session.get "foo" session)
+  in
   let () =
-    Alcotest.(check (option string))
-      "Has created session with session value" (Some "bar")
-      (Sihl.Session.get "foo" session)
+    Alcotest.(check (result (option string) Sihl.Error.testable))
+      "Has created session with session value" (Ok (Some "bar")) session
   in
   Lwt.return ()
 

@@ -22,17 +22,17 @@ val request_with_connection : Opium.Std.Request.t -> Opium.Std.Request.t Lwt.t
 val query_db_with_trx :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->
-  ('a, string) result Lwt.t
+  ('a, Core_error.t) Result.t Lwt.t
 
 val query_db_with_trx_exn :
   Opium_kernel.Rock.Request.t -> (connection -> 'a db_result) -> 'a Lwt.t
 
 val query_db_connection :
-  connection -> (connection -> 'a db_result) -> ('a, string) result Lwt.t
+  connection -> (connection -> 'a db_result) -> ('a, string) Result.t Lwt.t
 
 val query_db :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->
-  ('a, Core_error.t) result Lwt.t
+  ('a, Core_error.t) Result.t Lwt.t
 
 val connect : unit -> caqti_conn_pool

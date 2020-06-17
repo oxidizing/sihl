@@ -4,6 +4,8 @@ module Cookie = Http_cookie
 module Session = Http_session
 module Middleware = Http_middleware
 
+let ( let* ) = Lwt.bind
+
 let handle handler req = req |> handler |> Lwt.map Res.to_cohttp
 
 let get path handler = Opium.Std.get path (handle handler)

@@ -54,7 +54,7 @@ module Sql = struct
     let get_by_email connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.t
+        Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -74,7 +74,7 @@ module Sql = struct
         WHERE user_users.email = ?
         |sql}
       in
-      Connection.find request
+      Connection.find_opt request
 
     let upsert connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in

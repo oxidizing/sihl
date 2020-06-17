@@ -2,7 +2,7 @@ open Base
 
 let ok_json_string = {|{"msg":"ok"}|}
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 let url path = "http://localhost:3000/users" ^ path
 

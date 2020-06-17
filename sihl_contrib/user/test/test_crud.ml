@@ -2,7 +2,7 @@ open Base
 
 let ok_json_string = {|{"msg":"ok"}|}
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 let url path = "http://localhost:3000/users" ^ path
 
@@ -23,10 +23,11 @@ let test_user_fetches_all_users_fails _ () =
   in
   let* resp, _ =
     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/")
+    |> Lwt.map Result.return
   in
   let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
   let () = Alcotest.(check int) "Returns not permissions" 403 status in
-  Lwt.return @@ ()
+  Lwt.return @@ Ok ()
 
 let test_admin_fetches_all_users _ () =
   let* () = Sihl.Run.Manage.clean () in

@@ -1,7 +1,7 @@
 open Base
 open Sihl.Email
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 let render request email =
   let template_id = template_id email in
@@ -14,13 +14,13 @@ let render request email =
           Sihl.Core.Registry.get Bind.Repository.key
         in
         let* template =
-          Repository.get ~id:template_id |> Sihl.Core.Db.query_db_exn request
+          Repository.get ~id:template_id |> Sihl.Core.Db.query_db request
         in
         let content = Template.render template_data template in
-        Lwt.return content
-    | None -> Lwt.return content
+        Lwt.return @@ Ok content
+    | None -> Lwt.return @@ Ok content
   in
-  set_content content email |> Lwt.return
+  Ok (set_content content email) |> Lwt.return
 
 module Console : Sihl.Email.SERVICE = struct
   let show email =
@@ -50,7 +50,7 @@ module Smtp : Sihl.Email.SERVICE = struct
   let send request email =
     let* _ = render request email in
     (* TODO implement SMTP *)
-    Lwt.return @@ Error "Not implemented"
+    Lwt.return @@ Error (Sihl.Error.internal "Not implemented")
 end
 
 module SendGrid : Sihl.Email.SERVICE = struct
@@ -103,6 +103,7 @@ module SendGrid : Sihl.Email.SERVICE = struct
       Cohttp_lwt_unix.Client.post
         ~body:(Cohttp_lwt.Body.of_string req_body)
         ~headers sendgrid_send_url
+      |> Lwt.map (fun result -> Ok result)
     in
     let status = Cohttp.Response.status resp |> Cohttp.Code.code_of_status in
     match status with
@@ -110,13 +111,16 @@ module SendGrid : Sihl.Email.SERVICE = struct
         Logs.info (fun m -> m "successfully sent email using sendgrid");
         Lwt.return @@ Ok ()
     | _ ->
-        let* body = Cohttp_lwt.Body.to_string resp_body in
+        let* body =
+          resp_body |> Cohttp_lwt.Body.to_string
+          |> Lwt.map (fun result -> Ok result)
+        in
         Logs.err (fun m ->
             m
               "sending email using sendgrid failed with http status %i and \
                body %s"
               status body);
-        Lwt.return @@ Error "failed to send email"
+        Lwt.return @@ Error (Sihl.Error.internal "failed to send email")
 end
 
 module Memory : sig

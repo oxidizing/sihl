@@ -15,6 +15,8 @@ val bad_request : ?msg:string -> unit -> [> `BadRequest of string option ]
 
 val not_found : ?msg:string -> unit -> [> `NotFound of string option ]
 
+val not_found_of_opt : ('a option, t) Result.t -> ('a, t) Result.t
+
 val authentication : 'a -> [> `Authentication of 'b option ]
 
 val authorization : ?msg:string -> unit -> [> `Authorization of string option ]
