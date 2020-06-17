@@ -66,6 +66,11 @@ let try_to_run f =
     (fun () -> f () |> Lwt.map (fun result -> Ok result))
     (fun exn -> Lwt.return @@ error_of_exn exn)
 
+let abort_if_not_found msg result =
+  match result with
+  | None -> raise @@ Exception.BadRequest msg
+  | Some result -> result
+
 let raise_bad_request msg = raise @@ Exception.BadRequest msg
 
 let raise_no_permissions msg = raise @@ Exception.NoPermissions msg
