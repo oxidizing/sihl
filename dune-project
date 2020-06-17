@@ -1,4 +1,5 @@
 (lang dune 2.1)
+(generate_opam_files true)
 
 (name sihl)
 (version 0.0.35)
