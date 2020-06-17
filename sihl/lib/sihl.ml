@@ -3,6 +3,7 @@ module Ql = Core.Ql
 module Hashing = Core.Hashing
 module Jwt = Core.Jwt
 module Sig = Sig
+module Id = Core.Id
 module Http = Http
 module Middleware = Middleware
 module Repo = Repo
