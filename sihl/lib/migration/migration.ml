@@ -6,8 +6,8 @@ module Model = Migration_service.Model
 
 module type SERVICE = Migration_service.SERVICE
 
-let key : (module SERVICE) Core_registry.Key.t =
-  Core_registry.Key.create "migration.service"
+let key : (module SERVICE) Core_container.Key.t =
+  Core_container.Key.create "migration.service"
 
 module type REPO = sig
   val create_table_if_not_exists :
@@ -179,12 +179,12 @@ end
 
 module PostgreSql = Make (RepoPostgreSql)
 
-let postgresql = Core.Registry.bind key (module PostgreSql)
+let postgresql = Core.Container.bind key (module PostgreSql)
 
 module MariaDb = Make (RepoMariaDb)
 
 let mariadb =
-  Core.Registry.create_binding key (module MariaDb) MariaDb.provide_repo
+  Core.Container.create_binding key (module MariaDb) MariaDb.provide_repo
 
 include Migration_sig
 
@@ -197,7 +197,7 @@ let create_step ~label ?(check_fk = true) statement =
 let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
 
 let execute_steps migration conn =
-  let (module Service : SERVICE) = Core.Registry.fetch_exn key in
+  let (module Service : SERVICE) = Core.Container.fetch_exn key in
   let module Connection = (val conn : Caqti_lwt.CONNECTION) in
   let namespace, steps = migration in
   let open Lwt in
@@ -253,7 +253,7 @@ let execute_steps migration conn =
   run steps conn
 
 let execute_migration migration conn =
-  let (module Service : SERVICE) = Core.Registry.fetch_exn key in
+  let (module Service : SERVICE) = Core.Container.fetch_exn key in
   let namespace, _ = migration in
   Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
   let* () = Service.setup conn in

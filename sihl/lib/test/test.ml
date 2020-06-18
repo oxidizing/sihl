@@ -14,8 +14,8 @@ let register_services _ =
   (* TODO
      1. Register bindings
      2. Run migrations *)
-  (* List.map bindings ~f:Core.Registry.Binding.apply |> ignore;
-   * Core.Registry.set_initialized () *)
+  (* List.map bindings ~f:Core.Container.Binding.apply |> ignore;
+   * Core.Container.set_initialized () *)
   failwith "TODO"
 
 let just_services _ = failwith "TODO"

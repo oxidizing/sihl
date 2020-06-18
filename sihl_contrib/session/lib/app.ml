@@ -9,7 +9,7 @@ let endpoints () = []
 let repos () = Bind.Repository.default ()
 
 let bindings () =
-  [ Sihl.Core.Registry.bind Sihl.Http.Session.key (module Service) ]
+  [ Sihl.Core.Container.bind Sihl.Http.Session.key (module Service) ]
 
 let commands () = []
 

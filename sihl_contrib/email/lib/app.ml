@@ -28,16 +28,16 @@ let bindings () =
   [
     ( match backend with
     | "smtp" ->
-        Sihl.Core.Registry.Binding.create Bind.Transport.key
+        Sihl.Core.Container.Binding.create Bind.Transport.key
           (module Service.Smtp)
     | "sendgrid" ->
-        Sihl.Core.Registry.Binding.create Bind.Transport.key
+        Sihl.Core.Container.Binding.create Bind.Transport.key
           (module Service.SendGrid)
     | "console" ->
-        Sihl.Core.Registry.Binding.create Bind.Transport.key
+        Sihl.Core.Container.Binding.create Bind.Transport.key
           (module Service.Console)
     | _ ->
-        Sihl.Core.Registry.Binding.create Bind.Transport.key
+        Sihl.Core.Container.Binding.create Bind.Transport.key
           (module Service.Memory) );
   ]
 

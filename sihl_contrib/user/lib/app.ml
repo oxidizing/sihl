@@ -36,7 +36,7 @@ let repos () = Bind.Repository.default ()
 
 let bindings () =
   [
-    Sihl.Core.Registry.bind Sihl.Authn.registry_key
+    Sihl.Core.Container.bind Sihl.Authn.registry_key
       ( module struct
         let authenticate = Middleware.Authn.authenticate
       end );

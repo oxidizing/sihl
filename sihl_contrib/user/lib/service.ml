@@ -5,7 +5,7 @@ let ( let* ) = Lwt.bind
 module User = struct
   let is_valid_auth_token request token =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* token =
@@ -17,7 +17,7 @@ module User = struct
 
   let get request user ~user_id =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     if Sihl.User.is_admin user || Sihl.User.is_owner user user_id then
@@ -32,7 +32,7 @@ module User = struct
 
   let get_by_token request token =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* token =
@@ -47,7 +47,7 @@ module User = struct
 
   let get_all request user =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     if Sihl.User.is_admin user then
@@ -58,13 +58,13 @@ module User = struct
 
   let get_by_email request ~email =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
     Repository.User.get_by_email ~email |> Sihl.Core.Db.query_db_exn request
 
   let send_registration_email request user =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
     let token = Model.Token.create_email_confirmation user in
     let* () =
@@ -76,7 +76,7 @@ module User = struct
 
   let register ?(suppress_email = false) request ~email ~password ~username =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user =
@@ -100,7 +100,7 @@ module User = struct
 
   let create_admin request ~email ~password ~username =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user =
@@ -119,7 +119,7 @@ module User = struct
 
   let logout request user =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
     let* () = Sihl.Http.Session.remove ~key:"users.id" request in
     let id = Sihl.User.id user in
@@ -127,7 +127,7 @@ module User = struct
 
   let login request ~email ~password =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user =
@@ -148,7 +148,7 @@ module User = struct
 
   let token request user =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let token = Model.Token.create user in
@@ -160,7 +160,7 @@ module User = struct
 
   let update_password request current_user ~email ~old_password ~new_password =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user = get_by_email request ~email in
@@ -184,7 +184,7 @@ module User = struct
 
   let update_details request current_user ~email ~username =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user = get_by_email request ~email in
@@ -203,7 +203,7 @@ module User = struct
 
   let set_password request current_user ~user_id ~password =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user =
@@ -228,7 +228,7 @@ module User = struct
 
   let confirm_email request token =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* token =
@@ -253,7 +253,7 @@ module User = struct
 
   let request_password_reset request ~email =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* user = get_by_email request ~email in
@@ -267,7 +267,7 @@ module User = struct
 
   let reset_password request ~token ~new_password =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.fetch_exn Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
 
     let* token =

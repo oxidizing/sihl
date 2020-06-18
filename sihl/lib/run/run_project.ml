@@ -13,7 +13,7 @@ module type APP = sig
 
   val repos : unit -> (module Sig.REPO) list
 
-  val bindings : unit -> Core.Registry.Binding.t list
+  val bindings : unit -> Core.Container.Binding.t list
 
   val commands : unit -> Core.Cmd.t list
 
@@ -27,8 +27,8 @@ module type PROJECT = sig
   type t
 
   val create :
-    ?services:Core.Registry.Binding.t list ->
-    ?bindings:Core.Registry.Binding.t list ->
+    ?services:Core.Container.Binding.t list ->
+    ?bindings:Core.Container.Binding.t list ->
     config:Core.Config.Setting.t ->
     (unit -> Opium_kernel.Rock.Middleware.t) list ->
     (module APP) list ->
@@ -52,8 +52,8 @@ module Project : PROJECT = struct
     apps : (module APP) list;
     middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
-    bindings : Core.Registry.Binding.t list option;
-    services : Core.Registry.Binding.t list option;
+    bindings : Core.Container.Binding.t list option;
+    services : Core.Container.Binding.t list option;
   }
 
   let app_names project =
@@ -105,19 +105,19 @@ module Project : PROJECT = struct
     Logs.debug (fun m -> m "START: Binding services to service container");
     project.services
     |> Option.map ~f:(fun bindings ->
-           List.map bindings ~f:Core.Registry.Binding.apply)
+           List.map bindings ~f:Core.Container.Binding.apply)
     |> ignore;
     Logs.debug (fun m -> m "START: Binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->
-           List.map (App.bindings ()) ~f:Core.Registry.Binding.apply)
+           List.map (App.bindings ()) ~f:Core.Container.Binding.apply)
     |> ignore;
     Logs.debug (fun m -> m "START: Binding project implementations");
     project.bindings
     |> Option.map ~f:(fun bindings ->
-           List.map bindings ~f:Core.Registry.Binding.apply)
+           List.map bindings ~f:Core.Container.Binding.apply)
     |> ignore;
-    Core.Registry.set_initialized ()
+    Core.Container.set_initialized ()
 
   let setup_config project =
     let schemas =

@@ -82,7 +82,7 @@ end
 
 module Make : functor (Repo : REPO) -> SERVICE
 
-val mariadb : Core.Registry.Binding.t
+val mariadb : Core.Container.Binding.t
 
 val upload_base64 :
   Http.Req.t ->

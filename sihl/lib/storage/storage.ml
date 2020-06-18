@@ -46,8 +46,8 @@ module type REPO = sig
     Core.Db.connection -> id:string -> blob:string -> unit Core.Db.db_result
 end
 
-let key : (module SERVICE) Core_registry.Key.t =
-  Core_registry.Key.create "storage.service"
+let key : (module SERVICE) Core_container.Key.t =
+  Core_container.Key.create "storage.service"
 
 module Make (Repo : REPO) : SERVICE = struct
   let upload_base64 req ~file ~base64 =
@@ -243,10 +243,10 @@ end
 module MariaDb = Make (RepoMariaDb)
 
 let mariadb =
-  Core.Registry.create_binding key (module MariaDb) MariaDb.provide_repo
+  Core.Container.create_binding key (module MariaDb) MariaDb.provide_repo
 
 let upload_base64 req ~file ~base64 =
-  match Core.Registry.fetch key with
+  match Core.Container.fetch key with
   | Some (module Service : SERVICE) -> Service.upload_base64 req ~file ~base64
   | None ->
       let msg =
@@ -256,7 +256,7 @@ let upload_base64 req ~file ~base64 =
       Lwt.return @@ Error msg
 
 let update_base64 req ~file ~base64 =
-  match Core.Registry.fetch key with
+  match Core.Container.fetch key with
   | Some (module Service : SERVICE) -> Service.update_base64 req ~file ~base64
   | None ->
       let msg =
@@ -266,7 +266,7 @@ let update_base64 req ~file ~base64 =
       Lwt.return @@ Error msg
 
 let get_data_base64 req ~file =
-  match Core.Registry.fetch key with
+  match Core.Container.fetch key with
   | Some (module Service : SERVICE) -> Service.get_data_base64 req ~file
   | None ->
       let msg =

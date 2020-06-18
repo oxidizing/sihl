@@ -79,9 +79,9 @@ module type SERVICE = sig
   val send : Opium.Std.Request.t -> t -> (unit, string) Result.t Lwt.t
 end
 
-let key : (module SERVICE) Core.Registry.Key.t =
-  Core.Registry.Key.create "email.service"
+let key : (module SERVICE) Core.Container.Key.t =
+  Core.Container.Key.create "email.service"
 
 let send req email =
-  let (module Email : SERVICE) = Core.Registry.fetch_exn key in
+  let (module Email : SERVICE) = Core.Container.fetch_exn key in
   Email.send req email

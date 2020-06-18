@@ -17,7 +17,7 @@ let test_anonymous_request_returns_cookie _ () =
   in
   let* request = Sihl.Run.Test.request_with_connection () in
   let (module Repository : Sihl_session.Repo.REPOSITORY) =
-    Sihl.Core.Registry.fetch_exn Sihl_session.Bind.Repository.key
+    Sihl.Core.Container.fetch_exn Sihl_session.Bind.Repository.key
   in
   let* sessions = Repository.get_all |> Sihl.Core.Db.query_db request in
   let sessions = sessions |> Result.ok_or_failwith in
@@ -43,7 +43,7 @@ let test_requests_persist_session_variables _ () =
   in
   let* request = Sihl.Run.Test.request_with_connection () in
   let (module Repository : Sihl_session.Repo.REPOSITORY) =
-    Sihl.Core.Registry.fetch_exn Sihl_session.Bind.Repository.key
+    Sihl.Core.Container.fetch_exn Sihl_session.Bind.Repository.key
   in
   let* sessions = Repository.get_all |> Sihl.Core.Db.query_db request in
   let session = sessions |> Result.ok_or_failwith |> List.hd_exn in

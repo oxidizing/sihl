@@ -22,9 +22,9 @@ module Make : functor (Repo : REPO) -> SERVICE
 
 module PostgreSql : SERVICE
 
-val postgresql : Core.Registry.Binding.t
+val postgresql : Core.Container.Binding.t
 
-val mariadb : Core.Registry.Binding.t
+val mariadb : Core.Container.Binding.t
 
 module MariaDb : SERVICE
 

@@ -5,6 +5,7 @@ module Hashing = Core.Hashing
 module Jwt = Core.Jwt
 module Sig = Sig
 module Id = Core.Id
+module Container = Core_container
 
 (* Http, Middlewares and application lifecycle *)
 module Http = Http
