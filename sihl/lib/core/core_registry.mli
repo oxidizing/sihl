@@ -18,23 +18,18 @@ module Binding : sig
   val apply : t -> unit
 
   val register : 'a key -> 'a -> unit
-
-  val register_service :
-    (module Sig.SERVICE) key -> (module Sig.SERVICE) -> unit
 end
 
-val get_opt : 'a key -> 'a option
+val fetch : 'a key -> 'a option
 
-val get : 'a key -> 'a
+val fetch_exn : 'a key -> 'a
 
 type binding = Binding.t
 
 val register : 'a key -> 'a -> unit
 
-val register_service : (module Sig.SERVICE) key -> (module Sig.SERVICE) -> unit
-
 val bind : 'a key -> 'a -> binding
 
-val create_binding : 'a key -> 'a -> Sig.repo option -> binding
-
 val set_initialized : unit -> unit
+
+val create_binding : 'a key -> 'a -> Sig.repo option -> binding

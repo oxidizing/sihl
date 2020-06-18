@@ -83,5 +83,5 @@ let key : (module SERVICE) Core.Registry.Key.t =
   Core.Registry.Key.create "email.service"
 
 let send req email =
-  let (module Email : SERVICE) = Core.Registry.get key in
+  let (module Email : SERVICE) = Core.Registry.fetch_exn key in
   Email.send req email

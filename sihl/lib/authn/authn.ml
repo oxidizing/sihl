@@ -5,5 +5,5 @@ end
 let registry_key = Core.Registry.Key.create "/authn/service"
 
 let authenticate req =
-  let (module Service : AUTHN_SERVICE) = Core.Registry.get registry_key in
+  let (module Service : AUTHN_SERVICE) = Core.Registry.fetch_exn registry_key in
   Service.authenticate req

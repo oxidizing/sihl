@@ -246,7 +246,7 @@ let mariadb =
   Core.Registry.create_binding key (module MariaDb) MariaDb.provide_repo
 
 let upload_base64 req ~file ~base64 =
-  match Core.Registry.get_opt key with
+  match Core.Registry.fetch key with
   | Some (module Service : SERVICE) -> Service.upload_base64 req ~file ~base64
   | None ->
       let msg =
@@ -256,7 +256,7 @@ let upload_base64 req ~file ~base64 =
       Lwt.return @@ Error msg
 
 let update_base64 req ~file ~base64 =
-  match Core.Registry.get_opt key with
+  match Core.Registry.fetch key with
   | Some (module Service : SERVICE) -> Service.update_base64 req ~file ~base64
   | None ->
       let msg =
@@ -266,7 +266,7 @@ let update_base64 req ~file ~base64 =
       Lwt.return @@ Error msg
 
 let get_data_base64 req ~file =
-  match Core.Registry.get_opt key with
+  match Core.Registry.fetch key with
   | Some (module Service : SERVICE) -> Service.get_data_base64 req ~file
   | None ->
       let msg =

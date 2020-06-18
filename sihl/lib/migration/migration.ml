@@ -197,7 +197,7 @@ let create_step ~label ?(check_fk = true) statement =
 let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
 
 let execute_steps migration conn =
-  let (module Service : SERVICE) = Core.Registry.get key in
+  let (module Service : SERVICE) = Core.Registry.fetch_exn key in
   let module Connection = (val conn : Caqti_lwt.CONNECTION) in
   let namespace, steps = migration in
   let open Lwt in
@@ -253,7 +253,7 @@ let execute_steps migration conn =
   run steps conn
 
 let execute_migration migration conn =
-  let (module Service : SERVICE) = Core.Registry.get key in
+  let (module Service : SERVICE) = Core.Registry.fetch_exn key in
   let namespace, _ = migration in
   Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
   let* () = Service.setup conn in

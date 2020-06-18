@@ -3,6 +3,8 @@ module Repository = struct
     Sihl.Core.Registry.Key.create "session.repository"
 
   let default () =
-    let (module Repository : Repo.REPOSITORY) = Sihl.Core.Registry.get key in
+    let (module Repository : Repo.REPOSITORY) =
+      Sihl.Core.Registry.fetch_exn key
+    in
     [ (module Repository : Sihl.Sig.REPO) ]
 end

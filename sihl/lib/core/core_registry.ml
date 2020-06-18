@@ -44,14 +44,9 @@ module Binding = struct
   let apply binding = binding.binding ()
 
   let register key impl = create key impl |> apply
-
-  let register_service key service =
-    let (module Service : Sig.SERVICE) = service in
-    let repo = Service.provide_repo in
-    create_with_repo repo key service |> apply
 end
 
-let get_opt key =
+let fetch key =
   if State.is_initialized () then State.get key
   else
     failwith
@@ -60,8 +55,8 @@ let get_opt key =
        side of your function so that the registry gets accessed once the \
        module runs? "
 
-let get key =
-  match get_opt key with
+let fetch_exn key =
+  match fetch key with
   | Some implementation -> implementation
   | None ->
       let msg = "Implementation not found for " ^ Key.info key in
@@ -71,8 +66,6 @@ let get key =
 type binding = Binding.t
 
 let register = Binding.register
-
-let register_service = Binding.register_service
 
 (* TODO remove *)
 let bind = Binding.create

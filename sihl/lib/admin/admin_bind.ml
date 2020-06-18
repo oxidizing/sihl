@@ -8,7 +8,7 @@ let registry_key = Core.Registry.Key.create "/admin/service"
 
 module Service = struct
   let register_page page =
-    match Core.Registry.get_opt registry_key with
+    match Core.Registry.fetch registry_key with
     | Some (module Service : ADMIN_SERVICE) -> Service.register_page page
     | None ->
         Logs.warn (fun m ->
@@ -17,7 +17,7 @@ module Service = struct
                admin app?")
 
   let get_all_pages () =
-    match Core.Registry.get_opt registry_key with
+    match Core.Registry.fetch registry_key with
     | Some (module Service : ADMIN_SERVICE) -> Service.get_all_pages ()
     | None ->
         Logs.warn (fun m ->

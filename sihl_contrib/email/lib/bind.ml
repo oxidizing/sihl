@@ -4,7 +4,7 @@ module Repository = struct
 
   let default () =
     let (module Repository : Repo_sig.REPOSITORY) =
-      Sihl.Core.Registry.get key
+      Sihl.Core.Registry.fetch_exn key
     in
     [ (module Repository : Sihl.Sig.REPO) ]
 end
