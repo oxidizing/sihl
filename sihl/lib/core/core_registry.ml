@@ -30,22 +30,25 @@ module State = struct
   let is_initialized () = !state.is_initialized
 end
 
-module Binding : sig
-  type t
+module Binding = struct
+  type t = { binding : unit -> unit; repo : Sig.repo option }
 
-  val create : 'a Hmap.key -> 'a -> t
+  let get_repo binding = binding.repo
 
-  val apply : t -> unit
+  let create key impl =
+    { binding = (fun () -> State.set key impl); repo = None }
 
-  val register : 'a Hmap.key -> 'a -> unit
-end = struct
-  type t = unit -> unit
+  let create_with_repo repo key impl =
+    { binding = (fun () -> State.set key impl); repo }
 
-  let create key impl () = State.set key impl
-
-  let apply binding = binding ()
+  let apply binding = binding.binding ()
 
   let register key impl = create key impl |> apply
+
+  let register_service key service =
+    let (module Service : Sig.SERVICE) = service in
+    let repo = Service.provide_repo in
+    create_with_repo repo key service |> apply
 end
 
 let get_opt key =
@@ -69,6 +72,11 @@ type binding = Binding.t
 
 let register = Binding.register
 
+let register_service = Binding.register_service
+
+(* TODO remove *)
 let bind = Binding.create
+
+let create_binding key service repo = Binding.create_with_repo repo key service
 
 let set_initialized = State.set_initialized

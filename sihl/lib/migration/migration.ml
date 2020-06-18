@@ -183,7 +183,8 @@ let postgresql = Core.Registry.bind key (module PostgreSql)
 
 module MariaDb = Make (RepoMariaDb)
 
-let mariadb = Core.Registry.bind key (module MariaDb)
+let mariadb =
+  Core.Registry.create_binding key (module MariaDb) MariaDb.provide_repo
 
 include Migration_sig
 

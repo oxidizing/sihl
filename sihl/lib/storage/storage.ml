@@ -242,7 +242,8 @@ end
 
 module MariaDb = Make (RepoMariaDb)
 
-let mariadb = Core.Registry.bind key (module MariaDb)
+let mariadb =
+  Core.Registry.create_binding key (module MariaDb) MariaDb.provide_repo
 
 let upload_base64 req ~file ~base64 =
   match Core.Registry.get_opt key with

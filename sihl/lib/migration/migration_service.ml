@@ -22,6 +22,8 @@ module Model = struct
 end
 
 module type SERVICE = sig
+  include Sig.SERVICE
+
   val setup : Core.Db.connection -> (unit, string) Lwt_result.t
 
   val has :
@@ -40,6 +42,4 @@ module type SERVICE = sig
 
   val increment :
     Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val provide_repo : Sig.repo option
 end
