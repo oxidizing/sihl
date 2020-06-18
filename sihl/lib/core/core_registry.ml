@@ -1,3 +1,5 @@
+(* TODO rename to core_container.ml, provide more ergonomic API in bottom *)
+
 open Base
 
 module Hmap = Hmap.Make (struct
@@ -11,6 +13,8 @@ module Key = struct
 
   let info = Hmap.Key.info
 end
+
+type 'a key = 'a Key.t
 
 module State = struct
   type t = { map : Hmap.t; is_initialized : bool }
@@ -60,6 +64,8 @@ let get key =
       let msg = "Implementation not found for " ^ Key.info key in
       let () = Logs.err (fun m -> m "REGISTRY: %s" msg) in
       failwith msg
+
+type binding = Binding.t
 
 let register = Binding.register
 

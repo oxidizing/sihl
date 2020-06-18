@@ -10,6 +10,12 @@ let seed seed_fn =
   let* request = request_with_connection () in
   seed_fn request
 
-let register_service _ = failwith "TODO"
+let register_services _ =
+  (* TODO
+     1. Register bindings
+     2. Run migrations *)
+  (* List.map bindings ~f:Core.Registry.Binding.apply |> ignore;
+   * Core.Registry.set_initialized () *)
+  failwith "TODO"
 
-let just_service _ = failwith "TODO"
+let just_services _ = failwith "TODO"
