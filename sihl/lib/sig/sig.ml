@@ -3,6 +3,8 @@ type repo = (Core_db.connection -> unit Core_db.db_result) * Migration_sig.t
 
 let migration (_, migration) = migration
 
+let cleaner (cleaner, _) = cleaner
+
 module type REPO = sig
   val migrate : unit -> Migration_sig.t
 

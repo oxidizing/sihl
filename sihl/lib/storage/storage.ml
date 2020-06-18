@@ -11,6 +11,9 @@ end
 module type SERVICE = sig
   include Sig.SERVICE
 
+  val get_file :
+    Http.Req.t -> id:string -> (UploadedFile.t option, string) Lwt_result.t
+
   val upload_base64 :
     Http.Req.t ->
     file:File.t ->
@@ -36,6 +39,9 @@ module type REPO = sig
   val insert_blob :
     Core.Db.connection -> id:string -> blob:string -> unit Core.Db.db_result
 
+  val get_file :
+    Core.Db.connection -> id:string -> UploadedFile.t option Core.Db.db_result
+
   val get_blob :
     Core.Db.connection -> id:string -> string option Core.Db.db_result
 
@@ -50,6 +56,8 @@ let key : (module SERVICE) Core_container.Key.t =
   Core_container.Key.create "storage.service"
 
 module Make (Repo : REPO) : SERVICE = struct
+  let get_file req ~id = Repo.get_file ~id |> Core.Db.query_db req
+
   let upload_base64 req ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = Core.Id.random () |> Core.Id.to_string in
@@ -128,6 +136,23 @@ WHERE
 |sql}
     in
     Connection.exec request file
+
+  let get_file connection ~id =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.find_opt Caqti_type.string uploaded_file
+        {sql|
+SELECT
+  uuid,
+  filename,
+  filesize,
+  mime,
+  asset_blob
+FROM storage_handles
+WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
+|sql}
+    in
+    Connection.find_opt request id
 
   let get_blob connection ~id =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -248,6 +273,16 @@ let mariadb =
 let upload_base64 req ~file ~base64 =
   match Core.Container.fetch key with
   | Some (module Service : SERVICE) -> Service.upload_base64 req ~file ~base64
+  | None ->
+      let msg =
+        "STORAGE: Could not find storage service, make sure to register one"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let get_file req ~id =
+  match Core.Container.fetch key with
+  | Some (module Service : SERVICE) -> Service.get_file req ~id
   | None ->
       let msg =
         "STORAGE: Could not find storage service, make sure to register one"

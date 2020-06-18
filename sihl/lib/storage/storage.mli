@@ -45,6 +45,9 @@ end
 module type SERVICE = sig
   include Sig.SERVICE
 
+  val get_file :
+    Http.Req.t -> id:string -> (UploadedFile.t option, string) Lwt_result.t
+
   val upload_base64 :
     Http.Req.t ->
     file:File.t ->
@@ -70,6 +73,9 @@ module type REPO = sig
   val insert_blob :
     Core.Db.connection -> id:string -> blob:string -> unit Core.Db.db_result
 
+  val get_file :
+    Core.Db.connection -> id:string -> UploadedFile.t option Core.Db.db_result
+
   val get_blob :
     Core.Db.connection -> id:string -> string option Core.Db.db_result
 
@@ -89,6 +95,9 @@ val upload_base64 :
   file:File.t ->
   base64:string ->
   (UploadedFile.t, string) Lwt_result.t
+
+val get_file :
+  Http.Req.t -> id:string -> (UploadedFile.t option, string) Lwt_result.t
 
 val update_base64 :
   Http.Req.t ->

@@ -171,17 +171,26 @@ module Project : PROJECT = struct
   let clean project =
     (* TODO move this into some repo related module *)
     let* request = Run_test.request_with_connection () in
-    let repositories =
+    let app_cleaners =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
+      |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.clean)
     in
+    let service_cleaners =
+      project.bindings
+      |> List.map ~f:Core.Container.repo_of_binding
+      |> List.fold ~init:[] ~f:(fun acc cur ->
+             match cur with Some value -> List.cons value acc | None -> acc)
+      |> List.map ~f:Sig.cleaner
+    in
+    let cleaners = List.concat [ app_cleaners; service_cleaners ] in
     Logs.debug (fun m -> m "REPO: Cleaning up app database");
-    let rec clean_repos repos =
-      match repos with
+    let rec clean_repos cleaners =
+      match cleaners with
       | [] -> Lwt.return @@ Ok ()
-      | (module Repo : Sig.REPO) :: cleaners -> (
-          let* result = Repo.clean |> Core.Db.query_db request in
+      | cleaner :: cleaners -> (
+          let* result = cleaner |> Core.Db.query_db request in
           match result with
           | Ok _ -> clean_repos cleaners
           | Error msg ->
@@ -189,7 +198,7 @@ module Project : PROJECT = struct
                   m "REPO: Cleaning up app database failed %s" msg);
               Lwt.return @@ Error msg )
     in
-    clean_repos repositories
+    clean_repos cleaners
 
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"
