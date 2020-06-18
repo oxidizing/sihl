@@ -52,14 +52,14 @@ module Project : PROJECT = struct
     apps : (module APP) list;
     middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
-    bindings : Core.Container.Binding.t list option;
-    services : Core.Container.Binding.t list option;
+    bindings : Core.Container.Binding.t list;
+    services : Core.Container.Binding.t list;
   }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ?services ?bindings ~config middlewares apps =
+  let create ?(services = []) ?(bindings = []) ~config middlewares apps =
     { apps; config; services; bindings; middlewares }
 
   let merge_endpoints project =
@@ -95,28 +95,32 @@ module Project : PROJECT = struct
     Logs.debug (fun m -> m "START: logger set up")
 
   let migrate project =
-    project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.repos ())
-    |> List.concat
-    |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
-    |> Migration.execute
+    let app_migrations =
+      project.apps
+      |> List.map ~f:(fun (module App : APP) -> App.repos ())
+      |> List.concat
+      |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
+    in
+    let service_migrations =
+      project.bindings
+      |> List.map ~f:Core.Container.repo_of_binding
+      |> List.fold ~init:[] ~f:(fun acc cur ->
+             match cur with Some value -> List.cons value acc | None -> acc)
+      |> List.map ~f:Sig.migration
+    in
+    let migrations = List.concat [ app_migrations; service_migrations ] in
+    Migration.execute migrations
 
   let bind_registry project =
     Logs.debug (fun m -> m "START: Binding services to service container");
-    project.services
-    |> Option.map ~f:(fun bindings ->
-           List.map bindings ~f:Core.Container.Binding.apply)
-    |> ignore;
+    project.services |> List.map ~f:Core.Container.Binding.apply |> ignore;
     Logs.debug (fun m -> m "START: Binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->
            List.map (App.bindings ()) ~f:Core.Container.Binding.apply)
     |> ignore;
     Logs.debug (fun m -> m "START: Binding project implementations");
-    project.bindings
-    |> Option.map ~f:(fun bindings ->
-           List.map bindings ~f:Core.Container.Binding.apply)
-    |> ignore;
+    project.bindings |> List.map ~f:Core.Container.Binding.apply |> ignore;
     Core.Container.set_initialized ()
 
   let setup_config project =

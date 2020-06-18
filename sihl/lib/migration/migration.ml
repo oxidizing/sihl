@@ -290,6 +290,11 @@ let to_caqti_error result =
 
 (* TODO gracefully try to disable and enable fk keys *)
 let execute migrations =
+  let n = List.length migrations in
+  if n > 0 then
+    Logs.debug (fun m ->
+        m "MIGRATION: Executing %i migrations" (List.length migrations))
+  else Logs.debug (fun m -> m "MIGRATION: No migrations to execute");
   let open Lwt in
   let rec run migrations conn =
     match migrations with

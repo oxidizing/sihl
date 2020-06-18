@@ -31,7 +31,7 @@ module State = struct
 end
 
 module Binding = struct
-  type t = { binding : unit -> unit; repo : Sig.repo option }
+  type t = { binding : unit -> unit; repo : Sig.repo option } [@@deriving show]
 
   let get_repo binding = binding.repo
 
@@ -65,6 +65,8 @@ let fetch_exn key =
 
 type binding = Binding.t
 
+let pp = Binding.pp
+
 let register = Binding.register
 
 (* TODO remove *)
@@ -73,3 +75,5 @@ let bind = Binding.create
 let create_binding key service repo = Binding.create_with_repo repo key service
 
 let set_initialized = State.set_initialized
+
+let repo_of_binding = Binding.get_repo

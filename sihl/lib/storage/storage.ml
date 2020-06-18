@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS storage_blobs (
   let create_handles_table =
     Migration.create_step ~label:"create handles table"
       {sql|
-CREATE TABLE IF NOT EXISTS assets (
+CREATE TABLE IF NOT EXISTS storage_handles (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   filename VARCHAR(255) NOT NULL,

@@ -10,12 +10,14 @@ let seed seed_fn =
   let* request = request_with_connection () in
   seed_fn request
 
-let register_services _ =
-  (* TODO
-     1. Register bindings
-     2. Run migrations *)
-  (* List.map bindings ~f:Core.Container.Binding.apply |> ignore;
-   * Core.Container.set_initialized () *)
-  failwith "TODO"
+let register_services bindings =
+  let config =
+    Core.Config.Setting.create ~development:[]
+      ~test:[ ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev") ]
+      ~production:[]
+  in
+  let project = Run.Project.Project.create ~bindings ~config [] [] in
+  let* result = Run.Project.Project.start project in
+  result |> Result.ok_or_failwith |> Lwt.return
 
 let just_services _ = failwith "TODO"

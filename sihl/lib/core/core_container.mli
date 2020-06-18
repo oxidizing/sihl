@@ -26,6 +26,8 @@ val fetch_exn : 'a key -> 'a
 
 type binding = Binding.t
 
+val pp : Format.formatter -> binding -> unit
+
 val register : 'a key -> 'a -> unit
 
 val bind : 'a key -> 'a -> binding
@@ -33,3 +35,5 @@ val bind : 'a key -> 'a -> binding
 val set_initialized : unit -> unit
 
 val create_binding : 'a key -> 'a -> Sig.repo option -> binding
+
+val repo_of_binding : binding -> Sig.repo option

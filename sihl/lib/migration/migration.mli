@@ -32,6 +32,12 @@ type step = Migration_sig.step
 
 type t = Migration_sig.t
 
+val pp : Format.formatter -> t -> unit
+
+val show : t -> string
+
+val equal : t -> t -> bool
+
 val empty : string -> t
 
 val create_step : label:string -> ?check_fk:bool -> string -> step
