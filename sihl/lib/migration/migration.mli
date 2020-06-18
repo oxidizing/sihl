@@ -1,27 +1,6 @@
-module Model : sig
-  type t
-end
+module Model = Migration_service.Model
 
-module type SERVICE = sig
-  val setup : Core.Db.connection -> (unit, string) Lwt_result.t
-
-  val has :
-    Core.Db.connection -> namespace:string -> (bool, string) Lwt_result.t
-
-  val get :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val upsert : Core.Db.connection -> Model.t -> (unit, string) Lwt_result.t
-
-  val mark_dirty :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val mark_clean :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val increment :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-end
+module type SERVICE = Migration_service.SERVICE
 
 module type REPO = sig
   val create_table_if_not_exists :
@@ -49,9 +28,9 @@ val mariadb : Core.Registry.Binding.t
 
 module MariaDb : SERVICE
 
-type step
+type step = Migration_sig.step
 
-type t
+type t = Migration_sig.t
 
 val empty : string -> t
 
