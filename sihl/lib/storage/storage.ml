@@ -92,6 +92,14 @@ module RepoMariaDb = struct
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
+      (* Logs.err (fun m -> m "Got bytes %s" id);
+       * let msg = Printf.sprintf "Invalid id provided %s" id in
+       * let id =
+       *   id |> Uuidm.of_bytes |> Option.to_result ~none:msg
+       *   |> Base.Result.ok_or_failwith |> Uuidm.to_string
+       * in
+       * Logs.err (fun m -> m "Converted to id %s" id); *)
+      let id = Repo.hex_to_uuid id in
       let file = File.make ~id ~filename ~filesize ~mime in
       Ok (UploadedFile.make ~file ~blob)
     in
@@ -111,11 +119,11 @@ INSERT INTO storage_handles (
   mime,
   asset_blob
 ) VALUES (
+  UNHEX(REPLACE(?, '-', '')),
   ?,
   ?,
   ?,
-  ?,
-  ?
+  UNHEX(REPLACE(?, '-', ''))
 )
 |sql}
     in
@@ -130,7 +138,7 @@ UPDATE storage_handles SET
   filename = $2,
   filesize = $3,
   mime = $4,
-  asset_blob = $5
+  asset_blob = UNHEX(REPLACE($5, '-', ''))
 WHERE
   storage_handles.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
@@ -143,11 +151,11 @@ WHERE
       Caqti_request.find_opt Caqti_type.string uploaded_file
         {sql|
 SELECT
-  uuid,
+  HEX(uuid),
   filename,
   filesize,
   mime,
-  asset_blob
+  HEX(asset_blob)
 FROM storage_handles
 WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
@@ -177,7 +185,7 @@ INSERT INTO storage_blobs (
   uuid,
   asset_data
 ) VALUES (
-  ?,
+  UNHEX(REPLACE(?, '-', '')),
   ?
 )
 |sql}
@@ -191,7 +199,7 @@ INSERT INTO storage_blobs (
         Caqti_type.(tup2 string string)
         {sql|
 UPDATE storage_blobs SET
-  data = $2
+  asset_data = $2
 WHERE
   storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
@@ -241,7 +249,7 @@ CREATE TABLE IF NOT EXISTS storage_handles (
   filename VARCHAR(255) NOT NULL,
   filesize BIGINT UNSIGNED,
   mime VARCHAR(128) NOT NULL,
-  asset_blob BIGINT UNSIGNED NOT NULL,
+  asset_blob BINARY(16) NOT NULL,
   created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

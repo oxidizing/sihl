@@ -4,8 +4,7 @@ let ( let* ) = Lwt.bind
 
 let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 
-let upload_file _ () =
-  let* () = Sihl.Run.Manage.clean () in
+let fetch_uploaded_file _ () =
   let* () =
     Sihl.Test.register_services [ Sihl.Migration.mariadb; Sihl.Storage.mariadb ]
   in
@@ -20,11 +19,18 @@ let upload_file _ () =
     |> Lwt.map Result.ok_or_failwith
   in
   let* uploaded_file =
-    Sihl.Storage.get_file req ~id:file_id |> Lwt.map Result.ok_or_failwith
+    Sihl.Storage.get_file req ~id:file_id
+    |> Lwt.map Result.ok_or_failwith
+    |> Lwt.map (fun file ->
+           Option.value_exn file ~message:"No uploaded file found")
   in
-  let actual =
-    Option.value_exn uploaded_file ~message:"No uploaded file found"
-    |> Sihl.Storage.UploadedFile.file
+  let actual_file = uploaded_file |> Sihl.Storage.UploadedFile.file in
+  Alcotest.(check alco_file "has same file" file actual_file);
+  let* actual_blob =
+    Sihl.Storage.get_data_base64 req ~file:uploaded_file
+    |> Lwt.map Result.ok_or_failwith
+    |> Lwt.map (fun file ->
+           Option.value_exn file ~message:"No uploaded blob found")
   in
-  Alcotest.(check alco_file "has same file" file actual);
+  Alcotest.(check string "has same blob" "filecontentinbase64" actual_blob);
   Lwt.return ()

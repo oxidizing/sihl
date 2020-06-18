@@ -18,6 +18,8 @@ let register_services bindings =
   in
   let project = Run.Project.Project.create ~bindings ~config [] [] in
   let* result = Run.Project.Project.start project in
+  let () = result |> Result.ok_or_failwith in
+  let* result = Run.Project.Project.clean project in
   result |> Result.ok_or_failwith |> Lwt.return
 
 let just_services _ = failwith "TODO"
