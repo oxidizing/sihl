@@ -5,3 +5,7 @@ module type REPO = sig
 
   val clean : Core_db.connection -> unit Core_db.db_result
 end
+
+module type SERVICE = sig
+  val provide_repo : repo option
+end

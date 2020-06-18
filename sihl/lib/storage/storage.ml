@@ -1,12 +1,16 @@
 module File = struct
   type t = { id : string; filename : string; filesize : int; mime : string }
+  [@@deriving fields, yojson, show, eq, make]
 end
 
 module UploadedFile = struct
   type t = { file : File.t; blob : string }
+  [@@deriving fields, yojson, show, eq, make]
 end
 
 module type SERVICE = sig
+  include Sig.SERVICE
+
   val upload_base64 :
     Http.Req.t ->
     file:File.t ->
@@ -21,8 +25,6 @@ module type SERVICE = sig
 
   val get_data_base64 :
     Http.Req.t -> file:UploadedFile.t -> (string option, string) Lwt_result.t
-
-  val provide_repo : Sig.repo option
 end
 
 module type REPO = sig
@@ -54,13 +56,13 @@ module Make (Repo : REPO) : SERVICE = struct
     let* () =
       Repo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
     in
-    let uploaded_file = UploadedFile.{ file; blob = blob_id } in
+    let uploaded_file = UploadedFile.make ~file ~blob:blob_id in
     let* () = Repo.insert_file ~file:uploaded_file |> Core.Db.query_db req in
     Lwt.return @@ Ok uploaded_file
 
   let update_base64 req ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
-    let blob_id = UploadedFile.(file.blob) in
+    let blob_id = UploadedFile.blob file in
     let* () =
       Repo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
     in
@@ -68,7 +70,7 @@ module Make (Repo : REPO) : SERVICE = struct
     Lwt.return @@ Ok file
 
   let get_data_base64 req ~file =
-    let blob_id = UploadedFile.(file.blob) in
+    let blob_id = UploadedFile.blob file in
     Repo.get_blob ~id:blob_id |> Core.Db.query_db req
 
   let provide_repo = Some (Repo.clean, Repo.migrate ())
@@ -82,8 +84,8 @@ module RepoMariaDb = struct
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
-      let file = File.{ id; filename; filesize; mime } in
-      Ok UploadedFile.{ file; blob }
+      let file = File.make ~id ~filename ~filesize ~mime in
+      Ok (UploadedFile.make ~file ~blob)
     in
     Caqti_type.(
       custom ~encode ~decode
@@ -241,3 +243,33 @@ end
 module MariaDb = Make (RepoMariaDb)
 
 let mariadb = Core.Registry.bind key (module MariaDb)
+
+let upload_base64 req ~file ~base64 =
+  match Core.Registry.get_opt key with
+  | Some (module Service : SERVICE) -> Service.upload_base64 req ~file ~base64
+  | None ->
+      let msg =
+        "STORAGE: Could not find storage service, make sure to register one"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let update_base64 req ~file ~base64 =
+  match Core.Registry.get_opt key with
+  | Some (module Service : SERVICE) -> Service.update_base64 req ~file ~base64
+  | None ->
+      let msg =
+        "STORAGE: Could not find storage service, make sure to register one"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let get_data_base64 req ~file =
+  match Core.Registry.get_opt key with
+  | Some (module Service : SERVICE) -> Service.get_data_base64 req ~file
+  | None ->
+      let msg =
+        "STORAGE: Could not find storage service, make sure to register one"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg

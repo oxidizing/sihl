@@ -1,5 +1,3 @@
-(* Get rid of this module, contents moved to test.ml *)
-
 open Base
 
 let ( let* ) = Lwt.bind
@@ -11,3 +9,7 @@ let request_with_connection () =
 let seed seed_fn =
   let* request = request_with_connection () in
   seed_fn request
+
+let register_service _ = failwith "TODO"
+
+let just_service _ = failwith "TODO"
