@@ -10,6 +10,6 @@ module Repository = struct
 end
 
 module Transport = struct
-  let key : (module Sihl.Email.SERVICE) Sihl.Core.Container.Key.t =
+  let key : (module Sihl.Email.Service.SERVICE) Sihl.Core.Container.Key.t =
     Sihl.Core.Container.Key.create "email.transport"
 end

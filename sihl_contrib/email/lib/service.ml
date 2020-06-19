@@ -22,7 +22,7 @@ let render request email =
   in
   set_content content email |> Lwt.return
 
-module Console : Sihl.Email.SERVICE = struct
+module Console : Sihl.Email.Service.SERVICE = struct
   let show email =
     let sender = sender email in
     let recipient = recipient email in
@@ -46,14 +46,14 @@ Subject: %s
     Lwt.return @@ Ok (Logs.info (fun m -> m "%s" to_print))
 end
 
-module Smtp : Sihl.Email.SERVICE = struct
+module Smtp : Sihl.Email.Service.SERVICE = struct
   let send request email =
     let* _ = render request email in
     (* TODO implement SMTP *)
     Lwt.return @@ Error "Not implemented"
 end
 
-module SendGrid : Sihl.Email.SERVICE = struct
+module SendGrid : Sihl.Email.Service.SERVICE = struct
   let body ~recipient ~subject ~sender ~content =
     Printf.sprintf
       {|
@@ -120,7 +120,7 @@ module SendGrid : Sihl.Email.SERVICE = struct
 end
 
 module Memory : sig
-  include Sihl.Email.SERVICE
+  include Sihl.Email.Service.SERVICE
 
   val get : unit -> t
 end = struct
@@ -138,7 +138,7 @@ end = struct
 end
 
 let send request email =
-  let (module Email : Sihl.Email.SERVICE) =
+  let (module Email : Sihl.Email.Service.SERVICE) =
     Sihl.Core.Container.fetch_exn Bind.Transport.key
   in
   Email.send request email

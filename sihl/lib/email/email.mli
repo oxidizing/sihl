@@ -42,7 +42,7 @@ module Template : sig
   val render : TemplateData.t -> t -> string
 end
 
-type t
+type t = Email_model.t
 
 val make :
   sender:string ->
@@ -83,8 +83,10 @@ val show : t -> string
 
 val equal : t -> t -> bool
 
-module type SERVICE = sig
-  val send : Opium.Std.Request.t -> t -> (unit, string) Result.t Lwt.t
+module Service : sig
+  module type SERVICE = Email_sig.SERVICE
+
+  val key : (module SERVICE) Core_container.key
 end
 
 val send : Http.Req.t -> t -> (unit, string) Result.t Lwt.t
