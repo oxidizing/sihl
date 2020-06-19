@@ -1,7 +1,7 @@
-module type AUTHN_SERVICE = sig
-  val authenticate : Opium_kernel.Request.t -> User.t
-end
+module Service : sig
+  module type SERVICE = Authn_sig.SERVICE
 
-val registry_key : (module AUTHN_SERVICE) Core.Container.Key.t
+  val key : (module SERVICE) Core.Container.key
+end
 
 val authenticate : Opium_kernel.Request.t -> User.t

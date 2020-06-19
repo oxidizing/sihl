@@ -1,11 +1,11 @@
-module type AUTHN_SERVICE = sig
-  val authenticate : Opium_kernel.Request.t -> User.t
+module Service = struct
+  let key = Authn_service.key
+
+  module type SERVICE = Authn_sig.SERVICE
 end
 
-let registry_key = Core.Container.Key.create "/authn/service"
-
 let authenticate req =
-  let (module Service : AUTHN_SERVICE) =
-    Core.Container.fetch_exn registry_key
+  let (module Service : Service.SERVICE) =
+    Core.Container.fetch_exn Authn_service.key
   in
   Service.authenticate req
