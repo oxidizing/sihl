@@ -43,7 +43,7 @@ let middlewares =
 
 let services =
   [
-    Sihl.Migration.postgresql;
+    Sihl.Migration.Service.postgresql;
     Sihl_session_postgresql.bind;
     Sihl_email_postgresql.bind;
     Sihl_user_postgresql.bind;

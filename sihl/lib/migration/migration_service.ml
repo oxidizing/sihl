@@ -1,45 +1,169 @@
 open Base
+open Migration_sig
+module Model = Migration_model
 
-module Model = struct
-  type t = { namespace : string; version : int; dirty : bool }
+let ( let* ) = Lwt_result.bind
 
-  let create ~namespace = { namespace; version = 0; dirty = true }
+let key : (module SERVICE) Core_container.Key.t =
+  Core_container.Key.create "migration.service"
 
-  let mark_dirty state = { state with dirty = true }
+module Make (Repo : REPO) : SERVICE = struct
+  let setup c =
+    Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
+    Repo.create_table_if_not_exists |> Core.Db.query_db_connection c
 
-  let mark_clean state = { state with dirty = false }
+  let has c ~namespace =
+    let* result = Repo.get ~namespace |> Core.Db.query_db_connection c in
+    Lwt_result.return (Option.is_some result)
 
-  let increment state = { state with version = state.version + 1 }
+  let get c ~namespace =
+    let* state = Repo.get ~namespace |> Core.Db.query_db_connection c in
+    Lwt.return
+    @@
+    match state with
+    | Some state -> Ok state
+    | None ->
+        Error
+          (Printf.sprintf "could not get migration state for namespace %s"
+             namespace)
 
-  let steps_to_apply (namespace, steps) { version; _ } =
-    (namespace, List.drop steps version)
+  let upsert c state = Repo.upsert ~state |> Core.Db.query_db_connection c
 
-  let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
+  let mark_dirty c ~namespace =
+    let* state = get c ~namespace in
+    let dirty_state = Model.mark_dirty state in
+    let* () = upsert c dirty_state in
+    Lwt.return @@ Ok dirty_state
 
-  let to_tuple state = (state.namespace, state.version, state.dirty)
+  let mark_clean c ~namespace =
+    let* state = get c ~namespace in
+    let clean_state = Model.mark_clean state in
+    let* () = upsert c clean_state in
+    Lwt.return @@ Ok clean_state
 
-  let dirty state = state.dirty
+  let increment c ~namespace =
+    let* state = get c ~namespace in
+    let updated_state = Model.increment state in
+    let* () = upsert c updated_state in
+    Lwt.return @@ Ok updated_state
+
+  let provide_repo = None
 end
 
-module type SERVICE = sig
-  include Sig.SERVICE
+module RepoMariaDb = struct
+  let create_table_if_not_exists connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Caqti_type.unit
+        {sql|
+CREATE TABLE IF NOT EXISTS core_migration_state (
+  namespace VARCHAR(128) NOT NULL,
+  version INTEGER,
+  dirty BOOL NOT NULL,
+  PRIMARY KEY (namespace)
+);
+ |sql}
+    in
+    Connection.exec request ()
 
-  val setup : Core.Db.connection -> (unit, string) Lwt_result.t
+  let get connection ~namespace =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.find_opt Caqti_type.string
+        Caqti_type.(tup3 string int bool)
+        {sql|
+SELECT
+  namespace,
+  version,
+  dirty
+FROM core_migration_state
+WHERE namespace = ?;
+|sql}
+    in
+    let* result = Connection.find_opt request namespace in
+    Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
 
-  val has :
-    Core.Db.connection -> namespace:string -> (bool, string) Lwt_result.t
-
-  val get :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val upsert : Core.Db.connection -> Model.t -> (unit, string) Lwt_result.t
-
-  val mark_dirty :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val mark_clean :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val increment :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
+  let upsert connection ~state =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec
+        Caqti_type.(tup3 string int bool)
+        {sql|
+INSERT INTO core_migration_state (
+  namespace,
+  version,
+  dirty
+) VALUES (
+  ?,
+  ?,
+  ?
+) ON DUPLICATE KEY UPDATE
+version = VALUES(version),
+dirty = VALUES(dirty)
+|sql}
+    in
+    Connection.exec request (Model.to_tuple state)
 end
+
+module RepoPostgreSql = struct
+  let create_table_if_not_exists connection =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Caqti_type.unit
+        {sql|
+CREATE TABLE IF NOT EXISTS core_migration_state (
+  namespace VARCHAR(128) NOT NULL PRIMARY KEY,
+  version INTEGER,
+  dirty BOOL NOT NULL
+);
+ |sql}
+    in
+    Connection.exec request ()
+
+  let get connection ~namespace =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.find_opt Caqti_type.string
+        Caqti_type.(tup3 string int bool)
+        {sql|
+SELECT
+  namespace,
+  version,
+  dirty
+FROM core_migration_state
+WHERE namespace = ?;
+|sql}
+    in
+    let* result = Connection.find_opt request namespace in
+    Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
+
+  let upsert connection ~state =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec
+        Caqti_type.(tup3 string int bool)
+        {sql|
+INSERT INTO core_migration_state (
+  namespace,
+  version,
+  dirty
+) VALUES (
+  ?,
+  ?,
+  ?
+) ON CONFLICT (namespace)
+DO UPDATE SET version = EXCLUDED.version,
+dirty = EXCLUDED.dirty
+|sql}
+    in
+    Connection.exec request (Model.to_tuple state)
+end
+
+module PostgreSql = Make (RepoPostgreSql)
+
+let postgresql = Core.Container.bind key (module PostgreSql)
+
+module MariaDb = Make (RepoMariaDb)
+
+let mariadb =
+  Core.Container.create_binding key (module MariaDb) MariaDb.provide_repo

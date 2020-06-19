@@ -1,36 +1,24 @@
 module Model = Migration_service.Model
 
-module type SERVICE = Migration_service.SERVICE
+module Service : sig
+  module type SERVICE = Migration_sig.SERVICE
 
-module type REPO = sig
-  val create_table_if_not_exists :
-    Core.Db.connection ->
-    (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+  module type REPO = Migration_sig.REPO
 
-  val get :
-    Core.Db.connection ->
-    namespace:string ->
-    (Model.t option, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+  module Make : functor (Repo : REPO) -> SERVICE
 
-  val upsert :
-    Core.Db.connection ->
-    state:Model.t ->
-    (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+  module PostgreSql : SERVICE
+
+  val postgresql : Core.Container.Binding.t
+
+  val mariadb : Core.Container.Binding.t
+
+  module MariaDb : SERVICE
 end
 
-module Make : functor (Repo : REPO) -> SERVICE
+type step = Model.Migration.step
 
-module PostgreSql : SERVICE
-
-val postgresql : Core.Container.Binding.t
-
-val mariadb : Core.Container.Binding.t
-
-module MariaDb : SERVICE
-
-type step = Migration_sig.step
-
-type t = Migration_sig.t
+type t = Model.Migration.t
 
 val pp : Format.formatter -> t -> unit
 

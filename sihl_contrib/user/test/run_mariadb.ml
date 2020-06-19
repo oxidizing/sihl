@@ -26,7 +26,7 @@ let services =
     Sihl_session_mariadb.bind;
     Sihl_email_mariadb.bind;
     Sihl_user_mariadb.bind;
-    Sihl.Migration.mariadb;
+    Sihl.Migration.Service.mariadb;
   ]
 
 let project =

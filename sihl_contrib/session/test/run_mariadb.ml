@@ -10,7 +10,7 @@ let config =
 let middlewares =
   [ Sihl.Middleware.db; Sihl.Middleware.cookie; Sihl_session.middleware ]
 
-let services = [ Sihl_session_mariadb.bind; Sihl.Migration.mariadb ]
+let services = [ Sihl_session_mariadb.bind; Sihl.Migration.Service.mariadb ]
 
 let project =
   Sihl.Run.Project.Project.create ~config ~services middlewares
