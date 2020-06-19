@@ -85,7 +85,10 @@ let suite =
         test_case "session not expired" `Quick Test_session.session_not_expired;
       ] );
     ( "storage",
-      [ test_case "upload file" `Quick Test_storage.fetch_uploaded_file ] );
+      [
+        test_case "upload file" `Quick Test_storage.fetch_uploaded_file;
+        test_case "update file" `Quick Test_storage.update_uploaded_file;
+      ] );
   ]
 
 let () = Lwt_main.run (run "core" suite)

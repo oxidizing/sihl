@@ -1,52 +1,73 @@
 module File = struct
   type t = { id : string; filename : string; filesize : int; mime : string }
   [@@deriving fields, yojson, show, eq, make]
+
+  let set_mime mime file = { file with mime }
+
+  let set_filesize filesize file = { file with filesize }
+
+  let set_filename filename file = { file with filename }
 end
 
-module UploadedFile = struct
+module StoredFile = struct
   type t = { file : File.t; blob : string }
   [@@deriving fields, yojson, show, eq, make]
+
+  let mime stored_file = File.mime stored_file.file
+
+  let filesize stored_file = File.filesize stored_file.file
+
+  let filename stored_file = File.filename stored_file.file
+
+  let set_mime mime stored_file =
+    { stored_file with file = File.set_mime mime stored_file.file }
+
+  let set_filesize size stored_file =
+    { stored_file with file = File.set_filesize size stored_file.file }
+
+  let set_filename name stored_file =
+    { stored_file with file = File.set_filename name stored_file.file }
 end
 
 module type SERVICE = sig
   include Sig.SERVICE
 
   val get_file :
-    Http.Req.t -> id:string -> (UploadedFile.t option, string) Lwt_result.t
+    Http.Req.t -> id:string -> (StoredFile.t option, string) Lwt_result.t
 
   val upload_base64 :
     Http.Req.t ->
     file:File.t ->
     base64:string ->
-    (UploadedFile.t, string) Lwt_result.t
+    (StoredFile.t, string) Lwt_result.t
 
   val update_base64 :
     Http.Req.t ->
-    file:UploadedFile.t ->
+    file:StoredFile.t ->
     base64:string ->
-    (UploadedFile.t, string) Lwt_result.t
+    (StoredFile.t, string) Lwt_result.t
 
   val get_data_base64 :
-    Http.Req.t -> file:UploadedFile.t -> (string option, string) Lwt_result.t
+    Http.Req.t -> file:StoredFile.t -> (string option, string) Lwt_result.t
 end
 
 module type REPO = sig
   include Sig.REPO
 
   val insert_file :
-    Core.Db.connection -> file:UploadedFile.t -> unit Core.Db.db_result
+    Core.Db.connection -> file:StoredFile.t -> unit Core.Db.db_result
 
   val insert_blob :
     Core.Db.connection -> id:string -> blob:string -> unit Core.Db.db_result
 
   val get_file :
-    Core.Db.connection -> id:string -> UploadedFile.t option Core.Db.db_result
+    Core.Db.connection -> id:string -> StoredFile.t option Core.Db.db_result
 
   val get_blob :
     Core.Db.connection -> id:string -> string option Core.Db.db_result
 
   val update_file :
-    Core.Db.connection -> file:UploadedFile.t -> unit Core.Db.db_result
+    Core.Db.connection -> file:StoredFile.t -> unit Core.Db.db_result
 
   val update_blob :
     Core.Db.connection -> id:string -> blob:string -> unit Core.Db.db_result
@@ -64,13 +85,13 @@ module Make (Repo : REPO) : SERVICE = struct
     let* () =
       Repo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
     in
-    let uploaded_file = UploadedFile.make ~file ~blob:blob_id in
-    let* () = Repo.insert_file ~file:uploaded_file |> Core.Db.query_db req in
-    Lwt.return @@ Ok uploaded_file
+    let stored_file = StoredFile.make ~file ~blob:blob_id in
+    let* () = Repo.insert_file ~file:stored_file |> Core.Db.query_db req in
+    Lwt.return @@ Ok stored_file
 
   let update_base64 req ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
-    let blob_id = UploadedFile.blob file in
+    let blob_id = StoredFile.blob file in
     let* () =
       Repo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
     in
@@ -78,16 +99,16 @@ module Make (Repo : REPO) : SERVICE = struct
     Lwt.return @@ Ok file
 
   let get_data_base64 req ~file =
-    let blob_id = UploadedFile.blob file in
+    let blob_id = StoredFile.blob file in
     Repo.get_blob ~id:blob_id |> Core.Db.query_db req
 
   let provide_repo = Some (Repo.clean, Repo.migrate ())
 end
 
 module RepoMariaDb = struct
-  let uploaded_file =
+  let stored_file =
     let encode m =
-      let UploadedFile.{ file; blob } = m in
+      let StoredFile.{ file; blob } = m in
       let File.{ id; filename; filesize; mime } = file in
       Ok (id, (filename, (filesize, (mime, blob))))
     in
@@ -101,7 +122,7 @@ module RepoMariaDb = struct
        * Logs.err (fun m -> m "Converted to id %s" id); *)
       let id = Repo.hex_to_uuid id in
       let file = File.make ~id ~filename ~filesize ~mime in
-      Ok (UploadedFile.make ~file ~blob)
+      Ok (StoredFile.make ~file ~blob)
     in
     Caqti_type.(
       custom ~encode ~decode
@@ -110,7 +131,7 @@ module RepoMariaDb = struct
   let insert_file connection ~file =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
-      Caqti_request.exec uploaded_file
+      Caqti_request.exec stored_file
         {sql|
 INSERT INTO storage_handles (
   uuid,
@@ -132,7 +153,7 @@ INSERT INTO storage_handles (
   let update_file connection ~file =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
-      Caqti_request.exec uploaded_file
+      Caqti_request.exec stored_file
         {sql|
 UPDATE storage_handles SET
   filename = $2,
@@ -148,7 +169,7 @@ WHERE
   let get_file connection ~id =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
-      Caqti_request.find_opt Caqti_type.string uploaded_file
+      Caqti_request.find_opt Caqti_type.string stored_file
         {sql|
 SELECT
   HEX(uuid),
