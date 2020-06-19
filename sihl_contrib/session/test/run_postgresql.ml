@@ -10,12 +10,10 @@ let config =
 let middlewares =
   [ Sihl.Middleware.db; Sihl.Middleware.cookie; Sihl_session.middleware ]
 
-let bindings = [ Sihl_session_postgresql.bind ]
-
-let services = [ Sihl.Migration.postgresql ]
+let services = [ Sihl_session_postgresql.bind; Sihl.Migration.postgresql ]
 
 let project =
-  Sihl.Run.Project.Project.create ~config ~services ~bindings middlewares
+  Sihl.Run.Project.Project.create ~config ~services middlewares
     [ (module Sihl_session.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project

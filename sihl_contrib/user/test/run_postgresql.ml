@@ -41,17 +41,16 @@ let middlewares =
  * let register_services =
  *   [ MigrationService; SessionService; EmailService; UserService ] *)
 
-let bindings =
+let services =
   [
+    Sihl.Migration.postgresql;
     Sihl_session_postgresql.bind;
     Sihl_email_postgresql.bind;
     Sihl_user_postgresql.bind;
   ]
 
-let services = [ Sihl.Migration.postgresql ]
-
 let project =
-  Sihl.Run.Project.Project.create ~config ~services ~bindings middlewares
+  Sihl.Run.Project.Project.create ~config ~services middlewares
     [
       (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
     ]

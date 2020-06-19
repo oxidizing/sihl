@@ -33,7 +33,7 @@ let middlewares =
     Sihl_user.Middleware.Authn.session;
   ]
 
-let bindings =
+let services =
   [
     Sihl_session_postgresql.bind;
     Sihl_email_postgresql.bind;
@@ -41,7 +41,7 @@ let bindings =
   ]
 
 let project =
-  Sihl.Run.Project.Project.create ~config ~bindings middlewares
+  Sihl.Run.Project.Project.create ~config ~services middlewares
     [
       (module Sihl_session.App);
       (module Sihl_admin.App);

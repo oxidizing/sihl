@@ -28,7 +28,6 @@ module type PROJECT = sig
 
   val create :
     ?services:Core.Container.Binding.t list ->
-    ?bindings:Core.Container.Binding.t list ->
     config:Core.Config.Setting.t ->
     (unit -> Opium_kernel.Rock.Middleware.t) list ->
     (module APP) list ->
@@ -52,15 +51,14 @@ module Project : PROJECT = struct
     apps : (module APP) list;
     middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
-    bindings : Core.Container.Binding.t list;
     services : Core.Container.Binding.t list;
   }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ?(services = []) ?(bindings = []) ~config middlewares apps =
-    { apps; config; services; bindings; middlewares }
+  let create ?(services = []) ~config middlewares apps =
+    { apps; config; services; middlewares }
 
   let merge_endpoints project =
     project.apps
@@ -102,7 +100,7 @@ module Project : PROJECT = struct
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
     in
     let service_migrations =
-      project.bindings
+      project.services
       |> List.map ~f:Core.Container.repo_of_binding
       |> List.fold ~init:[] ~f:(fun acc cur ->
              match cur with Some value -> List.cons value acc | None -> acc)
@@ -119,8 +117,6 @@ module Project : PROJECT = struct
     |> List.map ~f:(fun (module App : APP) ->
            List.map (App.bindings ()) ~f:Core.Container.Binding.apply)
     |> ignore;
-    Logs.debug (fun m -> m "START: Binding project implementations");
-    project.bindings |> List.map ~f:Core.Container.Binding.apply |> ignore;
     Core.Container.set_initialized ()
 
   let setup_config project =
@@ -178,7 +174,7 @@ module Project : PROJECT = struct
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.clean)
     in
     let service_cleaners =
-      project.bindings
+      project.services
       |> List.map ~f:Core.Container.repo_of_binding
       |> List.fold ~init:[] ~f:(fun acc cur ->
              match cur with Some value -> List.cons value acc | None -> acc)
