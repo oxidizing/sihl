@@ -4,4 +4,6 @@
   base
   sihl
   alcotest
+  alcotest-lwt
+  caqti-driver-mariadb
 ))

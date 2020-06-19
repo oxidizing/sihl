@@ -4,6 +4,8 @@ val random : unit -> t
 
 val of_string : string -> (t, string) Result.t
 
+val of_bytes : string -> (t, string) Result.t
+
 val to_string : t -> string
 
 val is_valid_str : string -> bool

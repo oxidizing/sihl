@@ -6,13 +6,13 @@ module type SESSION_SERVICE = sig
   val get : string -> Opium_kernel.Request.t -> string option Lwt.t
 end
 
-let registry_key : (module SESSION_SERVICE) Core.Registry.Key.t =
-  Core.Registry.Key.create "session.service"
+let registry_key : (module SESSION_SERVICE) Core.Container.Key.t =
+  Core.Container.Key.create "session.service"
 
 let key = registry_key
 
 let set ~key ~value req =
-  match Core.Registry.get_opt registry_key with
+  match Core.Container.fetch registry_key with
   | Some (module Service : SESSION_SERVICE) -> Service.set ~key ~value req
   | None ->
       let msg =
@@ -23,7 +23,7 @@ let set ~key ~value req =
       failwith msg
 
 let remove ~key req =
-  match Core.Registry.get_opt registry_key with
+  match Core.Container.fetch registry_key with
   | Some (module Service : SESSION_SERVICE) -> Service.remove ~key req
   | None ->
       let msg =
@@ -34,7 +34,7 @@ let remove ~key req =
       failwith msg
 
 let get key req =
-  match Core.Registry.get_opt registry_key with
+  match Core.Container.fetch registry_key with
   | Some (module Service : SESSION_SERVICE) -> Service.get key req
   | None ->
       let msg =

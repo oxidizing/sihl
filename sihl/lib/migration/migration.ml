@@ -2,50 +2,12 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-module Model = struct
-  type t = { namespace : string; version : int; dirty : bool }
+module Model = Migration_service.Model
 
-  let create ~namespace = { namespace; version = 0; dirty = true }
+module type SERVICE = Migration_service.SERVICE
 
-  let mark_dirty state = { state with dirty = true }
-
-  let mark_clean state = { state with dirty = false }
-
-  let increment state = { state with version = state.version + 1 }
-
-  let steps_to_apply (namespace, steps) { version; _ } =
-    (namespace, List.drop steps version)
-
-  let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
-
-  let to_tuple state = (state.namespace, state.version, state.dirty)
-
-  let dirty state = state.dirty
-end
-
-module type SERVICE = sig
-  val setup : Core.Db.connection -> (unit, string) Lwt_result.t
-
-  val has :
-    Core.Db.connection -> namespace:string -> (bool, string) Lwt_result.t
-
-  val get :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val upsert : Core.Db.connection -> Model.t -> (unit, string) Lwt_result.t
-
-  val mark_dirty :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val mark_clean :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-
-  val increment :
-    Core.Db.connection -> namespace:string -> (Model.t, string) Lwt_result.t
-end
-
-let key : (module SERVICE) Core_registry.Key.t =
-  Core_registry.Key.create "migration.service"
+let key : (module SERVICE) Core_container.Key.t =
+  Core_container.Key.create "migration.service"
 
 module type REPO = sig
   val create_table_if_not_exists :
@@ -102,6 +64,8 @@ module Make (Repo : REPO) : SERVICE = struct
     let updated_state = Model.increment state in
     let* () = upsert c updated_state in
     Lwt.return @@ Ok updated_state
+
+  let provide_repo = None
 end
 
 module RepoMariaDb = struct
@@ -215,15 +179,14 @@ end
 
 module PostgreSql = Make (RepoPostgreSql)
 
-let postgresql = Core.Registry.bind key (module PostgreSql)
+let postgresql = Core.Container.bind key (module PostgreSql)
 
 module MariaDb = Make (RepoMariaDb)
 
-let mariadb = Core.Registry.bind key (module MariaDb)
+let mariadb =
+  Core.Container.create_binding key (module MariaDb) MariaDb.provide_repo
 
-type step = { label : string; statement : string; check_fk : bool }
-
-type t = string * step list
+include Migration_sig
 
 let empty label = (label, [])
 
@@ -234,7 +197,7 @@ let create_step ~label ?(check_fk = true) statement =
 let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
 
 let execute_steps migration conn =
-  let (module Service : SERVICE) = Core.Registry.get key in
+  let (module Service : SERVICE) = Core.Container.fetch_exn key in
   let module Connection = (val conn : Caqti_lwt.CONNECTION) in
   let namespace, steps = migration in
   let open Lwt in
@@ -290,7 +253,7 @@ let execute_steps migration conn =
   run steps conn
 
 let execute_migration migration conn =
-  let (module Service : SERVICE) = Core.Registry.get key in
+  let (module Service : SERVICE) = Core.Container.fetch_exn key in
   let namespace, _ = migration in
   Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
   let* () = Service.setup conn in
@@ -327,6 +290,11 @@ let to_caqti_error result =
 
 (* TODO gracefully try to disable and enable fk keys *)
 let execute migrations =
+  let n = List.length migrations in
+  if n > 0 then
+    Logs.debug (fun m ->
+        m "MIGRATION: Executing %i migrations" (List.length migrations))
+  else Logs.debug (fun m -> m "MIGRATION: No migrations to execute");
   let open Lwt in
   let rec run migrations conn =
     match migrations with

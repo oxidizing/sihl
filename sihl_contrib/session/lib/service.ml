@@ -2,7 +2,7 @@ let ( let* ) = Lwt.bind
 
 let set ~key ~value req =
   let (module Repository : Repo.REPOSITORY) =
-    Sihl.Core.Registry.get Bind.Repository.key
+    Sihl.Core.Container.fetch_exn Bind.Repository.key
   in
   let session_key =
     match Opium.Hmap.find Middleware.hmap_key (Opium.Std.Request.env req) with
@@ -26,7 +26,7 @@ let set ~key ~value req =
 
 let remove ~key req =
   let (module Repository : Repo.REPOSITORY) =
-    Sihl.Core.Registry.get Bind.Repository.key
+    Sihl.Core.Container.fetch_exn Bind.Repository.key
   in
   let session_key =
     match Opium.Hmap.find Middleware.hmap_key (Opium.Std.Request.env req) with
@@ -50,7 +50,7 @@ let remove ~key req =
 
 let get key req =
   let (module Repository : Repo.REPOSITORY) =
-    Sihl.Core.Registry.get Bind.Repository.key
+    Sihl.Core.Container.fetch_exn Bind.Repository.key
   in
   let session_key =
     match Opium.Hmap.find Middleware.hmap_key (Opium.Std.Request.env req) with

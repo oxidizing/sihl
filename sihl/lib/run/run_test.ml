@@ -1,3 +1,5 @@
+(* Get rid of this module, contents moved to test.ml *)
+
 open Base
 
 let ( let* ) = Lwt.bind

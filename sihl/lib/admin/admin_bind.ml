@@ -4,11 +4,11 @@ module type ADMIN_SERVICE = sig
   val get_all_pages : unit -> Admin_page.t list
 end
 
-let registry_key = Core.Registry.Key.create "/admin/service"
+let registry_key = Core.Container.Key.create "/admin/service"
 
 module Service = struct
   let register_page page =
-    match Core.Registry.get_opt registry_key with
+    match Core.Container.fetch registry_key with
     | Some (module Service : ADMIN_SERVICE) -> Service.register_page page
     | None ->
         Logs.warn (fun m ->
@@ -17,7 +17,7 @@ module Service = struct
                admin app?")
 
   let get_all_pages () =
-    match Core.Registry.get_opt registry_key with
+    match Core.Container.fetch registry_key with
     | Some (module Service : ADMIN_SERVICE) -> Service.get_all_pages ()
     | None ->
         Logs.warn (fun m ->

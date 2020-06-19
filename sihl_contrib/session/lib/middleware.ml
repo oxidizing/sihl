@@ -10,7 +10,7 @@ let hmap_key : string Opium.Hmap.key =
 let session () =
   let filter handler req =
     let (module Repository : Repo.REPOSITORY) =
-      Sihl.Core.Registry.get Bind.Repository.key
+      Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
     match Opium.Std.Cookie.get req ~key:cookie_key with
     | Some session_key -> (

@@ -13,7 +13,7 @@ module type APP = sig
 
   val repos : unit -> (module Sig.REPO) list
 
-  val bindings : unit -> Core.Registry.Binding.t list
+  val bindings : unit -> Core.Container.Binding.t list
 
   val commands : unit -> Core.Cmd.t list
 
@@ -27,8 +27,8 @@ module type PROJECT = sig
   type t
 
   val create :
-    ?services:Core.Registry.Binding.t list ->
-    ?bindings:Core.Registry.Binding.t list ->
+    ?services:Core.Container.Binding.t list ->
+    ?bindings:Core.Container.Binding.t list ->
     config:Core.Config.Setting.t ->
     (unit -> Opium_kernel.Rock.Middleware.t) list ->
     (module APP) list ->
@@ -52,14 +52,14 @@ module Project : PROJECT = struct
     apps : (module APP) list;
     middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
-    bindings : Core.Registry.Binding.t list option;
-    services : Core.Registry.Binding.t list option;
+    bindings : Core.Container.Binding.t list;
+    services : Core.Container.Binding.t list;
   }
 
   let app_names project =
     project.apps |> List.map ~f:(fun (module App : APP) -> App.namespace)
 
-  let create ?services ?bindings ~config middlewares apps =
+  let create ?(services = []) ?(bindings = []) ~config middlewares apps =
     { apps; config; services; bindings; middlewares }
 
   let merge_endpoints project =
@@ -89,35 +89,39 @@ module Project : PROJECT = struct
     Lwt.return @@ Ok ()
 
   let setup_logger () =
-    let log_level = Some Logs.Warning in
+    let log_level = Some Logs.Debug in
     Logs_fmt.reporter () |> Logs.set_reporter;
     Logs.set_level log_level;
     Logs.debug (fun m -> m "START: logger set up")
 
   let migrate project =
-    project.apps
-    |> List.map ~f:(fun (module App : APP) -> App.repos ())
-    |> List.concat
-    |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
-    |> Migration.execute
+    let app_migrations =
+      project.apps
+      |> List.map ~f:(fun (module App : APP) -> App.repos ())
+      |> List.concat
+      |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
+    in
+    let service_migrations =
+      project.bindings
+      |> List.map ~f:Core.Container.repo_of_binding
+      |> List.fold ~init:[] ~f:(fun acc cur ->
+             match cur with Some value -> List.cons value acc | None -> acc)
+      |> List.map ~f:Sig.migration
+    in
+    let migrations = List.concat [ app_migrations; service_migrations ] in
+    Migration.execute migrations
 
   let bind_registry project =
     Logs.debug (fun m -> m "START: Binding services to service container");
-    project.services
-    |> Option.map ~f:(fun bindings ->
-           List.map bindings ~f:Core.Registry.Binding.apply)
-    |> ignore;
+    project.services |> List.map ~f:Core.Container.Binding.apply |> ignore;
     Logs.debug (fun m -> m "START: Binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->
-           List.map (App.bindings ()) ~f:Core.Registry.Binding.apply)
+           List.map (App.bindings ()) ~f:Core.Container.Binding.apply)
     |> ignore;
     Logs.debug (fun m -> m "START: Binding project implementations");
-    project.bindings
-    |> Option.map ~f:(fun bindings ->
-           List.map bindings ~f:Core.Registry.Binding.apply)
-    |> ignore;
-    Core.Registry.set_initialized ()
+    project.bindings |> List.map ~f:Core.Container.Binding.apply |> ignore;
+    Core.Container.set_initialized ()
 
   let setup_config project =
     let schemas =
@@ -167,17 +171,26 @@ module Project : PROJECT = struct
   let clean project =
     (* TODO move this into some repo related module *)
     let* request = Run_test.request_with_connection () in
-    let repositories =
+    let app_cleaners =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
+      |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.clean)
     in
+    let service_cleaners =
+      project.bindings
+      |> List.map ~f:Core.Container.repo_of_binding
+      |> List.fold ~init:[] ~f:(fun acc cur ->
+             match cur with Some value -> List.cons value acc | None -> acc)
+      |> List.map ~f:Sig.cleaner
+    in
+    let cleaners = List.concat [ app_cleaners; service_cleaners ] in
     Logs.debug (fun m -> m "REPO: Cleaning up app database");
-    let rec clean_repos repos =
-      match repos with
+    let rec clean_repos cleaners =
+      match cleaners with
       | [] -> Lwt.return @@ Ok ()
-      | (module Repo : Sig.REPO) :: cleaners -> (
-          let* result = Repo.clean |> Core.Db.query_db request in
+      | cleaner :: cleaners -> (
+          let* result = cleaner |> Core.Db.query_db request in
           match result with
           | Ok _ -> clean_repos cleaners
           | Error msg ->
@@ -185,7 +198,7 @@ module Project : PROJECT = struct
                   m "REPO: Cleaning up app database failed %s" msg);
               Lwt.return @@ Error msg )
     in
-    clean_repos repositories
+    clean_repos cleaners
 
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"

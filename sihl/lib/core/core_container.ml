@@ -1,3 +1,5 @@
+(* TODO rename to core_container.ml, provide more ergonomic API in bottom *)
+
 open Base
 
 module Hmap = Hmap.Make (struct
@@ -11,6 +13,8 @@ module Key = struct
 
   let info = Hmap.Key.info
 end
+
+type 'a key = 'a Key.t
 
 module State = struct
   type t = { map : Hmap.t; is_initialized : bool }
@@ -26,25 +30,23 @@ module State = struct
   let is_initialized () = !state.is_initialized
 end
 
-module Binding : sig
-  type t
+module Binding = struct
+  type t = { binding : unit -> unit; repo : Sig.repo option } [@@deriving show]
 
-  val create : 'a Hmap.key -> 'a -> t
+  let get_repo binding = binding.repo
 
-  val apply : t -> unit
+  let create key impl =
+    { binding = (fun () -> State.set key impl); repo = None }
 
-  val register : 'a Hmap.key -> 'a -> unit
-end = struct
-  type t = unit -> unit
+  let create_with_repo repo key impl =
+    { binding = (fun () -> State.set key impl); repo }
 
-  let create key impl () = State.set key impl
-
-  let apply binding = binding ()
+  let apply binding = binding.binding ()
 
   let register key impl = create key impl |> apply
 end
 
-let get_opt key =
+let fetch key =
   if State.is_initialized () then State.get key
   else
     failwith
@@ -53,16 +55,25 @@ let get_opt key =
        side of your function so that the registry gets accessed once the \
        module runs? "
 
-let get key =
-  match get_opt key with
+let fetch_exn key =
+  match fetch key with
   | Some implementation -> implementation
   | None ->
       let msg = "Implementation not found for " ^ Key.info key in
       let () = Logs.err (fun m -> m "REGISTRY: %s" msg) in
       failwith msg
 
+type binding = Binding.t
+
+let pp = Binding.pp
+
 let register = Binding.register
 
+(* TODO remove *)
 let bind = Binding.create
 
+let create_binding key service repo = Binding.create_with_repo repo key service
+
 let set_initialized = State.set_initialized
+
+let repo_of_binding = Binding.get_repo
