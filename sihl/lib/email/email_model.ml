@@ -71,4 +71,15 @@ type t = {
 }
 [@@deriving show, eq, make, fields]
 
+module DevInbox = struct
+  let inbox : t option ref = ref None
+
+  let get () =
+    if Option.is_some !inbox then
+      Logs.err (fun m -> m "no email found in dev inbox");
+    Base.Option.value_exn ~message:"no email found in dev inbox" !inbox
+
+  let set email = inbox := Some email
+end
+
 let set_content content email = { email with content }

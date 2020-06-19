@@ -84,6 +84,9 @@ val show : t -> string
 val equal : t -> t -> bool
 
 module Service : sig
+  module Template = Email_sig.Template
+  module ConfigProvider = Email_sig.ConfigProvider
+
   module type SERVICE = Email_sig.SERVICE
 
   val key : (module SERVICE) Core_container.key
