@@ -17,31 +17,18 @@ end
 module type SERVICE = sig
   include Sig.SERVICE
 
-  val setup : Core.Db.connection -> (unit, string) Lwt_result.t
+  val register :
+    Opium_kernel.Request.t ->
+    Migration_model.Migration.t ->
+    (unit, string) Lwt_result.t
 
-  val has :
-    Core.Db.connection -> namespace:string -> (bool, string) Lwt_result.t
+  val get_migrations :
+    Opium_kernel.Request.t ->
+    (Migration_model.Migration.t list, string) Lwt_result.t
 
-  val get :
-    Core.Db.connection ->
-    namespace:string ->
-    (Migration_model.t, string) Lwt_result.t
-
-  val upsert :
-    Core.Db.connection -> Migration_model.t -> (unit, string) Lwt_result.t
-
-  val mark_dirty :
-    Core.Db.connection ->
-    namespace:string ->
-    (Migration_model.t, string) Lwt_result.t
-
-  val mark_clean :
-    Core.Db.connection ->
-    namespace:string ->
-    (Migration_model.t, string) Lwt_result.t
-
-  val increment :
-    Core.Db.connection ->
-    namespace:string ->
-    (Migration_model.t, string) Lwt_result.t
+  val execute :
+    Migration_model.Migration.t list -> (unit, string) Result.t Lwt.t
 end
+
+let key : (module SERVICE) Core_container.Key.t =
+  Core_container.Key.create "migration.service"

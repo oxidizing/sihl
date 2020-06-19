@@ -1,5 +1,7 @@
 module Template = struct
   module type SERVICE = sig
+    include Service.SERVICE
+
     val render :
       Opium.Std.Request.t ->
       Email_model.t ->

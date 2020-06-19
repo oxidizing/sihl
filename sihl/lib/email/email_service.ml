@@ -2,8 +2,15 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-module MakeTemplateService (Repo : Email_sig.Template.REPO) :
-  Email_sig.Template.SERVICE = struct
+module MakeTemplateService
+    (MigrationService : Migration.Service.SERVICE)
+    (Repo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE = struct
+  let on_bind req = MigrationService.register req (Repo.migrate ())
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
+
   let render request email =
     let template_id = Email_model.template_id email in
     let template_data = Email_model.template_data email in
@@ -221,8 +228,9 @@ CREATE TABLE email_templates (
 end
 
 module Template = struct
-  module MariaDb = MakeTemplateService (RepoMariaDb)
-  module PostgreSql = MakeTemplateService (RepoPostgreSql)
+  module MariaDb = MakeTemplateService (Migration.Service.MariaDb) (RepoMariaDb)
+  module PostgreSql =
+    MakeTemplateService (Migration.Service.PostgreSql) (RepoPostgreSql)
 
   module Empty = struct
     let render _ email = Lwt.return @@ Ok email

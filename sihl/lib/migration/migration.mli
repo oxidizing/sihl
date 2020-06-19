@@ -32,6 +32,4 @@ val create_step : label:string -> ?check_fk:bool -> string -> step
 
 val add_step : step -> t -> t
 
-val execute_migration : t -> Core.Db.connection -> (unit, string) Result.t Lwt.t
-
 val execute : t list -> (unit, string) Result.t Lwt.t
