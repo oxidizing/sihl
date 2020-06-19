@@ -6,7 +6,8 @@ let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 
 let fetch_uploaded_file _ () =
   let* () =
-    Sihl.Test.register_services [ Sihl.Migration.mariadb; Sihl.Storage.mariadb ]
+    Sihl.Test.register_services
+      [ Sihl.Migration.mariadb; Sihl.Storage.Service.mariadb ]
   in
   let file_id = Sihl.Id.(random () |> to_string) in
   let file =
@@ -37,7 +38,8 @@ let fetch_uploaded_file _ () =
 
 let update_uploaded_file _ () =
   let* () =
-    Sihl.Test.register_services [ Sihl.Migration.mariadb; Sihl.Storage.mariadb ]
+    Sihl.Test.register_services
+      [ Sihl.Migration.mariadb; Sihl.Storage.Service.mariadb ]
   in
   let file_id = Sihl.Id.(random () |> to_string) in
   let file =
