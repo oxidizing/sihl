@@ -41,14 +41,9 @@ module RepoMariaDb = struct
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
-      (* Logs.err (fun m -> m "Got bytes %s" id);
-       * let msg = Printf.sprintf "Invalid id provided %s" id in
-       * let id =
-       *   id |> Uuidm.of_bytes |> Option.to_result ~none:msg
-       *   |> Base.Result.ok_or_failwith |> Uuidm.to_string
-       * in
-       * Logs.err (fun m -> m "Converted to id %s" id); *)
-      let id = Repo.hex_to_uuid id in
+      let ( let* ) = Result.bind in
+      let* id = id |> Core.Id.of_bytes |> Result.map Core.Id.to_string in
+      let* blob = blob |> Core.Id.of_bytes |> Result.map Core.Id.to_string in
       let file = File.make ~id ~filename ~filesize ~mime in
       Ok (StoredFile.make ~file ~blob)
     in
@@ -100,11 +95,11 @@ WHERE
       Caqti_request.find_opt Caqti_type.string stored_file
         {sql|
 SELECT
-  HEX(uuid),
+  uuid,
   filename,
   filesize,
   mime,
-  HEX(asset_blob)
+  asset_blob
 FROM storage_handles
 WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}

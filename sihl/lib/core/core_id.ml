@@ -10,7 +10,16 @@ let of_string id_string =
   match id_string |> Uuidm.of_string with
   | Some id -> Ok id
   | None ->
-      Error (Printf.sprintf "Invalid id %s provided, expected uuidv4" id_string)
+      Error
+        (Printf.sprintf
+           "Invalid id %s provided, can not convert string to uuidv4" id_string)
+
+let of_bytes id_bytes =
+  let msg =
+    Printf.sprintf "Invalid id %s provided, can not convert bytes to uuidv4"
+      id_bytes
+  in
+  id_bytes |> Uuidm.of_bytes |> Option.to_result ~none:msg
 
 let to_string id = Uuidm.to_string id
 
