@@ -14,7 +14,7 @@ let middlewares =
     Sihl.Middleware.db;
     Sihl.Middleware.cookie;
     Sihl.Middleware.static;
-    Sihl_session.middleware;
+    Sihl.Middleware.session;
     Sihl.Middleware.flash;
     Sihl.Middleware.error;
     Sihl_user.Middleware.Authn.token;
@@ -23,16 +23,14 @@ let middlewares =
 
 let services =
   [
-    Sihl_session_mariadb.bind;
     Sihl_email_mariadb.bind;
     Sihl_user_mariadb.bind;
     Sihl.Migration.Service.mariadb;
+    Sihl.Session.Service.mariadb;
   ]
 
 let project =
   Sihl.Run.Project.Project.create ~services ~config middlewares
-    [
-      (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
-    ]
+    [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project

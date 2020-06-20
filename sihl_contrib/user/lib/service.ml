@@ -121,7 +121,11 @@ module User = struct
     let (module Repository : Repo_sig.REPOSITORY) =
       Sihl.Core.Container.fetch_exn Bind.Repository.key
     in
-    let* () = Sihl.Http.Session.remove ~key:"users.id" request in
+    let* () =
+      Sihl.Session.remove_value ~key:"users.id" request
+      |> Lwt_result.map_err Sihl.Core.Err.raise_server
+      |> Lwt.map Result.ok_exn
+    in
     let id = Sihl.User.id user in
     Repository.Token.delete_by_user ~id |> Sihl.Core.Db.query_db_exn request
 

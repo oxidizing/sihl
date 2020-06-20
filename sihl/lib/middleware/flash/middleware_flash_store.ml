@@ -1,26 +1,26 @@
 open Base
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 module Entry = Middleware_flash_model.Entry
 
 let fetch_entry req =
-  let* entry = Http.Session.get "flash" req in
+  let* entry = Session.get_value ~key:"flash" req in
   match entry with
-  | None -> Lwt.return None
+  | None -> Lwt.return @@ Ok None
   | Some entry -> (
       match entry |> Entry.of_string with
-      | Ok entry -> Lwt.return @@ Some entry
+      | Ok entry -> Lwt.return @@ Ok (Some entry)
       | Error msg ->
           Logs.warn (fun m ->
               m "FLASH: Invalid flash message in session %s" msg);
-          Lwt.return None )
+          Lwt.return @@ Ok None )
 
 let find_current req =
   let* entry = fetch_entry req in
   match entry with
-  | None -> Lwt.return None
-  | Some entry -> Lwt.return @@ Entry.current entry
+  | None -> Lwt.return @@ Ok None
+  | Some entry -> Lwt.return @@ Ok (Entry.current entry)
 
 let set_next req message =
   let* entry = fetch_entry req in
@@ -28,16 +28,16 @@ let set_next req message =
   | None ->
       (* No entry found, creating new one *)
       let entry = Entry.create message |> Entry.to_string in
-      Http.Session.set ~key:"flash" ~value:entry req
+      Session.set_value req ~key:"flash" ~value:entry
   | Some entry ->
       (* Overriding next message in existing entry *)
       let entry = Entry.set_next message entry |> Entry.to_string in
-      Http.Session.set ~key:"flash" ~value:entry req
+      Session.set_value req ~key:"flash" ~value:entry
 
 let rotate req =
   let* entry = fetch_entry req in
   match entry with
-  | None -> Lwt.return ()
+  | None -> Lwt.return @@ Ok ()
   | Some entry ->
       let entry = entry |> Entry.rotate |> Entry.to_string in
-      Http.Session.set ~key:"flash" ~value:entry req
+      Session.set_value req ~key:"flash" ~value:entry

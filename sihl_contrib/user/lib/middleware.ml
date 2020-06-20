@@ -24,7 +24,11 @@ module Authn = struct
       (* user has been authenticated somewhere else already, nothing to do *)
       | Some _ -> handler req
       | None -> (
-          let* user_id = Sihl.Http.Session.get "users.id" req in
+          let* user_id =
+            Sihl.Session.get_value ~key:"users.id" req
+            |> Lwt_result.map_err Sihl.Core.Err.raise_server
+            |> Lwt.map Result.ok_exn
+          in
           match user_id with
           (* there is no user_id, nothing to do *)
           | None -> handler req
@@ -37,7 +41,9 @@ module Authn = struct
     Rock.Middleware.create ~name:"users.session" ~filter
 
   let create_session req user =
-    Sihl.Http.Session.set ~key:"users.id" ~value:(Sihl.User.id user) req
+    Sihl.Session.set_value req ~key:"users.id" ~value:(Sihl.User.id user)
+    |> Lwt_result.map_err Sihl.Core.Err.raise_server
+    |> Lwt.map Result.ok_exn
 
   let token () =
     let filter handler req =

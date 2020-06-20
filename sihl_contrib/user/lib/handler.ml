@@ -174,7 +174,11 @@ module AdminUi = struct
 
     let get =
       get "/admin/login/" @@ fun req ->
-      let* flash = Sihl.Middleware.Flash.current req in
+      let* flash =
+        Sihl.Middleware.Flash.current req
+        |> Lwt_result.map_err Sihl.Core.Err.raise_server
+        |> Lwt.map Result.ok_exn
+      in
       let ctx = Sihl.Template.context ~flash () in
       Sihl.Admin.render ctx Sihl.Admin.Component.LoginPage.createElement ()
       |> Res.html |> Lwt.return
@@ -193,6 +197,8 @@ module AdminUi = struct
       | Error _ ->
           Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/login/"
             "Provided email or password is wrong."
+          |> Lwt_result.map_err Sihl.Core.Err.raise_server
+          |> Lwt.map Result.ok_exn
   end
 
   module Logout = struct
@@ -213,7 +219,12 @@ module AdminUi = struct
     let handler =
       get "/admin/users/users/" @@ fun req ->
       let user = Sihl.Authn.authenticate req in
-      let* flash = Sihl.Middleware.Flash.current req in
+      let* flash =
+        Sihl.Middleware.Flash.current req
+        |> Lwt_result.map_err Sihl.Core.Err.raise_server
+        |> Lwt.map Result.ok_exn
+      in
+
       let ctx = Sihl.Template.context ~flash () in
       let* users = Service.User.get_all req user in
       Sihl.Admin.render ctx Admin_component_user.UserListPage.createElement
@@ -228,7 +239,12 @@ module AdminUi = struct
       get "/admin/users/users/:id/" @@ fun req ->
       let user_id = Req.param req "id" in
       let user = Sihl.Authn.authenticate req in
-      let* flash = Sihl.Middleware.Flash.current req in
+      let* flash =
+        Sihl.Middleware.Flash.current req
+        |> Lwt_result.map_err Sihl.Core.Err.raise_server
+        |> Lwt.map Result.ok_exn
+      in
+
       let ctx = Sihl.Template.context ~flash () in
       let* user = Service.User.get req user ~user_id in
       Sihl.Admin.render ctx Admin_component_user.UserPage.createElement user
@@ -252,9 +268,13 @@ module AdminUi = struct
       | Ok _ ->
           Sihl.Middleware.Flash.redirect_with_success req ~path:user_page
             "New password successfully set"
+          |> Lwt_result.map_err Sihl.Core.Err.raise_server
+          |> Lwt.map Result.ok_exn
       | Error error ->
           Logs.err (fun m -> m "%s" (Sihl.Core.Err.Error.show error));
           Sihl.Middleware.Flash.redirect_with_error req ~path:user_page
             (Sihl.Core.Err.Error.show error)
+          |> Lwt_result.map_err Sihl.Core.Err.raise_server
+          |> Lwt.map Result.ok_exn
   end
 end

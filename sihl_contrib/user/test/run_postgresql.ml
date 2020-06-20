@@ -14,7 +14,7 @@ let middlewares =
     Sihl.Middleware.db;
     Sihl.Middleware.cookie;
     Sihl.Middleware.static;
-    Sihl_session.middleware;
+    Sihl.Middleware.session;
     Sihl.Middleware.flash;
     Sihl.Middleware.error;
     Sihl_user.Middleware.Authn.token;
@@ -44,15 +44,13 @@ let middlewares =
 let services =
   [
     Sihl.Migration.Service.postgresql;
-    Sihl_session_postgresql.bind;
     Sihl_email_postgresql.bind;
     Sihl_user_postgresql.bind;
+    Sihl.Session.Service.postgresql;
   ]
 
 let project =
   Sihl.Run.Project.Project.create ~config ~services middlewares
-    [
-      (module Sihl_session.App); (module Sihl_email.App); (module Sihl_user.App);
-    ]
+    [ (module Sihl_email.App); (module Sihl_user.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project
