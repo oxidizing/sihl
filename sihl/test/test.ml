@@ -83,6 +83,12 @@ let suite =
     ( "session",
       [
         test_case "session not expired" `Quick Test_session.session_not_expired;
+        test_case "test anonymous request return cookie" `Quick
+          Test_session.test_anonymous_request_returns_cookie;
+        test_case "test requests persist session variable" `Quick
+          Test_session.test_requests_persist_session_variables;
+        test_case "test set session variable" `Quick
+          Test_session.test_set_session_variable;
       ] );
     ( "storage",
       [

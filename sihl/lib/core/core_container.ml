@@ -1,5 +1,3 @@
-(* TODO rename to core_container.ml, provide more ergonomic API in bottom *)
-
 open Base
 
 module Hmap = Hmap.Make (struct
@@ -44,6 +42,8 @@ module Binding = struct
   let apply binding = binding.binding ()
 
   let register key impl = create key impl |> apply
+
+  let get_service _ = failwith "TODO"
 end
 
 let fetch key =
@@ -77,3 +77,16 @@ let create_binding key service repo = Binding.create_with_repo repo key service
 let set_initialized = State.set_initialized
 
 let repo_of_binding = Binding.get_repo
+
+let bind_all req service_bindings =
+  let rec bind_services req service_bindings =
+    match service_bindings with
+    | binding :: service_bindings ->
+        let (module Service : Core_service.SERVICE) =
+          Binding.get_service binding
+        in
+        Lwt_result.bind (Service.on_bind req) (fun _ ->
+            bind_services req service_bindings)
+    | [] -> Lwt_result.return ()
+  in
+  bind_services req service_bindings

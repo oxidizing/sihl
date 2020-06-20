@@ -153,6 +153,13 @@ module Project : PROJECT = struct
     setup_config project;
     Logs.debug (fun m -> m "START: Binding registry");
     bind_registry project;
+    Logs.debug (fun m -> m "START: Call service bind hooks");
+    (* TODO create a service context here *)
+    let* req =
+      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
+      |> Opium.Std.Request.create |> Core.Db.request_with_connection
+    in
+    let* _ = Core.Container.bind_all req project.services in
     Logs.debug (fun m -> m "START: Calling app start hooks");
     call_start_hooks project;
     Logs.debug (fun m -> m "START: Migrating");

@@ -1,7 +1,15 @@
 open Base
 
-module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
-  let ( let* ) = Lwt.bind
+let ( let* ) = Lwt.bind
+
+module Make
+    (MigrationService : Migration.Service.SERVICE)
+    (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
+  let on_bind req = MigrationService.register req (Repo.migrate ())
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
 
   let set_value req ~key ~value =
     let session_key =
@@ -298,10 +306,10 @@ CREATE TABLE session_sessions (
   let clean connection = Sql.Session.clean connection
 end
 
-module MariaDb = Make (RepoMariaDb)
+module MariaDb = Make (Migration.Service.MariaDb) (RepoMariaDb)
 
 let mariadb = Core.Container.bind Session_sig.key (module MariaDb)
 
-module PostgreSql = Make (RepoPostgreSql)
+module PostgreSql = Make (Migration.Service.PostgreSql) (RepoPostgreSql)
 
 let postgresql = Core.Container.bind Session_sig.key (module PostgreSql)

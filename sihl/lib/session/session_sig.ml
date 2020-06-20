@@ -16,6 +16,8 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
+  include Service.SERVICE
+
   val set_value :
     Opium_kernel.Request.t ->
     key:string ->

@@ -16,7 +16,10 @@ let session_not_expired _ () =
          (Sihl.Session.is_expired (Ptime_clock.now ()) session))
 
 let test_anonymous_request_returns_cookie _ () =
-  let* () = Sihl.Run.Manage.clean () in
+  let* () =
+    Sihl.Test.register_services
+      [ Sihl.Migration.Service.mariadb; Sihl.Session.Service.mariadb ]
+  in
   (* Create request with injected database into request env *)
   let* req =
     Uri.of_string "/foobar/" |> Cohttp.Request.make
@@ -43,7 +46,10 @@ let test_anonymous_request_returns_cookie _ () =
   Lwt.return ()
 
 let test_requests_persist_session_variables _ () =
-  let* () = Sihl.Run.Manage.clean () in
+  let* () =
+    Sihl.Test.register_services
+      [ Sihl.Migration.Service.mariadb; Sihl.Session.Service.mariadb ]
+  in
   (* Create request with injected database into request env *)
   let* req =
     Uri.of_string "/foobar/" |> Cohttp.Request.make
