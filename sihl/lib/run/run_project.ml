@@ -13,7 +13,7 @@ module type APP = sig
 
   val repos : unit -> (module Sig.REPO) list
 
-  val bindings : unit -> Core.Container.Binding.t list
+  val bindings : unit -> Core.Container.binding list
 
   val commands : unit -> Core.Cmd.t list
 
@@ -22,12 +22,11 @@ module type APP = sig
   val stop : unit -> (unit, string) Result.t
 end
 
-(* TODO replace bindings with services *)
 module type PROJECT = sig
   type t
 
   val create :
-    ?services:Core.Container.Binding.t list ->
+    ?services:Core.Container.binding list ->
     config:Core.Config.Setting.t ->
     (unit -> Opium_kernel.Rock.Middleware.t) list ->
     (module APP) list ->
@@ -51,7 +50,7 @@ module Project : PROJECT = struct
     apps : (module APP) list;
     middlewares : (unit -> Opium_kernel.Rock.Middleware.t) list;
     config : Core.Config.Setting.t;
-    services : Core.Container.Binding.t list;
+    services : Core.Container.binding list;
   }
 
   let app_names project =
@@ -93,29 +92,31 @@ module Project : PROJECT = struct
     Logs.debug (fun m -> m "START: logger set up")
 
   let migrate project =
+    let* req =
+      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
+      |> Opium.Std.Request.create |> Core.Db.request_with_connection
+    in
     let app_migrations =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
     in
-    let service_migrations =
-      project.services
-      |> List.map ~f:Core.Container.repo_of_binding
-      |> List.fold ~init:[] ~f:(fun acc cur ->
-             match cur with Some value -> List.cons value acc | None -> acc)
-      |> List.map ~f:Sig.migration
+    let* service_migrations =
+      Migration.get_migrations req
+      |> Lwt_result.map_err Core.Err.raise_server
+      |> Lwt.map Result.ok_exn
     in
-    let migrations = List.concat [ app_migrations; service_migrations ] in
+    let migrations = List.concat [ service_migrations; app_migrations ] in
     Migration.execute migrations
 
   let bind_registry project =
     Logs.debug (fun m -> m "START: Binding services to service container");
-    project.services |> List.map ~f:Core.Container.Binding.apply |> ignore;
+    project.services |> List.map ~f:Core.Container.register |> ignore;
     Logs.debug (fun m -> m "START: Binding default implementations of apps");
     project.apps
     |> List.map ~f:(fun (module App : APP) ->
-           List.map (App.bindings ()) ~f:Core.Container.Binding.apply)
+           List.map (App.bindings ()) ~f:Core.Container.register)
     |> ignore;
     Core.Container.set_initialized ()
 
@@ -153,6 +154,17 @@ module Project : PROJECT = struct
     setup_config project;
     Logs.debug (fun m -> m "START: Binding registry");
     bind_registry project;
+    Logs.debug (fun m -> m "START: Call service bind hooks");
+    (* TODO create a service context here *)
+    let* req =
+      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
+      |> Opium.Std.Request.create |> Core.Db.request_with_connection
+    in
+    let* () =
+      Core.Container.bind req project.services
+      |> Lwt_result.map_err Core.Err.raise_server
+      |> Lwt.map Result.ok_exn
+    in
     Logs.debug (fun m -> m "START: Calling app start hooks");
     call_start_hooks project;
     Logs.debug (fun m -> m "START: Migrating");
@@ -165,28 +177,21 @@ module Project : PROJECT = struct
   let seed _ = Lwt.return @@ Error "not implemented"
 
   let clean project =
-    (* TODO move this into some repo related module *)
-    let* request = Run_test.request_with_connection () in
+    let* req = Run_test.request_with_connection () in
+    Logs.debug (fun m -> m "REPO: Cleaning up service repos ");
+    let* () = Repo.clean_all req |> Lwt.map Result.ok_or_failwith in
     let app_cleaners =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.clean)
     in
-    let service_cleaners =
-      project.services
-      |> List.map ~f:Core.Container.repo_of_binding
-      |> List.fold ~init:[] ~f:(fun acc cur ->
-             match cur with Some value -> List.cons value acc | None -> acc)
-      |> List.map ~f:Sig.cleaner
-    in
-    let cleaners = List.concat [ app_cleaners; service_cleaners ] in
     Logs.debug (fun m -> m "REPO: Cleaning up app database");
     let rec clean_repos cleaners =
       match cleaners with
       | [] -> Lwt.return @@ Ok ()
       | cleaner :: cleaners -> (
-          let* result = cleaner |> Core.Db.query_db request in
+          let* result = cleaner |> Core.Db.query_db req in
           match result with
           | Ok _ -> clean_repos cleaners
           | Error msg ->
@@ -194,7 +199,7 @@ module Project : PROJECT = struct
                   m "REPO: Cleaning up app database failed %s" msg);
               Lwt.return @@ Error msg )
     in
-    clean_repos cleaners
+    clean_repos app_cleaners
 
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"

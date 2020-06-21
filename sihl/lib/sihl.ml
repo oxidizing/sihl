@@ -13,6 +13,7 @@ module Middleware = Middleware
 module Repo = Repo
 module Migration = Migration
 module Run = Run
+module Service = Service
 
 (* Exentions *)
 module Admin = Admin

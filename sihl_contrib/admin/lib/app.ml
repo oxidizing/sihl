@@ -12,7 +12,8 @@ let repos () = []
 
 let bindings () =
   [
-    Sihl.Core.Container.Binding.create Sihl.Admin.Bind.registry_key
+    Sihl.Core.Container.create_binding Sihl.Admin.Bind.registry_key
+      (module Service)
       (module Service);
   ]
 

@@ -4,7 +4,6 @@
  (libraries
   base
   sihl
-  sihl_email
   tyxml
   )
  (preprocess

@@ -32,14 +32,23 @@ let endpoints () =
     AdminUi.UserSetPassword.handler;
   ]
 
-let repos () = Bind.Repository.default ()
+let repos () = []
+
+module AuthenticationService = struct
+  let on_bind _ = Lwt.return @@ Ok ()
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
+
+  let authenticate = Middleware.Authn.authenticate
+end
 
 let bindings () =
   [
-    Sihl.Core.Container.bind Sihl.Authn.registry_key
-      ( module struct
-        let authenticate = Middleware.Authn.authenticate
-      end );
+    Sihl.Core.Container.create_binding Sihl.Authn.Service.key
+      (module AuthenticationService)
+      (module AuthenticationService);
   ]
 
 let commands () = [ Command.create_admin ]

@@ -1,6 +1,6 @@
 open Base
 
-type t
+type t = User_model.User.t
 
 val t_of_sexp : Sexp.t -> t
 
@@ -71,3 +71,6 @@ val create :
 val system : t
 
 val t : t Caqti_type.t
+
+module Token = User_model.Token
+module Sig = User_sig

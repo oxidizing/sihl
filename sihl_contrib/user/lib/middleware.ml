@@ -24,12 +24,19 @@ module Authn = struct
       (* user has been authenticated somewhere else already, nothing to do *)
       | Some _ -> handler req
       | None -> (
-          let* user_id = Sihl.Http.Session.get "users.id" req in
+          let* user_id =
+            Sihl.Session.get_value ~key:"users.id" req
+            |> Lwt_result.map_err Sihl.Core.Err.raise_server
+            |> Lwt.map Result.ok_exn
+          in
           match user_id with
           (* there is no user_id, nothing to do *)
           | None -> handler req
           | Some user_id ->
-              let* user = Service.User.get req Sihl.User.system ~user_id in
+              let (module UserService : Sihl.User.Sig.SERVICE) =
+                Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+              in
+              let* user = UserService.get req Sihl.User.system ~user_id in
               let env = Opium.Hmap.add key user (Request.env req) in
               let req = { req with Request.env } in
               handler req )
@@ -37,7 +44,9 @@ module Authn = struct
     Rock.Middleware.create ~name:"users.session" ~filter
 
   let create_session req user =
-    Sihl.Http.Session.set ~key:"users.id" ~value:(Sihl.User.id user) req
+    Sihl.Session.set_value req ~key:"users.id" ~value:(Sihl.User.id user)
+    |> Lwt_result.map_err Sihl.Core.Err.raise_server
+    |> Lwt.map Result.ok_exn
 
   let token () =
     let filter handler req =
@@ -48,13 +57,19 @@ module Authn = struct
           let token =
             token |> String.split ~on:' ' |> List.tl_exn |> List.hd_exn
           in
-          let* user = Service.User.get_by_token req token in
+          let (module UserService : Sihl.User.Sig.SERVICE) =
+            Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+          in
+          let* user = UserService.get_by_token req token in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in
           handler req
       | Some (`Basic (email, password)) ->
+          let (module UserService : Sihl.User.Sig.SERVICE) =
+            Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+          in
           let* user =
-            Service.User.authenticate_credentials req ~email ~password
+            UserService.authenticate_credentials req ~email ~password
           in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in

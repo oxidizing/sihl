@@ -3,13 +3,9 @@
  (libraries
   base
   sihl_user
-  sihl_user_postgresql
-  sihl_user_mariadb
-  sihl_email_postgresql
-  sihl_email_mariadb
-  sihl_session
-  sihl_session_postgresql
-  sihl_session_mariadb
   alcotest
   alcotest-lwt
-  ))
+  caqti-driver-mariadb
+  caqti-driver-postgresql
+ )
+)

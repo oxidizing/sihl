@@ -26,27 +26,31 @@ let middlewares =
     Sihl.Middleware.db;
     Sihl.Middleware.cookie;
     Sihl.Middleware.static;
-    Sihl_session.middleware;
+    Sihl.Middleware.session;
     Sihl.Middleware.flash;
     Sihl.Middleware.error;
     Sihl_user.Middleware.Authn.token;
     Sihl_user.Middleware.Authn.session;
   ]
 
-let services =
-  [
-    Sihl_session_postgresql.bind;
-    Sihl_email_postgresql.bind;
-    Sihl_user_postgresql.bind;
-  ]
+module EmailConfigProvider = struct
+  let api_key _ = Lwt.return @@ Ok "TODO"
+end
+
+module EmailService =
+  Sihl.Email.Service.Make.SendGrid
+    (Sihl.Email.Service.Template.PostgreSql)
+    (EmailConfigProvider)
+
+let email_service =
+  Sihl.Container.create_binding Sihl.Email.Sig.key
+    (module EmailService)
+    (module EmailService)
+
+let services = [ email_service; Sihl_user.Service.postgresql ]
 
 let project =
   Sihl.Run.Project.Project.create ~config ~services middlewares
-    [
-      (module Sihl_session.App);
-      (module Sihl_admin.App);
-      (module Sihl_email.App);
-      (module Sihl_user.App);
-    ]
+    [ (module Sihl_admin.App); (module Sihl_user.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project

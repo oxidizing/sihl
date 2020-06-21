@@ -6,9 +6,12 @@ let ( let* ) = Lwt.bind
 let fn request args =
   match args with
   | [ "createadmin"; email; password ] -> (
+      let (module UserService : Sihl.User.Sig.SERVICE) =
+        Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+      in
       let* result =
         try_to_run (fun () ->
-            Service.User.create_admin request ~email ~password ~username:None)
+            UserService.create_admin request ~email ~password ~username:None)
       in
       Lwt.return
       @@

@@ -1,8 +1,8 @@
-type data_map = (string * string) list
+type data_map = Session_model.data_map
 
-type data = (string, string, Base.String.comparator_witness) Base.Map.t
+type data = Session_model.data
 
-type t = { key : string; data : data; expire_date : Ptime.t }
+type t = Session_model.t
 
 val create : ?expire_date:Ptime.t -> Ptime.t -> t
 
@@ -25,3 +25,28 @@ val remove : key:string -> t -> t
 val pp : Format.formatter -> t -> unit
 
 val t : t Caqti_type.t
+
+val set_value :
+  Opium_kernel.Request.t ->
+  key:string ->
+  value:string ->
+  (unit, string) Result.t Lwt.t
+
+val remove_value :
+  Opium_kernel.Request.t -> key:string -> (unit, string) Result.t Lwt.t
+
+val get_value :
+  Opium_kernel.Request.t -> key:string -> (string option, string) Result.t Lwt.t
+
+val get_session :
+  Opium_kernel.Request.t ->
+  key:string ->
+  (Session_model.t option, string) Result.t Lwt.t
+
+val insert_session :
+  Opium_kernel.Request.t ->
+  session:Session_model.t ->
+  (unit, string) Result.t Lwt.t
+
+module Sig = Session_sig
+module Service = Session_service

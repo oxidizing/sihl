@@ -7,6 +7,7 @@ module Flash = Middleware_flash
 module Gzip = Middleware_gzip
 module Security = Middleware_security
 module Static = Middleware_static
+module Session = Middleware_session
 
 let flash = Flash.m
 
@@ -17,3 +18,5 @@ let static = Static.m
 let cookie = Cookie.m
 
 let db = Db.m
+
+let session = Session.m

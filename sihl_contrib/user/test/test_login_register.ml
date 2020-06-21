@@ -100,7 +100,7 @@ let test_fetch_user_after_logout_fails _ () =
     Sihl.Run.Test.seed
     @@ Sihl_user.Seed.logged_in_user ~email:"foobar@example.com" ~password:"321"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
   in
