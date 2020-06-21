@@ -1,7 +1,7 @@
 open Storage_model
 
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Service.SERVICE
 
   val get_file :
     Http.Req.t -> id:string -> (StoredFile.t option, string) Lwt_result.t

@@ -1,42 +1,17 @@
-module Key : sig
-  type 'a t
+type 'a key
 
-  val create : string -> 'a t
+type binding
 
-  val info : 'a t -> string
-end
+val create_key : string -> 'a key
 
-type 'a key = 'a Key.t
+val fetch_service : 'a key -> 'a option
 
-module Binding : sig
-  type t
+val fetch_service_exn : 'a key -> 'a
 
-  val get_repo : t -> Sig.repo option
+val create_binding : 'a key -> 'a -> (module Service.SERVICE) -> binding
 
-  val create : 'a key -> 'a -> t
-
-  val apply : t -> unit
-
-  val register : 'a key -> 'a -> unit
-end
-
-val fetch : 'a key -> 'a option
-
-val fetch_exn : 'a key -> 'a
-
-type binding = Binding.t
-
-val pp : Format.formatter -> binding -> unit
-
-val register : 'a key -> 'a -> unit
-
-val bind : 'a key -> 'a -> binding
+val register : binding -> unit
 
 val set_initialized : unit -> unit
 
-val create_binding : 'a key -> 'a -> Sig.repo option -> binding
-
-val repo_of_binding : binding -> Sig.repo option
-
-val bind_all :
-  Opium_kernel.Request.t -> binding list -> (unit, string) Lwt_result.t
+val bind : Opium_kernel.Request.t -> binding list -> (unit, string) Lwt_result.t

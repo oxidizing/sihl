@@ -3,10 +3,7 @@
  (libraries
   base
   sihl_user
-  sihl_user_postgresql
-  sihl_user_mariadb
-  sihl_email_postgresql
-  sihl_email_mariadb
   alcotest
   alcotest-lwt
-  ))
+ )
+)

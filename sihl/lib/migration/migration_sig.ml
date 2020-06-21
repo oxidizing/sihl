@@ -15,7 +15,7 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Service.SERVICE
 
   val register :
     Opium_kernel.Request.t ->
@@ -30,5 +30,5 @@ module type SERVICE = sig
     Migration_model.Migration.t list -> (unit, string) Result.t Lwt.t
 end
 
-let key : (module SERVICE) Core_container.Key.t =
-  Core_container.Key.create "migration.service"
+let key : (module SERVICE) Core.Container.key =
+  Core.Container.create_key "migration.service"

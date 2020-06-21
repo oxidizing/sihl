@@ -17,7 +17,7 @@ let test_user_fetches_all_users_fails _ () =
     @@ Sihl_user.Seed.logged_in_user ~email:"user2@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
   in
@@ -39,7 +39,7 @@ let test_admin_fetches_all_users _ () =
     @@ Sihl_user.Seed.logged_in_admin ~email:"admin@example.com"
          ~password:"password"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let headers =
     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
   in
@@ -62,7 +62,7 @@ let test_user_updates_password _ () =
     @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let body =
     {|
        {
@@ -103,7 +103,7 @@ let test_user_updates_others_password_fails _ () =
     Sihl.Run.Test.seed
     @@ Sihl_user.Seed.user ~email:"user2@example.com" ~password:"foobar2"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let body =
     {|
        {
@@ -131,7 +131,7 @@ let test_user_updates_own_details _ () =
     @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let body =
     {|
        {
@@ -169,7 +169,7 @@ let test_user_updates_others_details_fails _ () =
     @@ Sihl_user.Seed.logged_in_user ~email:"user2@example.com"
          ~password:"foobar2"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let body =
     {|
        {
@@ -201,7 +201,7 @@ let test_admin_sets_password _ () =
     @@ Sihl_user.Seed.logged_in_user ~email:"user1@example.com"
          ~password:"foobar"
   in
-  let token = Sihl_user.Model.Token.value token in
+  let token = Sihl.User.Token.value token in
   let user_id = Sihl.User.id user in
   let body =
     Printf.sprintf

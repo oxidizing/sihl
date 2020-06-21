@@ -33,7 +33,10 @@ module Authn = struct
           (* there is no user_id, nothing to do *)
           | None -> handler req
           | Some user_id ->
-              let* user = Service.User.get req Sihl.User.system ~user_id in
+              let (module UserService : Sihl.User.Sig.SERVICE) =
+                Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+              in
+              let* user = UserService.get req Sihl.User.system ~user_id in
               let env = Opium.Hmap.add key user (Request.env req) in
               let req = { req with Request.env } in
               handler req )
@@ -54,13 +57,19 @@ module Authn = struct
           let token =
             token |> String.split ~on:' ' |> List.tl_exn |> List.hd_exn
           in
-          let* user = Service.User.get_by_token req token in
+          let (module UserService : Sihl.User.Sig.SERVICE) =
+            Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+          in
+          let* user = UserService.get_by_token req token in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in
           handler req
       | Some (`Basic (email, password)) ->
+          let (module UserService : Sihl.User.Sig.SERVICE) =
+            Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+          in
           let* user =
-            Service.User.authenticate_credentials req ~email ~password
+            UserService.authenticate_credentials req ~email ~password
           in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in

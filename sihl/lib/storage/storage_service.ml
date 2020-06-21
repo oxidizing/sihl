@@ -1,10 +1,17 @@
 open Storage_sig
 open Storage_model
 
-let key : (module SERVICE) Core_container.Key.t =
-  Core_container.Key.create "storage.service"
+let key : (module SERVICE) Core.Container.key =
+  Core.Container.create_key "storage.service"
 
-module Make (Repo : REPO) : SERVICE = struct
+module Make (MigrationService : Migration.Service.SERVICE) (Repo : REPO) :
+  SERVICE = struct
+  let on_bind req = MigrationService.register req (Repo.migrate ())
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
+
   let get_file req ~id = Repo.get_file ~id |> Core.Db.query_db req
 
   let upload_base64 req ~file ~base64 =
@@ -29,8 +36,6 @@ module Make (Repo : REPO) : SERVICE = struct
   let get_data_base64 req ~file =
     let blob_id = StoredFile.blob file in
     Repo.get_blob ~id:blob_id |> Core.Db.query_db req
-
-  let provide_repo = Some (Repo.clean, Repo.migrate ())
 end
 
 module RepoMariaDb = struct
@@ -217,7 +222,6 @@ end
 
 (** TODO Implement postgres repo **)
 
-module MariaDb = Make (RepoMariaDb)
+module MariaDb = Make (Migration.Service.MariaDb) (RepoMariaDb)
 
-let mariadb =
-  Core.Container.create_binding key (module MariaDb) MariaDb.provide_repo
+let mariadb = Core.Container.create_binding key (module MariaDb) (module MariaDb)

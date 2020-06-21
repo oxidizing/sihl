@@ -21,16 +21,24 @@ let middlewares =
     Sihl_user.Middleware.Authn.session;
   ]
 
+module EmailService =
+  Sihl.Email.Service.Make.Memory (Sihl.Email.Service.Template.PostgreSql)
+
+let email_service =
+  Sihl.Container.create_binding Sihl.Email.Sig.key
+    (module EmailService)
+    (module EmailService)
+
 let services =
   [
-    Sihl_email_mariadb.bind;
-    Sihl_user_mariadb.bind;
     Sihl.Migration.Service.mariadb;
+    email_service;
+    Sihl_user.Service.mariadb;
     Sihl.Session.Service.mariadb;
   ]
 
 let project =
   Sihl.Run.Project.Project.create ~services ~config middlewares
-    [ (module Sihl_email.App); (module Sihl_user.App) ]
+    [ (module Sihl_user.App) ]
 
 let () = Sihl.Run.Project.Project.run_command project

@@ -6,6 +6,6 @@ end
 
 let authenticate req =
   let (module Service : Service.SERVICE) =
-    Core.Container.fetch_exn Authn_service.key
+    Core.Container.fetch_service_exn Authn_service.key
   in
   Service.authenticate req

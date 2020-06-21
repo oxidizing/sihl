@@ -46,8 +46,8 @@ module type SERVICE = sig
     (unit, string) Result.t Lwt.t
 end
 
-let key : (module SERVICE) Core.Container.Key.t =
-  Core.Container.Key.create "session.service"
+let key : (module SERVICE) Core.Container.key =
+  Core.Container.create_key "session.service"
 
 let middleware_key : string Opium.Hmap.key =
   Opium.Hmap.Key.create ("session.key", fun _ -> sexp_of_string "session.key")

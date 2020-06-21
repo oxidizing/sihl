@@ -42,6 +42,8 @@ module Template : sig
   val render : TemplateData.t -> t -> string
 end
 
+module DevInbox = Email_model.DevInbox
+
 type t = Email_model.t
 
 val make :
@@ -83,13 +85,7 @@ val show : t -> string
 
 val equal : t -> t -> bool
 
-module Service : sig
-  module Template = Email_sig.Template
-  module ConfigProvider = Email_sig.ConfigProvider
-
-  module type SERVICE = Email_sig.SERVICE
-
-  val key : (module SERVICE) Core_container.key
-end
+module Service = Email_service
+module Sig = Email_sig
 
 val send : Http.Req.t -> t -> (unit, string) Result.t Lwt.t

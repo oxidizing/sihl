@@ -308,8 +308,12 @@ end
 
 module MariaDb = Make (Migration.Service.MariaDb) (RepoMariaDb)
 
-let mariadb = Core.Container.bind Session_sig.key (module MariaDb)
+let mariadb =
+  Core.Container.create_binding Session_sig.key (module MariaDb) (module MariaDb)
 
 module PostgreSql = Make (Migration.Service.PostgreSql) (RepoPostgreSql)
 
-let postgresql = Core.Container.bind Session_sig.key (module PostgreSql)
+let postgresql =
+  Core.Container.create_binding Session_sig.key
+    (module PostgreSql)
+    (module PostgreSql)

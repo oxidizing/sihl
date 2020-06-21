@@ -33,9 +33,11 @@ module ConfigProvider = struct
 end
 
 module type SERVICE = sig
+  include Service.SERVICE
+
   val send :
     Opium.Std.Request.t -> Email_model.t -> (unit, string) Result.t Lwt.t
 end
 
-let key : (module SERVICE) Core.Container.Key.t =
-  Core.Container.Key.create "email.service"
+let key : (module SERVICE) Core.Container.key =
+  Core.Container.create_key "email.service"

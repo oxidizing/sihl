@@ -14,6 +14,8 @@ end
 
 type 'a key = 'a Key.t
 
+let create_key = Key.create
+
 module State = struct
   type t = { map : Hmap.t; is_initialized : bool }
 
@@ -29,24 +31,19 @@ module State = struct
 end
 
 module Binding = struct
-  type t = { binding : unit -> unit; repo : Sig.repo option } [@@deriving show]
+  type t = { binding : unit -> unit; service : (module Service.SERVICE) }
 
-  let get_repo binding = binding.repo
+  let create key service generic_service =
+    { binding = (fun () -> State.set key service); service = generic_service }
 
-  let create key impl =
-    { binding = (fun () -> State.set key impl); repo = None }
+  let register binding = binding.binding ()
 
-  let create_with_repo repo key impl =
-    { binding = (fun () -> State.set key impl); repo }
-
-  let apply binding = binding.binding ()
-
-  let register key impl = create key impl |> apply
-
-  let get_service _ = failwith "TODO"
+  let get_service binding = binding.service
 end
 
-let fetch key =
+type binding = Binding.t
+
+let fetch_service key =
   if State.is_initialized () then State.get key
   else
     failwith
@@ -55,30 +52,21 @@ let fetch key =
        side of your function so that the registry gets accessed once the \
        module runs? "
 
-let fetch_exn key =
-  match fetch key with
+let fetch_service_exn key =
+  match fetch_service key with
   | Some implementation -> implementation
   | None ->
       let msg = "Implementation not found for " ^ Key.info key in
       let () = Logs.err (fun m -> m "REGISTRY: %s" msg) in
       failwith msg
 
-type binding = Binding.t
-
-let pp = Binding.pp
+let create_binding = Binding.create
 
 let register = Binding.register
 
-(* TODO remove *)
-let bind = Binding.create
-
-let create_binding key service repo = Binding.create_with_repo repo key service
-
 let set_initialized = State.set_initialized
 
-let repo_of_binding = Binding.get_repo
-
-let bind_all req service_bindings =
+let bind req service_bindings =
   let rec bind_services req service_bindings =
     match service_bindings with
     | binding :: service_bindings ->

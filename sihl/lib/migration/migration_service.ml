@@ -5,6 +5,12 @@ module Model = Migration_model
 let ( let* ) = Lwt_result.bind
 
 module Make (MigrationRepo : REPO) : SERVICE = struct
+  let on_bind _ = Lwt.return @@ Ok ()
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
+
   let setup c =
     Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     MigrationRepo.create_table_if_not_exists |> Core.Db.query_db_connection c
@@ -49,14 +55,12 @@ module Make (MigrationRepo : REPO) : SERVICE = struct
     let* () = upsert c updated_state in
     Lwt.return @@ Ok updated_state
 
-  let provide_repo = None
-
   let register _ _ = failwith "TODO implement register migration"
 
   let get_migrations _ = failwith "TODO get_migrations"
 
   let execute_steps migration conn =
-    let (module Service : SERVICE) = Core.Container.fetch_exn key in
+    let (module Service : SERVICE) = Core.Container.fetch_service_exn key in
     let module Connection = (val conn : Caqti_lwt.CONNECTION) in
     let namespace, steps = migration in
     let open Lwt in
@@ -113,7 +117,7 @@ module Make (MigrationRepo : REPO) : SERVICE = struct
     run steps conn
 
   let execute_migration migration conn =
-    let (module Service : SERVICE) = Core.Container.fetch_exn key in
+    let (module Service : SERVICE) = Core.Container.fetch_service_exn key in
     let namespace, _ = migration in
     Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
     let* () = setup conn in
@@ -285,9 +289,9 @@ end
 
 module PostgreSql = Make (RepoPostgreSql)
 
-let postgresql = Core.Container.bind key (module PostgreSql)
+let postgresql =
+  Core.Container.create_binding key (module PostgreSql) (module PostgreSql)
 
 module MariaDb = Make (RepoMariaDb)
 
-let mariadb =
-  Core.Container.create_binding key (module MariaDb) MariaDb.provide_repo
+let mariadb = Core.Container.create_binding key (module MariaDb) (module MariaDb)

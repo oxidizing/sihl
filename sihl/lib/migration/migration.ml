@@ -27,6 +27,18 @@ let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
 
 let execute migrations =
   let (module MigrationService : Service.SERVICE) =
-    Core.Container.fetch_exn Migration_sig.key
+    Core.Container.fetch_service_exn Migration_sig.key
   in
   MigrationService.execute migrations
+
+let register req migration =
+  let (module MigrationService : Service.SERVICE) =
+    Core.Container.fetch_service_exn Migration_sig.key
+  in
+  MigrationService.register req migration
+
+let get_migrations req =
+  let (module MigrationService : Service.SERVICE) =
+    Core.Container.fetch_service_exn Migration_sig.key
+  in
+  MigrationService.get_migrations req

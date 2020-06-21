@@ -33,7 +33,7 @@ let test_anonymous_request_returns_cookie _ () =
   in
   let* req = Sihl.Run.Test.request_with_connection () in
   let (module Service : Sihl.Session.Sig.SERVICE) =
-    Sihl.Core.Container.fetch_exn Sihl.Session.Sig.key
+    Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in
   let* sessions =
     Service.get_all_sessions req
@@ -69,7 +69,7 @@ let test_requests_persist_session_variables _ () =
   in
   let* req = Sihl.Run.Test.request_with_connection () in
   let (module Service : Sihl.Session.Sig.SERVICE) =
-    Sihl.Core.Container.fetch_exn Sihl.Session.Sig.key
+    Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in
   let* session =
     Service.get_all_sessions req

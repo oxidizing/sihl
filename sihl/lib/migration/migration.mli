@@ -9,9 +9,9 @@ module Service : sig
 
   module PostgreSql : SERVICE
 
-  val postgresql : Core.Container.Binding.t
+  val postgresql : Core.Container.binding
 
-  val mariadb : Core.Container.Binding.t
+  val mariadb : Core.Container.binding
 
   module MariaDb : SERVICE
 end
@@ -33,3 +33,7 @@ val create_step : label:string -> ?check_fk:bool -> string -> step
 val add_step : step -> t -> t
 
 val execute : t list -> (unit, string) Result.t Lwt.t
+
+val register : Opium_kernel.Request.t -> t -> (unit, string) Lwt_result.t
+
+val get_migrations : Opium_kernel.Request.t -> (t list, string) Lwt_result.t

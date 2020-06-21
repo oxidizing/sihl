@@ -4,7 +4,7 @@ module Sig = Session_sig
 module Service = Session_service
 
 let set_value req ~key ~value =
-  match Core.Container.fetch Sig.key with
+  match Core.Container.fetch_service Sig.key with
   | Some (module Service : Sig.SERVICE) -> Service.set_value ~key ~value req
   | None ->
       let msg =
@@ -15,7 +15,7 @@ let set_value req ~key ~value =
       Lwt.return @@ Error msg
 
 let remove_value req ~key =
-  match Core.Container.fetch Sig.key with
+  match Core.Container.fetch_service Sig.key with
   | Some (module Service : Sig.SERVICE) -> Service.remove_value ~key req
   | None ->
       let msg =
@@ -26,7 +26,7 @@ let remove_value req ~key =
       Lwt.return @@ Error msg
 
 let get_value req ~key =
-  match Core.Container.fetch Sig.key with
+  match Core.Container.fetch_service Sig.key with
   | Some (module Service : Sig.SERVICE) -> Service.get_value ~key req
   | None ->
       let msg =
@@ -37,7 +37,7 @@ let get_value req ~key =
       Lwt.return @@ Error msg
 
 let get_session req ~key =
-  match Core.Container.fetch Sig.key with
+  match Core.Container.fetch_service Sig.key with
   | Some (module Service : Sig.SERVICE) -> Service.get_session req ~key
   | None ->
       let msg =
@@ -48,7 +48,7 @@ let get_session req ~key =
       Lwt.return @@ Error msg
 
 let insert_session req ~session =
-  match Core.Container.fetch Sig.key with
+  match Core.Container.fetch_service Sig.key with
   | Some (module Service : Sig.SERVICE) -> Service.insert_session req ~session
   | None ->
       let msg =

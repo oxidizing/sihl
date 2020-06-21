@@ -240,6 +240,12 @@ end
 module Make = struct
   module Console (TemplateService : Email_sig.Template.SERVICE) :
     Email_sig.SERVICE = struct
+    let on_bind _ = Lwt.return @@ Ok ()
+
+    let on_start _ = Lwt.return @@ Ok ()
+
+    let on_stop _ = Lwt.return @@ Ok ()
+
     let show email =
       let sender = Email_model.sender email in
       let recipient = Email_model.recipient email in
@@ -267,6 +273,12 @@ Subject: %s
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SMTP) : Email_sig.SERVICE =
   struct
+    let on_bind _ = Lwt.return @@ Ok ()
+
+    let on_start _ = Lwt.return @@ Ok ()
+
+    let on_stop _ = Lwt.return @@ Ok ()
+
     let send request email =
       let* _ = TemplateService.render request email in
       (* TODO implement SMTP *)
@@ -277,6 +289,12 @@ Subject: %s
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SENDGRID) : Email_sig.SERVICE =
   struct
+    let on_bind _ = Lwt.return @@ Ok ()
+
+    let on_start _ = Lwt.return @@ Ok ()
+
+    let on_stop _ = Lwt.return @@ Ok ()
+
     let body ~recipient ~subject ~sender ~content =
       Printf.sprintf
         {|
@@ -347,6 +365,12 @@ Subject: %s
 
   module Memory (TemplateService : Email_sig.Template.SERVICE) :
     Email_sig.SERVICE = struct
+    let on_bind _ = Lwt.return @@ Ok ()
+
+    let on_start _ = Lwt.return @@ Ok ()
+
+    let on_stop _ = Lwt.return @@ Ok ()
+
     let send request email =
       let* email = TemplateService.render request email in
       Email_model.DevInbox.set email;

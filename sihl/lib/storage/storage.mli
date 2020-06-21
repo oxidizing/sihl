@@ -81,7 +81,5 @@ val get_data_base64 :
 module Sig = Storage_sig
 
 module Service : sig
-  module Make : functor (Repo : Sig.REPO) -> Sig.SERVICE
-
-  val mariadb : Core.Container.Binding.t
+  val mariadb : Core.Container.binding
 end

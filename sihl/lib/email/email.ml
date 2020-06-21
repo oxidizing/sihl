@@ -1,16 +1,9 @@
 include Email_model
-
-module Service = struct
-  module Template = Email_sig.Template
-  module ConfigProvider = Email_sig.ConfigProvider
-
-  module type SERVICE = Email_sig.SERVICE
-
-  let key = Email_sig.key
-end
+module Service = Email_service
+module Sig = Email_sig
 
 let send req email =
-  let (module EmailService : Service.SERVICE) =
-    Core.Container.fetch_exn Service.key
+  let (module EmailService : Sig.SERVICE) =
+    Core.Container.fetch_service_exn Sig.key
   in
   EmailService.send req email
