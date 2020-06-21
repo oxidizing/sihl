@@ -1,11 +1,13 @@
 open Base
 
-let ( let* ) = Lwt.bind
+let ( let* ) = Lwt_result.bind
 
 module Make
     (MigrationService : Migration.Service.SERVICE)
-    (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
-  let on_bind req = MigrationService.register req (Repo.migrate ())
+    (SessionRepo : Session_sig.REPO) : Session_sig.SERVICE = struct
+  let on_bind req =
+    let* () = MigrationService.register req (SessionRepo.migrate ()) in
+    Repo.register_cleaner req SessionRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -22,7 +24,7 @@ module Make
             "Session not found in Request.env, have you applied the \
              Sihl.Middleware.session?"
     in
-    let* session = Repo.get ~key:session_key |> Core.Db.query_db_exn req in
+    let* session = SessionRepo.get ~key:session_key |> Core.Db.query_db req in
     match session with
     | None ->
         Lwt.return
@@ -31,7 +33,7 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_model.set ~key ~value session in
-        Repo.insert session |> Core.Db.query_db req
+        SessionRepo.insert session |> Core.Db.query_db req
 
   let remove_value req ~key =
     let session_key =
@@ -44,7 +46,7 @@ module Make
             "Session not found in Request.env, have you applied the \
              Sihl.Middleware.session?"
     in
-    let* session = Repo.get ~key:session_key |> Core.Db.query_db_exn req in
+    let* session = SessionRepo.get ~key:session_key |> Core.Db.query_db req in
     match session with
     | None ->
         Lwt.return
@@ -53,7 +55,7 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_model.remove ~key session in
-        Repo.insert session |> Core.Db.query_db req
+        SessionRepo.insert session |> Core.Db.query_db req
 
   let get_value req ~key =
     let session_key =
@@ -66,7 +68,7 @@ module Make
             "Session not found in Request.env, have you applied the \
              Sihl.Middleware.session?"
     in
-    let* session = Repo.get ~key:session_key |> Core.Db.query_db_exn req in
+    let* session = SessionRepo.get ~key:session_key |> Core.Db.query_db req in
     match session with
     | None ->
         Logs.warn (fun m ->
@@ -75,14 +77,15 @@ module Make
     | Some session ->
         Session_model.get key session |> Result.return |> Lwt.return
 
-  let get_session req ~key = Repo.get ~key |> Core.Db.query_db req
+  let get_session req ~key = SessionRepo.get ~key |> Core.Db.query_db req
 
-  let get_all_sessions req = Repo.get_all |> Core.Db.query_db req
+  let get_all_sessions req = SessionRepo.get_all |> Core.Db.query_db req
 
-  let insert_session req ~session = Repo.insert session |> Core.Db.query_db req
+  let insert_session req ~session =
+    SessionRepo.insert session |> Core.Db.query_db req
 end
 
-module RepoMariaDb = struct
+module SessionRepoMariaDb = struct
   module Sql = struct
     module Session = struct
       module Model = Session_model
@@ -196,7 +199,7 @@ CREATE TABLE session_sessions (
     Repo.set_fk_check connection true
 end
 
-module RepoPostgreSql = struct
+module SessionRepoPostgreSql = struct
   module Sql = struct
     module Session = struct
       module Model = Session_model
@@ -306,12 +309,12 @@ CREATE TABLE session_sessions (
   let clean connection = Sql.Session.clean connection
 end
 
-module MariaDb = Make (Migration.Service.MariaDb) (RepoMariaDb)
+module MariaDb = Make (Migration.Service.MariaDb) (SessionRepoMariaDb)
 
 let mariadb =
   Core.Container.create_binding Session_sig.key (module MariaDb) (module MariaDb)
 
-module PostgreSql = Make (Migration.Service.PostgreSql) (RepoPostgreSql)
+module PostgreSql = Make (Migration.Service.PostgreSql) (SessionRepoPostgreSql)
 
 let postgresql =
   Core.Container.create_binding Session_sig.key

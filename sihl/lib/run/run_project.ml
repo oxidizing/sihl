@@ -92,22 +92,22 @@ module Project : PROJECT = struct
     Logs.debug (fun m -> m "START: logger set up")
 
   let migrate project =
+    let* req =
+      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
+      |> Opium.Std.Request.create |> Core.Db.request_with_connection
+    in
     let app_migrations =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
     in
-    let* req =
-      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
-      |> Opium.Std.Request.create |> Core.Db.request_with_connection
-    in
     let* service_migrations =
       Migration.get_migrations req
       |> Lwt_result.map_err Core.Err.raise_server
       |> Lwt.map Result.ok_exn
     in
-    let migrations = List.concat [ app_migrations; service_migrations ] in
+    let migrations = List.concat [ service_migrations; app_migrations ] in
     Migration.execute migrations
 
   let bind_registry project =
@@ -160,8 +160,11 @@ module Project : PROJECT = struct
       "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
       |> Opium.Std.Request.create |> Core.Db.request_with_connection
     in
-    (* TODO handle result properly *)
-    let* _ = Core.Container.bind req project.services in
+    let* () =
+      Core.Container.bind req project.services
+      |> Lwt_result.map_err Core.Err.raise_server
+      |> Lwt.map Result.ok_exn
+    in
     Logs.debug (fun m -> m "START: Calling app start hooks");
     call_start_hooks project;
     Logs.debug (fun m -> m "START: Migrating");
@@ -174,19 +177,15 @@ module Project : PROJECT = struct
   let seed _ = Lwt.return @@ Error "not implemented"
 
   let clean project =
-    (* TODO
-       1. get app cleaners and apply them
-       2. in on_bind methods of services register cleaners
-    *)
     let* req = Run_test.request_with_connection () in
+    Logs.debug (fun m -> m "REPO: Cleaning up service repos ");
+    let* () = Repo.clean_all req |> Lwt.map Result.ok_or_failwith in
     let app_cleaners =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.clean)
     in
-    let service_cleaners = [] in
-    let cleaners = List.concat [ app_cleaners; service_cleaners ] in
     Logs.debug (fun m -> m "REPO: Cleaning up app database");
     let rec clean_repos cleaners =
       match cleaners with
@@ -200,7 +199,7 @@ module Project : PROJECT = struct
                   m "REPO: Cleaning up app database failed %s" msg);
               Lwt.return @@ Error msg )
     in
-    clean_repos cleaners
+    clean_repos app_cleaners
 
   (* TODO implement *)
   let stop _ = Lwt.return @@ Error "not implemented"

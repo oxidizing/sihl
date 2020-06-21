@@ -5,5 +5,7 @@
   sihl_user
   alcotest
   alcotest-lwt
+  caqti-driver-mariadb
+  caqti-driver-postgresql
  )
 )

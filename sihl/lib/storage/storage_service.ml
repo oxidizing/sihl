@@ -1,44 +1,50 @@
 open Storage_sig
 open Storage_model
 
+let ( let* ) = Lwt_result.bind
+
 let key : (module SERVICE) Core.Container.key =
   Core.Container.create_key "storage.service"
 
-module Make (MigrationService : Migration.Service.SERVICE) (Repo : REPO) :
+module Make (MigrationService : Migration.Service.SERVICE) (StorageRepo : REPO) :
   SERVICE = struct
-  let on_bind req = MigrationService.register req (Repo.migrate ())
+  let on_bind req =
+    let* () = MigrationService.register req (StorageRepo.migrate ()) in
+    Repo.register_cleaner req StorageRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let get_file req ~id = Repo.get_file ~id |> Core.Db.query_db req
+  let get_file req ~id = StorageRepo.get_file ~id |> Core.Db.query_db req
 
   let upload_base64 req ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = Core.Id.random () |> Core.Id.to_string in
     let* () =
-      Repo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
+      StorageRepo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
     in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
-    let* () = Repo.insert_file ~file:stored_file |> Core.Db.query_db req in
+    let* () =
+      StorageRepo.insert_file ~file:stored_file |> Core.Db.query_db req
+    in
     Lwt.return @@ Ok stored_file
 
   let update_base64 req ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = StoredFile.blob file in
     let* () =
-      Repo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
+      StorageRepo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
     in
-    let* () = Repo.update_file ~file |> Core.Db.query_db req in
+    let* () = StorageRepo.update_file ~file |> Core.Db.query_db req in
     Lwt.return @@ Ok file
 
   let get_data_base64 req ~file =
     let blob_id = StoredFile.blob file in
-    Repo.get_blob ~id:blob_id |> Core.Db.query_db req
+    StorageRepo.get_blob ~id:blob_id |> Core.Db.query_db req
 end
 
-module RepoMariaDb = struct
+module StorageRepoMariaDb = struct
   let stored_file =
     let encode m =
       let StoredFile.{ file; blob } = m in
@@ -222,6 +228,6 @@ end
 
 (** TODO Implement postgres repo **)
 
-module MariaDb = Make (Migration.Service.MariaDb) (RepoMariaDb)
+module MariaDb = Make (Migration.Service.MariaDb) (StorageRepoMariaDb)
 
 let mariadb = Core.Container.create_binding key (module MariaDb) (module MariaDb)

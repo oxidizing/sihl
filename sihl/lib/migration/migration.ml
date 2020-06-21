@@ -26,6 +26,12 @@ let create_step ~label ?(check_fk = true) statement =
 let add_step step (label, steps) = (label, List.concat [ steps; [ step ] ])
 
 let execute migrations =
+  (* List.map
+   *   ~f:(fun migration ->
+   *     Logs.err (fun m ->
+   *         m "Executing migration %a" Model.Migration.pp migration))
+   *   migrations
+   * |> ignore; *)
   let (module MigrationService : Service.SERVICE) =
     Core.Container.fetch_service_exn Migration_sig.key
   in

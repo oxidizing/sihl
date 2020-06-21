@@ -31,5 +31,5 @@ module Registry = struct
 
   let get_all () = !registry
 
-  let register migration = registry := List.cons migration !registry
+  let register migration = registry := List.concat [ !registry; [ migration ] ]
 end

@@ -22,7 +22,7 @@ let middlewares =
   ]
 
 module EmailService =
-  Sihl.Email.Service.Make.Memory (Sihl.Email.Service.Template.PostgreSql)
+  Sihl.Email.Service.Make.Memory (Sihl.Email.Service.Template.MariaDb)
 
 let email_service =
   Sihl.Container.create_binding Sihl.Email.Sig.key
