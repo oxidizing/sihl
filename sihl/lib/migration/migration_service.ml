@@ -55,9 +55,11 @@ module Make (MigrationRepo : REPO) : SERVICE = struct
     let* () = upsert c updated_state in
     Lwt.return @@ Ok updated_state
 
-  let register _ _ = failwith "TODO implement register migration"
+  let register _ migration =
+    Migration_model.Registry.register migration;
+    Lwt.return @@ Ok ()
 
-  let get_migrations _ = failwith "TODO get_migrations"
+  let get_migrations _ = Lwt.return @@ Ok (Migration_model.Registry.get_all ())
 
   let execute_steps migration conn =
     let (module Service : SERVICE) = Core.Container.fetch_service_exn key in
