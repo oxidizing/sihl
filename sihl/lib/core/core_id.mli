@@ -1,4 +1,4 @@
-type t
+type t = Uuidm.t
 
 val random : unit -> t
 
@@ -7,6 +7,8 @@ val of_string : string -> (t, string) Result.t
 val of_bytes : string -> (t, string) Result.t
 
 val to_string : t -> string
+
+val to_bytes : t -> string
 
 val is_valid_str : string -> bool
 

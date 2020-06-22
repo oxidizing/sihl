@@ -23,6 +23,8 @@ let of_bytes id_bytes =
 
 let to_string id = Uuidm.to_string id
 
+let to_bytes id = Uuidm.to_bytes id
+
 let is_valid_str id_string = id_string |> of_string |> Result.is_ok
 
 module Uuidm = Uuidm
