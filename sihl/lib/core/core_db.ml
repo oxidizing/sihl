@@ -11,6 +11,8 @@ type ('res, 'err) query =
 
 type 'a db_result = ('a, Caqti_error.t) Lwt_result.t
 
+type 'a result = ('a, string) Lwt_result.t
+
 type connection = (module Caqti_lwt.CONNECTION)
 
 (* [connection ()] establishes a live database connection and is a pool of
