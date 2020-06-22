@@ -171,7 +171,7 @@ module Make (MigrationRepo : REPO) : SERVICE = struct
           | Ok () -> run migrations conn
           | Error err -> return (Error err) )
     in
-    let pool = Core.Db.connect () in
+    let pool = Core.Db.connect () |> Result.ok_or_failwith in
     let result =
       Caqti_lwt.Pool.use
         (fun conn -> run migrations conn >|= to_caqti_error)
