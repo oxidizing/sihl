@@ -135,6 +135,20 @@ let query_db request query =
   in
   connection |> query |> Lwt_result.map_err Caqti_error.show
 
+let query request query =
+  let connection =
+    match request |> Request.env |> Opium.Hmap.find key with
+    | Some connection -> connection
+    | None ->
+        let msg =
+          "DB: Failed to fetch DB connection from Request.env, was the DB \
+           middleware applied?"
+        in
+        Logs.err (fun m -> m "%s" msg);
+        failwith msg
+  in
+  connection |> query
+
 let query_db_connection connection query =
   query connection |> Lwt_result.map_err Caqti_error.show
 

@@ -14,7 +14,7 @@ module Template = struct
     val get :
       id:string ->
       Core.Db.connection ->
-      Email_model.Template.t Core.Db.db_result
+      (Email_model.Template.t option, string) Result.t Lwt.t
   end
 end
 

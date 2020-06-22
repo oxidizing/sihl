@@ -33,7 +33,12 @@ val query_db_connection :
 val query_db :
   Opium_kernel.Rock.Request.t ->
   (connection -> 'a db_result) ->
-  ('a, string) result Lwt.t
+  ('a, string) Result.t Lwt.t
+
+val query :
+  Opium_kernel.Rock.Request.t ->
+  (connection -> ('a, string) Result.t Lwt.t) ->
+  ('a, string) Result.t Lwt.t
 
 val query_db_exn :
   ?message:string ->

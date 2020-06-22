@@ -21,7 +21,12 @@ module MakeTemplateService
       match template_id with
       | Some template_id ->
           let* template =
-            EmailRepo.get ~id:template_id |> Core.Db.query_db request
+            EmailRepo.get ~id:template_id |> Core.Db.query request
+          in
+          let* template =
+            template
+            |> Result.of_option ~error:"Template with id %s not found"
+            |> Lwt.return
           in
           let content = Email_model.Template.render template_data template in
           Lwt.return @@ Ok content
@@ -37,7 +42,7 @@ module EmailRepoMariaDb = struct
     let get connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.t
+        Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
           LOWER(CONCAT(
@@ -56,7 +61,7 @@ module EmailRepoMariaDb = struct
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
       in
-      Connection.find request
+      Connection.find_opt request
 
     (* TODO split into insert and update *)
     let upsert connection =
@@ -129,7 +134,8 @@ CREATE TABLE email_templates (
 
   let migrate = Migration.migration
 
-  let get ~id connection = Sql.get connection id
+  let get ~id connection =
+    Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
   (* TODO sihl_user has to seed templates properly
      let clean connection = Sql.clean connection () *)
@@ -143,7 +149,7 @@ module EmailRepoPostgreSql = struct
     let get connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.find Caqti_type.string Model.t
+        Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
           uuid,
@@ -156,7 +162,7 @@ module EmailRepoPostgreSql = struct
         WHERE email_templates.uuid = ?
         |sql}
       in
-      Connection.find request
+      Connection.find_opt request
 
     (* TODO split into insert and update *)
     let upsert connection =
@@ -222,7 +228,8 @@ CREATE TABLE email_templates (
 
   let migrate = Migration.migration
 
-  let get ~id connection = Sql.get connection id
+  let get ~id connection =
+    Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
   (* TODO sihl_user has to seed templates properly
      let clean connection = Sql.clean connection () *)
