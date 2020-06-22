@@ -16,4 +16,8 @@ val pp : Format.formatter -> t -> unit
 
 val equal : t -> t -> bool
 
+val t_string : string Caqti_type.t
+
+val t : t Caqti_type.t
+
 module Uuidm = Uuidm

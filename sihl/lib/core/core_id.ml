@@ -27,4 +27,25 @@ let to_bytes id = Uuidm.to_bytes id
 
 let is_valid_str id_string = id_string |> of_string |> Result.is_ok
 
+let t_string =
+  let ( let* ) = Result.bind in
+  let encode uuid =
+    let* uuid = of_string uuid in
+    Ok (to_bytes uuid)
+  in
+  let decode uuid =
+    let* uuid = of_bytes uuid in
+    Ok (to_string uuid)
+  in
+  Caqti_type.(custom ~encode ~decode octets)
+
+let t =
+  let ( let* ) = Result.bind in
+  let encode uuid = Ok (to_bytes uuid) in
+  let decode uuid =
+    let* uuid = of_bytes uuid in
+    Ok uuid
+  in
+  Caqti_type.(custom ~encode ~decode octets)
+
 module Uuidm = Uuidm
