@@ -3,7 +3,7 @@ open Base
 let ( let* ) = Lwt.bind
 
 let m () =
-  let pool = Core.Db.connect () in
+  let pool = Core.Db.connect () |> Result.ok_or_failwith in
   let filter handler req =
     let response_ref : Opium.Std.Response.t option ref = ref None in
     let* _ =
