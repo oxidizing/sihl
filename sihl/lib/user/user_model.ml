@@ -14,11 +14,11 @@ module User = struct
 
   let confirm user = { user with confirmed = true }
 
-  let update_password user new_password =
+  let set_user_password user new_password =
     let hash = new_password |> Core.Hashing.hash |> Result.ok_or_failwith in
     { user with password = hash }
 
-  let update_details user ~email ~username = { user with email; username }
+  let set_user_details user ~email ~username = { user with email; username }
 
   let is_admin user = user.admin
 

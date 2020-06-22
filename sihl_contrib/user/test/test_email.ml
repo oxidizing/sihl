@@ -9,56 +9,56 @@ let extract_token text =
   Option.value_exn ~message:"no match found"
     (Sihl.Core.Regex.extract_last regexp text)
 
-let test_user_registers_and_confirms_email _ () =
-  let* _ = Sihl.Run.Manage.clean () in
-  let body =
-    {|
-       {
-         "email": "user1@example.com",
-         "username": "user1",
-         "password": "123"
-       }
-|}
-  in
-  let* _ =
-    Cohttp_lwt_unix.Client.post
-      ~body:(Cohttp_lwt.Body.of_string body)
-      (Uri.of_string @@ url "/register/")
-  in
-  let email = Sihl.Email.DevInbox.get () in
-  let token = email |> Sihl.Email.content |> extract_token in
-  let* _ =
-    Cohttp_lwt_unix.Client.get
-      (Uri.of_string @@ url ("/confirm-email/?token=" ^ token))
-  in
-  let base64 = Base64.encode_exn "user1@example.com:123" in
-  let headers =
-    Cohttp.Header.of_list [ ("authorization", "Basic " ^ base64) ]
-  in
-  let* _, body =
-    Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
-  in
-  let* body = Cohttp_lwt.Body.to_string body in
-  let Sihl_user.Handler.Login.{ token; _ } =
-    body |> Yojson.Safe.from_string
-    |> Sihl_user.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
-  in
-  let () =
-    Alcotest.(check bool) "Returns token" true (not @@ String.is_empty token)
-  in
-  let headers =
-    Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
-  in
-  let* _, body =
-    Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
-  in
-  let* body = body |> Cohttp_lwt.Body.to_string in
-  let confirmed =
-    body |> Yojson.Safe.from_string |> Sihl.User.of_yojson
-    |> Result.ok_or_failwith |> Sihl.User.confirmed
-  in
-  let () = Alcotest.(check bool) "Has confirmed email" true confirmed in
-  Lwt.return @@ ()
+(* let test_user_registers_and_confirms_email _ () =
+ *   let* _ = Sihl.Run.Manage.clean () in
+ *   let body =
+ *     {|
+ *        {
+ *          "email": "user1@example.com",
+ *          "username": "user1",
+ *          "password": "123"
+ *        }
+ * |}
+ *   in
+ *   let* _ =
+ *     Cohttp_lwt_unix.Client.post
+ *       ~body:(Cohttp_lwt.Body.of_string body)
+ *       (Uri.of_string @@ url "/register/")
+ *   in
+ *   let email = Sihl.Email.DevInbox.get () in
+ *   let token = email |> Sihl.Email.content |> extract_token in
+ *   let* _ =
+ *     Cohttp_lwt_unix.Client.get
+ *       (Uri.of_string @@ url ("/confirm-email/?token=" ^ token))
+ *   in
+ *   let base64 = Base64.encode_exn "user1@example.com:123" in
+ *   let headers =
+ *     Cohttp.Header.of_list [ ("authorization", "Basic " ^ base64) ]
+ *   in
+ *   let* _, body =
+ *     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/login/")
+ *   in
+ *   let* body = Cohttp_lwt.Body.to_string body in
+ *   let Sihl_user.Handler.Login.{ token; _ } =
+ *     body |> Yojson.Safe.from_string
+ *     |> Sihl_user.Handler.Login.body_out_of_yojson |> Result.ok_or_failwith
+ *   in
+ *   let () =
+ *     Alcotest.(check bool) "Returns token" true (not @@ String.is_empty token)
+ *   in
+ *   let headers =
+ *     Cohttp.Header.of_list [ ("authorization", "Bearer " ^ token) ]
+ *   in
+ *   let* _, body =
+ *     Cohttp_lwt_unix.Client.get ~headers (Uri.of_string @@ url "/users/me/")
+ *   in
+ *   let* body = body |> Cohttp_lwt.Body.to_string in
+ *   let confirmed =
+ *     body |> Yojson.Safe.from_string |> Sihl.User.of_yojson
+ *     |> Result.ok_or_failwith |> Sihl.User.confirmed
+ *   in
+ *   let () = Alcotest.(check bool) "Has confirmed email" true confirmed in
+ *   Lwt.return @@ () *)
 
 let test_user_resets_password _ () =
   let* _ = Sihl.Run.Manage.clean () in
