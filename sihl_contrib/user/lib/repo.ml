@@ -6,12 +6,14 @@ module type REPOSITORY = sig
       Sihl.Core.Db.connection -> Sihl.User.t list Sihl.Core.Db.db_result
 
     val get :
-      id:string -> Sihl.Core.Db.connection -> Sihl.User.t Sihl.Core.Db.db_result
+      id:string ->
+      Sihl.Core.Db.connection ->
+      Sihl.User.t option Sihl.Core.Db.db_result
 
     val get_by_email :
       email:string ->
       Sihl.Core.Db.connection ->
-      Sihl.User.t Sihl.Core.Db.db_result
+      Sihl.User.t option Sihl.Core.Db.db_result
 
     val insert :
       Sihl.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
@@ -24,7 +26,7 @@ module type REPOSITORY = sig
     val get :
       value:string ->
       Sihl.Core.Db.connection ->
-      Sihl.User.Token.t Sihl.Core.Db.db_result
+      Sihl.User.Token.t option Sihl.Core.Db.db_result
 
     val delete_by_user :
       id:string -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
@@ -75,7 +77,7 @@ module MariaDb = struct
       let get connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
-          Caqti_request.find Caqti_type.string Model.t
+          Caqti_request.find_opt Caqti_type.string Model.t
             {sql|
         SELECT
           LOWER(CONCAT(
@@ -95,12 +97,12 @@ module MariaDb = struct
         WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
         in
-        Connection.find request
+        Connection.find_opt request
 
       let get_by_email connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
-          Caqti_request.find Caqti_type.string Model.t
+          Caqti_request.find_opt Caqti_type.string Model.t
             {sql|
         SELECT
           LOWER(CONCAT(
@@ -120,7 +122,7 @@ module MariaDb = struct
         WHERE user_users.email = ?
         |sql}
         in
-        Connection.find request
+        Connection.find_opt request
 
       let upsert connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -170,7 +172,7 @@ TRUNCATE user_users;
       let get connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
-          Caqti_request.find Caqti_type.string Model.t
+          Caqti_request.find_opt Caqti_type.string Model.t
             {sql|
         SELECT
           LOWER(CONCAT(
@@ -196,7 +198,7 @@ TRUNCATE user_users;
         WHERE user_tokens.token_value = ?
         |sql}
         in
-        Connection.find request
+        Connection.find_opt request
 
       let upsert connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -396,7 +398,7 @@ module PostgreSql = struct
       let get connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
-          Caqti_request.find Caqti_type.string Model.t
+          Caqti_request.find_opt Caqti_type.string Model.t
             {sql|
         SELECT
           uuid as id,
@@ -410,12 +412,12 @@ module PostgreSql = struct
         WHERE user_users.uuid = ?::uuid
         |sql}
         in
-        Connection.find request
+        Connection.find_opt request
 
       let get_by_email connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
-          Caqti_request.find Caqti_type.string Model.t
+          Caqti_request.find_opt Caqti_type.string Model.t
             {sql|
         SELECT
           uuid as id,
@@ -429,7 +431,7 @@ module PostgreSql = struct
         WHERE user_users.email = ?
         |sql}
         in
-        Connection.find request
+        Connection.find_opt request
 
       let insert connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -491,7 +493,7 @@ module PostgreSql = struct
       let get connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
-          Caqti_request.find Caqti_type.string Model.t
+          Caqti_request.find_opt Caqti_type.string Model.t
             {sql|
         SELECT
           user_tokens.uuid as id,
@@ -505,7 +507,7 @@ module PostgreSql = struct
         WHERE user_tokens.token_value = ?
         |sql}
         in
-        Connection.find request
+        Connection.find_opt request
 
       let insert connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in

@@ -1,4 +1,6 @@
 open Base
+module Token = User_model.Token
+module Sig = User_sig
 
 type t = User_model.User.t
 
@@ -43,9 +45,9 @@ val make :
 
 val confirm : t -> t
 
-val update_password : t -> string -> t
+val set_user_password : t -> string -> t
 
-val update_details : t -> email:string -> username:string option -> t
+val set_user_details : t -> email:string -> username:string option -> t
 
 val is_admin : t -> bool
 
@@ -72,5 +74,34 @@ val system : t
 
 val t : t Caqti_type.t
 
-module Token = User_model.Token
-module Sig = User_sig
+val get :
+  Opium_kernel.Request.t ->
+  user_id:string ->
+  (User_model.User.t option, string) Result.t Lwt.t
+
+val get_by_email :
+  Opium_kernel.Request.t ->
+  email:string ->
+  (User_model.User.t option, string) Result.t Lwt.t
+
+val get_all :
+  Opium_kernel.Request.t -> (User_model.User.t list, string) Result.t Lwt.t
+
+val update_password :
+  Opium_kernel.Request.t ->
+  email:string ->
+  old_password:string ->
+  new_password:string ->
+  (User_model.User.t, string) Result.t Lwt.t
+
+val set_password :
+  Opium_kernel.Request.t ->
+  user_id:string ->
+  password:string ->
+  (User_model.User.t, string) Result.t Lwt.t
+
+val update_details :
+  Opium_kernel.Request.t ->
+  email:string ->
+  username:string option ->
+  (User_model.User.t, string) Result.t Lwt.t

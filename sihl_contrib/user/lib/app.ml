@@ -10,27 +10,25 @@ let config () =
     ]
 
 let endpoints () =
-  let open Handler in
-  [
-    Login.handler;
-    Register.handler;
-    Logout.handler;
-    GetUser.handler;
-    GetUsers.handler;
-    GetMe.handler;
-    UpdatePassword.handler;
-    UpdateDetails.handler;
-    SetPassword.handler;
-    ConfirmEmail.handler;
-    RequestPasswordReset.handler;
-    ResetPassword.handler;
-    AdminUi.Login.get;
-    AdminUi.Login.post;
-    AdminUi.Logout.handler;
-    AdminUi.User.handler;
-    AdminUi.Users.handler;
-    AdminUi.UserSetPassword.handler;
-  ]
+  [ (* TODO fix once we have defined user service, token service and use case layer *)
+    (* Login.handler;
+     * Register.handler;
+     * Logout.handler;
+     * GetUser.handler;
+     * GetUsers.handler;
+     * GetMe.handler;
+     * UpdatePassword.handler;
+     * UpdateDetails.handler;
+     * SetPassword.handler;
+     * ConfirmEmail.handler;
+     * RequestPasswordReset.handler;
+     * ResetPassword.handler;
+     * AdminUi.Login.get;
+     * AdminUi.Login.post;
+     * AdminUi.Logout.handler;
+     * AdminUi.User.handler;
+     * AdminUi.Users.handler;
+     * AdminUi.UserSetPassword.handler; *) ]
 
 let repos () = []
 

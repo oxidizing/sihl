@@ -32,14 +32,18 @@ module Authn = struct
           match user_id with
           (* there is no user_id, nothing to do *)
           | None -> handler req
-          | Some user_id ->
-              let (module UserService : Sihl.User.Sig.SERVICE) =
-                Sihl.Container.fetch_service_exn Sihl.User.Sig.key
+          | Some user_id -> (
+              let* user =
+                Sihl.User.get req ~user_id
+                |> Lwt_result.map_err Sihl.Core.Err.raise_not_authenticated
+                |> Lwt.map Result.ok_exn
               in
-              let* user = UserService.get req Sihl.User.system ~user_id in
-              let env = Opium.Hmap.add key user (Request.env req) in
-              let req = { req with Request.env } in
-              handler req )
+              match user with
+              | None -> Sihl.Core.Err.raise_not_authenticated "No user found"
+              | Some user ->
+                  let env = Opium.Hmap.add key user (Request.env req) in
+                  let req = { req with Request.env } in
+                  handler req ) )
     in
     Rock.Middleware.create ~name:"users.session" ~filter
 
@@ -52,7 +56,7 @@ module Authn = struct
     let filter handler req =
       match req |> Request.headers |> Cohttp.Header.get_authorization with
       | None -> handler req
-      | Some (`Other token) ->
+      | Some (`Other token) -> (
           (* TODO use more robust bearer token parsing *)
           let token =
             token |> String.split ~on:' ' |> List.tl_exn |> List.hd_exn
@@ -60,16 +64,25 @@ module Authn = struct
           let (module UserService : Sihl.User.Sig.SERVICE) =
             Sihl.Container.fetch_service_exn Sihl.User.Sig.key
           in
-          let* user = UserService.get_by_token req token in
-          let env = Opium.Hmap.add key user (Request.env req) in
-          let req = { req with Request.env } in
-          handler req
+          let* user =
+            UserService.get_by_token req token
+            |> Lwt_result.map_err Sihl.Core.Err.raise_not_authenticated
+            |> Lwt.map Result.ok_exn
+          in
+          match user with
+          | None -> Sihl.Core.Err.raise_not_authenticated "No user found"
+          | Some user ->
+              let env = Opium.Hmap.add key user (Request.env req) in
+              let req = { req with Request.env } in
+              handler req )
       | Some (`Basic (email, password)) ->
           let (module UserService : Sihl.User.Sig.SERVICE) =
             Sihl.Container.fetch_service_exn Sihl.User.Sig.key
           in
           let* user =
             UserService.authenticate_credentials req ~email ~password
+            |> Lwt_result.map_err Sihl.Core.Err.raise_not_authenticated
+            |> Lwt.map Result.ok_exn
           in
           let env = Opium.Hmap.add key user (Request.env req) in
           let req = { req with Request.env } in
