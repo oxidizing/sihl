@@ -1,6 +1,10 @@
 open Base
 
 module User = struct
+  (* TODO add Status.Active and Status.Inactive *)
+  (* TODO add roles ADT with user, staff and superuser *)
+  (* TODO Ptime.t created_at *)
+
   type t = {
     id : string;
     email : string;

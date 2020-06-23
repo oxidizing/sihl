@@ -34,6 +34,13 @@ module type SERVICE = sig
     password:string ->
     (User_model.User.t, string) Result.t Lwt.t
 
+  val create_user :
+    Opium_kernel.Request.t ->
+    email:string ->
+    password:string ->
+    username:string option ->
+    (User_model.User.t, string) Result.t Lwt.t
+
   (* Extract the following functions into a token service and to the use case layer *)
 
   val get_by_token :

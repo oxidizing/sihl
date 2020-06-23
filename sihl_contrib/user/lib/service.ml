@@ -117,6 +117,13 @@ module Make (UserRepo : Repo.REPOSITORY) : Sihl.User.Sig.SERVICE = struct
     let* () = UserRepo.User.insert user |> Sihl.Core.Db.query_db request in
     Lwt.return @@ Ok user
 
+  let create_user request ~email ~password ~username =
+    let user =
+      Sihl.User.create ~email ~password ~username ~admin:false ~confirmed:false
+    in
+    let* () = UserRepo.User.insert user |> Sihl.Core.Db.query_db request in
+    Lwt.return @@ Ok user
+
   let logout request user =
     let* () = Sihl.Session.remove_value ~key:"users.id" request in
     let id = Sihl.User.id user in

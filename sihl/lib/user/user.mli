@@ -105,3 +105,10 @@ val update_details :
   email:string ->
   username:string option ->
   (User_model.User.t, string) Result.t Lwt.t
+
+val create_user :
+  Opium_kernel.Request.t ->
+  email:string ->
+  password:string ->
+  username:string option ->
+  (User_model.User.t, string) Result.t Lwt.t

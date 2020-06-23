@@ -37,3 +37,9 @@ let update_details req ~email ~username =
     Core.Container.fetch_service_exn Sig.key
   in
   UserService.update_details req ~email ~username
+
+let create_user req ~email ~password ~username =
+  let (module UserService : Sig.SERVICE) =
+    Core.Container.fetch_service_exn Sig.key
+  in
+  UserService.create_user req ~email ~password ~username
