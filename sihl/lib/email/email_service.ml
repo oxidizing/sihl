@@ -387,3 +387,23 @@ Subject: %s
       Lwt.return @@ Ok ()
   end
 end
+
+module Memory = struct
+  module EmailServiceMariadb =
+    Make.Memory
+      (MakeTemplateService (Migration.Service.MariaDb) (EmailRepoMariaDb))
+
+  let mariadb =
+    Core_container.create_binding Email_sig.key
+      (module EmailServiceMariadb)
+      (module EmailServiceMariadb)
+
+  module EmailServicePostgreSql =
+    Make.Memory
+      (MakeTemplateService (Migration.Service.PostgreSql) (EmailRepoPostgreSql))
+
+  let postgresql =
+    Core_container.create_binding Email_sig.key
+      (module EmailServicePostgreSql)
+      (module EmailServicePostgreSql)
+end
