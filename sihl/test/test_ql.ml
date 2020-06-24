@@ -132,32 +132,18 @@ let to_sql_fragments _ () =
       |> set_sort sort_criterion |> set_limit 10 |> set_offset 1)
   in
   let filter_whitelist = [ "foo"; "fooz"; "some" ] in
-  let ( (filter, filter_values),
-        (sort, sort_values),
-        (limit, limit_value),
-        (offset, offset_value) ) =
-    match Sihl.Ql.to_sql_fragments filter_whitelist query with
-    | ( Some (filter, filter_values),
-        Some (sort, sort_values),
-        Some (limit, limit_value),
-        Some (offset, offset_value) ) ->
-        ( (filter, filter_values),
-          (sort, sort_values),
-          (limit, limit_value),
-          (offset, offset_value) )
-    | _ -> failwith "Invalid query provided"
+  let filter, sort, pagination, values =
+    Sihl.Ql.to_sql_fragments filter_whitelist query
   in
+  Alcotest.(
+    check (list string) "values"
+      [ "bar"; "baz"; "where"; "foo"; "bar"; "10"; "1" ]
+      values);
   Alcotest.(
     check string "filters" "WHERE ((foo = ? AND fooz LIKE ?) OR some LIKE ?)"
       filter);
-  Alcotest.(
-    check (list string) "filter values" [ "bar"; "baz"; "where" ] filter_values);
   Alcotest.(check string "sort query" "ORDER BY ? ASC, ? DESC" sort);
-  Alcotest.(check (list string) "sort values" [ "foo"; "bar" ] sort_values);
-  Alcotest.(check string "limit query" "LIMIT ?" limit);
-  Alcotest.(check int "limit value" 10 limit_value);
-  Alcotest.(check string "offset query" "OFFSET ?" offset);
-  Alcotest.(check int "offset value" 1 offset_value);
+  Alcotest.(check string "pagination query" "LIMIT ? OFFSET ?" pagination);
   Lwt.return ()
 
 let of_string_empty_sort _ () =

@@ -25,9 +25,9 @@ type t = {
 [@@deriving show, eq, sexp]
 
 module Sql = struct
-  let limit limit = ("LIMIT ?", limit)
+  let limit limit = ("LIMIT ?", [ Int.to_string limit ])
 
-  let offset offset = ("OFFSET ?", offset)
+  let offset offset = ("OFFSET ?", [ Int.to_string offset ])
 
   let sort sort =
     let values = ref [] in
@@ -98,39 +98,37 @@ module Sql = struct
     (result, !values)
 
   let to_fragments filter_whitelist query =
-    let filter_fragment =
-      Option.map ~f:(filter filter_whitelist) query.filter
+    let filter_qs, filter_values =
+      query.filter
+      |> Option.map ~f:(filter filter_whitelist)
+      |> Option.value ~default:("", [])
     in
-    let sort_fragment = Option.map ~f:sort query.sort in
-    let limit_fragment = Option.map ~f:limit query.limit in
-    let offset_fragment = Option.map ~f:offset query.offset in
-    (filter_fragment, sort_fragment, limit_fragment, offset_fragment)
+    let sort_qs, sort_values =
+      query.sort |> Option.map ~f:sort |> Option.value ~default:("", [])
+    in
+    let limit_fragment = query.limit |> Option.map ~f:limit in
+    let offset_fragment = query.offset |> Option.map ~f:offset in
+    let pagination_qs, pagination_values =
+      Option.merge limit_fragment offset_fragment
+        ~f:(fun (limit_query, limit_value) (offset_query, offset_value) ->
+          ( limit_query ^ " " ^ offset_query,
+            List.concat [ limit_value; offset_value ] ))
+      |> Option.value ~default:("", [])
+    in
+    ( filter_qs,
+      sort_qs,
+      pagination_qs,
+      List.concat [ filter_values; sort_values; pagination_values ] )
 
   let to_string filter_whitelist query =
-    let filter_fragment, sort_fragment, limit_fragment, offset_fragment =
+    let filter_fragment, sort_fragment, pagination_fragment, values =
       to_fragments filter_whitelist query
     in
-    let limit_fragment =
-      limit_fragment
-      |> Option.map ~f:(fun (qs, value) -> (qs, [ Int.to_string value ]))
-    in
-    let offset_fragment =
-      offset_fragment
-      |> Option.map ~f:(fun (qs, value) -> (qs, [ Int.to_string value ]))
-    in
     let qs =
-      List.filter ~f:Option.is_some
-        [ filter_fragment; sort_fragment; limit_fragment; offset_fragment ]
-      |> List.map ~f:(Option.map ~f:(fun (qs, _) -> qs))
-      |> List.map ~f:(Option.value ~default:"")
+      List.filter
+        ~f:(fun str -> not (String.is_empty str))
+        [ filter_fragment; sort_fragment; pagination_fragment ]
       |> String.concat ~sep:" "
-    in
-    let values =
-      List.filter ~f:Option.is_some
-        [ filter_fragment; sort_fragment; limit_fragment; offset_fragment ]
-      |> List.map ~f:(Option.map ~f:(fun (_, values) -> values))
-      |> List.map ~f:(Option.value ~default:[])
-      |> List.concat
     in
     (qs, values)
 end

@@ -28,12 +28,7 @@ val of_string : string -> (t, string) Result.t
 val to_sql : string list -> t -> string * string list
 
 val to_sql_fragments :
-  string list ->
-  t ->
-  (string * string list) option
-  * (string * string list) option
-  * (string * int) option
-  * (string * int) option
+  string list -> t -> string * string * string * string list
 
 val to_string : t -> string
 
