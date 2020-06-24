@@ -51,7 +51,10 @@ let suite =
         test_case "to sql limit offset" `Quick Test_ql.to_sql_limit_offset;
         test_case "to sql sort" `Quick Test_ql.to_sql_sort;
         test_case "to sql filter" `Quick Test_ql.to_sql_filter;
+        test_case "to sql filter with partial whitelist" `Quick
+          Test_ql.to_sql_filter_with_partial_whitelist;
         test_case "to sql" `Quick Test_ql.to_sql;
+        test_case "to sql fragments" `Quick Test_ql.to_sql_fragments;
         test_case "of string empty sort" `Quick Test_ql.of_string_empty_sort;
         test_case "of string limit offset" `Quick Test_ql.of_string_limit_offset;
         test_case "of string sort" `Quick Test_ql.of_string_sort;
