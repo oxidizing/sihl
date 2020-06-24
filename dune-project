@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.0.39)
+(version 0.0.40)
 
 (authors "Josef Erben")
 (source (github oxidizing/sihl))
@@ -89,7 +89,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.39))
+  (sihl (>= 0.0.40))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -106,7 +106,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.39))
+  (sihl (>= 0.0.40))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
