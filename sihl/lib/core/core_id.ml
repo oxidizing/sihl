@@ -30,15 +30,11 @@ let is_valid_str id_string = id_string |> of_string |> Result.is_ok
 let t_string =
   let ( let* ) = Result.bind in
   let encode uuid =
-    Logs.debug (fun m -> m "ENCODING: Received %s as uuid" uuid);
     let* uuid = of_string uuid in
-    Logs.debug (fun m -> m "Result of to_bytes: %s" (to_bytes uuid));
     Ok (to_bytes uuid)
   in
   let decode uuid =
-    Logs.debug (fun m -> m "DECODING: Received %s as uuid" uuid);
     let* uuid = of_bytes uuid in
-    Logs.debug (fun m -> m "Result of to_string: %s" (to_string uuid));
     Ok (to_string uuid)
   in
   Caqti_type.(custom ~encode ~decode string)
