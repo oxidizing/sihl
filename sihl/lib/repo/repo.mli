@@ -1,6 +1,6 @@
 (* RepoService *)
 
-type cleaner = Core_db.connection -> unit Core_db.db_result
+type cleaner = Core_db.connection -> (unit, string) Result.t Lwt.t
 
 module Meta : sig
   type t
@@ -16,12 +16,9 @@ module Meta : sig
   val make : total:int -> t
 end
 
-val set_fk_check : Core.Db.connection -> bool -> unit Core.Db.db_result
-
-val register_cleaner :
-  Opium_kernel.Request.t -> cleaner -> (unit, string) Result.t Lwt.t
+val register_cleaner : Core.Ctx.t -> cleaner -> (unit, string) Result.t Lwt.t
 
 val register_cleaners :
-  Opium_kernel.Request.t -> cleaner list -> (unit, string) Result.t Lwt.t
+  Core.Ctx.t -> cleaner list -> (unit, string) Result.t Lwt.t
 
-val clean_all : Opium_kernel.Request.t -> (unit, string) Result.t Lwt.t
+val clean_all : Core.Ctx.t -> (unit, string) Result.t Lwt.t

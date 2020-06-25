@@ -3,43 +3,43 @@ module type REPOSITORY = sig
 
   module User : sig
     val get_all :
-      Sihl.Core.Db.connection -> Sihl.User.t list Sihl.Core.Db.db_result
+      Sihl.Core.Db.connection -> (Sihl.User.t list, string) Result.t Lwt.t
 
     val get :
       id:string ->
       Sihl.Core.Db.connection ->
-      Sihl.User.t option Sihl.Core.Db.db_result
+      (Sihl.User.t option, string) Result.t Lwt.t
 
     val get_by_email :
       email:string ->
       Sihl.Core.Db.connection ->
-      Sihl.User.t option Sihl.Core.Db.db_result
+      (Sihl.User.t option, string) Result.t Lwt.t
 
     val insert :
-      Sihl.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
+      Sihl.User.t -> Sihl.Core.Db.connection -> (unit, string) Result.t Lwt.t
 
     val update :
-      Sihl.User.t -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
+      Sihl.User.t -> Sihl.Core.Db.connection -> (unit, string) Result.t Lwt.t
   end
 
   module Token : sig
     val get :
       value:string ->
       Sihl.Core.Db.connection ->
-      Sihl.User.Token.t option Sihl.Core.Db.db_result
+      (Sihl.User.Token.t option, string) Result.t Lwt.t
 
     val delete_by_user :
-      id:string -> Sihl.Core.Db.connection -> unit Sihl.Core.Db.db_result
+      id:string -> Sihl.Core.Db.connection -> (unit, string) Result.t Lwt.t
 
     val insert :
       Sihl.User.Token.t ->
       Sihl.Core.Db.connection ->
-      unit Sihl.Core.Db.db_result
+      (unit, string) Result.t Lwt.t
 
     val update :
       Sihl.User.Token.t ->
       Sihl.Core.Db.connection ->
-      unit Sihl.Core.Db.db_result
+      (unit, string) Result.t Lwt.t
   end
 end
 
@@ -73,8 +73,9 @@ module MariaDb = struct
            |sql}
         in
         Connection.collect_list request ()
+        |> Lwt_result.map_err Caqti_error.show
 
-      let get connection =
+      let get connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -97,9 +98,9 @@ module MariaDb = struct
         WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let get_by_email connection =
+      let get_by_email connection email =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -122,9 +123,9 @@ module MariaDb = struct
         WHERE user_users.email = ?
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request email |> Lwt_result.map_err Caqti_error.show
 
-      let upsert connection =
+      let upsert connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -154,7 +155,7 @@ module MariaDb = struct
         confirmed = VALUES(confirmed)
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
       let clean connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -163,13 +164,13 @@ module MariaDb = struct
 TRUNCATE user_users;
 |sql}
         in
-        Connection.exec request ()
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
 
     module Token = struct
       module Model = Token
 
-      let get connection =
+      let get connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -198,9 +199,9 @@ TRUNCATE user_users;
         WHERE user_tokens.token_value = ?
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let upsert connection =
+      let upsert connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -224,9 +225,9 @@ TRUNCATE user_users;
         status = VALUES(status)
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let delete_by_user connection =
+      let delete_by_user connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Caqti_type.string
@@ -237,7 +238,7 @@ TRUNCATE user_users;
          WHERE user_users.uuid = UNHEX(REPLACE(?, '-', '')))
         |sql}
         in
-        Connection.exec request
+        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
       let clean connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -247,7 +248,7 @@ TRUNCATE user_users;
         TRUNCATE user_tokens;
            |sql}
         in
-        Connection.exec request ()
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
   end
 
@@ -366,10 +367,10 @@ CREATE TABLE user_tokens (
 
   let clean connection =
     let ( let* ) = Lwt_result.bind in
-    let* () = Sihl.Repo.set_fk_check connection false in
+    let* () = Sihl.Db.set_fk_check connection ~check:false in
     let* () = Sql.User.clean connection in
     let* () = Sql.Token.clean connection in
-    Sihl.Repo.set_fk_check connection true
+    Sihl.Db.set_fk_check connection ~check:false
 end
 
 module PostgreSql = struct
@@ -394,8 +395,9 @@ module PostgreSql = struct
         |sql}
         in
         Connection.collect_list request ()
+        |> Lwt_result.map_err Caqti_error.show
 
-      let get connection =
+      let get connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -412,9 +414,9 @@ module PostgreSql = struct
         WHERE user_users.uuid = ?::uuid
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let get_by_email connection =
+      let get_by_email connection email =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -431,9 +433,9 @@ module PostgreSql = struct
         WHERE user_users.email = ?
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request email |> Lwt_result.map_err Caqti_error.show
 
-      let insert connection =
+      let insert connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -457,9 +459,9 @@ module PostgreSql = struct
         )
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let update connection =
+      let update connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -475,7 +477,7 @@ module PostgreSql = struct
         WHERE user_users.uuid = $1
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
       let clean connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -484,13 +486,13 @@ module PostgreSql = struct
             "TRUNCATE TABLE user_users CASCADE;"
         in
 
-        Connection.exec request ()
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
 
     module Token = struct
       module Model = Token
 
-      let get connection =
+      let get connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -507,9 +509,9 @@ module PostgreSql = struct
         WHERE user_tokens.token_value = ?
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let insert connection =
+      let insert connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -529,9 +531,9 @@ module PostgreSql = struct
         )
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let update connection =
+      let update connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -547,9 +549,9 @@ module PostgreSql = struct
         WHERE user_tokens.uuid = $1
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let delete_by_user connection =
+      let delete_by_user connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Caqti_type.string
@@ -560,7 +562,7 @@ module PostgreSql = struct
          WHERE user_users.uuid = ?)
         |sql}
         in
-        Connection.exec request
+        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
       let clean connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -568,7 +570,7 @@ module PostgreSql = struct
           Caqti_request.exec Caqti_type.unit
             "TRUNCATE TABLE user_tokens CASCADE;"
         in
-        Connection.exec request ()
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
   end
 

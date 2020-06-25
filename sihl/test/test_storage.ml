@@ -14,13 +14,13 @@ let fetch_uploaded_file _ () =
     Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
       ~mime:"application/pdf"
   in
-  let* req = Sihl.Test.request_with_connection () in
+  let ctx = Sihl.Test.context () in
   let* _ =
-    Sihl.Storage.upload_base64 req ~file ~base64:"filecontentinbase64"
+    Sihl.Storage.upload_base64 ctx ~file ~base64:"filecontentinbase64"
     |> Lwt.map Result.ok_or_failwith
   in
   let* uploaded_file =
-    Sihl.Storage.get_file req ~id:file_id
+    Sihl.Storage.get_file ctx ~id:file_id
     |> Lwt.map Result.ok_or_failwith
     |> Lwt.map (fun file ->
            Option.value_exn file ~message:"No uploaded file found")
@@ -28,7 +28,7 @@ let fetch_uploaded_file _ () =
   let actual_file = uploaded_file |> Sihl.Storage.StoredFile.file in
   Alcotest.(check alco_file "has same file" file actual_file);
   let* actual_blob =
-    Sihl.Storage.get_data_base64 req ~file:uploaded_file
+    Sihl.Storage.get_data_base64 ctx ~file:uploaded_file
     |> Lwt.map Result.ok_or_failwith
     |> Lwt.map (fun file ->
            Option.value_exn file ~message:"No uploaded blob found")
@@ -46,9 +46,9 @@ let update_uploaded_file _ () =
     Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
       ~mime:"application/pdf"
   in
-  let* req = Sihl.Test.request_with_connection () in
+  let ctx = Sihl.Test.context () in
   let* stored_file =
-    Sihl.Storage.upload_base64 req ~file ~base64:"filecontentinbase64"
+    Sihl.Storage.upload_base64 ctx ~file ~base64:"filecontentinbase64"
     |> Lwt.map Result.ok_or_failwith
   in
 
@@ -56,7 +56,7 @@ let update_uploaded_file _ () =
     Sihl.Storage.StoredFile.set_filename "assessment.pdf" stored_file
   in
   let* actual_file =
-    Sihl.Storage.update_base64 req ~file:updated_file ~base64:"newcontent"
+    Sihl.Storage.update_base64 ctx ~file:updated_file ~base64:"newcontent"
     |> Lwt.map Result.ok_or_failwith
   in
   Alcotest.(
@@ -64,7 +64,7 @@ let update_uploaded_file _ () =
       (Sihl.Storage.StoredFile.file updated_file)
       (Sihl.Storage.StoredFile.file actual_file));
   let* actual_blob =
-    Sihl.Storage.get_data_base64 req ~file:stored_file
+    Sihl.Storage.get_data_base64 ctx ~file:stored_file
     |> Lwt.map Result.ok_or_failwith
     |> Lwt.map (fun file ->
            Option.value_exn file ~message:"No uploaded blob found")

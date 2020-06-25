@@ -2,7 +2,7 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-type fn = Opium.Std.Request.t -> string list -> (unit, string) Result.t Lwt.t
+type fn = Core_ctx.t -> string list -> (unit, string) Result.t Lwt.t
 
 type t = { name : string; description : string; fn : fn } [@@deriving fields]
 
@@ -34,17 +34,12 @@ This is a list of all supported commands:
 |}
     command_list
 
-(* TODO move to correct place *)
-let request_with_connection () =
-  "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
-  |> Opium.Std.Request.create |> Core_db.request_with_connection
-
 let execute command args =
-  let* request = request_with_connection () in
+  let ctx = Core_db.ctx_with_pool () in
   let fn = fn command in
   let description = description command in
   (* wait for the execution to end *)
-  let result = Lwt_main.run (fn request args) in
+  let result = Lwt_main.run (fn ctx args) in
   match result with
   | Ok _ -> Lwt.return ()
   | Error "wrong usage" ->

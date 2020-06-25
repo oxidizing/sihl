@@ -3,9 +3,9 @@ module Service = Storage_service
 module Sig = Storage_sig
 include Storage_model
 
-let upload_base64 req ~file ~base64 =
+let upload_base64 ctx ~file ~base64 =
   match Core.Container.fetch_service Service.key with
-  | Some (module Service : SERVICE) -> Service.upload_base64 req ~file ~base64
+  | Some (module Service : SERVICE) -> Service.upload_base64 ctx ~file ~base64
   | None ->
       let msg =
         "STORAGE: Could not find storage service, make sure to register one"
@@ -13,9 +13,9 @@ let upload_base64 req ~file ~base64 =
       Logs.err (fun m -> m "%s" msg);
       Lwt.return @@ Error msg
 
-let get_file req ~id =
+let get_file ctx ~id =
   match Core.Container.fetch_service Service.key with
-  | Some (module Service : SERVICE) -> Service.get_file req ~id
+  | Some (module Service : SERVICE) -> Service.get_file ctx ~id
   | None ->
       let msg =
         "STORAGE: Could not find storage service, make sure to register one"
@@ -23,9 +23,9 @@ let get_file req ~id =
       Logs.err (fun m -> m "%s" msg);
       Lwt.return @@ Error msg
 
-let update_base64 req ~file ~base64 =
+let update_base64 ctx ~file ~base64 =
   match Core.Container.fetch_service Service.key with
-  | Some (module Service : SERVICE) -> Service.update_base64 req ~file ~base64
+  | Some (module Service : SERVICE) -> Service.update_base64 ctx ~file ~base64
   | None ->
       let msg =
         "STORAGE: Could not find storage service, make sure to register one"
@@ -33,9 +33,9 @@ let update_base64 req ~file ~base64 =
       Logs.err (fun m -> m "%s" msg);
       Lwt.return @@ Error msg
 
-let get_data_base64 req ~file =
+let get_data_base64 ctx ~file =
   match Core.Container.fetch_service Service.key with
-  | Some (module Service : SERVICE) -> Service.get_data_base64 req ~file
+  | Some (module Service : SERVICE) -> Service.get_data_base64 ctx ~file
   | None ->
       let msg =
         "STORAGE: Could not find storage service, make sure to register one"

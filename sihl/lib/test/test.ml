@@ -2,10 +2,6 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-let request_with_connection () =
-  "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
-  |> Opium.Std.Request.create |> Core.Db.request_with_connection
-
 let register_services services =
   let config =
     Core.Config.Setting.create ~development:[]
@@ -19,15 +15,13 @@ let register_services services =
   result |> Result.ok_or_failwith |> Lwt.return
 
 let seed seed_fn =
-  let* request = request_with_connection () in
-  let* result = seed_fn request in
+  let ctx = Core.Db.ctx_with_pool () in
+  let* result = seed_fn ctx in
   match result with
   | Ok result -> Lwt.return result
   | Error msg -> failwith ("Failed to run seed " ^ msg)
 
 let context ?user () =
-  let pool = Core.Db.connect () |> Result.ok_or_failwith in
   match user with
-  | Some user ->
-      Core.Ctx.(empty |> User.ctx_add_user user |> Core.Db.ctx_add_pool pool)
-  | None -> Core.Ctx.(empty |> Core.Db.ctx_add_pool pool)
+  | Some user -> Core.Db.ctx_with_pool () |> User.ctx_add_user user
+  | None -> Core.Db.ctx_with_pool ()

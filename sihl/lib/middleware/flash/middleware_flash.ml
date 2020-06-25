@@ -11,8 +11,9 @@ let key : string Opium.Hmap.key =
 
 let m () =
   let filter handler req =
+    let ctx = Http.ctx req in
     let ( let* ) = Lwt.bind in
-    let* result = Store.rotate req in
+    let* result = Store.rotate ctx in
     let () =
       result |> Result.map_error ~f:Core.Err.raise_server |> Result.ok_exn
     in

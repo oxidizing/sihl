@@ -4,4 +4,4 @@ module Service : sig
   val key : (module SERVICE) Core.Container.key
 end
 
-val authenticate : Opium_kernel.Request.t -> User.t
+val authenticate : Core.Ctx.t -> User.t

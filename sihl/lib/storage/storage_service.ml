@@ -8,40 +8,38 @@ let key : (module SERVICE) Core.Container.key =
 
 module Make (MigrationService : Migration.Service.SERVICE) (StorageRepo : REPO) :
   SERVICE = struct
-  let on_bind req =
-    let* () = MigrationService.register req (StorageRepo.migrate ()) in
-    Repo.register_cleaner req StorageRepo.clean
+  let on_bind ctx =
+    let* () = MigrationService.register ctx (StorageRepo.migrate ()) in
+    Repo.register_cleaner ctx StorageRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let get_file req ~id = StorageRepo.get_file ~id |> Core.Db.query_db req
+  let get_file ctx ~id = StorageRepo.get_file ~id |> Core.Db.query ctx
 
-  let upload_base64 req ~file ~base64 =
+  let upload_base64 ctx ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = Core.Id.random () |> Core.Id.to_string in
     let* () =
-      StorageRepo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
+      StorageRepo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query ctx
     in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
-    let* () =
-      StorageRepo.insert_file ~file:stored_file |> Core.Db.query_db req
-    in
+    let* () = StorageRepo.insert_file ~file:stored_file |> Core.Db.query ctx in
     Lwt.return @@ Ok stored_file
 
-  let update_base64 req ~file ~base64 =
+  let update_base64 ctx ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = StoredFile.blob file in
     let* () =
-      StorageRepo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query_db req
+      StorageRepo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query ctx
     in
-    let* () = StorageRepo.update_file ~file |> Core.Db.query_db req in
+    let* () = StorageRepo.update_file ~file |> Core.Db.query ctx in
     Lwt.return @@ Ok file
 
-  let get_data_base64 req ~file =
+  let get_data_base64 ctx ~file =
     let blob_id = StoredFile.blob file in
-    StorageRepo.get_blob ~id:blob_id |> Core.Db.query_db req
+    StorageRepo.get_blob ~id:blob_id |> Core.Db.query ctx
 end
 
 module StorageRepoMariaDb = struct
@@ -82,7 +80,7 @@ INSERT INTO storage_handles (
 )
 |sql}
     in
-    Connection.exec request file
+    Connection.exec request file |> Lwt_result.map_err Caqti_error.show
 
   let update_file connection ~file =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -98,7 +96,7 @@ WHERE
   storage_handles.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
     in
-    Connection.exec request file
+    Connection.exec request file |> Lwt_result.map_err Caqti_error.show
 
   let get_file connection ~id =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -115,7 +113,7 @@ FROM storage_handles
 WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
     in
-    Connection.find_opt request id
+    Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
   let get_blob connection ~id =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -128,7 +126,7 @@ FROM storage_blobs
 WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
     in
-    Connection.find_opt request id
+    Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
   let insert_blob connection ~id ~blob =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -145,7 +143,7 @@ INSERT INTO storage_blobs (
 )
 |sql}
     in
-    Connection.exec request (id, blob)
+    Connection.exec request (id, blob) |> Lwt_result.map_err Caqti_error.show
 
   let update_blob connection ~id ~blob =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -159,7 +157,7 @@ WHERE
   storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
     in
-    Connection.exec request (id, blob)
+    Connection.exec request (id, blob) |> Lwt_result.map_err Caqti_error.show
 
   let clean_handles connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -169,7 +167,7 @@ WHERE
            TRUNCATE storage_handles;
           |sql}
     in
-    Connection.exec request ()
+    Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
   let clean_blobs connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -179,7 +177,7 @@ WHERE
            TRUNCATE storage_blobs;
           |sql}
     in
-    Connection.exec request ()
+    Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
   let create_blobs_table =
     Migration.create_step ~label:"create blobs table"
@@ -220,10 +218,10 @@ CREATE TABLE IF NOT EXISTS storage_handles (
 
   let clean connection =
     let ( let* ) = Lwt_result.bind in
-    let* () = Repo.set_fk_check connection false in
+    let* () = Core.Db.set_fk_check connection ~check:false in
     let* () = clean_handles connection in
     let* () = clean_blobs connection in
-    Repo.set_fk_check connection true
+    Core.Db.set_fk_check connection ~check:true
 end
 
 (** TODO Implement postgres repo **)

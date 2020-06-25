@@ -77,39 +77,38 @@ val system : t
 val t : t Caqti_type.t
 
 val get :
-  Opium_kernel.Request.t ->
+  Core.Ctx.t ->
   user_id:string ->
   (User_model.User.t option, string) Result.t Lwt.t
 
 val get_by_email :
-  Opium_kernel.Request.t ->
+  Core.Ctx.t ->
   email:string ->
   (User_model.User.t option, string) Result.t Lwt.t
 
-val get_all :
-  Opium_kernel.Request.t -> (User_model.User.t list, string) Result.t Lwt.t
+val get_all : Core.Ctx.t -> (User_model.User.t list, string) Result.t Lwt.t
 
 val update_password :
-  Opium_kernel.Request.t ->
+  Core.Ctx.t ->
   email:string ->
   old_password:string ->
   new_password:string ->
   (User_model.User.t, string) Result.t Lwt.t
 
 val set_password :
-  Opium_kernel.Request.t ->
+  Core.Ctx.t ->
   user_id:string ->
   password:string ->
   (User_model.User.t, string) Result.t Lwt.t
 
 val update_details :
-  Opium_kernel.Request.t ->
+  Core.Ctx.t ->
   email:string ->
   username:string option ->
   (User_model.User.t, string) Result.t Lwt.t
 
 val create_user :
-  Opium_kernel.Request.t ->
+  Core.Ctx.t ->
   email:string ->
   password:string ->
   username:string option ->

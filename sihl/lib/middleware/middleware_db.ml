@@ -3,7 +3,7 @@ open Base
 let ( let* ) = Lwt.bind
 
 let m () =
-  let pool = Core.Db.connect () |> Result.ok_or_failwith in
+  let pool = Core.Db.create_pool () |> Result.ok_or_failwith in
   let filter handler req =
     let response_ref : Opium.Std.Response.t option ref = ref None in
     let* _ =
@@ -11,7 +11,8 @@ let m () =
         (fun connection ->
           let (module Connection : Caqti_lwt.CONNECTION) = connection in
           let env =
-            Opium.Hmap.add Core.Db.key connection (Opium.Std.Request.env req)
+            Opium.Hmap.add Core.Db.middleware_key_connection connection
+              (Opium.Std.Request.env req)
           in
           let response = handler { req with env } in
           let* response = response in

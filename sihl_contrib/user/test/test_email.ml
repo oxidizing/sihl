@@ -63,7 +63,7 @@ let extract_token text =
 let test_user_resets_password _ () =
   let* _ = Sihl.Run.Manage.clean () in
   let* _ =
-    Sihl.Run.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"password"
   in
   let body = {|{"email": "user1@example.com"}|} in
@@ -97,11 +97,11 @@ let test_user_resets_password _ () =
 let test_user_uses_reset_token_twice_fails _ () =
   let* _ = Sihl.Run.Manage.clean () in
   let* _ =
-    Sihl.Run.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.user ~email:"user1@example.com" ~password:"password"
   in
   let* _ =
-    Sihl.Run.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.admin ~email:"admin@example.com" ~password:"password"
   in
   let body = {|{"email": "user1@example.com"}|} in
