@@ -9,3 +9,5 @@ let not_authenticated = `NotAuthenticated
 let no_permissions = `NoPermissions
 
 let internal = `Internal
+
+let alco_error = Alcotest.testable pp_error equal_error
