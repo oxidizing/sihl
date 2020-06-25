@@ -4,6 +4,8 @@ module Sig = User_sig
 
 type t = User_model.User.t
 
+val ctx_add_user : t -> Core.Ctx.t -> Core.Ctx.t
+
 val t_of_sexp : Sexp.t -> t
 
 val sexp_of_t : t -> Sexp.t
@@ -112,3 +114,5 @@ val create_user :
   password:string ->
   username:string option ->
   (User_model.User.t, string) Result.t Lwt.t
+
+val require_user : Core.Ctx.t -> (t, string) Result.t Lwt.t

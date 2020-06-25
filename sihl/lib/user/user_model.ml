@@ -16,6 +16,8 @@ module User = struct
   }
   [@@deriving sexp, fields, yojson, show, eq, make]
 
+  let ctx_key : t Core.Ctx.key = Core.Ctx.create_key ()
+
   let confirm user = { user with confirmed = true }
 
   let set_user_password user new_password =

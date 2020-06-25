@@ -3,8 +3,11 @@
 open Base
 open Opium.Std
 
-(* Type aliases for the sake of documentation and explication *)
-type caqti_conn_pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
+type pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
+
+let ctx_key_pool : pool Core_ctx.key = Core_ctx.create_key ()
+
+let ctx_add_pool pool ctx = Core_ctx.add ctx_key_pool pool ctx
 
 type ('res, 'err) query =
   Caqti_lwt.connection -> ('res, ([< Caqti_error.t ] as 'err)) Result.t Lwt.t
@@ -15,8 +18,8 @@ type 'a result = ('a, string) Lwt_result.t
 
 type connection = (module Caqti_lwt.CONNECTION)
 
-(* [connection ()] establishes a live database connection and is a pool of
-   concurrent threads for accessing that connection. *)
+let ctx_key_connection : connection Core_ctx.key = Core_ctx.create_key ()
+
 let connect () =
   let pool_size = Core_config.read_int ~default:10 "DATABASE_POOL_SIZE" in
   Logs.debug (fun m -> m "DB: Create pool with size %i" pool_size);
@@ -134,3 +137,30 @@ let query_db_exn ?message request query =
   match result with
   | Ok result -> Lwt.return result
   | Error msg -> Core_err.raise_database (Option.value ~default:msg message)
+
+let ( let* ) = Lwt_result.bind
+
+let trx ctx f =
+  match Core_ctx.find ctx_key_pool ctx with
+  | Some pool ->
+      (* TODO rollback in case of error *)
+      Caqti_lwt.Pool.use
+        (fun connection ->
+          (let (module Connection : Caqti_lwt.CONNECTION) = connection in
+           let* () =
+             Connection.start () |> Lwt_result.map_err Caqti_error.show
+           in
+           let ctx = Core_ctx.add ctx_key_connection (module Connection) ctx in
+           let* result = f ctx in
+           let* () =
+             Connection.commit () |> Lwt_result.map_err Caqti_error.show
+           in
+           Lwt.return @@ Ok result)
+          |> Lwt_result.map_err (fun msg ->
+                 Caqti_error.request_failed ~uri:Uri.empty ~query:""
+                   (Caqti_error.Msg msg)))
+        pool
+      |> Lwt_result.map_err Caqti_error.show
+  | None ->
+      Lwt.return
+        (Error "No connection pool found, have you applied the DB middleware?")

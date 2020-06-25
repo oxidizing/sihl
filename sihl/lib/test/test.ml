@@ -24,3 +24,10 @@ let seed seed_fn =
   match result with
   | Ok result -> Lwt.return result
   | Error msg -> failwith ("Failed to run seed " ^ msg)
+
+let context ?user () =
+  let pool = Core.Db.connect () |> Result.ok_or_failwith in
+  match user with
+  | Some user ->
+      Core.Ctx.(empty |> User.ctx_add_user user |> Core.Db.ctx_add_pool pool)
+  | None -> Core.Ctx.(empty |> Core.Db.ctx_add_pool pool)

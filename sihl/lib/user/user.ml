@@ -1,6 +1,9 @@
+open Base
 include User_model.User
 module Sig = User_sig
 module Token = User_model.Token
+
+let ctx_add_user user ctx = Core.Ctx.add ctx_key user ctx
 
 let get req ~user_id =
   let (module UserService : Sig.SERVICE) =
@@ -43,3 +46,8 @@ let create_user req ~email ~password ~username =
     Core.Container.fetch_service_exn Sig.key
   in
   UserService.create_user req ~email ~password ~username
+
+let require_user ctx =
+  Core.Ctx.find ctx_key ctx
+  |> Result.of_option ~error:"No authenticated user"
+  |> Lwt.return
