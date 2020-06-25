@@ -1,3 +1,3 @@
 module type SERVICE = sig
-  val authenticate : Opium_kernel.Request.t -> User.t
+  val authenticate : Core.Ctx.t -> User.t
 end

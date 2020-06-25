@@ -27,26 +27,18 @@ val pp : Format.formatter -> t -> unit
 val t : t Caqti_type.t
 
 val set_value :
-  Opium_kernel.Request.t ->
-  key:string ->
-  value:string ->
-  (unit, string) Result.t Lwt.t
+  Core.Ctx.t -> key:string -> value:string -> (unit, string) Result.t Lwt.t
 
-val remove_value :
-  Opium_kernel.Request.t -> key:string -> (unit, string) Result.t Lwt.t
+val remove_value : Core.Ctx.t -> key:string -> (unit, string) Result.t Lwt.t
 
 val get_value :
-  Opium_kernel.Request.t -> key:string -> (string option, string) Result.t Lwt.t
+  Core.Ctx.t -> key:string -> (string option, string) Result.t Lwt.t
 
 val get_session :
-  Opium_kernel.Request.t ->
-  key:string ->
-  (Session_model.t option, string) Result.t Lwt.t
+  Core.Ctx.t -> key:string -> (Session_model.t option, string) Result.t Lwt.t
 
 val insert_session :
-  Opium_kernel.Request.t ->
-  session:Session_model.t ->
-  (unit, string) Result.t Lwt.t
+  Core.Ctx.t -> session:Session_model.t -> (unit, string) Result.t Lwt.t
 
 module Sig = Session_sig
 module Service = Session_service

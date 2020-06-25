@@ -3,7 +3,7 @@ open Sihl.Core.Err
 
 let ( let* ) = Lwt.bind
 
-let fn request args =
+let fn ctx args =
   match args with
   | [ "createadmin"; email; password ] -> (
       let (module UserService : Sihl.User.Sig.SERVICE) =
@@ -11,7 +11,7 @@ let fn request args =
       in
       let* result =
         try_to_run (fun () ->
-            UserService.create_admin request ~email ~password ~username:None)
+            UserService.create_admin ctx ~email ~password ~username:None)
       in
       Lwt.return
       @@

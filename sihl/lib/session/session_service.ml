@@ -5,26 +5,22 @@ let ( let* ) = Lwt_result.bind
 module Make
     (MigrationService : Migration.Service.SERVICE)
     (SessionRepo : Session_sig.REPO) : Session_sig.SERVICE = struct
-  let on_bind req =
-    let* () = MigrationService.register req (SessionRepo.migrate ()) in
-    Repo.register_cleaner req SessionRepo.clean
+  let on_bind ctx =
+    let* () = MigrationService.register ctx (SessionRepo.migrate ()) in
+    Repo.register_cleaner ctx SessionRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let set_value req ~key ~value =
-    let session_key =
-      match
-        Opium.Hmap.find Session_sig.middleware_key (Opium.Std.Request.env req)
-      with
-      | Some session -> session
-      | None ->
-          Core.Err.raise_server
-            "Session not found in Request.env, have you applied the \
-             Sihl.Middleware.session?"
-    in
-    let* session = SessionRepo.get ~key:session_key |> Core.Db.query_db req in
+  let require_session_key ctx =
+    Core.Ctx.find Session_sig.ctx_session_key ctx
+    |> Result.of_option ~error:"No session found"
+    |> Lwt.return
+
+  let set_value ctx ~key ~value =
+    let* session_key = require_session_key ctx in
+    let* session = SessionRepo.get ~key:session_key |> Core.Db.query ctx in
     match session with
     | None ->
         Lwt.return
@@ -33,20 +29,11 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_model.set ~key ~value session in
-        SessionRepo.insert session |> Core.Db.query_db req
+        SessionRepo.insert session |> Core.Db.query ctx
 
-  let remove_value req ~key =
-    let session_key =
-      match
-        Opium.Hmap.find Session_sig.middleware_key (Opium.Std.Request.env req)
-      with
-      | Some session -> session
-      | None ->
-          Core.Err.raise_server
-            "Session not found in Request.env, have you applied the \
-             Sihl.Middleware.session?"
-    in
-    let* session = SessionRepo.get ~key:session_key |> Core.Db.query_db req in
+  let remove_value ctx ~key =
+    let* session_key = require_session_key ctx in
+    let* session = SessionRepo.get ~key:session_key |> Core.Db.query ctx in
     match session with
     | None ->
         Lwt.return
@@ -55,20 +42,11 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_model.remove ~key session in
-        SessionRepo.insert session |> Core.Db.query_db req
+        SessionRepo.insert session |> Core.Db.query ctx
 
-  let get_value req ~key =
-    let session_key =
-      match
-        Opium.Hmap.find Session_sig.middleware_key (Opium.Std.Request.env req)
-      with
-      | Some session -> session
-      | None ->
-          Core.Err.raise_server
-            "Session not found in Request.env, have you applied the \
-             Sihl.Middleware.session?"
-    in
-    let* session = SessionRepo.get ~key:session_key |> Core.Db.query_db req in
+  let get_value ctx ~key =
+    let* session_key = require_session_key ctx in
+    let* session = SessionRepo.get ~key:session_key |> Core.Db.query ctx in
     match session with
     | None ->
         Logs.warn (fun m ->
@@ -77,12 +55,12 @@ module Make
     | Some session ->
         Session_model.get key session |> Result.return |> Lwt.return
 
-  let get_session req ~key = SessionRepo.get ~key |> Core.Db.query_db req
+  let get_session ctx ~key = SessionRepo.get ~key |> Core.Db.query ctx
 
-  let get_all_sessions req = SessionRepo.get_all |> Core.Db.query_db req
+  let get_all_sessions ctx = SessionRepo.get_all |> Core.Db.query ctx
 
-  let insert_session req ~session =
-    SessionRepo.insert session |> Core.Db.query_db req
+  let insert_session ctx ~session =
+    SessionRepo.insert session |> Core.Db.query ctx
 end
 
 module SessionRepoMariaDb = struct
@@ -102,9 +80,10 @@ module SessionRepoMariaDb = struct
         FROM session_sessions
         |sql}
         in
-        Connection.collect_list request
+        Connection.collect_list request ()
+        |> Lwt_result.map_err Caqti_error.show
 
-      let get connection =
+      let get connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -117,9 +96,9 @@ module SessionRepoMariaDb = struct
         WHERE session_sessions.session_key = ?
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let upsert connection =
+      let upsert connection model =
         (* TODO split up into insert and update *)
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
@@ -137,9 +116,9 @@ module SessionRepoMariaDb = struct
         session_data = VALUES(session_data)
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let delete connection =
+      let delete connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Caqti_type.string
@@ -148,7 +127,7 @@ module SessionRepoMariaDb = struct
       WHERE session_sessions.session_key = ?
       |sql}
         in
-        Connection.exec request
+        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
       let clean connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -158,7 +137,7 @@ module SessionRepoMariaDb = struct
            TRUNCATE session_sessions;
           |sql}
         in
-        Connection.exec request ()
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
   end
 
@@ -180,7 +159,7 @@ CREATE TABLE session_sessions (
       Migration.(empty "session" |> add_step create_sessions_table)
   end
 
-  let get_all connection = Sql.Session.get_all connection ()
+  let get_all connection = Sql.Session.get_all connection
 
   let get ~key connection = Sql.Session.get connection key
 
@@ -194,9 +173,9 @@ CREATE TABLE session_sessions (
 
   let clean connection =
     let ( let* ) = Lwt_result.bind in
-    let* () = Repo.set_fk_check connection false in
+    let* () = Core.Db.set_fk_check connection ~check:false in
     let* () = Sql.Session.clean connection in
-    Repo.set_fk_check connection true
+    Core.Db.set_fk_check connection ~check:true
 end
 
 module SessionRepoPostgreSql = struct
@@ -216,9 +195,10 @@ module SessionRepoPostgreSql = struct
         FROM session_sessions
         |sql}
         in
-        Connection.collect_list request
+        Connection.collect_list request ()
+        |> Lwt_result.map_err Caqti_error.show
 
-      let get connection =
+      let get connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -231,9 +211,9 @@ module SessionRepoPostgreSql = struct
         WHERE session_sessions.session_key = ?
         |sql}
         in
-        Connection.find_opt request
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let upsert connection =
+      let upsert connection model =
         (* TODO split up into insert and update *)
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
@@ -251,9 +231,9 @@ module SessionRepoPostgreSql = struct
         session_data = EXCLUDED.session_data
         |sql}
         in
-        Connection.exec request
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let delete connection =
+      let delete connection id =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Caqti_type.string
@@ -262,7 +242,7 @@ module SessionRepoPostgreSql = struct
       WHERE session_sessions.session_key = ?
            |sql}
         in
-        Connection.exec request
+        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
       let clean connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -272,7 +252,7 @@ module SessionRepoPostgreSql = struct
         TRUNCATE TABLE session_sessions CASCADE;
         |sql}
         in
-        Connection.exec request ()
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
   end
 
@@ -294,7 +274,7 @@ CREATE TABLE session_sessions (
       Migration.(empty "session" |> add_step create_sessions_table)
   end
 
-  let get_all connection = Sql.Session.get_all connection ()
+  let get_all connection = Sql.Session.get_all connection
 
   let get ~key connection = Sql.Session.get connection key
 

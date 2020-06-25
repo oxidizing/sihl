@@ -31,7 +31,7 @@ module State = struct
 end
 
 module Binding = struct
-  type t = { binding : unit -> unit; service : (module Service.SERVICE) }
+  type t = { binding : unit -> unit; service : (module Core_service.SERVICE) }
 
   let create key service generic_service =
     { binding = (fun () -> State.set key service); service = generic_service }
@@ -66,7 +66,7 @@ let register = Binding.register
 
 let set_initialized = State.set_initialized
 
-let bind req service_bindings =
+let bind ctx service_bindings =
   let rec bind_services req service_bindings =
     match service_bindings with
     | binding :: service_bindings ->
@@ -77,4 +77,4 @@ let bind req service_bindings =
             bind_services req service_bindings)
     | [] -> Lwt_result.return ()
   in
-  bind_services req service_bindings
+  bind_services ctx service_bindings

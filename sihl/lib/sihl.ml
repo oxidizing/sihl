@@ -9,16 +9,16 @@ module Container = Core_container
 module Db = Core_db
 module Fail = Core_fail
 module Ctx = Core_ctx
+module Service = Core_service
 
-(* Http, Middlewares and application lifecycle *)
+(* Web, Http, Middlewares, Application Lifecycle *)
 module Http = Http
 module Middleware = Middleware
 module Repo = Repo
 module Migration = Migration
 module Run = Run
-module Service = Service
 
-(* Exentions *)
+(* Extensions *)
 module Admin = Admin
 module Template = Template
 module Authn = Authn

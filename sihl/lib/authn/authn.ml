@@ -4,8 +4,8 @@ module Service = struct
   module type SERVICE = Authn_sig.SERVICE
 end
 
-let authenticate req =
+let authenticate ctx =
   let (module Service : Service.SERVICE) =
     Core.Container.fetch_service_exn Authn_service.key
   in
-  Service.authenticate req
+  Service.authenticate ctx

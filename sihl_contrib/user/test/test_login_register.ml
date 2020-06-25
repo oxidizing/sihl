@@ -74,7 +74,7 @@ let test_register_invalid_user_fails _ () =
 let test_register_existing_user_fails _ () =
   let* () = Sihl.Run.Manage.clean () in
   let* _ =
-    Sihl.Run.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.user ~email:"foobar@example.com" ~password:"321"
   in
   let body =
@@ -97,7 +97,7 @@ let test_register_existing_user_fails _ () =
 (* let test_fetch_user_after_logout_fails _ () =
  *   let* () = Sihl.Run.Manage.clean () in
  *   let* _, token =
- *     Sihl.Run.Test.seed
+ *     Sihl.Test.seed
  *     @@ Sihl_user.Seed.logged_in_user ~email:"foobar@example.com" ~password:"321"
  *   in
  *   let token = Sihl.User.Token.value token in
@@ -122,7 +122,7 @@ let test_register_existing_user_fails _ () =
 let test_login_with_wrong_credentials_fails _ () =
   let* () = Sihl.Run.Manage.clean () in
   let* _ =
-    Sihl.Run.Test.seed
+    Sihl.Test.seed
     @@ Sihl_user.Seed.user ~email:"foobar@example.com" ~password:"321"
   in
   let auth = "foobar@example.com:wrongpassword" |> Base64.encode_exn in

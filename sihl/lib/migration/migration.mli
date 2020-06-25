@@ -34,6 +34,6 @@ val add_step : step -> t -> t
 
 val execute : t list -> (unit, string) Result.t Lwt.t
 
-val register : Opium_kernel.Request.t -> t -> (unit, string) Lwt_result.t
+val register : Core.Ctx.t -> t -> (unit, string) Lwt_result.t
 
-val get_migrations : Opium_kernel.Request.t -> (t list, string) Lwt_result.t
+val get_migrations : Core.Ctx.t -> (t list, string) Lwt_result.t

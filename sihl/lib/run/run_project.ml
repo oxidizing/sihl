@@ -92,18 +92,15 @@ module Project : PROJECT = struct
     Logs.debug (fun m -> m "START: logger set up")
 
   let migrate project =
-    let* req =
-      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
-      |> Opium.Std.Request.create |> Core.Db.request_with_connection
-    in
     let app_migrations =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
       |> List.concat
       |> List.map ~f:(fun (module Repo : Sig.REPO) -> Repo.migrate ())
     in
+    let ctx = Core.Db.ctx_with_pool () in
     let* service_migrations =
-      Migration.get_migrations req
+      Migration.get_migrations ctx
       |> Lwt_result.map_err Core.Err.raise_server
       |> Lwt.map Result.ok_exn
     in
@@ -156,12 +153,9 @@ module Project : PROJECT = struct
     bind_registry project;
     Logs.debug (fun m -> m "START: Call service bind hooks");
     (* TODO create a service context here *)
-    let* req =
-      "/mocked-request" |> Uri.of_string |> Cohttp_lwt.Request.make
-      |> Opium.Std.Request.create |> Core.Db.request_with_connection
-    in
+    let ctx = Core.Db.ctx_with_pool () in
     let* () =
-      Core.Container.bind req project.services
+      Core.Container.bind ctx project.services
       |> Lwt_result.map_err Core.Err.raise_server
       |> Lwt.map Result.ok_exn
     in
@@ -177,9 +171,9 @@ module Project : PROJECT = struct
   let seed _ = Lwt.return @@ Error "not implemented"
 
   let clean project =
-    let* req = Run_test.request_with_connection () in
+    let ctx = Core.Db.ctx_with_pool () in
     Logs.debug (fun m -> m "REPO: Cleaning up service repos ");
-    let* () = Repo.clean_all req |> Lwt.map Result.ok_or_failwith in
+    let* () = Repo.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let app_cleaners =
       project.apps
       |> List.map ~f:(fun (module App : APP) -> App.repos ())
@@ -191,7 +185,7 @@ module Project : PROJECT = struct
       match cleaners with
       | [] -> Lwt.return @@ Ok ()
       | cleaner :: cleaners -> (
-          let* result = cleaner |> Core.Db.query_db req in
+          let* result = cleaner |> Core.Db.query ctx in
           match result with
           | Ok _ -> clean_repos cleaners
           | Error msg ->

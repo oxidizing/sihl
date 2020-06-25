@@ -7,9 +7,10 @@ module Dashboard = struct
 
   let handler =
     get "/admin/dashboard/" @@ fun req ->
-    let email = Sihl.Authn.authenticate req |> Sihl.User.email in
+    let ctx = Sihl.Http.ctx req in
+    let email = Sihl.Authn.authenticate ctx |> Sihl.User.email in
     let* flash =
-      Sihl.Middleware.Flash.current req
+      Sihl.Middleware.Flash.current ctx
       |> Lwt_result.map_err Sihl.Core.Err.raise_server
       |> Lwt.map Result.ok_exn
     in
@@ -23,8 +24,9 @@ module Catch = struct
 
   let handler =
     all "/admin/**" @@ fun req ->
+    let ctx = Sihl.Http.ctx req in
     let path = req |> Opium.Std.Request.uri |> Uri.to_string in
-    Sihl.Middleware.Flash.redirect_with_error req ~path:"/admin/dashboard/"
+    Sihl.Middleware.Flash.redirect_with_error ctx ~path:"/admin/dashboard/"
       (Printf.sprintf "Path %s not found :(" path)
     |> Lwt_result.map_err Sihl.Core.Err.raise_server
     |> Lwt.map Result.ok_exn

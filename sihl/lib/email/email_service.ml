@@ -5,24 +5,22 @@ let ( let* ) = Lwt_result.bind
 module MakeTemplateService
     (MigrationService : Migration.Service.SERVICE)
     (EmailRepo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE = struct
-  let on_bind req =
-    let* () = MigrationService.register req (EmailRepo.migrate ()) in
-    Repo.register_cleaner req EmailRepo.clean
+  let on_bind ctx =
+    let* () = MigrationService.register ctx (EmailRepo.migrate ()) in
+    Repo.register_cleaner ctx EmailRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let render request email =
+  let render ctx email =
     let template_id = Email_model.template_id email in
     let template_data = Email_model.template_data email in
     let content = Email_model.content email in
     let* content =
       match template_id with
       | Some template_id ->
-          let* template =
-            EmailRepo.get ~id:template_id |> Core.Db.query request
-          in
+          let* template = EmailRepo.get ~id:template_id |> Core.Db.query ctx in
           let* template =
             template
             |> Result.of_option ~error:"Template with id %s not found"

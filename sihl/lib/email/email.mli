@@ -88,4 +88,4 @@ val equal : t -> t -> bool
 module Service = Email_service
 module Sig = Email_sig
 
-val send : Http.Req.t -> t -> (unit, string) Result.t Lwt.t
+val send : Core.Ctx.t -> t -> (unit, string) Result.t Lwt.t

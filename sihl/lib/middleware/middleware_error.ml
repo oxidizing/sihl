@@ -4,6 +4,7 @@ let ( let* ) = Lwt.bind
 
 let m () =
   let filter handler req =
+    let ctx = Http.ctx req in
     let* response = Core_err.try_to_run (fun () -> handler req) in
     match (Req.accepts_html req, response) with
     | _, Ok response -> Lwt.return response
@@ -23,7 +24,7 @@ let m () =
           | Core_err.Error.NoPermissions msg ) ) ->
         (* TODO evaluate whether the error handler should really remove invalid cookies *)
         let* () =
-          Middleware_flash.set_error req msg
+          Middleware_flash.set_error ctx msg
           |> Lwt_result.map_err Core.Err.raise_server
           |> Lwt.map Base.Result.ok_exn
         in
@@ -52,7 +53,7 @@ let m () =
           | Core_err.Error.Email msg
           | Core_err.Error.Server msg ) ) ->
         let* () =
-          Middleware_flash.set_error req msg
+          Middleware_flash.set_error ctx msg
           |> Lwt_result.map_err Core.Err.raise_server
           |> Lwt.map Base.Result.ok_exn
         in

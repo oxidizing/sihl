@@ -6,9 +6,10 @@ let cookie_key = "session.key"
 
 let m () =
   let filter handler req =
+    let ctx = Http.ctx req in
     match Opium.Std.Cookie.get req ~key:cookie_key with
     | Some session_key -> (
-        let* session = Session.get_session req ~key:session_key in
+        let* session = Session.get_session ctx ~key:session_key in
         let session =
           session |> Result.map_error ~f:Core.Err.raise_server |> Result.ok_exn
         in
@@ -22,7 +23,7 @@ let m () =
                 in
                 let session = Session.create (Ptime_clock.now ()) in
                 (* TODO try to create new session if key is already taken *)
-                let* result = Session.insert_session req ~session in
+                let* result = Session.insert_session ctx ~session in
                 let () =
                   result
                   |> Result.map_error ~f:Core.Err.raise_server
@@ -39,7 +40,7 @@ let m () =
         | None ->
             let session = Session.create (Ptime_clock.now ()) in
             (* TODO try to create new session if key is already taken *)
-            let* result = Session.insert_session req ~session in
+            let* result = Session.insert_session ctx ~session in
             let () =
               result
               |> Result.map_error ~f:Core.Err.raise_server
@@ -56,7 +57,7 @@ let m () =
     | None ->
         let session = Session.create (Ptime_clock.now ()) in
         (* TODO try to create new session if key is already taken *)
-        let* result = Session.insert_session req ~session in
+        let* result = Session.insert_session ctx ~session in
         let () =
           result |> Result.map_error ~f:Core.Err.raise_server |> Result.ok_exn
         in

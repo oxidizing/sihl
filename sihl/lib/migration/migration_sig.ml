@@ -1,30 +1,26 @@
 module type REPO = sig
   val create_table_if_not_exists :
-    Core.Db.connection ->
-    (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+    Core.Db.connection -> (unit, string) Result.t Lwt.t
 
   val get :
     Core.Db.connection ->
     namespace:string ->
-    (Migration_model.t option, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+    (Migration_model.t option, string) Result.t Lwt.t
 
   val upsert :
     Core.Db.connection ->
     state:Migration_model.t ->
-    (unit, [> Caqti_error.call_or_retrieve ]) Result.t Lwt.t
+    (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig
-  include Service.SERVICE
+  include Core_service.SERVICE
 
   val register :
-    Opium_kernel.Request.t ->
-    Migration_model.Migration.t ->
-    (unit, string) Lwt_result.t
+    Core.Ctx.t -> Migration_model.Migration.t -> (unit, string) Lwt_result.t
 
   val get_migrations :
-    Opium_kernel.Request.t ->
-    (Migration_model.Migration.t list, string) Lwt_result.t
+    Core.Ctx.t -> (Migration_model.Migration.t list, string) Lwt_result.t
 
   val execute :
     Migration_model.Migration.t list -> (unit, string) Result.t Lwt.t
