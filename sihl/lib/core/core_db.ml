@@ -1,7 +1,5 @@
 (* DatabaseService *)
 
-let ( let* ) = Lwt_result.bind
-
 open Base
 
 type pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
@@ -38,7 +36,6 @@ let query_connection conn f = f conn |> Lwt_result.map_err Caqti_error.show
 let query ctx f =
   match Core_ctx.find ctx_key_pool ctx with
   | Some pool ->
-      (* TODO rollback in case of error *)
       Caqti_lwt.Pool.use
         (fun connection ->
           f connection
@@ -48,33 +45,81 @@ let query ctx f =
         pool
       |> Lwt_result.map_err Caqti_error.show
   | None ->
-      Lwt.return
-        (Error "No connection pool found, have you applied the DB middleware?")
+      Logs.err (fun m -> m "No connection pool found");
+      Logs.info (fun m -> m "Have you applied the DB middleware?");
+      Lwt.return (Error "No connection pool found")
 
-let trx ctx f =
+let tx ctx f =
+  let ( let* ) = Lwt.bind in
   match Core_ctx.find ctx_key_pool ctx with
-  | Some pool ->
-      (* TODO rollback in case of error *)
-      Caqti_lwt.Pool.use
-        (fun connection ->
-          (let (module Connection : Caqti_lwt.CONNECTION) = connection in
-           let* () =
-             Connection.start () |> Lwt_result.map_err Caqti_error.show
-           in
-           let ctx = Core_ctx.add ctx_key_connection (module Connection) ctx in
-           let* result = f ctx in
-           let* () =
-             Connection.commit () |> Lwt_result.map_err Caqti_error.show
-           in
-           Lwt.return @@ Ok result)
-          |> Lwt_result.map_err (fun msg ->
-                 Caqti_error.request_failed ~uri:Uri.empty ~query:""
-                   (Caqti_error.Msg msg)))
-        pool
-      |> Lwt_result.map_err Caqti_error.show
+  | Some pool -> (
+      Logs.debug (fun m -> m "DB TX: Fetched connection pool from context");
+      let result = ref (Error (Core_fail.internal ())) in
+      let* pool_result =
+        Caqti_lwt.Pool.use
+          (fun connection ->
+            Logs.debug (fun m -> m "DB TX: Fetched connection from pool");
+            let (module Connection : Caqti_lwt.CONNECTION) = connection in
+            let* start_result = Connection.start () in
+            match start_result with
+            | Error msg ->
+                Logs.debug (fun m ->
+                    m "DB TX: Failed to start transaction %s"
+                      (Caqti_error.show msg));
+                Lwt.return @@ Error msg
+            | Ok () ->
+                Logs.debug (fun m -> m "DB TX: Started transaction");
+                let ctx =
+                  Core_ctx.add ctx_key_connection (module Connection) ctx
+                in
+                let* f_result = f ctx in
+                result := f_result;
+                let f_result =
+                  f_result
+                  |> Result.map_error ~f:(fun error ->
+                         let msg = Core_fail.show_error error in
+                         Logs.err (fun m ->
+                             m "DB TX: Failed to run f() in transaction %s" msg);
+                         Caqti_error.request_failed ~uri:Uri.empty ~query:""
+                           (Caqti_error.Msg msg))
+                in
+                let* commit_rollback_result =
+                  match f_result with
+                  | Error _ ->
+                      Connection.rollback ()
+                      |> Lwt_result.map (fun res ->
+                             Logs.debug (fun m ->
+                                 m "DB TX: Successfully rolled back transaction");
+                             res)
+                      |> Lwt_result.map_err (fun error ->
+                             Logs.err (fun m ->
+                                 m "DB TX: Failed to rollback transaction %s"
+                                   (Caqti_error.show error));
+                             error)
+                  | Ok _ ->
+                      Connection.commit ()
+                      |> Lwt_result.map (fun res ->
+                             Logs.debug (fun m ->
+                                 m "DB TX: Successfully committed transaction");
+                             res)
+                      |> Lwt_result.map_err (fun error ->
+                             Logs.err (fun m ->
+                                 m "DB TX: Failed to commit transaction %s"
+                                   (Caqti_error.show error));
+                             error)
+                in
+                Lwt.return @@ commit_rollback_result)
+          pool
+      in
+      match pool_result with
+      | Error msg ->
+          Error (Core_fail.internal ~msg:(Caqti_error.show msg) ())
+          |> Lwt.return
+      | Ok () -> !result |> Lwt.return )
   | None ->
-      Lwt.return
-        (Error "No connection pool found, have you applied the DB middleware?")
+      Logs.err (fun m -> m "No connection pool found");
+      Logs.info (fun m -> m "Have you applied the DB middleware?");
+      Lwt.return (Error (Core_fail.internal ()))
 
 let set_fk_check conn ~check =
   let module Connection = (val conn : Caqti_lwt.CONNECTION) in

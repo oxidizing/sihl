@@ -28,9 +28,9 @@ val query :
   (Caqti_lwt.connection -> ('a, string) Lwt_result.t) ->
   ('a, string) Lwt_result.t
 
-val trx :
+val tx :
   Core_ctx.t ->
-  (Core_ctx.t -> ('a, string) Lwt_result.t) ->
-  ('a, string) Lwt_result.t
+  (Core_ctx.t -> ('a, Core_fail.error) Lwt_result.t) ->
+  ('a, Core_fail.error) Lwt_result.t
 
 val set_fk_check : connection -> check:bool -> (unit, string) Result.t Lwt.t
