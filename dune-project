@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.0.42)
+(version 0.0.43)
 
 (authors "Josef Erben")
 (source (github oxidizing/sihl))
@@ -65,6 +65,9 @@
   (ppx_fields_conv (>= 0.13.0))
   (ppx_sexp_conv (>= 0.13.0))
 
+  ;; Test
+  (alcotest (>= 1.1.0))
+
   ;; Dev dependencies
   (utop :dev)
   (merlin :dev)
@@ -89,7 +92,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.42))
+  (sihl (>= 0.0.43))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
@@ -106,7 +109,7 @@
   (lwt (>= 5.3.0))
 
   ;; Sihl
-  (sihl (>= 0.0.42))
+  (sihl (>= 0.0.43))
 
   ;; Standard library replacement
   (base (>= v0.13.1))
