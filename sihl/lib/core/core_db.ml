@@ -111,11 +111,17 @@ let tx ctx f =
                 Lwt.return @@ commit_rollback_result)
           pool
       in
-      match pool_result with
-      | Error msg ->
-          Error (Core_fail.internal ~msg:(Caqti_error.show msg) ())
+      match (!result, pool_result) with
+      | Ok result_ok, Ok _ ->
+          (* All good, return result of f ctx *)
+          result_ok |> Result.return |> Lwt.return
+      | Ok _, Error pool_err ->
+          (* Failed to commit transaction, but f ctx was successful *)
+          Error (Core_fail.internal ~msg:(Caqti_error.show pool_err) ())
           |> Lwt.return
-      | Ok () -> !result |> Lwt.return )
+      | Error result_err, _ ->
+          (* Doesn't matter what pool did if f ctx failed *)
+          result_err |> Result.fail |> Lwt.return )
   | None ->
       Logs.err (fun m -> m "No connection pool found");
       Logs.info (fun m -> m "Have you applied the DB middleware?");
