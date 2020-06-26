@@ -1,6 +1,7 @@
 open Base
 module Token = User_model.Token
 module Sig = User_sig
+module Authz = User_authz
 
 type t = User_model.User.t
 

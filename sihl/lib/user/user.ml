@@ -2,6 +2,7 @@ open Base
 include User_model.User
 module Sig = User_sig
 module Token = User_model.Token
+module Authz = User_authz
 
 let ctx_add_user user ctx = Core.Ctx.add ctx_key user ctx
 

@@ -1,8 +1,8 @@
 type error =
   [ `BadRequest of string list
   | `NotAuthenticated
-  | `NoPermissions
-  | `Internal of string ]
+  | `NoPermissions of string
+  | `Internal ]
 
 val pp_error : Format.formatter -> error -> unit
 
@@ -17,10 +17,10 @@ val error_of_yojson :
 
 val bad_request : string list -> [> `BadRequest of string list ]
 
-val not_authenticated : [> `NotAuthenticated ]
+val not_authenticated : 'a -> [> `NotAuthenticated ]
 
-val no_permissions : [> `NoPermissions ]
+val no_permissions : string -> [> `NoPermissions of string ]
 
-val internal : ?msg:string -> unit -> [> `Internal of string ]
+val internal : 'a -> [> `Internal ]
 
 val alco_error : error Alcotest.testable

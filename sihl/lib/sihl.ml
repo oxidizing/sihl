@@ -22,6 +22,7 @@ module Run = Run
 module Admin = Admin
 module Template = Template
 module Authn = Authn
+module Authz = Authz
 module User = User
 module Email = Email
 module Session = Session
