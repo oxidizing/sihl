@@ -1,4 +1,5 @@
-(* Libraries *)
+(** Libraries *)
+
 module Core = Core
 module Ql = Core.Ql
 module Hashing = Core.Hashing
@@ -10,15 +11,14 @@ module Db = Core_db
 module Fail = Core_fail
 module Ctx = Core_ctx
 module Service = Core_service
-
-(* Web, Http, Middlewares, Application Lifecycle *)
 module Http = Http
 module Middleware = Middleware
 module Repo = Repo
 module Migration = Migration
 module Run = Run
 
-(* Extensions *)
+(** Extensions *)
+
 module Admin = Admin
 module Template = Template
 module Authn = Authn
