@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS storage_blobs (
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
   let create_handles_table =
@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS storage_handles (
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
   let migrate () =

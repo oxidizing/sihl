@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
   version INTEGER,
   dirty BOOL NOT NULL,
   PRIMARY KEY (namespace)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
  |sql}
     in
     Connection.exec request () |> Lwt_result.map_err Caqti_error.show

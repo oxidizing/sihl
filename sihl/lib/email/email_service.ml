@@ -105,7 +105,7 @@ module EmailRepoMariaDb = struct
     let fix_collation =
       Migration.create_step ~label:"fix collation"
         {sql|
-SET collation_connection = 'utf8mb4_unicode_ci';
+SET collation_server = 'utf8mb4_unicode_ci';
 |sql}
 
     let create_templates_table =
@@ -121,7 +121,7 @@ CREATE TABLE email_templates (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
     let migration () =

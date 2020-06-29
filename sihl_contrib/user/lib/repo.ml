@@ -278,7 +278,7 @@ TRUNCATE user_users;
     let fix_collation =
       Sihl.Migration.create_step ~label:"fix collation"
         {sql|
-SET collation_connection = 'utf8mb4_unicode_ci';
+SET collation_server = 'utf8mb4_unicode_ci';
 |sql}
 
     let create_users_table =
@@ -297,7 +297,7 @@ CREATE TABLE user_users (
   PRIMARY KEY (id),
   CONSTRAINT unique_uuid UNIQUE KEY (uuid),
   CONSTRAINT unique_email UNIQUE KEY (email)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
          |sql}
 
     let create_tokens_table =
@@ -315,7 +315,7 @@ CREATE TABLE user_tokens (
   CONSTRAINT unqiue_uuid UNIQUE KEY (uuid),
   CONSTRAINT unique_value UNIQUE KEY (token_value),
   FOREIGN KEY (token_user) REFERENCES user_users (id)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
     let add_confirmation_template =

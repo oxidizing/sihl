@@ -152,7 +152,7 @@ CREATE TABLE session_sessions (
   expire_date TIMESTAMP NOT NULL,
   PRIMARY KEY(id),
   CONSTRAINT unique_key UNIQUE(session_key)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
     let migration () =
