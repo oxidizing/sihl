@@ -14,7 +14,7 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
-  include Core_service.SERVICE
+  include Sig.SERVICE
 
   val register :
     Core.Ctx.t -> Migration_model.Migration.t -> (unit, string) Lwt_result.t

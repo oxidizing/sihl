@@ -1,7 +1,7 @@
 open Storage_model
 
 module type SERVICE = sig
-  include Core_service.SERVICE
+  include Sig.SERVICE
 
   val get_file :
     Core.Ctx.t -> id:string -> (StoredFile.t option, string) Lwt_result.t

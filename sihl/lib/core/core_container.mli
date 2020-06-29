@@ -8,7 +8,7 @@ val fetch_service : 'a key -> 'a option
 
 val fetch_service_exn : 'a key -> 'a
 
-val create_binding : 'a key -> 'a -> (module Core_service.SERVICE) -> binding
+val create_binding : 'a key -> 'a -> (module Sig.SERVICE) -> binding
 
 val register : binding -> unit
 

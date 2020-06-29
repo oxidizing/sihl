@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Core_service.SERVICE
+  include Sig.SERVICE
 
   (* Extract the pure user service part *)
   val get :

@@ -21,7 +21,7 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
-  include Core_service.SERVICE
+  include Sig.SERVICE
 
   val set_value :
     Core.Ctx.t -> key:string -> value:string -> (unit, string) Result.t Lwt.t
