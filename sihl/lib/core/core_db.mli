@@ -10,11 +10,7 @@ val ctx_key_connection : connection Core_ctx.key
 
 val middleware_key_connection : connection Opium.Hmap.key
 
-val create_pool :
-  unit ->
-  ( (Caqti_lwt.connection, [> Caqti_error.connect ]) Caqti_lwt.Pool.t,
-    string )
-  result
+val create_pool : unit -> (pool, string) result
 
 val ctx_with_pool : unit -> Core_ctx.t
 

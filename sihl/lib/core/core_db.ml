@@ -15,17 +15,27 @@ let ctx_key_connection : connection Core_ctx.key = Core_ctx.create_key ()
 let middleware_key_connection : connection Opium.Hmap.key =
   Opium.Hmap.Key.create ("connection", fun _ -> sexp_of_string "connection")
 
+let pool_ref : pool option ref = ref None
+
 let create_pool () =
-  let pool_size = Core_config.read_int ~default:10 "DATABASE_POOL_SIZE" in
-  Logs.debug (fun m -> m "DB: Create pool with size %i" pool_size);
-  "DATABASE_URL" |> Core_config.read_string |> Uri.of_string
-  |> Caqti_lwt.connect_pool ~max_size:pool_size
-  |> function
-  | Ok pool -> Ok pool
-  | Error err ->
-      let msg = "DB: Failed to connect to DB pool" in
-      Logs.err (fun m -> m "%s %s" msg (Caqti_error.show err));
-      Error msg
+  match !pool_ref with
+  | Some pool ->
+      Logs.debug (fun m ->
+          m "DB: Skipping pool creation, re-using existing pool");
+      Ok pool
+  | None -> (
+      let pool_size = Core_config.read_int ~default:10 "DATABASE_POOL_SIZE" in
+      Logs.debug (fun m -> m "DB: Create pool with size %i" pool_size);
+      "DATABASE_URL" |> Core_config.read_string |> Uri.of_string
+      |> Caqti_lwt.connect_pool ~max_size:pool_size
+      |> function
+      | Ok pool ->
+          pool_ref := Some pool;
+          Ok pool
+      | Error err ->
+          let msg = "DB: Failed to connect to DB pool" in
+          Logs.err (fun m -> m "%s %s" msg (Caqti_error.show err));
+          Error msg )
 
 let ctx_with_pool () =
   let pool = create_pool () |> Result.ok_or_failwith in
@@ -34,8 +44,14 @@ let ctx_with_pool () =
 let query_connection conn f = f conn |> Lwt_result.map_err Caqti_error.show
 
 let query ctx f =
-  match Core_ctx.find ctx_key_pool ctx with
-  | Some pool ->
+  match
+    (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)
+  with
+  | Some connection, _ ->
+      Logs.debug (fun m ->
+          m "DB TX: Open transaction found, running queries on tx connection");
+      f connection
+  | None, Some pool ->
       Caqti_lwt.Pool.use
         (fun connection ->
           f connection
@@ -45,9 +61,9 @@ let query ctx f =
         pool
       |> Lwt_result.map_err (fun error ->
              let msg = Caqti_error.show error in
-             Logs.err (fun m -> m "DB %s" msg);
+             Logs.err (fun m -> m "DB: %s" msg);
              msg)
-  | None ->
+  | None, None ->
       Logs.err (fun m -> m "DB: No connection pool found");
       Logs.info (fun m -> m "DB: Have you applied the DB middleware?");
       Lwt.return (Error "DB: No connection pool found")
@@ -56,6 +72,12 @@ let atomic ctx f =
   let ( let* ) = Lwt.bind in
   match Core_ctx.find ctx_key_pool ctx with
   | Some pool -> (
+      let n_connections = Caqti_lwt.Pool.size pool in
+      let max_connections =
+        Core_config.read_int ~default:10 "DATABASE_POOL_SIZE"
+      in
+      Logs.debug (fun m ->
+          m "DB: Pool usage: %i/%i" n_connections max_connections);
       Logs.debug (fun m -> m "DB TX: Fetched connection pool from context");
       let* pool_result =
         Caqti_lwt.Pool.use
