@@ -43,11 +43,14 @@ let query ctx f =
                  Caqti_error.request_failed ~uri:Uri.empty ~query:""
                    (Caqti_error.Msg msg)))
         pool
-      |> Lwt_result.map_err Caqti_error.show
+      |> Lwt_result.map_err (fun error ->
+             let msg = Caqti_error.show error in
+             Logs.err (fun m -> m "DB %s" msg);
+             msg)
   | None ->
-      Logs.err (fun m -> m "No connection pool found");
-      Logs.info (fun m -> m "Have you applied the DB middleware?");
-      Lwt.return (Error "No connection pool found")
+      Logs.err (fun m -> m "DB: No connection pool found");
+      Logs.info (fun m -> m "DB: Have you applied the DB middleware?");
+      Lwt.return (Error "DB: No connection pool found")
 
 let atomic ctx f =
   let ( let* ) = Lwt.bind in
@@ -72,6 +75,7 @@ let atomic ctx f =
                   Core_ctx.add ctx_key_connection (module Connection) ctx
                 in
                 let* f_result = f ctx in
+                let _ = Core_ctx.remove ctx_key_connection ctx in
                 let* commit_rollback_result =
                   match f_result with
                   | Error _ ->
