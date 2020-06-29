@@ -11,6 +11,8 @@ let not_authenticated _ = `NotAuthenticated
 
 let no_permissions msg = `NoPermissions msg
 
-let internal _ = `Internal
+let internal msg =
+  Logs.err (fun m -> m "%s" msg);
+  `Internal
 
 let alco_error = Alcotest.testable pp_error equal_error

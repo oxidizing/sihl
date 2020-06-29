@@ -21,6 +21,6 @@ val not_authenticated : 'a -> [> `NotAuthenticated ]
 
 val no_permissions : string -> [> `NoPermissions of string ]
 
-val internal : 'a -> [> `Internal ]
+val internal : string -> [> `Internal ]
 
 val alco_error : error Alcotest.testable
