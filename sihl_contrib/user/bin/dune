@@ -1,9 +1,0 @@
-(executable
- (name run)
- (libraries
-  base
-  sihl_admin
-  sihl_user
-  alcotest
-  alcotest-lwt
-  ))
