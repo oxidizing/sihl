@@ -1,23 +1,58 @@
 (* Libraries *)
 module Core = Core
-module Ql = Core.Ql
-module Hashing = Core.Hashing
-module Jwt = Core.Jwt
-module Sig = Sig
 module Id = Core.Id
-module Container = Core_container
-module Db = Core_db
-module Fail = Core_fail
-module Ctx = Core_ctx
+module Container = Core.Container
+module Fail = Core.Fail
+module Ctx = Core.Ctx
+module Ql = Core.Ql
 
-(* Web, Http, Middlewares, Application Lifecycle *)
+(* TODO move to core *)
+module Sig = Sig
+
+(* ConfigService *)
+module Config = Core.Config
+
+(* HashingService *)
+module Hashing = Core.Hashing
+
+(* RegexService *)
+module Regex = Core.Regex
+
+(* JsonService *)
+module Json = Core.Json
+
+(* RandomService *)
+module Random = Core.Random
+
+(* JwtService *)
+module Jwt = Core.Jwt
+
+(* DatabaseService *)
+module Db = Core_db
+
+(* CommandLineService *)
+module Cmd = Core_cmd
+
+(* HttpService *)
 module Http = Http
+
+(* Middlewares *)
 module Middleware = Middleware
-module Repo = Repo
-module Migration = Migration
-module Run = Run
-module Test = Test
+
+(* TemplateService *)
 module Template = Template
+
+(* RepoService *)
+module Repo = Repo
+
+(* MigrationService *)
+module Migration = Migration
+
+(* ProjectService *)
+module Run = Run
+
+(* TestService *)
+module Test = Test
 
 (* Extensions *)
 module Admin = Admin
@@ -37,5 +72,5 @@ module User = User
 - user_job.ml
 - user_seed.ml
 - user_cmd.ml
-- user_http.ml
+- user_web.ml
  *)
