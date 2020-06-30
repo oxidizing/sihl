@@ -1,0 +1,6 @@
+(test
+ (name test)
+ (libraries
+  test_common
+  alcotest-lwt
+))

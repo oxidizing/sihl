@@ -80,37 +80,3 @@
   (alcotest-lwt (and (>= 1.1.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
 ))
-
-(package
- (name sihl_admin)
- (synopsis "A Sihl app to build backoffice web applications for administrators")
- (description "This app provides a building blocks to build and register admin pages to increase visibility and provide administrators with internal tools..")
- (depends
-  ;; General system dependencies
-  (dune (>= 2))
-  (ocaml (>= 4.08.0))
-  (lwt (>= 5.3.0))
-
-  ;; Sihl
-  (sihl (>= 0.0.43))
-
-  ;; Standard library replacement
-  (base (>= v0.13.1))
-))
-
-(package
- (name sihl_user)
- (synopsis "A user management app for Sihl")
- (description "This app provides an Admin UI, Email confirmation & Password reset workflows, an HTTP API and a Service API supporting MariaDB and Postgres.")
- (depends
-  ;; General system dependencies
-  (dune (>= 2))
-  (ocaml (>= 4.08.0))
-  (lwt (>= 5.3.0))
-
-  ;; Sihl
-  (sihl (>= 0.0.43))
-
-  ;; Standard library replacement
-  (base (>= v0.13.1))
-))

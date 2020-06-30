@@ -27,22 +27,16 @@ jobs:
           name: Pin packages
           command: |
             opam pin add -y -n sihl .
-            opam pin add -y -n sihl_admin .
-            opam pin add -y -n sihl_user .
       - run:
           name: Install system dependencies
           command: |
             sudo apt-get update -y
             sudo apt-get install -y libmariadbclient-dev libpq-dev
             opam depext -y sihl
-            opam depext -y sihl_admin
-            opam depext -y sihl_user
       - run:
           name: Install OCaml dependencies
           command: |
             opam install --deps-only -y sihl --with-test
-            opam install --deps-only -y sihl_admin
-            opam install --deps-only -y sihl_user
       - run:
           name: Build
           command: opam config exec -- make

@@ -1,0 +1,7 @@
+(test
+ (name test)
+ (libraries
+  test_common
+  alcotest-lwt
+  caqti-driver-mariadb
+))
