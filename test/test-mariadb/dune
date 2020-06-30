@@ -1,9 +1,7 @@
 (test
  (name test)
  (libraries
-  base
-  sihl
-  alcotest
+  test_common
   alcotest-lwt
   caqti-driver-mariadb
 ))
