@@ -15,3 +15,7 @@ test-dev:
 
 test-all:
 	SIHL_ENV=test dune runtest --force --no-buffer test
+
+doc:
+	dune build @doc
+	cp -f docs/odoc.css _build/default/_doc/_html/odoc.css
