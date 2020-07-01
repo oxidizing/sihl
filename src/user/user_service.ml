@@ -2,7 +2,9 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-module Make (UserRepo : User_sig.REPOSITORY) : User.Sig.SERVICE = struct
+module User = User_model.User
+
+module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
   let on_bind req =
     let* () = Migration.register req (UserRepo.migrate ()) in
     Repo.register_cleaner req UserRepo.clean
@@ -74,13 +76,61 @@ end
 module UserMariaDb = Make (User_service_repo.MariaDb)
 
 let mariadb =
-  Core.Container.create_binding User.Sig.key
+  Core.Container.create_binding User_sig.key
     (module UserMariaDb)
     (module UserMariaDb)
 
 module UserPostgreSql = Make (User_service_repo.PostgreSql)
 
 let postgresql =
-  Core.Container.create_binding User.Sig.key
+  Core.Container.create_binding User_sig.key
     (module UserPostgreSql)
     (module UserPostgreSql)
+
+let get req ~user_id =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.get req ~user_id
+
+let get_by_email req ~email =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.get_by_email req ~email
+
+let get_all req =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.get_all req
+
+let update_password req ~email ~old_password ~new_password =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.update_password req ~email ~old_password ~new_password
+
+let set_password req ~user_id ~password =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.set_password req ~user_id ~password
+
+let update_details req ~email ~username =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.update_details req ~email ~username
+
+let create_user req ~email ~password ~username =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.create_user req ~email ~password ~username
+
+let create_admin req ~email ~password ~username =
+  let (module UserService : User_sig.SERVICE) =
+    Core.Container.fetch_service_exn User_sig.key
+  in
+  UserService.create_admin req ~email ~password ~username

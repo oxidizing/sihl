@@ -4,7 +4,7 @@ let admin ~email ~password request =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  User.create_admin request ~email ~password ~username:None
+  User_service.create_admin request ~email ~password ~username:None
 
 (* let logged_in_admin ~email ~password request =
  *   let (module UserService : User_sig.SERVICE) =
@@ -20,7 +20,7 @@ let user ~email ~password request =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  User.create_user request ~email ~password ~username:None
+  User_service.create_user request ~email ~password ~username:None
 
 (* let logged_in_user ~email ~password request =
  *   let (module UserService : User_sig.SERVICE) =

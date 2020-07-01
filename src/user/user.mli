@@ -1,6 +1,8 @@
 open Base
 module Sig = User_sig
 module Authz = User_authz
+module Service = User_service
+module Seed = User_seed
 
 type t = User_model.User.t
 
