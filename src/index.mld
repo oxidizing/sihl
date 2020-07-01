@@ -68,18 +68,20 @@ To be 100% honest, there is a tiny core that deals with service dependency injec
 // TODO link to source of tiny core as a proof
 
 {1 Installation}
-{2 OPAM}
+{2 opam}
 
 Install opam according to {{:https://opam.ocaml.org/doc/Install.html} this}.
 
+Sihl has not been released to OPAM yet, we plan to release it in the coming days.
+
 Run {!opam install sihl}.
 
-(TODO Sihl has not been released to OPAM yet, we plan to release it in the coming days)
+TODO Provide starter skeleton as git repo
 
-{2 Esy}
+{2 esy}
 TODO
 
-{2 Nix}
+{2 nix}
 TODO
 
 {1 Tutorial}
@@ -116,16 +118,54 @@ TODO
 - build dockerfile
 
 {1 Concepts}
-{2 Option, Result and Lwt.t}
-{2 App Architecture}
+
+On order to navigate the code base of provided Sihl modules and to make most of this documentation, there are some concepts that you need to familiarize yourself with.
+
+{2 Option, Result and Lwt}
+
+Make sure you understand conceptually [Option], [Result] and {{:https://ocsigen.org/lwt/} Lwt}. You should also familiarize yourself with the basic API of those modules.
+
+{3 Option}
+TODO vs. null/absence of something
+
+{3 Result}
+TODO no exceptions, just result
+
+{3 Lwt}
+Sihl uses Lwt to do non-blocking I/O. Because we assume that any I/O might fail, almost every API has nested [Result.t] inside [Lwt.t] like so [('a, 'e) Result.t Lwt.t]. This is in fact so common that Lwt provides a helper module [Lwt_result.t] to ergonomically handle the nested [Result.t].
+
+Since OCaml 4.08.1, the language has built in support for [let*] syntax. This is similar to async/await in other languages like JavaScript. Sihl makes extensive use of this new syntax to flatten Lwt chains. {{:https://jobjo.github.io/2019/04/24/ocaml-has-some-new-shiny-syntax.html} This} is a good primer.
+
+This allows us to express domain logic without obfuscating it with noise that is caused by asynchronous operations.
+
+{3 Common patterns}
+
+TODO show common patterns:
+- Result.of_option(~error)
+- Lwt_result.map_err(...)
+
+{2 Architecture}
+
+TODO show file system
+
+{3 Context }
+
 {3 Use Case }
+
 {3 Service}
+
 {3 Repository}
+
 {3 Model}
+
 {3 Job}
+
 {3 Web & Command Line}
+
 {2 Extending Sihl}
+
 {3 Middleware}
+
 {3 Service}
 
 {1 Web}
@@ -167,6 +207,7 @@ TODO
 {1 XLSX & CSV}
 {1 PDF}
 {1 Secret}
+{1 Signals}
 
 {1 Recipes}
 {2 Add pagination and sorting to a list of things}
