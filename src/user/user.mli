@@ -109,6 +109,15 @@ val update_details :
   username:string option ->
   (User_model.User.t, string) Result.t Lwt.t
 
+val login :
+  Core.Ctx.t ->
+  email:string ->
+  password:string ->
+  (User_model.User.t option, string) Result.t Lwt.t
+
+val create_session_for :
+  Core.Ctx.t -> User_model.User.t -> (unit, string) Result.t Lwt.t
+
 val create_user :
   Core.Ctx.t ->
   email:string ->
@@ -123,4 +132,13 @@ val create_admin :
   username:string option ->
   (User_model.User.t, string) Result.t Lwt.t
 
-val require_user : Core.Ctx.t -> (t, string) Result.t Lwt.t
+val register :
+  Core.Ctx.t ->
+  email:string ->
+  password:string ->
+  password_confirmation:string ->
+  (User_model.User.t, string) Result.t Lwt.t
+
+val require_user : Core.Ctx.t -> (t, string) Result.t
+
+val find_user : Core.Ctx.t -> t option

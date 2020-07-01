@@ -23,7 +23,13 @@ let create_user = User_service.create_user
 
 let create_admin = User_service.create_admin
 
+let register _ = failwith "TODO register()"
+
+let login _ = failwith "TODO login()"
+
+let create_session_for _ = failwith "TODO create_session_for"
+
 let require_user ctx =
-  Core.Ctx.find ctx_key ctx
-  |> Result.of_option ~error:"No authenticated user"
-  |> Lwt.return
+  Core.Ctx.find ctx_key ctx |> Result.of_option ~error:"No authenticated user"
+
+let find_user ctx = Core.Ctx.find ctx_key ctx

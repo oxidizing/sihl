@@ -23,6 +23,7 @@ module Json = Core.Json
 
 (* RandomService *)
 module Random = Core.Random
+module Message = Message
 
 (* JwtService *)
 module Jwt = Core.Jwt
@@ -32,6 +33,7 @@ module Db = Core_db
 
 (* CommandLineService *)
 module Cmd = Core_cmd
+module Web = Web
 
 (* HttpService *)
 module Http = Http
