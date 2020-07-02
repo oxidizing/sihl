@@ -21,3 +21,5 @@ let cookie = Cookie.m
 let db = Db.m
 
 let session = Session.m
+
+let csrf = Csrf.m
