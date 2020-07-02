@@ -1,3 +1,5 @@
+module Schedule = Session_schedule
+
 type data_map = Session_model.data_map
 
 type data = Session_model.data

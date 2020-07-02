@@ -87,3 +87,5 @@ module Builtin = struct
         ~fn:(fn migrate)
   end
 end
+
+let run () = failwith "TODO Sihl.Cmd.run()"

@@ -1,5 +1,5 @@
 module Component = Admin_component
-module Context = Admin_context
+module Page = Admin_model.Page
 
 let render _ _ _ = failwith "TODO render()"
 
@@ -26,3 +26,5 @@ let get_all_pages ctx =
             "ADMIN: Could not get admin pages, have you installed the admin \
              app?");
       Lwt.return @@ Ok []
+
+let create_page _ = failwith "TODO implement admin create_page"

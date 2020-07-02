@@ -26,15 +26,17 @@ module Logout = {
 };
 
 module FlashMessage = {
-  let createElement = (~ctx, ()) => {
-    switch (Admin_context.message(ctx)) {
-    | Some((color, msg)) =>
-      let class_ = ["hero", "is-small", color];
-      <section class_ style="margin-top: 2em;">
-        <div class_="hero-body"> {Html.txt(msg)} </div>
-      </section>;
-    | None => <Empty />
-    };
+  let createElement = (~ctx as _, ()) => {
+    <Empty
+      /* switch (Admin_context.message(ctx)) { */
+      /* | Some((color, msg)) => */
+      /*   let class_ = ["hero", "is-small", color]; */
+      /*   <section class_ style="margin-top: 2em;"> */
+      /*     <div class_="hero-body"> {Html.txt(msg)} </div> */
+      /*   </section>; */
+      /* | None => <Empty /> */
+      /* }; */
+    />;
   };
 };
 
@@ -66,7 +68,6 @@ module Navigation = {
   let createElement = (~ctx, ()) => {
     let elems =
       ctx
-      |> Admin_context.pages
       |> List.map(~f=page =>
            <li>
              <a href={Admin_model.Page.path(page)}>

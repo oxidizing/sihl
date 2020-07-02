@@ -55,6 +55,7 @@ module Run = Run
 
 (* TestService *)
 module Test = Test
+module App = App
 
 (* Extensions *)
 module Admin = Admin

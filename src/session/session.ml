@@ -2,6 +2,7 @@ open Base
 include Session_model
 module Sig = Session_sig
 module Service = Session_service
+module Schedule = Session_schedule
 
 let set_value req ~key ~value =
   match Core.Container.fetch_service Sig.key with

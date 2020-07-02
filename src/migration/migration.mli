@@ -1,4 +1,5 @@
 module Model = Migration_service.Model
+module Cmd = Migration_cmd
 
 module Service : sig
   module type SERVICE = Migration_sig.SERVICE

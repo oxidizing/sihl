@@ -1,3 +1,5 @@
+module Admin = Email_admin
+
 module TemplateData : sig
   type t
 

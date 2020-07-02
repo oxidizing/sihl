@@ -6,8 +6,8 @@ let ( let* ) = Lwt.bind
 let fn ctx args =
   match args with
   | [ "createadmin"; email; password ] -> (
-      let (module UserService : User.Sig.SERVICE) =
-        Core.Container.fetch_service_exn User.Sig.key
+      let (module UserService : User_sig.SERVICE) =
+        Core.Container.fetch_service_exn User_sig.key
       in
       let* result =
         try_to_run (fun () ->

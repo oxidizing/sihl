@@ -1,6 +1,7 @@
 open Base
 include Migration_model.Migration
 module Model = Migration_model
+module Cmd = Migration_cmd
 
 module Service = struct
   module type SERVICE = Migration_sig.SERVICE

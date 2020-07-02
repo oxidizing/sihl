@@ -1,6 +1,8 @@
 open Base;
 open Tyxml;
 
+module User = User_model.User;
+
 module Row = {
   let createElement = (~user, ()) => {
     let url = "/admin/users/users/" ++ User.id(user) ++ "/";
@@ -78,3 +80,5 @@ module UserPage = {
     </Admin.Component.Page>;
   };
 };
+
+let users = Admin.create_page();
