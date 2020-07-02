@@ -43,3 +43,5 @@ let get_migrations ctx =
     Core.Container.fetch_service_exn Migration_sig.key
   in
   MigrationService.get_migrations ctx
+
+let run_all ctx = Lwt_result.bind (get_migrations ctx) execute

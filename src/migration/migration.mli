@@ -38,3 +38,5 @@ val execute : t list -> (unit, string) Result.t Lwt.t
 val register : Core.Ctx.t -> t -> (unit, string) Lwt_result.t
 
 val get_migrations : Core.Ctx.t -> (t list, string) Lwt_result.t
+
+val run_all : Core.Ctx.t -> (unit, string) Lwt_result.t

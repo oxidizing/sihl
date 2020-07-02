@@ -41,6 +41,10 @@ let ctx_with_pool () =
   let pool = create_pool () |> Result.ok_or_failwith in
   Core_ctx.(empty |> ctx_add_pool pool)
 
+let add_pool ctx =
+  let pool = create_pool () |> Result.ok_or_failwith in
+  ctx_add_pool pool ctx
+
 let query_connection conn f = f conn |> Lwt_result.map_err Caqti_error.show
 
 let query ctx f =

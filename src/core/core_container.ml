@@ -17,15 +17,24 @@ type 'a key = 'a Key.t
 let create_key = Key.create
 
 module State = struct
-  type t = { map : Hmap.t; is_initialized : bool }
+  type t = {
+    map : Hmap.t;
+    is_initialized : bool;
+    services : (module Sig.SERVICE) list;
+  }
 
-  let state = ref { map = Hmap.empty; is_initialized = false }
+  let state = ref { map = Hmap.empty; is_initialized = false; services = [] }
 
   let set_initialized () = state := { !state with is_initialized = true }
 
-  let set key impl = state := { !state with map = Hmap.add key impl !state.map }
+  let set key impl generic_service =
+    let map = Hmap.add key impl !state.map in
+    let services = List.concat [ !state.services; [ generic_service ] ] in
+    state := { !state with map; services }
 
   let get key = Hmap.find key !state.map
+
+  let get_services () = !state.services
 
   let is_initialized () = !state.is_initialized
 end
@@ -34,7 +43,10 @@ module Binding = struct
   type t = { binding : unit -> unit; service : (module Sig.SERVICE) }
 
   let create key service generic_service =
-    { binding = (fun () -> State.set key service); service = generic_service }
+    {
+      binding = (fun () -> State.set key service generic_service);
+      service = generic_service;
+    }
 
   let register binding = binding.binding ()
 
@@ -66,13 +78,26 @@ let register = Binding.register
 
 let set_initialized = State.set_initialized
 
-let bind ctx service_bindings =
-  let rec bind_services req service_bindings =
+let bind_services ctx service_bindings =
+  let rec bind ctx service_bindings =
     match service_bindings with
     | binding :: service_bindings ->
         let (module Service : Sig.SERVICE) = Binding.get_service binding in
-        Lwt_result.bind (Service.on_bind req) (fun _ ->
-            bind_services req service_bindings)
+        Lwt_result.bind (Service.on_bind ctx) (fun _ ->
+            bind ctx service_bindings)
     | [] -> Lwt_result.return ()
   in
-  bind_services ctx service_bindings
+  bind ctx service_bindings |> Lwt_result.map set_initialized
+
+let start_services ctx =
+  let rec start ctx services =
+    match services with
+    | (module Service : Sig.SERVICE) :: services ->
+        Lwt_result.bind (Service.on_start ctx) (fun _ -> start ctx services)
+    | [] -> Lwt_result.return ()
+  in
+  let services = State.get_services () in
+  start ctx services
+
+(* TODO remove*)
+let bind = bind_services

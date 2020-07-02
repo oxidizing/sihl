@@ -14,6 +14,8 @@ val create_pool : unit -> (pool, string) result
 
 val ctx_with_pool : unit -> Core_ctx.t
 
+val add_pool : Core_ctx.t -> Core_ctx.t
+
 val query_connection :
   connection ->
   (connection -> ('a, Caqti_error.t) Lwt_result.t) ->

@@ -65,15 +65,5 @@ module Email = Email
 module Session = Session
 module Storage = Storage
 module User = User
-
-(*
-- user.ml
-- user_core.ml
-- user_sig.ml
-- user_service.ml
-- user_authz.ml
-- user_job.ml
-- user_seed.ml
-- user_cmd.ml
-- user_web.ml
- *)
+module Data = Data
+module Log = Log

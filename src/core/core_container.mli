@@ -15,3 +15,7 @@ val register : binding -> unit
 val set_initialized : unit -> unit
 
 val bind : Core_ctx.t -> binding list -> (unit, string) Lwt_result.t
+
+val bind_services : Core_ctx.t -> binding list -> (unit, string) Lwt_result.t
+
+val start_services : Core_ctx.t -> (unit, string) Lwt_result.t

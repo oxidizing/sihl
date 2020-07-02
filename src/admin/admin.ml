@@ -27,4 +27,6 @@ let get_all_pages ctx =
              app?");
       Lwt.return @@ Ok []
 
+let register_pages _ _ = Lwt_result.fail "TODO admin.register_pages()"
+
 let create_page _ = failwith "TODO implement admin create_page"
