@@ -14,6 +14,16 @@ let kernel_services =
     Admin.Service.instance;
   ]
 
+(* TODO
+1. core_jwt, core_hashing, core_json, core_random, core_regex => utils
+2. core_id, core_ql, repo, core_db => data
+3. core_cmd => cmd
+4. http => web, remove http
+5. remove core_err, core_fail
+6. move run_project => app and services
+7. move Sig.SERVICE => core_container
+*)
+
 let start (module App : Sig.APP) =
   (let ctx = Core.Ctx.empty in
    Log.debug (fun m -> m "APP: Bind services");
