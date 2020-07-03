@@ -37,6 +37,7 @@ module Web = Web
 
 (* HttpService *)
 module Http = Http
+module Utils = Utils
 
 (* Middlewares *)
 module Middleware = Middleware

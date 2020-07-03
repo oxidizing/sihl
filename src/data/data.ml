@@ -1,2 +1,2 @@
-module Db = Core_db
+module Db = Data_db
 module Migration = Migration

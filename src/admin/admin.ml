@@ -1,3 +1,4 @@
+module Service = Admin_service
 module Component = Admin_component
 module Page = Admin_model.Page
 
