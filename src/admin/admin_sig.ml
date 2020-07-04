@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val register_page :
     Core.Ctx.t -> Admin_model.Page.t -> (unit, string) Result.t Lwt.t

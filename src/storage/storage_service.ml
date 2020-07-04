@@ -6,40 +6,40 @@ let ( let* ) = Lwt_result.bind
 let key : (module SERVICE) Core.Container.key =
   Core.Container.create_key "storage.service"
 
-module Make (MigrationService : Migration.Service.SERVICE) (StorageRepo : REPO) :
+module Make (MigrationService : Data.Migration.Sig.SERVICE) (StorageRepo : REPO) :
   SERVICE = struct
   let on_bind ctx =
     let* () = MigrationService.register ctx (StorageRepo.migrate ()) in
-    Repo.register_cleaner ctx StorageRepo.clean
+    Data.Repo.register_cleaner ctx StorageRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let get_file ctx ~id = StorageRepo.get_file ~id |> Core.Db.query ctx
+  let get_file ctx ~id = StorageRepo.get_file ~id |> Data.Db.query ctx
 
   let upload_base64 ctx ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
-    let blob_id = Core.Id.random () |> Core.Id.to_string in
+    let blob_id = Data.Id.random () |> Data.Id.to_string in
     let* () =
-      StorageRepo.insert_blob ~id:blob_id ~blob:base64 |> Core.Db.query ctx
+      StorageRepo.insert_blob ~id:blob_id ~blob:base64 |> Data.Db.query ctx
     in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
-    let* () = StorageRepo.insert_file ~file:stored_file |> Core.Db.query ctx in
+    let* () = StorageRepo.insert_file ~file:stored_file |> Data.Db.query ctx in
     Lwt.return @@ Ok stored_file
 
   let update_base64 ctx ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = StoredFile.blob file in
     let* () =
-      StorageRepo.update_blob ~id:blob_id ~blob:base64 |> Core.Db.query ctx
+      StorageRepo.update_blob ~id:blob_id ~blob:base64 |> Data.Db.query ctx
     in
-    let* () = StorageRepo.update_file ~file |> Core.Db.query ctx in
+    let* () = StorageRepo.update_file ~file |> Data.Db.query ctx in
     Lwt.return @@ Ok file
 
   let get_data_base64 ctx ~file =
     let blob_id = StoredFile.blob file in
-    StorageRepo.get_blob ~id:blob_id |> Core.Db.query ctx
+    StorageRepo.get_blob ~id:blob_id |> Data.Db.query ctx
 end
 
 module StorageRepoMariaDb = struct
@@ -51,8 +51,8 @@ module StorageRepoMariaDb = struct
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
       let ( let* ) = Result.bind in
-      let* id = id |> Core.Id.of_bytes |> Result.map Core.Id.to_string in
-      let* blob = blob |> Core.Id.of_bytes |> Result.map Core.Id.to_string in
+      let* id = id |> Data.Id.of_bytes |> Result.map Data.Id.to_string in
+      let* blob = blob |> Data.Id.of_bytes |> Result.map Data.Id.to_string in
       let file = File.make ~id ~filename ~filesize ~mime in
       Ok (StoredFile.make ~file ~blob)
     in
@@ -180,7 +180,7 @@ WHERE
     Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
   let create_blobs_table =
-    Migration.create_step ~label:"create blobs table"
+    Data.Migration.create_step ~label:"create blobs table"
       {sql|
 CREATE TABLE IF NOT EXISTS storage_blobs (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -194,7 +194,7 @@ CREATE TABLE IF NOT EXISTS storage_blobs (
 |sql}
 
   let create_handles_table =
-    Migration.create_step ~label:"create handles table"
+    Data.Migration.create_step ~label:"create handles table"
       {sql|
 CREATE TABLE IF NOT EXISTS storage_handles (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -211,21 +211,21 @@ CREATE TABLE IF NOT EXISTS storage_handles (
 |sql}
 
   let migrate () =
-    Migration.(
+    Data.Migration.(
       empty "storage"
       |> add_step create_blobs_table
       |> add_step create_handles_table)
 
   let clean connection =
     let ( let* ) = Lwt_result.bind in
-    let* () = Core.Db.set_fk_check connection ~check:false in
+    let* () = Data.Db.set_fk_check connection ~check:false in
     let* () = clean_handles connection in
     let* () = clean_blobs connection in
-    Core.Db.set_fk_check connection ~check:true
+    Data.Db.set_fk_check connection ~check:true
 end
 
 (** TODO Implement postgres repo **)
 
-module MariaDb = Make (Migration.Service.MariaDb) (StorageRepoMariaDb)
+module MariaDb = Make (Data.Migration.Service.MariaDb) (StorageRepoMariaDb)
 
 let mariadb = Core.Container.create_binding key (module MariaDb) (module MariaDb)

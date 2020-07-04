@@ -7,7 +7,7 @@ let url path = "http://localhost:3000/users" ^ path
 let extract_token text =
   let regexp = Pcre.regexp {|token=([\w|\-]*)|} in
   Option.value_exn ~message:"no match found"
-    (Sihl.Core.Regex.extract_last regexp text)
+    (Sihl.Utils.Regex.extract_last regexp text)
 
 (* let test_user_registers_and_confirms_email _ () =
  *   let* _ = Sihl.Run.Manage.clean () in

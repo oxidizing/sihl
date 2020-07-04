@@ -16,9 +16,10 @@ let session_not_expired _ () =
          (Sihl.Session.is_expired (Ptime_clock.now ()) session))
 
 let test_anonymous_request_returns_cookie _ () =
+  let ctx = Sihl.Test.context () in
   let* () =
-    Sihl.Test.register_services
-      [ Sihl.Migration.Service.mariadb; Sihl.Session.Service.mariadb ]
+    Sihl.Test.with_services ctx
+      [ Sihl.Data.Migration.Service.mariadb; Sihl.Session.Service.mariadb ]
   in
   (* Inject ctx somehow *)
   (* let* req =
@@ -31,14 +32,11 @@ let test_anonymous_request_returns_cookie _ () =
    *     (fun _ -> Lwt.return @@ Opium_kernel.Response.create ())
    *     req
    * in *)
-  let ctx = Sihl.Test.context () in
   let (module Service : Sihl.Session.Sig.SERVICE) =
     Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in
   let* sessions =
-    Service.get_all_sessions ctx
-    |> Lwt_result.map_err Sihl.Core.Err.raise_server
-    |> Lwt.map Result.ok_exn
+    Service.get_all_sessions ctx |> Lwt.map Result.ok_or_failwith
   in
   let () =
     Alcotest.(check int) "Has created session" 1 (List.length sessions)
@@ -46,9 +44,10 @@ let test_anonymous_request_returns_cookie _ () =
   Lwt.return ()
 
 let test_requests_persist_session_variables _ () =
+  let ctx = Sihl.Test.context () in
   let* () =
-    Sihl.Test.register_services
-      [ Sihl.Migration.Service.mariadb; Sihl.Session.Service.mariadb ]
+    Sihl.Test.with_services ctx
+      [ Sihl.Data.Migration.Service.mariadb; Sihl.Session.Service.mariadb ]
   in
   (* Create request with injected database into request env *)
   (* let* req =
@@ -67,14 +66,13 @@ let test_requests_persist_session_variables _ () =
    *       Lwt.return @@ Opium_kernel.Response.create ())
    *     req
    * in *)
-  let ctx = Sihl.Test.context () in
   let (module Service : Sihl.Session.Sig.SERVICE) =
     Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in
   let* session =
     Service.get_all_sessions ctx
-    |> Lwt_result.map_err Sihl.Core.Err.raise_server
-    |> Lwt.map Result.ok_exn |> Lwt.map List.hd_exn
+    |> Lwt.map Result.ok_or_failwith
+    |> Lwt.map List.hd_exn
   in
   let () =
     Alcotest.(check (option string))

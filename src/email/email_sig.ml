@@ -1,17 +1,17 @@
 module Template = struct
   module type SERVICE = sig
-    include Sig.SERVICE
+    include Core_container.SERVICE
 
     val render :
       Core.Ctx.t -> Email_model.t -> (Email_model.t, string) Result.t Lwt.t
   end
 
   module type REPO = sig
-    include Sig.REPO
+    include Data.Repo.Sig.REPO
 
     val get :
       id:string ->
-      Core.Db.connection ->
+      Data_db_core.connection ->
       (Email_model.Template.t option, string) Result.t Lwt.t
   end
 end
@@ -31,7 +31,7 @@ module ConfigProvider = struct
 end
 
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val send : Core.Ctx.t -> Email_model.t -> (unit, string) Result.t Lwt.t
 end

@@ -16,7 +16,7 @@ let default_expiration_date now =
 
 let create ?expire_date now =
   {
-    key = Core.Random.base64 ~bytes:10;
+    key = Utils.Random.base64 ~bytes:10;
     data = Map.empty (module String);
     expire_date =
       Option.value ~default:(default_expiration_date now) expire_date;

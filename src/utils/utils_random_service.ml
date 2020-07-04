@@ -1,9 +1,7 @@
-open Base
-
 module Service : Utils_random_sig.SERVICE = struct
   let base64 ~bytes =
     let rec rand result n =
-      if n > 0 then rand (result ^ Char.to_string (Random.ascii ())) (n - 1)
+      if n > 0 then rand Base.(result ^ Char.to_string (Random.ascii ())) (n - 1)
       else result
     in
     Base64.encode_string @@ rand "" bytes

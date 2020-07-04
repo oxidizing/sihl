@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val base64 : bytes:int -> string
 end

@@ -1,7 +1,6 @@
 type t
 
-(* TODO get rid of Core_fail.error and just return string*)
-type handler = Web_req.t -> (Web_res.t, Core_fail.error) result Lwt.t
+type handler = Web_req.t -> (Web_res.t, string) result Lwt.t
 
 val pp : Format.formatter -> t -> unit
 

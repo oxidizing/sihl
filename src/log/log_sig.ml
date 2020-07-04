@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   type level = App | Error | Warning | Info | Debug
 

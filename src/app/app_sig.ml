@@ -1,11 +1,11 @@
 module type APP = sig
-  val config : Core_config.Setting.t
+  val config : Config.t
 
   val services : Core_container.binding list
 
   val routes : Web.Server.stacked_routes
 
-  val commands : Core_cmd.t list
+  val commands : Cmd.t list
 
   val schedules : Schedule.t list
 

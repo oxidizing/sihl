@@ -7,9 +7,10 @@ let suite = [ Test_common.Test.session; Test_common.Test.storage ]
 let () =
   Lwt_main.run
     (let* () =
-       Sihl.Test.register_services
+       let ctx = Sihl.Test.context () in
+       Sihl.Test.with_services ctx
          [
-           Sihl.Migration.Service.mariadb;
+           Sihl.Data.Migration.Service.mariadb;
            Sihl.Storage.Service.mariadb;
            Sihl.Session.Service.mariadb;
          ]

@@ -1,3 +1,11 @@
+module type SERVICE = sig
+  val on_bind : Core_ctx.t -> (unit, string) Lwt_result.t
+
+  val on_start : Core_ctx.t -> (unit, string) Lwt_result.t
+
+  val on_stop : Core_ctx.t -> (unit, string) Lwt_result.t
+end
+
 type 'a key
 
 type binding
@@ -8,7 +16,7 @@ val fetch_service : 'a key -> 'a option
 
 val fetch_service_exn : 'a key -> 'a
 
-val create_binding : 'a key -> 'a -> (module Sig.SERVICE) -> binding
+val create_binding : 'a key -> 'a -> (module SERVICE) -> binding
 
 val register : binding -> unit
 

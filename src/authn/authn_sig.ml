@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val authenticate : Core.Ctx.t -> User.t
 end

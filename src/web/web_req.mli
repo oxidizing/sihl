@@ -1,8 +1,36 @@
 type t
 
-val ctx_of : t -> Core_ctx.t
+val ctx_of : 'a -> 'b
+
+val accepts_html : t -> bool
+
+val require_authorization_header :
+  Cohttp.Header.t -> (Cohttp.Auth.credential, string) result
 
 val find_in_query : string -> (string * 'a list) list -> 'a option
+
+val query_opt : t -> string -> string option
+
+val query : t -> string -> (string, string) result
+
+val query2_opt : t -> string -> string -> string option * string option
+
+val query2 :
+  t -> string -> string -> (string, string) result * (string, string) result
+
+val query3_opt :
+  t ->
+  string ->
+  string ->
+  string ->
+  string option * string option * string option
+
+val query3 :
+  t ->
+  string ->
+  string ->
+  string ->
+  (string, string) result * (string, string) result * (string, string) result
 
 val urlencoded : ?body:string -> t -> string -> (string, string) Lwt_result.t
 
@@ -15,3 +43,12 @@ val urlencoded3 :
   string ->
   string ->
   (string * string * string, string) Lwt_result.t
+
+val param : t -> string -> string
+
+val param2 : t -> string -> string -> string * string
+
+val param3 : t -> string -> string -> string -> string * string * string
+
+val require_body :
+  t -> (Yojson.Safe.t -> ('a, string) result) -> ('a, string) Lwt_result.t

@@ -9,4 +9,4 @@ module Service : Config_sig.SERVICE = struct
 end
 
 let instance =
-  Core.Container.create_binding Config_sig.key (module Service) (module Service)
+  Core_container.create_binding Config_sig.key (module Service) (module Service)

@@ -5,7 +5,7 @@ let ( let* ) = Lwt.bind
 let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 
 let fetch_uploaded_file _ () =
-  let file_id = Sihl.Id.(random () |> to_string) in
+  let file_id = Sihl.Data.Id.(random () |> to_string) in
   let file =
     Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
       ~mime:"application/pdf"
@@ -33,7 +33,7 @@ let fetch_uploaded_file _ () =
   Lwt.return ()
 
 let update_uploaded_file _ () =
-  let file_id = Sihl.Id.(random () |> to_string) in
+  let file_id = Sihl.Data.Id.(random () |> to_string) in
   let file =
     Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
       ~mime:"application/pdf"

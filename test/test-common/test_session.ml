@@ -19,9 +19,7 @@ let test_anonymous_request_returns_cookie _ () =
     Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in
   let* sessions =
-    Service.get_all_sessions ctx
-    |> Lwt_result.map_err Sihl.Core.Err.raise_server
-    |> Lwt.map Result.ok_exn
+    Service.get_all_sessions ctx |> Lwt.map Result.ok_or_failwith
   in
   let () =
     Alcotest.(check int) "Has created session" 1 (List.length sessions)
@@ -52,8 +50,8 @@ let test_requests_persist_session_variables _ () =
   in
   let* session =
     Service.get_all_sessions ctx
-    |> Lwt_result.map_err Sihl.Core.Err.raise_server
-    |> Lwt.map Result.ok_exn |> Lwt.map List.hd_exn
+    |> Lwt.map Result.ok_or_failwith
+    |> Lwt.map List.hd_exn
   in
   let () =
     Alcotest.(check (option string))

@@ -1,8 +1,7 @@
 module Req = Web_req
 module Res = Web_res
 
-type handler = Req.t -> (Res.t, Core_fail.error) Result.t Lwt.t
-[@@deriving show]
+type handler = Req.t -> (Res.t, string) Result.t Lwt.t [@@deriving show]
 
 let equal_handler _ _ = true
 
