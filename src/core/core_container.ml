@@ -87,6 +87,7 @@ let register = Binding.register
 let set_initialized = State.set_initialized
 
 let bind_services ctx service_bindings =
+  let () = List.map service_bindings ~f:Binding.register |> ignore in
   let rec bind ctx service_bindings =
     match service_bindings with
     | binding :: service_bindings ->

@@ -14,7 +14,7 @@ let test_anonymous_request_returns_cookie _ () =
    *     (fun _ -> Lwt.return @@ Opium_kernel.Response.create ())
    *     req
    * in *)
-  let ctx = Sihl.Test.context () in
+  let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
   let (module Service : Sihl.Session.Sig.SERVICE) =
     Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in
@@ -44,7 +44,7 @@ let test_requests_persist_session_variables _ () =
    *       Lwt.return @@ Opium_kernel.Response.create ())
    *     req
    * in *)
-  let ctx = Sihl.Test.context () in
+  let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
   let (module Service : Sihl.Session.Sig.SERVICE) =
     Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
   in

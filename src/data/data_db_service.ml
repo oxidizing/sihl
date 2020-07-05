@@ -15,9 +15,13 @@ module Service : Data_db_sig.SERVICE = struct
             m "DB: Skipping pool creation, re-using existing pool");
         Ok pool
     | None -> (
-        let pool_size = Config.read_int ~default:10 "DATABASE_POOL_SIZE" in
+        let pool_size =
+          Config.read_int ~default:10 "DATABASE_POOL_SIZE"
+          |> Result.ok_or_failwith
+        in
         Logs.debug (fun m -> m "DB: Create pool with size %i" pool_size);
-        "DATABASE_URL" |> Config.read_string |> Uri.of_string
+        "DATABASE_URL" |> Config.read_string |> Result.ok_or_failwith
+        |> Uri.of_string
         |> Caqti_lwt.connect_pool ~max_size:pool_size
         |> function
         | Ok pool ->
@@ -70,6 +74,7 @@ module Service : Data_db_sig.SERVICE = struct
         let n_connections = Caqti_lwt.Pool.size pool in
         let max_connections =
           Config.read_int ~default:10 "DATABASE_POOL_SIZE"
+          |> Result.ok_or_failwith
         in
         Logs.debug (fun m ->
             m "DB: Pool usage: %i/%i" n_connections max_connections);
