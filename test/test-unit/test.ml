@@ -4,10 +4,12 @@ let suite =
   [
     ("config", []);
     ( "http",
-      [ (* test_case "require url encoded body" `Quick
-         *   Test_http.test_require_url_encoded_body;
-         * test_case "require tuple url encoded body" `Quick
-         *   Test_http.test_require_tuple_url_encoded_body; *) ] );
+      [
+        test_case "require url encoded body" `Quick
+          Test_http.test_require_url_encoded_body;
+        test_case "require tuple url encoded body" `Quick
+          Test_http.test_require_tuple_url_encoded_body;
+      ] );
     ( "query language",
       [
         test_case "to string limit offset" `Quick Test_ql.to_string_limit_offset;

@@ -4,6 +4,11 @@ let ( let* ) = Lwt_result.bind
 
 type t = Opium.Std.Request.t
 
+let create ?(body = "") ?(uri = "/") () =
+  Opium.Std.Request.create
+    ~body:(Cohttp_lwt.Body.of_string body)
+    (Cohttp_lwt.Request.make (Uri.of_string uri))
+
 let ctx_of _ = failwith "TODO ctx_of"
 
 let accepts_html req =

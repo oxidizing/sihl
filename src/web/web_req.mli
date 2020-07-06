@@ -1,5 +1,7 @@
 type t
 
+val create : ?body:string -> ?uri:string -> unit -> t
+
 val ctx_of : 'a -> 'b
 
 val accepts_html : t -> bool
