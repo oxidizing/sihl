@@ -11,3 +11,5 @@ val find : 'a key -> t -> 'a option
 val remove : 'a key -> t -> t
 
 val create_key : unit -> 'a key
+
+val id : t -> string

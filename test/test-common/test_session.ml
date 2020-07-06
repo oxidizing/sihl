@@ -3,23 +3,12 @@ open Base
 let ( let* ) = Lwt.bind
 
 let test_anonymous_request_returns_cookie _ () =
-  (* Inject ctx somehow *)
-  (* let* req =
-   *   Uri.of_string "/foobar/" |> Cohttp.Request.make
-   *   |> Opium_kernel.Request.create |> Sihl.Core.Db.request_with_connection
-   * in
-   * let middleware_to_test = Sihl.Middleware.session () in
-   * let* _ =
-   *   Opium_kernel.Rock.Middleware.apply middleware_to_test
-   *     (fun _ -> Lwt.return @@ Opium_kernel.Response.create ())
-   *     req
-   * in *)
   let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
-  let (module Service : Sihl.Session.Sig.SERVICE) =
-    Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
-  in
+  let* () = Sihl.Data.Repo.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+  let stack = [ Sihl.Web.Middleware.session () ] in
+  let* _ = Sihl.Test.middleware_stack ctx stack in
   let* sessions =
-    Service.get_all_sessions ctx |> Lwt.map Result.ok_or_failwith
+    Sihl.Session.get_all_sessions ctx |> Lwt.map Result.ok_or_failwith
   in
   let () =
     Alcotest.(check int) "Has created session" 1 (List.length sessions)
@@ -27,29 +16,20 @@ let test_anonymous_request_returns_cookie _ () =
   Lwt.return ()
 
 let test_requests_persist_session_variables _ () =
-  (* Create request with injected database into request env *)
-  (* let* req =
-   *   Uri.of_string "/foobar/" |> Cohttp.Request.make
-   *   |> Opium_kernel.Request.create |> Sihl.Core.Db.request_with_connection
-   * in
-   * let middleware_to_test = Sihl.Middleware.session () in
-   * let* _ =
-   *   Opium_kernel.Rock.Middleware.apply middleware_to_test
-   *     (fun req ->
-   *       let* () =
-   *         Sihl.Session.set_value ~key:"foo" ~value:"bar" req
-   *         |> Lwt_result.map_err Sihl.Core.Err.raise_server
-   *         |> Lwt.map Result.ok_exn
-   *       in
-   *       Lwt.return @@ Opium_kernel.Response.create ())
-   *     req
-   * in *)
   let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
-  let (module Service : Sihl.Session.Sig.SERVICE) =
-    Sihl.Core.Container.fetch_service_exn Sihl.Session.Sig.key
+  let* () = Sihl.Data.Repo.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+  let stack = [ Sihl.Web.Middleware.session () ] in
+  let handler ctx =
+    Logs.debug (fun m -> m "two %s" (Sihl.Core.Ctx.id ctx));
+    let* () =
+      Sihl.Session.set_value ctx ~key:"foo" ~value:"bar"
+      |> Lwt.map Result.ok_or_failwith
+    in
+    Lwt.return @@ Sihl.Web.Res.html
   in
+  let* _ = Sihl.Test.middleware_stack ctx ~handler stack in
   let* session =
-    Service.get_all_sessions ctx
+    Sihl.Session.get_all_sessions ctx
     |> Lwt.map Result.ok_or_failwith
     |> Lwt.map List.hd_exn
   in

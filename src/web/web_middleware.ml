@@ -2,6 +2,8 @@ type t = Web_middleware_core.t
 
 type stack = Web_middleware_core.stack
 
+let apply = Web_middleware_core.apply
+
 let apply_stack = Web_middleware_core.apply_stack
 
 module Clickjacking = Web_middleware_clickjacking

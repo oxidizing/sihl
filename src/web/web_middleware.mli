@@ -2,6 +2,8 @@ type t
 
 type stack = t list
 
+val apply : t -> Web_route.t -> Web_route.t
+
 val apply_stack : stack -> Web_route.t -> Web_route.t
 
 module Clickjacking = Web_middleware_clickjacking

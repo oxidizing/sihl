@@ -44,5 +44,8 @@ val get_session :
 val insert_session :
   Core.Ctx.t -> session:Session_model.t -> (unit, string) Result.t Lwt.t
 
+val get_all_sessions :
+  Core.Ctx.t -> (Session_model.t list, string) Result.t Lwt.t
+
 module Sig = Session_sig
 module Service = Session_service

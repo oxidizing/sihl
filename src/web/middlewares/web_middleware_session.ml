@@ -39,9 +39,12 @@ let m () =
     | None ->
         let session = Session.create (Ptime_clock.now ()) in
         (* TODO try to create new session if key is already taken *)
-        let* result = Session.insert_session ctx ~session in
-        let () = result |> Result.ok_or_failwith in
+        let* () =
+          Session.insert_session ctx ~session |> Lwt.map Result.ok_or_failwith
+        in
+        Logs.debug (fun m -> m "Added session %a" Session.pp session);
         let ctx = Session.add_to_ctx session ctx in
+        Logs.debug (fun m -> m "one %s" (Core.Ctx.id ctx));
         let* res = handler ctx in
         res
         |> Web_res.set_cookie ~key:cookie_key ~data:session.key
