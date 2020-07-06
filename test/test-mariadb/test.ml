@@ -6,22 +6,20 @@ let suite = [ Test_common.Test.session; Test_common.Test.storage ]
 
 let config =
   Sihl.Config.create ~development:[]
-    ~test:[ ("DATABASE_URL", "mariadb://root:password@127.0.0.1:3306/dev") ]
+    ~test:[ ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev") ]
     ~production:[]
+
+let services =
+  [
+    Sihl.Data.Migration.Service.mariadb;
+    Sihl.Storage.Service.mariadb;
+    Sihl.Session.Service.mariadb;
+  ]
 
 let () =
   Lwt_main.run
     (let* () =
-       let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
-       let* () =
-         Sihl.Config.register_config ctx config
-         |> Lwt.map Base.Result.ok_or_failwith
-       in
-       Sihl.Test.with_services ctx
-         [
-           Sihl.Data.Migration.Service.mariadb;
-           Sihl.Storage.Service.mariadb;
-           Sihl.Session.Service.mariadb;
-         ]
+       let ctx = Sihl.Core.Ctx.empty in
+       Sihl.Test.app ctx ~config ~services
      in
      run "mariadb tests" @@ suite)

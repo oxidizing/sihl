@@ -3,7 +3,10 @@ module Service = Config_service
 include Config_core.Config
 
 let register_config _ config =
+  Logs.debug (fun m -> m "CONFIG: Register config");
   Config_core.Internal.register config |> Lwt.return
+
+let create = Config_core.Config.create
 
 let is_testing () =
   Sys.getenv "SIHL_ENV"

@@ -27,7 +27,7 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
     | Some state -> Ok state
     | None ->
         Error
-          (Printf.sprintf "could not get migration state for namespace %s"
+          (Printf.sprintf "MIGRATION: Could not get migration state for %s"
              namespace)
 
   let upsert ctx state = MigrationRepo.upsert ~state |> Data_db.query ctx
@@ -126,7 +126,7 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
       Core.Container.fetch_service_exn Data_migration_sig.key
     in
     let namespace, _ = migration in
-    Logs.debug (fun m -> m "MIGRATION: Execute migrations for app %s" namespace);
+    Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
     let* () = setup ctx in
     let* has_state = has ctx ~namespace in
     let* state =
@@ -135,15 +135,13 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
         if Model.dirty state then (
           let msg =
             Printf.sprintf
-              "Dirty migration found for app %s, has to be fixed manually"
-              namespace
+              "Dirty migration found for %s, has to be fixed manually" namespace
           in
           Logs.err (fun m -> m "MIGRATION: %s" msg);
           failwith msg )
         else mark_dirty ctx ~namespace
       else (
-        Logs.debug (fun m ->
-            m "MIGRATION: Setting up table for %s app" namespace);
+        Logs.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
         let state = Model.create ~namespace in
         let* () = upsert ctx state in
         Lwt.return @@ Ok state )

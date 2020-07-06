@@ -57,6 +57,7 @@ end = struct
   let get () =
     Option.value_exn
       ~message:
-        "CONFIG: No configuration found, have you called Project.start()?"
+        "CONFIG: No configuration found, have you registered configurations \
+         with Sihl.Config.register_config?"
       !state
 end

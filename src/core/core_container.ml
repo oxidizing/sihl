@@ -87,6 +87,7 @@ let register = Binding.register
 let set_initialized = State.set_initialized
 
 let bind_services ctx service_bindings =
+  Logs.debug (fun m -> m "CONTAINER: Register services");
   let () = List.map service_bindings ~f:Binding.register |> ignore in
   let rec bind ctx service_bindings =
     match service_bindings with
@@ -96,9 +97,11 @@ let bind_services ctx service_bindings =
             bind ctx service_bindings)
     | [] -> Lwt_result.return ()
   in
+  Logs.debug (fun m -> m "CONTAINER: Bind services");
   bind ctx service_bindings |> Lwt_result.map set_initialized
 
 let start_services ctx =
+  Logs.debug (fun m -> m "CONTAINER: Start services");
   let rec start ctx services =
     match services with
     | (module Service : SERVICE) :: services ->
@@ -107,6 +110,3 @@ let start_services ctx =
   in
   let services = State.get_services () in
   start ctx services
-
-(* TODO remove*)
-let bind = bind_services
