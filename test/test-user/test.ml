@@ -1,3 +1,5 @@
+(* TODO get rid of this whole dune package by merging tests into test-common *)
+
 let suite =
   [
     ( "login & register",
