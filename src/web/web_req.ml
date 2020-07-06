@@ -41,7 +41,13 @@ let require_authorization_header ctx =
   | None -> Error "No authorization header found"
   | Some token -> Ok token
 
-let cookie_data _ ~key:_ = failwith "cookie_data"
+let cookie_data ctx ~key =
+  (* TODO parse cookie content properly using Uri.pct_decode (don't forget to try())*)
+  let req = get_req ctx in
+  let cookies =
+    req |> Opium_kernel.Request.headers |> Cohttp.Cookie.Cookie_hdr.extract
+  in
+  cookies |> List.map ~f:(fun (_, v) -> v) |> List.find ~f:(String.equal key)
 
 let get_header ctx key =
   let req = get_req ctx in

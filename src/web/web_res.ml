@@ -1,3 +1,4 @@
+open Base
 open Web_core
 
 type t = {
@@ -6,6 +7,7 @@ type t = {
   body : string option;
   headers : headers;
   opium_res : Opium_kernel.Response.t option;
+  cookies : (string * string) list;
 }
 
 let html =
@@ -15,6 +17,7 @@ let html =
     body = None;
     headers = [];
     opium_res = None;
+    cookies = [];
   }
 
 let set_redirect path =
@@ -24,13 +27,15 @@ let set_redirect path =
     body = None;
     headers = [];
     opium_res = None;
+    cookies = [];
   }
 
 let set_body str res = { res with body = Some str }
 
 let set_opium_res opium_res res = { res with opium_res = Some opium_res }
 
-let set_cookie ~key:_ ~data:_ _ = failwith "TODO set_cookie()"
+let set_cookie ~key ~data res =
+  { res with cookies = List.cons (key, data) res.cookies }
 
 let to_opium res =
   match res.opium_res with
@@ -49,4 +54,7 @@ let to_opium res =
       in
       let code = Cohttp.Code.status_of_code code in
       let body = `String (Option.value ~default:"" res.body) in
-      Opium.Std.respond ~headers ~code body
+      let opium_res = Opium.Std.respond ~headers ~code body in
+      List.fold_left res.cookies ~init:opium_res
+        ~f:(fun opium_res (key, data) ->
+          Opium.Std.Cookie.set opium_res ~key ~data)

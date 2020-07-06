@@ -1,14 +1,20 @@
+val services :
+  Core.Ctx.t ->
+  Core.Container.binding list ->
+  before_start:(unit -> unit Lwt.t) ->
+  unit Lwt.t
+
 val app :
   Core.Ctx.t ->
   config:Config.t ->
   services:Core.Container.binding list ->
   unit Lwt.t
 
-val services :
+val middleware_stack :
   Core.Ctx.t ->
-  Core.Container.binding list ->
-  before_start:(unit -> unit Lwt.t) ->
-  unit Lwt.t
+  ?handler:Web.Route.handler ->
+  Web.Middleware.stack ->
+  Web.Res.t Lwt.t
 
 val seed : (Core.Ctx.t -> ('a, string) Result.t Lwt.t) -> 'a Lwt.t
 

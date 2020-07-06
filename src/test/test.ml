@@ -24,6 +24,15 @@ let app ctx ~config ~services:service_bindings =
       in
       Data.Migration.run_all ctx |> Lwt.map Base.Result.ok_or_failwith)
 
+let middleware_stack ctx ?handler stack =
+  let handler =
+    Option.value ~default:(fun _ -> Lwt.return @@ Web.Res.html) handler
+  in
+  let route = Web.Route.get "" handler in
+  let handler = Web.Middleware.apply_stack stack route |> Web.Route.handler in
+  let ctx = Web.Req.create_and_add_to_ctx ctx in
+  handler ctx
+
 let seed seed_fn =
   let ctx = Data.Db.ctx_with_pool () in
   let* result = seed_fn ctx in

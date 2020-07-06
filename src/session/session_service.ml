@@ -15,10 +15,11 @@ module Make
 
   let require_session_key ctx =
     Core.Ctx.find Session_sig.ctx_session_key ctx
-    |> Result.of_option ~error:"No session found"
+    |> Result.of_option ~error:"SESSION: No session found in context"
     |> Lwt.return
 
   let set_value ctx ~key ~value =
+    Logs.debug (fun m -> m "four %s" (Core.Ctx.id ctx));
     let* session_key = require_session_key ctx in
     let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
     match session with

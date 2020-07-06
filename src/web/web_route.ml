@@ -25,9 +25,9 @@ let all path handler = (All, path, handler)
 let prefix prefix (meth, path, handler) = (meth, prefix ^ path, handler)
 
 let handler_to_opium_handler handler opium_req =
-  let ctx = Core.Ctx.empty in
-  let req = Web_req.add_to_ctx opium_req ctx in
-  handler req |> Lwt.map Web_res.to_opium
+  Core.Ctx.empty
+  |> Web_req.add_to_ctx opium_req
+  |> handler |> Lwt.map Web_res.to_opium
 
 let to_opium_builder (meth, path, handler) =
   let handler = handler_to_opium_handler handler in
