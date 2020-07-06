@@ -20,12 +20,18 @@ val flash : unit -> t
 
 val error : unit -> t
 
-(* val static : unit -> t *)
+val db : unit -> t
 
-(* val cookie : unit -> t *)
+val session : unit -> t
 
-(* val db : unit -> t *)
+val static :
+  local_path:string ->
+  uri_prefix:string ->
+  ?headers:Cohttp.Header.t ->
+  ?etag_of_fname:(string -> string) ->
+  unit ->
+  t
 
-(* val session : unit -> t *)
+val cookie : unit -> t
 
-(* val csrf : unit -> t *)
+val csrf : unit -> t

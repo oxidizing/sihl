@@ -20,14 +20,12 @@ let flash = Web_middleware_flash.m
 
 let error = Web_middleware_error.m
 
-(* TODO implement middlewares with sihl types *)
+let db = Web_middleware_db.m
 
-(* let static = Web_middleware_static.m *)
+let session = Web_middleware_session.m
 
-(* let cookie = Web_middleware_cookie.m *)
+let static = Web_middleware_static.m
 
-(* let db = Web_middleware_db.m *)
+let cookie = Web_middleware_cookie.m
 
-(* let session = Web_middleware_session.m *)
-
-(* let csrf = Web_middleware_csrf.m *)
+let csrf = Web_middleware_csrf.m

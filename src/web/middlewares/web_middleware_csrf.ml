@@ -2,8 +2,8 @@
 https://docs.djangoproject.com/en/3.0/ref/csrf/#how-it-works *)
 
 let m () =
-  let filter handler req =
-    Logs.warn (fun m -> m "csrf middleware is not implemented");
-    handler req
+  let filter handler ctx =
+    Logs.warn (fun m -> m "WEB: CSRF middleware is not implemented");
+    handler ctx
   in
-  Opium.Std.Rock.Middleware.create ~name:"csrf" ~filter
+  Web_middleware_core.create ~name:"csrf" filter
