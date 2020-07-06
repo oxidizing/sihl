@@ -1,13 +1,13 @@
 module MariaDb : User_sig.REPOSITORY = struct
   module Migration = struct
     let fix_collation =
-      Migration.create_step ~label:"fix collation"
+      Data.Migration.create_step ~label:"fix collation"
         {sql|
 SET collation_server = 'utf8mb4_unicode_ci';
 |sql}
 
     let create_users_table =
-      Migration.create_step ~label:"create users table"
+      Data.Migration.create_step ~label:"create users table"
         {sql|
 CREATE TABLE user_users (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -26,7 +26,7 @@ CREATE TABLE user_users (
          |sql}
 
     let migration () =
-      Migration.(
+      Data.Migration.(
         empty "users" |> add_step fix_collation |> add_step create_users_table)
   end
 
@@ -154,7 +154,7 @@ end
 module PostgreSql : User_sig.REPOSITORY = struct
   module Migration = struct
     let create_users_table =
-      Migration.create_step ~label:"create users table"
+      Data.Migration.create_step ~label:"create users table"
         {sql|
 CREATE TABLE user_users (
   id serial,
@@ -172,7 +172,8 @@ CREATE TABLE user_users (
 );
 |sql}
 
-    let migration () = Migration.(empty "users" |> add_step create_users_table)
+    let migration () =
+      Data.Migration.(empty "users" |> add_step create_users_table)
   end
 
   let migrate = Migration.migration

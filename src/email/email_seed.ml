@@ -1,5 +1,5 @@
 (* let add_confirmation_template =
-   *       Migration.create_step ~label:"create default email templates"
+   *       Data.Migration.create_step ~label:"create default email templates"
    *         {sql|
    *         INSERT INTO email_templates (
    *           uuid,
@@ -17,7 +17,7 @@
    * |sql}
    *
    *     let add_password_reset_template =
-   *       Migration.create_step ~label:"create default email templates"
+   *       Data.Migration.create_step ~label:"create default email templates"
    *         {sql|
    *         INSERT INTO email_templates (
    *           uuid,

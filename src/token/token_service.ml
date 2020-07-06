@@ -1,7 +1,7 @@
 (* TODO refactor below to token service and use cases *)
 
 (* let is_valid_auth_token ctx token =
- *   let* token = UserRepo.Token.get ~value:token |> Core.Db.query ctx in
+ *   let* token = UserRepo.Token.get ~value:token |> Data.Db.query ctx in
  *   token
  *   |> Option.value_map ~default:false ~f:User.Token.is_valid_auth
  *   |> Result.return |> Lwt.return
@@ -9,7 +9,7 @@
  * let get_by_token ctx token =
  *   let* token =
  *     UserRepo.Token.get ~value:token
- *     |> Core.Db.query ctx
+ *     |> Data.Db.query ctx
  *     |> Lwt.map Result.ok_or_failwith
  *     |> Lwt.map (Result.of_option ~error:"User not found")
  *   in
@@ -18,7 +18,7 @@
  *
  * let send_registration_email ctx user =
  *   let token = User.Token.create_email_confirmation user in
- *   let* () = UserRepo.Token.insert token |> Core.Db.query ctx in
+ *   let* () = UserRepo.Token.insert token |> Data.Db.query ctx in
  *   let email = Model.Email.create_confirmation token user in
  *   Email.send ctx email
  *
@@ -32,7 +32,7 @@
  *   let user =
  *     User.create ~email ~password ~username ~admin:false ~confirmed:false
  *   in
- *   let* () = UserRepo.insert user |> Core.Db.query ctx in
+ *   let* () = UserRepo.insert user |> Data.Db.query ctx in
  *   let* () =
  *     if suppress_email then Lwt.return @@ Ok ()
  *     else send_registration_email ctx user
@@ -40,7 +40,7 @@
  *   Lwt.return @@ Ok user
  *
  * let create_admin ctx ~email ~password ~username =
- *   let* user = UserRepo.get_by_email ~email |> Core.Db.query ctx in
+ *   let* user = UserRepo.get_by_email ~email |> Data.Db.query ctx in
  *   let* () =
  *     match user with
  *     | Some _ -> Lwt.return @@ Error "Email already taken"
@@ -49,14 +49,14 @@
  *   let user =
  *     User.create ~email ~password ~username ~admin:true ~confirmed:true
  *   in
- *   let* () = UserRepo.insert user |> Core.Db.query ctx in
+ *   let* () = UserRepo.insert user |> Data.Db.query ctx in
  *   Lwt.return @@ Ok user
  *
  *
  * let logout ctx user =
  *   let* () = Session.remove_value ~key:"users.id" ctx in
  *   let id = User.id user in
- *   UserRepo.Token.delete_by_user ~id |> Core.Db.query ctx
+ *   UserRepo.Token.delete_by_user ~id |> Data.Db.query ctx
  *
  * let login ctx ~email ~password =
  *   let* user =
@@ -66,7 +66,7 @@
  *   in
  *   if User.matches_password password user then
  *     let token = User.Token.create user in
- *     let* () = UserRepo.Token.insert token |> Core.Db.query ctx in
+ *     let* () = UserRepo.Token.insert token |> Data.Db.query ctx in
  *     Lwt.return @@ Ok token
  *   else Lwt.return @@ Error "Wrong credentials provided"
  *
@@ -81,14 +81,14 @@
  *
  * let token ctx user =
  *   let token = User.Token.create user in
- *   let* () = UserRepo.Token.insert token |> Core.Db.query ctx in
+ *   let* () = UserRepo.Token.insert token |> Data.Db.query ctx in
  *   Lwt.return @@ Ok token *)
 
 (* TODO move to use case layer *)
 
 (* let confirm_email ctx token =
  *   let* token =
- *     UserRepo.Token.get ~value:token |> Core.Db.query ctx
+ *     UserRepo.Token.get ~value:token |> Data.Db.query ctx
  *   in
  *   let token =
  *     token |> Core.Err.with_bad_ctx "invalid token provided"
@@ -96,7 +96,7 @@
  *   if not @@ User.Token.is_valid_email_configuration token then
  *     Core.Err.raise_bad_ctx "invalid confirmation token provided"
  *   else
- *     Core.Db.query_with_trx_exn ctx (fun connection ->
+ *     Data.Db.query_with_trx_exn ctx (fun connection ->
  *         let* () =
  *           UserRepo.Token.update (User.Token.inactivate token) connection
  *           |> Core.Err.database
@@ -111,7 +111,7 @@
  *   let* user = get_by_email ctx ~email in
  *   let token = User.Token.create_password_reset user in
  *   let* () =
- *     UserRepo.Token.insert token |> Core.Db.query_exn ctx
+ *     UserRepo.Token.insert token |> Data.Db.query_exn ctx
  *   in
  *   let email = Model.Email.create_password_reset token user in
  *   let* result = Email.send ctx email in
@@ -119,7 +119,7 @@
  *
  * let reset_password ctx ~token ~new_password =
  *   let* token =
- *     UserRepo.Token.get ~value:token |> Core.Db.query ctx
+ *     UserRepo.Token.get ~value:token |> Data.Db.query ctx
  *   in
  *   let token =
  *     token |> Core.Err.with_bad_ctx "invalid token provided"
@@ -128,7 +128,7 @@
  *     Core.Err.raise_bad_ctx "invalid or inactive token provided"
  *   else
  *     let* user =
- *       UserRepo.get ~id:token.user |> Core.Db.query ctx
+ *       UserRepo.get ~id:token.user |> Data.Db.query ctx
  *     in
  *     let user =
  *       user |> Core.Err.with_bad_ctx "invalid user for token found"
@@ -136,7 +136,7 @@
  *     (\* TODO use transaction here *\)
  *     let updated_user = User.update_password user new_password in
  *     let* () =
- *       UserRepo.update updated_user |> Core.Db.query_exn ctx
+ *       UserRepo.update updated_user |> Data.Db.query_exn ctx
  *     in
  *     let token = User.Token.inactivate token in
- *     UserRepo.Token.update token |> Core.Db.query_exn ctx *)
+ *     UserRepo.Token.update token |> Data.Db.query_exn ctx *)

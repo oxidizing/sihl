@@ -1,32 +1,32 @@
 module type REPOSITORY = sig
-  include Sig.REPO
+  include Data.Repo.Sig.REPO
 
   val get_all :
-    Core.Db.connection -> (User_model.User.t list, string) Result.t Lwt.t
+    Data_db_core.connection -> (User_model.User.t list, string) Result.t Lwt.t
 
   val get :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     id:string ->
     (User_model.User.t option, string) Result.t Lwt.t
 
   val get_by_email :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     email:string ->
     (User_model.User.t option, string) Result.t Lwt.t
 
   val insert :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     user:User_model.User.t ->
     (unit, string) Result.t Lwt.t
 
   val update :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     user:User_model.User.t ->
     (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val get_all : Core.Ctx.t -> (User_model.User.t list, string) Result.t Lwt.t
 

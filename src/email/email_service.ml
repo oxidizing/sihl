@@ -3,11 +3,11 @@ open Base
 let ( let* ) = Lwt_result.bind
 
 module MakeTemplateService
-    (MigrationService : Migration.Service.SERVICE)
+    (MigrationService : Data.Migration.Sig.SERVICE)
     (EmailRepo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE = struct
   let on_bind ctx =
     let* () = MigrationService.register ctx (EmailRepo.migrate ()) in
-    Repo.register_cleaner ctx EmailRepo.clean
+    Data.Repo.register_cleaner ctx EmailRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -20,7 +20,7 @@ module MakeTemplateService
     let* content =
       match template_id with
       | Some template_id ->
-          let* template = EmailRepo.get ~id:template_id |> Core.Db.query ctx in
+          let* template = EmailRepo.get ~id:template_id |> Data.Db.query ctx in
           let* template =
             template
             |> Result.of_option ~error:"Template with id %s not found"
@@ -103,13 +103,13 @@ module EmailRepoMariaDb = struct
 
   module Migration = struct
     let fix_collation =
-      Migration.create_step ~label:"fix collation"
+      Data.Migration.create_step ~label:"fix collation"
         {sql|
 SET collation_server = 'utf8mb4_unicode_ci';
 |sql}
 
     let create_templates_table =
-      Migration.create_step ~label:"create templates table"
+      Data.Migration.create_step ~label:"create templates table"
         {sql|
 CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -125,7 +125,7 @@ CREATE TABLE email_templates (
 |sql}
 
     let migration () =
-      Migration.(
+      Data.Migration.(
         empty "email" |> add_step fix_collation
         |> add_step create_templates_table)
   end
@@ -205,7 +205,7 @@ module EmailRepoPostgreSql = struct
 
   module Migration = struct
     let create_templates_table =
-      Migration.create_step ~label:"create templates table"
+      Data.Migration.create_step ~label:"create templates table"
         {sql|
 CREATE TABLE email_templates (
   id SERIAL,
@@ -221,7 +221,7 @@ CREATE TABLE email_templates (
 |sql}
 
     let migration () =
-      Migration.(empty "email" |> add_step create_templates_table)
+      Data.Migration.(empty "email" |> add_step create_templates_table)
   end
 
   let migrate = Migration.migration
@@ -236,9 +236,11 @@ end
 
 module Template = struct
   module MariaDb =
-    MakeTemplateService (Migration.Service.MariaDb) (EmailRepoMariaDb)
+    MakeTemplateService (Data.Migration.Service.MariaDb) (EmailRepoMariaDb)
   module PostgreSql =
-    MakeTemplateService (Migration.Service.PostgreSql) (EmailRepoPostgreSql)
+    MakeTemplateService
+      (Data.Migration.Service.PostgreSql)
+      (EmailRepoPostgreSql)
 
   module Empty = struct
     let render _ email = Lwt.return @@ Ok email
@@ -389,7 +391,7 @@ end
 module Memory = struct
   module EmailServiceMariadb =
     Make.Memory
-      (MakeTemplateService (Migration.Service.MariaDb) (EmailRepoMariaDb))
+      (MakeTemplateService (Data.Migration.Service.MariaDb) (EmailRepoMariaDb))
 
   let mariadb =
     Core_container.create_binding Email_sig.key
@@ -398,7 +400,9 @@ module Memory = struct
 
   module EmailServicePostgreSql =
     Make.Memory
-      (MakeTemplateService (Migration.Service.PostgreSql) (EmailRepoPostgreSql))
+      (MakeTemplateService
+         (Data.Migration.Service.PostgreSql)
+         (EmailRepoPostgreSql))
 
   let postgresql =
     Core_container.create_binding Email_sig.key

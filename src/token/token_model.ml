@@ -30,9 +30,9 @@ let inactivate token = { token with status = "inactive" }
 
 let create user =
   {
-    id = Core.Random.uuidv4 ();
+    id = Data.Id.random () |> Data.Id.to_string;
     (* TODO generate more compact random token *)
-    value = Core.Random.uuidv4 ();
+    value = Data.Id.random () |> Data.Id.to_string;
     kind = "auth";
     user = User.id user;
     status = "active";
@@ -40,9 +40,9 @@ let create user =
 
 let create_email_confirmation user =
   {
-    id = Core.Random.uuidv4 ();
+    id = Data.Id.random () |> Data.Id.to_string;
     (* TODO generate more compact random token *)
-    value = Core.Random.uuidv4 ();
+    value = Data.Id.random () |> Data.Id.to_string;
     kind = "email_confirmation";
     user = User.id user;
     status = "active";
@@ -50,9 +50,9 @@ let create_email_confirmation user =
 
 let create_password_reset user =
   {
-    id = Core.Random.uuidv4 ();
+    id = Data.Id.random () |> Data.Id.to_string;
     (* TODO generate more compact random token *)
-    value = Core.Random.uuidv4 ();
+    value = Data.Id.random () |> Data.Id.to_string;
     kind = "password_reset";
     user = User.id user;
     status = "active";

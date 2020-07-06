@@ -1,69 +1,20 @@
-(* Libraries *)
 module Core = Core
-module Id = Core.Id
-module Container = Core.Container
-module Fail = Core.Fail
-module Ctx = Core.Ctx
-module Ql = Core.Ql
-
-(* TODO move to core *)
-module Sig = Sig
-
-(* ConfigService *)
-module Config = Core.Config
-
-(* HashingService *)
-module Hashing = Core.Hashing
-
-(* RegexService *)
-module Regex = Core.Regex
-
-(* JsonService *)
-module Json = Core.Json
-
-(* RandomService *)
-module Random = Core.Random
-module Message = Message
-
-(* JwtService *)
-module Jwt = Core.Jwt
-
-(* DatabaseService *)
-module Db = Core_db
-
-(* CommandLineService *)
-module Cmd = Core_cmd
+module Utils = Utils
+module Config = Config
+module Log = Log
+module Data = Data
 module Web = Web
-
-(* HttpService *)
-module Http = Http
-
-(* Middlewares *)
-module Middleware = Middleware
-
-(* TemplateService *)
-module Template = Template
-
-(* RepoService *)
-module Repo = Repo
-
-(* MigrationService *)
-module Migration = Migration
-
-(* ProjectService *)
-module Run = Run
-
-(* TestService *)
-module Test = Test
+module Cmd = Cmd
+module Admin = Admin
+module Schedule = Schedule
+module Authz = Authz
 module App = App
+module Test = Test
 
 (* Extensions *)
-module Admin = Admin
 module Authn = Authn
-module Authz = Authz
 module Email = Email
 module Session = Session
+module Message = Message
 module Storage = Storage
 module User = User
-module Data = Data
-module Log = Log

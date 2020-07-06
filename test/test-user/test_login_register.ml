@@ -57,7 +57,7 @@ let url path = "http://localhost:3000/users" ^ path
  *   Lwt.return @@ () *)
 
 let test_register_invalid_user_fails _ () =
-  let* () = Sihl.Run.Manage.clean () in
+  let* () = Sihl.Test.clean () in
   let body = {|
        {
          "email": "foobar@example.com"

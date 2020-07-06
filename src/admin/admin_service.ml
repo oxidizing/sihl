@@ -22,3 +22,6 @@ module Service : Admin_sig.SERVICE = struct
 
   let get_all_pages _ = Lwt.return @@ Ok !pages
 end
+
+let instance =
+  Core.Container.create_binding Admin_sig.key (module Service) (module Service)

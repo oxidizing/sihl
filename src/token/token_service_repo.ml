@@ -229,13 +229,13 @@
  *
  *   module Migration = struct
  *     let fix_collation =
- *       Sihl.Migration.create_step ~label:"fix collation"
+ *       Sihl.Data.Migration.create_step ~label:"fix collation"
  *         {sql|
  * SET collation_server = 'utf8mb4_unicode_ci';
  * |sql}
  *
  *     let create_users_table =
- *       Sihl.Migration.create_step ~label:"create users table"
+ *       Sihl.Data.Migration.create_step ~label:"create users table"
  *         {sql|
  * CREATE TABLE user_users (
  *   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -254,7 +254,7 @@
  *          |sql}
  *
  *     let create_tokens_table =
- *       Sihl.Migration.create_step ~label:"create tokens table"
+ *       Sihl.Data.Migration.create_step ~label:"create tokens table"
  *         {sql|
  * CREATE TABLE user_tokens (
  *   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -272,7 +272,7 @@
  * |sql}
  *
  *     let add_confirmation_template =
- *       Sihl.Migration.create_step ~label:"create default email templates"
+ *       Sihl.Data.Migration.create_step ~label:"create default email templates"
  *         {sql|
  *     INSERT INTO email_templates (
  *         uuid,
@@ -290,7 +290,7 @@
  * |sql}
  *
  *     let add_password_reset_template =
- *       Sihl.Migration.create_step ~label:"create default email templates"
+ *       Sihl.Data.Migration.create_step ~label:"create default email templates"
  *         {sql|
  *     INSERT INTO email_templates (
  *         uuid,
@@ -308,7 +308,7 @@
  * |sql}
  *
  *     let migration () =
- *       Sihl.Migration.(
+ *       Sihl.Data.Migration.(
  *         empty "users" |> add_step fix_collation
  *         |> add_step create_users_table
  *         |> add_step create_tokens_table
@@ -529,7 +529,7 @@
  *
  *   module Migration = struct
  *     let create_users_table =
- *       Sihl.Migration.create_step ~label:"create users table"
+ *       Sihl.Data.Migration.create_step ~label:"create users table"
  *         {sql|
  * CREATE TABLE user_users (
  *   id serial,
@@ -548,7 +548,7 @@
  * |sql}
  *
  *     let create_tokens_table =
- *       Sihl.Migration.create_step ~label:"create tokens table"
+ *       Sihl.Data.Migration.create_step ~label:"create tokens table"
  *         {sql|
  * CREATE TABLE user_tokens (
  *   id serial,
@@ -567,7 +567,7 @@
  *
  *     (\* TODO this should be a seed that this app call on startup *\)
  *     let add_confirmation_template =
- *       Sihl.Migration.create_step ~label:"create default email templates"
+ *       Sihl.Data.Migration.create_step ~label:"create default email templates"
  *         {sql|
  *         INSERT INTO email_templates (
  *           uuid,
@@ -586,7 +586,7 @@
  *
  *     (\* TODO this should be a seed that this app call on startup *\)
  *     let add_password_reset_template =
- *       Sihl.Migration.create_step ~label:"create default email templates"
+ *       Sihl.Data.Migration.create_step ~label:"create default email templates"
  *         {sql|
  *         INSERT INTO email_templates (
  *           uuid,
@@ -604,7 +604,7 @@
  * |sql}
  *
  *     let migration () =
- *       Sihl.Migration.(
+ *       Sihl.Data.Migration.(
  *         empty "users"
  *         |> add_step create_users_table
  *         |> add_step create_tokens_table

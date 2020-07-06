@@ -5,12 +5,12 @@ let ( let* ) = Lwt.bind
 let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 
 let fetch_uploaded_file _ () =
-  let file_id = Sihl.Id.(random () |> to_string) in
+  let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
+  let file_id = Sihl.Data.Id.(random () |> to_string) in
   let file =
     Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
       ~mime:"application/pdf"
   in
-  let ctx = Sihl.Test.context () in
   let* _ =
     Sihl.Storage.upload_base64 ctx ~file ~base64:"filecontentinbase64"
     |> Lwt.map Result.ok_or_failwith
@@ -33,12 +33,12 @@ let fetch_uploaded_file _ () =
   Lwt.return ()
 
 let update_uploaded_file _ () =
-  let file_id = Sihl.Id.(random () |> to_string) in
+  let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
+  let file_id = Sihl.Data.Id.(random () |> to_string) in
   let file =
     Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
       ~mime:"application/pdf"
   in
-  let ctx = Sihl.Test.context () in
   let* stored_file =
     Sihl.Storage.upload_base64 ctx ~file ~base64:"filecontentinbase64"
     |> Lwt.map Result.ok_or_failwith

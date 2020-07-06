@@ -1,17 +1,17 @@
 module type REPOSITORY = sig
-  include Sig.REPO
+  include Data.Repo.Sig.REPO
 
   val get :
     value:string ->
-    Core.Db.connection ->
+    Data_db_core.connection ->
     (Token_model.t option, string) Result.t Lwt.t
 
   val delete_by_user :
-    id:string -> Core.Db.connection -> (unit, string) Result.t Lwt.t
+    id:string -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 
   val insert :
-    Token_model.t -> Core.Db.connection -> (unit, string) Result.t Lwt.t
+    Token_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 
   val update :
-    Token_model.t -> Core.Db.connection -> (unit, string) Result.t Lwt.t
+    Token_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 end

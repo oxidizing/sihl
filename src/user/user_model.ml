@@ -21,7 +21,7 @@ module User = struct
   let confirm user = { user with confirmed = true }
 
   let set_user_password user new_password =
-    let hash = new_password |> Core.Hashing.hash |> Result.ok_or_failwith in
+    let hash = new_password |> Utils.Hashing.hash |> Result.ok_or_failwith in
     { user with password = hash }
 
   let set_user_details user ~email ~username = { user with email; username }
@@ -33,7 +33,7 @@ module User = struct
   let is_confirmed user = user.confirmed
 
   let matches_password password user =
-    Core.Hashing.matches ~hash:user.password ~plain:password
+    Utils.Hashing.matches ~hash:user.password ~plain:password
 
   let validate_password password =
     (* TODO use more sophisticated policy *)
@@ -50,9 +50,9 @@ module User = struct
     Result.all_unit [ matches_password; new_password_valid ]
 
   let create ~email ~password ~username ~admin ~confirmed =
-    let hash = password |> Core.Hashing.hash |> Result.ok_or_failwith in
+    let hash = password |> Utils.Hashing.hash |> Result.ok_or_failwith in
     {
-      id = Core.Random.uuidv4 ();
+      id = Data.Id.random () |> Data.Id.to_string;
       email;
       password = hash;
       username;
@@ -86,10 +86,10 @@ end
 
 (* module Email = struct
  *   let sender () =
- *     Sihl.Core.Config.read_string ~default:"hello@oxidizing.io" "EMAIL_SENDER"
+ *     Sihl.Config.read_string ~default:"hello@oxidizing.io" "EMAIL_SENDER"
  *
  *   let base_url () =
- *     Sihl.Core.Config.read_string ~default:"http://localhost:3000" "BASE_URL"
+ *     Sihl.Config.read_string ~default:"http://localhost:3000" "BASE_URL"
  *
  *   let create_confirmation token user =
  *     let data =

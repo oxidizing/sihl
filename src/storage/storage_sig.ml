@@ -1,7 +1,7 @@
 open Storage_model
 
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val get_file :
     Core.Ctx.t -> id:string -> (StoredFile.t option, string) Lwt_result.t
@@ -23,30 +23,36 @@ module type SERVICE = sig
 end
 
 module type REPO = sig
-  include Sig.REPO
+  include Data.Repo.Sig.REPO
 
   val insert_file :
-    Core.Db.connection -> file:StoredFile.t -> (unit, string) Result.t Lwt.t
+    Data_db_core.connection ->
+    file:StoredFile.t ->
+    (unit, string) Result.t Lwt.t
 
   val insert_blob :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     id:string ->
     blob:string ->
     (unit, string) Result.t Lwt.t
 
   val get_file :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     id:string ->
     (StoredFile.t option, string) Result.t Lwt.t
 
   val get_blob :
-    Core.Db.connection -> id:string -> (string option, string) Result.t Lwt.t
+    Data_db_core.connection ->
+    id:string ->
+    (string option, string) Result.t Lwt.t
 
   val update_file :
-    Core.Db.connection -> file:StoredFile.t -> (unit, string) Result.t Lwt.t
+    Data_db_core.connection ->
+    file:StoredFile.t ->
+    (unit, string) Result.t Lwt.t
 
   val update_blob :
-    Core.Db.connection ->
+    Data_db_core.connection ->
     id:string ->
     blob:string ->
     (unit, string) Result.t Lwt.t

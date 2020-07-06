@@ -3,11 +3,11 @@ open Base
 let ( let* ) = Lwt_result.bind
 
 module Make
-    (MigrationService : Migration.Service.SERVICE)
+    (MigrationService : Data.Migration.Sig.SERVICE)
     (SessionRepo : Session_sig.REPO) : Session_sig.SERVICE = struct
   let on_bind ctx =
     let* () = MigrationService.register ctx (SessionRepo.migrate ()) in
-    Repo.register_cleaner ctx SessionRepo.clean
+    Data.Repo.register_cleaner ctx SessionRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -20,7 +20,7 @@ module Make
 
   let set_value ctx ~key ~value =
     let* session_key = require_session_key ctx in
-    let* session = SessionRepo.get ~key:session_key |> Core.Db.query ctx in
+    let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
     match session with
     | None ->
         Lwt.return
@@ -29,11 +29,11 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_model.set ~key ~value session in
-        SessionRepo.insert session |> Core.Db.query ctx
+        SessionRepo.insert session |> Data.Db.query ctx
 
   let remove_value ctx ~key =
     let* session_key = require_session_key ctx in
-    let* session = SessionRepo.get ~key:session_key |> Core.Db.query ctx in
+    let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
     match session with
     | None ->
         Lwt.return
@@ -42,11 +42,11 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_model.remove ~key session in
-        SessionRepo.insert session |> Core.Db.query ctx
+        SessionRepo.insert session |> Data.Db.query ctx
 
   let get_value ctx ~key =
     let* session_key = require_session_key ctx in
-    let* session = SessionRepo.get ~key:session_key |> Core.Db.query ctx in
+    let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
     match session with
     | None ->
         Logs.warn (fun m ->
@@ -55,12 +55,12 @@ module Make
     | Some session ->
         Session_model.get key session |> Result.return |> Lwt.return
 
-  let get_session ctx ~key = SessionRepo.get ~key |> Core.Db.query ctx
+  let get_session ctx ~key = SessionRepo.get ~key |> Data.Db.query ctx
 
-  let get_all_sessions ctx = SessionRepo.get_all |> Core.Db.query ctx
+  let get_all_sessions ctx = SessionRepo.get_all |> Data.Db.query ctx
 
   let insert_session ctx ~session =
-    SessionRepo.insert session |> Core.Db.query ctx
+    SessionRepo.insert session |> Data.Db.query ctx
 end
 
 module SessionRepoMariaDb = struct
@@ -143,7 +143,7 @@ module SessionRepoMariaDb = struct
 
   module Migration = struct
     let create_sessions_table =
-      Migration.create_step ~label:"create sessions table"
+      Data.Migration.create_step ~label:"create sessions table"
         {sql|
 CREATE TABLE session_sessions (
   id serial,
@@ -156,7 +156,7 @@ CREATE TABLE session_sessions (
 |sql}
 
     let migration () =
-      Migration.(empty "session" |> add_step create_sessions_table)
+      Data.Migration.(empty "session" |> add_step create_sessions_table)
   end
 
   let get_all connection = Sql.Session.get_all connection
@@ -173,9 +173,9 @@ CREATE TABLE session_sessions (
 
   let clean connection =
     let ( let* ) = Lwt_result.bind in
-    let* () = Core.Db.set_fk_check connection ~check:false in
+    let* () = Data.Db.set_fk_check connection ~check:false in
     let* () = Sql.Session.clean connection in
-    Core.Db.set_fk_check connection ~check:true
+    Data.Db.set_fk_check connection ~check:true
 end
 
 module SessionRepoPostgreSql = struct
@@ -258,7 +258,7 @@ module SessionRepoPostgreSql = struct
 
   module Migration = struct
     let create_sessions_table =
-      Migration.create_step ~label:"create sessions table"
+      Data.Migration.create_step ~label:"create sessions table"
         {sql|
 CREATE TABLE session_sessions (
   id serial,
@@ -271,7 +271,7 @@ CREATE TABLE session_sessions (
 |sql}
 
     let migration () =
-      Migration.(empty "session" |> add_step create_sessions_table)
+      Data.Migration.(empty "session" |> add_step create_sessions_table)
   end
 
   let get_all connection = Sql.Session.get_all connection
@@ -289,12 +289,13 @@ CREATE TABLE session_sessions (
   let clean connection = Sql.Session.clean connection
 end
 
-module MariaDb = Make (Migration.Service.MariaDb) (SessionRepoMariaDb)
+module MariaDb = Make (Data.Migration.Service.MariaDb) (SessionRepoMariaDb)
 
 let mariadb =
   Core.Container.create_binding Session_sig.key (module MariaDb) (module MariaDb)
 
-module PostgreSql = Make (Migration.Service.PostgreSql) (SessionRepoPostgreSql)
+module PostgreSql =
+  Make (Data.Migration.Service.PostgreSql) (SessionRepoPostgreSql)
 
 let postgresql =
   Core.Container.create_binding Session_sig.key

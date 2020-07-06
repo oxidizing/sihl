@@ -1,27 +1,28 @@
 open Base
 
 module type REPO = sig
-  include Sig.REPO
+  include Data.Repo.Sig.REPO
 
   val get_all :
-    Core.Db.connection -> (Session_model.t list, string) Result.t Lwt.t
+    Data_db_core.connection -> (Session_model.t list, string) Result.t Lwt.t
 
   val get :
     key:string ->
-    Core.Db.connection ->
+    Data_db_core.connection ->
     (Session_model.t option, string) Result.t Lwt.t
 
   val insert :
-    Session_model.t -> Core.Db.connection -> (unit, string) Result.t Lwt.t
+    Session_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 
   val update :
-    Session_model.t -> Core.Db.connection -> (unit, string) Result.t Lwt.t
+    Session_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 
-  val delete : key:string -> Core.Db.connection -> (unit, string) Result.t Lwt.t
+  val delete :
+    key:string -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig
-  include Sig.SERVICE
+  include Core_container.SERVICE
 
   val set_value :
     Core.Ctx.t -> key:string -> value:string -> (unit, string) Result.t Lwt.t

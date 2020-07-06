@@ -1,5 +1,13 @@
 open Base
 
+module type SERVICE = sig
+  val on_bind : Core_ctx.t -> (unit, string) Lwt_result.t
+
+  val on_start : Core_ctx.t -> (unit, string) Lwt_result.t
+
+  val on_stop : Core_ctx.t -> (unit, string) Lwt_result.t
+end
+
 module Hmap = Hmap.Make (struct
   type 'a t = string
 end)
@@ -20,7 +28,7 @@ module State = struct
   type t = {
     map : Hmap.t;
     is_initialized : bool;
-    services : (module Sig.SERVICE) list;
+    services : (module SERVICE) list;
   }
 
   let state = ref { map = Hmap.empty; is_initialized = false; services = [] }
@@ -40,7 +48,7 @@ module State = struct
 end
 
 module Binding = struct
-  type t = { binding : unit -> unit; service : (module Sig.SERVICE) }
+  type t = { binding : unit -> unit; service : (module SERVICE) }
 
   let create key service generic_service =
     {
@@ -79,25 +87,26 @@ let register = Binding.register
 let set_initialized = State.set_initialized
 
 let bind_services ctx service_bindings =
+  Logs.debug (fun m -> m "CONTAINER: Register services");
+  let () = List.map service_bindings ~f:Binding.register |> ignore in
   let rec bind ctx service_bindings =
     match service_bindings with
     | binding :: service_bindings ->
-        let (module Service : Sig.SERVICE) = Binding.get_service binding in
+        let (module Service : SERVICE) = Binding.get_service binding in
         Lwt_result.bind (Service.on_bind ctx) (fun _ ->
             bind ctx service_bindings)
     | [] -> Lwt_result.return ()
   in
+  Logs.debug (fun m -> m "CONTAINER: Bind services");
   bind ctx service_bindings |> Lwt_result.map set_initialized
 
 let start_services ctx =
+  Logs.debug (fun m -> m "CONTAINER: Start services");
   let rec start ctx services =
     match services with
-    | (module Service : Sig.SERVICE) :: services ->
+    | (module Service : SERVICE) :: services ->
         Lwt_result.bind (Service.on_start ctx) (fun _ -> start ctx services)
     | [] -> Lwt_result.return ()
   in
   let services = State.get_services () in
   start ctx services
-
-(* TODO remove*)
-let bind = bind_services

@@ -1,30 +1,22 @@
 open Base
-open Core.Err
 
 let ( let* ) = Lwt.bind
 
 let fn ctx args =
   match args with
-  | [ "createadmin"; email; password ] -> (
+  | [ "createadmin"; email; password ] ->
       let (module UserService : User_sig.SERVICE) =
         Core.Container.fetch_service_exn User_sig.key
       in
-      let* result =
-        try_to_run (fun () ->
-            UserService.create_admin ctx ~email ~password ~username:None)
+      let* _ =
+        UserService.create_admin ctx ~email ~password ~username:None
+        |> Lwt.map Result.ok_or_failwith
       in
-      Lwt.return
-      @@
-      match result with
-      | Ok _ -> Ok ()
-      | Error error ->
-          let msg = Error.show error in
-          let _ = Logs.info (fun m -> m "Failed to run command: %s" msg) in
-          Error msg )
+      Lwt.return @@ Ok ()
   (* TODO think about a way to encapsulate that case
      without stringly typing *)
   | _ -> Lwt.return @@ Error "wrong usage"
 
 let create_admin =
-  Core.Cmd.create ~name:"createadmin"
-    ~description:"createadmin <email> <password>" ~fn
+  Cmd.create ~name:"createadmin" ~description:"createadmin <email> <password>"
+    ~fn

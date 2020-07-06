@@ -1,5 +1,5 @@
 open Base
-open Sihl.Middleware.Flash
+open Sihl.Web.Middleware.Flash
 
 let entry_t = Alcotest.testable Entry.pp Entry.equal
 

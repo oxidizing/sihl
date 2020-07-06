@@ -1,4 +1,4 @@
-open Sihl.Core.Regex
+open Sihl.Utils.Regex
 
 let extract _ () =
   let regexp = of_string {|token=([\w|\-]*)|} in
