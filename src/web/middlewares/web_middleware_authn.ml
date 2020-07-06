@@ -1,4 +1,3 @@
-open Base
 open Opium.Std
 
 let ( let* ) = Lwt.bind
@@ -8,27 +7,28 @@ let key : User.t Opium.Hmap.key =
 
 let session () =
   let filter handler req =
-    let ctx = Web_req.ctx_of req in
-    match Opium.Hmap.find key (Request.env req) with
-    (* user has been authenticated somewhere else already, nothing to do *)
-    | Some _ -> handler req
-    | None -> (
-        let* user_id =
-          Session.get_value ~key:"users.id" ctx |> Lwt.map Result.ok_or_failwith
-        in
-        match user_id with
-        (* there is no user_id, nothing to do *)
-        | None -> handler req
-        | Some user_id -> (
-            let* user =
-              User.get ctx ~user_id |> Lwt.map Result.ok_or_failwith
-            in
-            match user with
-            | None -> failwith "No user found"
-            | Some user ->
-                let env = Opium.Hmap.add key user (Request.env req) in
-                let req = { req with Request.env } in
-                handler req ) )
+    handler req
+    (* let ctx = Web_req.ctx_of req in
+     * match Opium.Hmap.find key (Request.env req) with
+     * (\* user has been authenticated somewhere else already, nothing to do *\)
+     * | Some _ -> handler req
+     * | None -> (
+     *     let* user_id =
+     *       Session.get_value ~key:"users.id" ctx |> Lwt.map Result.ok_or_failwith
+     *     in
+     *     match user_id with
+     *     (\* there is no user_id, nothing to do *\)
+     *     | None -> handler req
+     *     | Some user_id -> (
+     *         let* user =
+     *           User.get ctx ~user_id |> Lwt.map Result.ok_or_failwith
+     *         in
+     *         match user with
+     *         | None -> failwith "No user found"
+     *         | Some user ->
+     *             let env = Opium.Hmap.add key user (Request.env req) in
+     *             let req = { req with Request.env } in
+     *             handler req ) ) *)
   in
   Rock.Middleware.create ~name:"users.session" ~filter
 

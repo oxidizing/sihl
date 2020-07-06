@@ -2,12 +2,13 @@ type t
 
 val create : ?body:string -> ?uri:string -> unit -> t
 
-val ctx_of : 'a -> 'b
+val ctx_of : t -> Core.Ctx.t
+
+val update_ctx : Core.Ctx.t -> t -> t
 
 val accepts_html : t -> bool
 
-val require_authorization_header :
-  Cohttp.Header.t -> (Cohttp.Auth.credential, string) result
+val require_authorization_header : t -> (Cohttp.Auth.credential, string) result
 
 val find_in_query : string -> (string * 'a list) list -> 'a option
 
