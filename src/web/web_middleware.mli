@@ -32,6 +32,6 @@ val static :
   unit ->
   t
 
-(* val cookie : unit -> t *)
+val cookie : unit -> t
 
-(* val csrf : unit -> t *)
+val csrf : unit -> t

@@ -26,8 +26,6 @@ let session = Web_middleware_session.m
 
 let static = Web_middleware_static.m
 
-(* TODO implement middlewares with sihl types *)
+let cookie = Web_middleware_cookie.m
 
-(* let cookie = Web_middleware_cookie.m *)
-
-(* let csrf = Web_middleware_csrf.m *)
+let csrf = Web_middleware_csrf.m
