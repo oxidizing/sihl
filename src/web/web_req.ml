@@ -21,6 +21,14 @@ let get_req ctx =
   |> Result.of_option ~error:"No HTTP request found in context"
   |> Result.ok_or_failwith
 
+let is_get ctx =
+  let req = get_req ctx in
+  match Opium_kernel.Rock.Request.meth req with `GET -> true | _ -> false
+
+let get_uri ctx =
+  let req = get_req ctx in
+  Opium_kernel.Request.uri req
+
 let accepts_html ctx =
   let req = get_req ctx in
   Cohttp.Header.get (Opium.Std.Request.headers req) "Accept"
@@ -32,6 +40,12 @@ let require_authorization_header ctx =
   match req |> Opium.Std.Request.headers |> Cohttp.Header.get_authorization with
   | None -> Error "No authorization header found"
   | Some token -> Ok token
+
+let cookie_data _ ~key:_ = failwith "cookie_data"
+
+let get_header ctx key =
+  let req = get_req ctx in
+  Cohttp.Header.get (Opium.Std.Request.headers req) key
 
 let find_in_query key query =
   query

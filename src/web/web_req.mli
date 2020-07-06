@@ -8,6 +8,14 @@ val accepts_html : Core.Ctx.t -> bool
 val require_authorization_header :
   Core.Ctx.t -> (Cohttp.Auth.credential, string) result
 
+val cookie_data : Core.Ctx.t -> key:string -> string option
+
+val is_get : Core.Ctx.t -> bool
+
+val get_uri : Core.Ctx.t -> Uri.t
+
+val get_header : Core.Ctx.t -> string -> string option
+
 val query_opt : Core.Ctx.t -> string -> string option
 
 val query : Core.Ctx.t -> string -> (string, string) result

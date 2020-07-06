@@ -4,6 +4,10 @@ module Sig = Session_sig
 module Service = Session_service
 module Schedule = Session_schedule
 
+let ctx_key : t Core.Ctx.key = Core.Ctx.create_key ()
+
+let add_to_ctx session ctx = Core.Ctx.add ctx_key session ctx
+
 let set_value req ~key ~value =
   match Core.Container.fetch_service Sig.key with
   | Some (module Service : Sig.SERVICE) -> Service.set_value ~key ~value req
