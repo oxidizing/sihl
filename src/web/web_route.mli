@@ -6,7 +6,7 @@ val show : t -> string
 
 val equal : t -> t -> bool
 
-type handler = Web_req.t -> Web_res.t Lwt.t
+type handler = Core.Ctx.t -> Web_res.t Lwt.t
 
 val handler : t -> handler
 

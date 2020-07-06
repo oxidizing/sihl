@@ -1,7 +1,6 @@
-module Req = Web_req
 module Res = Web_res
 
-type handler = Req.t -> Res.t Lwt.t [@@deriving show]
+type handler = Core.Ctx.t -> Res.t Lwt.t [@@deriving show]
 
 let equal_handler _ _ = true
 
@@ -26,7 +25,8 @@ let all path handler = (All, path, handler)
 let prefix prefix (meth, path, handler) = (meth, prefix ^ path, handler)
 
 let handler_to_opium_handler handler opium_req =
-  let req = Web_req.of_opium opium_req in
+  let ctx = Core.Ctx.empty in
+  let req = Web_req.add_to_ctx opium_req ctx in
   handler req |> Lwt.map Web_res.to_opium
 
 let to_opium_builder (meth, path, handler) =

@@ -10,12 +10,11 @@ let key : string Opium.Hmap.key =
   Opium.Hmap.Key.create ("flash", fun _ -> sexp_of_string "flash")
 
 let m () =
-  let filter handler req =
-    let ctx = Web_req.ctx_of req in
+  let filter handler ctx =
     let ( let* ) = Lwt.bind in
     let* result = Store.rotate ctx in
     let () = result |> Result.ok_or_failwith in
-    handler req
+    handler ctx
   in
   Web_middleware_core.create ~name:"flash" filter
 

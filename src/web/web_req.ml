@@ -2,27 +2,33 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-type t = { req : Opium.Std.Request.t; ctx : Core.Ctx.t }
+type t = Opium_kernel.Request.t
 
-let create ?(body = "") ?(uri = "/") () =
-  {
-    req =
-      Opium.Std.Request.create
-        ~body:(Cohttp_lwt.Body.of_string body)
-        (Cohttp_lwt.Request.make (Uri.of_string uri));
-    ctx = Core.Ctx.empty;
-  }
+let key : t Core.Ctx.key = Core.Ctx.create_key ()
 
-let ctx_of req = req.ctx
+let add_to_ctx req ctx = Core.Ctx.add key req ctx
 
-let update_ctx ctx req = { req with ctx }
+let create_and_add_to_ctx ?(body = "") ?(uri = "/") ctx =
+  let req =
+    Opium.Std.Request.create
+      ~body:(Cohttp_lwt.Body.of_string body)
+      (Cohttp_lwt.Request.make (Uri.of_string uri))
+  in
+  add_to_ctx req ctx
 
-let accepts_html { req; _ } =
+let get_req ctx =
+  Core.Ctx.find key ctx
+  |> Result.of_option ~error:"No HTTP request found in context"
+  |> Result.ok_or_failwith
+
+let accepts_html ctx =
+  let req = get_req ctx in
   Cohttp.Header.get (Opium.Std.Request.headers req) "Accept"
   |> Option.value_map ~default:false ~f:(fun a ->
          String.is_substring a ~substring:"text/html")
 
-let require_authorization_header { req; _ } =
+let require_authorization_header ctx =
+  let req = get_req ctx in
   match req |> Opium.Std.Request.headers |> Cohttp.Header.get_authorization with
   | None -> Error "No authorization header found"
   | Some token -> Ok token
@@ -33,24 +39,26 @@ let find_in_query key query =
   |> Option.map ~f:(fun (_, r) -> r)
   |> Option.bind ~f:List.hd
 
-let query_opt { req; _ } key =
+let query_opt ctx key =
+  let req = get_req ctx in
   req |> Opium.Std.Request.uri |> Uri.query |> find_in_query key
 
-let query req key =
-  match query_opt req key with
+let query ctx key =
+  match query_opt ctx key with
   | None -> Error (Printf.sprintf "Please provide a key %s" key)
   | Some value -> Ok value
 
-let query2_opt req key1 key2 = (query_opt req key1, query_opt req key2)
+let query2_opt ctx key1 key2 = (query_opt ctx key1, query_opt ctx key2)
 
-let query2 req key1 key2 = (query req key1, query req key2)
+let query2 ctx key1 key2 = (query ctx key1, query ctx key2)
 
-let query3_opt req key1 key2 key3 =
-  (query_opt req key1, query_opt req key2, query_opt req key3)
+let query3_opt ctx key1 key2 key3 =
+  (query_opt ctx key1, query_opt ctx key2, query_opt ctx key3)
 
-let query3 req key1 key2 key3 = (query req key1, query req key2, query req key3)
+let query3 ctx key1 key2 key3 = (query ctx key1, query ctx key2, query ctx key3)
 
-let urlencoded ?body { req; _ } key =
+let urlencoded ?body ctx key =
+  let req = get_req ctx in
   (* we need to be able to pass in the body
      because Opium.Std.Request.body drains
      the body stream from the request *)
@@ -65,36 +73,36 @@ let urlencoded ?body { req; _ } key =
   | None -> Lwt.return @@ Error (Printf.sprintf "Please provide a %s." key)
   | Some value -> Lwt.return @@ Ok value
 
-let urlencoded2 req key1 key2 =
+let urlencoded2 ctx key1 key2 =
   let* body =
-    req.req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+    ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
     |> Lwt.map Result.return
   in
-  let* value1 = urlencoded ~body req key1 in
-  let* value2 = urlencoded ~body req key2 in
+  let* value1 = urlencoded ~body ctx key1 in
+  let* value2 = urlencoded ~body ctx key2 in
   Lwt.return @@ Ok (value1, value2)
 
-let urlencoded3 req key1 key2 key3 =
+let urlencoded3 ctx key1 key2 key3 =
   let* body =
-    req.req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+    ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
     |> Lwt.map Result.return
   in
-  let* value1 = urlencoded ~body req key1 in
-  let* value2 = urlencoded ~body req key2 in
-  let* value3 = urlencoded ~body req key3 in
+  let* value1 = urlencoded ~body ctx key1 in
+  let* value2 = urlencoded ~body ctx key2 in
+  let* value3 = urlencoded ~body ctx key3 in
   Lwt.return @@ Ok (value1, value2, value3)
 
-let param { req; _ } = Opium.Std.param req
+let param ctx =
+  let req = get_req ctx in
+  Opium.Std.param req
 
-let param2 req key1 key2 = (param req key1, param req key2)
+let param2 ctx key1 key2 = (param ctx key1, param ctx key2)
 
-let param3 req key1 key2 key3 = (param req key1, param req key2, param req key3)
+let param3 ctx key1 key2 key3 = (param ctx key1, param ctx key2, param ctx key3)
 
-let require_body { req; _ } decode =
+let require_body ctx decode =
   let* body =
-    req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string
+    ctx |> get_req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string
     |> Lwt.map Result.return
   in
   body |> Utils.Json.parse |> Result.bind ~f:decode |> Lwt.return
-
-let of_opium req = { req; ctx = Core.Ctx.empty }
