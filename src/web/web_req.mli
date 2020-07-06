@@ -1,59 +1,60 @@
-type t
+val add_to_ctx : Opium_kernel.Request.t -> Core.Ctx.t -> Core.Ctx.t
 
-val create : ?body:string -> ?uri:string -> unit -> t
+val create_and_add_to_ctx :
+  ?body:string -> ?uri:string -> Core.Ctx.t -> Core.Ctx.t
 
-val ctx_of : t -> Core.Ctx.t
+val accepts_html : Core.Ctx.t -> bool
 
-val update_ctx : Core.Ctx.t -> t -> t
+val require_authorization_header :
+  Core.Ctx.t -> (Cohttp.Auth.credential, string) result
 
-val accepts_html : t -> bool
+val query_opt : Core.Ctx.t -> string -> string option
 
-val require_authorization_header : t -> (Cohttp.Auth.credential, string) result
+val query : Core.Ctx.t -> string -> (string, string) result
 
-val find_in_query : string -> (string * 'a list) list -> 'a option
-
-val query_opt : t -> string -> string option
-
-val query : t -> string -> (string, string) result
-
-val query2_opt : t -> string -> string -> string option * string option
+val query2_opt : Core.Ctx.t -> string -> string -> string option * string option
 
 val query2 :
-  t -> string -> string -> (string, string) result * (string, string) result
+  Core.Ctx.t ->
+  string ->
+  string ->
+  (string, string) result * (string, string) result
 
 val query3_opt :
-  t ->
+  Core.Ctx.t ->
   string ->
   string ->
   string ->
   string option * string option * string option
 
 val query3 :
-  t ->
+  Core.Ctx.t ->
   string ->
   string ->
   string ->
   (string, string) result * (string, string) result * (string, string) result
 
-val urlencoded : ?body:string -> t -> string -> (string, string) Lwt_result.t
+val urlencoded :
+  ?body:string -> Core.Ctx.t -> string -> (string, string) Lwt_result.t
 
 val urlencoded2 :
-  t -> string -> string -> (string * string, string) Lwt_result.t
+  Core.Ctx.t -> string -> string -> (string * string, string) Lwt_result.t
 
 val urlencoded3 :
-  t ->
+  Core.Ctx.t ->
   string ->
   string ->
   string ->
   (string * string * string, string) Lwt_result.t
 
-val param : t -> string -> string
+val param : Core.Ctx.t -> string -> string
 
-val param2 : t -> string -> string -> string * string
+val param2 : Core.Ctx.t -> string -> string -> string * string
 
-val param3 : t -> string -> string -> string -> string * string * string
+val param3 :
+  Core.Ctx.t -> string -> string -> string -> string * string * string
 
 val require_body :
-  t -> (Yojson.Safe.t -> ('a, string) result) -> ('a, string) Lwt_result.t
-
-val of_opium : Opium_kernel.Request.t -> t
+  Core.Ctx.t ->
+  (Yojson.Safe.t -> ('a, string) result) ->
+  ('a, string) Lwt_result.t
