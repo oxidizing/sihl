@@ -3,7 +3,7 @@ module Entry = Web_middleware_flash_model.Entry
 
 val key : string Opium.Hmap.key
 
-val m : unit -> Opium_kernel.Rock.Middleware.t
+val m : unit -> Web_middleware_core.t
 
 val current : Core.Ctx.t -> (Message.t option, string) Result.t Lwt.t
 

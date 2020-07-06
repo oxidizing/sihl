@@ -64,5 +64,4 @@ let m () =
      *     Opium.Std.Response.create ~headers ~body ~code:`Moved_permanently ()
      *     |> Lwt.return *)
   in
-
-  Opium.Std.Rock.Middleware.create ~name:"error handler" ~filter
+  Web_middleware_core.create ~name:"error handler" filter

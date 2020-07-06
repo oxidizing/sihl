@@ -85,3 +85,5 @@ let require_body req decode =
     |> Lwt.map Result.return
   in
   body |> Utils.Json.parse |> Result.bind ~f:decode |> Lwt.return
+
+let of_opium req = req

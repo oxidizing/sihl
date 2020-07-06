@@ -1,7 +1,7 @@
 open Base
 
 module Context = struct
-  type t = { flash : Web.Middleware.Flash.Message.t option; csrf : string }
+  type t = { flash : Message.t option; csrf : string }
 
   let create ~flash () = { flash; csrf = "TODO" }
 

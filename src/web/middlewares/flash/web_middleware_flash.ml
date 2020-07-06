@@ -17,7 +17,7 @@ let m () =
     let () = result |> Result.ok_or_failwith in
     handler req
   in
-  Opium.Std.Rock.Middleware.create ~name:"flash" ~filter
+  Web_middleware_core.create ~name:"flash" filter
 
 let current req =
   let* entry = Store.find_current req in
@@ -33,8 +33,8 @@ let set_error req txt = set req (Message.error txt)
 
 let redirect_with_error req ~path txt =
   let* () = set_error req txt in
-  Web_res.redirect path |> Result.return |> Lwt.return
+  Web_res.set_redirect path |> Result.return |> Lwt.return
 
 let redirect_with_success req ~path txt =
   let* () = set_success req txt in
-  Web_res.redirect path |> Result.return |> Lwt.return
+  Web_res.set_redirect path |> Result.return |> Lwt.return

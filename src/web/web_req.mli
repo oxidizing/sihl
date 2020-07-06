@@ -52,3 +52,5 @@ val param3 : t -> string -> string -> string -> string * string * string
 
 val require_body :
   t -> (Yojson.Safe.t -> ('a, string) result) -> ('a, string) Lwt_result.t
+
+val of_opium : Opium_kernel.Request.t -> t
