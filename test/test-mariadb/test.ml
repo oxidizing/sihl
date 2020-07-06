@@ -22,4 +22,4 @@ let () =
        let ctx = Sihl.Core.Ctx.empty in
        Sihl.Test.app ctx ~config ~services
      in
-     run "mariadb tests" @@ suite)
+     run "mariadb" @@ suite)
