@@ -1,7 +1,7 @@
 open Base
 
 module Service : Admin_sig.SERVICE = struct
-  let pages : Admin_model.Page.t list ref = ref []
+  let pages : Admin_core.Page.t list ref = ref []
 
   let on_bind _ = Lwt.return @@ Ok ()
 
@@ -11,13 +11,11 @@ module Service : Admin_sig.SERVICE = struct
 
   let register_page _ page =
     Logs.debug (fun m ->
-        m "ADMIN UI: Registering admin ui page: %s"
-          (Admin_model.Page.label page));
+        m "ADMIN UI: Registering admin ui page: %s" (Admin_core.Page.label page));
     pages :=
       !pages |> List.cons page
       |> List.sort ~compare:(fun p1 p2 ->
-             String.compare (Admin_model.Page.path p1)
-               (Admin_model.Page.path p2));
+             String.compare (Admin_core.Page.path p1) (Admin_core.Page.path p2));
     Lwt.return @@ Ok ()
 
   let get_all_pages _ = Lwt.return @@ Ok !pages

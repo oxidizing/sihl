@@ -1,12 +1,8 @@
+open Base
+module Sig = Admin_sig
 module Service = Admin_service
 module Component = Admin_component
-module Page = Admin_model.Page
-
-let render _ _ _ = failwith "TODO render()"
-
-(* let admin_context = Context.of_template_context context in
- * let document = admin_page admin_context args in
- * Template.render document *)
+module Page = Admin_core.Page
 
 let register_page ctx page =
   match Core.Container.fetch_service Admin_sig.key with
@@ -15,8 +11,13 @@ let register_page ctx page =
       Logs.warn (fun m ->
           m
             "ADMIN: Could not register admin page, have you installed the \
-             admin app?");
+             admin service?");
       Lwt.return @@ Ok ()
+
+let register_pages ctx pages =
+  pages
+  |> List.map ~f:(register_page ctx)
+  |> Lwt.all |> Lwt.map Result.all |> Lwt_result.map ignore
 
 let get_all_pages ctx =
   match Core.Container.fetch_service Admin_sig.key with
@@ -28,6 +29,4 @@ let get_all_pages ctx =
              app?");
       Lwt.return @@ Ok []
 
-let register_pages _ _ = Lwt_result.fail "TODO admin.register_pages()"
-
-let create_page _ = failwith "TODO implement admin create_page"
+let create_page = Page.create

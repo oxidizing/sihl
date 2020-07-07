@@ -2,11 +2,11 @@ module type SERVICE = sig
   include Core_container.SERVICE
 
   val register_page :
-    Core.Ctx.t -> Admin_model.Page.t -> (unit, string) Result.t Lwt.t
+    Core.Ctx.t -> Admin_core.Page.t -> (unit, string) Result.t Lwt.t
 
   val get_all_pages :
-    Core.Ctx.t -> (Admin_model.Page.t list, string) Result.t Lwt.t
+    Core.Ctx.t -> (Admin_core.Page.t list, string) Result.t Lwt.t
 end
 
 let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "admin.service"
+  Core.Container.create_key "admin"

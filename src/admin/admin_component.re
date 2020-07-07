@@ -70,8 +70,8 @@ module Navigation = {
       ctx
       |> List.map(~f=page =>
            <li>
-             <a href={Admin_model.Page.path(page)}>
-               {Html.txt(Admin_model.Page.label(page))}
+             <a href={Admin_core.Page.path(page)}>
+               {Html.txt(Admin_core.Page.label(page))}
              </a>
            </li>
          );

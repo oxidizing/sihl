@@ -81,4 +81,4 @@ module UserPage = {
   };
 };
 
-let users = Admin.create_page();
+let users = Admin.create_page(~path="users", ~label="Users");
