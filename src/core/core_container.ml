@@ -89,6 +89,7 @@ let set_initialized = State.set_initialized
 let bind_services ctx service_bindings =
   Logs.debug (fun m -> m "CONTAINER: Register services");
   let () = List.map service_bindings ~f:Binding.register |> ignore in
+  set_initialized ();
   let rec bind ctx service_bindings =
     match service_bindings with
     | binding :: service_bindings ->
@@ -98,7 +99,7 @@ let bind_services ctx service_bindings =
     | [] -> Lwt_result.return ()
   in
   Logs.debug (fun m -> m "CONTAINER: Bind services");
-  bind ctx service_bindings |> Lwt_result.map set_initialized
+  bind ctx service_bindings
 
 let start_services ctx =
   Logs.debug (fun m -> m "CONTAINER: Start services");
