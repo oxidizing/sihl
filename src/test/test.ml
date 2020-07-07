@@ -33,8 +33,7 @@ let middleware_stack ctx ?handler stack =
   let ctx = Web.Req.create_and_add_to_ctx ctx in
   handler ctx
 
-let seed seed_fn =
-  let ctx = Data.Db.ctx_with_pool () in
+let seed ctx seed_fn =
   let* result = seed_fn ctx in
   match result with
   | Ok result -> Lwt.return result

@@ -16,7 +16,7 @@ val middleware_stack :
   Web.Middleware.stack ->
   Web.Res.t Lwt.t
 
-val seed : (Core.Ctx.t -> ('a, string) Result.t Lwt.t) -> 'a Lwt.t
+val seed : Core.Ctx.t -> (Core.Ctx.t -> ('a, string) Result.t Lwt.t) -> 'a Lwt.t
 
 val start_app : (module App_sig.APP) -> unit Lwt.t
 

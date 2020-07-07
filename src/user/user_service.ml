@@ -5,9 +5,9 @@ let ( let* ) = Lwt_result.bind
 module User = User_model.User
 
 module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
-  let on_bind req =
-    let* () = Data.Migration.register req (UserRepo.migrate ()) in
-    Data.Repo.register_cleaner req UserRepo.clean
+  let on_bind ctx =
+    let* () = Data.Migration.register ctx (UserRepo.migrate ()) in
+    Data.Repo.register_cleaner ctx UserRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
