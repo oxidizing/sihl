@@ -6,7 +6,7 @@ While we are working on finishing up the first public release, check out this [e
 
 ## Documentation
 
-[Documentation](https://oxidizing.github.io/sihl-docs/sihl/index.html) is heavily WIP but always in sync with the current master branch. It gives a good overview of the scope of the framework.
+[Documentation](https://oxidizing.github.io/docs/sihl/index.html) is heavily WIP but always in sync with the current master branch. It gives a good overview of the scope of the framework.
 
 ## Status of the project
 
