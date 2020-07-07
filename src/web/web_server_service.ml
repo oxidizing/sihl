@@ -1,5 +1,7 @@
 open Base
 
+let ( let* ) = Lwt.bind
+
 let registered_routes = ref []
 
 module Service : Web_server_sig.SERVICE = struct
@@ -14,6 +16,7 @@ module Service : Web_server_sig.SERVICE = struct
     let app =
       List.fold ~f:(fun app builder -> builder app) ~init:app builders
     in
+    (* We don't want to block here, the returned Lwt.t will never resolve *)
     let _ = Opium.Std.App.start app in
     Lwt_result.return ()
 
