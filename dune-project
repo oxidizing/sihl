@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.0.43)
+(version 0.0.44)
 
 (authors "Josef Erben")
 (source (github oxidizing/sihl))
