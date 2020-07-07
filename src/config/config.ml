@@ -15,9 +15,8 @@ let is_testing () =
 
 let read_string ?default key =
   let value =
-    Option.first_some
+    Option.first_some (Sys.getenv key)
       (Map.find (Config_core.Internal.get ()) key)
-      (Sys.getenv key)
   in
   match (default, value) with
   | _, Some value -> Ok value
@@ -27,9 +26,8 @@ let read_string ?default key =
 
 let read_int ?default key =
   let value =
-    Option.first_some
+    Option.first_some (Sys.getenv key)
       (Map.find (Config_core.Internal.get ()) key)
-      (Sys.getenv key)
   in
   match (default, value) with
   | _, Some value -> (
@@ -43,9 +41,8 @@ let read_int ?default key =
 
 let read_bool ?default key =
   let value =
-    Option.first_some
+    Option.first_some (Sys.getenv key)
       (Map.find (Config_core.Internal.get ()) key)
-      (Sys.getenv key)
   in
   match (default, value) with
   | _, Some value -> (
