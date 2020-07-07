@@ -1,3 +1,4 @@
+module Core = Web_core
 module Req = Web_req
 module Res = Web_res
 module Route = Web_route
