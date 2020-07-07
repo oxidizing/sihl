@@ -5,7 +5,7 @@ module Service : Log_sig.SERVICE = struct
     let log_level = Some Debug in
     Logs_fmt.reporter () |> set_reporter;
     set_level log_level;
-    debug (fun m -> m "Log: Logger set up");
+    debug (fun m -> m "LOGGER: Logger set up");
     Lwt_result.return ()
 
   let on_start _ = Lwt_result.return ()

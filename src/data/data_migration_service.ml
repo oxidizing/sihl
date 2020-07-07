@@ -138,7 +138,7 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
               "Dirty migration found for %s, has to be fixed manually" namespace
           in
           Logs.err (fun m -> m "MIGRATION: %s" msg);
-          failwith msg )
+          Lwt_result.fail msg )
         else mark_dirty ctx ~namespace
       else (
         Logs.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);

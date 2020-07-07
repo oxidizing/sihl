@@ -10,7 +10,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://github.com/oxidizing/sihl"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "dune" {>= "2"}
+  "dune" {>= "2.4"}
   "ocaml" {>= "4.08.0"}
   "lwt" {>= "5.3.0"}
   "base" {>= "v0.13.1"}

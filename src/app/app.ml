@@ -38,6 +38,5 @@ let start (module App : Sig.APP) =
          Log.err (fun m -> m "APP: Failed to start app %s" msg);
          msg)
   |> Lwt.map Base.Result.ok_or_failwith
-  |> Lwt.map (fun () ->
-         Log.debug (fun m -> m "APP: App started");
-         (module App : Sig.APP))
+  |> Lwt.map (fun () -> Log.debug (fun m -> m "APP: App started"))
+  |> Lwt_main.run

@@ -1,4 +1,6 @@
 module Service = Cmd_service
 include Cmd_core
 
-let register_commands _ _ = Lwt_result.fail "TODO cmd.register_commands"
+let register_commands _ _ =
+  Logs.warn (fun m -> m "CMD: Registration of commands is not implemented");
+  Lwt_result.return ()

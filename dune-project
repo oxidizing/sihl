@@ -18,7 +18,7 @@
  (description "A web framework for Reason and OCaml to build apps rapidly.")
  (depends
   ;; General system dependencies
-  (dune (>= 2))
+  (dune (>= 2.4))
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
 
