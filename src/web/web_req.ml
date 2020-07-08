@@ -42,12 +42,13 @@ let require_authorization_header ctx =
   | Some token -> Ok token
 
 let cookie_data ctx ~key =
-  (* TODO parse cookie content properly using Uri.pct_decode (don't forget to try())*)
   let req = get_req ctx in
   let cookies =
     req |> Opium_kernel.Request.headers |> Cohttp.Cookie.Cookie_hdr.extract
   in
-  cookies |> List.map ~f:(fun (_, v) -> v) |> List.find ~f:(String.equal key)
+  cookies
+  |> List.find ~f:(fun (k, _) -> String.equal key k)
+  |> Option.map ~f:(fun (_, v) -> Uri.pct_decode v)
 
 let get_header ctx key =
   let req = get_req ctx in

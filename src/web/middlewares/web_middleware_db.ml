@@ -3,4 +3,4 @@ let m () =
     let ctx = Data.Db.add_pool ctx in
     handler ctx
   in
-  Web_middleware_core.create ~name:"data.db" filter
+  Web_middleware_core.create ~name:"database" filter

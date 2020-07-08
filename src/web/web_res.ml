@@ -1,15 +1,25 @@
 open Base
 open Web_core
 
+module OpiumResponse = struct
+  (* We want to be able to derive show and eq from our own response type t *)
+  type t = Opium_kernel.Response.t
+
+  let equal _ _ = false
+
+  let pp _ _ = ()
+end
+
 type t = {
   content_type : content_type;
   redirect : string option;
   body : string option;
   headers : headers;
-  opium_res : Opium_kernel.Response.t option;
+  opium_res : OpiumResponse.t option;
   cookies : (string * string) list;
   status : int;
 }
+[@@deriving show, eq]
 
 let html =
   {
@@ -58,7 +68,14 @@ let to_opium res =
         | None -> headers
       in
       let body = `String (Option.value ~default:"" res.body) in
-      let opium_res = Opium.Std.respond ~headers ~code body in
-      List.fold_left res.cookies ~init:opium_res
-        ~f:(fun opium_res (key, data) ->
-          Opium.Std.Cookie.set opium_res ~key ~data)
+      let cookie_headers =
+        res.cookies
+        |> List.map ~f:(fun cookie ->
+               Cohttp.Cookie.Set_cookie_hdr.make ~secure:false ~path:"/" cookie)
+        |> List.map ~f:Cohttp.Cookie.Set_cookie_hdr.serialize
+      in
+      let headers =
+        List.fold_left cookie_headers ~init:headers ~f:(fun headers (k, v) ->
+            Cohttp.Header.add headers k v)
+      in
+      Opium.Std.respond ~headers ~code body

@@ -13,5 +13,8 @@ let apply middleware route =
   Web_route.set_handler updated_handler route
 
 let apply_stack middleware_stack route =
+  (* The request goes through the middlewares from top to bottom,
+     so we have to reverse the middleware_stack *)
+  let middleware_stack = List.rev middleware_stack in
   List.fold_left middleware_stack ~init:route ~f:(fun route middleware ->
       apply middleware route)

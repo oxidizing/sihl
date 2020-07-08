@@ -1,5 +1,9 @@
 type t
 
+val pp : Format.formatter -> t -> unit
+
+val equal : t -> t -> bool
+
 val html : t
 
 val set_body : string -> t -> t
