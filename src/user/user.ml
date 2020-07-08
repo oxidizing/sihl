@@ -25,13 +25,18 @@ let create_user = User_service.create_user
 
 let create_admin = User_service.create_admin
 
-let register _ = failwith "TODO register()"
+let register ctx ~username ~email ~password ~password_confirmation =
+  let is_same = String.equal password password_confirmation in
+  create_user ctx ~username ~email ~password
+  |> Lwt_result.map (fun user ->
+         if is_same then Ok user
+         else Error "Password confirmation doesn't match provided password")
 
 let login _ = failwith "TODO login()"
 
 let create_session_for _ = failwith "TODO create_session_for"
 
 let require_user ctx =
-  Core.Ctx.find ctx_key ctx |> Result.of_option ~error:"No authenticated user"
+  Core.Ctx.find ctx_key ctx |> Result.of_option ~error:"User not authenticated"
 
 let find_user ctx = Core.Ctx.find ctx_key ctx

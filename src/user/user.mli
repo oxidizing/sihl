@@ -136,10 +136,11 @@ val create_admin :
 
 val register :
   Core.Ctx.t ->
+  username:string option ->
   email:string ->
   password:string ->
   password_confirmation:string ->
-  (User_model.User.t, string) Result.t Lwt.t
+  ((User_model.User.t, string) Result.t, string) Result.t Lwt.t
 
 val require_user : Core.Ctx.t -> (t, string) Result.t
 
