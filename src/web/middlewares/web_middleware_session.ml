@@ -2,9 +2,7 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-let cookie_key = "session_key"
-
-let m () =
+let m ?(cookie_key = "session_key") () =
   let filter handler ctx =
     match Web_req.cookie_data ctx ~key:cookie_key with
     | Some session_key -> (

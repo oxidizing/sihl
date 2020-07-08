@@ -24,7 +24,7 @@ val error : unit -> t
 
 val db : unit -> t
 
-val session : unit -> t
+val session : ?cookie_key:string -> unit -> t
 
 val static :
   local_path:string ->
