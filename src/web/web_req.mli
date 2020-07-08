@@ -55,6 +55,23 @@ val urlencoded3 :
   string ->
   (string * string * string, string) Lwt_result.t
 
+val urlencoded4 :
+  Core.Ctx.t ->
+  string ->
+  string ->
+  string ->
+  string ->
+  (string * string * string * string, string) Lwt_result.t
+
+val urlencoded5 :
+  Core.Ctx.t ->
+  string ->
+  string ->
+  string ->
+  string ->
+  string ->
+  (string * string * string * string * string, string) Lwt_result.t
+
 val param : Core.Ctx.t -> string -> string
 
 val param2 : Core.Ctx.t -> string -> string -> string * string
