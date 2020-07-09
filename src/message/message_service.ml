@@ -39,10 +39,11 @@ let set_next ctx message =
 let rotate ctx =
   let* entry = fetch_entry ctx in
   match entry with
-  | None -> Lwt.return @@ Ok ()
+  | None -> Lwt.return @@ Ok None
   | Some entry ->
-      let entry = entry |> Entry.rotate |> Entry.to_string in
-      Session.set_value ctx ~key:session_key ~value:entry
+      let seralized_entry = entry |> Entry.rotate |> Entry.to_string in
+      let* () = Session.set_value ctx ~key:session_key ~value:seralized_entry in
+      Lwt_result.return @@ Message_core.Entry.current entry
 
 let current ctx =
   let* entry = find_current ctx in
@@ -57,5 +58,3 @@ let set ctx ?(error = []) ?(warning = []) ?(success = []) ?(info = []) () =
       |> set_info info)
   in
   set_next ctx message
-
-let get = current

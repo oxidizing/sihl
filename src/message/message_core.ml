@@ -24,6 +24,12 @@ module Message = struct
   let get_success message = message.success
 
   let get_info message = message.info
+
+  let ctx_key : t Core_ctx.key = Core_ctx.create_key ()
+
+  let ctx_add message ctx = Core_ctx.add ctx_key message ctx
+
+  let get ctx = Core_ctx.find ctx_key ctx
 end
 
 module Entry = struct
