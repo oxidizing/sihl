@@ -26,6 +26,8 @@ val db : unit -> t
 
 val session : ?cookie_key:string -> unit -> t
 
+val authn_session : unit -> t
+
 val static :
   local_path:string ->
   uri_prefix:string ->

@@ -1,7 +1,6 @@
-module Service : sig
-  module type SERVICE = Authn_sig.SERVICE
+module Sig = Authn_sig
+module Service = Authn_service
 
-  val key : (module SERVICE) Core.Container.key
-end
+val authenticate : Core.Ctx.t -> (User.t option, string) Result.t Lwt.t
 
-val authenticate : Core.Ctx.t -> User.t
+val create_session_for : Core.Ctx.t -> User.t -> (unit, string) Result.t Lwt.t

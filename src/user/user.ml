@@ -29,8 +29,6 @@ let register = User_service.register
 
 let login = User_service.login
 
-let create_session_for _ = failwith "TODO create_session_for"
-
 let require_user ctx =
   Core.Ctx.find ctx_key ctx |> Result.of_option ~error:"User not authenticated"
 

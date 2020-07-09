@@ -154,9 +154,6 @@ val login :
   password:string ->
   ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
 
-val create_session_for :
-  Core.Ctx.t -> User_core.User.t -> (unit, string) Result.t Lwt.t
-
 val require_user : Core.Ctx.t -> (t, string) Result.t
 
 val find_user : Core.Ctx.t -> t option

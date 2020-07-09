@@ -26,6 +26,8 @@ let db = Web_middleware_db.m
 
 let session = Web_middleware_session.m
 
+let authn_session = Web_middleware_authn.session
+
 let static = Web_middleware_static.m
 
 let cookie = Web_middleware_cookie.m
