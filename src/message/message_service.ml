@@ -43,7 +43,7 @@ let rotate ctx =
   | Some entry ->
       let seralized_entry = entry |> Entry.rotate |> Entry.to_string in
       let* () = Session.set_value ctx ~key:session_key ~value:seralized_entry in
-      Lwt_result.return @@ Message_core.Entry.current entry
+      Lwt_result.return @@ Message_core.Entry.next entry
 
 let current ctx =
   let* entry = find_current ctx in

@@ -29,7 +29,7 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_core.set ~key ~value session in
-        SessionRepo.insert session |> Data.Db.query ctx
+        SessionRepo.update session |> Data.Db.query ctx
 
   let remove_value ctx ~key =
     let* session_key = require_session_key ctx in
@@ -42,7 +42,7 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_core.remove ~key session in
-        SessionRepo.insert session |> Data.Db.query ctx
+        SessionRepo.update session |> Data.Db.query ctx
 
   let get_value ctx ~key =
     let* session_key = require_session_key ctx in
@@ -98,8 +98,7 @@ module SessionRepoMariaDb = struct
         in
         Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let upsert connection model =
-        (* TODO split up into insert and update *)
+      let insert connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -112,8 +111,20 @@ module SessionRepoMariaDb = struct
           ?,
           ?,
           ?
-        ) ON DUPLICATE KEY UPDATE
-        session_data = VALUES(session_data)
+        )
+        |sql}
+        in
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+
+      let update connection model =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Model.t
+            {sql|
+        UPDATE session_sessions SET
+          session_data = $2,
+          expire_date = $3
+        WHERE session_key = $1
         |sql}
         in
         Connection.exec request model |> Lwt_result.map_err Caqti_error.show
@@ -163,9 +174,9 @@ CREATE TABLE session_sessions (
 
   let get ~key connection = Sql.Session.get connection key
 
-  let insert session connection = Sql.Session.upsert connection session
+  let insert session connection = Sql.Session.insert connection session
 
-  let update session connection = Sql.Session.upsert connection session
+  let update session connection = Sql.Session.update connection session
 
   let delete ~key connection = Sql.Session.delete connection key
 
@@ -213,8 +224,7 @@ module SessionRepoPostgreSql = struct
         in
         Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let upsert connection model =
-        (* TODO split up into insert and update *)
+      let insert connection model =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request =
           Caqti_request.exec Model.t
@@ -227,8 +237,20 @@ module SessionRepoPostgreSql = struct
           ?,
           ?,
           ?
-        ) ON CONFLICT (session_key) DO UPDATE SET
-        session_data = EXCLUDED.session_data
+        )
+        |sql}
+        in
+        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+
+      let update connection model =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Model.t
+            {sql|
+        UPDATE session_sessions SET
+          session_data = $2,
+          expire_date = $3
+        WHERE session_key = $1
         |sql}
         in
         Connection.exec request model |> Lwt_result.map_err Caqti_error.show
@@ -278,9 +300,9 @@ CREATE TABLE session_sessions (
 
   let get ~key connection = Sql.Session.get connection key
 
-  let insert session connection = Sql.Session.upsert connection session
+  let insert session connection = Sql.Session.insert connection session
 
-  let update session connection = Sql.Session.upsert connection session
+  let update session connection = Sql.Session.update connection session
 
   let delete ~key connection = Sql.Session.delete connection key
 
