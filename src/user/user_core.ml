@@ -49,6 +49,10 @@ module User = struct
     let new_password_valid = validate_password new_password in
     Result.all_unit [ matches_password; new_password_valid ]
 
+  let default_password_policy password =
+    if String.length password > 8 then Ok ()
+    else Error "Password has to contain at least 8 characters"
+
   let create ~email ~password ~username ~admin ~confirmed =
     let hash = password |> Utils.Hashing.hash |> Result.ok_or_failwith in
     {

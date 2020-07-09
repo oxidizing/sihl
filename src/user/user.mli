@@ -6,7 +6,7 @@ module Seed = User_seed
 module Cmd = User_cmd
 module Admin = User_admin
 
-type t = User_model.User.t
+type t = User_core.User.t
 
 val ctx_add_user : t -> Core.Ctx.t -> Core.Ctx.t
 
@@ -83,64 +83,63 @@ val t : t Caqti_type.t
 val get :
   Core.Ctx.t ->
   user_id:string ->
-  (User_model.User.t option, string) Result.t Lwt.t
+  (User_core.User.t option, string) Result.t Lwt.t
 
 val get_by_email :
-  Core.Ctx.t ->
-  email:string ->
-  (User_model.User.t option, string) Result.t Lwt.t
+  Core.Ctx.t -> email:string -> (User_core.User.t option, string) Result.t Lwt.t
 
-val get_all : Core.Ctx.t -> (User_model.User.t list, string) Result.t Lwt.t
+val get_all : Core.Ctx.t -> (User_core.User.t list, string) Result.t Lwt.t
 
 val update_password :
   Core.Ctx.t ->
   email:string ->
   old_password:string ->
   new_password:string ->
-  (User_model.User.t, string) Result.t Lwt.t
+  (User_core.User.t, string) Result.t Lwt.t
 
 val set_password :
   Core.Ctx.t ->
   user_id:string ->
   password:string ->
-  (User_model.User.t, string) Result.t Lwt.t
+  (User_core.User.t, string) Result.t Lwt.t
 
 val update_details :
   Core.Ctx.t ->
   email:string ->
   username:string option ->
-  (User_model.User.t, string) Result.t Lwt.t
-
-val login :
-  Core.Ctx.t ->
-  email:string ->
-  password:string ->
-  (User_model.User.t option, string) Result.t Lwt.t
-
-val create_session_for :
-  Core.Ctx.t -> User_model.User.t -> (unit, string) Result.t Lwt.t
+  (User_core.User.t, string) Result.t Lwt.t
 
 val create_user :
   Core.Ctx.t ->
   email:string ->
   password:string ->
   username:string option ->
-  (User_model.User.t, string) Result.t Lwt.t
+  (User_core.User.t, string) Result.t Lwt.t
 
 val create_admin :
   Core.Ctx.t ->
   email:string ->
   password:string ->
   username:string option ->
-  (User_model.User.t, string) Result.t Lwt.t
+  (User_core.User.t, string) Result.t Lwt.t
 
 val register :
   Core.Ctx.t ->
+  ?password_policy:(string -> (unit, string) Result.t) ->
   username:string option ->
   email:string ->
   password:string ->
   password_confirmation:string ->
-  ((User_model.User.t, string) Result.t, string) Result.t Lwt.t
+  ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
+
+val login :
+  Core.Ctx.t ->
+  email:string ->
+  password:string ->
+  ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
+
+val create_session_for :
+  Core.Ctx.t -> User_core.User.t -> (unit, string) Result.t Lwt.t
 
 val require_user : Core.Ctx.t -> (t, string) Result.t
 

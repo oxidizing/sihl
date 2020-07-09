@@ -2,7 +2,7 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-module User = User_model.User
+module User = User_core.User
 
 module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
   let on_bind ctx =
@@ -134,3 +134,27 @@ let create_admin req ~email ~password ~username =
     Core.Container.fetch_service_exn User_sig.key
   in
   UserService.create_admin req ~email ~password ~username
+
+let register ctx ?(password_policy = User.default_password_policy) ~username
+    ~email ~password ~password_confirmation =
+  let is_same = String.equal password password_confirmation in
+  create_user ctx ~username ~email ~password
+  |> Lwt_result.map (fun user ->
+         if is_same then Ok user
+         else Error "Password confirmation doesn't match provided password")
+  |> Lwt_result.map (fun user ->
+         match user with
+         | Ok user ->
+             user |> User.password |> password_policy
+             |> Result.map ~f:(fun _ -> user)
+         | error -> error)
+
+let login ctx ~email ~password =
+  let* user = get_by_email ctx ~email in
+  let* user =
+    user
+    |> Result.of_option ~error:"Invalid email or password provided"
+    |> Lwt.return
+  in
+  if User.matches_password password user then Lwt_result.return @@ Ok user
+  else Lwt_result.return @@ Error "Invalid email or password provided"

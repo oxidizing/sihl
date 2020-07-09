@@ -1,7 +1,7 @@
 open Base;
 open Tyxml;
 
-module User = User_model.User;
+module User = User_core.User;
 
 module Row = {
   let createElement = (~user, ()) => {

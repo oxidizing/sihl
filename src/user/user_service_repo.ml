@@ -32,7 +32,7 @@ CREATE TABLE user_users (
 
   let migrate = Migration.migration
 
-  module Model = User_model.User
+  module Model = User_core.User
 
   let get_all connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -178,7 +178,7 @@ CREATE TABLE user_users (
 
   let migrate = Migration.migration
 
-  module Model = User_model.User
+  module Model = User_core.User
 
   let get_all connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
