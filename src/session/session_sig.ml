@@ -4,18 +4,18 @@ module type REPO = sig
   include Data.Repo.Sig.REPO
 
   val get_all :
-    Data_db_core.connection -> (Session_model.t list, string) Result.t Lwt.t
+    Data_db_core.connection -> (Session_core.t list, string) Result.t Lwt.t
 
   val get :
     key:string ->
     Data_db_core.connection ->
-    (Session_model.t option, string) Result.t Lwt.t
+    (Session_core.t option, string) Result.t Lwt.t
 
   val insert :
-    Session_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+    Session_core.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 
   val update :
-    Session_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+    Session_core.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
 
   val delete :
     key:string -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
@@ -33,15 +33,15 @@ module type SERVICE = sig
     Core.Ctx.t -> key:string -> (string option, string) Result.t Lwt.t
 
   val get_session :
-    Core.Ctx.t -> key:string -> (Session_model.t option, string) Result.t Lwt.t
+    Core.Ctx.t -> key:string -> (Session_core.t option, string) Result.t Lwt.t
 
   val require_session_key : Core.Ctx.t -> (string, string) Result.t Lwt.t
 
   val get_all_sessions :
-    Core.Ctx.t -> (Session_model.t list, string) Result.t Lwt.t
+    Core.Ctx.t -> (Session_core.t list, string) Result.t Lwt.t
 
   val insert_session :
-    Core.Ctx.t -> session:Session_model.t -> (unit, string) Result.t Lwt.t
+    Core.Ctx.t -> session:Session_core.t -> (unit, string) Result.t Lwt.t
 end
 
 let key : (module SERVICE) Core.Container.key =

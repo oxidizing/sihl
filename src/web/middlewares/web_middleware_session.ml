@@ -15,7 +15,7 @@ let m ?(cookie_key = "session_key") () =
               if Session.is_expired (Ptime_clock.now ()) session then (
                 Logs.debug (fun m ->
                     m "SESSION: Session expired, creating new one");
-                let session = Session.create (Ptime_clock.now ()) in
+                let session = Session.make (Ptime_clock.now ()) in
                 (* TODO try to create new session if key is already taken *)
                 let* result = Session.insert_session ctx ~session in
                 let () = result |> Result.ok_or_failwith in
@@ -25,7 +25,7 @@ let m ?(cookie_key = "session_key") () =
             let ctx = Session.add_to_ctx session ctx in
             handler ctx
         | None ->
-            let session = Session.create (Ptime_clock.now ()) in
+            let session = Session.make (Ptime_clock.now ()) in
             (* TODO try to create new session if key is already taken *)
             let* result = Session.insert_session ctx ~session in
             let () = result |> Result.ok_or_failwith in
@@ -35,7 +35,7 @@ let m ?(cookie_key = "session_key") () =
             |> Web_res.set_cookie ~key:cookie_key ~data:session.key
             |> Lwt.return )
     | None ->
-        let session = Session.create (Ptime_clock.now ()) in
+        let session = Session.make (Ptime_clock.now ()) in
         (* TODO try to create new session if key is already taken *)
         let* () =
           Session.insert_session ctx ~session |> Lwt.map Result.ok_or_failwith

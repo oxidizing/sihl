@@ -28,7 +28,7 @@ module Make
              (Logs.warn (fun m ->
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
-        let session = Session_model.set ~key ~value session in
+        let session = Session_core.set ~key ~value session in
         SessionRepo.insert session |> Data.Db.query ctx
 
   let remove_value ctx ~key =
@@ -41,7 +41,7 @@ module Make
              (Logs.warn (fun m ->
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
-        let session = Session_model.remove ~key session in
+        let session = Session_core.remove ~key session in
         SessionRepo.insert session |> Data.Db.query ctx
 
   let get_value ctx ~key =
@@ -53,7 +53,7 @@ module Make
             m "SESSION: Provided session key has no session in DB");
         Lwt.return @@ Ok None
     | Some session ->
-        Session_model.get key session |> Result.return |> Lwt.return
+        Session_core.get key session |> Result.return |> Lwt.return
 
   let get_session ctx ~key = SessionRepo.get ~key |> Data.Db.query ctx
 
@@ -66,7 +66,7 @@ end
 module SessionRepoMariaDb = struct
   module Sql = struct
     module Session = struct
-      module Model = Session_model
+      module Model = Session_core
 
       let get_all connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -181,7 +181,7 @@ end
 module SessionRepoPostgreSql = struct
   module Sql = struct
     module Session = struct
-      module Model = Session_model
+      module Model = Session_core
 
       let get_all connection =
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -301,3 +301,81 @@ let postgresql =
   Core.Container.create_binding Session_sig.key
     (module PostgreSql)
     (module PostgreSql)
+
+let set_value ctx ~key ~value =
+  Logs.debug (fun m -> m "three %s" (Core.Ctx.id ctx));
+  match Core.Container.fetch_service Session_sig.key with
+  | Some (module Service : Session_sig.SERVICE) ->
+      Service.set_value ~key ~value ctx
+  | None ->
+      let msg =
+        "SESSION: Could not find session service, have you installed the \
+         session app?"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let remove_value ctx ~key =
+  match Core.Container.fetch_service Session_sig.key with
+  | Some (module Service : Session_sig.SERVICE) -> Service.remove_value ~key ctx
+  | None ->
+      let msg =
+        "SESSION: Could not find session service, have you installed the \
+         session app?"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let get_value ctx ~key =
+  match Core.Container.fetch_service Session_sig.key with
+  | Some (module Service : Session_sig.SERVICE) -> Service.get_value ~key ctx
+  | None ->
+      let msg =
+        "SESSION: Could not find session service, have you installed the \
+         session app?"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let get_session ctx ~key =
+  match Core.Container.fetch_service Session_sig.key with
+  | Some (module Service : Session_sig.SERVICE) -> Service.get_session ctx ~key
+  | None ->
+      let msg =
+        "SESSION: Could not find session service, have you installed the \
+         session app?"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let get_all_sessions ctx =
+  match Core.Container.fetch_service Session_sig.key with
+  | Some (module Service : Session_sig.SERVICE) -> Service.get_all_sessions ctx
+  | None ->
+      let msg =
+        "SESSION: Could not find session service, have you installed the \
+         session app?"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let insert_session ctx ~session =
+  match Core.Container.fetch_service Session_sig.key with
+  | Some (module Service : Session_sig.SERVICE) ->
+      Service.insert_session ctx ~session
+  | None ->
+      let msg =
+        "SESSION: Could not find session service, have you installed the \
+         session app?"
+      in
+      Logs.err (fun m -> m "%s" msg);
+      Lwt.return @@ Error msg
+
+let create ctx data =
+  let empty_session = Session_core.make (Ptime_clock.now ()) in
+  let session =
+    List.fold data ~init:empty_session ~f:(fun session (key, value) ->
+        Session_core.set ~key ~value session)
+  in
+  let* () = insert_session ctx ~session in
+  Lwt_result.return session
