@@ -135,8 +135,8 @@ let create_admin req ~email ~password ~username =
   in
   UserService.create_admin req ~email ~password ~username
 
-let register ctx ?(password_policy = User.default_password_policy) ~username
-    ~email ~password ~password_confirmation =
+let register ctx ?(password_policy = User.default_password_policy) ?username
+    ~email ~password ~password_confirmation () =
   let is_same = String.equal password password_confirmation in
   create_user ctx ~username ~email ~password
   |> Lwt_result.map (fun user ->

@@ -126,10 +126,11 @@ val create_admin :
 val register :
   Core.Ctx.t ->
   ?password_policy:(string -> (unit, string) Result.t) ->
-  username:string option ->
+  ?username:string ->
   email:string ->
   password:string ->
   password_confirmation:string ->
+  unit ->
   ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
 
 val login :

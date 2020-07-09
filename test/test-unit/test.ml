@@ -44,12 +44,12 @@ let suite =
         test_case "test 2" `Quick Test_regex.test2;
         test_case "test 3" `Quick Test_regex.test3;
       ] );
-    ( "flash",
+    ( "message",
       [
         test_case "entry to and from string" `Quick
-          Test_flash.entry_to_and_from_string;
-        test_case "rotate once" `Quick Test_flash.rotate_once;
-        test_case "rotate twice" `Quick Test_flash.rotate_twice;
+          Test_message.entry_to_and_from_string;
+        test_case "rotate once" `Quick Test_message.rotate_once;
+        test_case "rotate twice" `Quick Test_message.rotate_twice;
       ] );
     ( "session",
       [

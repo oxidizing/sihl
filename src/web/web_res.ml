@@ -32,7 +32,7 @@ let html =
     status = 200;
   }
 
-let set_redirect path =
+let redirect path =
   {
     content_type = Html;
     redirect = Some path;
