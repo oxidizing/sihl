@@ -35,23 +35,30 @@ module User = struct
   let matches_password password user =
     Utils.Hashing.matches ~hash:user.password ~plain:password
 
-  let validate_password password =
-    (* TODO use more sophisticated policy *)
-    if String.length password > 8 then Ok ()
-    else Error "new password has to be longer than 8"
+  let default_password_policy password =
+    if String.length password >= 8 then Ok ()
+    else Error "Password has to contain at least 8 characters"
 
-  let validate user ~old_password ~new_password =
-    let matches_password =
+  let validate_new_password ~password ~password_confirmation ~password_policy =
+    let is_same =
+      if String.equal password password_confirmation then Ok ()
+      else Error "Password confirmation doesn't match provided password"
+    in
+    let complies_with_policy = password_policy password in
+    Result.all_unit [ is_same; complies_with_policy ]
+
+  let validate_change_password user ~old_password ~new_password
+      ~new_password_confirmation ~password_policy =
+    let matches_old_password =
       match matches_password old_password user with
       | true -> Ok ()
-      | false -> Error "wrong current password provided"
+      | false -> Error "Invalid current password provided"
     in
-    let new_password_valid = validate_password new_password in
-    Result.all_unit [ matches_password; new_password_valid ]
-
-  let default_password_policy password =
-    if String.length password > 8 then Ok ()
-    else Error "Password has to contain at least 8 characters"
+    let new_password_valid =
+      validate_new_password ~password:new_password
+        ~password_confirmation:new_password_confirmation ~password_policy
+    in
+    Result.all_unit [ matches_old_password; new_password_valid ]
 
   let create ~email ~password ~username ~admin ~confirmed =
     let hash = password |> Utils.Hashing.hash |> Result.ok_or_failwith in

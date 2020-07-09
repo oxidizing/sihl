@@ -63,10 +63,19 @@ val is_confirmed : t -> bool
 
 val matches_password : string -> t -> bool
 
-val validate_password : string -> (unit, string) Result.t
+val validate_new_password :
+  password:string ->
+  password_confirmation:string ->
+  password_policy:(string -> (unit, string) Result.t) ->
+  (unit, string) Result.t
 
-val validate :
-  t -> old_password:string -> new_password:string -> (unit, string) Result.t
+val validate_change_password :
+  t ->
+  old_password:string ->
+  new_password:string ->
+  new_password_confirmation:string ->
+  password_policy:(string -> (unit, string) Result.t) ->
+  (unit, string) Result.t
 
 val create :
   email:string ->
@@ -80,6 +89,8 @@ val system : t
 
 val t : t Caqti_type.t
 
+val get_all : Core.Ctx.t -> (User_core.User.t list, string) Result.t Lwt.t
+
 val get :
   Core.Ctx.t ->
   user_id:string ->
@@ -88,25 +99,29 @@ val get :
 val get_by_email :
   Core.Ctx.t -> email:string -> (User_core.User.t option, string) Result.t Lwt.t
 
-val get_all : Core.Ctx.t -> (User_core.User.t list, string) Result.t Lwt.t
-
 val update_password :
   Core.Ctx.t ->
+  ?password_policy:(string -> (unit, string) Result.t) ->
   email:string ->
   old_password:string ->
   new_password:string ->
-  (User_core.User.t, string) Result.t Lwt.t
-
-val set_password :
-  Core.Ctx.t ->
-  user_id:string ->
-  password:string ->
+  new_password_confirmation:string ->
+  unit ->
   (User_core.User.t, string) Result.t Lwt.t
 
 val update_details :
   Core.Ctx.t ->
   email:string ->
   username:string option ->
+  (User_core.User.t, string) Result.t Lwt.t
+
+val set_password :
+  Core.Ctx.t ->
+  ?password_policy:(string -> (unit, string) Result.t) ->
+  user_id:string ->
+  password:string ->
+  password_confirmation:string ->
+  unit ->
   (User_core.User.t, string) Result.t Lwt.t
 
 val create_user :

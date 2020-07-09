@@ -2,7 +2,7 @@ module Service : Log_sig.SERVICE = struct
   include Logs
 
   let on_bind _ =
-    let log_level = Some Debug in
+    let log_level = Some Warning in
     Logs_fmt.reporter () |> set_reporter;
     set_level log_level;
     debug (fun m -> m "LOGGER: Logger set up");
