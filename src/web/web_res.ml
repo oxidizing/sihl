@@ -40,7 +40,7 @@ let redirect path =
     headers = [];
     opium_res = None;
     cookies = [];
-    status = 301;
+    status = 302;
   }
 
 let set_body str res = { res with body = Some str }

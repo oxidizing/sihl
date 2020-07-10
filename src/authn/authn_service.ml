@@ -4,9 +4,7 @@ let key : (module Authn_sig.SERVICE) Core.Container.key =
   Core.Container.create_key "authn"
 
 module AuthenticationService : Authn_sig.SERVICE = struct
-  let on_bind _ =
-    (* TODO register command *)
-    Lwt.return @@ Ok ()
+  let on_bind _ = Lwt.return @@ Ok ()
 
   let on_start _ = Lwt.return @@ Ok ()
 

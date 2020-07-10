@@ -160,11 +160,13 @@ let register ctx ?(password_policy = User.default_password_policy) ?username
       | Some _ -> Lwt_result.return (Error "Invalid email address provided") )
 
 let login ctx ~email ~password =
-  let* user = get_by_email ctx ~email in
   let* user =
-    user
-    |> Result.of_option ~error:"Invalid email or password provided"
-    |> Lwt.return
+    get_by_email ctx ~email
+    |> Lwt_result.map
+         (Result.of_option ~error:"Invalid email or password provided")
   in
-  if User.matches_password password user then Lwt_result.return @@ Ok user
-  else Lwt_result.return @@ Error "Invalid email or password provided"
+  match user with
+  | Ok user ->
+      if User.matches_password password user then Lwt_result.return @@ Ok user
+      else Lwt_result.return @@ Error "Invalid email or password provided"
+  | Error msg -> Lwt_result.return @@ Error msg
