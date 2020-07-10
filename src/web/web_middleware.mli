@@ -11,20 +11,22 @@ module Cookie = Web_middleware_cookie
 module Csrf = Web_middleware_csrf
 module Db = Web_middleware_db
 module Error = Web_middleware_error
-module Flash = Web_middleware_flash
+module Message = Web_middleware_message
 module Gzip = Web_middleware_gzip
 module Security = Web_middleware_security
 module Static = Web_middleware_static
 module Session = Web_middleware_session
 module Authn = Web_middleware_authn
 
-val flash : unit -> t
+val message : unit -> t
 
 val error : unit -> t
 
 val db : unit -> t
 
 val session : ?cookie_key:string -> unit -> t
+
+val authn_session : unit -> t
 
 val static :
   local_path:string ->

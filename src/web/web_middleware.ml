@@ -11,20 +11,22 @@ module Cookie = Web_middleware_cookie
 module Csrf = Web_middleware_csrf
 module Db = Web_middleware_db
 module Error = Web_middleware_error
-module Flash = Web_middleware_flash
+module Message = Web_middleware_message
 module Gzip = Web_middleware_gzip
 module Security = Web_middleware_security
 module Static = Web_middleware_static
 module Session = Web_middleware_session
 module Authn = Web_middleware_authn
 
-let flash = Web_middleware_flash.m
+let message = Web_middleware_message.m
 
 let error = Web_middleware_error.m
 
 let db = Web_middleware_db.m
 
 let session = Web_middleware_session.m
+
+let authn_session = Web_middleware_authn.session
 
 let static = Web_middleware_static.m
 

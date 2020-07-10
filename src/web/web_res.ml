@@ -32,7 +32,7 @@ let html =
     status = 200;
   }
 
-let set_redirect path =
+let redirect path =
   {
     content_type = Html;
     redirect = Some path;
@@ -40,7 +40,7 @@ let set_redirect path =
     headers = [];
     opium_res = None;
     cookies = [];
-    status = 301;
+    status = 302;
   }
 
 let set_body str res = { res with body = Some str }

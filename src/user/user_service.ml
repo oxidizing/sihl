@@ -2,7 +2,7 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-module User = User_model.User
+module User = User_core.User
 
 module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
   let on_bind ctx =
@@ -20,13 +20,18 @@ module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
 
   let get_all ctx = UserRepo.get_all |> Data.Db.query ctx
 
-  let update_password ctx ~email ~old_password ~new_password =
+  let update_password ctx ?(password_policy = User.default_password_policy)
+      ~email ~old_password ~new_password ~new_password_confirmation () =
     let* user =
       get_by_email ctx ~email
       |> Lwt.map Result.ok_or_failwith
       |> Lwt.map (Result.of_option ~error:"User not found to update password")
     in
-    let* () = User.validate user ~old_password ~new_password |> Lwt.return in
+    let* () =
+      User.validate_change_password user ~old_password ~new_password
+        ~new_password_confirmation ~password_policy
+      |> Lwt.return
+    in
     let updated_user = User.set_user_password user new_password in
     let* () = UserRepo.update ~user:updated_user |> Data.Db.query ctx in
     Lwt.return @@ Ok updated_user
@@ -41,13 +46,18 @@ module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
     let* () = UserRepo.update ~user:updated_user |> Data.Db.query ctx in
     Lwt.return @@ Ok updated_user
 
-  let set_password ctx ~user_id ~password =
+  let set_password ctx ?(password_policy = User.default_password_policy)
+      ~user_id ~password ~password_confirmation () =
     let* user =
       get ctx ~user_id
       |> Lwt.map Result.ok_or_failwith
       |> Lwt.map (Result.of_option ~error:"User not found to set password")
     in
-    let* () = User.validate_password password |> Lwt.return in
+    let* () =
+      User.validate_new_password ~password ~password_confirmation
+        ~password_policy
+      |> Lwt.return
+    in
     let updated_user = User.set_user_password user password in
     let* () = UserRepo.update ~user:updated_user |> Data.Db.query ctx in
     Lwt.return @@ Ok updated_user
@@ -87,50 +97,76 @@ let postgresql =
     (module UserPostgreSql)
     (module UserPostgreSql)
 
-let get req ~user_id =
+let get ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.get req ~user_id
+  UserService.get ctx
 
-let get_by_email req ~email =
+let get_by_email ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.get_by_email req ~email
+  UserService.get_by_email ctx
 
-let get_all req =
+let get_all ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.get_all req
+  UserService.get_all ctx
 
-let update_password req ~email ~old_password ~new_password =
+let update_password ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.update_password req ~email ~old_password ~new_password
+  UserService.update_password ctx
 
-let set_password req ~user_id ~password =
+let set_password ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.set_password req ~user_id ~password
+  UserService.set_password ctx
 
-let update_details req ~email ~username =
+let update_details ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.update_details req ~email ~username
+  UserService.update_details ctx
 
-let create_user req ~email ~password ~username =
+let create_user ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.create_user req ~email ~password ~username
+  UserService.create_user ctx
 
-let create_admin req ~email ~password ~username =
+let create_admin ctx =
   let (module UserService : User_sig.SERVICE) =
     Core.Container.fetch_service_exn User_sig.key
   in
-  UserService.create_admin req ~email ~password ~username
+  UserService.create_admin ctx
+
+let register ctx ?(password_policy = User.default_password_policy) ?username
+    ~email ~password ~password_confirmation () =
+  match
+    User.validate_new_password ~password ~password_confirmation ~password_policy
+  with
+  | Error msg -> Lwt_result.return @@ Error msg
+  | Ok () -> (
+      let* user = get_by_email ctx ~email in
+      match user with
+      | None ->
+          create_user ctx ~username ~email ~password
+          |> Lwt_result.map (fun user -> Ok user)
+      | Some _ -> Lwt_result.return (Error "Invalid email address provided") )
+
+let login ctx ~email ~password =
+  let* user =
+    get_by_email ctx ~email
+    |> Lwt_result.map
+         (Result.of_option ~error:"Invalid email or password provided")
+  in
+  match user with
+  | Ok user ->
+      if User.matches_password password user then Lwt_result.return @@ Ok user
+      else Lwt_result.return @@ Error "Invalid email or password provided"
+  | Error msg -> Lwt_result.return @@ Error msg

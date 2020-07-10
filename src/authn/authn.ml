@@ -1,11 +1,8 @@
-module Service = struct
-  let key = Authn_service.key
+module Sig = Authn_sig
+module Service = Authn_service
 
-  module type SERVICE = Authn_sig.SERVICE
-end
+let find_user_in_session = Service.find_user_in_session
 
-let authenticate ctx =
-  let (module Service : Service.SERVICE) =
-    Core.Container.fetch_service_exn Authn_service.key
-  in
-  Service.authenticate ctx
+let authenticate_session = Service.authenticate_session
+
+let unauthenticate_session = Service.unauthenticate_sesssion

@@ -1,11 +1,9 @@
 open Base
 
 module Context = struct
-  type t = { flash : Message.t option; csrf : string }
+  type t = { csrf : string }
 
-  let create ~flash () = { flash; csrf = "TODO" }
-
-  let flash ctx = ctx.flash
+  let create () = { csrf = "TODO" }
 
   let csrf ctx = ctx.csrf
 end

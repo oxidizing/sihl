@@ -32,7 +32,7 @@ CREATE TABLE user_users (
 
   let migrate = Migration.migration
 
-  module Model = User_model.User
+  module Model = User_core.User
 
   let get_all connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -108,8 +108,7 @@ CREATE TABLE user_users (
     in
     Connection.find_opt request email |> Lwt_result.map_err Caqti_error.show
 
-  (* TODO separate upsert to insert/update *)
-  let upsert connection model =
+  let insert connection model =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     let request =
       Caqti_request.exec Model.t
@@ -130,20 +129,31 @@ CREATE TABLE user_users (
           ?,
           ?,
           ?
-        ) ON DUPLICATE KEY UPDATE
-        email = VALUES(email),
-        username = VALUES(username),
-        password = VALUES(password),
-        status = VALUES(status),
-        admin = VALUES(admin),
-        confirmed = VALUES(confirmed)
+        )
         |sql}
     in
     Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-  let insert conn ~user = upsert conn user
+  let update connection model =
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request =
+      Caqti_request.exec Model.t
+        {sql|
+        UPDATE user_users SET
+          email = $2,
+          username = $3,
+          password = $4,
+          status = $5,
+          admin = $6,
+          confirmed = $7
+        WHERE uuid = $1
+        |sql}
+    in
+    Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-  let update conn ~user = upsert conn user
+  let insert conn ~user = insert conn user
+
+  let update conn ~user = update conn user
 
   let clean connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -178,7 +188,7 @@ CREATE TABLE user_users (
 
   let migrate = Migration.migration
 
-  module Model = User_model.User
+  module Model = User_core.User
 
   let get_all connection =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in

@@ -1,3 +1,8 @@
-type t
+module Core = Message_core
+include Message_core.Message
 
-let set_error _ _ = failwith "TODO Message.set_error"
+type t = Message_core.Message.t
+
+let set = Message_service.set
+
+let rotate = Message_service.rotate

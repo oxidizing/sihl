@@ -12,10 +12,9 @@ let default_expiration_date now =
   | None ->
       let msg = "SESSION APP: Setting default expiration went wrong" in
       Logs.err (fun m -> m "%s" msg);
-      (* TODO get rid of exceptions *)
       failwith msg
 
-let create ?expire_date now =
+let make ?expire_date now =
   {
     key = Utils.Random.base64 ~bytes:10;
     data = Map.empty (module String);
