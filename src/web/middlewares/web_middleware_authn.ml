@@ -2,7 +2,7 @@ let ( let* ) = Lwt.bind
 
 let session () =
   let filter handler ctx =
-    let* user = Authn.authenticate ctx in
+    let* user = Authn.find_user_in_session ctx in
     match user with
     | Ok (Some user) ->
         let ctx = User.ctx_add_user user ctx in

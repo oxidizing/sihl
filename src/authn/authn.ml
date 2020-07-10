@@ -1,6 +1,8 @@
 module Sig = Authn_sig
 module Service = Authn_service
 
-let authenticate = Service.authenticate
+let find_user_in_session = Service.find_user_in_session
 
-let create_session_for = Service.create_session_for
+let authenticate_session = Service.authenticate_session
+
+let unauthenticate_session = Service.unauthenticate_sesssion

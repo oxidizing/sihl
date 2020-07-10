@@ -12,14 +12,16 @@ module AuthenticationService : Authn_sig.SERVICE = struct
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let authenticate ctx =
+  let find_user_in_session ctx =
     let* user_id = Session.get_value ctx ~key:"authn" in
     match user_id with
     | None -> Lwt_result.return None
     | Some user_id -> User.get ctx ~user_id
 
-  let create_session_for ctx user =
+  let authenticate_session ctx user =
     Session.set_value ctx ~key:"authn" ~value:(User.id user)
+
+  let unauthenticate_session ctx = Session.remove_value ctx ~key:"authn"
 end
 
 let service =
@@ -27,14 +29,20 @@ let service =
     (module AuthenticationService)
     (module AuthenticationService)
 
-let authenticate ctx =
+let find_user_in_session ctx =
   let (module Service : Authn_sig.SERVICE) =
     Core.Container.fetch_service_exn key
   in
-  Service.authenticate ctx
+  Service.find_user_in_session ctx
 
-let create_session_for ctx user =
+let authenticate_session ctx =
   let (module Service : Authn_sig.SERVICE) =
     Core.Container.fetch_service_exn key
   in
-  Service.create_session_for ctx user
+  Service.authenticate_session ctx
+
+let unauthenticate_sesssion ctx =
+  let (module Service : Authn_sig.SERVICE) =
+    Core.Container.fetch_service_exn key
+  in
+  Service.unauthenticate_session ctx

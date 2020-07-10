@@ -151,9 +151,13 @@ let register ctx ?(password_policy = User.default_password_policy) ?username
     User.validate_new_password ~password ~password_confirmation ~password_policy
   with
   | Error msg -> Lwt_result.return @@ Error msg
-  | Ok () ->
-      create_user ctx ~username ~email ~password
-      |> Lwt_result.map (fun user -> Ok user)
+  | Ok () -> (
+      let* user = get_by_email ctx ~email in
+      match user with
+      | None ->
+          create_user ctx ~username ~email ~password
+          |> Lwt_result.map (fun user -> Ok user)
+      | Some _ -> Lwt_result.return (Error "Invalid email address provided") )
 
 let login ctx ~email ~password =
   let* user = get_by_email ctx ~email in
