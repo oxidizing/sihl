@@ -2,7 +2,8 @@ open Alcotest_lwt
 
 let ( let* ) = Lwt.bind
 
-let suite = [ Test_common.Test.session; Test_common.Test.storage ]
+let suite =
+  [ Test_common.Test.session; Test_common.Test.storage; Test_common.Test.user ]
 
 let config =
   Sihl.Config.create ~development:[]
@@ -14,6 +15,7 @@ let services =
     Sihl.Data.Migration.Service.mariadb;
     Sihl.Storage.Service.mariadb;
     Sihl.Session.Service.mariadb;
+    Sihl.User.Service.mariadb;
   ]
 
 let () =

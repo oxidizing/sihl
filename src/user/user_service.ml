@@ -15,44 +15,38 @@ module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
 
   let get ctx ~user_id = UserRepo.get ~id:user_id |> Data.Db.query ctx
 
+  let get_exn ctx ~user ~msg =
+    let* user = get ctx ~user_id:(User.id user) in
+    match user with
+    | Some user -> Lwt_result.return user
+    | None ->
+        Logs.err (fun m -> m "%s" msg);
+        Lwt_result.fail msg
+
   let get_by_email ctx ~email =
     UserRepo.get_by_email ~email |> Data.Db.query ctx
 
   let get_all ctx = UserRepo.get_all |> Data.Db.query ctx
 
   let update_password ctx ?(password_policy = User.default_password_policy)
-      ~email ~old_password ~new_password ~new_password_confirmation () =
-    let* user =
-      get_by_email ctx ~email
-      |> Lwt.map Result.ok_or_failwith
-      |> Lwt.map (Result.of_option ~error:"User not found to update password")
-    in
-    let* () =
+      ~user ~old_password ~new_password ~new_password_confirmation () =
+    match
       User.validate_change_password user ~old_password ~new_password
         ~new_password_confirmation ~password_policy
-      |> Lwt.return
-    in
-    let updated_user = User.set_user_password user new_password in
-    let* () = UserRepo.update ~user:updated_user |> Data.Db.query ctx in
-    Lwt.return @@ Ok updated_user
+    with
+    | Ok () ->
+        let updated_user = User.set_user_password user new_password in
+        let* () = UserRepo.update ~user:updated_user |> Data.Db.query ctx in
+        Lwt_result.return @@ Ok updated_user
+    | Error msg -> Lwt_result.return @@ Error msg
 
-  let update_details ctx ~email ~username =
-    let* user =
-      get_by_email ctx ~email
-      |> Lwt.map Result.ok_or_failwith
-      |> Lwt.map (Result.of_option ~error:"User not found to update details")
-    in
+  let update_details ctx ~user ~email ~username =
     let updated_user = User.set_user_details user ~email ~username in
     let* () = UserRepo.update ~user:updated_user |> Data.Db.query ctx in
-    Lwt.return @@ Ok updated_user
+    get_exn ctx ~user ~msg:("Failed to update user with email " ^ email)
 
-  let set_password ctx ?(password_policy = User.default_password_policy)
-      ~user_id ~password ~password_confirmation () =
-    let* user =
-      get ctx ~user_id
-      |> Lwt.map Result.ok_or_failwith
-      |> Lwt.map (Result.of_option ~error:"User not found to set password")
-    in
+  let set_password ctx ?(password_policy = User.default_password_policy) ~user
+      ~password ~password_confirmation () =
     let* () =
       User.validate_new_password ~password ~password_confirmation
         ~password_policy

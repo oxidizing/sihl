@@ -2,7 +2,7 @@ open Alcotest_lwt
 
 let ( let* ) = Lwt.bind
 
-let suite = [ Test_common.Test.session ]
+let suite = [ Test_common.Test.session; Test_common.Test.user ]
 
 let config =
   Sihl.Config.create ~development:[]
@@ -10,7 +10,11 @@ let config =
     ~production:[]
 
 let services =
-  [ Sihl.Data.Migration.Service.postgresql; Sihl.Session.Service.postgresql ]
+  [
+    Sihl.Data.Migration.Service.postgresql;
+    Sihl.Session.Service.postgresql;
+    Sihl.User.Service.postgresql;
+  ]
 
 let () =
   Lwt_main.run

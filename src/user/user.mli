@@ -49,6 +49,8 @@ val make :
   unit ->
   t
 
+val alcotest : t Alcotest.testable
+
 val confirm : t -> t
 
 val set_user_password : t -> string -> t
@@ -102,15 +104,16 @@ val get_by_email :
 val update_password :
   Core.Ctx.t ->
   ?password_policy:(string -> (unit, string) Result.t) ->
-  email:string ->
+  user:t ->
   old_password:string ->
   new_password:string ->
   new_password_confirmation:string ->
   unit ->
-  (User_core.User.t, string) Result.t Lwt.t
+  ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
 
 val update_details :
   Core.Ctx.t ->
+  user:t ->
   email:string ->
   username:string option ->
   (User_core.User.t, string) Result.t Lwt.t
@@ -118,7 +121,7 @@ val update_details :
 val set_password :
   Core.Ctx.t ->
   ?password_policy:(string -> (unit, string) Result.t) ->
-  user_id:string ->
+  user:User_core.User.t ->
   password:string ->
   password_confirmation:string ->
   unit ->

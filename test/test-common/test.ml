@@ -15,3 +15,11 @@ let storage =
       test_case "upload file" `Quick Test_storage.fetch_uploaded_file;
       test_case "update file" `Quick Test_storage.update_uploaded_file;
     ] )
+
+let user =
+  ( "user",
+    [
+      test_case "update details" `Quick Test_user.update_details;
+      test_case "update password" `Quick Test_user.update_password;
+      test_case "update password fails" `Quick Test_user.update_password_fails;
+    ] )

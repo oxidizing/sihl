@@ -146,7 +146,7 @@ CREATE TABLE user_users (
           status = $5,
           admin = $6,
           confirmed = $7
-        WHERE uuid = $1
+        WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
     in
     Connection.exec request model |> Lwt_result.map_err Caqti_error.show
