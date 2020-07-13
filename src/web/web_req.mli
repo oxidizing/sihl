@@ -42,6 +42,11 @@ val query3 :
   string ->
   (string, string) result * (string, string) result * (string, string) result
 
+val urlencoded_list :
+  ?body:string ->
+  Core.Ctx.t ->
+  ((string * string list) list, string) Lwt_result.t
+
 val urlencoded :
   ?body:string -> Core.Ctx.t -> string -> (string, string) Lwt_result.t
 

@@ -28,10 +28,12 @@ let session = Web_middleware_session.m
 
 let authn_session = Web_middleware_authn.session
 
-let require_login = Web_middleware_authn.require_login
+let require_user = Web_middleware_authn.require_user
 
 let static = Web_middleware_static.m
 
 let cookie = Web_middleware_cookie.m
 
 let csrf = Web_middleware_csrf.m
+
+let create = Web_middleware_core.create

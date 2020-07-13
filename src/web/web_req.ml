@@ -78,6 +78,17 @@ let query3_opt ctx key1 key2 key3 =
 
 let query3 ctx key1 key2 key3 = (query ctx key1, query ctx key2, query ctx key3)
 
+let urlencoded_list ?body ctx =
+  let req = get_req ctx in
+  let* body =
+    match body with
+    | Some body -> Lwt.return @@ Ok body
+    | None ->
+        req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+        |> Lwt.map Result.return
+  in
+  body |> Uri.pct_decode |> Uri.query_of_encoded |> Result.return |> Lwt.return
+
 let urlencoded ?body ctx key =
   let req = get_req ctx in
   (* we need to be able to pass in the body

@@ -28,7 +28,7 @@ val session : ?cookie_key:string -> unit -> t
 
 val authn_session : unit -> t
 
-val require_login : path:string -> t
+val require_user : login_path_f:(unit -> string) -> t
 
 val static :
   local_path:string ->
@@ -41,3 +41,5 @@ val static :
 val cookie : unit -> t
 
 val csrf : unit -> t
+
+val create : name:string -> (Web_route.handler -> Web_route.handler) -> t
