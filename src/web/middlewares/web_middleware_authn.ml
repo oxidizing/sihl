@@ -14,6 +14,15 @@ let session () =
   in
   Web_middleware_core.create ~name:"authn_session" filter
 
+let require_login ~path =
+  let filter handler ctx =
+    let user = User.find_user ctx in
+    match user with
+    | Some _ -> handler ctx
+    | None -> Web_res.redirect path |> Lwt.return
+  in
+  Web_middleware_core.create ~name:"authn_require_login" filter
+
 (* let token () =
  *   let filter handler req =
  *     let ctx = Http.ctx req in

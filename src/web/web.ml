@@ -5,3 +5,4 @@ module Route = Web_route
 module Template = Web_template
 module Middleware = Web_middleware
 module Server = Web_server
+module Utils = Web_utils

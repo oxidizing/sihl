@@ -13,6 +13,13 @@ let is_testing () =
   |> Option.value ~default:"development"
   |> String.equal "test"
 
+let read_string_default ~default key =
+  let value =
+    Option.first_some (Sys.getenv key)
+      (Map.find (Config_core.Internal.get ()) key)
+  in
+  Option.value value ~default
+
 let read_string ?default key =
   let value =
     Option.first_some (Sys.getenv key)

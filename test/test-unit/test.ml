@@ -10,6 +10,7 @@ let suite =
         test_case "require tuple url encoded body" `Quick
           Test_http.test_require_tuple_url_encoded_body;
       ] );
+    ("web", [ test_case "prefix path" `Quick Test_web.externalize_link ]);
     ( "query language",
       [
         test_case "to string limit offset" `Quick Test_ql.to_string_limit_offset;
