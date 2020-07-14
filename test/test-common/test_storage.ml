@@ -12,7 +12,7 @@ let fetch_uploaded_file _ () =
       ~mime:"application/pdf"
   in
   let* _ =
-    Sihl.Storage.upload_base64 ctx ~file ~base64:"filecontentinbase64"
+    Sihl.Storage.upload_base64 ctx ~file ~base64:"ZmlsZWNvbnRlbnQ="
     |> Lwt.map Result.ok_or_failwith
   in
   let* uploaded_file =
@@ -29,7 +29,7 @@ let fetch_uploaded_file _ () =
     |> Lwt.map (fun file ->
            Option.value_exn file ~message:"No uploaded blob found")
   in
-  Alcotest.(check string "has same blob" "filecontentinbase64" actual_blob);
+  Alcotest.(check string "has same blob" "ZmlsZWNvbnRlbnQ=" actual_blob);
   Lwt.return ()
 
 let update_uploaded_file _ () =
@@ -40,7 +40,7 @@ let update_uploaded_file _ () =
       ~mime:"application/pdf"
   in
   let* stored_file =
-    Sihl.Storage.upload_base64 ctx ~file ~base64:"filecontentinbase64"
+    Sihl.Storage.upload_base64 ctx ~file ~base64:"ZmlsZWNvbnRlbnQ="
     |> Lwt.map Result.ok_or_failwith
   in
 
@@ -48,7 +48,7 @@ let update_uploaded_file _ () =
     Sihl.Storage.StoredFile.set_filename "assessment.pdf" stored_file
   in
   let* actual_file =
-    Sihl.Storage.update_base64 ctx ~file:updated_file ~base64:"newcontent"
+    Sihl.Storage.update_base64 ctx ~file:updated_file ~base64:"bmV3Y29udGVudA=="
     |> Lwt.map Result.ok_or_failwith
   in
   Alcotest.(
@@ -61,5 +61,5 @@ let update_uploaded_file _ () =
     |> Lwt.map (fun file ->
            Option.value_exn file ~message:"No uploaded blob found")
   in
-  Alcotest.(check string "has updated blob" "newcontent" actual_blob);
+  Alcotest.(check string "has updated blob" "bmV3Y29udGVudA==" actual_blob);
   Lwt.return ()

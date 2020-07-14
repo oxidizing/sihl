@@ -66,7 +66,7 @@
   (ppx_sexp_conv (>= 0.13.0))
 
   ;; Test
-  (alcotest (>= 1.1.0))
+  (alcotest (>= 1.2.0))
 
   ;; Dev dependencies
   (utop :dev)
@@ -76,7 +76,7 @@
   (tuareg :dev)
 
   ;; Test dependencies
-  (alcotest (and (>= 1.1.0) :with-test))
-  (alcotest-lwt (and (>= 1.1.0) :with-test))
+  (alcotest (and (>= 1.2.0) :with-test))
+  (alcotest-lwt (and (>= 1.2.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
 ))

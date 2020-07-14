@@ -19,11 +19,13 @@ module Make (MigrationService : Data.Migration.Sig.SERVICE) (StorageRepo : REPO)
   let get_file ctx ~id = StorageRepo.get_file ~id |> Data.Db.query ctx
 
   let upload_base64 ctx ~file ~base64 =
-    let ( let* ) = Lwt_result.bind in
     let blob_id = Data.Id.random () |> Data.Id.to_string in
-    let* () =
-      StorageRepo.insert_blob ~id:blob_id ~blob:base64 |> Data.Db.query ctx
+    let* blob =
+      match Base64.decode base64 with
+      | Error (`Msg msg) -> Lwt_result.fail msg
+      | Ok blob -> Lwt_result.return blob
     in
+    let* () = StorageRepo.insert_blob ~id:blob_id ~blob |> Data.Db.query ctx in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
     let* () = StorageRepo.insert_file ~file:stored_file |> Data.Db.query ctx in
     Lwt.return @@ Ok stored_file
@@ -31,15 +33,22 @@ module Make (MigrationService : Data.Migration.Sig.SERVICE) (StorageRepo : REPO)
   let update_base64 ctx ~file ~base64 =
     let ( let* ) = Lwt_result.bind in
     let blob_id = StoredFile.blob file in
-    let* () =
-      StorageRepo.update_blob ~id:blob_id ~blob:base64 |> Data.Db.query ctx
+    let* blob =
+      match Base64.decode base64 with
+      | Error (`Msg msg) -> Lwt_result.fail msg
+      | Ok blob -> Lwt_result.return blob
     in
+    let* () = StorageRepo.update_blob ~id:blob_id ~blob |> Data.Db.query ctx in
     let* () = StorageRepo.update_file ~file |> Data.Db.query ctx in
     Lwt.return @@ Ok file
 
   let get_data_base64 ctx ~file =
     let blob_id = StoredFile.blob file in
-    StorageRepo.get_blob ~id:blob_id |> Data.Db.query ctx
+    let* blob = StorageRepo.get_blob ~id:blob_id |> Data.Db.query ctx in
+    match Option.map Base64.encode blob with
+    | Some (Error (`Msg msg)) -> Lwt_result.fail msg
+    | Some (Ok blob) -> Lwt_result.return @@ Some blob
+    | None -> Lwt_result.return None
 end
 
 module StorageRepoMariaDb = struct
@@ -121,7 +130,7 @@ WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
       Caqti_request.find_opt Caqti_type.string Caqti_type.string
         {sql|
 SELECT
-  TO_BASE64(asset_data)
+  asset_data
 FROM storage_blobs
 WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
@@ -139,7 +148,7 @@ INSERT INTO storage_blobs (
   asset_data
 ) VALUES (
   UNHEX(REPLACE(?, '-', '')),
-  FROM_BASE64(?)
+  ?
 )
 |sql}
     in
@@ -152,7 +161,7 @@ INSERT INTO storage_blobs (
         Caqti_type.(tup2 string string)
         {sql|
 UPDATE storage_blobs SET
-  asset_data = FROM_BASE64($2)
+  asset_data = $2
 WHERE
   storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
