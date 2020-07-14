@@ -21,6 +21,10 @@ let get_req ctx =
   |> Result.of_option ~error:"No HTTP request found in context"
   |> Result.ok_or_failwith
 
+module UrlEncoded = struct
+  type t = (string * string list) list [@@deriving eq, show, yojson]
+end
+
 let is_get ctx =
   let req = get_req ctx in
   match Opium_kernel.Rock.Request.meth req with `GET -> true | _ -> false
@@ -66,7 +70,7 @@ let query_opt ctx key =
 
 let query ctx key =
   match query_opt ctx key with
-  | None -> Error (Printf.sprintf "Please provide a key %s" key)
+  | None -> Error (Printf.sprintf "Please provide a key '%s'" key)
   | Some value -> Ok value
 
 let query2_opt ctx key1 key2 = (query_opt ctx key1, query_opt ctx key2)
@@ -102,7 +106,8 @@ let urlencoded ?body ctx key =
         |> Lwt.map Result.return
   in
   match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
-  | None -> Lwt.return @@ Error (Printf.sprintf "Please provide a %s." key)
+  | None ->
+      Lwt.return @@ Error (Printf.sprintf "Please provide params '%s.'" key)
   | Some value -> Lwt.return @@ Ok value
 
 let urlencoded2 ctx key1 key2 =

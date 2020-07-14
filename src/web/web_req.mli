@@ -10,6 +10,20 @@ val require_authorization_header :
 
 val cookie_data : Core.Ctx.t -> key:string -> string option
 
+module UrlEncoded : sig
+  type t = (string * string list) list
+
+  val equal : t -> t -> bool
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+
+  val to_yojson : t -> Utils_json.t
+
+  val of_yojson : Utils_json.t -> t Ppx_deriving_yojson_runtime.error_or
+end
+
 val is_get : Core.Ctx.t -> bool
 
 val get_uri : Core.Ctx.t -> Uri.t
@@ -43,9 +57,7 @@ val query3 :
   (string, string) result * (string, string) result * (string, string) result
 
 val urlencoded_list :
-  ?body:string ->
-  Core.Ctx.t ->
-  ((string * string list) list, string) Lwt_result.t
+  ?body:string -> Core.Ctx.t -> (UrlEncoded.t, string) Lwt_result.t
 
 val urlencoded :
   ?body:string -> Core.Ctx.t -> string -> (string, string) Lwt_result.t
