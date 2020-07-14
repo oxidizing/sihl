@@ -6,6 +6,8 @@ val equal : t -> t -> bool
 
 val html : t
 
+val json : t
+
 val redirect : string -> t
 
 val set_body : string -> t -> t

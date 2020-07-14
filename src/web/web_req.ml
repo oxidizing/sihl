@@ -58,6 +58,12 @@ let get_header ctx key =
   let req = get_req ctx in
   Cohttp.Header.get (Opium.Std.Request.headers req) key
 
+let parse_token ctx =
+  (* TODO make this more robust *)
+  get_header ctx "authorization"
+  |> Option.map ~f:(String.split ~on:' ')
+  |> Option.bind ~f:List.tl |> Option.bind ~f:List.hd
+
 let find_in_query key query =
   query
   |> List.find ~f:(fun (k, _) -> String.equal k key)

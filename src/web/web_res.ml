@@ -32,6 +32,17 @@ let html =
     status = 200;
   }
 
+let json =
+  {
+    content_type = Json;
+    redirect = None;
+    body = None;
+    headers = [];
+    opium_res = None;
+    cookies = [];
+    status = 200;
+  }
+
 let redirect path =
   {
     content_type = Html;

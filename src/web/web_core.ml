@@ -1,6 +1,8 @@
-type content_type = Html [@@deriving show, eq]
+type content_type = Html | Json [@@deriving show, eq]
 
-let show_content_type = function Html -> "text/html"
+let show_content_type = function
+  | Html -> "text/html"
+  | Json -> "application/json"
 
 type header = string * string [@@deriving show, eq]
 

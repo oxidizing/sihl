@@ -4,7 +4,7 @@ open Storage_model
 let ( let* ) = Lwt_result.bind
 
 let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "storage.service"
+  Core.Container.create_key "storage"
 
 module Make (MigrationService : Data.Migration.Sig.SERVICE) (StorageRepo : REPO) :
   SERVICE = struct
@@ -121,7 +121,7 @@ WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
       Caqti_request.find_opt Caqti_type.string Caqti_type.string
         {sql|
 SELECT
-  asset_data
+  TO_BASE64(asset_data)
 FROM storage_blobs
 WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
@@ -139,7 +139,7 @@ INSERT INTO storage_blobs (
   asset_data
 ) VALUES (
   UNHEX(REPLACE(?, '-', '')),
-  ?
+  FROM_BASE64(?)
 )
 |sql}
     in
@@ -152,7 +152,7 @@ INSERT INTO storage_blobs (
         Caqti_type.(tup2 string string)
         {sql|
 UPDATE storage_blobs SET
-  asset_data = $2
+  asset_data = FROM_BASE64($2)
 WHERE
   storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}

@@ -10,6 +10,8 @@ val require_authorization_header :
 
 val cookie_data : Core.Ctx.t -> key:string -> string option
 
+val parse_token : Core.Ctx.t -> string option
+
 module UrlEncoded : sig
   type t = (string * string list) list
 
