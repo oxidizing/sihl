@@ -2,8 +2,7 @@ open Base
 
 module User = struct
   (* TODO add Status.Active and Status.Inactive *)
-  (* TODO add roles ADT with user, staff and superuser *)
-  (* TODO Ptime.t created_at *)
+  (* TODO roles that are managed by a role service *)
 
   type t = {
     id : string;

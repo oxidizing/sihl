@@ -2,7 +2,9 @@ module type REPOSITORY = sig
   include Data.Repo.Sig.REPO
 
   val get_all :
-    Data_db_core.connection -> (User_core.User.t list, string) Result.t Lwt.t
+    Data_db_core.connection ->
+    query:Data.Ql.t ->
+    (User_core.User.t list * Data.Repo.Meta.t, string) Result.t Lwt.t
 
   val get :
     Data_db_core.connection ->
@@ -28,7 +30,10 @@ end
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val get_all : Core.Ctx.t -> (User_core.User.t list, string) Result.t Lwt.t
+  val get_all :
+    Core.Ctx.t ->
+    query:Data.Ql.t ->
+    (User_core.User.t list * Data.Repo.Meta.t, string) Result.t Lwt.t
 
   val get :
     Core.Ctx.t ->

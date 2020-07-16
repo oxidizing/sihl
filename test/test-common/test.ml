@@ -22,4 +22,5 @@ let user =
       test_case "update details" `Quick Test_user.update_details;
       test_case "update password" `Quick Test_user.update_password;
       test_case "update password fails" `Quick Test_user.update_password_fails;
+      test_case "filter users by email" `Quick Test_user.filter_users_by_email;
     ] )

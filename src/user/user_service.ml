@@ -26,7 +26,7 @@ module Make (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
   let get_by_email ctx ~email =
     UserRepo.get_by_email ~email |> Data.Db.query ctx
 
-  let get_all ctx = UserRepo.get_all |> Data.Db.query ctx
+  let get_all ctx ~query = UserRepo.get_all ~query |> Data.Db.query ctx
 
   let update_password ctx ?(password_policy = User.default_password_policy)
       ~user ~old_password ~new_password ~new_password_confirmation () =

@@ -1,3 +1,13 @@
+let ( let* ) = Lwt_result.bind
+
+module Dynparam = struct
+  type t = Pack : 'a Caqti_type.t * 'a -> t
+
+  let empty = Pack (Caqti_type.unit, ())
+
+  let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
+end
+
 module MariaDb : User_sig.REPOSITORY = struct
   module Migration = struct
     let fix_collation =
@@ -34,12 +44,24 @@ CREATE TABLE user_users (
 
   module Model = User_core.User
 
-  let get_all connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request =
-      Caqti_request.find Caqti_type.unit Model.t
+  let get_all connection ~query =
+    let filter_whitelist = [ "email"; "username"; "status"; "admin" ] in
+    let filter_fragment, sort_fragment, pagination_fragment, values =
+      Data.Ql.to_sql_fragments filter_whitelist query
+    in
+    let rec create_param values param =
+      match values with
+      | [] -> param
+      | value :: values ->
+          create_param values (Dynparam.add Caqti_type.string value param)
+    in
+    let param = create_param values Dynparam.empty in
+    let (Dynparam.Pack (pt, pv)) = param in
+
+    let query =
+      Printf.sprintf
         {sql|
-        SELECT
+        SELECT SQL_CALC_FOUND_ROWS
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
            SUBSTR(HEX(uuid), 9, 4), '-',
@@ -55,9 +77,27 @@ CREATE TABLE user_users (
           confirmed,
           created_at
         FROM user_users
+        %s
+        %s
+        %s
            |sql}
+        filter_fragment sort_fragment pagination_fragment
     in
-    Connection.collect_list request () |> Lwt_result.map_err Caqti_error.show
+
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request = Caqti_request.collect ~oneshot:true pt Model.t query in
+    let* users =
+      Connection.collect_list request pv |> Lwt_result.map_err Caqti_error.show
+    in
+    let request =
+      Caqti_request.find Caqti_type.unit Caqti_type.int "SELECT FOUND_ROWS()"
+    in
+    let* meta =
+      Connection.find request ()
+      |> Lwt_result.map_err Caqti_error.show
+      |> Lwt_result.map (fun total -> Data.Repo.Meta.make ~total)
+    in
+    Lwt_result.return (users, meta)
 
   let get connection ~id =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -196,10 +236,22 @@ CREATE TABLE user_users (
 
   module Model = User_core.User
 
-  let get_all connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request =
-      Caqti_request.collect Caqti_type.unit Model.t
+  let get_all connection ~query =
+    let filter_whitelist = [ "email"; "username"; "status"; "admin" ] in
+    let filter_fragment, sort_fragment, pagination_fragment, values =
+      Data.Ql.to_sql_fragments filter_whitelist query
+    in
+    let rec create_param values param =
+      match values with
+      | [] -> param
+      | value :: values ->
+          create_param values (Dynparam.add Caqti_type.string value param)
+    in
+    let param = create_param values Dynparam.empty in
+    let (Dynparam.Pack (pt, pv)) = param in
+
+    let query =
+      Printf.sprintf
         {sql|
         SELECT
           uuid as id,
@@ -211,9 +263,19 @@ CREATE TABLE user_users (
           confirmed,
           created_at
         FROM user_users
+        %s
+        %s
+        %s
         |sql}
+        filter_fragment sort_fragment pagination_fragment
     in
-    Connection.collect_list request () |> Lwt_result.map_err Caqti_error.show
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let request = Caqti_request.collect ~oneshot:true pt Model.t query in
+    let* users =
+      Connection.collect_list request pv |> Lwt_result.map_err Caqti_error.show
+    in
+    (* TODO Find out best way to get total rows for that query without limit *)
+    Lwt_result.return (users, Data.Repo.Meta.make ~total:(List.length users))
 
   let get connection ~id =
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in

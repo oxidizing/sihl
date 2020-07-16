@@ -66,3 +66,30 @@ let update_password_fails _ () =
       "Can login with updated password"
       (Error "Invalid email or password provided") user);
   Lwt.return ()
+
+let filter_users_by_email _ () =
+  let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
+  let* () = Sihl.Data.Repo.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+  let* user1 =
+    Sihl.Test.seed ctx
+      (Sihl.User.Seed.user ~email:"user1@example.com" ~password:"123123123")
+  in
+  let* _ =
+    Sihl.Test.seed ctx
+      (Sihl.User.Seed.user ~email:"user2@example.com" ~password:"123123123")
+  in
+  let* _ =
+    Sihl.Test.seed ctx
+      (Sihl.User.Seed.user ~email:"user3@example.com" ~password:"123123123")
+  in
+  let filter =
+    Sihl.Data.Ql.Filter.(C { key = "email"; value = "%user1%"; op = Like })
+  in
+  let query = Sihl.Data.Ql.(empty |> set_limit 10 |> set_filter filter) in
+  let* actual_users, meta =
+    Sihl.User.get_all ctx ~query |> Lwt.map Result.ok_or_failwith
+  in
+  Alcotest.(check int "has correct meta" 1 (Sihl.Data.Repo.Meta.total meta));
+  Alcotest.(
+    check (list Sihl.User.alcotest) "has one user" actual_users [ user1 ]);
+  Lwt.return ()

@@ -90,7 +90,10 @@ val system : t
 
 val t : t Caqti_type.t
 
-val get_all : Core.Ctx.t -> (User_core.User.t list, string) Result.t Lwt.t
+val get_all :
+  Core.Ctx.t ->
+  query:Data.Ql.t ->
+  (User_core.User.t list * Data.Repo.Meta.t, string) Result.t Lwt.t
 
 val get :
   Core.Ctx.t ->
