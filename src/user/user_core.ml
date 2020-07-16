@@ -17,7 +17,9 @@ module User = struct
         [@to_yojson Utils.Time.ptime_to_yojson]
         [@of_yojson Utils.Time.ptime_of_yojson]
   }
-  [@@deriving fields, yojson, show, eq, make]
+  [@@deriving fields, yojson, show, make]
+
+  let equal u1 u2 = String.equal u1.id u2.id
 
   let alcotest = Alcotest.testable pp equal
 
