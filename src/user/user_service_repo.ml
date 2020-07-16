@@ -52,7 +52,8 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         FROM user_users
            |sql}
     in
@@ -76,7 +77,8 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         FROM user_users
         WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
@@ -101,7 +103,8 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         FROM user_users
         WHERE user_users.email = ?
         |sql}
@@ -120,15 +123,17 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         ) VALUES (
-          UNHEX(REPLACE(?, '-', '')),
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
+          UNHEX(REPLACE($1, '-', '')),
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8
         )
         |sql}
     in
@@ -145,7 +150,8 @@ CREATE TABLE user_users (
           password = $4,
           status = $5,
           admin = $6,
-          confirmed = $7
+          confirmed = $7,
+          created_at = $8
         WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
     in
@@ -202,7 +208,8 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         FROM user_users
         |sql}
     in
@@ -220,7 +227,8 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         FROM user_users
         WHERE user_users.uuid = ?::uuid
         |sql}
@@ -239,7 +247,8 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         FROM user_users
         WHERE user_users.email = ?
         |sql}
@@ -258,15 +267,17 @@ CREATE TABLE user_users (
           password,
           status,
           admin,
-          confirmed
+          confirmed,
+          created_at
         ) VALUES (
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8
         )
         |sql}
     in
@@ -284,7 +295,8 @@ CREATE TABLE user_users (
           password = $4,
           status = $5,
           admin = $6,
-          confirmed = $7
+          confirmed = $7,
+          created_at = $8
         WHERE user_users.uuid = $1
         |sql}
     in

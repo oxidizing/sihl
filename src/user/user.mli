@@ -10,10 +10,6 @@ type t = User_core.User.t
 
 val ctx_add_user : t -> Core.Ctx.t -> Core.Ctx.t
 
-val t_of_sexp : Sexp.t -> t
-
-val sexp_of_t : t -> Sexp.t
-
 val confirmed : t -> bool
 
 val admin : t -> bool
@@ -46,6 +42,7 @@ val make :
   status:string ->
   admin:bool ->
   confirmed:bool ->
+  created_at:Ptime.t ->
   unit ->
   t
 

@@ -13,8 +13,11 @@ module User = struct
     status : string;
     admin : bool;
     confirmed : bool;
+    created_at : Ptime.t;
+        [@to_yojson Utils.Time.ptime_to_yojson]
+        [@of_yojson Utils.Time.ptime_of_yojson]
   }
-  [@@deriving sexp, fields, yojson, show, eq, make]
+  [@@deriving fields, yojson, show, eq, make]
 
   let alcotest = Alcotest.testable pp equal
 
@@ -72,6 +75,7 @@ module User = struct
       admin;
       confirmed;
       status = "active";
+      created_at = Ptime_clock.now ();
     }
 
   let system =
@@ -83,18 +87,23 @@ module User = struct
       Ok
         ( m.id,
           ( m.email,
-            (m.username, (m.password, (m.status, (m.admin, m.confirmed)))) ) )
+            ( m.username,
+              (m.password, (m.status, (m.admin, (m.confirmed, m.created_at))))
+            ) ) )
     in
     let decode
-        (id, (email, (username, (password, (status, (admin, confirmed)))))) =
-      Ok { id; email; username; password; status; admin; confirmed }
+        ( id,
+          ( email,
+            (username, (password, (status, (admin, (confirmed, created_at)))))
+          ) ) =
+      Ok { id; email; username; password; status; admin; confirmed; created_at }
     in
     Caqti_type.(
       custom ~encode ~decode
         (tup2 string
            (tup2 string
               (tup2 (option string)
-                 (tup2 string (tup2 string (tup2 bool bool)))))))
+                 (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
 end
 
 (* module Email = struct
