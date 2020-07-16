@@ -1,19 +1,20 @@
 open Base
 
 module Filter = struct
-  type op = Eq | Like [@@deriving show, eq, sexp]
+  type op = Eq | Like [@@deriving show, eq, sexp, yojson]
 
   type criterion = { key : string; value : string; op : op }
-  [@@deriving show, eq, sexp]
+  [@@deriving show, eq, sexp, yojson]
 
   type t = And of t list | Or of t list | C of criterion
-  [@@deriving show, eq, sexp]
+  [@@deriving show, eq, sexp, yojson]
 end
 
 module Sort = struct
-  type criterion = Asc of string | Desc of string [@@deriving show, eq, sexp]
+  type criterion = Asc of string | Desc of string
+  [@@deriving show, eq, sexp, yojson]
 
-  type t = criterion list [@@deriving show, eq, sexp]
+  type t = criterion list [@@deriving show, eq, sexp, yojson]
 end
 
 type t = {
@@ -22,7 +23,7 @@ type t = {
   limit : int option; [@sexp.option]
   offset : int option; [@sexp.option]
 }
-[@@deriving show, eq, sexp]
+[@@deriving show, eq, sexp, yojson]
 
 module Sql = struct
   let limit limit = ("LIMIT ?", [ Int.to_string limit ])

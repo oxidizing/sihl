@@ -1,25 +1,13 @@
 module PartialCollection : sig
-  type page
-
-  val limit : page -> int
-
-  val offset : page -> int
-
-  val pp_page : Format.formatter -> page -> unit
-
-  val show_page : page -> string
-
-  val equal_page : page -> page -> bool
-
   type view
 
-  val last : view -> page option
+  val last : view -> Data_ql.t option
 
-  val next : view -> page option
+  val next : view -> Data_ql.t option
 
-  val previous : view -> page option
+  val previous : view -> Data_ql.t option
 
-  val first : view -> page option
+  val first : view -> Data_ql.t option
 
   val pp_view : Format.formatter -> view -> unit
 
