@@ -1,7 +1,7 @@
 open Base
 
 module PartialCollection = struct
-  type view = {
+  type controls = {
     first : Data_ql.t option;
     previous : Data_ql.t option;
     next : Data_ql.t option;
@@ -9,10 +9,10 @@ module PartialCollection = struct
   }
   [@@deriving show, eq, fields, yojson]
 
-  type 'a t = { id : string; member : 'a list; total_items : int; view : view }
+  type 'a t = { member : 'a list; total_items : int; controls : controls }
   [@@deriving show, eq, fields, yojson]
 
-  let view_of_pagination query total_items =
+  let controls_of_pagination query total_items =
     let limit = Data_ql.limit query in
     let offset = Data_ql.offset query in
     let limit = Option.value ~default:25 limit in
@@ -37,8 +37,8 @@ module PartialCollection = struct
     in
     { first; previous; next; last }
 
-  let create id ~query ~meta items =
+  let create ~query ~meta items =
     let total_items = Data_repo.Meta.total meta in
-    let view = view_of_pagination query total_items in
-    { id; member = items; total_items; view }
+    let controls = controls_of_pagination query total_items in
+    { member = items; total_items; controls }
 end
