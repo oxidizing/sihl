@@ -1,5 +1,5 @@
 module Sig = App_sig
 
-val kernel_services : Core.Container.binding list
-
-val start : (module Sig.APP) -> unit
+module Make : functor (Kernel : App_sig.KERNEL) (App : App_sig.APP) -> sig
+  val start : unit -> unit
+end

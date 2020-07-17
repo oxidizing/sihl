@@ -1,3 +1,4 @@
+module Sig = Schedule_sig
 module Service = Schedule_service
 
 type t = Schedule_core.t

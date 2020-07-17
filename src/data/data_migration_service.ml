@@ -168,6 +168,8 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
     in
     let ctx = Data_db.ctx_with_pool () in
     run migrations ctx
+
+  let run_all ctx = Lwt_result.bind (get_migrations ctx) execute
 end
 
 module RepoMariaDb = struct

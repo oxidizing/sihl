@@ -1,5 +1,6 @@
 open Base
 module Service = Config_service
+module Sig = Config_sig
 include Config_core.Config
 
 let register_config _ config =

@@ -1,3 +1,4 @@
+module Sig = Cmd_sig
 module Service = Cmd_service
 include Cmd_core
 

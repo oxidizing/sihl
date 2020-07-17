@@ -1,3 +1,4 @@
+module Sig = Web_server_sig
 module Service = Web_server_service
 
 type routes = Web_server_core.routes
