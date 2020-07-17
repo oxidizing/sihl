@@ -27,6 +27,3 @@ module type SERVICE = sig
 
   val run_all : Core.Ctx.t -> (unit, string) Lwt_result.t
 end
-
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "migration.service"

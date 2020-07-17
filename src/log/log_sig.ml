@@ -44,5 +44,3 @@ module type SERVICE = sig
 
   val debug : ?src:src -> 'a log
 end
-
-let key : (module SERVICE) Core.Container.key = Core.Container.create_key "log"

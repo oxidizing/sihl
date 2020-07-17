@@ -2,7 +2,7 @@ open Base
 open Data_db_core
 
 module Service : Data_db_sig.SERVICE = struct
-  let on_bind _ = Lwt_result.return ()
+  let on_init _ = Lwt_result.return ()
 
   let on_start _ = Lwt_result.return ()
 
@@ -151,6 +151,3 @@ module Service : Data_db_sig.SERVICE = struct
     in
     Connection.exec request check |> Lwt_result.map_err Caqti_error.show
 end
-
-let instance =
-  Core.Container.create_binding Data_db_sig.key (module Service) (module Service)

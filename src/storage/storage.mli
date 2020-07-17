@@ -1,3 +1,5 @@
+module Sig = Storage_sig
+
 module File : sig
   type t
 
@@ -58,28 +60,4 @@ module StoredFile : sig
   val set_filesize : int -> t -> t
 
   val set_filename : string -> t -> t
-end
-
-val upload_base64 :
-  Core.Ctx.t ->
-  file:File.t ->
-  base64:string ->
-  (StoredFile.t, string) Lwt_result.t
-
-val get_file :
-  Core.Ctx.t -> id:string -> (StoredFile.t option, string) Lwt_result.t
-
-val update_base64 :
-  Core.Ctx.t ->
-  file:StoredFile.t ->
-  base64:string ->
-  (StoredFile.t, string) Lwt_result.t
-
-val get_data_base64 :
-  Core.Ctx.t -> file:StoredFile.t -> (string option, string) Lwt_result.t
-
-module Sig = Storage_sig
-
-module Service : sig
-  val mariadb : Core.Container.binding
 end

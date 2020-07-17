@@ -4,10 +4,11 @@ let ( let* ) = Lwt_result.bind
 
 module Make
     (MigrationService : Data.Migration.Sig.SERVICE)
-    (SessionRepo : Session_sig.REPO) : Session_sig.SERVICE = struct
-  let on_bind ctx =
+    (SessionRepo : Session_sig.REPO)
+    (RepoService : Data.Repo.Sig.SERVICE) : Session_sig.SERVICE = struct
+  let on_init ctx =
     let* () = MigrationService.register ctx (SessionRepo.migrate ()) in
-    Data.Repo.register_cleaner ctx SessionRepo.clean
+    RepoService.register_cleaner ctx SessionRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -61,6 +62,15 @@ module Make
 
   let insert_session ctx ~session =
     SessionRepo.insert session |> Data.Db.query ctx
+
+  let create ctx data =
+    let empty_session = Session_core.make (Ptime_clock.now ()) in
+    let session =
+      List.fold data ~init:empty_session ~f:(fun session (key, value) ->
+          Session_core.set ~key ~value session)
+    in
+    let* () = insert_session ctx ~session in
+    Lwt_result.return session
 end
 
 module SessionRepoMariaDb = struct
@@ -310,94 +320,3 @@ CREATE TABLE session_sessions (
 
   let clean connection = Sql.Session.clean connection
 end
-
-module MariaDb = Make (Data.Migration.Service.MariaDb) (SessionRepoMariaDb)
-
-let mariadb =
-  Core.Container.create_binding Session_sig.key (module MariaDb) (module MariaDb)
-
-module PostgreSql =
-  Make (Data.Migration.Service.PostgreSql) (SessionRepoPostgreSql)
-
-let postgresql =
-  Core.Container.create_binding Session_sig.key
-    (module PostgreSql)
-    (module PostgreSql)
-
-let set_value ctx ~key ~value =
-  Logs.debug (fun m -> m "three %s" (Core.Ctx.id ctx));
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) ->
-      Service.set_value ~key ~value ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let remove_value ctx ~key =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.remove_value ~key ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let get_value ctx ~key =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.get_value ~key ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let get_session ctx ~key =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.get_session ctx ~key
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let get_all_sessions ctx =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.get_all_sessions ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let insert_session ctx ~session =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) ->
-      Service.insert_session ctx ~session
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let create ctx data =
-  let empty_session = Session_core.make (Ptime_clock.now ()) in
-  let session =
-    List.fold data ~init:empty_session ~f:(fun session (key, value) ->
-        Session_core.set ~key ~value session)
-  in
-  let* () = insert_session ctx ~session in
-  Lwt_result.return session

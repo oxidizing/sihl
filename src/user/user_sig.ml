@@ -84,7 +84,20 @@ module type SERVICE = sig
     password:string ->
     username:string option ->
     (User_core.User.t, string) Result.t Lwt.t
-end
 
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "user.service"
+  val register :
+    Core_ctx.t ->
+    ?password_policy:(string -> (unit, string) result) ->
+    ?username:string ->
+    email:string ->
+    password:string ->
+    password_confirmation:string ->
+    unit ->
+    ((User_core.User.t, string) result, string) Lwt_result.t
+
+  val login :
+    Core_ctx.t ->
+    email:string ->
+    password:string ->
+    ((User_core.User.t, string) result, string) Lwt_result.t
+end

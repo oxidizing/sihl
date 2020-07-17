@@ -6,6 +6,3 @@ module type SERVICE = sig
     Web_server_core.stacked_routes ->
     (unit, string) Result.t Lwt.t
 end
-
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "database"

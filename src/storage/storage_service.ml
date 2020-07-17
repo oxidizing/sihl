@@ -3,14 +3,13 @@ open Storage_model
 
 let ( let* ) = Lwt_result.bind
 
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "storage"
-
-module Make (MigrationService : Data.Migration.Sig.SERVICE) (StorageRepo : REPO) :
-  SERVICE = struct
-  let on_bind ctx =
+module Make
+    (MigrationService : Data.Migration.Sig.SERVICE)
+    (RepoService : Data.Repo.Sig.SERVICE)
+    (StorageRepo : REPO) : SERVICE = struct
+  let on_init ctx =
     let* () = MigrationService.register ctx (StorageRepo.migrate ()) in
-    Data.Repo.register_cleaner ctx StorageRepo.clean
+    RepoService.register_cleaner ctx StorageRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -234,7 +233,3 @@ CREATE TABLE IF NOT EXISTS storage_handles (
 end
 
 (** TODO Implement postgres repo **)
-
-module MariaDb = Make (Data.Migration.Service.MariaDb) (StorageRepoMariaDb)
-
-let mariadb = Core.Container.create_binding key (module MariaDb) (module MariaDb)

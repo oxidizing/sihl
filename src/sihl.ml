@@ -5,7 +5,6 @@ module Log = Log
 module Data = Data
 module Web = Web
 module Cmd = Cmd
-module Admin = Admin
 module Schedule = Schedule
 module Authz = Authz
 module App = App

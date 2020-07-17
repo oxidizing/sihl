@@ -1,5 +1,5 @@
 module Service : Cmd_sig.SERVICE = struct
-  let on_bind _ =
+  let on_init _ =
     (* TODO
        let add_default_commands project commands =
          List.concat
@@ -59,6 +59,3 @@ module Service : Cmd_sig.SERVICE = struct
 
   let run _ = failwith "TODO Sihl.Cmd.run()"
 end
-
-let instance =
-  Core.Container.create_binding Cmd_sig.key (module Service) (module Service)

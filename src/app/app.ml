@@ -11,7 +11,7 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
     let result =
       (let ctx = Core.Ctx.empty in
        Log.debug (fun m -> m "APP: Bind services");
-       let* () = Core.Container.bind_services ctx App.services in
+       let* () = Core.Container.register_services ctx App.services in
        Log.debug (fun m -> m "APP: Register config");
        let* () = Kernel.Config.register_config ctx App.config in
        let ctx = Data.Db.add_pool ctx in

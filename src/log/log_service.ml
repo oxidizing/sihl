@@ -12,7 +12,7 @@ module Service : Log_sig.SERVICE = struct
     | Some "error" -> Error
     | _ -> Warning
 
-  let on_bind _ =
+  let on_init _ =
     let log_level = Some (get_level ()) in
     Logs_fmt.reporter () |> set_reporter;
     set_level log_level;
@@ -23,6 +23,3 @@ module Service : Log_sig.SERVICE = struct
 
   let on_stop _ = Lwt_result.return ()
 end
-
-let instance =
-  Core.Container.create_binding Log_sig.key (module Service) (module Service)

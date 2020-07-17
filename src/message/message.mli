@@ -1,3 +1,4 @@
+module Sig = Message_sig
 module Core = Message_core
 
 type t = Message_core.Message.t
@@ -30,18 +31,4 @@ val get_success : t -> string list
 
 val get_info : t -> string list
 
-val rotate : Core_ctx.t -> (t option, string) Result.t Lwt.t
-(** Returns the current message *)
-
 val ctx_add : t -> Core_ctx.t -> Core_ctx.t
-
-val set :
-  Core_ctx.t ->
-  ?error:string list ->
-  ?warning:string list ->
-  ?success:string list ->
-  ?info:string list ->
-  unit ->
-  (unit, string) Result.t Lwt.t
-
-val get : Core_ctx.t -> t option

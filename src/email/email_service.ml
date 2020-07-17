@@ -4,10 +4,11 @@ let ( let* ) = Lwt_result.bind
 
 module MakeTemplateService
     (MigrationService : Data.Migration.Sig.SERVICE)
-    (EmailRepo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE = struct
-  let on_bind ctx =
+    (EmailRepo : Email_sig.Template.REPO)
+    (RepoService : Data.Repo.Sig.SERVICE) : Email_sig.Template.SERVICE = struct
+  let on_init ctx =
     let* () = MigrationService.register ctx (EmailRepo.migrate ()) in
-    Data.Repo.register_cleaner ctx EmailRepo.clean
+    RepoService.register_cleaner ctx EmailRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -234,23 +235,10 @@ CREATE TABLE email_templates (
   let clean _ = Lwt.return @@ Ok ()
 end
 
-module Template = struct
-  module MariaDb =
-    MakeTemplateService (Data.Migration.Service.MariaDb) (EmailRepoMariaDb)
-  module PostgreSql =
-    MakeTemplateService
-      (Data.Migration.Service.PostgreSql)
-      (EmailRepoPostgreSql)
-
-  module Empty = struct
-    let render _ email = Lwt.return @@ Ok email
-  end
-end
-
 module Make = struct
   module Console (TemplateService : Email_sig.Template.SERVICE) :
     Email_sig.SERVICE = struct
-    let on_bind req = TemplateService.on_bind req
+    let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
 
@@ -283,7 +271,7 @@ Subject: %s
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SMTP) : Email_sig.SERVICE =
   struct
-    let on_bind req = TemplateService.on_bind req
+    let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
 
@@ -299,7 +287,7 @@ Subject: %s
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SENDGRID) : Email_sig.SERVICE =
   struct
-    let on_bind req = TemplateService.on_bind req
+    let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
 
@@ -375,7 +363,7 @@ Subject: %s
 
   module Memory (TemplateService : Email_sig.Template.SERVICE) :
     Email_sig.SERVICE = struct
-    let on_bind req = TemplateService.on_bind req
+    let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
 
@@ -386,26 +374,4 @@ Subject: %s
       Email_model.DevInbox.set email;
       Lwt.return @@ Ok ()
   end
-end
-
-module Memory = struct
-  module EmailServiceMariadb =
-    Make.Memory
-      (MakeTemplateService (Data.Migration.Service.MariaDb) (EmailRepoMariaDb))
-
-  let mariadb =
-    Core_container.create_binding Email_sig.key
-      (module EmailServiceMariadb)
-      (module EmailServiceMariadb)
-
-  module EmailServicePostgreSql =
-    Make.Memory
-      (MakeTemplateService
-         (Data.Migration.Service.PostgreSql)
-         (EmailRepoPostgreSql))
-
-  let postgresql =
-    Core_container.create_binding Email_sig.key
-      (module EmailServicePostgreSql)
-      (module EmailServicePostgreSql)
 end

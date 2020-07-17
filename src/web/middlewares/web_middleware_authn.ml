@@ -1,29 +1,31 @@
 let ( let* ) = Lwt.bind
 
-let session () =
-  let filter handler ctx =
-    let* user = Authn.find_user_in_session ctx in
-    match user with
-    | Ok (Some user) ->
-        let ctx = User.ctx_add_user user ctx in
-        handler ctx
-    | Ok None -> handler ctx
-    | Error msg ->
-        Logs.err (fun m -> m "MIDDLEWARE: Failed to authenticate %s" msg);
-        failwith msg
-  in
-  Web_middleware_core.create ~name:"authn_session" filter
+module Make (AuthnService : Authn.Sig.SERVICE) = struct
+  let session () =
+    let filter handler ctx =
+      let* user = AuthnService.find_user_in_session ctx in
+      match user with
+      | Ok (Some user) ->
+          let ctx = User.ctx_add_user user ctx in
+          handler ctx
+      | Ok None -> handler ctx
+      | Error msg ->
+          Logs.err (fun m -> m "MIDDLEWARE: Failed to authenticate %s" msg);
+          failwith msg
+    in
+    Web_middleware_core.create ~name:"authn_session" filter
 
-let require_user ~login_path_f =
-  let filter handler ctx =
-    let user = User.find_user ctx in
-    match user with
-    | Some _ -> handler ctx
-    | None ->
-        let login_path = login_path_f () in
-        Web_res.redirect login_path |> Lwt.return
-  in
-  Web_middleware_core.create ~name:"user_require_login" filter
+  let require_user ~login_path_f =
+    let filter handler ctx =
+      let user = User.find_user ctx in
+      match user with
+      | Some _ -> handler ctx
+      | None ->
+          let login_path = login_path_f () in
+          Web_res.redirect login_path |> Lwt.return
+    in
+    Web_middleware_core.create ~name:"user_require_login" filter
+end
 
 (* let token () =
  *   let filter handler req =

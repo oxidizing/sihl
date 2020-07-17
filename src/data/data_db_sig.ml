@@ -26,6 +26,3 @@ module type SERVICE = sig
 
   val set_fk_check : connection -> check:bool -> (unit, string) Result.t Lwt.t
 end
-
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "database"

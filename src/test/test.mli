@@ -1,14 +1,14 @@
-val services :
-  Core.Ctx.t ->
-  Core.Container.binding list ->
-  before_start:(unit -> unit Lwt.t) ->
-  unit Lwt.t
+(* val services :
+ *   Core.Ctx.t ->
+ *   Core.Container.binding list ->
+ *   before_start:(unit -> unit Lwt.t) ->
+ *   unit Lwt.t *)
 
-val app :
-  Core.Ctx.t ->
-  config:Config.t ->
-  services:Core.Container.binding list ->
-  unit Lwt.t
+(* val app :
+ *   Core.Ctx.t ->
+ *   config:Config.t ->
+ *   services:Core.Container.binding list ->
+ *   unit Lwt.t *)
 
 val middleware_stack :
   Core.Ctx.t ->

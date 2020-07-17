@@ -19,7 +19,7 @@ end
 module type APP = sig
   val config : Config.t
 
-  val services : Core_container.binding list
+  val services : (module Core.Container.SERVICE) list
 
   val routes : Web.Server.stacked_routes
 
