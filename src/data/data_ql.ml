@@ -18,7 +18,10 @@ module Sort = struct
 end
 
 module Page = struct
-  type t = { limit : int option; offset : int option }
+  type t = {
+    limit : int option; [@sexp.option]
+    offset : int option; [@sexp.option]
+  }
   [@@deriving show, eq, sexp, yojson]
 
   let empty = { limit = None; offset = None }

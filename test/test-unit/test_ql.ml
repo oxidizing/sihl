@@ -3,13 +3,13 @@ let query = Alcotest.testable Sihl.Data.Ql.pp Sihl.Data.Ql.equal
 let to_string_limit_offset _ () =
   let query = Sihl.Data.Ql.(empty |> set_offset 10 |> set_limit 20) in
   let actual = Sihl.Data.Ql.to_string query in
-  let expected = "((limit 20)(offset 10))" in
+  let expected = "((page((limit 20)(offset 10))))" in
   Lwt.return @@ Alcotest.(check string "equals" expected actual)
 
 let to_string_sort _ () =
   let query = Sihl.Data.Ql.(empty |> set_sort [ Asc "foo"; Desc "bar" ]) in
   let actual = Sihl.Data.Ql.to_string query in
-  let expected = "((sort((Asc foo)(Desc bar))))" in
+  let expected = "((sort((Asc foo)(Desc bar)))(page()))" in
   Lwt.return @@ Alcotest.(check string "equals" expected actual)
 
 let to_string_filter _ () =
@@ -18,7 +18,7 @@ let to_string_filter _ () =
   in
   let query = Sihl.Data.Ql.(empty |> set_filter criterion) in
   let actual = Sihl.Data.Ql.to_string query in
-  let expected = "((filter(C((key foo)(value bar)(op Eq)))))" in
+  let expected = "((filter(C((key foo)(value bar)(op Eq))))(page()))" in
   Lwt.return @@ Alcotest.(check string "equals" expected actual)
 
 let to_string _ () =
@@ -35,7 +35,7 @@ let to_string _ () =
   let actual = Sihl.Data.Ql.to_string query in
   let expected =
     "((filter(C((key foo)(value bar)(op Eq))))(sort((Asc foo)(Desc \
-     bar)))(limit 10)(offset 1))"
+     bar)))(page((limit 10)(offset 1))))"
   in
   Lwt.return @@ Alcotest.(check string "equals" expected actual)
 
@@ -175,20 +175,20 @@ let of_string_empty_sort _ () =
        check (result query string) "equals" (Ok Sihl.Data.Ql.empty) actual)
 
 let of_string_sort _ () =
-  let actual = Sihl.Data.Ql.of_string "((sort((Asc foo)(Desc bar))))" in
+  let actual = Sihl.Data.Ql.of_string "((sort((Asc foo)(Desc bar)))(page()))" in
   let expected = Sihl.Data.Ql.(empty |> set_sort [ Asc "foo"; Desc "bar" ]) in
   Lwt.return
   @@ Alcotest.(check (result query string) "equals" (Ok expected) actual)
 
 let of_string_limit_offset _ () =
-  let actual = Sihl.Data.Ql.of_string "((limit 20)(offset 10))" in
+  let actual = Sihl.Data.Ql.of_string "((page((limit 20)(offset 10))))" in
   let expected = Sihl.Data.Ql.(empty |> set_limit 20 |> set_offset 10) in
   Lwt.return
   @@ Alcotest.(check (result query string) "equals" (Ok expected) actual)
 
 let of_string_filter _ () =
   let actual =
-    Sihl.Data.Ql.of_string "((filter(C((key foo)(value bar)(op Eq)))))"
+    Sihl.Data.Ql.of_string "((filter(C((key foo)(value bar)(op Eq))))(page()))"
   in
   let criterion =
     Sihl.Data.Ql.Filter.(C { key = "foo"; value = "bar"; op = Eq })
@@ -201,7 +201,7 @@ let of_string _ () =
   let actual =
     Sihl.Data.Ql.of_string
       "((filter(C((key foo)(value bar)(op Eq))))(sort((Asc foo)(Desc \
-       bar)))(limit 10)(offset 1))"
+       bar)))(page((limit 10)(offset 1))))"
   in
   let filter_criterion =
     Sihl.Data.Ql.Filter.(C { key = "foo"; value = "bar"; op = Eq })
