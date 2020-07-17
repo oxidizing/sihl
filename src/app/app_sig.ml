@@ -9,8 +9,6 @@ module type APP = sig
 
   val schedules : Schedule.t list
 
-  val admin_pages : Admin.Page.t list
-
   val on_start : Core_ctx.t -> (unit, string) Result.t Lwt.t
 
   val on_stop : Core_ctx.t -> (unit, string) Result.t Lwt.t

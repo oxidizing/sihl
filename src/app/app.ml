@@ -1,5 +1,21 @@
 module Sig = App_sig
 
+module type KERNEL_SERVICES = sig
+  module Random : Utils.Random.Sig.SERVICE
+
+  module Log : Utils.Log.Sig.SERVICE
+
+  module Config : Utils.Config.Sig.SERVICE
+
+  module Db : Utils.Db.Sig.SERVICE
+
+  module WebServer : Web.Server.Sig.SERVICE
+
+  module Cmd : Cmd.Sig.SERVICE
+
+  module Schedule : Schedule.Sig.SERVICE
+end
+
 let ( let* ) = Lwt_result.bind
 
 let kernel_services =
@@ -35,8 +51,6 @@ let start (module App : Sig.APP) =
      Log.debug (fun m -> m "APP: Register schedules");
      let* () = Schedule.register_schedule ctx App.schedules in
      Log.debug (fun m -> m "APP: Register admin pages");
-     let* () = Admin.register_pages ctx App.admin_pages in
-     Log.debug (fun m -> m "APP: Start services");
      let* () = Core.Container.start_services ctx in
      App.on_start ctx)
     |> Lwt_result.map_err (fun msg ->
