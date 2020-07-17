@@ -21,7 +21,7 @@ let get_req ctx =
   |> Result.of_option ~error:"No HTTP request found in context"
   |> Result.ok_or_failwith
 
-module UrlEncoded = struct
+module Query = struct
   type t = (string * string list) list [@@deriving eq, show, yojson]
 end
 
@@ -70,9 +70,11 @@ let find_in_query key query =
   |> Option.map ~f:(fun (_, r) -> r)
   |> Option.bind ~f:List.hd
 
-let query_opt ctx key =
+let get_query_string ctx =
   let req = get_req ctx in
-  req |> Opium.Std.Request.uri |> Uri.query |> find_in_query key
+  req |> Opium.Std.Request.uri |> Uri.query
+
+let query_opt ctx key = ctx |> get_query_string |> find_in_query key
 
 let query ctx key =
   match query_opt ctx key with

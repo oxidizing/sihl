@@ -17,13 +17,43 @@ module Sort = struct
   type t = criterion list [@@deriving show, eq, sexp, yojson]
 end
 
+module Page = struct
+  type t = { limit : int option; offset : int option }
+  [@@deriving show, eq, sexp, yojson]
+
+  let empty = { limit = None; offset = None }
+
+  let set_limit limit page = { page with limit = Some limit }
+
+  let set_offset offset page = { page with offset = Some offset }
+
+  let get_limit page = page.limit
+
+  let get_offset page = page.offset
+
+  let of_string str =
+    if String.equal str "" then Ok empty
+    else
+      let sexp = Sexplib.Sexp.of_string str in
+      Ok (t_of_sexp sexp)
+
+  let to_string query =
+    let sexp = query |> sexp_of_t in
+    Sexplib.Sexp.to_string sexp
+end
+
 type t = {
   filter : Filter.t option; [@sexp.option]
   sort : Sort.t option; [@sexp.option]
-  limit : int option; [@sexp.option]
-  offset : int option; [@sexp.option]
+  page : Page.t;
 }
 [@@deriving show, eq, sexp, yojson]
+
+let get_page query = query.page
+
+let get_limit query = query.page.limit
+
+let get_offset query = query.page.offset
 
 module Sql = struct
   let limit limit = ("LIMIT ?", [ Int.to_string limit ])
@@ -107,8 +137,8 @@ module Sql = struct
     let sort_qs, sort_values =
       query.sort |> Option.map ~f:sort |> Option.value ~default:("", [])
     in
-    let limit_fragment = query.limit |> Option.map ~f:limit in
-    let offset_fragment = query.offset |> Option.map ~f:offset in
+    let limit_fragment = get_limit query |> Option.map ~f:limit in
+    let offset_fragment = get_offset query |> Option.map ~f:offset in
     let pagination_qs, pagination_values =
       Option.merge limit_fragment offset_fragment
         ~f:(fun (limit_query, limit_value) (offset_query, offset_value) ->
@@ -136,7 +166,7 @@ end
 
 let of_string str =
   if String.equal str "" then
-    Ok { filter = None; sort = None; limit = None; offset = None }
+    Ok { filter = None; sort = None; page = { limit = None; offset = None } }
   else
     let sexp = Sexplib.Sexp.of_string str in
     Ok (t_of_sexp sexp)
@@ -149,7 +179,8 @@ let to_sql = Sql.to_string
 
 let to_sql_fragments = Sql.to_fragments
 
-let empty = { filter = None; sort = None; limit = None; offset = None }
+let empty =
+  { filter = None; sort = None; page = { limit = None; offset = None } }
 
 let set_filter filter query = { query with filter = Some filter }
 
@@ -164,10 +195,10 @@ let set_filter_and criterion query =
 
 let set_sort sort query = { query with sort = Some sort }
 
-let set_limit limit query = { query with limit = Some limit }
+let set_limit limit query =
+  let page = { query.page with limit = Some limit } in
+  { query with page }
 
-let set_offset offset query = { query with offset = Some offset }
-
-let limit query = query.limit
-
-let offset query = query.offset
+let set_offset offset query =
+  let page = { query.page with offset = Some offset } in
+  { query with page }

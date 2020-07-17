@@ -12,12 +12,35 @@ module Sort : sig
   type t = criterion list
 end
 
-type t = {
-  filter : Filter.t option;
-  sort : Sort.t option;
-  limit : int option;
-  offset : int option;
-}
+module Page : sig
+  type t = { limit : int option; offset : int option }
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+
+  val equal : t -> t -> bool
+
+  val to_yojson : t -> Yojson.Safe.t
+
+  val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or
+
+  val empty : t
+
+  val set_limit : int -> t -> t
+
+  val set_offset : int -> t -> t
+
+  val get_limit : t -> int option
+
+  val get_offset : t -> int option
+
+  val of_string : string -> (t, string) Result.t
+
+  val to_string : t -> string
+end
+
+type t = { filter : Filter.t option; sort : Sort.t option; page : Page.t }
 
 val to_yojson : t -> Yojson.Safe.t
 
@@ -48,6 +71,8 @@ val set_limit : int -> t -> t
 
 val set_offset : int -> t -> t
 
-val limit : t -> int option
+val get_page : t -> Page.t
 
-val offset : t -> int option
+val get_limit : t -> int option
+
+val get_offset : t -> int option

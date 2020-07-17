@@ -1,13 +1,13 @@
 module PartialCollection : sig
   type controls
 
-  val last : controls -> Data_ql.t option
+  val last : controls -> Data_ql.Page.t option
 
-  val next : controls -> Data_ql.t option
+  val next : controls -> Data_ql.Page.t option
 
-  val previous : controls -> Data_ql.t option
+  val previous : controls -> Data_ql.Page.t option
 
-  val first : controls -> Data_ql.t option
+  val first : controls -> Data_ql.Page.t option
 
   val pp_controls : Format.formatter -> controls -> unit
 
@@ -22,7 +22,7 @@ module PartialCollection : sig
 
   type 'a t = { member : 'a list; total_items : int; controls : controls }
 
-  val create : query:Data_ql.t -> meta:Data_repo.Meta.t -> 'a list -> 'a t
+  val create : page:Data_ql.Page.t -> meta:Data_repo.Meta.t -> 'a list -> 'a t
 
   val controls : 'a t -> controls
 

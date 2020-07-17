@@ -12,7 +12,7 @@ val cookie_data : Core.Ctx.t -> key:string -> string option
 
 val parse_token : Core.Ctx.t -> string option
 
-module UrlEncoded : sig
+module Query : sig
   type t = (string * string list) list
 
   val equal : t -> t -> bool
@@ -21,9 +21,9 @@ module UrlEncoded : sig
 
   val show : t -> string
 
-  val to_yojson : t -> Utils_json.t
+  val to_yojson : t -> Utils.Json.t
 
-  val of_yojson : Utils_json.t -> t Ppx_deriving_yojson_runtime.error_or
+  val of_yojson : Utils.Json.t -> t Ppx_deriving_yojson_runtime.error_or
 end
 
 val is_get : Core.Ctx.t -> bool
@@ -31,6 +31,8 @@ val is_get : Core.Ctx.t -> bool
 val get_uri : Core.Ctx.t -> Uri.t
 
 val get_header : Core.Ctx.t -> string -> string option
+
+val get_query_string : Core.Ctx.t -> Query.t
 
 val query_opt : Core.Ctx.t -> string -> string option
 
@@ -59,7 +61,7 @@ val query3 :
   (string, string) result * (string, string) result * (string, string) result
 
 val urlencoded_list :
-  ?body:string -> Core.Ctx.t -> (UrlEncoded.t, string) Lwt_result.t
+  ?body:string -> Core.Ctx.t -> (Query.t, string) Lwt_result.t
 
 val urlencoded :
   ?body:string -> Core.Ctx.t -> string -> (string, string) Lwt_result.t
