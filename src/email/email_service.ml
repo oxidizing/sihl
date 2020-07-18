@@ -2,47 +2,52 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
-module MakeTemplateService
-    (MigrationService : Data.Migration.Sig.SERVICE)
-    (EmailRepo : Email_sig.Template.REPO)
-    (RepoService : Data.Repo.Sig.SERVICE) : Email_sig.Template.SERVICE = struct
-  let on_init ctx =
-    let* () = MigrationService.register ctx (EmailRepo.migrate ()) in
-    RepoService.register_cleaner ctx EmailRepo.clean
+module Template = struct
+  module Make
+      (MigrationService : Data.Migration.Sig.SERVICE)
+      (TemplateRepo : Email_sig.Template.REPO)
+      (RepoService : Data.Repo.Sig.SERVICE) : Email_sig.Template.SERVICE =
+  struct
+    let on_init ctx =
+      let* () = MigrationService.register ctx (TemplateRepo.migrate ()) in
+      RepoService.register_cleaner ctx TemplateRepo.clean
 
-  let on_start _ = Lwt.return @@ Ok ()
+    let on_start _ = Lwt.return @@ Ok ()
 
-  let on_stop _ = Lwt.return @@ Ok ()
+    let on_stop _ = Lwt.return @@ Ok ()
 
-  let render ctx email =
-    let template_id = Email_model.template_id email in
-    let template_data = Email_model.template_data email in
-    let content = Email_model.content email in
-    let* content =
-      match template_id with
-      | Some template_id ->
-          let* template = EmailRepo.get ~id:template_id |> Data.Db.query ctx in
-          let* template =
-            template
-            |> Result.of_option ~error:"Template with id %s not found"
-            |> Lwt.return
-          in
-          let content = Email_model.Template.render template_data template in
-          Lwt.return @@ Ok content
-      | None -> Lwt.return @@ Ok content
-    in
-    Email_model.set_content content email |> Result.return |> Lwt.return
-end
+    let render ctx email =
+      let template_id = Email_model.template_id email in
+      let template_data = Email_model.template_data email in
+      let content = Email_model.content email in
+      let* content =
+        match template_id with
+        | Some template_id ->
+            let* template =
+              TemplateRepo.get ~id:template_id |> Data.Db.query ctx
+            in
+            let* template =
+              template
+              |> Result.of_option ~error:"Template with id %s not found"
+              |> Lwt.return
+            in
+            let content = Email_model.Template.render template_data template in
+            Lwt.return @@ Ok content
+        | None -> Lwt.return @@ Ok content
+      in
+      Email_model.set_content content email |> Result.return |> Lwt.return
+  end
 
-module EmailRepoMariaDb = struct
-  module Sql = struct
-    module Model = Email_model.Template
+  module Repo = struct
+    module MariaDb = struct
+      module Sql = struct
+        module Model = Email_model.Template
 
-    let get connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.find_opt Caqti_type.string Model.t
-          {sql|
+        let get connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find_opt Caqti_type.string Model.t
+              {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -59,59 +64,59 @@ module EmailRepoMariaDb = struct
         FROM email_templates
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
-      in
-      Connection.find_opt request
+          in
+          Connection.find_opt request
 
-    (* TODO split into insert and update *)
-    let upsert connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Model.t
-          {sql|
-        INSERT INTO email_templates (
-          uuid,
-          label,
-          content_text,
-          content_html,
-          status,
-          created_at
-        ) VALUES (
-          UNHEX(REPLACE(?, '-', '')),
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
-        ) ON DUPLICATE KEY UPDATE
-        DO UPDATE SET
-          label = VALUES(label),
-          content = VALUES(content),
-          status = VALUES(status)
-        |sql}
-      in
-      Connection.exec request
+        (* (\* TODO split into insert and update *\)
+         * let upsert connection =
+         *   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+         *   let request =
+         *     Caqti_request.exec Model.t
+         *       {sql|
+         * INSERT INTO email_templates (
+         *   uuid,
+         *   label,
+         *   content_text,
+         *   content_html,
+         *   status,
+         *   created_at
+         * ) VALUES (
+         *   UNHEX(REPLACE(?, '-', '')),
+         *   ?,
+         *   ?,
+         *   ?,
+         *   ?,
+         *   ?
+         * ) ON DUPLICATE KEY UPDATE
+         * DO UPDATE SET
+         *   label = VALUES(label),
+         *   content = VALUES(content),
+         *   status = VALUES(status)
+         * |sql}
+         *   in
+         *   Connection.exec request *)
 
-    let clean connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
+        let clean connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Caqti_type.unit
+              {sql|
         TRUNCATE TABLE email_templates CASCADE;
          |sql}
-      in
-      Connection.exec request
-  end
+          in
+          Connection.exec request
+      end
 
-  module Migration = struct
-    let fix_collation =
-      Data.Migration.create_step ~label:"fix collation"
-        {sql|
+      module Migration = struct
+        let fix_collation =
+          Data.Migration.create_step ~label:"fix collation"
+            {sql|
 SET collation_server = 'utf8mb4_unicode_ci';
 |sql}
 
-    let create_templates_table =
-      Data.Migration.create_step ~label:"create templates table"
-        {sql|
+        let create_templates_table =
+          Data.Migration.create_step ~label:"create templates table"
+            {sql|
 CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
@@ -125,31 +130,31 @@ CREATE TABLE email_templates (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
-    let migration () =
-      Data.Migration.(
-        empty "email" |> add_step fix_collation
-        |> add_step create_templates_table)
-  end
+        let migration () =
+          Data.Migration.(
+            empty "email" |> add_step fix_collation
+            |> add_step create_templates_table)
+      end
 
-  let migrate = Migration.migration
+      let migrate = Migration.migration
 
-  let get ~id connection =
-    Sql.get connection id |> Lwt_result.map_err Caqti_error.show
+      let get ~id connection =
+        Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
-  (* TODO sihl_user has to seed templates properly
-     let clean connection = Sql.clean connection () *)
-  let clean _ = Lwt.return @@ Ok ()
-end
+      (* TODO sihl_user has to seed templates properly
+         let clean connection = Sql.clean connection () *)
+      let clean _ = Lwt.return @@ Ok ()
+    end
 
-module EmailRepoPostgreSql = struct
-  module Sql = struct
-    module Model = Email_model.Template
+    module PostgreSql = struct
+      module Sql = struct
+        module Model = Email_model.Template
 
-    let get connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.find_opt Caqti_type.string Model.t
-          {sql|
+        let get connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find_opt Caqti_type.string Model.t
+              {sql|
         SELECT
           uuid,
           label,
@@ -160,54 +165,54 @@ module EmailRepoPostgreSql = struct
         FROM email_templates
         WHERE email_templates.uuid = ?
         |sql}
-      in
-      Connection.find_opt request
+          in
+          Connection.find_opt request
 
-    (* TODO split into insert and update *)
-    let upsert connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Model.t
-          {sql|
-        INSERT INTO email_templates (
-          uuid,
-          label,
-          content_text,
-          content_html,
-          status,
-          created_at
-        ) VALUES (
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
-        ) ON CONFLICT (id)
-        DO UPDATE SET
-          label = EXCLUDED.label,
-          content_text = EXCLUDED.content_text,
-          content_html = EXCLUDED.content_html,
-          status = EXCLUDED.status
-        |sql}
-      in
-      Connection.exec request
+        (* TODO split into insert and update *)
+        (* let upsert connection =
+         *   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+         *   let request =
+         *     Caqti_request.exec Model.t
+         *       {sql|
+         * INSERT INTO email_templates (
+         *   uuid,
+         *   label,
+         *   content_text,
+         *   content_html,
+         *   status,
+         *   created_at
+         * ) VALUES (
+         *   ?,
+         *   ?,
+         *   ?,
+         *   ?,
+         *   ?,
+         *   ?
+         * ) ON CONFLICT (id)
+         * DO UPDATE SET
+         *   label = EXCLUDED.label,
+         *   content_text = EXCLUDED.content_text,
+         *   content_html = EXCLUDED.content_html,
+         *   status = EXCLUDED.status
+         * |sql}
+         *   in
+         *   Connection.exec request *)
 
-    let clean connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
+        let clean connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Caqti_type.unit
+              {sql|
         TRUNCATE TABLE email_templates CASCADE;
          |sql}
-      in
-      Connection.exec request
-  end
+          in
+          Connection.exec request
+      end
 
-  module Migration = struct
-    let create_templates_table =
-      Data.Migration.create_step ~label:"create templates table"
-        {sql|
+      module Migration = struct
+        let create_templates_table =
+          Data.Migration.create_step ~label:"create templates table"
+            {sql|
 CREATE TABLE email_templates (
   id SERIAL,
   uuid UUID NOT NULL,
@@ -221,18 +226,20 @@ CREATE TABLE email_templates (
 );
 |sql}
 
-    let migration () =
-      Data.Migration.(empty "email" |> add_step create_templates_table)
+        let migration () =
+          Data.Migration.(empty "email" |> add_step create_templates_table)
+      end
+
+      let migrate = Migration.migration
+
+      let get ~id connection =
+        Sql.get connection id |> Lwt_result.map_err Caqti_error.show
+
+      (* TODO sihl_user has to seed templates properly
+         let clean connection = Sql.clean connection () *)
+      let clean _ = Lwt.return @@ Ok ()
+    end
   end
-
-  let migrate = Migration.migration
-
-  let get ~id connection =
-    Sql.get connection id |> Lwt_result.map_err Caqti_error.show
-
-  (* TODO sihl_user has to seed templates properly
-     let clean connection = Sql.clean connection () *)
-  let clean _ = Lwt.return @@ Ok ()
 end
 
 module Make = struct

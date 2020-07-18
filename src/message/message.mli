@@ -1,3 +1,4 @@
+module Service = Message_service
 module Sig = Message_sig
 module Core = Message_core
 
@@ -30,5 +31,7 @@ val get_warning : t -> string list
 val get_success : t -> string list
 
 val get_info : t -> string list
+
+val get : Core_ctx.t -> t option
 
 val ctx_add : t -> Core_ctx.t -> Core_ctx.t

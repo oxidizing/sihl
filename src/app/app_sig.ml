@@ -1,7 +1,7 @@
 module type KERNEL = sig
   module Random : Utils.Random.Sig.SERVICE
 
-  module Log : Utils.Log.Sig.SERVICE
+  module Log : Log.Sig.SERVICE
 
   module Config : Config.Sig.SERVICE
 
