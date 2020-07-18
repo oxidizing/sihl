@@ -56,20 +56,20 @@ let url path = "http://localhost:3000/users" ^ path
  *   in
  *   Lwt.return @@ () *)
 
-let test_register_invalid_user_fails _ () =
-  let* () = Sihl.Test.clean () in
-  let body = {|
-       {
-         "email": "foobar@example.com"
-       }
-|} in
-  let* resp, _ =
-    Cohttp_lwt_unix.Client.post
-      ~body:(Cohttp_lwt.Body.of_string body)
-      (Uri.of_string "http://localhost:3000/users/register/")
-  in
-  let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
-  Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status
+(* let test_register_invalid_user_fails _ () =
+ *   let* () = Sihl.Test.clean () in
+ *   let body = {|
+ *        {
+ *          "email": "foobar@example.com"
+ *        }
+ * |} in
+ *   let* resp, _ =
+ *     Cohttp_lwt_unix.Client.post
+ *       ~body:(Cohttp_lwt.Body.of_string body)
+ *       (Uri.of_string "http://localhost:3000/users/register/")
+ *   in
+ *   let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
+ *   Lwt.return @@ Alcotest.(check int) "Returns bad request status" 400 status *)
 
 (* let test_register_existing_user_fails _ () =
  *   let* () = Sihl.Run.Manage.clean () in

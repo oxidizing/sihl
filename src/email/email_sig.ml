@@ -35,6 +35,3 @@ module type SERVICE = sig
 
   val send : Core.Ctx.t -> Email_model.t -> (unit, string) Result.t Lwt.t
 end
-
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "email.service"

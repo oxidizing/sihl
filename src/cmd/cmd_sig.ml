@@ -6,6 +6,3 @@ module type SERVICE = sig
 
   val run : Core_ctx.t -> (unit, string) Result.t Lwt.t
 end
-
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "config"

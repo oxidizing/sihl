@@ -18,17 +18,9 @@ module Static = Web_middleware_static
 module Session = Web_middleware_session
 module Authn = Web_middleware_authn
 
-let message = Web_middleware_message.m
-
 let error = Web_middleware_error.m
 
 let db = Web_middleware_db.m
-
-let session = Web_middleware_session.m
-
-let authn_session = Web_middleware_authn.session
-
-let require_user = Web_middleware_authn.require_user
 
 let static = Web_middleware_static.m
 

@@ -1,4 +1,5 @@
-module Admin = Email_admin
+module Service = Email_service
+module Sig = Email_sig
 
 module TemplateData : sig
   type t
@@ -86,8 +87,3 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 
 val equal : t -> t -> bool
-
-module Service = Email_service
-module Sig = Email_sig
-
-val send : Core.Ctx.t -> t -> (unit, string) Result.t Lwt.t

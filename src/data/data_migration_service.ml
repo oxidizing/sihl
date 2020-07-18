@@ -5,7 +5,7 @@ let ( let* ) = Lwt_result.bind
 
 module Make (MigrationRepo : Data_migration_sig.REPO) :
   Data_migration_sig.SERVICE = struct
-  let on_bind _ = Lwt.return @@ Ok ()
+  let on_init _ = Lwt.return @@ Ok ()
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -59,9 +59,6 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
 
   let execute_steps ctx migration =
     let open Lwt in
-    let (module Service : Data_migration_sig.SERVICE) =
-      Core.Container.fetch_service_exn Data_migration_sig.key
-    in
     let namespace, steps = migration in
     let rec run steps =
       match steps with
@@ -122,9 +119,6 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
     run steps
 
   let execute_migration ctx migration =
-    let (module Service : Data_migration_sig.SERVICE) =
-      Core.Container.fetch_service_exn Data_migration_sig.key
-    in
     let namespace, _ = migration in
     Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
     let* () = setup ctx in
@@ -168,6 +162,8 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
     in
     let ctx = Data_db.ctx_with_pool () in
     run migrations ctx
+
+  let run_all ctx = Lwt_result.bind (get_migrations ctx) execute
 end
 
 module RepoMariaDb = struct
@@ -286,17 +282,3 @@ dirty = EXCLUDED.dirty
     Connection.exec request (Model.to_tuple state)
     |> Lwt_result.map_err Caqti_error.show
 end
-
-module PostgreSql = Make (RepoPostgreSql)
-
-let postgresql =
-  Core.Container.create_binding Data_migration_sig.key
-    (module PostgreSql)
-    (module PostgreSql)
-
-module MariaDb = Make (RepoMariaDb)
-
-let mariadb =
-  Core.Container.create_binding Data_migration_sig.key
-    (module MariaDb)
-    (module MariaDb)

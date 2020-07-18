@@ -42,10 +42,12 @@ module type SERVICE = sig
 
   val insert_session :
     Core.Ctx.t -> session:Session_core.t -> (unit, string) Result.t Lwt.t
-end
 
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "session.service"
+  val create :
+    Core_ctx.t ->
+    (string * string) list ->
+    (Session_core.t, string) Lwt_result.t
+end
 
 let middleware_key : string Opium.Hmap.key =
   Opium.Hmap.Key.create ("session.key", fun _ -> sexp_of_string "session.key")

@@ -1,6 +1,6 @@
-type t
+type t = Web_middleware_core.t
 
-type stack = t list
+type stack = Web_middleware_core.stack
 
 val apply : t -> Web_route.t -> Web_route.t
 
@@ -18,17 +18,9 @@ module Static = Web_middleware_static
 module Session = Web_middleware_session
 module Authn = Web_middleware_authn
 
-val message : unit -> t
-
 val error : unit -> t
 
 val db : unit -> t
-
-val session : ?cookie_key:string -> unit -> t
-
-val authn_session : unit -> t
-
-val require_user : login_path_f:(unit -> string) -> t
 
 val static :
   local_path:string ->

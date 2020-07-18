@@ -3,6 +3,3 @@ module type SERVICE = sig
 
   val base64 : bytes:int -> string
 end
-
-let key : (module SERVICE) Core.Container.key =
-  Core.Container.create_key "random"

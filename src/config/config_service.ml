@@ -1,5 +1,5 @@
 module Service : Config_sig.SERVICE = struct
-  let on_bind _ = Lwt_result.return ()
+  let on_init _ = Lwt_result.return ()
 
   let on_start _ = Lwt_result.return ()
 
@@ -7,6 +7,3 @@ module Service : Config_sig.SERVICE = struct
 
   let register_config _ _ = failwith "TODO register_config"
 end
-
-let instance =
-  Core_container.create_binding Config_sig.key (module Service) (module Service)

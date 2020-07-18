@@ -4,10 +4,11 @@ let ( let* ) = Lwt_result.bind
 
 module Make
     (MigrationService : Data.Migration.Sig.SERVICE)
-    (SessionRepo : Session_sig.REPO) : Session_sig.SERVICE = struct
-  let on_bind ctx =
+    (SessionRepo : Session_sig.REPO)
+    (RepoService : Data.Repo.Sig.SERVICE) : Session_sig.SERVICE = struct
+  let on_init ctx =
     let* () = MigrationService.register ctx (SessionRepo.migrate ()) in
-    Data.Repo.register_cleaner ctx SessionRepo.clean
+    RepoService.register_cleaner ctx SessionRepo.clean
 
   let on_start _ = Lwt.return @@ Ok ()
 
@@ -61,33 +62,43 @@ module Make
 
   let insert_session ctx ~session =
     SessionRepo.insert session |> Data.Db.query ctx
+
+  let create ctx data =
+    let empty_session = Session_core.make (Ptime_clock.now ()) in
+    let session =
+      List.fold data ~init:empty_session ~f:(fun session (key, value) ->
+          Session_core.set ~key ~value session)
+    in
+    let* () = insert_session ctx ~session in
+    Lwt_result.return session
 end
 
-module SessionRepoMariaDb = struct
-  module Sql = struct
-    module Session = struct
-      module Model = Session_core
+module Repo = struct
+  module MariaDb = struct
+    module Sql = struct
+      module Session = struct
+        module Model = Session_core
 
-      let get_all connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.find Caqti_type.unit Model.t
-            {sql|
+        let get_all connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find Caqti_type.unit Model.t
+              {sql|
         SELECT
           session_key,
           session_data,
           expire_date
         FROM session_sessions
         |sql}
-        in
-        Connection.collect_list request ()
-        |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.collect_list request ()
+          |> Lwt_result.map_err Caqti_error.show
 
-      let get connection id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.find_opt Caqti_type.string Model.t
-            {sql|
+        let get connection id =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find_opt Caqti_type.string Model.t
+              {sql|
         SELECT
           session_key,
           session_data,
@@ -95,14 +106,14 @@ module SessionRepoMariaDb = struct
         FROM session_sessions
         WHERE session_sessions.session_key = ?
         |sql}
-        in
-        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let insert connection model =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Model.t
-            {sql|
+        let insert connection model =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
         INSERT INTO session_sessions (
           session_key,
           session_data,
@@ -113,49 +124,49 @@ module SessionRepoMariaDb = struct
           ?
         )
         |sql}
-        in
-        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let update connection model =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Model.t
-            {sql|
+        let update connection model =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
         UPDATE session_sessions SET
           session_data = $2,
           expire_date = $3
         WHERE session_key = $1
         |sql}
-        in
-        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let delete connection id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Caqti_type.string
-            {sql|
+        let delete connection id =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Caqti_type.string
+              {sql|
       DELETE FROM session_sessions
       WHERE session_sessions.session_key = ?
       |sql}
-        in
-        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
-      let clean connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Caqti_type.unit
-            {sql|
+        let clean connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Caqti_type.unit
+              {sql|
            TRUNCATE session_sessions;
           |sql}
-        in
-        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+      end
     end
-  end
 
-  module Migration = struct
-    let create_sessions_table =
-      Data.Migration.create_step ~label:"create sessions table"
-        {sql|
+    module Migration = struct
+      let create_sessions_table =
+        Data.Migration.create_step ~label:"create sessions table"
+          {sql|
 CREATE TABLE session_sessions (
   id serial,
   session_key VARCHAR(64) NOT NULL,
@@ -166,54 +177,54 @@ CREATE TABLE session_sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
-    let migration () =
-      Data.Migration.(empty "session" |> add_step create_sessions_table)
+      let migration () =
+        Data.Migration.(empty "session" |> add_step create_sessions_table)
+    end
+
+    let get_all connection = Sql.Session.get_all connection
+
+    let get ~key connection = Sql.Session.get connection key
+
+    let insert session connection = Sql.Session.insert connection session
+
+    let update session connection = Sql.Session.update connection session
+
+    let delete ~key connection = Sql.Session.delete connection key
+
+    let migrate = Migration.migration
+
+    let clean connection =
+      let ( let* ) = Lwt_result.bind in
+      let* () = Data.Db.set_fk_check connection ~check:false in
+      let* () = Sql.Session.clean connection in
+      Data.Db.set_fk_check connection ~check:true
   end
 
-  let get_all connection = Sql.Session.get_all connection
+  module PostgreSql = struct
+    module Sql = struct
+      module Session = struct
+        module Model = Session_core
 
-  let get ~key connection = Sql.Session.get connection key
-
-  let insert session connection = Sql.Session.insert connection session
-
-  let update session connection = Sql.Session.update connection session
-
-  let delete ~key connection = Sql.Session.delete connection key
-
-  let migrate = Migration.migration
-
-  let clean connection =
-    let ( let* ) = Lwt_result.bind in
-    let* () = Data.Db.set_fk_check connection ~check:false in
-    let* () = Sql.Session.clean connection in
-    Data.Db.set_fk_check connection ~check:true
-end
-
-module SessionRepoPostgreSql = struct
-  module Sql = struct
-    module Session = struct
-      module Model = Session_core
-
-      let get_all connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.find Caqti_type.unit Model.t
-            {sql|
+        let get_all connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find Caqti_type.unit Model.t
+              {sql|
         SELECT
           session_key,
           session_data,
           expire_date
         FROM session_sessions
         |sql}
-        in
-        Connection.collect_list request ()
-        |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.collect_list request ()
+          |> Lwt_result.map_err Caqti_error.show
 
-      let get connection id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.find_opt Caqti_type.string Model.t
-            {sql|
+        let get connection id =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find_opt Caqti_type.string Model.t
+              {sql|
         SELECT
           session_key,
           session_data,
@@ -221,14 +232,14 @@ module SessionRepoPostgreSql = struct
         FROM session_sessions
         WHERE session_sessions.session_key = ?
         |sql}
-        in
-        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-      let insert connection model =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Model.t
-            {sql|
+        let insert connection model =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
         INSERT INTO session_sessions (
           session_key,
           session_data,
@@ -239,49 +250,49 @@ module SessionRepoPostgreSql = struct
           ?
         )
         |sql}
-        in
-        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let update connection model =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Model.t
-            {sql|
+        let update connection model =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
         UPDATE session_sessions SET
           session_data = $2,
           expire_date = $3
         WHERE session_key = $1
         |sql}
-        in
-        Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request model |> Lwt_result.map_err Caqti_error.show
 
-      let delete connection id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Caqti_type.string
-            {sql|
+        let delete connection id =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Caqti_type.string
+              {sql|
       DELETE FROM session_sessions
       WHERE session_sessions.session_key = ?
            |sql}
-        in
-        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
-      let clean connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Caqti_type.unit
-            {sql|
+        let clean connection =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Caqti_type.unit
+              {sql|
         TRUNCATE TABLE session_sessions CASCADE;
         |sql}
-        in
-        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+          in
+          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+      end
     end
-  end
 
-  module Migration = struct
-    let create_sessions_table =
-      Data.Migration.create_step ~label:"create sessions table"
-        {sql|
+    module Migration = struct
+      let create_sessions_table =
+        Data.Migration.create_step ~label:"create sessions table"
+          {sql|
 CREATE TABLE session_sessions (
   id serial,
   session_key VARCHAR NOT NULL,
@@ -292,112 +303,22 @@ CREATE TABLE session_sessions (
 );
 |sql}
 
-    let migration () =
-      Data.Migration.(empty "session" |> add_step create_sessions_table)
+      let migration () =
+        Data.Migration.(empty "session" |> add_step create_sessions_table)
+    end
+
+    let get_all connection = Sql.Session.get_all connection
+
+    let get ~key connection = Sql.Session.get connection key
+
+    let insert session connection = Sql.Session.insert connection session
+
+    let update session connection = Sql.Session.update connection session
+
+    let delete ~key connection = Sql.Session.delete connection key
+
+    let migrate = Migration.migration
+
+    let clean connection = Sql.Session.clean connection
   end
-
-  let get_all connection = Sql.Session.get_all connection
-
-  let get ~key connection = Sql.Session.get connection key
-
-  let insert session connection = Sql.Session.insert connection session
-
-  let update session connection = Sql.Session.update connection session
-
-  let delete ~key connection = Sql.Session.delete connection key
-
-  let migrate = Migration.migration
-
-  let clean connection = Sql.Session.clean connection
 end
-
-module MariaDb = Make (Data.Migration.Service.MariaDb) (SessionRepoMariaDb)
-
-let mariadb =
-  Core.Container.create_binding Session_sig.key (module MariaDb) (module MariaDb)
-
-module PostgreSql =
-  Make (Data.Migration.Service.PostgreSql) (SessionRepoPostgreSql)
-
-let postgresql =
-  Core.Container.create_binding Session_sig.key
-    (module PostgreSql)
-    (module PostgreSql)
-
-let set_value ctx ~key ~value =
-  Logs.debug (fun m -> m "three %s" (Core.Ctx.id ctx));
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) ->
-      Service.set_value ~key ~value ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let remove_value ctx ~key =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.remove_value ~key ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let get_value ctx ~key =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.get_value ~key ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let get_session ctx ~key =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.get_session ctx ~key
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let get_all_sessions ctx =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) -> Service.get_all_sessions ctx
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let insert_session ctx ~session =
-  match Core.Container.fetch_service Session_sig.key with
-  | Some (module Service : Session_sig.SERVICE) ->
-      Service.insert_session ctx ~session
-  | None ->
-      let msg =
-        "SESSION: Could not find session service, have you installed the \
-         session app?"
-      in
-      Logs.err (fun m -> m "%s" msg);
-      Lwt.return @@ Error msg
-
-let create ctx data =
-  let empty_session = Session_core.make (Ptime_clock.now ()) in
-  let session =
-    List.fold data ~init:empty_session ~f:(fun session (key, value) ->
-        Session_core.set ~key ~value session)
-  in
-  let* () = insert_session ctx ~session in
-  Lwt_result.return session

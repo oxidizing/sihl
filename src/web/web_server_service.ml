@@ -5,7 +5,7 @@ let ( let* ) = Lwt.bind
 let registered_routes = ref []
 
 module Service : Web_server_sig.SERVICE = struct
-  let on_bind _ = Lwt_result.return ()
+  let on_init _ = Lwt_result.return ()
 
   let on_start _ =
     Logs.debug (fun m -> m "WEB: Starting HTTP server");
@@ -24,8 +24,3 @@ module Service : Web_server_sig.SERVICE = struct
 
   let register_routes _ routes = Lwt_result.return (registered_routes := routes)
 end
-
-let instance =
-  Core.Container.create_binding Web_server_sig.key
-    (module Service)
-    (module Service)
