@@ -1,5 +1,5 @@
 module Migration =
-  Sihl.Data.Migration.Service.Make (Sihl.Data.Migration.Service.RepoPostgreSql)
+  Sihl.Data.Migration.Service.Make (Sihl.Data.Migration.Service.Repo.PostgreSql)
 module Repo = Sihl.Data.Repo.Service
 module Session =
   Sihl.Session.Service.Make (Migration) (Sihl.Session.Service.Repo.PostgreSql)

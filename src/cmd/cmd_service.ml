@@ -1,16 +1,15 @@
-module Service : Cmd_sig.SERVICE = struct
-  let on_init _ =
-    (* TODO
-       let add_default_commands project commands =
-         List.concat
-           [
-             commands; [
-               Core.Cmd.Builtin.Version.command;
-               Core.Cmd.Builtin.Start.command (fun () -> start project);
-               Core.Cmd.Builtin.Migrate.command (fun () -> migrate project);
-             ];
-           ]*)
-    (*
+let on_init _ =
+  (* TODO
+     let add_default_commands project commands =
+       List.concat
+         [
+           commands; [
+             Core.Cmd.Builtin.Version.command;
+             Core.Cmd.Builtin.Start.command (fun () -> start project);
+             Core.Cmd.Builtin.Migrate.command (fun () -> migrate project);
+           ];
+         ]*)
+  (*
  *
  *   let is_testing () =
  *     Sys.getenv "SIHL_ENV"
@@ -49,13 +48,12 @@ module Service : Cmd_sig.SERVICE = struct
  *       Caml.print_string
  *       @@ "START: Running with SIHL_ENV=test, ignore command line arguments\n"
  *)
-    Lwt_result.return ()
+  Lwt_result.return ()
 
-  let on_start _ = Lwt_result.return ()
+let on_start _ = Lwt_result.return ()
 
-  let on_stop _ = Lwt_result.return ()
+let on_stop _ = Lwt_result.return ()
 
-  let register_commands _ = failwith "TODO register_commands"
+let register_commands _ = failwith "TODO register_commands"
 
-  let run _ = failwith "TODO Sihl.Cmd.run()"
-end
+let run _ = failwith "TODO Sihl.Cmd.run()"
