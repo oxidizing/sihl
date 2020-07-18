@@ -1,6 +1,6 @@
-type t
+type t = Web_middleware_core.t
 
-type stack = t list
+type stack = Web_middleware_core.stack
 
 val apply : t -> Web_route.t -> Web_route.t
 

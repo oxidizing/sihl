@@ -1,27 +1,29 @@
+open Base
 open Alcotest_lwt
 
 let ( let* ) = Lwt.bind
 
-let suite =
-  [ Test_common.Test.session; Test_common.Test.storage; Test_common.Test.user ]
+module TestSuite =
+  Test_common.Test.Make (Sihl.Data.Db.Service.Service) (Sihl.Data.Repo.Service)
+    (Service.Session)
+    (Service.User)
+    (Service.Storage)
+
+let test_suite = [ TestSuite.session; TestSuite.storage; TestSuite.user ]
 
 let config =
   Sihl.Config.create ~development:[]
     ~test:[ ("DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev") ]
     ~production:[]
 
-let services =
-  [
-    Sihl.Data.Migration.Service.mariadb;
-    Sihl.Storage.Service.mariadb;
-    Sihl.Session.Service.mariadb;
-    Sihl.User.Service.mariadb;
-  ]
+let services : (module Sihl.Core.Container.SERVICE) list =
+  [ (module Service.Session); (module Service.User); (module Service.Storage) ]
 
 let () =
   Lwt_main.run
     (let* () =
        let ctx = Sihl.Core.Ctx.empty in
-       Sihl.Test.app ctx ~config ~services
+       let* () = Service.Test.services ctx ~config ~services in
+       Lwt.return ()
      in
-     run "mariadb" @@ suite)
+     run "mariadb" @@ test_suite)

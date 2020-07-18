@@ -2,6 +2,7 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
+module Repo = User_service_repo
 module User = User_core.User
 
 module Make
