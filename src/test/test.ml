@@ -2,14 +2,17 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-module Make (MigrationService : Data.Migration.Sig.SERVICE) = struct
+module Make
+    (MigrationService : Data.Migration.Sig.SERVICE)
+    (ConfigService : Config.Sig.SERVICE) =
+struct
   let services ctx ~config ~services =
     let* () =
       Core.Container.register_services ctx services
       |> Lwt.map Result.ok_or_failwith
     in
     let* () =
-      Config.register_config ctx config |> Lwt.map Result.ok_or_failwith
+      ConfigService.register_config ctx config |> Lwt.map Result.ok_or_failwith
     in
     let* () =
       Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith

@@ -9,4 +9,5 @@ module User =
 module Storage =
   Sihl.Storage.Service.Make (Migration) (Repo)
     (Sihl.Storage.Service.Repo.MariaDb)
-module Test = Sihl.Test.Make (Migration)
+module Config = Sihl.Config.Service
+module Test = Sihl.Test.Make (Migration) (Config)
