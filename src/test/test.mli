@@ -1,4 +1,7 @@
-module Make : functor (MigrationService : Data_migration_sig.SERVICE) -> sig
+module Make : functor
+  (MigrationService : Data_migration_sig.SERVICE)
+  (ConfigService : Config.Sig.SERVICE)
+  -> sig
   val services :
     Core_ctx.t ->
     config:Config.t ->

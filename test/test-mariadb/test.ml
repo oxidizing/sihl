@@ -4,7 +4,7 @@ open Alcotest_lwt
 let ( let* ) = Lwt.bind
 
 module TestSuite =
-  Test_common.Test.Make (Sihl.Data.Db.Service.Service) (Sihl.Data.Repo.Service)
+  Test_common.Test.Make (Sihl.Data.Db.Service) (Sihl.Data.Repo.Service)
     (Service.Session)
     (Service.User)
     (Service.Storage)

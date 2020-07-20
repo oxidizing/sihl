@@ -2,6 +2,12 @@ open Data_repo_core
 
 let ( let* ) = Lwt_result.bind
 
+let on_init _ = Lwt_result.return ()
+
+let on_start _ = Lwt_result.return ()
+
+let on_stop _ = Lwt_result.return ()
+
 module Registry = struct
   let registry : cleaner list ref = ref []
 
