@@ -14,5 +14,5 @@ module Test = Sihl.Test.Make (Migration) (Config)
 module EmailTemplate =
   Sihl.Email.Service.Template.Make
     (Migration)
-    (Sihl.Email.Service.Template.Repo.MariaDb)
+    (Sihl.Email.Service.Template.Repo.PostgreSql)
     (Repo)

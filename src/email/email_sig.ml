@@ -7,6 +7,11 @@ module Template = struct
       id:string ->
       (Email_core.Template.t option, string) Result.t Lwt.t
 
+    val get_by_name :
+      Core.Ctx.t ->
+      name:string ->
+      (Email_core.Template.t option, string) Result.t Lwt.t
+
     val create :
       Core.Ctx.t ->
       name:string ->
@@ -28,6 +33,11 @@ module Template = struct
 
     val get :
       id:string ->
+      Data_db_core.connection ->
+      (Email_core.Template.t option, string) Result.t Lwt.t
+
+    val get_by_name :
+      name:string ->
       Data_db_core.connection ->
       (Email_core.Template.t option, string) Result.t Lwt.t
 
