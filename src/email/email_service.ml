@@ -149,7 +149,7 @@ SET collation_server = 'utf8mb4_unicode_ci';
 CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
-  name VARCHAR(255) NOT NULL,
+  name VARCHAR(128) NOT NULL,
   content_text TEXT NOT NULL,
   content_html TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -256,7 +256,7 @@ CREATE TABLE email_templates (
 CREATE TABLE email_templates (
   id SERIAL,
   uuid UUID NOT NULL,
-  name VARCHAR(255) NOT NULL,
+  name VARCHAR(128) NOT NULL,
   content_text TEXT NOT NULL,
   content_html TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
