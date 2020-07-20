@@ -10,7 +10,8 @@ module TestSuite =
     (Service.Storage)
     (Service.EmailTemplate)
 
-let test_suite = [ TestSuite.session; TestSuite.storage; TestSuite.user ]
+let test_suite =
+  [ TestSuite.session; TestSuite.storage; TestSuite.user; TestSuite.email ]
 
 let config =
   Sihl.Config.create ~development:[]
