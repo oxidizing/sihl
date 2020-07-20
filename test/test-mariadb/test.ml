@@ -19,7 +19,12 @@ let config =
     ~production:[]
 
 let services : (module Sihl.Core.Container.SERVICE) list =
-  [ (module Service.Session); (module Service.User); (module Service.Storage) ]
+  [
+    (module Service.Session);
+    (module Service.User);
+    (module Service.Storage);
+    (module Service.EmailTemplate);
+  ]
 
 let () =
   Lwt_main.run
