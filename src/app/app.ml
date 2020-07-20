@@ -10,7 +10,7 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
   let start () =
     let result =
       (let ctx = Core.Ctx.empty in
-       Log.debug (fun m -> m "APP: Bind services");
+       Log.debug (fun m -> m "APP: Register services");
        let* () = Core.Container.register_services ctx App.services in
        Log.debug (fun m -> m "APP: Register config");
        let* () = Kernel.Config.register_config ctx App.config in
@@ -32,5 +32,6 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
       |> Lwt.map Base.Result.ok_or_failwith
       |> Lwt.map (fun () -> Log.debug (fun m -> m "APP: App started"))
     in
+
     Lwt_main.run (Lwt.bind result run_forever)
 end

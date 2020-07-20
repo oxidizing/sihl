@@ -5,6 +5,8 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
+  include Core.Container.SERVICE
+
   val register_cleaner : 'a -> Data_repo_core.cleaner -> (unit, 'b) result Lwt.t
 
   val register_cleaners :

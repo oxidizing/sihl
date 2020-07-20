@@ -54,6 +54,8 @@ let on_start _ = Lwt_result.return ()
 
 let on_stop _ = Lwt_result.return ()
 
-let register_commands _ = failwith "TODO register_commands"
+let register_commands _ _ =
+  Logs.warn (fun m -> m "CMD: Registration of commands is not implemented");
+  Lwt_result.return ()
 
 let run _ = failwith "TODO Sihl.Cmd.run()"
