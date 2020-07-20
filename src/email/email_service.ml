@@ -130,7 +130,7 @@ module Template = struct
           let request =
             Caqti_request.exec Caqti_type.unit
               {sql|
-        TRUNCATE TABLE email_templates CASCADE;
+        TRUNCATE TABLE email_templates;
          |sql}
           in
           Connection.exec request () |> Lwt_result.map_err Caqti_error.show
