@@ -1,13 +1,5 @@
 let ( let* ) = Lwt_result.bind
 
-module Dynparam = struct
-  type t = Pack : 'a Caqti_type.t * 'a -> t
-
-  let empty = Pack (Caqti_type.unit, ())
-
-  let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
-end
-
 module MariaDb : User_sig.REPOSITORY = struct
   module Migration = struct
     let fix_collation =
@@ -53,10 +45,11 @@ CREATE TABLE user_users (
       match values with
       | [] -> param
       | value :: values ->
-          create_param values (Dynparam.add Caqti_type.string value param)
+          create_param values
+            (Data.Repo.Dynparam.add Caqti_type.string value param)
     in
-    let param = create_param values Dynparam.empty in
-    let (Dynparam.Pack (pt, pv)) = param in
+    let param = create_param values Data.Repo.Dynparam.empty in
+    let (Data.Repo.Dynparam.Pack (pt, pv)) = param in
 
     let query =
       Printf.sprintf
@@ -245,10 +238,11 @@ CREATE TABLE user_users (
       match values with
       | [] -> param
       | value :: values ->
-          create_param values (Dynparam.add Caqti_type.string value param)
+          create_param values
+            (Data.Repo.Dynparam.add Caqti_type.string value param)
     in
-    let param = create_param values Dynparam.empty in
-    let (Dynparam.Pack (pt, pv)) = param in
+    let param = create_param values Data.Repo.Dynparam.empty in
+    let (Data.Repo.Dynparam.Pack (pt, pv)) = param in
 
     let query =
       Printf.sprintf

@@ -11,3 +11,8 @@ module Storage =
     (Sihl.Storage.Service.Repo.MariaDb)
 module Config = Sihl.Config.Service
 module Test = Sihl.Test.Make (Migration) (Config)
+module EmailTemplate =
+  Sihl.Email.Service.Template.Make
+    (Migration)
+    (Sihl.Email.Service.Template.Repo.MariaDb)
+    (Repo)

@@ -2,14 +2,25 @@ module Template = struct
   module type SERVICE = sig
     include Core_container.SERVICE
 
-    val render :
-      Core.Ctx.t -> Email_core.t -> (Email_core.t, string) Result.t Lwt.t
+    val get :
+      Core.Ctx.t ->
+      id:string ->
+      (Email_core.Template.t option, string) Result.t Lwt.t
 
     val create :
       Core.Ctx.t ->
+      name:string ->
       html:string ->
       text:string ->
       (Email_core.Template.t, string) Result.t Lwt.t
+
+    val update :
+      Core.Ctx.t ->
+      template:Email_core.Template.t ->
+      (Email_core.Template.t, string) Result.t Lwt.t
+
+    val render :
+      Core.Ctx.t -> Email_core.t -> (Email_core.t, string) Result.t Lwt.t
   end
 
   module type REPO = sig
@@ -19,6 +30,16 @@ module Template = struct
       id:string ->
       Data_db_core.connection ->
       (Email_core.Template.t option, string) Result.t Lwt.t
+
+    val insert :
+      Data_db_core.connection ->
+      template:Email_core.Template.t ->
+      (unit, string) Result.t Lwt.t
+
+    val update :
+      Data_db_core.connection ->
+      template:Email_core.Template.t ->
+      (unit, string) Result.t Lwt.t
   end
 end
 

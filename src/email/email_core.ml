@@ -1,14 +1,4 @@
 module Template = struct
-  module Data = struct
-    type t = (string * string) list [@@deriving show, eq]
-
-    let empty = []
-
-    let add ~key ~value data = List.cons (key, value) data
-
-    let make data = data
-  end
-
   type t = {
     id : string;
     name : string;
@@ -17,6 +7,12 @@ module Template = struct
     created_at : Ptime.t;
   }
   [@@deriving show, eq, fields]
+
+  let set_name name template = { template with name }
+
+  let set_text content_text template = { template with content_text }
+
+  let set_html content_html template = { template with content_html }
 
   let t =
     let encode m =
@@ -31,8 +27,7 @@ module Template = struct
 
   let make ?text ?html name =
     {
-      (* The template data module from above shadows Sihl.Data *)
-      id = Sihl__Data.Id.random () |> Sihl__Data.Id.to_string;
+      id = Data.Id.random () |> Data.Id.to_string;
       name;
       content_text = text |> Option.value ~default:"";
       content_html = html |> Option.value ~default:"";
@@ -50,6 +45,16 @@ module Template = struct
       | (k, v) :: data -> render_value data @@ replace_element value k v
     in
     render_value data template.content_text
+
+  module Data = struct
+    type t = (string * string) list [@@deriving show, eq]
+
+    let empty = []
+
+    let add ~key ~value data = List.cons (key, value) data
+
+    let make data = data
+  end
 end
 
 type t = {

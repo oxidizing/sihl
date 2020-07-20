@@ -16,6 +16,25 @@ module Template = struct
 
     let on_stop _ = Lwt.return @@ Ok ()
 
+    let get ctx ~id = TemplateRepo.get ~id |> Data.Db.query ctx
+
+    let create ctx ~name ~html ~text =
+      let template = Email_core.Template.make ~text ~html name in
+      let* () = TemplateRepo.insert ~template |> Data.Db.query ctx in
+      let id = Email_core.Template.id template in
+      let* created = TemplateRepo.get ~id |> Data.Db.query ctx in
+      created
+      |> Result.of_option ~error:"Could not create email template"
+      |> Lwt.return
+
+    let update ctx ~template =
+      let* () = TemplateRepo.insert ~template |> Data.Db.query ctx in
+      let id = Email_core.Template.id template in
+      let* created = TemplateRepo.get ~id |> Data.Db.query ctx in
+      created
+      |> Result.of_option ~error:"Could not update email template"
+      |> Lwt.return
+
     let render ctx email =
       let template_id = Email_core.template_id email in
       let template_data = Email_core.template_data email in
@@ -36,16 +55,10 @@ module Template = struct
         | None -> Lwt.return @@ Ok content
       in
       Email_core.set_content content email |> Result.return |> Lwt.return
-
-    let create ctx ~html ~text =
-      ctx |> ignore;
-      html |> ignore;
-      text |> ignore;
-      failwith "TODO create()"
   end
 
   module Repo = struct
-    module MariaDb = struct
+    module MariaDb : Email_sig.Template.REPO = struct
       module Sql = struct
         module Model = Email_core.Template
 
@@ -72,32 +85,45 @@ module Template = struct
           in
           Connection.find_opt request
 
-        (* (\* TODO split into insert and update *\)
-         * let upsert connection =
-         *   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-         *   let request =
-         *     Caqti_request.exec Model.t
-         *       {sql|
-         * INSERT INTO email_templates (
-         *   uuid,
-         *   name,
-         *   content_text,
-         *   content_html,
-         *   created_at
-         * ) VALUES (
-         *   UNHEX(REPLACE(?, '-', '')),
-         *   ?,
-         *   ?,
-         *   ?,
-         *   ?,
-         *   ?
-         * ) ON DUPLICATE KEY UPDATE
-         * DO UPDATE SET
-         *   name = VALUES(name),
-         *   content = VALUES(content)
-         * |sql}
-         *   in
-         *   Connection.exec request *)
+        let insert connection template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
+        INSERT INTO email_templates (
+          uuid,
+          name,
+          content_text,
+          content_html,
+          created_at
+        ) VALUES (
+          UNHEX(REPLACE(?, '-', '')),
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
+        |sql}
+          in
+          Connection.exec request template
+          |> Lwt_result.map_err Caqti_error.show
+
+        let update connection template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
+        UPDATE SET email_templates
+          name = $2,
+          content_text = $3,
+          content_html = $4,
+          created_at = $5
+        WHERE email_templates.uuid = UNHEX(REPLACE($1, '-', ''))
+        |sql}
+          in
+          Connection.exec request template
+          |> Lwt_result.map_err Caqti_error.show
 
         let clean connection =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -107,7 +133,7 @@ module Template = struct
         TRUNCATE TABLE email_templates CASCADE;
          |sql}
           in
-          Connection.exec request
+          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
       end
 
       module Migration = struct
@@ -144,10 +170,14 @@ CREATE TABLE email_templates (
       let get ~id connection =
         Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
-      let clean conn = Sql.clean conn ()
+      let insert conn ~template = Sql.insert conn template
+
+      let update conn ~template = Sql.update conn template
+
+      let clean conn = Sql.clean conn
     end
 
-    module PostgreSql = struct
+    module PostgreSql : Email_sig.Template.REPO = struct
       module Sql = struct
         module Model = Email_core.Template
 
@@ -168,33 +198,45 @@ CREATE TABLE email_templates (
           in
           Connection.find_opt request
 
-        (* TODO split into insert and update *)
-        (* let upsert connection =
-         *   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-         *   let request =
-         *     Caqti_request.exec Model.t
-         *       {sql|
-         * INSERT INTO email_templates (
-         *   uuid,
-         *   name,
-         *   content_text,
-         *   content_html,
-         *   created_at
-         * ) VALUES (
-         *   ?,
-         *   ?,
-         *   ?,
-         *   ?,
-         *   ?,
-         *   ?
-         * ) ON CONFLICT (id)
-         * DO UPDATE SET
-         *   name = EXCLUDED.name,
-         *   content_text = EXCLUDED.content_text,
-         *   content_html = EXCLUDED.content_html
-         * |sql}
-         *   in
-         *   Connection.exec request *)
+        let insert connection template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
+        INSERT INTO email_templates (
+          uuid,
+          name,
+          content_text,
+          content_html,
+          created_at
+        ) VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
+        |sql}
+          in
+          Connection.exec request template
+          |> Lwt_result.map_err Caqti_error.show
+
+        let update connection template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.exec Model.t
+              {sql|
+        UPDATE SET email_templates
+          name = $2,
+          content_text = $3,
+          content_html = $4,
+          created_at = $5
+        WHERE email_templates.uuid = $1
+        |sql}
+          in
+          Connection.exec request template
+          |> Lwt_result.map_err Caqti_error.show
 
         let clean connection =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -204,7 +246,7 @@ CREATE TABLE email_templates (
         TRUNCATE TABLE email_templates CASCADE;
          |sql}
           in
-          Connection.exec request
+          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
       end
 
       module Migration = struct
@@ -233,7 +275,11 @@ CREATE TABLE email_templates (
       let get ~id connection =
         Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
-      let clean conn = Sql.clean conn ()
+      let clean conn = Sql.clean conn
+
+      let insert conn ~template = Sql.insert conn template
+
+      let update conn ~template = Sql.update conn template
     end
   end
 end

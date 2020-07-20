@@ -3,7 +3,7 @@ module Sig = Email_sig
 
 module Template : sig
   module Data : sig
-    type t
+    type t = Email_core.Template.Data.t
 
     val pp : Format.formatter -> t -> unit
 
@@ -18,7 +18,7 @@ module Template : sig
     val make : (string * string) list -> t
   end
 
-  type t
+  type t = Email_core.Template.t
 
   val make : ?text:string -> ?html:string -> string -> t
 
@@ -31,6 +31,12 @@ module Template : sig
   val name : t -> string
 
   val id : t -> string
+
+  val set_name : string -> t -> t
+
+  val set_text : string -> t -> t
+
+  val set_html : string -> t -> t
 
   val pp : Format.formatter -> t -> unit
 

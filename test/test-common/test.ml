@@ -5,7 +5,8 @@ module Make
     (RepoService : Sihl.Data.Repo.Sig.SERVICE)
     (SessionService : Sihl.Session.Sig.SERVICE)
     (UserService : Sihl.User.Sig.SERVICE)
-    (StorageService : Sihl.Storage.Sig.SERVICE) =
+    (StorageService : Sihl.Storage.Sig.SERVICE)
+    (EmailTemplateService : Sihl.Email.Sig.Template.SERVICE) =
 struct
   module TestSession =
     Test_session.Make (DbService) (RepoService) (SessionService)
@@ -43,5 +44,15 @@ struct
         test_case "update password" `Quick TestUser.update_password;
         test_case "update password fails" `Quick TestUser.update_password_fails;
         test_case "filter users by email" `Quick TestUser.filter_users_by_email;
+      ] )
+
+  module TestEmail =
+    Test_email.Make (DbService) (RepoService) (EmailTemplateService)
+
+  let email =
+    ( "email",
+      [
+        test_case "create email template" `Quick TestEmail.create_template;
+        test_case "update email template" `Quick TestEmail.update_template;
       ] )
 end
