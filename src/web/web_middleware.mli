@@ -20,8 +20,6 @@ module Authn = Web_middleware_authn
 
 val error : unit -> t
 
-val db : unit -> t
-
 val static :
   local_path:string ->
   uri_prefix:string ->

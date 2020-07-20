@@ -70,5 +70,7 @@ end
 module type SERVICE = sig
   include Core_container.SERVICE
 
+  module Template : Template.SERVICE
+
   val send : Core.Ctx.t -> Email_core.t -> (unit, string) Result.t Lwt.t
 end

@@ -4,8 +4,9 @@ open Storage_model
 let ( let* ) = Lwt_result.bind
 
 module Make
-    (MigrationService : Data.Migration.Sig.SERVICE)
+    (Db : Data_db_sig.SERVICE)
     (RepoService : Data.Repo.Sig.SERVICE)
+    (MigrationService : Data.Migration.Sig.SERVICE)
     (StorageRepo : REPO) : SERVICE = struct
   let on_init ctx =
     let* () = MigrationService.register ctx (StorageRepo.migrate ()) in
@@ -15,7 +16,7 @@ module Make
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let get_file ctx ~id = StorageRepo.get_file ~id |> Data.Db.query ctx
+  let get_file ctx ~id = StorageRepo.get_file ~id |> Db.query ctx
 
   let upload_base64 ctx ~file ~base64 =
     let blob_id = Data.Id.random () |> Data.Id.to_string in
@@ -24,9 +25,9 @@ module Make
       | Error (`Msg msg) -> Lwt_result.fail msg
       | Ok blob -> Lwt_result.return blob
     in
-    let* () = StorageRepo.insert_blob ~id:blob_id ~blob |> Data.Db.query ctx in
+    let* () = StorageRepo.insert_blob ~id:blob_id ~blob |> Db.query ctx in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
-    let* () = StorageRepo.insert_file ~file:stored_file |> Data.Db.query ctx in
+    let* () = StorageRepo.insert_file ~file:stored_file |> Db.query ctx in
     Lwt.return @@ Ok stored_file
 
   let update_base64 ctx ~file ~base64 =
@@ -37,13 +38,13 @@ module Make
       | Error (`Msg msg) -> Lwt_result.fail msg
       | Ok blob -> Lwt_result.return blob
     in
-    let* () = StorageRepo.update_blob ~id:blob_id ~blob |> Data.Db.query ctx in
-    let* () = StorageRepo.update_file ~file |> Data.Db.query ctx in
+    let* () = StorageRepo.update_blob ~id:blob_id ~blob |> Db.query ctx in
+    let* () = StorageRepo.update_file ~file |> Db.query ctx in
     Lwt.return @@ Ok file
 
   let get_data_base64 ctx ~file =
     let blob_id = StoredFile.blob file in
-    let* blob = StorageRepo.get_blob ~id:blob_id |> Data.Db.query ctx in
+    let* blob = StorageRepo.get_blob ~id:blob_id |> Db.query ctx in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) -> Lwt_result.fail msg
     | Some (Ok blob) -> Lwt_result.return @@ Some blob

@@ -35,8 +35,7 @@ This is a list of all supported commands:
 |}
     command_list
 
-let execute command args =
-  let ctx = Data_db.ctx_with_pool () in
+let execute ctx command args =
   let fn = fn command in
   let description = description command in
   (* wait for the execution to end *)

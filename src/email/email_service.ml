@@ -4,9 +4,10 @@ let ( let* ) = Lwt_result.bind
 
 module Template = struct
   module Make
+      (Db : Data_db_sig.SERVICE)
+      (RepoService : Data.Repo.Sig.SERVICE)
       (MigrationService : Data.Migration.Sig.SERVICE)
-      (TemplateRepo : Email_sig.Template.REPO)
-      (RepoService : Data.Repo.Sig.SERVICE) : Email_sig.Template.SERVICE =
+      (TemplateRepo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE =
   struct
     let on_init ctx =
       let* () = MigrationService.register ctx (TemplateRepo.migrate ()) in
@@ -16,24 +17,23 @@ module Template = struct
 
     let on_stop _ = Lwt.return @@ Ok ()
 
-    let get ctx ~id = TemplateRepo.get ~id |> Data.Db.query ctx
+    let get ctx ~id = TemplateRepo.get ~id |> Db.query ctx
 
-    let get_by_name ctx ~name =
-      TemplateRepo.get_by_name ~name |> Data.Db.query ctx
+    let get_by_name ctx ~name = TemplateRepo.get_by_name ~name |> Db.query ctx
 
     let create ctx ~name ~html ~text =
       let template = Email_core.Template.make ~text ~html name in
-      let* () = TemplateRepo.insert ~template |> Data.Db.query ctx in
+      let* () = TemplateRepo.insert ~template |> Db.query ctx in
       let id = Email_core.Template.id template in
-      let* created = TemplateRepo.get ~id |> Data.Db.query ctx in
+      let* created = TemplateRepo.get ~id |> Db.query ctx in
       created
       |> Result.of_option ~error:"Could not create email template"
       |> Lwt.return
 
     let update ctx ~template =
-      let* () = TemplateRepo.update ~template |> Data.Db.query ctx in
+      let* () = TemplateRepo.update ~template |> Db.query ctx in
       let id = Email_core.Template.id template in
-      let* created = TemplateRepo.get ~id |> Data.Db.query ctx in
+      let* created = TemplateRepo.get ~id |> Db.query ctx in
       created
       |> Result.of_option ~error:"Could not update email template"
       |> Lwt.return
@@ -45,9 +45,7 @@ module Template = struct
       let* content =
         match template_id with
         | Some template_id ->
-            let* template =
-              TemplateRepo.get ~id:template_id |> Data.Db.query ctx
-            in
+            let* template = TemplateRepo.get ~id:template_id |> Db.query ctx in
             let* template =
               template
               |> Result.of_option
@@ -337,6 +335,8 @@ end
 module Make = struct
   module Console (TemplateService : Email_sig.Template.SERVICE) :
     Email_sig.SERVICE = struct
+    module Template = TemplateService
+
     let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
@@ -370,6 +370,8 @@ Subject: %s
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SMTP) : Email_sig.SERVICE =
   struct
+    module Template = TemplateService
+
     let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
@@ -386,6 +388,8 @@ Subject: %s
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SENDGRID) : Email_sig.SERVICE =
   struct
+    module Template = TemplateService
+
     let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()
@@ -462,6 +466,8 @@ Subject: %s
 
   module Memory (TemplateService : Email_sig.Template.SERVICE) :
     Email_sig.SERVICE = struct
+    module Template = TemplateService
+
     let on_init req = TemplateService.on_init req
 
     let on_start _ = Lwt.return @@ Ok ()

@@ -37,7 +37,7 @@ struct
     Lwt.return ()
 
   let update_uploaded_file _ () =
-    let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
+    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
     let file_id = Sihl.Data.Id.(random () |> to_string) in
     let file =
       Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123

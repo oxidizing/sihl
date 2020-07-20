@@ -3,7 +3,7 @@ module Model = Data_migration_core
 
 let ( let* ) = Lwt_result.bind
 
-module Make (MigrationRepo : Data_migration_sig.REPO) :
+module Make (Db : Data_db_sig.SERVICE) (MigrationRepo : Data_migration_sig.REPO) :
   Data_migration_sig.SERVICE = struct
   let on_init _ = Lwt.return @@ Ok ()
 
@@ -13,14 +13,14 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
 
   let setup ctx =
     Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
-    MigrationRepo.create_table_if_not_exists |> Data_db.query ctx
+    MigrationRepo.create_table_if_not_exists |> Db.query ctx
 
   let has ctx ~namespace =
-    let* result = MigrationRepo.get ~namespace |> Data_db.query ctx in
+    let* result = MigrationRepo.get ~namespace |> Db.query ctx in
     Lwt_result.return (Option.is_some result)
 
   let get ctx ~namespace =
-    let* state = MigrationRepo.get ~namespace |> Data_db.query ctx in
+    let* state = MigrationRepo.get ~namespace |> Db.query ctx in
     Lwt.return
     @@
     match state with
@@ -30,7 +30,7 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
           (Printf.sprintf "MIGRATION: Could not get migration state for %s"
              namespace)
 
-  let upsert ctx state = MigrationRepo.upsert ~state |> Data_db.query ctx
+  let upsert ctx state = MigrationRepo.upsert ~state |> Db.query ctx
 
   let mark_dirty ctx ~namespace =
     let* state = get ctx ~namespace in
@@ -69,7 +69,7 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
             let req = Caqti_request.exec Caqti_type.unit statement in
             Connection.exec req () |> Lwt_result.map_err Caqti_error.show
           in
-          Data_db.query ctx query >>= function
+          Db.query ctx query >>= function
           | Ok () ->
               Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
               let* _ = increment ctx ~namespace in
@@ -84,21 +84,21 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
               Lwt.return @@ Error msg )
       | { label; statement; check_fk = false } :: steps -> (
           let ( let* ) = Lwt.bind in
-          let* _ = Data_db.set_fk_check ~check:false |> Data_db.query ctx in
+          let* _ = Db.set_fk_check ~check:false |> Db.query ctx in
           Logs.debug (fun m ->
               m "MIGRATION: Running %s without fk checks" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
             let req = Caqti_request.exec Caqti_type.unit statement in
             Connection.exec req () |> Lwt_result.map_err Caqti_error.show
           in
-          Data_db.query ctx query >>= function
+          Db.query ctx query >>= function
           | Ok () ->
-              let* _ = Data_db.set_fk_check ~check:true |> Data_db.query ctx in
+              let* _ = Db.set_fk_check ~check:true |> Db.query ctx in
               Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
               let* _ = increment ctx ~namespace in
               run steps
           | Error err ->
-              let* _ = Data_db.set_fk_check ~check:true |> Data_db.query ctx in
+              let* _ = Db.set_fk_check ~check:true |> Db.query ctx in
               let msg =
                 Printf.sprintf
                   "MIGRATION: Error while running migration for %s %s" namespace
@@ -160,7 +160,7 @@ module Make (MigrationRepo : Data_migration_sig.REPO) :
           | Ok () -> run migrations ctx
           | Error err -> return (Error err) )
     in
-    let ctx = Data_db.ctx_with_pool () in
+    let ctx = Db.ctx_with_pool () in
     run migrations ctx
 
   let run_all ctx = Lwt_result.bind (get_migrations ctx) execute
