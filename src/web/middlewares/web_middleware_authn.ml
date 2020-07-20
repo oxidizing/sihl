@@ -24,7 +24,22 @@ module Make (AuthnService : Authn.Sig.SERVICE) = struct
           let login_path = login_path_f () in
           Web_res.redirect login_path |> Lwt.return
     in
-    Web_middleware_core.create ~name:"user_require_login" filter
+    Web_middleware_core.create ~name:"user_require_user" filter
+
+  let require_admin ~login_path_f =
+    let filter handler ctx =
+      let user = User.find_user ctx in
+      match user with
+      | Some user ->
+          if User.is_admin user then handler ctx
+          else
+            let login_path = login_path_f () in
+            Web_res.redirect login_path |> Lwt.return
+      | None ->
+          let login_path = login_path_f () in
+          Web_res.redirect login_path |> Lwt.return
+    in
+    Web_middleware_core.create ~name:"user_require_admin" filter
 end
 
 (* let token () =
