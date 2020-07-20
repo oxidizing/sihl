@@ -18,6 +18,9 @@ module Template = struct
 
     let get ctx ~id = TemplateRepo.get ~id |> Data.Db.query ctx
 
+    let get_by_name ctx ~name =
+      TemplateRepo.get_by_name ~name |> Data.Db.query ctx
+
     let create ctx ~name ~html ~text =
       let template = Email_core.Template.make ~text ~html name in
       let* () = TemplateRepo.insert ~template |> Data.Db.query ctx in
@@ -28,7 +31,7 @@ module Template = struct
       |> Lwt.return
 
     let update ctx ~template =
-      let* () = TemplateRepo.insert ~template |> Data.Db.query ctx in
+      let* () = TemplateRepo.update ~template |> Data.Db.query ctx in
       let id = Email_core.Template.id template in
       let* created = TemplateRepo.get ~id |> Data.Db.query ctx in
       created
@@ -47,7 +50,10 @@ module Template = struct
             in
             let* template =
               template
-              |> Result.of_option ~error:"Template with id %s not found"
+              |> Result.of_option
+                   ~error:
+                     (Printf.sprintf "Template with id %s not found"
+                        template_id)
               |> Lwt.return
             in
             let content = Email_core.Template.render template_data template in
@@ -62,7 +68,7 @@ module Template = struct
       module Sql = struct
         module Model = Email_core.Template
 
-        let get connection =
+        let get connection ~id =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           let request =
             Caqti_request.find_opt Caqti_type.string Model.t
@@ -83,7 +89,31 @@ module Template = struct
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
           in
-          Connection.find_opt request
+          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
+
+        let get_by_name connection ~name =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find_opt Caqti_type.string Model.t
+              {sql|
+        SELECT
+          LOWER(CONCAT(
+           SUBSTR(HEX(uuid), 1, 8), '-',
+           SUBSTR(HEX(uuid), 9, 4), '-',
+           SUBSTR(HEX(uuid), 13, 4), '-',
+           SUBSTR(HEX(uuid), 17, 4), '-',
+           SUBSTR(HEX(uuid), 21)
+           )),
+          name,
+          content_text,
+          content_html,
+          created_at
+        FROM email_templates
+        WHERE email_templates.name = ?
+        |sql}
+          in
+          Connection.find_opt request name
+          |> Lwt_result.map_err Caqti_error.show
 
         let insert connection template =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -101,7 +131,6 @@ module Template = struct
           ?,
           ?,
           ?,
-          ?,
           ?
         )
         |sql}
@@ -114,7 +143,8 @@ module Template = struct
           let request =
             Caqti_request.exec Model.t
               {sql|
-        UPDATE SET email_templates
+        UPDATE email_templates
+        SET
           name = $2,
           content_text = $3,
           content_html = $4,
@@ -167,8 +197,9 @@ CREATE TABLE email_templates (
 
       let migrate = Migration.migration
 
-      let get ~id connection =
-        Sql.get connection id |> Lwt_result.map_err Caqti_error.show
+      let get ~id connection = Sql.get connection ~id
+
+      let get_by_name ~name connection = Sql.get_by_name connection ~name
 
       let insert conn ~template = Sql.insert conn template
 
@@ -181,7 +212,7 @@ CREATE TABLE email_templates (
       module Sql = struct
         module Model = Email_core.Template
 
-        let get connection =
+        let get connection ~id =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           let request =
             Caqti_request.find_opt Caqti_type.string Model.t
@@ -196,7 +227,25 @@ CREATE TABLE email_templates (
         WHERE email_templates.uuid = ?
         |sql}
           in
-          Connection.find_opt request
+          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
+
+        let get_by_name connection ~name =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          let request =
+            Caqti_request.find_opt Caqti_type.string Model.t
+              {sql|
+        SELECT
+          uuid,
+          name,
+          content_text,
+          content_html,
+          created_at
+        FROM email_templates
+        WHERE email_templates.name = ?
+        |sql}
+          in
+          Connection.find_opt request name
+          |> Lwt_result.map_err Caqti_error.show
 
         let insert connection template =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -214,7 +263,6 @@ CREATE TABLE email_templates (
           ?,
           ?,
           ?,
-          ?,
           ?
         )
         |sql}
@@ -227,7 +275,8 @@ CREATE TABLE email_templates (
           let request =
             Caqti_request.exec Model.t
               {sql|
-        UPDATE SET email_templates
+        UPDATE email_templates
+        SET
           name = $2,
           content_text = $3,
           content_html = $4,
@@ -272,8 +321,9 @@ CREATE TABLE email_templates (
 
       let migrate = Migration.migration
 
-      let get ~id connection =
-        Sql.get connection id |> Lwt_result.map_err Caqti_error.show
+      let get ~id connection = Sql.get connection ~id
+
+      let get_by_name ~name connection = Sql.get_by_name connection ~name
 
       let clean conn = Sql.clean conn
 
