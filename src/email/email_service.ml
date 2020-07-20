@@ -17,9 +17,9 @@ module Template = struct
     let on_stop _ = Lwt.return @@ Ok ()
 
     let render ctx email =
-      let template_id = Email_model.template_id email in
-      let template_data = Email_model.template_data email in
-      let content = Email_model.content email in
+      let template_id = Email_core.template_id email in
+      let template_data = Email_core.template_data email in
+      let content = Email_core.content email in
       let* content =
         match template_id with
         | Some template_id ->
@@ -31,17 +31,23 @@ module Template = struct
               |> Result.of_option ~error:"Template with id %s not found"
               |> Lwt.return
             in
-            let content = Email_model.Template.render template_data template in
+            let content = Email_core.Template.render template_data template in
             Lwt.return @@ Ok content
         | None -> Lwt.return @@ Ok content
       in
-      Email_model.set_content content email |> Result.return |> Lwt.return
+      Email_core.set_content content email |> Result.return |> Lwt.return
+
+    let create ctx ~html ~text =
+      ctx |> ignore;
+      html |> ignore;
+      text |> ignore;
+      failwith "TODO create()"
   end
 
   module Repo = struct
     module MariaDb = struct
       module Sql = struct
-        module Model = Email_model.Template
+        module Model = Email_core.Template
 
         let get connection =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -56,10 +62,9 @@ module Template = struct
            SUBSTR(HEX(uuid), 17, 4), '-',
            SUBSTR(HEX(uuid), 21)
            )),
-          label,
+          name,
           content_text,
           content_html,
-          status,
           created_at
         FROM email_templates
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
@@ -75,10 +80,9 @@ module Template = struct
          *       {sql|
          * INSERT INTO email_templates (
          *   uuid,
-         *   label,
+         *   name,
          *   content_text,
          *   content_html,
-         *   status,
          *   created_at
          * ) VALUES (
          *   UNHEX(REPLACE(?, '-', '')),
@@ -89,9 +93,8 @@ module Template = struct
          *   ?
          * ) ON DUPLICATE KEY UPDATE
          * DO UPDATE SET
-         *   label = VALUES(label),
-         *   content = VALUES(content),
-         *   status = VALUES(status)
+         *   name = VALUES(name),
+         *   content = VALUES(content)
          * |sql}
          *   in
          *   Connection.exec request *)
@@ -120,13 +123,13 @@ SET collation_server = 'utf8mb4_unicode_ci';
 CREATE TABLE email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
-  label VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
   content_text TEXT NOT NULL,
   content_html TEXT NOT NULL,
-  status VARCHAR(128) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+  CONSTRAINT unique_name UNIQUE KEY (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
 
@@ -141,14 +144,12 @@ CREATE TABLE email_templates (
       let get ~id connection =
         Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
-      (* TODO sihl_user has to seed templates properly
-         let clean connection = Sql.clean connection () *)
-      let clean _ = Lwt.return @@ Ok ()
+      let clean conn = Sql.clean conn ()
     end
 
     module PostgreSql = struct
       module Sql = struct
-        module Model = Email_model.Template
+        module Model = Email_core.Template
 
         let get connection =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -157,10 +158,9 @@ CREATE TABLE email_templates (
               {sql|
         SELECT
           uuid,
-          label,
+          name,
           content_text,
           content_html,
-          status,
           created_at
         FROM email_templates
         WHERE email_templates.uuid = ?
@@ -176,10 +176,9 @@ CREATE TABLE email_templates (
          *       {sql|
          * INSERT INTO email_templates (
          *   uuid,
-         *   label,
+         *   name,
          *   content_text,
          *   content_html,
-         *   status,
          *   created_at
          * ) VALUES (
          *   ?,
@@ -190,10 +189,9 @@ CREATE TABLE email_templates (
          *   ?
          * ) ON CONFLICT (id)
          * DO UPDATE SET
-         *   label = EXCLUDED.label,
+         *   name = EXCLUDED.name,
          *   content_text = EXCLUDED.content_text,
-         *   content_html = EXCLUDED.content_html,
-         *   status = EXCLUDED.status
+         *   content_html = EXCLUDED.content_html
          * |sql}
          *   in
          *   Connection.exec request *)
@@ -216,13 +214,13 @@ CREATE TABLE email_templates (
 CREATE TABLE email_templates (
   id SERIAL,
   uuid UUID NOT NULL,
-  label VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
   content_text TEXT NOT NULL,
   content_html TEXT NOT NULL,
-  status VARCHAR(128) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (id),
-  UNIQUE (uuid)
+  UNIQUE (uuid),
+  UNIQUE (name)
 );
 |sql}
 
@@ -235,9 +233,7 @@ CREATE TABLE email_templates (
       let get ~id connection =
         Sql.get connection id |> Lwt_result.map_err Caqti_error.show
 
-      (* TODO sihl_user has to seed templates properly
-         let clean connection = Sql.clean connection () *)
-      let clean _ = Lwt.return @@ Ok ()
+      let clean conn = Sql.clean conn ()
     end
   end
 end
@@ -252,10 +248,10 @@ module Make = struct
     let on_stop _ = Lwt.return @@ Ok ()
 
     let show email =
-      let sender = Email_model.sender email in
-      let recipient = Email_model.recipient email in
-      let subject = Email_model.subject email in
-      let content = Email_model.content email in
+      let sender = Email_core.sender email in
+      let recipient = Email_core.recipient email in
+      let subject = Email_core.subject email in
+      let content = Email_core.content email in
       Printf.sprintf
         {|
 -----------------------
@@ -340,10 +336,10 @@ Subject: %s
           ]
       in
       let* email = TemplateService.render request email in
-      let sender = Email_model.sender email in
-      let recipient = Email_model.recipient email in
-      let subject = Email_model.subject email in
-      let content = Email_model.content email in
+      let sender = Email_core.sender email in
+      let recipient = Email_core.recipient email in
+      let subject = Email_core.subject email in
+      let content = Email_core.content email in
       let req_body = body ~recipient ~subject ~sender ~content in
       let* resp, resp_body =
         Cohttp_lwt_unix.Client.post
@@ -378,7 +374,7 @@ Subject: %s
 
     let send request email =
       let* email = TemplateService.render request email in
-      Email_model.DevInbox.set email;
+      Email_core.DevInbox.set email;
       Lwt.return @@ Ok ()
   end
 end

@@ -1,36 +1,34 @@
 module Service = Email_service
 module Sig = Email_sig
 
-module TemplateData : sig
-  type t
-
-  val pp : Format.formatter -> t -> unit
-
-  val show : t -> string
-
-  val equal : t -> t -> bool
-
-  val empty : t
-
-  val add : key:string -> value:string -> t -> t
-
-  val make : (string * string) list -> t
-end
-
 module Template : sig
+  module Data : sig
+    type t
+
+    val pp : Format.formatter -> t -> unit
+
+    val show : t -> string
+
+    val equal : t -> t -> bool
+
+    val empty : t
+
+    val add : key:string -> value:string -> t -> t
+
+    val make : (string * string) list -> t
+  end
+
   type t
 
   val make : ?text:string -> ?html:string -> string -> t
 
   val created_at : t -> Ptime.t
 
-  val status : t -> string
-
   val content_html : t -> string
 
   val content_text : t -> string
 
-  val label : t -> string
+  val name : t -> string
 
   val id : t -> string
 
@@ -42,12 +40,12 @@ module Template : sig
 
   val t : t Caqti_type.t
 
-  val render : TemplateData.t -> t -> string
+  val render : Data.t -> t -> string
 end
 
-module DevInbox = Email_model.DevInbox
+module DevInbox = Email_core.DevInbox
 
-type t = Email_model.t
+type t = Email_core.t
 
 val make :
   sender:string ->
@@ -58,11 +56,11 @@ val make :
   ?bcc:string list ->
   html:bool ->
   ?template_id:string ->
-  ?template_data:TemplateData.t ->
+  ?template_data:Template.Data.t ->
   unit ->
   t
 
-val template_data : t -> TemplateData.t
+val template_data : t -> Template.Data.t
 
 val template_id : t -> string option
 

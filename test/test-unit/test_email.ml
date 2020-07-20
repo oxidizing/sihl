@@ -1,7 +1,7 @@
 let test_email_rendering_simple _ () =
   let data =
-    Sihl.Email.TemplateData.empty
-    |> Sihl.Email.TemplateData.add ~key:"foo" ~value:"bar"
+    Sihl.Email.Template.Data.empty
+    |> Sihl.Email.Template.Data.add ~key:"foo" ~value:"bar"
   in
   let actual =
     Sihl.Email.Template.render data
@@ -9,9 +9,9 @@ let test_email_rendering_simple _ () =
   in
   let _ = Alcotest.(check string) "Renders template" "bar" actual in
   let data =
-    Sihl.Email.TemplateData.empty
-    |> Sihl.Email.TemplateData.add ~key:"foo" ~value:"hey"
-    |> Sihl.Email.TemplateData.add ~key:"bar" ~value:"ho"
+    Sihl.Email.Template.Data.empty
+    |> Sihl.Email.Template.Data.add ~key:"foo" ~value:"hey"
+    |> Sihl.Email.Template.Data.add ~key:"bar" ~value:"ho"
   in
   let actual =
     Sihl.Email.Template.render data
@@ -21,9 +21,9 @@ let test_email_rendering_simple _ () =
 
 let test_email_rendering_complex _ () =
   let data =
-    Sihl.Email.TemplateData.empty
-    |> Sihl.Email.TemplateData.add ~key:"foo" ~value:"hey"
-    |> Sihl.Email.TemplateData.add ~key:"bar" ~value:"ho"
+    Sihl.Email.Template.Data.empty
+    |> Sihl.Email.Template.Data.add ~key:"foo" ~value:"hey"
+    |> Sihl.Email.Template.Data.add ~key:"bar" ~value:"ho"
   in
   let actual =
     Sihl.Email.Template.render data

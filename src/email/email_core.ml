@@ -1,47 +1,41 @@
-module TemplateData = struct
-  type t = (string * string) list [@@deriving show, eq]
-
-  let empty = []
-
-  let add ~key ~value data = List.cons (key, value) data
-
-  let make data = data
-end
-
 module Template = struct
+  module Data = struct
+    type t = (string * string) list [@@deriving show, eq]
+
+    let empty = []
+
+    let add ~key ~value data = List.cons (key, value) data
+
+    let make data = data
+  end
+
   type t = {
     id : string;
-    label : string;
+    name : string;
     content_text : string;
     content_html : string;
-    status : string;
     created_at : Ptime.t;
   }
   [@@deriving show, eq, fields]
 
   let t =
     let encode m =
-      Ok
-        ( m.id,
-          (m.label, (m.content_text, (m.content_html, (m.status, m.created_at))))
-        )
+      Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
     in
-    let decode
-        (id, (label, (content_text, (content_html, (status, created_at))))) =
-      Ok { id; label; content_text; content_html; status; created_at }
+    let decode (id, (name, (content_text, (content_html, created_at)))) =
+      Ok { id; name; content_text; content_html; created_at }
     in
     Caqti_type.(
       custom ~encode ~decode
-        (tup2 string
-           (tup2 string (tup2 string (tup2 string (tup2 string ptime))))))
+        (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
 
-  let make ?text ?html label =
+  let make ?text ?html name =
     {
-      id = "TODO";
-      label;
+      (* The template data module from above shadows Sihl.Data *)
+      id = Sihl__Data.Id.random () |> Sihl__Data.Id.to_string;
+      name;
       content_text = text |> Option.value ~default:"";
       content_html = html |> Option.value ~default:"";
-      status = "active";
       created_at = Ptime_clock.now ();
     }
 
