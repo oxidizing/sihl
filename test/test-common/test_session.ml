@@ -10,7 +10,7 @@ struct
   module Middleware = Sihl.Web.Middleware.Session.Make (SessionService)
 
   let test_anonymous_request_returns_cookie _ () =
-    let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
+    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let stack = [ Middleware.m () ] in
     let* _ = Sihl.Test.middleware_stack ctx stack in
@@ -23,7 +23,7 @@ struct
     Lwt.return ()
 
   let test_requests_persist_session_variables _ () =
-    let ctx = Sihl.Core.Ctx.empty |> Sihl.Data.Db.add_pool in
+    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let stack = [ Middleware.m () ] in
     let handler ctx =

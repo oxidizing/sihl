@@ -21,6 +21,7 @@ module type SERVICE = sig
 
   val atomic :
     Core_ctx.t ->
+    ?no_rollback:bool ->
     (Core_ctx.t -> ('a, 'e) Lwt_result.t) ->
     (('a, 'e) Result.t, string) Lwt_result.t
 

@@ -14,7 +14,7 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
        let* () = Core.Container.register_services ctx App.services in
        Log.debug (fun m -> m "APP: Register config");
        let* () = Kernel.Config.register_config ctx App.config in
-       let ctx = Data.Db.add_pool ctx in
+       let ctx = Kernel.Db.add_pool ctx in
        Log.debug (fun m -> m "APP: Run migrations");
        let* () = Kernel.Migration.run_all ctx in
        Log.debug (fun m -> m "APP: Register routes");

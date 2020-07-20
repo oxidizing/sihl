@@ -3,9 +3,10 @@ open Base
 let ( let* ) = Lwt_result.bind
 
 module Make
+    (Db : Data_db_sig.SERVICE)
+    (RepoService : Data.Repo.Sig.SERVICE)
     (MigrationService : Data.Migration.Sig.SERVICE)
-    (SessionRepo : Session_sig.REPO)
-    (RepoService : Data.Repo.Sig.SERVICE) : Session_sig.SERVICE = struct
+    (SessionRepo : Session_sig.REPO) : Session_sig.SERVICE = struct
   let on_init ctx =
     let* () = MigrationService.register ctx (SessionRepo.migrate ()) in
     RepoService.register_cleaner ctx SessionRepo.clean
@@ -21,7 +22,7 @@ module Make
 
   let set_value ctx ~key ~value =
     let* session_key = require_session_key ctx in
-    let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
+    let* session = SessionRepo.get ~key:session_key |> Db.query ctx in
     match session with
     | None ->
         Lwt.return
@@ -30,11 +31,11 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_core.set ~key ~value session in
-        SessionRepo.update session |> Data.Db.query ctx
+        SessionRepo.update session |> Db.query ctx
 
   let remove_value ctx ~key =
     let* session_key = require_session_key ctx in
-    let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
+    let* session = SessionRepo.get ~key:session_key |> Db.query ctx in
     match session with
     | None ->
         Lwt.return
@@ -43,11 +44,11 @@ module Make
                   m "SESSION: Provided session key has no session in DB"))
     | Some session ->
         let session = Session_core.remove ~key session in
-        SessionRepo.update session |> Data.Db.query ctx
+        SessionRepo.update session |> Db.query ctx
 
   let get_value ctx ~key =
     let* session_key = require_session_key ctx in
-    let* session = SessionRepo.get ~key:session_key |> Data.Db.query ctx in
+    let* session = SessionRepo.get ~key:session_key |> Db.query ctx in
     match session with
     | None ->
         Logs.warn (fun m ->
@@ -56,12 +57,11 @@ module Make
     | Some session ->
         Session_core.get key session |> Result.return |> Lwt.return
 
-  let get_session ctx ~key = SessionRepo.get ~key |> Data.Db.query ctx
+  let get_session ctx ~key = SessionRepo.get ~key |> Db.query ctx
 
-  let get_all_sessions ctx = SessionRepo.get_all |> Data.Db.query ctx
+  let get_all_sessions ctx = SessionRepo.get_all |> Db.query ctx
 
-  let insert_session ctx ~session =
-    SessionRepo.insert session |> Data.Db.query ctx
+  let insert_session ctx ~session = SessionRepo.insert session |> Db.query ctx
 
   let create ctx data =
     let empty_session = Session_core.make (Ptime_clock.now ()) in

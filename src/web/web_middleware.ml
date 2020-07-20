@@ -20,8 +20,6 @@ module Authn = Web_middleware_authn
 
 let error = Web_middleware_error.m
 
-let db = Web_middleware_db.m
-
 let static = Web_middleware_static.m
 
 let cookie = Web_middleware_cookie.m

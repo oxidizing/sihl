@@ -66,7 +66,7 @@ let query ctx f =
       Logs.info (fun m -> m "DB: Have you applied the DB middleware?");
       Lwt.return (Error "DB: No connection pool found")
 
-let atomic ctx f =
+let atomic ctx ?(no_rollback = false) f =
   let ( let* ) = Lwt.bind in
   match Core_ctx.find ctx_key_pool ctx with
   | Some pool -> (
@@ -98,8 +98,8 @@ let atomic ctx f =
                 let* f_result = f ctx in
                 let _ = Core_ctx.remove ctx_key_connection ctx in
                 let* commit_rollback_result =
-                  match f_result with
-                  | Error _ ->
+                  match (f_result, no_rollback) with
+                  | Error _, false ->
                       Connection.rollback ()
                       |> Lwt_result.map (fun res ->
                              Logs.debug (fun m ->
@@ -110,7 +110,7 @@ let atomic ctx f =
                                  m "DB TX: Failed to rollback transaction %s"
                                    (Caqti_error.show error));
                              error)
-                  | Ok _ ->
+                  | Ok _, _ | _, true ->
                       Connection.commit ()
                       |> Lwt_result.map (fun res ->
                              Logs.debug (fun m ->
