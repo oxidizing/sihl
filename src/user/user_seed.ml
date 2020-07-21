@@ -14,8 +14,8 @@ module Make (UserService : User_sig.SERVICE) = struct
    *   let* token = UserService.login request ~email ~password in
    *   Lwt.return (user, token) *)
 
-  let user ~email ~password request =
-    UserService.create_user request ~email ~password ~username:None
+  let user ~email ~password ?username request =
+    UserService.create_user request ~email ~password ~username
 
   (* let logged_in_user ~email ~password request =
    *   let (module UserService : User_sig.SERVICE) =

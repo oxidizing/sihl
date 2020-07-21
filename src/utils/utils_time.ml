@@ -1,3 +1,17 @@
+open Base
+
+type duration = OneDay | OneWeek | OneMonth | OneYear
+
+let duration_to_span duration =
+  let duration_s =
+    match duration with
+    | OneDay -> 60. *. 60. *. 24.
+    | OneWeek -> 60. *. 60. *. 24. *. 7.
+    | OneMonth -> 60. *. 60. *. 24. *. 30.
+    | OneYear -> 60. *. 60. *. 24. *. 365.
+  in
+  Option.value_exn (Ptime.of_float_s duration_s) |> Ptime.to_span
+
 let ptime_to_yojson ptime = `String (Ptime.to_rfc3339 ptime)
 
 let ptime_of_yojson yojson =

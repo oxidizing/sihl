@@ -58,6 +58,11 @@ let suite =
         test_case "test set session variable" `Quick
           Test_session.test_set_session_variable;
       ] );
+    ( "jwt",
+      [
+        test_case "is not expired" `Quick Test_jwt.is_not_expired;
+        test_case "is expired" `Quick Test_jwt.is_expired;
+      ] );
   ]
 
 let () = Lwt_main.run (run "unit tests" suite)
