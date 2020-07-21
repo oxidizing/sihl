@@ -60,6 +60,9 @@
   ;; UUID
   (uuidm (>= 0.9.7))
 
+  ;; SMTP
+  (letters (>= 0.1.1))
+
   ;; Helpers & Generation
   (sexplib (>= 0.13.0))
   (ppx_fields_conv (>= 0.13.0))
