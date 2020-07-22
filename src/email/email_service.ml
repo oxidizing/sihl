@@ -363,7 +363,7 @@ Subject: %s
     let send request email =
       let* email = TemplateService.render request email in
       let to_print = email |> show in
-      Lwt.return @@ Ok (Logs.info (fun m -> m "%s" to_print))
+      Lwt.return @@ Ok (Caml.print_endline to_print)
   end
 
   module Smtp
