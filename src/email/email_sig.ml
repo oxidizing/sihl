@@ -55,11 +55,21 @@ end
 
 module ConfigProvider = struct
   module type SMTP = sig
+    val smtp_sender : Core.Ctx.t -> (string, string) Lwt_result.t
+
+    val smtp_username : Core.Ctx.t -> (string, string) Lwt_result.t
+
+    val smtp_password : Core.Ctx.t -> (string, string) Lwt_result.t
+
     val smtp_host : Core.Ctx.t -> (string, string) Lwt_result.t
 
-    val smtp_port : Core.Ctx.t -> (int, string) Lwt_result.t
+    val smtp_port : Core.Ctx.t -> (int option, string) Lwt_result.t
 
-    val smtp_secure : Core.Ctx.t -> (bool, string) Lwt_result.t
+    (* Use None for detault *)
+
+    val smtp_starttls : Core.Ctx.t -> (bool, string) Lwt_result.t
+
+    val smtp_ca_dir : Core.Ctx.t -> (string, string) Lwt_result.t
   end
 
   module type SENDGRID = sig

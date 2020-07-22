@@ -379,9 +379,36 @@ Subject: %s
     let on_stop _ = Lwt.return @@ Ok ()
 
     let send request email =
-      let* _ = TemplateService.render request email in
-      (* TODO implement SMTP *)
-      Lwt.return @@ Error "Not implemented"
+      (* TODO: how to get config for sending emails? *)
+      let* rendered = TemplateService.render request email in
+      let recipients =
+        List.concat
+          [
+            [ Letters.To rendered.recipient ];
+            List.map rendered.cc ~f:(fun address -> Letters.Cc address);
+            List.map rendered.bcc ~f:(fun address -> Letters.Bcc address);
+          ]
+      in
+      let body =
+        match rendered.html with
+        | true -> Letters.Html rendered.content
+        | false -> Letters.Plain rendered.content
+      in
+      let message =
+        Letters.build_email ~from:email.sender ~recipients
+          ~subject:email.subject ~body
+      in
+      let* sender = ConfigProvider.smtp_sender request in
+      let* username = ConfigProvider.smtp_username request in
+      let* password = ConfigProvider.smtp_password request in
+      let* hostname = ConfigProvider.smtp_host request in
+      let* port = ConfigProvider.smtp_port request in
+      let* with_starttls = ConfigProvider.smtp_starttls request in
+      let* ca_dir = ConfigProvider.smtp_ca_dir request in
+      let config : Letters.config =
+        { sender; username; password; hostname; port; with_starttls; ca_dir }
+      in
+      Letters.send ~config ~recipients ~message
   end
 
   module SendGrid

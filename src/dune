@@ -19,6 +19,7 @@
   uuidm
   base64
   jwto
+  letters
   alcotest
 )
  (preprocess
