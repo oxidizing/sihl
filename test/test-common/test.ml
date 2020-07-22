@@ -7,6 +7,7 @@ module Make
     (SessionService : Sihl.Session.Sig.SERVICE)
     (UserService : Sihl.User.Sig.SERVICE)
     (StorageService : Sihl.Storage.Sig.SERVICE)
+    (PasswordReset : Sihl.User.PasswordReset.Sig.SERVICE)
     (EmailTemplateService : Sihl.Email.Sig.Template.SERVICE) =
 struct
   module TestToken = Test_token.Make (DbService) (RepoService) (TokenService)
@@ -63,5 +64,16 @@ struct
       [
         test_case "create email template" `Quick TestEmail.create_template;
         test_case "update email template" `Quick TestEmail.update_template;
+      ] )
+
+  module TestPasswordReset =
+    Test_password_reset.Make (DbService) (RepoService) (UserService)
+      (PasswordReset)
+
+  let password_reset =
+    ( "password reset",
+      [
+        test_case "password reset" `Quick
+          TestPasswordReset.reset_password_suceeds;
       ] )
 end

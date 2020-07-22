@@ -8,6 +8,7 @@ module TestSuite =
     (Service.Session)
     (Service.User)
     (Service.Storage)
+    (Service.PasswordReset)
     (Service.EmailTemplate)
 
 let test_suite = [ TestSuite.session; TestSuite.user; TestSuite.email ]

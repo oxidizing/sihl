@@ -8,6 +8,7 @@ module TestSuite =
     (Service.Session)
     (Service.User)
     (Service.Storage)
+    (Service.PasswordReset)
     (Service.EmailTemplate)
 
 let test_suite =
@@ -17,6 +18,7 @@ let test_suite =
     TestSuite.storage;
     TestSuite.user;
     TestSuite.email;
+    TestSuite.password_reset;
   ]
 
 let config =
@@ -32,6 +34,7 @@ let services : (module Sihl.Core.Container.SERVICE) list =
     (module Service.User);
     (module Service.Storage);
     (module Service.EmailTemplate);
+    (module Service.PasswordReset);
   ]
 
 let () =

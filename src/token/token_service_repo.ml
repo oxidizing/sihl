@@ -42,7 +42,6 @@ module MariaDb = struct
 
     let insert connection ~token =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Logs.err (fun m -> m "Inserting token %a" Token_core.pp token);
       let request =
         Caqti_request.exec Model.t
           {sql|
