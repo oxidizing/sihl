@@ -26,7 +26,7 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
           |> Yojson.Safe.to_string
         in
         let* token =
-          TokenService.create ctx ~kind ~data ~expires_in:Utils.Time.OneDay
+          TokenService.create ctx ~kind ~data ~expires_in:Utils.Time.OneDay ()
         in
         Lwt_result.return @@ Some token
     | None ->
@@ -41,6 +41,7 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
     in
     let user_id =
       token |> Result.map ~f:Token.data
+      |> Result.bind ~f:(Result.of_option ~error:"Token has not user assigned")
       |> Result.bind ~f:Utils.Json.parse
       |> Result.bind ~f:TokenData.of_yojson
       |> Result.map ~f:TokenData.user_id

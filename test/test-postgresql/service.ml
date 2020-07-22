@@ -4,6 +4,9 @@ module Migration =
     (Db)
     (Sihl.Data.Migration.Service.Repo.PostgreSql)
 module Repo = Sihl.Data.Repo.Service.Make (Db)
+module Token =
+  Sihl.Token.Service.Make (Db) (Repo) (Migration)
+    (Sihl.Token.Service.Repo.MariaDb)
 module Session =
   Sihl.Session.Service.Make (Db) (Repo) (Migration)
     (Sihl.Session.Service.Repo.PostgreSql)

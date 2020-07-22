@@ -3,11 +3,20 @@ open Alcotest_lwt
 module Make
     (DbService : Sihl.Data.Db.Sig.SERVICE)
     (RepoService : Sihl.Data.Repo.Sig.SERVICE)
+    (TokenService : Sihl.Token.Sig.SERVICE)
     (SessionService : Sihl.Session.Sig.SERVICE)
     (UserService : Sihl.User.Sig.SERVICE)
     (StorageService : Sihl.Storage.Sig.SERVICE)
     (EmailTemplateService : Sihl.Email.Sig.Template.SERVICE) =
 struct
+  module TestToken = Test_token.Make (DbService) (RepoService) (TokenService)
+
+  let token =
+    ( "token",
+      [
+        test_case "create and find token" `Quick TestToken.create_and_find_token;
+      ] )
+
   module TestSession =
     Test_session.Make (DbService) (RepoService) (SessionService)
 

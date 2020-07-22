@@ -4,13 +4,20 @@ open Alcotest_lwt
 let ( let* ) = Lwt.bind
 
 module TestSuite =
-  Test_common.Test.Make (Service.Db) (Service.Repo) (Service.Session)
+  Test_common.Test.Make (Service.Db) (Service.Repo) (Service.Token)
+    (Service.Session)
     (Service.User)
     (Service.Storage)
     (Service.EmailTemplate)
 
 let test_suite =
-  [ TestSuite.session; TestSuite.storage; TestSuite.user; TestSuite.email ]
+  [
+    TestSuite.token;
+    TestSuite.session;
+    TestSuite.storage;
+    TestSuite.user;
+    TestSuite.email;
+  ]
 
 let config =
   Sihl.Config.create ~development:[]
@@ -19,6 +26,8 @@ let config =
 
 let services : (module Sihl.Core.Container.SERVICE) list =
   [
+    (module Service.Log);
+    (module Service.Token);
     (module Service.Session);
     (module Service.User);
     (module Service.Storage);
