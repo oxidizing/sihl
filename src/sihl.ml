@@ -9,8 +9,7 @@ module Schedule = Schedule
 module Authz = Authz
 module App = App
 module Test = Test
-
-(* Extensions *)
+module Token = Token
 module Authn = Authn
 module Email = Email
 module Session = Session

@@ -1,17 +1,29 @@
 module type REPOSITORY = sig
   include Data.Repo.Sig.REPO
 
-  val get :
+  val find :
     value:string ->
     Data_db_core.connection ->
-    (Token_model.t option, string) Result.t Lwt.t
+    (Token_core.t, string) Result.t Lwt.t
 
-  val delete_by_user :
-    id:string -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+  val find_opt :
+    value:string ->
+    Data_db_core.connection ->
+    (Token_core.t option, string) Result.t Lwt.t
 
   val insert :
-    Token_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+    token:Token_core.t ->
+    Data_db_core.connection ->
+    (unit, string) Result.t Lwt.t
+end
 
-  val update :
-    Token_model.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+module type SERVICE = sig
+  include Core.Container.SERVICE
+
+  val create :
+    Core.Ctx.t ->
+    kind:string ->
+    data:string ->
+    expires_in:Utils.Time.duration ->
+    (Token_core.t, string) Result.t Lwt.t
 end

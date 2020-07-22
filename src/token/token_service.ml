@@ -1,3 +1,32 @@
+open Base
+
+let ( let* ) = Lwt_result.bind
+
+module Make
+    (Db : Data_db_sig.SERVICE)
+    (RepoService : Data.Repo.Sig.SERVICE)
+    (MigrationService : Data.Migration.Sig.SERVICE)
+    (TokenRepo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
+  let on_init ctx =
+    let* () = MigrationService.register ctx (TokenRepo.migrate ()) in
+    RepoService.register_cleaner ctx TokenRepo.clean
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
+
+  let create ctx ~kind ~data ~expires_in =
+    let id = Data.Id.random () |> Data.Id.to_string in
+    let token = Token_core.make ~id ~kind ~data ~expires_in () in
+    let* result =
+      Db.atomic ctx (fun ctx ->
+          let* () = TokenRepo.insert ~token |> Db.query ctx in
+          let value = Token_core.value token in
+          TokenRepo.find ~value |> Db.query ctx)
+    in
+    Lwt.return result
+end
+
 (* TODO refactor below to token service and use cases *)
 
 (* let is_valid_auth_token ctx token =
