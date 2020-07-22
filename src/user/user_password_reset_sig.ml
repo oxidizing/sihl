@@ -7,7 +7,8 @@ module type SERVICE = sig
 
   val reset_password :
     Core.Ctx.t ->
-    Token.t ->
+    token:string ->
     password:string ->
+    password_confirmation:string ->
     ((unit, string) Result.t, string) Result.t Lwt.t
 end

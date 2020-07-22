@@ -5,7 +5,7 @@ let ( let* ) = Lwt_result.bind
 let kind = "password_reset"
 
 module TokenData = struct
-  type t = { user_id : string } [@@deriving yojson, make]
+  type t = { user_id : string } [@@deriving yojson, make, fields]
 end
 
 module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) :
@@ -31,8 +31,32 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
         Lwt_result.return @@ Some token
     | None ->
         Logs.warn (fun m ->
-            m "PASSWORDRESET: No user found with email %s" email);
+            m "PASSWORD_RESET: No user found with email %s" email);
         Lwt_result.return None
 
-  let reset_password _ _ ~password:_ = failwith "TODO"
+  let reset_password ctx ~token ~password ~password_confirmation =
+    let* token = TokenService.find_opt ctx ~value:token () in
+    let token =
+      Result.of_option ~error:"Invalid or expired token provided" token
+    in
+    let user_id =
+      token |> Result.map ~f:Token.data
+      |> Result.bind ~f:Utils.Json.parse
+      |> Result.bind ~f:TokenData.of_yojson
+      |> Result.map ~f:TokenData.user_id
+    in
+    match user_id with
+    | Error msg -> Lwt_result.return @@ Error msg
+    | Ok user_id -> (
+        let* user = UserService.get ctx ~user_id in
+        match user with
+        | None ->
+            Lwt_result.return
+            @@ Error (Printf.sprintf "User with id %s not found" user_id)
+        | Some user ->
+            let* _ =
+              UserService.set_password ctx ~user ~password
+                ~password_confirmation ()
+            in
+            Lwt_result.return @@ Ok () )
 end

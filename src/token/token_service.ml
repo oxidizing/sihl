@@ -15,6 +15,15 @@ module Make
 
   let on_stop _ = Lwt.return @@ Ok ()
 
+  let find_opt ctx ?(any = false) ~value () =
+    TokenRepo.find_opt ~any ~value |> Db.query ctx
+
+  let find ctx ?(any = false) ~value () =
+    let* token = find_opt ctx ~any ~value () in
+    token
+    |> Result.of_option ~error:(Printf.sprintf "Token %s not found" value)
+    |> Lwt.return
+
   let create ctx ~kind ~data ~expires_in =
     let id = Data.Id.random () |> Data.Id.to_string in
     let token = Token_core.make ~id ~kind ~data ~expires_in () in
@@ -22,7 +31,7 @@ module Make
       Db.atomic ctx (fun ctx ->
           let* () = TokenRepo.insert ~token |> Db.query ctx in
           let value = Token_core.value token in
-          TokenRepo.find ~value |> Db.query ctx)
+          find ctx ~value ())
     in
     Lwt.return result
 end

@@ -3,11 +3,13 @@ module type REPOSITORY = sig
 
   val find :
     value:string ->
+    ?any:bool ->
     Data_db_core.connection ->
     (Token_core.t, string) Result.t Lwt.t
 
   val find_opt :
     value:string ->
+    ?any:bool ->
     Data_db_core.connection ->
     (Token_core.t option, string) Result.t Lwt.t
 
@@ -26,4 +28,20 @@ module type SERVICE = sig
     data:string ->
     expires_in:Utils.Time.duration ->
     (Token_core.t, string) Result.t Lwt.t
+
+  val find :
+    Core.Ctx.t ->
+    ?any:bool ->
+    value:string ->
+    unit ->
+    (Token_core.t, string) Result.t Lwt.t
+  (** If [any] is true, all the stored tokens are returned. If [any] is false, only tokens that have not expired and that have status "active" are returned. [any] is false by default. *)
+
+  val find_opt :
+    Core.Ctx.t ->
+    ?any:bool ->
+    value:string ->
+    unit ->
+    (Token_core.t option, string) Result.t Lwt.t
+  (** If [any] is true, all the stored tokens are returned. If [any] is false, only tokens that have not expired and that have status "active" are returned. [any] is false by default. *)
 end
