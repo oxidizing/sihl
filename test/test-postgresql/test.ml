@@ -4,9 +4,11 @@ open Alcotest_lwt
 let ( let* ) = Lwt.bind
 
 module TestSuite =
-  Test_common.Test.Make (Service.Db) (Service.Repo) (Service.Session)
+  Test_common.Test.Make (Service.Db) (Service.Repo) (Service.Token)
+    (Service.Session)
     (Service.User)
     (Service.Storage)
+    (Service.PasswordReset)
     (Service.EmailTemplate)
 
 let test_suite = [ TestSuite.session; TestSuite.user; TestSuite.email ]

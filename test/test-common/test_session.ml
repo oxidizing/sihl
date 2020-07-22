@@ -18,7 +18,7 @@ struct
       SessionService.get_all_sessions ctx |> Lwt.map Result.ok_or_failwith
     in
     let () =
-      Alcotest.(check int) "Has created session" 1 (List.length sessions)
+      Alcotest.(check int "Has created session" 1 (List.length sessions))
     in
     Lwt.return ()
 
@@ -41,9 +41,10 @@ struct
       |> Lwt.map List.hd_exn
     in
     let () =
-      Alcotest.(check (option string))
-        "Has created session with session value" (Some "bar")
-        (Sihl.Session.get "foo" session)
+      Alcotest.(
+        check (option string) "Has created session with session value"
+          (Some "bar")
+          (Sihl.Session.get "foo" session))
     in
     Lwt.return ()
 end

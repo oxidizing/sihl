@@ -18,7 +18,7 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: password
       MYSQL_DATABASE: dev
-      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+      MYSQL_ROOT_PASSWORD: password
     ports:
       - 3306:3306
 
