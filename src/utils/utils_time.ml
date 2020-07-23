@@ -1,6 +1,7 @@
 open Base
 
 type duration = OneMinute | TenMinutes | OneDay | OneWeek | OneMonth | OneYear
+[@@deriving yojson, show, eq]
 
 let duration_to_span duration =
   let duration_s =
