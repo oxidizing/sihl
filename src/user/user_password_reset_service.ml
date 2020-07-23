@@ -55,9 +55,9 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
             Lwt_result.return
             @@ Error (Printf.sprintf "User with id %s not found" user_id)
         | Some user ->
-            let* _ =
+            let* result =
               UserService.set_password ctx ~user ~password
                 ~password_confirmation ()
             in
-            Lwt_result.return @@ Ok () )
+            Lwt_result.return @@ Result.map ~f:(fun _ -> ()) result )
 end

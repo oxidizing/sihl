@@ -51,14 +51,17 @@ module Make
 
   let set_password ctx ?(password_policy = User.default_password_policy) ~user
       ~password ~password_confirmation () =
-    let* () =
+    let* result =
       User.validate_new_password ~password ~password_confirmation
         ~password_policy
-      |> Lwt.return
+      |> Lwt_result.return
     in
-    let updated_user = User.set_user_password user password in
-    let* () = UserRepo.update ~user:updated_user |> Db.query ctx in
-    Lwt.return @@ Ok updated_user
+    match result with
+    | Error msg -> Lwt_result.return @@ Error msg
+    | Ok () ->
+        let updated_user = User.set_user_password user password in
+        let* () = UserRepo.update ~user:updated_user |> Db.query ctx in
+        Lwt_result.return @@ Ok updated_user
 
   let create_user ctx ~email ~password ~username =
     let user =

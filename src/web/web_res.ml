@@ -56,6 +56,8 @@ let redirect path =
 
 let set_body str res = { res with body = Some str }
 
+let set_content_type content_type res = { res with content_type }
+
 let set_opium_res opium_res res = { res with opium_res = Some opium_res }
 
 let set_cookie ~key ~data res =

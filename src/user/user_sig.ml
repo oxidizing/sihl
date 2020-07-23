@@ -69,7 +69,7 @@ module type SERVICE = sig
     password:string ->
     password_confirmation:string ->
     unit ->
-    (User_core.User.t, string) Result.t Lwt.t
+    ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
 
   val create_user :
     Core.Ctx.t ->

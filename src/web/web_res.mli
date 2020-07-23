@@ -12,6 +12,8 @@ val redirect : string -> t
 
 val set_body : string -> t -> t
 
+val set_content_type : Web_core.content_type -> t -> t
+
 val set_opium_res : Opium_kernel.Response.t -> t -> t
 
 val set_cookie : key:string -> data:string -> t -> t
