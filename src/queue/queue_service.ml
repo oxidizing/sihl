@@ -63,7 +63,17 @@ module Make
             Logs.err (fun m ->
                 m "QUEUE: Failure while running job instance %a %s"
                   JobInstance.pp job_instance msg);
-            let* result = Job.failed job ctx ~msg in
+            let* result =
+              Lwt.catch
+                (fun () -> Job.failed job ctx ~msg)
+                (fun exn ->
+                  let exn_string = Exn.to_string exn in
+                  Lwt.return
+                  @@ Error
+                       ( "Exception caught while cleaning up job, this is a \
+                          bug in your job failure handler, make sure to not \
+                          throw exceptions " ^ exn_string ))
+            in
             match result with
             | Error msg ->
                 Logs.err (fun m ->
