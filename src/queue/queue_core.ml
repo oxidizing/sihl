@@ -70,11 +70,18 @@ module JobInstance = struct
     }
 
   let should_run ~job ~job_instance ~now =
-    (* TODO Check if retry delay is held *)
     let tries = job_instance.tries in
     let max_tries = Job.max_tries job in
     let start_at = job_instance.start_at in
-    tries < max_tries && Ptime.is_later start_at ~than:now
+    let retry_delay = Job.retry_delay job |> Utils.Time.duration_to_span in
+    let earliest_retry_at =
+      Ptime.add_span now retry_delay |> Option.value ~default:now
+    in
+    tries < max_tries
+    && Ptime.is_later start_at ~than:now
+    && Ptime.is_later now ~than:earliest_retry_at
+
+  let is_pending job_instance = job_instance.status == Status.Pending
 
   let incr_tries job_instance =
     { job_instance with tries = job_instance.tries + 1 }

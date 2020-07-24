@@ -46,7 +46,17 @@ module Make
               input_string JobInstance.pp job_instance msg);
         Lwt.return None
     | Ok input -> (
-        let* result = Job.handle job ctx ~input in
+        let* result =
+          Lwt.catch
+            (fun () -> Job.handle job ctx ~input)
+            (fun exn ->
+              let exn_string = Exn.to_string exn in
+              Lwt.return
+              @@ Error
+                   ( "Exception caught while running job, this is a bug in \
+                      your job handler, make sure to not throw exceptions "
+                   ^ exn_string ))
+        in
         match result with
         | Error msg -> (
             Logs.err (fun m ->
