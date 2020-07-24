@@ -22,7 +22,6 @@ struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.dispatch ctx ~job () in
-    let* () = QueueService.work_queue ctx ~jobs:[ job ] in
     let () = Alcotest.(check bool "has ran job" true !has_ran_job) in
     Lwt.return ()
 

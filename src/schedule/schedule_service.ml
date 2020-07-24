@@ -1,10 +1,29 @@
-let on_init _ = Lwt_result.return ()
+let ( let* ) = Lwt.bind
 
-let on_start _ = Lwt_result.return ()
+module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
+  let on_init _ = Lwt_result.return ()
 
-let on_stop _ = Lwt_result.return ()
+  let on_start _ = Lwt_result.return ()
 
-let register_schedules _ _ =
-  Logs.warn (fun m ->
-      m "SCHEDULE: Registration of schedules is not implemented");
-  Lwt_result.return ()
+  let on_stop _ = Lwt_result.return ()
+
+  let schedule ctx schedule =
+    Log.debug (fun m -> m "SCHEDULE: Scheduling %a" Schedule_core.pp schedule);
+    let scheduled_function = Schedule_core.scheduled_function schedule in
+    let rec loop () =
+      let now = Ptime_clock.now () in
+      let duration = Schedule_core.run_in schedule ~now in
+      Log.debug (fun m ->
+          m "SCHEDULE: Running schedule %a in %f seconds" Schedule_core.pp
+            schedule duration);
+      let* () = scheduled_function ctx in
+      let* () = Lwt_unix.sleep duration in
+      loop ()
+    in
+    loop () |> ignore
+
+  let register_schedules _ _ =
+    Logs.warn (fun m ->
+        m "SCHEDULE: Registration of schedules is not implemented");
+    Lwt_result.return ()
+end

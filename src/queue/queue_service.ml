@@ -5,20 +5,25 @@ let ( let* ) = Lwt.bind
 module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 
-module Make
+let registered_jobs () : 'a Job.t list ref = ref []
+
+module MakePolling
     (Log : Log_sig.SERVICE)
     (Db : Data_db_sig.SERVICE)
     (RepoService : Data.Repo.Sig.SERVICE)
     (MigrationService : Data.Migration.Sig.SERVICE)
+    (ScheduleService : Schedule.Sig.SERVICE)
     (QueueRepo : Queue_sig.REPO) : Queue_sig.SERVICE = struct
   let on_init ctx =
     let ( let* ) = Lwt_result.bind in
     let* () = MigrationService.register ctx (QueueRepo.migrate ()) in
     RepoService.register_cleaner ctx QueueRepo.clean
 
-  let on_start _ = Lwt.return @@ Ok ()
-
   let on_stop _ = Lwt.return @@ Ok ()
+
+  let register_jobs _ ~jobs =
+    registered_jobs () := jobs;
+    Lwt.return ()
 
   let dispatch ctx ~job ?delay input =
     let input = Job.input_to_string job input in
@@ -146,6 +151,14 @@ module Make
           | Some job -> work_job ctx ~job ~job_instance )
     in
     loop pending_job_instances jobs
+
+  let on_start ctx =
+    let jobs = !(registered_jobs ()) in
+    let schedule =
+      Schedule.create Schedule.every_second ~f:(fun ctx -> work_queue ctx ~jobs)
+    in
+    ScheduleService.schedule ctx schedule;
+    Lwt_result.return ()
 end
 
 module Repo = Queue_service_repo

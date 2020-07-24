@@ -24,4 +24,6 @@ module type SERVICE = sig
   val dispatch :
     Core.Ctx.t -> job:'a Job.t -> ?delay:Utils.Time.duration -> 'a -> unit Lwt.t
   (** Queue a [job] for processing. Use [delay] to run the job after a certain amount of time. *)
+
+  val register_jobs : Core.Ctx.t -> jobs:'a Job.t list -> unit Lwt.t
 end

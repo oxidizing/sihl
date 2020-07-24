@@ -1,13 +1,21 @@
 open Base
 
-type duration = OneMinute | TenMinutes | OneDay | OneWeek | OneMonth | OneYear
+type duration =
+  | OneSecond
+  | OneMinute
+  | TenMinutes
+  | OneDay
+  | OneWeek
+  | OneMonth
+  | OneYear
 [@@deriving yojson, show, eq]
 
 let duration_to_span duration =
   let duration_s =
     match duration with
-    | OneMinute -> 60. *. 60.
-    | TenMinutes -> 60. *. 60. *. 10.
+    | OneSecond -> 1.
+    | OneMinute -> 60.
+    | TenMinutes -> 60. *. 10.
     | OneDay -> 60. *. 60. *. 24.
     | OneWeek -> 60. *. 60. *. 24. *. 7.
     | OneMonth -> 60. *. 60. *. 24. *. 30.
