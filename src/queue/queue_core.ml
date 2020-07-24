@@ -5,8 +5,8 @@ module Job = struct
 
   type 'a t = {
     name : string;
-    input_to_string : 'a -> string;
-    string_to_input : string -> ('a, string) Result.t;
+    input_to_string : 'a -> string option;
+    string_to_input : string option -> ('a, string) Result.t;
     handle : Core.Ctx.t -> input:'a -> (unit, string) Result.t Lwt.t;
     failed : Core.Ctx.t -> msg:string -> (unit, string) Result.t Lwt.t;
     max_tries : int;
@@ -49,7 +49,7 @@ module JobInstance = struct
 
   type t = {
     id : Data.Id.t;
-    input : string;
+    input : string option;
     name : string;
     tries : int;
     start_at : Ptime.t;
@@ -69,18 +69,6 @@ module JobInstance = struct
       status = Status.Pending;
     }
 
-  let should_run ~job ~job_instance ~now =
-    let tries = job_instance.tries in
-    let max_tries = Job.max_tries job in
-    let start_at = job_instance.start_at in
-    let retry_delay = Job.retry_delay job |> Utils.Time.duration_to_span in
-    let earliest_retry_at =
-      Ptime.add_span now retry_delay |> Option.value ~default:now
-    in
-    tries < max_tries
-    && Ptime.is_later start_at ~than:now
-    && Ptime.is_later now ~than:earliest_retry_at
-
   let is_pending job_instance = job_instance.status == Status.Pending
 
   let incr_tries job_instance =
@@ -93,4 +81,22 @@ module JobInstance = struct
 
   let set_succeeded job_instance =
     { job_instance with status = Status.Succeeded }
+
+  let should_run ~job ~job_instance ~now =
+    let tries = job_instance.tries in
+    let max_tries = Job.max_tries job in
+    let start_at = job_instance.start_at in
+    let retry_delay = Job.retry_delay job |> Utils.Time.duration_to_span in
+    let earliest_retry_at =
+      if Option.is_some job_instance.last_ran_at then
+        Ptime.add_span now retry_delay |> Option.value ~default:now
+      else now
+    in
+    let has_tries_left = tries < max_tries in
+    let is_after_delay = not (Ptime.is_later start_at ~than:now) in
+    let is_after_retry_delay =
+      not (Ptime.is_later earliest_retry_at ~than:now)
+    in
+    let is_pending = is_pending job_instance in
+    is_pending && has_tries_left && is_after_delay && is_after_retry_delay
 end

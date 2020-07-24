@@ -43,7 +43,8 @@ module Make
     | Error msg ->
         Log.err (fun m ->
             m "QUEUE: Unexpected input %s found for job instance %a %s"
-              input_string JobInstance.pp job_instance msg);
+              (Option.value ~default:"-" input_string)
+              JobInstance.pp job_instance msg);
         Lwt.return None
     | Ok input -> (
         let* result =
@@ -136,3 +137,5 @@ module Make
     in
     loop pending_job_instances jobs
 end
+
+module Repo = Queue_service_repo
