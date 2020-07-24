@@ -1,3 +1,4 @@
+open Alcotest_lwt
 open Base
 
 let ( let* ) = Lwt.bind
@@ -36,4 +37,8 @@ struct
       |> Lwt.map Result.ok_or_failwith
     in
     Lwt.return ()
+
+  let test_suite =
+    ( "password reset",
+      [ test_case "password reset" `Quick reset_password_suceeds ] )
 end

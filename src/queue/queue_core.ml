@@ -8,7 +8,7 @@ module Job = struct
     input_to_string : 'a -> string option;
     string_to_input : string option -> ('a, string) Result.t;
     handle : Core.Ctx.t -> input:'a -> (unit, string) Result.t Lwt.t;
-    failed : Core.Ctx.t -> msg:string -> (unit, string) Result.t Lwt.t;
+    failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t;
     max_tries : int;
     retry_delay : Utils.Time.duration;
   }

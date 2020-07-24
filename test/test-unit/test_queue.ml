@@ -7,7 +7,7 @@ let should_run_job _ () =
       ~input_to_string:(fun () -> None)
       ~string_to_input:(fun _ -> Ok ())
       ~handle:(fun _ ~input:_ -> Lwt_result.return ())
-      ~failed:(fun _ ~msg:_ -> Lwt_result.return ())
+      ~failed:(fun _ -> Lwt_result.return ())
     |> Sihl.Queue.set_max_tries 3
     |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
   in

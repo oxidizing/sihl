@@ -3,22 +3,32 @@ open Alcotest_lwt
 
 let ( let* ) = Lwt.bind
 
-module TestSuite =
-  Test_common.Test.Make (Service.Db) (Service.Repo) (Service.Token)
-    (Service.Session)
-    (Service.User)
-    (Service.Storage)
-    (Service.PasswordReset)
+module Token =
+  Test_common.Test.Token.Make (Service.Db) (Service.Repo) (Service.Token)
+module Session =
+  Test_common.Test.Session.Make (Service.Db) (Service.Repo) (Service.Session)
+module Storage =
+  Test_common.Test.Storage.Make (Service.Db) (Service.Repo) (Service.Storage)
+module User =
+  Test_common.Test.User.Make (Service.Db) (Service.Repo) (Service.User)
+module Email =
+  Test_common.Test.Email.Make (Service.Db) (Service.Repo)
     (Service.EmailTemplate)
+module PasswordReset =
+  Test_common.Test.PasswordReset.Make (Service.Db) (Service.Repo) (Service.User)
+    (Service.PasswordReset)
+module Queue =
+  Test_common.Test.Queue.Make (Service.Db) (Service.Repo) (Service.Queue)
 
 let test_suite =
   [
-    TestSuite.token;
-    TestSuite.session;
-    TestSuite.storage;
-    TestSuite.user;
-    TestSuite.email;
-    TestSuite.password_reset;
+    Token.test_suite;
+    Session.test_suite;
+    Storage.test_suite;
+    User.test_suite;
+    Email.test_suite;
+    PasswordReset.test_suite;
+    Queue.test_suite;
   ]
 
 let config =
@@ -35,6 +45,7 @@ let services : (module Sihl.Core.Container.SERVICE) list =
     (module Service.Storage);
     (module Service.EmailTemplate);
     (module Service.PasswordReset);
+    (module Service.Queue);
   ]
 
 let () =

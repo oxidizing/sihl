@@ -1,3 +1,4 @@
+open Alcotest_lwt
 open Base
 
 let ( let* ) = Lwt.bind
@@ -44,4 +45,11 @@ struct
     in
     Alcotest.(check string "name" "newname" (Sihl.Email.Template.name template));
     Lwt.return ()
+
+  let test_suite =
+    ( "email",
+      [
+        test_case "create email template" `Quick create_template;
+        test_case "update email template" `Quick update_template;
+      ] )
 end

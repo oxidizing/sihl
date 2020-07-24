@@ -1,3 +1,4 @@
+open Alcotest_lwt
 open Base
 
 let ( let* ) = Lwt.bind
@@ -23,4 +24,7 @@ struct
       Alcotest.(check Sihl.Token.alco "Has created session" created found)
     in
     Lwt.return ()
+
+  let test_suite =
+    ("token", [ test_case "create and find token" `Quick create_and_find_token ])
 end

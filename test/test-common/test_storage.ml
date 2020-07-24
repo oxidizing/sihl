@@ -1,3 +1,4 @@
+open Alcotest_lwt
 open Base
 
 let ( let* ) = Lwt.bind
@@ -6,10 +7,12 @@ let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 
 module Make
     (DbService : Sihl.Data.Db.Sig.SERVICE)
+    (RepoService : Sihl.Data.Repo.Sig.SERVICE)
     (StorageService : Sihl.Storage.Sig.SERVICE) =
 struct
   let fetch_uploaded_file _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
+    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let file_id = Sihl.Data.Id.(random () |> to_string) in
     let file =
       Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
@@ -38,6 +41,7 @@ struct
 
   let update_uploaded_file _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
+    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let file_id = Sihl.Data.Id.(random () |> to_string) in
     let file =
       Sihl.Storage.File.make ~id:file_id ~filename:"diploma.pdf" ~filesize:123
@@ -68,4 +72,11 @@ struct
     in
     Alcotest.(check string "has updated blob" "bmV3Y29udGVudA==" actual_blob);
     Lwt.return ()
+
+  let test_suite =
+    ( "storage",
+      [
+        test_case "upload file" `Quick fetch_uploaded_file;
+        test_case "update file" `Quick update_uploaded_file;
+      ] )
 end

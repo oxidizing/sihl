@@ -65,7 +65,7 @@ module Make
                   JobInstance.pp job_instance msg);
             let* result =
               Lwt.catch
-                (fun () -> Job.failed job ctx ~msg)
+                (fun () -> Job.failed job ctx)
                 (fun exn ->
                   let exn_string = Exn.to_string exn in
                   Lwt.return

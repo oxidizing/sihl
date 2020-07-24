@@ -23,3 +23,6 @@ module EmailTemplate =
   Sihl.Email.Service.Template.Make (Db) (Repo) (Migration)
     (Sihl.Email.Service.Template.Repo.MariaDb)
 module PasswordReset = Sihl.User.PasswordReset.Service.Make (Token) (User)
+module Queue =
+  Sihl.Queue.Service.Make (Log) (Db) (Repo) (Migration)
+    (Sihl.Queue.Service.Repo.Memory)
