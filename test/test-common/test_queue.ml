@@ -21,14 +21,14 @@ struct
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
     let* () = QueueService.dispatch ctx ~job () in
-    let* () = Lwt_unix.sleep 1.0 in
-    let () = Alcotest.(check bool "has ran job" true !has_ran_job) in
+    let* () = Lwt_unix.sleep 1.5 in
+    let () = Alcotest.(check bool "has processed job" true !has_ran_job) in
     Lwt.return ()
 
   let test_suite ctx =
     ( "queue",
       [
-        test_case "queue and work job" `Quick
+        test_case "dispatched job gets processed" `Quick
           (dispatched_job_gets_processed ctx);
       ] )
 end

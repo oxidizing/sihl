@@ -128,7 +128,6 @@ module MakePolling
 
   let work_queue ctx =
     let jobs = !registered_jobs in
-    Log.debug (fun m -> m "Found %d jobs" (List.length jobs));
     let* pending_job_instances =
       QueueRepo.find_pending ctx
       |> Lwt_result.map_err (fun msg ->

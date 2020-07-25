@@ -1,3 +1,5 @@
+open Base
+
 let ( let* ) = Lwt.bind
 
 module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
@@ -16,7 +18,17 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
       Log.debug (fun m ->
           m "SCHEDULE: Running schedule %a in %f seconds" Schedule_core.pp
             schedule duration);
-      let* () = scheduled_function ctx in
+      let* () =
+        Lwt.catch
+          (fun () -> scheduled_function ctx)
+          (fun exn ->
+            Log.err (fun m ->
+                m
+                  "Exception caught while running schedule, this is a bug in \
+                   your scheduled function. %s"
+                  (Exn.to_string exn));
+            Lwt.return ())
+      in
       let* () = Lwt_unix.sleep duration in
       loop ()
     in
