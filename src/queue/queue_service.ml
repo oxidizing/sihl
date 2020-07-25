@@ -5,7 +5,9 @@ let ( let* ) = Lwt.bind
 module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 
-let registered_jobs () : 'a Job.t list ref = ref []
+(* TODO think about how to avoid Obj.magic *)
+(* We have this problem due to the polymorphic type 'a Job.t and mutable state *)
+let registered_jobs = Caml.Obj.magic (ref [])
 
 module MakePolling
     (Log : Log_sig.SERVICE)
@@ -19,12 +21,13 @@ module MakePolling
   let on_stop _ = Lwt.return @@ Ok ()
 
   let register_jobs _ ~jobs =
-    registered_jobs () := jobs;
+    registered_jobs := jobs;
     Lwt.return ()
 
   let dispatch ctx ~job ?delay input =
     let input = Job.input_to_string job input in
     let name = Job.name job in
+    Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);
     let now = Ptime_clock.now () in
     let start_at =
       delay
@@ -123,7 +126,9 @@ module MakePolling
             job_instance);
       Lwt.return () )
 
-  let work_queue ctx ~jobs =
+  let work_queue ctx =
+    let jobs = !registered_jobs in
+    Log.debug (fun m -> m "Found %d jobs" (List.length jobs));
     let* pending_job_instances =
       QueueRepo.find_pending ctx
       |> Lwt_result.map_err (fun msg ->
@@ -146,12 +151,13 @@ module MakePolling
           | None -> loop job_instances jobs
           | Some job -> work_job ctx ~job ~job_instance )
     in
-    loop pending_job_instances jobs
+    let* () = loop pending_job_instances jobs in
+    Log.debug (fun m -> m "QUEUE: Finish working queue");
+    Lwt.return ()
 
   let on_start ctx =
-    let jobs = !(registered_jobs ()) in
     let schedule =
-      Schedule.create Schedule.every_second ~f:(fun ctx -> work_queue ctx ~jobs)
+      Schedule.create Schedule.every_second ~f:(fun ctx -> work_queue ctx)
     in
     ScheduleService.schedule ctx schedule;
     Lwt_result.return ()

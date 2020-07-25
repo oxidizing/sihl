@@ -10,7 +10,7 @@ let config = Sihl.Config.create ~development:[] ~test:[] ~production:[]
 let test_suite ctx = [ Queue.test_suite ctx ]
 
 let services : (module Sihl.Core.Container.SERVICE) list =
-  [ (module Service.Queue) ]
+  [ (module Service.Log); (module Service.Queue) ]
 
 let () =
   let ctx = Sihl.Core.Ctx.empty in

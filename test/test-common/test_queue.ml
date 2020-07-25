@@ -7,7 +7,7 @@ module Make
     (RepoService : Sihl.Data.Repo.Sig.SERVICE)
     (QueueService : Sihl.Queue.Sig.SERVICE) =
 struct
-  let queue_and_work_job ctx _ () =
+  let dispatched_job_gets_processed ctx _ () =
     let has_ran_job = ref false in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job =
@@ -19,10 +19,16 @@ struct
       |> Sihl.Queue.set_max_tries 3
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
+    let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
     let* () = QueueService.dispatch ctx ~job () in
+    let* () = Lwt_unix.sleep 1.0 in
     let () = Alcotest.(check bool "has ran job" true !has_ran_job) in
     Lwt.return ()
 
   let test_suite ctx =
-    ("queue", [ test_case "queue and work job" `Quick (queue_and_work_job ctx) ])
+    ( "queue",
+      [
+        test_case "queue and work job" `Quick
+          (dispatched_job_gets_processed ctx);
+      ] )
 end
