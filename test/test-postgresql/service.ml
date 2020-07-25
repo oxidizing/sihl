@@ -1,17 +1,21 @@
+(* Essential services *)
 module Db = Sihl.Data.Db.Service
-module Migration =
-  Sihl.Data.Migration.Service.Make
-    (Db)
-    (Sihl.Data.Migration.Service.Repo.PostgreSql)
-module Repo = Sihl.Data.Repo.Service.Make (Db)
-module Session =
-  Sihl.Session.Service.Make (Db) (Repo) (Migration)
-    (Sihl.Session.Service.Repo.PostgreSql)
-module User =
-  Sihl.User.Service.Make (Db) (Repo) (Migration)
-    (Sihl.User.Service.Repo.PostgreSql)
+module Log = Sihl.Log.Service
 module Config = Sihl.Config.Service
+module Repo = Sihl.Data.Repo.Service
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.PostgreSql
+module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
+
+(* Repositories *)
+module SessionRepo =
+  Sihl.Session.Service.Repo.MakePostgreSql (Db) (Repo) (Migration)
+module UserRepo = Sihl.User.Service.Repo.MakePostgreSql (Db) (Repo) (Migration)
+module EmailTemplateRepo =
+  Sihl.Email.Service.Template.Repo.MakePostgreSql (Db) (Repo) (Migration)
+
+(* Services *)
+module Session = Sihl.Session.Service.Make (SessionRepo)
+module User = Sihl.User.Service.Make (UserRepo)
 module Test = Sihl.Test.Make (Migration) (Config)
-module EmailTemplate =
-  Sihl.Email.Service.Template.Make (Db) (Repo) (Migration)
-    (Sihl.Email.Service.Template.Repo.PostgreSql)
+module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
+module Schedule = Sihl.Schedule.Service.Make (Log)

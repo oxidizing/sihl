@@ -1,5 +1,5 @@
 module type REPOSITORY = sig
-  include Data.Repo.Sig.REPO_NEW
+  include Data.Repo.Sig.REPO
 
   val find : Core.Ctx.t -> value:string -> (Token_core.t, string) Result.t Lwt.t
 

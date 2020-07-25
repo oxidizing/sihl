@@ -1,7 +1,7 @@
 open Base
 
 module type REPO = sig
-  include Data.Repo.Sig.REPO_NEW
+  include Data.Repo.Sig.REPO
 
   val get_all : Core.Ctx.t -> (Session_core.t list, string) Result.t Lwt.t
 

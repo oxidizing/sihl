@@ -3,33 +3,33 @@ open Base
 let ( let* ) = Lwt_result.bind
 
 module Template = struct
-  module Make (TemplateRepo : Email_sig.Template.REPO) :
-    Email_sig.Template.SERVICE = struct
+  module Make (Repo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE =
+  struct
     let on_init ctx =
-      let* () = TemplateRepo.register_migration ctx in
-      TemplateRepo.register_cleaner ctx
+      let* () = Repo.register_migration ctx in
+      Repo.register_cleaner ctx
 
     let on_start _ = Lwt.return @@ Ok ()
 
     let on_stop _ = Lwt.return @@ Ok ()
 
-    let get ctx ~id = TemplateRepo.get ctx ~id
+    let get ctx ~id = Repo.get ctx ~id
 
-    let get_by_name ctx ~name = TemplateRepo.get_by_name ctx ~name
+    let get_by_name ctx ~name = Repo.get_by_name ctx ~name
 
     let create ctx ~name ~html ~text =
       let template = Email_core.Template.make ~text ~html name in
-      let* () = TemplateRepo.insert ctx ~template in
+      let* () = Repo.insert ctx ~template in
       let id = Email_core.Template.id template in
-      let* created = TemplateRepo.get ctx ~id in
+      let* created = Repo.get ctx ~id in
       created
       |> Result.of_option ~error:"Could not create email template"
       |> Lwt.return
 
     let update ctx ~template =
-      let* () = TemplateRepo.update ctx ~template in
+      let* () = Repo.update ctx ~template in
       let id = Email_core.Template.id template in
-      let* created = TemplateRepo.get ctx ~id in
+      let* created = Repo.get ctx ~id in
       created
       |> Result.of_option ~error:"Could not update email template"
       |> Lwt.return
@@ -41,7 +41,7 @@ module Template = struct
       let* content =
         match template_id with
         | Some template_id ->
-            let* template = TemplateRepo.get ctx ~id:template_id in
+            let* template = Repo.get ctx ~id:template_id in
             let* template =
               template
               |> Result.of_option
@@ -209,7 +209,7 @@ CREATE TABLE email_templates (
       let update ctx ~template = Sql.update ~template |> DbService.query ctx
     end
 
-    module PostgreSql
+    module MakePostgreSql
         (DbService : Data.Db.Sig.SERVICE)
         (RepoService : Data.Repo.Sig.SERVICE)
         (MigrationService : Data.Migration.Sig.SERVICE) :

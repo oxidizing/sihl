@@ -29,7 +29,7 @@ module Template = struct
   end
 
   module type REPO = sig
-    include Data.Repo.Sig.REPO_NEW
+    include Data.Repo.Sig.REPO
 
     val get :
       Core.Ctx.t ->

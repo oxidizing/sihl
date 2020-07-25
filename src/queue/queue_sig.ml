@@ -2,7 +2,7 @@ module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 
 module type REPO = sig
-  include Data.Repo.Sig.REPO_NEW
+  include Data.Repo.Sig.REPO
 
   val enqueue :
     Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t

@@ -4,13 +4,11 @@ open Base
 let ( let* ) = Lwt.bind
 
 module Make
-    (DbService : Sihl.Data.Db.Sig.SERVICE)
     (RepoService : Sihl.Data.Repo.Sig.SERVICE)
     (QueueService : Sihl.Queue.Sig.SERVICE) =
 struct
-  let queue_and_work_job _ () =
+  let queue_and_work_job ctx _ () =
     let has_ran_job = ref false in
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job =
       Sihl.Queue.create_job ~name:"foo"
@@ -25,6 +23,6 @@ struct
     let () = Alcotest.(check bool "has ran job" true !has_ran_job) in
     Lwt.return ()
 
-  let test_suite =
-    ("queue", [ test_case "queue and work job" `Quick queue_and_work_job ])
+  let test_suite ctx =
+    ("queue", [ test_case "queue and work job" `Quick (queue_and_work_job ctx) ])
 end

@@ -17,10 +17,8 @@ module Email =
 module PasswordReset =
   Test_common.Test.PasswordReset.Make (Service.Db) (Service.Repo) (Service.User)
     (Service.PasswordReset)
-module Queue =
-  Test_common.Test.Queue.Make (Service.Db) (Service.Repo) (Service.Queue)
 
-let test_suite =
+let test_suite _ =
   [
     Token.test_suite;
     Session.test_suite;
@@ -28,7 +26,6 @@ let test_suite =
     User.test_suite;
     Email.test_suite;
     PasswordReset.test_suite;
-    Queue.test_suite;
   ]
 
 let config =
@@ -39,20 +36,21 @@ let config =
 let services : (module Sihl.Core.Container.SERVICE) list =
   [
     (module Service.Log);
+    (module Service.Config);
     (module Service.Token);
     (module Service.Session);
     (module Service.User);
     (module Service.Storage);
     (module Service.EmailTemplate);
     (module Service.PasswordReset);
-    (module Service.Queue);
   ]
 
 let () =
+  let ctx = Sihl.Core.Ctx.empty in
   Lwt_main.run
     (let* () =
-       let ctx = Sihl.Core.Ctx.empty in
        let* () = Service.Test.services ctx ~config ~services in
        Lwt.return ()
      in
-     run "mariadb" @@ test_suite)
+     let ctx = Service.Db.add_pool ctx in
+     run "mariadb" @@ test_suite ctx)

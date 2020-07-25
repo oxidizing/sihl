@@ -202,31 +202,34 @@ CREATE TABLE session_sessions (
     let delete ctx ~key = Sql.delete ~id:key |> DbService.query ctx
   end
 
-  module PostgreSql = struct
+  module MakePostgreSql
+      (DbService : Data.Db.Sig.SERVICE)
+      (RepoService : Data.Repo.Sig.SERVICE)
+      (MigrationService : Data.Migration.Sig.SERVICE) : Session_sig.REPO =
+  struct
     module Sql = struct
-      module Session = struct
-        module Model = Session_core
+      module Model = Session_core
 
-        let get_all connection =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find Caqti_type.unit Model.t
-              {sql|
+      let get_all connection =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.find Caqti_type.unit Model.t
+            {sql|
         SELECT
           session_key,
           session_data,
           expire_date
         FROM session_sessions
         |sql}
-          in
-          Connection.collect_list request ()
-          |> Lwt_result.map_err Caqti_error.show
+        in
+        Connection.collect_list request ()
+        |> Lwt_result.map_err Caqti_error.show
 
-        let get connection id =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string Model.t
-              {sql|
+      let get connection ~id =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.find_opt Caqti_type.string Model.t
+            {sql|
         SELECT
           session_key,
           session_data,
@@ -234,14 +237,14 @@ CREATE TABLE session_sessions (
         FROM session_sessions
         WHERE session_sessions.session_key = ?
         |sql}
-          in
-          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
+        in
+        Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-        let insert connection model =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Model.t
-              {sql|
+      let insert connection ~session =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Model.t
+            {sql|
         INSERT INTO session_sessions (
           session_key,
           session_data,
@@ -252,43 +255,42 @@ CREATE TABLE session_sessions (
           ?
         )
         |sql}
-          in
-          Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+        in
+        Connection.exec request session |> Lwt_result.map_err Caqti_error.show
 
-        let update connection model =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Model.t
-              {sql|
+      let update connection ~session =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Model.t
+            {sql|
         UPDATE session_sessions SET
           session_data = $2,
           expire_date = $3
         WHERE session_key = $1
         |sql}
-          in
-          Connection.exec request model |> Lwt_result.map_err Caqti_error.show
+        in
+        Connection.exec request session |> Lwt_result.map_err Caqti_error.show
 
-        let delete connection id =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Caqti_type.string
-              {sql|
+      let delete connection ~id =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Caqti_type.string
+            {sql|
       DELETE FROM session_sessions
       WHERE session_sessions.session_key = ?
            |sql}
-          in
-          Connection.exec request id |> Lwt_result.map_err Caqti_error.show
+        in
+        Connection.exec request id |> Lwt_result.map_err Caqti_error.show
 
-        let clean connection =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Caqti_type.unit
-              {sql|
+      let clean connection =
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let request =
+          Caqti_request.exec Caqti_type.unit
+            {sql|
         TRUNCATE TABLE session_sessions CASCADE;
         |sql}
-          in
-          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
-      end
+        in
+        Connection.exec request () |> Lwt_result.map_err Caqti_error.show
     end
 
     module Migration = struct
@@ -309,18 +311,21 @@ CREATE TABLE session_sessions (
         Data.Migration.(empty "session" |> add_step create_sessions_table)
     end
 
-    let get_all connection = Sql.Session.get_all connection
+    let register_migration ctx =
+      MigrationService.register ctx (Migration.migration ())
 
-    let get ~key connection = Sql.Session.get connection key
+    let register_cleaner ctx =
+      let cleaner ctx = Sql.clean |> DbService.query ctx in
+      RepoService.register_cleaner ctx cleaner
 
-    let insert session connection = Sql.Session.insert connection session
+    let get_all ctx = Sql.get_all |> DbService.query ctx
 
-    let update session connection = Sql.Session.update connection session
+    let get ctx ~key = Sql.get ~id:key |> DbService.query ctx
 
-    let delete ~key connection = Sql.Session.delete connection key
+    let insert ctx session = Sql.insert ~session |> DbService.query ctx
 
-    let migrate = Migration.migration
+    let update ctx session = Sql.update ~session |> DbService.query ctx
 
-    let clean connection = Sql.Session.clean connection
+    let delete ctx ~key = Sql.delete ~id:key |> DbService.query ctx
   end
 end

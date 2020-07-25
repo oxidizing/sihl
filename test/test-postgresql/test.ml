@@ -11,7 +11,7 @@ module Email =
   Test_common.Test.Email.Make (Service.Db) (Service.Repo)
     (Service.EmailTemplate)
 
-let test_suite = [ Session.test_suite; User.test_suite; Email.test_suite ]
+let test_suite _ = [ Session.test_suite; User.test_suite; Email.test_suite ]
 
 let config =
   Sihl.Config.create ~development:[]
@@ -26,10 +26,11 @@ let services : (module Sihl.Core.Container.SERVICE) list =
   ]
 
 let () =
+  let ctx = Sihl.Core.Ctx.empty in
   Lwt_main.run
     (let* () =
-       let ctx = Sihl.Core.Ctx.empty in
        let* () = Service.Test.services ctx ~config ~services in
        Lwt.return ()
      in
-     run "postgresql" @@ test_suite)
+     let ctx = Service.Db.add_pool ctx in
+     run "postgresql" @@ test_suite ctx)
