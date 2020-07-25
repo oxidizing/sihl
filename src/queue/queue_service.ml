@@ -9,15 +9,12 @@ let registered_jobs () : 'a Job.t list ref = ref []
 
 module MakePolling
     (Log : Log_sig.SERVICE)
-    (Db : Data_db_sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE)
     (ScheduleService : Schedule.Sig.SERVICE)
     (QueueRepo : Queue_sig.REPO) : Queue_sig.SERVICE = struct
   let on_init ctx =
     let ( let* ) = Lwt_result.bind in
-    let* () = MigrationService.register ctx (QueueRepo.migrate ()) in
-    RepoService.register_cleaner ctx QueueRepo.clean
+    let* () = QueueRepo.register_migration ctx in
+    QueueRepo.register_cleaner ctx
 
   let on_stop _ = Lwt.return @@ Ok ()
 
@@ -36,8 +33,7 @@ module MakePolling
       |> Option.value ~default:now
     in
     let job_instance = JobInstance.create ~input ~name ~start_at in
-    QueueRepo.enqueue ~job_instance
-    |> Db.query ctx
+    QueueRepo.enqueue ctx ~job_instance
     |> Lwt_result.map_err (fun msg ->
            "QUEUE: Failure while enqueuing job instance: " ^ msg)
     |> Lwt.map Result.ok_or_failwith
@@ -98,7 +94,7 @@ module MakePolling
                   job_instance_id);
             Lwt.return @@ Some () )
 
-  let update ctx ~job_instance = QueueRepo.update ~job_instance |> Db.query ctx
+  let update ctx ~job_instance = QueueRepo.update ctx ~job_instance
 
   let work_job ctx ~job ~job_instance =
     let now = Ptime_clock.now () in
@@ -129,7 +125,7 @@ module MakePolling
 
   let work_queue ctx ~jobs =
     let* pending_job_instances =
-      QueueRepo.find_pending |> Db.query ctx
+      QueueRepo.find_pending ctx
       |> Lwt_result.map_err (fun msg ->
              "QUEUE: Failure while finding pending job instances " ^ msg)
       |> Lwt.map Result.ok_or_failwith

@@ -2,17 +2,20 @@ open Base
 module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 
-module Memory : Queue_sig.REPO = struct
+module MakeMemory (Repo : Data.Repo.Sig.SERVICE) : Queue_sig.REPO = struct
   let state = ref (Map.empty (module String))
 
   let ordered_ids = ref []
 
-  let clean _ =
-    state := Map.empty (module String);
-    ordered_ids := [];
-    Lwt_result.return ()
+  let register_cleaner ctx =
+    let cleaner _ =
+      state := Map.empty (module String);
+      ordered_ids := [];
+      Lwt_result.return ()
+    in
+    Repo.register_cleaner ctx cleaner
 
-  let migrate () = Data.Migration.empty "queue"
+  let register_migration _ = Lwt_result.return ()
 
   let enqueue _ ~job_instance =
     let id = JobInstance.id job_instance |> Data.Id.to_string in

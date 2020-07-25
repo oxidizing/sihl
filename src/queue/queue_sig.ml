@@ -2,20 +2,15 @@ module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 
 module type REPO = sig
-  include Data.Repo.Sig.REPO
+  include Data.Repo.Sig.REPO_NEW
 
   val enqueue :
-    Data.Db.connection ->
-    job_instance:JobInstance.t ->
-    (unit, string) Result.t Lwt.t
+    Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t
 
-  val find_pending :
-    Data.Db.connection -> (JobInstance.t list, string) Result.t Lwt.t
+  val find_pending : Core.Ctx.t -> (JobInstance.t list, string) Result.t Lwt.t
 
   val update :
-    Data.Db.connection ->
-    job_instance:JobInstance.t ->
-    (unit, string) Result.t Lwt.t
+    Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig
