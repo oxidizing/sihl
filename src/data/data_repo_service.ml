@@ -13,7 +13,7 @@ module Registry = struct
     registry := List.concat [ !registry; cleaners ]
 end
 
-module Make (Db : Data_db_sig.SERVICE) : Data_repo_sig.SERVICE = struct
+module Service : Data_repo_sig.SERVICE = struct
   let on_init _ = Lwt_result.return ()
 
   let on_start _ = Lwt_result.return ()
@@ -34,7 +34,7 @@ module Make (Db : Data_db_sig.SERVICE) : Data_repo_sig.SERVICE = struct
       match cleaners with
       | [] -> Lwt.return @@ Ok ()
       | cleaner :: cleaners ->
-          let* () = cleaner |> Db.query ctx in
+          let* () = cleaner ctx in
           clean_repos cleaners
     in
     clean_repos cleaners

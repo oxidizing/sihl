@@ -3,37 +3,33 @@ open Base
 let ( let* ) = Lwt_result.bind
 
 module Template = struct
-  module Make
-      (Db : Data_db_sig.SERVICE)
-      (RepoService : Data.Repo.Sig.SERVICE)
-      (MigrationService : Data.Migration.Sig.SERVICE)
-      (TemplateRepo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE =
-  struct
+  module Make (TemplateRepo : Email_sig.Template.REPO) :
+    Email_sig.Template.SERVICE = struct
     let on_init ctx =
-      let* () = MigrationService.register ctx (TemplateRepo.migrate ()) in
-      RepoService.register_cleaner ctx TemplateRepo.clean
+      let* () = TemplateRepo.register_migration ctx in
+      TemplateRepo.register_cleaner ctx
 
     let on_start _ = Lwt.return @@ Ok ()
 
     let on_stop _ = Lwt.return @@ Ok ()
 
-    let get ctx ~id = TemplateRepo.get ~id |> Db.query ctx
+    let get ctx ~id = TemplateRepo.get ctx ~id
 
-    let get_by_name ctx ~name = TemplateRepo.get_by_name ~name |> Db.query ctx
+    let get_by_name ctx ~name = TemplateRepo.get_by_name ctx ~name
 
     let create ctx ~name ~html ~text =
       let template = Email_core.Template.make ~text ~html name in
-      let* () = TemplateRepo.insert ~template |> Db.query ctx in
+      let* () = TemplateRepo.insert ctx ~template in
       let id = Email_core.Template.id template in
-      let* created = TemplateRepo.get ~id |> Db.query ctx in
+      let* created = TemplateRepo.get ctx ~id in
       created
       |> Result.of_option ~error:"Could not create email template"
       |> Lwt.return
 
     let update ctx ~template =
-      let* () = TemplateRepo.update ~template |> Db.query ctx in
+      let* () = TemplateRepo.update ctx ~template in
       let id = Email_core.Template.id template in
-      let* created = TemplateRepo.get ~id |> Db.query ctx in
+      let* created = TemplateRepo.get ctx ~id in
       created
       |> Result.of_option ~error:"Could not update email template"
       |> Lwt.return
@@ -45,7 +41,7 @@ module Template = struct
       let* content =
         match template_id with
         | Some template_id ->
-            let* template = TemplateRepo.get ~id:template_id |> Db.query ctx in
+            let* template = TemplateRepo.get ctx ~id:template_id in
             let* template =
               template
               |> Result.of_option
@@ -62,7 +58,11 @@ module Template = struct
   end
 
   module Repo = struct
-    module MariaDb : Email_sig.Template.REPO = struct
+    module MakeMariaDb
+        (DbService : Data.Db.Sig.SERVICE)
+        (RepoService : Data.Repo.Sig.SERVICE)
+        (MigrationService : Data.Migration.Sig.SERVICE) :
+      Email_sig.Template.REPO = struct
       module Sql = struct
         module Model = Email_core.Template
 
@@ -113,7 +113,7 @@ module Template = struct
           Connection.find_opt request name
           |> Lwt_result.map_err Caqti_error.show
 
-        let insert connection template =
+        let insert connection ~template =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           let request =
             Caqti_request.exec Model.t
@@ -136,7 +136,7 @@ module Template = struct
           Connection.exec request template
           |> Lwt_result.map_err Caqti_error.show
 
-        let update connection template =
+        let update connection ~template =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           let request =
             Caqti_request.exec Model.t
@@ -193,20 +193,27 @@ CREATE TABLE email_templates (
             |> add_step create_templates_table)
       end
 
-      let migrate = Migration.migration
+      let register_migration ctx =
+        MigrationService.register ctx (Migration.migration ())
 
-      let get ~id connection = Sql.get connection ~id
+      let register_cleaner ctx =
+        let cleaner ctx = Sql.clean |> DbService.query ctx in
+        RepoService.register_cleaner ctx cleaner
 
-      let get_by_name ~name connection = Sql.get_by_name connection ~name
+      let get ctx ~id = Sql.get ~id |> DbService.query ctx
 
-      let insert conn ~template = Sql.insert conn template
+      let get_by_name ctx ~name = Sql.get_by_name ~name |> DbService.query ctx
 
-      let update conn ~template = Sql.update conn template
+      let insert ctx ~template = Sql.insert ~template |> DbService.query ctx
 
-      let clean conn = Sql.clean conn
+      let update ctx ~template = Sql.update ~template |> DbService.query ctx
     end
 
-    module PostgreSql : Email_sig.Template.REPO = struct
+    module PostgreSql
+        (DbService : Data.Db.Sig.SERVICE)
+        (RepoService : Data.Repo.Sig.SERVICE)
+        (MigrationService : Data.Migration.Sig.SERVICE) :
+      Email_sig.Template.REPO = struct
       module Sql = struct
         module Model = Email_core.Template
 
@@ -245,7 +252,7 @@ CREATE TABLE email_templates (
           Connection.find_opt request name
           |> Lwt_result.map_err Caqti_error.show
 
-        let insert connection template =
+        let insert connection ~template =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           let request =
             Caqti_request.exec Model.t
@@ -268,7 +275,7 @@ CREATE TABLE email_templates (
           Connection.exec request template
           |> Lwt_result.map_err Caqti_error.show
 
-        let update connection template =
+        let update connection ~template =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           let request =
             Caqti_request.exec Model.t
@@ -317,17 +324,20 @@ CREATE TABLE email_templates (
           Data.Migration.(empty "email" |> add_step create_templates_table)
       end
 
-      let migrate = Migration.migration
+      let register_migration ctx =
+        MigrationService.register ctx (Migration.migration ())
 
-      let get ~id connection = Sql.get connection ~id
+      let register_cleaner ctx =
+        let cleaner ctx = Sql.clean |> DbService.query ctx in
+        RepoService.register_cleaner ctx cleaner
 
-      let get_by_name ~name connection = Sql.get_by_name connection ~name
+      let get ctx ~id = Sql.get ~id |> DbService.query ctx
 
-      let clean conn = Sql.clean conn
+      let get_by_name ctx ~name = Sql.get_by_name ~name |> DbService.query ctx
 
-      let insert conn ~template = Sql.insert conn template
+      let insert ctx ~template = Sql.insert ~template |> DbService.query ctx
 
-      let update conn ~template = Sql.update conn template
+      let update ctx ~template = Sql.update ~template |> DbService.query ctx
     end
   end
 end

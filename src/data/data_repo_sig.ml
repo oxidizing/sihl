@@ -4,6 +4,12 @@ module type REPO = sig
   val clean : Data_db_core.connection -> (unit, string) Result.t Lwt.t
 end
 
+module type REPO_NEW = sig
+  val register_migration : Core.Ctx.t -> (unit, string) Result.t Lwt.t
+
+  val register_cleaner : Core.Ctx.t -> (unit, string) Result.t Lwt.t
+end
+
 module type SERVICE = sig
   include Core.Container.SERVICE
 
