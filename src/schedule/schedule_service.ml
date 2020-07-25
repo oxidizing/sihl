@@ -10,14 +10,16 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
   let on_stop _ = Lwt_result.return ()
 
   let schedule ctx schedule =
-    Log.debug (fun m -> m "SCHEDULE: Scheduling %a" Schedule_core.pp schedule);
+    Log.debug (fun m ->
+        m "SCHEDULE: Scheduling %s" (Schedule_core.label schedule));
     let scheduled_function = Schedule_core.scheduled_function schedule in
     let rec loop () =
       let now = Ptime_clock.now () in
       let duration = Schedule_core.run_in schedule ~now in
       Log.debug (fun m ->
-          m "SCHEDULE: Running schedule %a in %f seconds" Schedule_core.pp
-            schedule duration);
+          m "SCHEDULE: Running schedule %s in %f seconds"
+            (Schedule_core.label schedule)
+            duration);
       let* () =
         Lwt.catch
           (fun () -> scheduled_function ctx)

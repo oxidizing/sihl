@@ -155,8 +155,11 @@ module MakePolling
     Lwt.return ()
 
   let on_start ctx =
+    (* TODO create empty ctx and pipe through job.with_context, create schedule with that context *)
+    let schedule_ctx = Core.Ctx.empty in
     let schedule =
-      Schedule.create Schedule.every_second ~f:(fun ctx -> work_queue ctx)
+      Schedule.create Schedule.every_second ~f:work_queue ~label:"job_queue"
+        schedule_ctx
     in
     ScheduleService.schedule ctx schedule;
     Lwt_result.return ()
