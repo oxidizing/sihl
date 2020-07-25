@@ -5,6 +5,7 @@ module Job = struct
 
   type 'a t = {
     name : string;
+    with_context : Core.Ctx.t -> Core.Ctx.t;
     input_to_string : 'a -> string option;
     string_to_input : string option -> ('a, string) Result.t;
     handle : Core.Ctx.t -> input:'a -> (unit, string) Result.t Lwt.t;
@@ -14,9 +15,11 @@ module Job = struct
   }
   [@@deriving show, fields]
 
-  let create ~name ~input_to_string ~string_to_input ~handle ~failed =
+  let create ~name ?(with_context = fun ctx -> ctx) ~input_to_string
+      ~string_to_input ~handle ~failed () =
     {
       name;
+      with_context;
       input_to_string;
       string_to_input;
       handle;

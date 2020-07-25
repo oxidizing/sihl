@@ -11,7 +11,7 @@ test-postgresql:
 	SIHL_ENV=test dune runtest --force test/test-postgresql
 
 test-dev:
-	SIHL_ENV=test DATABASE=postgres dune runtest -w test/test-unit test/test-memory
+	SIHL_ENV=test dune runtest -w test/test-unit test/test-memory
 
 test-all:
 	SIHL_ENV=test dune runtest --force test
