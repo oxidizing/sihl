@@ -3,20 +3,17 @@ module Repo = Token_service_repo
 
 let ( let* ) = Lwt_result.bind
 
-module Make
-    (Db : Data_db_sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE)
-    (TokenRepo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
+module Make (Db : Data_db_sig.SERVICE) (Repo : Token_sig.REPOSITORY) :
+  Token_sig.SERVICE = struct
   let on_init ctx =
-    let* () = MigrationService.register ctx (TokenRepo.migrate ()) in
-    RepoService.register_cleaner ctx TokenRepo.clean
+    let* () = Repo.register_migration ctx in
+    Repo.register_cleaner ctx
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let find_opt ctx ~value () = TokenRepo.find_opt ~value |> Db.query ctx
+  let find_opt ctx ~value () = Repo.find_opt ctx ~value
 
   let find ctx ~value () =
     let* token = find_opt ctx ~value () in
@@ -30,7 +27,7 @@ module Make
     let token = Token_core.make ~id ~kind ~data ~expires_in () in
     let* result =
       Db.atomic ctx (fun ctx ->
-          let* () = TokenRepo.insert ~token |> Db.query ctx in
+          let* () = Repo.insert ctx ~token in
           let value = Token_core.value token in
           find ctx ~value ())
     in

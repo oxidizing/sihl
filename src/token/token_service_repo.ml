@@ -1,4 +1,8 @@
-module MariaDb = struct
+module MakeMariaDb
+    (DbService : Data_db_sig.SERVICE)
+    (RepoService : Data.Repo.Sig.SERVICE)
+    (MigrationService : Data.Migration.Sig.SERVICE) : Token_sig.REPOSITORY =
+struct
   module Sql = struct
     module Model = Token_core
 
@@ -69,10 +73,7 @@ module MariaDb = struct
     let clean connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
-        TRUNCATE token_tokens;
-           |sql}
+        Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
       in
       Connection.exec request () |> Lwt_result.map_err Caqti_error.show
   end
@@ -105,16 +106,16 @@ CREATE TABLE token_tokens (
         empty "tokens" |> add_step fix_collation |> add_step create_tokens_table)
   end
 
-  let find ~value connection = Sql.find connection ~value
+  let register_migration ctx =
+    MigrationService.register ctx (Migration.migration ())
 
-  let find_opt ~value connection = Sql.find_opt connection ~value
+  let register_cleaner ctx =
+    let cleaner ctx = Sql.clean |> DbService.query ctx in
+    RepoService.register_cleaner ctx cleaner
 
-  let insert ~token connection = Sql.insert connection ~token
+  let find ctx ~value = Sql.find ~value |> DbService.query ctx
 
-  let migrate = Migration.migration
+  let find_opt ctx ~value = Sql.find_opt ~value |> DbService.query ctx
 
-  let clean connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    let request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;" in
-    Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+  let insert ctx ~token = Sql.insert ~token |> DbService.query ctx
 end
