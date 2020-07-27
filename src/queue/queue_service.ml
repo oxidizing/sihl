@@ -34,17 +34,10 @@ module MakePolling
     Lwt.return ()
 
   let dispatch ctx ~job ?delay input =
-    let input = Job.input_to_string job input in
     let name = Job.name job in
     Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);
     let now = Ptime_clock.now () in
-    let start_at =
-      delay
-      |> Option.map ~f:Utils.Time.duration_to_span
-      |> Option.bind ~f:(Ptime.add_span now)
-      |> Option.value ~default:now
-    in
-    let job_instance = JobInstance.create ~input ~name ~start_at in
+    let job_instance = JobInstance.create ~input ~delay ~now job in
     Repo.enqueue ctx ~job_instance
     |> Lwt_result.map_err (fun msg ->
            "QUEUE: Failure while enqueuing job instance: " ^ msg)
@@ -101,7 +94,7 @@ module MakePolling
 
   let work_job ctx ~job ~job_instance =
     let now = Ptime_clock.now () in
-    if JobInstance.should_run ~job ~job_instance ~now then
+    if JobInstance.should_run ~job_instance ~now then
       let input_string = JobInstance.input job_instance in
       let* job_run_status = run_job ctx input_string ~job ~job_instance in
       let job_instance =

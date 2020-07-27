@@ -87,11 +87,27 @@ module JobInstance = struct
     tries : int;
     start_at : Ptime.t;
     last_ran_at : Ptime.t option;
+    max_tries : int;
+    retry_delay_s : int;
     status : Status.t;
   }
   [@@deriving show, eq, fields, make]
 
-  let create ~input ~name ~start_at =
+  let create ~input ~delay ~now job =
+    let input = Job.input_to_string job input in
+    let name = Job.name job in
+    let retry_delay_s =
+      Option.value_exn
+        ( job |> Job.retry_delay |> Utils.Time.duration_to_span
+        |> Ptime.Span.to_int_s )
+    in
+    let start_at =
+      delay
+      |> Option.map ~f:Utils.Time.duration_to_span
+      |> Option.bind ~f:(Ptime.add_span now)
+      |> Option.value ~default:now
+    in
+    let max_tries = Job.max_tries job in
     {
       id = Data.Id.random ();
       input;
@@ -99,6 +115,8 @@ module JobInstance = struct
       tries = 0;
       start_at;
       last_ran_at = None;
+      max_tries;
+      retry_delay_s;
       status = Status.Pending;
     }
 
@@ -115,13 +133,11 @@ module JobInstance = struct
   let set_succeeded job_instance =
     { job_instance with status = Status.Succeeded }
 
-  let should_run ~job ~job_instance ~now =
+  let should_run ~job_instance ~now =
     let tries = job_instance.tries in
-    let max_tries = WorkableJob.max_tries job in
+    let max_tries = job_instance.max_tries in
     let start_at = job_instance.start_at in
-    let retry_delay =
-      WorkableJob.retry_delay job |> Utils.Time.duration_to_span
-    in
+    let retry_delay = job_instance.retry_delay_s |> Ptime.Span.of_int_s in
     let earliest_retry_at =
       if Option.is_some job_instance.last_ran_at then
         Ptime.add_span now retry_delay |> Option.value ~default:now
