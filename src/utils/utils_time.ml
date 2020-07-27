@@ -4,6 +4,7 @@ type duration =
   | OneSecond
   | OneMinute
   | TenMinutes
+  | OneHour
   | OneDay
   | OneWeek
   | OneMonth
@@ -16,6 +17,7 @@ let duration_to_span duration =
     | OneSecond -> 1.
     | OneMinute -> 60.
     | TenMinutes -> 60. *. 10.
+    | OneHour -> 60. *. 60.
     | OneDay -> 60. *. 60. *. 24.
     | OneWeek -> 60. *. 60. *. 24. *. 7.
     | OneMonth -> 60. *. 60. *. 24. *. 30.

@@ -84,3 +84,15 @@ module type SERVICE = sig
 
   val send : Core.Ctx.t -> Email_core.t -> (unit, string) Result.t Lwt.t
 end
+
+module Delayed = struct
+  module type SERVICE = sig
+    include Core_container.SERVICE
+
+    module EmailService : SERVICE
+
+    val send_later : Core.Ctx.t -> Email_core.t -> unit Lwt.t
+
+    val bulk_send_later : Core.Ctx.t -> Email_core.t list -> unit Lwt.t
+  end
+end

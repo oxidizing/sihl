@@ -14,7 +14,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
@@ -37,7 +37,7 @@ struct
     let job1 =
       Sihl.Queue.create_job ~name:"foo1" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job1 := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
@@ -47,7 +47,7 @@ struct
     let job2 =
       Sihl.Queue.create_job ~name:"foo2" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job2 := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
@@ -58,7 +58,7 @@ struct
     let* () = QueueService.on_start ctx |> Lwt.map Result.ok_or_failwith in
     let* () = QueueService.dispatch ctx ~job:job1 () in
     let* () = QueueService.dispatch ctx ~job:job2 () in
-    let* () = Lwt_unix.sleep 2.0 in
+    let* () = Lwt_unix.sleep 4.0 in
     let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
     let () = Alcotest.(check bool "has processed job1" true !has_ran_job1) in
     let () = Alcotest.(check bool "has processed job2" true !has_ran_job1) in
@@ -71,7 +71,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.fail "didn't work")
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
@@ -95,7 +95,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> failwith "didn't work")
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
@@ -126,7 +126,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context:custom_with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun ctx ~input:_ ->
           has_custom_ctx_string :=
             Option.is_some (Sihl.Core.Ctx.find custom_ctx_key ctx);
@@ -151,7 +151,7 @@ struct
       [
         test_case "dispatched job gets processed" `Quick
           (dispatched_job_gets_processed ctx with_context);
-        test_case "two dispatched job get processed" `Quick
+        test_case "two dispatched jobs get processed" `Quick
           (two_dispatched_jobs_get_processed ctx with_context);
         test_case "cleans up job after error" `Quick
           (cleans_up_job_after_error ctx with_context);
