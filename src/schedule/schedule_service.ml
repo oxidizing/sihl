@@ -10,6 +10,8 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
   let on_stop _ = Lwt_result.return ()
 
   let schedule ctx schedule =
+    let should_stop = ref false in
+    let stop_schedule () = should_stop := true in
     Log.debug (fun m ->
         m "SCHEDULE: Scheduling %s" (Schedule_core.label schedule));
     let scheduled_function = Schedule_core.scheduled_function schedule in
@@ -32,9 +34,16 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
             Lwt.return ())
       in
       let* () = Lwt_unix.sleep duration in
-      loop ()
+      if !should_stop then
+        let () =
+          Log.debug (fun m ->
+              m "SCHEDULE: Stop schedule %s" (Schedule_core.label schedule))
+        in
+        Lwt.return ()
+      else loop ()
     in
-    loop () |> ignore
+    loop () |> ignore;
+    stop_schedule
 
   let register_schedules _ _ =
     Logs.warn (fun m ->

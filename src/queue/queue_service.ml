@@ -9,16 +9,26 @@ module JobInstance = Queue_core.JobInstance
 (* We have this problem due to the polymorphic type 'a Job.t and mutable state *)
 let registered_jobs = Caml.Obj.magic (ref [])
 
+let stop_schedule : (unit -> unit) option ref = ref None
+
 module MakePolling
     (Log : Log_sig.SERVICE)
     (ScheduleService : Schedule.Sig.SERVICE)
-    (QueueRepo : Queue_sig.REPO) : Queue_sig.SERVICE = struct
+    (Repo : Queue_sig.REPO) : Queue_sig.SERVICE = struct
   let on_init ctx =
     let ( let* ) = Lwt_result.bind in
-    let* () = QueueRepo.register_migration ctx in
-    QueueRepo.register_cleaner ctx
+    let* () = Repo.register_migration ctx in
+    Repo.register_cleaner ctx
 
-  let on_stop _ = Lwt.return @@ Ok ()
+  let on_stop _ =
+    registered_jobs := [];
+    match !stop_schedule with
+    | Some stop_schedule ->
+        stop_schedule ();
+        Lwt_result.return ()
+    | None ->
+        Log.warn (fun m -> m "QUEUE: Can not stop schedule");
+        Lwt_result.return ()
 
   let register_jobs _ ~jobs =
     registered_jobs := jobs;
@@ -36,7 +46,7 @@ module MakePolling
       |> Option.value ~default:now
     in
     let job_instance = JobInstance.create ~input ~name ~start_at in
-    QueueRepo.enqueue ctx ~job_instance
+    Repo.enqueue ctx ~job_instance
     |> Lwt_result.map_err (fun msg ->
            "QUEUE: Failure while enqueuing job instance: " ^ msg)
     |> Lwt.map Result.ok_or_failwith
@@ -97,7 +107,7 @@ module MakePolling
                   job_instance_id);
             Lwt.return @@ Some () )
 
-  let update ctx ~job_instance = QueueRepo.update ctx ~job_instance
+  let update ctx ~job_instance = Repo.update ctx ~job_instance
 
   let work_job ctx ~job ~job_instance =
     let now = Ptime_clock.now () in
@@ -126,10 +136,9 @@ module MakePolling
             job_instance);
       Lwt.return () )
 
-  let work_queue ctx =
-    let jobs = !registered_jobs in
+  let work_queue ctx ~jobs =
     let* pending_job_instances =
-      QueueRepo.find_pending ctx
+      Repo.find_pending ctx
       |> Lwt_result.map_err (fun msg ->
              "QUEUE: Failure while finding pending job instances " ^ msg)
       |> Lwt.map Result.ok_or_failwith
@@ -156,12 +165,13 @@ module MakePolling
 
   let on_start ctx =
     (* TODO create empty ctx and pipe through job.with_context, create schedule with that context *)
+    let jobs = !registered_jobs in
     let schedule_ctx = Core.Ctx.empty in
     let schedule =
-      Schedule.create Schedule.every_second ~f:work_queue ~label:"job_queue"
-        schedule_ctx
+      Schedule.create Schedule.every_second ~f:(work_queue ~jobs)
+        ~label:"job_queue" schedule_ctx
     in
-    ScheduleService.schedule ctx schedule;
+    stop_schedule := Some (ScheduleService.schedule ctx schedule);
     Lwt_result.return ()
 end
 

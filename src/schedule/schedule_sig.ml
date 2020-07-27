@@ -4,5 +4,5 @@ module type SERVICE = sig
   val register_schedules :
     Core_ctx.t -> Schedule_core.t list -> (unit, string) Result.t Lwt.t
 
-  val schedule : Core.Ctx.t -> Schedule_core.t -> unit
+  val schedule : Core.Ctx.t -> Schedule_core.t -> Schedule_core.stop_schedule
 end

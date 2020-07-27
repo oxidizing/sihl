@@ -1,3 +1,5 @@
+open Base
+
 module Job = struct
   let default_tries = 5
 
@@ -72,7 +74,7 @@ module JobInstance = struct
       status = Status.Pending;
     }
 
-  let is_pending job_instance = job_instance.status == Status.Pending
+  let is_pending job_instance = Status.equal job_instance.status Status.Pending
 
   let incr_tries job_instance =
     { job_instance with tries = job_instance.tries + 1 }
@@ -102,4 +104,37 @@ module JobInstance = struct
     in
     let is_pending = is_pending job_instance in
     is_pending && has_tries_left && is_after_delay && is_after_retry_delay
+end
+
+(* TODO turn these into types *)
+module type JOB_WORKER = sig
+  val work : Core.Ctx.t -> input:string -> (unit, string) Result.t Lwt.t
+
+  val failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t
+
+  val with_context : Core.Ctx.t -> Core.Ctx.t
+
+  val name : string
+
+  val max_tries : int
+
+  val retry_delay : Utils.Time.duration
+end
+
+module JobWorkerManager : sig
+  val register_worker : (module JOB_WORKER) -> unit
+
+  val work : Core.Ctx.t -> JobInstance.t -> unit Lwt.t
+end = struct
+  let registered_workers :
+      (string, (module JOB_WORKER), Base.String.comparator_witness) Base.Map.t
+      ref =
+    ref @@ Map.empty (module String)
+
+  let register_worker (module JobWorker : JOB_WORKER) =
+    registered_workers :=
+      Map.add_exn !registered_workers ~key:JobWorker.name
+        ~data:(module JobWorker)
+
+  let work _ _ = failwith "TODO"
 end

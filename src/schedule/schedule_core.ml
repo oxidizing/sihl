@@ -8,6 +8,8 @@ type t = {
 }
 [@@deriving fields]
 
+type stop_schedule = unit -> unit
+
 let get_function schedule = schedule.fn
 
 let run_in schedule ~now:_ =
