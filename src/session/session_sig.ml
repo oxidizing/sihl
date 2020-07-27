@@ -3,22 +3,16 @@ open Base
 module type REPO = sig
   include Data.Repo.Sig.REPO
 
-  val get_all :
-    Data_db_core.connection -> (Session_core.t list, string) Result.t Lwt.t
+  val get_all : Core.Ctx.t -> (Session_core.t list, string) Result.t Lwt.t
 
   val get :
-    key:string ->
-    Data_db_core.connection ->
-    (Session_core.t option, string) Result.t Lwt.t
+    Core.Ctx.t -> key:string -> (Session_core.t option, string) Result.t Lwt.t
 
-  val insert :
-    Session_core.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+  val insert : Core.Ctx.t -> Session_core.t -> (unit, string) Result.t Lwt.t
 
-  val update :
-    Session_core.t -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+  val update : Core.Ctx.t -> Session_core.t -> (unit, string) Result.t Lwt.t
 
-  val delete :
-    key:string -> Data_db_core.connection -> (unit, string) Result.t Lwt.t
+  val delete : Core.Ctx.t -> key:string -> (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig

@@ -16,3 +16,4 @@ module Session = Session
 module Message = Message
 module Storage = Storage
 module User = User
+module Queue = Queue

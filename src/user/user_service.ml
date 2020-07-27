@@ -5,20 +5,16 @@ let ( let* ) = Lwt_result.bind
 module Repo = User_service_repo
 module User = User_core.User
 
-module Make
-    (Db : Data_db_sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE)
-    (UserRepo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
+module Make (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
   let on_init ctx =
-    let* () = MigrationService.register ctx (UserRepo.migrate ()) in
-    RepoService.register_cleaner ctx UserRepo.clean
+    let* () = Repo.register_migration ctx in
+    Repo.register_cleaner ctx
 
   let on_start _ = Lwt.return @@ Ok ()
 
   let on_stop _ = Lwt.return @@ Ok ()
 
-  let get ctx ~user_id = UserRepo.get ~id:user_id |> Db.query ctx
+  let get ctx ~user_id = Repo.get ctx ~id:user_id
 
   let get_exn ctx ~user ~msg =
     let* user = get ctx ~user_id:(User.id user) in
@@ -28,9 +24,9 @@ module Make
         Logs.err (fun m -> m "%s" msg);
         Lwt_result.fail msg
 
-  let get_by_email ctx ~email = UserRepo.get_by_email ~email |> Db.query ctx
+  let get_by_email ctx ~email = Repo.get_by_email ctx ~email
 
-  let get_all ctx ~query = UserRepo.get_all ~query |> Db.query ctx
+  let get_all ctx ~query = Repo.get_all ctx ~query
 
   let update_password ctx ?(password_policy = User.default_password_policy)
       ~user ~old_password ~new_password ~new_password_confirmation () =
@@ -40,13 +36,13 @@ module Make
     with
     | Ok () ->
         let updated_user = User.set_user_password user new_password in
-        let* () = UserRepo.update ~user:updated_user |> Db.query ctx in
+        let* () = Repo.update ~user:updated_user ctx in
         Lwt_result.return @@ Ok updated_user
     | Error msg -> Lwt_result.return @@ Error msg
 
   let update_details ctx ~user ~email ~username =
     let updated_user = User.set_user_details user ~email ~username in
-    let* () = UserRepo.update ~user:updated_user |> Db.query ctx in
+    let* () = Repo.update ctx ~user:updated_user in
     get_exn ctx ~user ~msg:("Failed to update user with email " ^ email)
 
   let set_password ctx ?(password_policy = User.default_password_policy) ~user
@@ -60,18 +56,18 @@ module Make
     | Error msg -> Lwt_result.return @@ Error msg
     | Ok () ->
         let updated_user = User.set_user_password user password in
-        let* () = UserRepo.update ~user:updated_user |> Db.query ctx in
+        let* () = Repo.update ctx ~user:updated_user in
         Lwt_result.return @@ Ok updated_user
 
   let create_user ctx ~email ~password ~username =
     let user =
       User.create ~email ~password ~username ~admin:false ~confirmed:false
     in
-    let* () = UserRepo.insert ~user |> Db.query ctx in
+    let* () = Repo.insert ctx ~user in
     Lwt.return @@ Ok user
 
   let create_admin ctx ~email ~password ~username =
-    let* user = UserRepo.get_by_email ~email |> Db.query ctx in
+    let* user = Repo.get_by_email ctx ~email in
     let* () =
       match user with
       | Some _ -> Lwt.return @@ Error "Email already taken"
@@ -80,7 +76,7 @@ module Make
     let user =
       User.create ~email ~password ~username ~admin:true ~confirmed:true
     in
-    let* () = UserRepo.insert ~user |> Db.query ctx in
+    let* () = Repo.insert ctx ~user in
     Lwt.return @@ Ok user
 
   let register ctx ?(password_policy = User.default_password_policy) ?username

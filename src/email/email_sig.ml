@@ -32,22 +32,22 @@ module Template = struct
     include Data.Repo.Sig.REPO
 
     val get :
+      Core.Ctx.t ->
       id:string ->
-      Data_db_core.connection ->
       (Email_core.Template.t option, string) Result.t Lwt.t
 
     val get_by_name :
+      Core.Ctx.t ->
       name:string ->
-      Data_db_core.connection ->
       (Email_core.Template.t option, string) Result.t Lwt.t
 
     val insert :
-      Data_db_core.connection ->
+      Core.Ctx.t ->
       template:Email_core.Template.t ->
       (unit, string) Result.t Lwt.t
 
     val update :
-      Data_db_core.connection ->
+      Core.Ctx.t ->
       template:Email_core.Template.t ->
       (unit, string) Result.t Lwt.t
   end

@@ -63,6 +63,7 @@ let suite =
         test_case "is not expired" `Quick Test_jwt.is_not_expired;
         test_case "is expired" `Quick Test_jwt.is_expired;
       ] );
+    ("queue", [ test_case "should job run" `Quick Test_queue.should_run_job ]);
   ]
 
 let () = Lwt_main.run (run "unit tests" suite)

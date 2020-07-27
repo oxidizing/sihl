@@ -1,3 +1,4 @@
+open Alcotest_lwt
 open Base
 
 let ( let* ) = Lwt.bind
@@ -47,4 +48,13 @@ struct
           (Sihl.Session.get "foo" session))
     in
     Lwt.return ()
+
+  let test_suite =
+    ( "session",
+      [
+        test_case "test anonymous request return cookie" `Quick
+          test_anonymous_request_returns_cookie;
+        test_case "test requests persist session variable" `Quick
+          test_requests_persist_session_variables;
+      ] )
 end

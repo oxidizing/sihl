@@ -1,7 +1,7 @@
 module type REPO = sig
-  val migrate : unit -> Data_migration_core.Migration.t
+  val register_migration : Core.Ctx.t -> (unit, string) Result.t Lwt.t
 
-  val clean : Data_db_core.connection -> (unit, string) Result.t Lwt.t
+  val register_cleaner : Core.Ctx.t -> (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig

@@ -1,10 +1,52 @@
-let on_init _ = Lwt_result.return ()
+open Base
 
-let on_start _ = Lwt_result.return ()
+let ( let* ) = Lwt.bind
 
-let on_stop _ = Lwt_result.return ()
+module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
+  let on_init _ = Lwt_result.return ()
 
-let register_schedules _ _ =
-  Logs.warn (fun m ->
-      m "SCHEDULE: Registration of schedules is not implemented");
-  Lwt_result.return ()
+  let on_start _ = Lwt_result.return ()
+
+  let on_stop _ = Lwt_result.return ()
+
+  let schedule _ schedule =
+    let should_stop = ref false in
+    let stop_schedule () = should_stop := true in
+    Log.debug (fun m ->
+        m "SCHEDULE: Scheduling %s" (Schedule_core.label schedule));
+    let scheduled_function = Schedule_core.scheduled_function schedule in
+    let rec loop () =
+      let now = Ptime_clock.now () in
+      let duration = Schedule_core.run_in schedule ~now in
+      Log.debug (fun m ->
+          m "SCHEDULE: Running schedule %s in %f seconds"
+            (Schedule_core.label schedule)
+            duration);
+      let* () =
+        Lwt.catch
+          (fun () -> scheduled_function ())
+          (fun exn ->
+            Log.err (fun m ->
+                m
+                  "Exception caught while running schedule, this is a bug in \
+                   your scheduled function. %s"
+                  (Exn.to_string exn));
+            Lwt.return ())
+      in
+      let* () = Lwt_unix.sleep duration in
+      if !should_stop then
+        let () =
+          Log.debug (fun m ->
+              m "SCHEDULE: Stop schedule %s" (Schedule_core.label schedule))
+        in
+        Lwt.return ()
+      else loop ()
+    in
+    loop () |> ignore;
+    stop_schedule
+
+  let register_schedules _ _ =
+    Logs.warn (fun m ->
+        m "SCHEDULE: Registration of schedules is not implemented");
+    Lwt_result.return ()
+end

@@ -1,25 +1,29 @@
+(* Essential services *)
 module Db = Sihl.Data.Db.Service
 module Log = Sihl.Log.Service
-module Migration =
-  Sihl.Data.Migration.Service.Make
-    (Db)
-    (Sihl.Data.Migration.Service.Repo.MariaDb)
-module Repo = Sihl.Data.Repo.Service.Make (Db)
-module Token =
-  Sihl.Token.Service.Make (Db) (Repo) (Migration)
-    (Sihl.Token.Service.Repo.MariaDb)
-module Session =
-  Sihl.Session.Service.Make (Db) (Repo) (Migration)
-    (Sihl.Session.Service.Repo.MariaDb)
-module User =
-  Sihl.User.Service.Make (Db) (Repo) (Migration)
-    (Sihl.User.Service.Repo.MariaDb)
-module Storage =
-  Sihl.Storage.Service.Make (Db) (Repo) (Migration)
-    (Sihl.Storage.Service.Repo.MariaDb)
 module Config = Sihl.Config.Service
+module Repo = Sihl.Data.Repo.Service
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
+module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
+
+(* Repositories *)
+module TokenRepo = Sihl.Token.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module SessionRepo =
+  Sihl.Session.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module StorageRepo =
+  Sihl.Storage.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module EmailTemplateRepo =
+  Sihl.Email.Service.Template.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module QueueRepo = Sihl.Queue.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+
+(* Services *)
+module Token = Sihl.Token.Service.Make (Db) (TokenRepo)
+module Session = Sihl.Session.Service.Make (SessionRepo)
+module User = Sihl.User.Service.Make (UserRepo)
+module Storage = Sihl.Storage.Service.Make (StorageRepo)
 module Test = Sihl.Test.Make (Migration) (Config)
-module EmailTemplate =
-  Sihl.Email.Service.Template.Make (Db) (Repo) (Migration)
-    (Sihl.Email.Service.Template.Repo.MariaDb)
+module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
 module PasswordReset = Sihl.User.PasswordReset.Service.Make (Token) (User)
+module Schedule = Sihl.Schedule.Service.Make (Log)
+module Queue = Sihl.Queue.Service.MakePolling (Log) (Schedule) (QueueRepo)

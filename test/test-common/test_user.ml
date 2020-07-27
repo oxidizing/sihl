@@ -1,3 +1,4 @@
+open Alcotest_lwt
 open Base
 
 let ( let* ) = Lwt.bind
@@ -100,4 +101,13 @@ struct
     Alcotest.(
       check (list Sihl.User.alcotest) "has one user" actual_users [ user1 ]);
     Lwt.return ()
+
+  let test_suite =
+    ( "user",
+      [
+        test_case "update details" `Quick update_details;
+        test_case "update password" `Quick update_password;
+        test_case "update password fails" `Quick update_password_fails;
+        test_case "filter users by email" `Quick filter_users_by_email;
+      ] )
 end

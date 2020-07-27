@@ -1,20 +1,12 @@
 module type REPOSITORY = sig
   include Data.Repo.Sig.REPO
 
-  val find :
-    value:string ->
-    Data_db_core.connection ->
-    (Token_core.t, string) Result.t Lwt.t
+  val find : Core.Ctx.t -> value:string -> (Token_core.t, string) Result.t Lwt.t
 
   val find_opt :
-    value:string ->
-    Data_db_core.connection ->
-    (Token_core.t option, string) Result.t Lwt.t
+    Core.Ctx.t -> value:string -> (Token_core.t option, string) Result.t Lwt.t
 
-  val insert :
-    token:Token_core.t ->
-    Data_db_core.connection ->
-    (unit, string) Result.t Lwt.t
+  val insert : Core.Ctx.t -> token:Token_core.t -> (unit, string) Result.t Lwt.t
 end
 
 module type SERVICE = sig
