@@ -33,7 +33,7 @@ module MakePolling
     registered_jobs := jobs |> List.map ~f:WorkableJob.of_job;
     Lwt.return ()
 
-  let dispatch ctx ~job ?delay input =
+  let dispatch ctx ~job ?delay ?input () =
     let name = Job.name job in
     Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);
     let now = Ptime_clock.now () in
