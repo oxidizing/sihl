@@ -9,7 +9,7 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
 
   let on_stop _ = Lwt_result.return ()
 
-  let schedule ctx schedule =
+  let schedule _ schedule =
     let should_stop = ref false in
     let stop_schedule () = should_stop := true in
     Log.debug (fun m ->
@@ -24,7 +24,7 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
             duration);
       let* () =
         Lwt.catch
-          (fun () -> scheduled_function ctx)
+          (fun () -> scheduled_function ())
           (fun exn ->
             Log.err (fun m ->
                 m

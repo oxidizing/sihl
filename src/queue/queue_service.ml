@@ -164,12 +164,21 @@ module MakePolling
     Lwt.return ()
 
   let on_start ctx =
-    (* TODO create empty ctx and pipe through job.with_context, create schedule with that context *)
     let jobs = !registered_jobs in
-    let schedule_ctx = Core.Ctx.empty in
+    (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
+    let combined_context_fn =
+      jobs
+      |> List.map ~f:Job.with_context
+      |> List.fold_left ~init:Fn.id ~f:Fn.compose
+    in
+    (* This function run every second, the request context gets created here with each tick *)
+    let scheduled_function () =
+      let ctx = combined_context_fn Core.Ctx.empty in
+      work_queue ctx ~jobs
+    in
     let schedule =
-      Schedule.create Schedule.every_second ~f:(work_queue ~jobs)
-        ~label:"job_queue" schedule_ctx
+      Schedule.create Schedule.every_second ~f:scheduled_function
+        ~label:"job_queue"
     in
     stop_schedule := Some (ScheduleService.schedule ctx schedule);
     Lwt_result.return ()

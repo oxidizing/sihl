@@ -3,8 +3,7 @@ type scheduled_time = Every of Utils.Time.duration [@@deriving eq, show]
 type t = {
   label : string;
   scheduled_time : scheduled_time;
-  fn : Core.Ctx.t -> unit Lwt.t;
-  context : Core.Ctx.t;
+  fn : unit -> unit Lwt.t;
 }
 [@@deriving fields]
 
@@ -20,7 +19,6 @@ let run_in schedule ~now:_ =
 
 let scheduled_function schedule = schedule.fn
 
-let create scheduled_time ~f context ~label =
-  { label; scheduled_time; fn = f; context }
+let create scheduled_time ~f ~label = { label; scheduled_time; fn = f }
 
 let every_second = Every Utils.Time.OneSecond

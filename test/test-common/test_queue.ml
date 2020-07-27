@@ -93,7 +93,7 @@ struct
     let* () = QueueService.on_init ctx |> Lwt.map Result.ok_or_failwith in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job =
-      Sihl.Queue.create_job ~name:"foo_exception"
+      Sihl.Queue.create_job ~name:"foo"
         ~input_to_string:(fun () -> None)
         ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> failwith "didn't work")
