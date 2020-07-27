@@ -100,6 +100,23 @@ val param2 : Core.Ctx.t -> string -> string -> string * string
 val param3 :
   Core.Ctx.t -> string -> string -> string -> string * string * string
 
+val param4 :
+  Core.Ctx.t ->
+  string ->
+  string ->
+  string ->
+  string ->
+  string * string * string * string
+
+val param5 :
+  Core.Ctx.t ->
+  string ->
+  string ->
+  string ->
+  string ->
+  string ->
+  string * string * string * string * string
+
 val require_body :
   Core.Ctx.t ->
   (Yojson.Safe.t -> ('a, string) result) ->

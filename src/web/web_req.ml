@@ -168,6 +168,16 @@ let param2 ctx key1 key2 = (param ctx key1, param ctx key2)
 
 let param3 ctx key1 key2 key3 = (param ctx key1, param ctx key2, param ctx key3)
 
+let param4 ctx key1 key2 key3 key4 =
+  (param ctx key1, param ctx key2, param ctx key3, param ctx key4)
+
+let param5 ctx key1 key2 key3 key4 key5 =
+  ( param ctx key1,
+    param ctx key2,
+    param ctx key3,
+    param ctx key4,
+    param ctx key5 )
+
 let require_body ctx decode =
   let* body =
     ctx |> get_req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string
