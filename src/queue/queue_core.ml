@@ -1,5 +1,6 @@
 open Base
 
+(** This is the description of a job. A job dispatch is a job description and some arguments/input. *)
 module Job = struct
   let default_tries = 5
 
@@ -35,6 +36,33 @@ module Job = struct
   let set_retry_delay retry_delay job = { job with retry_delay }
 end
 
+(** A workable job can process a job instance that is persisted. We can not store the job directly because of the polymorphic type ('a Job.t). *)
+module WorkableJob = struct
+  type t = {
+    name : string;
+    with_context : Core.Ctx.t -> Core.Ctx.t;
+    work : Core.Ctx.t -> input:string option -> (unit, string) Result.t Lwt.t;
+    failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t;
+    max_tries : int;
+    retry_delay : Utils.Time.duration;
+  }
+  [@@deriving show, fields]
+
+  let of_job job =
+    let name = Job.name job in
+    let with_context = Job.with_context job in
+    let work ctx ~input =
+      match (Job.string_to_input job) input with
+      | Error msg -> Lwt_result.fail msg
+      | Ok input -> (Job.handle job) ctx ~input
+    in
+    let failed = Job.failed job in
+    let max_tries = Job.max_tries job in
+    let retry_delay = Job.retry_delay job in
+    { name; with_context; work; failed; max_tries; retry_delay }
+end
+
+(** This is the actual job instance that is derived from the job description ['a Job.t] and some input. This needs to be serialized and persisted for persistent job queues. *)
 module JobInstance = struct
   module Status = struct
     type t = Pending | Succeeded | Failed [@@deriving yojson, show, eq]
@@ -89,9 +117,11 @@ module JobInstance = struct
 
   let should_run ~job ~job_instance ~now =
     let tries = job_instance.tries in
-    let max_tries = Job.max_tries job in
+    let max_tries = WorkableJob.max_tries job in
     let start_at = job_instance.start_at in
-    let retry_delay = Job.retry_delay job |> Utils.Time.duration_to_span in
+    let retry_delay =
+      WorkableJob.retry_delay job |> Utils.Time.duration_to_span
+    in
     let earliest_retry_at =
       if Option.is_some job_instance.last_ran_at then
         Ptime.add_span now retry_delay |> Option.value ~default:now
@@ -104,37 +134,4 @@ module JobInstance = struct
     in
     let is_pending = is_pending job_instance in
     is_pending && has_tries_left && is_after_delay && is_after_retry_delay
-end
-
-(* TODO turn these into types *)
-module type JOB_WORKER = sig
-  val work : Core.Ctx.t -> input:string -> (unit, string) Result.t Lwt.t
-
-  val failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t
-
-  val with_context : Core.Ctx.t -> Core.Ctx.t
-
-  val name : string
-
-  val max_tries : int
-
-  val retry_delay : Utils.Time.duration
-end
-
-module JobWorkerManager : sig
-  val register_worker : (module JOB_WORKER) -> unit
-
-  val work : Core.Ctx.t -> JobInstance.t -> unit Lwt.t
-end = struct
-  let registered_workers :
-      (string, (module JOB_WORKER), Base.String.comparator_witness) Base.Map.t
-      ref =
-    ref @@ Map.empty (module String)
-
-  let register_worker (module JobWorker : JOB_WORKER) =
-    registered_workers :=
-      Map.add_exn !registered_workers ~key:JobWorker.name
-        ~data:(module JobWorker)
-
-  let work _ _ = failwith "TODO"
 end

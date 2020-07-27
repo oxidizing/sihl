@@ -7,7 +7,7 @@ module type REPO = sig
   val enqueue :
     Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t
 
-  val find_pending : Core.Ctx.t -> (JobInstance.t list, string) Result.t Lwt.t
+  val find_workable : Core.Ctx.t -> (JobInstance.t list, string) Result.t Lwt.t
 
   val update :
     Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t

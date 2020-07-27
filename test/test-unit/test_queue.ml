@@ -11,6 +11,7 @@ let should_run_job _ () =
       ()
     |> Sihl.Queue.set_max_tries 3
     |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
+    |> Sihl.Queue.Core.WorkableJob.of_job
   in
   let job_instance =
     Sihl.Queue.Core.JobInstance.create ~input:None ~name:"foo" ~start_at:now

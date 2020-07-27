@@ -3,11 +3,10 @@ open Base
 let ( let* ) = Lwt.bind
 
 module Job = Queue_core.Job
+module WorkableJob = Queue_core.WorkableJob
 module JobInstance = Queue_core.JobInstance
 
-(* TODO think about how to avoid Obj.magic *)
-(* We have this problem due to the polymorphic type 'a Job.t and mutable state *)
-let registered_jobs = Caml.Obj.magic (ref [])
+let registered_jobs : WorkableJob.t list ref = ref []
 
 let stop_schedule : (unit -> unit) option ref = ref None
 
@@ -31,7 +30,7 @@ module MakePolling
         Lwt_result.return ()
 
   let register_jobs _ ~jobs =
-    registered_jobs := jobs;
+    registered_jobs := jobs |> List.map ~f:WorkableJob.of_job;
     Lwt.return ()
 
   let dispatch ctx ~job ?delay input =
@@ -51,61 +50,52 @@ module MakePolling
            "QUEUE: Failure while enqueuing job instance: " ^ msg)
     |> Lwt.map Result.ok_or_failwith
 
-  let run_job ctx input_string ~job ~job_instance =
+  let run_job ctx input ~job ~job_instance =
     let job_instance_id = JobInstance.id job_instance in
-    match Job.string_to_input job input_string with
-    | Error msg ->
-        Log.err (fun m ->
-            m "QUEUE: Unexpected input %s found for job instance %a %s"
-              (Option.value ~default:"-" input_string)
-              JobInstance.pp job_instance msg);
-        Lwt.return None
-    | Ok input -> (
+    let* result =
+      Lwt.catch
+        (fun () -> WorkableJob.work job ctx ~input)
+        (fun exn ->
+          let exn_string = Exn.to_string exn in
+          Lwt.return
+          @@ Error
+               ( "Exception caught while running job, this is a bug in your \
+                  job handler, make sure to not throw exceptions " ^ exn_string
+               ))
+    in
+    match result with
+    | Error msg -> (
+        Logs.err (fun m ->
+            m "QUEUE: Failure while running job instance %a %s" JobInstance.pp
+              job_instance msg);
         let* result =
           Lwt.catch
-            (fun () -> Job.handle job ctx ~input)
+            (fun () -> WorkableJob.failed job ctx)
             (fun exn ->
               let exn_string = Exn.to_string exn in
               Lwt.return
               @@ Error
-                   ( "Exception caught while running job, this is a bug in \
-                      your job handler, make sure to not throw exceptions "
-                   ^ exn_string ))
+                   ( "Exception caught while cleaning up job, this is a bug in \
+                      your job failure handler, make sure to not throw \
+                      exceptions " ^ exn_string ))
         in
         match result with
-        | Error msg -> (
+        | Error msg ->
             Logs.err (fun m ->
-                m "QUEUE: Failure while running job instance %a %s"
+                m
+                  "QUEUE: Failure while run failure handler for job instance \
+                   %a %s"
                   JobInstance.pp job_instance msg);
-            let* result =
-              Lwt.catch
-                (fun () -> Job.failed job ctx)
-                (fun exn ->
-                  let exn_string = Exn.to_string exn in
-                  Lwt.return
-                  @@ Error
-                       ( "Exception caught while cleaning up job, this is a \
-                          bug in your job failure handler, make sure to not \
-                          throw exceptions " ^ exn_string ))
-            in
-            match result with
-            | Error msg ->
-                Logs.err (fun m ->
-                    m
-                      "QUEUE: Failure while run failure handler for job \
-                       instance %a %s"
-                      JobInstance.pp job_instance msg);
-                Lwt.return None
-            | Ok () ->
-                Logs.err (fun m ->
-                    m "QUEUE: Failure while cleaning up job instance %a"
-                      Uuidm.pp job_instance_id);
-                Lwt.return None )
+            Lwt.return None
         | Ok () ->
-            Logs.debug (fun m ->
-                m "QUEUE: Successfully ran job instance %a" Uuidm.pp
+            Logs.err (fun m ->
+                m "QUEUE: Failure while cleaning up job instance %a" Uuidm.pp
                   job_instance_id);
-            Lwt.return @@ Some () )
+            Lwt.return None )
+    | Ok () ->
+        Logs.debug (fun m ->
+            m "QUEUE: Successfully ran job instance %a" Uuidm.pp job_instance_id);
+        Lwt.return @@ Some ()
 
   let update ctx ~job_instance = Repo.update ctx ~job_instance
 
@@ -121,7 +111,7 @@ module MakePolling
       let job_instance =
         match job_run_status with
         | None ->
-            if JobInstance.tries job_instance >= Job.max_tries job then
+            if JobInstance.tries job_instance >= WorkableJob.max_tries job then
               JobInstance.set_failed job_instance
             else job_instance
         | Some () -> JobInstance.set_succeeded job_instance
@@ -138,7 +128,7 @@ module MakePolling
 
   let work_queue ctx ~jobs =
     let* pending_job_instances =
-      Repo.find_pending ctx
+      Repo.find_workable ctx
       |> Lwt_result.map_err (fun msg ->
              "QUEUE: Failure while finding pending job instances " ^ msg)
       |> Lwt.map Result.ok_or_failwith
@@ -153,7 +143,8 @@ module MakePolling
       | job_instance :: job_instances -> (
           let job =
             List.find jobs ~f:(fun job ->
-                job |> Job.name |> String.equal (JobInstance.name job_instance))
+                job |> WorkableJob.name
+                |> String.equal (JobInstance.name job_instance))
           in
           match job with
           | None -> loop job_instances jobs
@@ -168,7 +159,7 @@ module MakePolling
     (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
     let combined_context_fn =
       jobs
-      |> List.map ~f:Job.with_context
+      |> List.map ~f:WorkableJob.with_context
       |> List.fold_left ~init:Fn.id ~f:Fn.compose
     in
     (* This function run every second, the request context gets created here with each tick *)

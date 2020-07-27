@@ -28,7 +28,7 @@ module MakeMemory (Repo : Data.Repo.Sig.SERVICE) : Queue_sig.REPO = struct
     state := Map.set !state ~key:id ~data:job_instance;
     Lwt_result.return ()
 
-  let find_pending _ =
+  let find_workable _ =
     let all_job_instances =
       List.map !ordered_ids ~f:(fun id -> Map.find !state id)
     in
