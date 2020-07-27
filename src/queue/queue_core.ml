@@ -9,9 +9,9 @@ module Job = struct
   type 'a t = {
     name : string;
     with_context : Core.Ctx.t -> Core.Ctx.t;
-    input_to_string : 'a option -> string option;
-    string_to_input : string option -> ('a option, string) Result.t;
-    handle : Core.Ctx.t -> input:'a option -> (unit, string) Result.t Lwt.t;
+    input_to_string : 'a -> string option;
+    string_to_input : string option -> ('a, string) Result.t;
+    handle : Core.Ctx.t -> input:'a -> (unit, string) Result.t Lwt.t;
     failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t;
     max_tries : int;
     retry_delay : Utils.Time.duration;

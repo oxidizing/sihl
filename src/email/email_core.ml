@@ -5,8 +5,10 @@ module Template = struct
     content_text : string;
     content_html : string;
     created_at : Ptime.t;
+        [@to_yojson Utils.Time.ptime_to_yojson]
+        [@of_yojson Utils.Time.ptime_of_yojson]
   }
-  [@@deriving show, eq, fields]
+  [@@deriving yojson, show, eq, fields]
 
   let set_name name template = { template with name }
 
@@ -68,7 +70,7 @@ type t = {
   template_id : string option;
   template_data : (string * string) list;
 }
-[@@deriving show, eq, make, fields]
+[@@deriving yojson, show, eq, make, fields]
 
 module DevInbox = struct
   let inbox : t option ref = ref None

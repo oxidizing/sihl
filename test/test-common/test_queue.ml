@@ -14,7 +14,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
@@ -37,7 +37,7 @@ struct
     let job1 =
       Sihl.Queue.create_job ~name:"foo1" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job1 := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
@@ -47,7 +47,7 @@ struct
     let job2 =
       Sihl.Queue.create_job ~name:"foo2" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job2 := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
@@ -71,7 +71,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.fail "didn't work")
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
@@ -95,7 +95,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> failwith "didn't work")
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
@@ -126,7 +126,7 @@ struct
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context:custom_with_context
         ~input_to_string:(fun _ -> None)
-        ~string_to_input:(fun _ -> Ok None)
+        ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun ctx ~input:_ ->
           has_custom_ctx_string :=
             Option.is_some (Sihl.Core.Ctx.find custom_ctx_key ctx);

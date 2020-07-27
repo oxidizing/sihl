@@ -517,3 +517,62 @@ Subject: %s
       Lwt.return @@ Ok ()
   end
 end
+
+module Delayed = struct
+  module Make
+      (EmailService : Email_sig.SERVICE)
+      (DbService : Data.Db.Sig.SERVICE)
+      (QueueService : Queue_sig.SERVICE) : Email_sig.Delayed.SERVICE = struct
+    module EmailService = EmailService
+
+    module Job = struct
+      let input_to_string email =
+        email |> Email_core.to_yojson |> Yojson.Safe.to_string |> Option.return
+
+      let string_to_input email =
+        match email with
+        | None ->
+            Log.err (fun m ->
+                m
+                  "DELAYED_EMAIL: Serialized email string was NULL, can not \
+                   deserialize email. Please fix the string manually and reset \
+                   the job instance.");
+            Error "Invalid serialized email string received"
+        | Some email ->
+            email |> Utils.Json.parse |> Result.bind ~f:Email_core.of_yojson
+
+      let handle ctx ~input = EmailService.send ctx input
+
+      (** Nothing to clean up, sending emails is a side effect *)
+      let failed _ = Lwt_result.return ()
+
+      let job =
+        Queue_core.Job.create ~name:"send_email"
+          ~with_context:DbService.add_pool ~input_to_string ~string_to_input
+          ~handle ~failed ()
+        |> Queue_core.Job.set_max_tries 10
+        |> Queue_core.Job.set_retry_delay Utils.Time.OneHour
+    end
+
+    let on_init ctx =
+      QueueService.register_jobs ctx ~jobs:[ Job.job ] |> Lwt.map Result.return
+
+    let on_start _ = Lwt.return @@ Ok ()
+
+    let on_stop _ = Lwt.return @@ Ok ()
+
+    let send_later ctx email = QueueService.dispatch ctx ~job:Job.job email
+
+    let bulk_send_later ctx emails =
+      DbService.atomic ctx (fun ctx ->
+          let rec loop emails =
+            match emails with
+            | email :: emails ->
+                Lwt.bind (send_later ctx email) (fun () -> loop emails)
+            | [] -> Lwt.return ()
+          in
+          loop emails |> Lwt.map Result.return)
+      |> Lwt.map Result.ok_or_failwith
+      |> Lwt.map Result.ok_or_failwith
+  end
+end
