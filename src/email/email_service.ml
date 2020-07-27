@@ -37,8 +37,9 @@ module Template = struct
     let render ctx email =
       let template_id = Email_core.template_id email in
       let template_data = Email_core.template_data email in
-      let content = Email_core.content email in
-      let* content =
+      let text_content = Email_core.text_content email in
+      let html_content = Email_core.html_content email in
+      let* text_content, html_content =
         match template_id with
         | Some template_id ->
             let* template = Repo.get ctx ~id:template_id in
@@ -50,11 +51,16 @@ module Template = struct
                         template_id)
               |> Lwt.return
             in
-            let content = Email_core.Template.render template_data template in
-            Lwt.return @@ Ok content
-        | None -> Lwt.return @@ Ok content
+            let render_result =
+              Email_core.Template.render template_data template
+            in
+            Lwt.return @@ Ok render_result
+        | None -> Lwt.return @@ Ok (text_content, html_content)
       in
-      Email_core.set_content content email |> Result.return |> Lwt.return
+      email
+      |> Email_core.set_text_content text_content
+      |> Email_core.set_html_content html_content
+      |> Result.return |> Lwt.return
   end
 
   module Repo = struct
@@ -357,18 +363,25 @@ module Make = struct
       let sender = Email_core.sender email in
       let recipient = Email_core.recipient email in
       let subject = Email_core.subject email in
-      let content = Email_core.content email in
+      let text_content = Email_core.text_content email in
+      let html_content = Email_core.html_content email in
       Printf.sprintf
         {|
 -----------------------
 Email sent by: %s
 Recpient: %s
 Subject: %s
+-----------------------
+Text:
+
+%s
+-----------------------
+Html:
 
 %s
 -----------------------
 |}
-        sender recipient subject content
+        sender recipient subject text_content html_content
 
     let send request email =
       let* email = TemplateService.render request email in
@@ -401,8 +414,8 @@ Subject: %s
       in
       let body =
         match rendered.html with
-        | true -> Letters.Html rendered.content
-        | false -> Letters.Plain rendered.content
+        | true -> Letters.Html rendered.html_content
+        | false -> Letters.Plain rendered.text_content
       in
       let message =
         Letters.build_email ~from:email.sender ~recipients
@@ -476,8 +489,10 @@ Subject: %s
       let sender = Email_core.sender email in
       let recipient = Email_core.recipient email in
       let subject = Email_core.subject email in
-      let content = Email_core.content email in
-      let req_body = body ~recipient ~subject ~sender ~content in
+      let text_content = Email_core.text_content email in
+      (* TODO support html content *)
+      (* let html_content = Email_core.text_content email in *)
+      let req_body = body ~recipient ~subject ~sender ~content:text_content in
       let* resp, resp_body =
         Cohttp_lwt_unix.Client.post
           ~body:(Cohttp_lwt.Body.of_string req_body)

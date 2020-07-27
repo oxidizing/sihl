@@ -46,7 +46,7 @@ module Template : sig
 
   val t : t Caqti_type.t
 
-  val render : Data.t -> t -> string
+  val render : Data.t -> t -> string * string
 end
 
 module DevInbox = Email_core.DevInbox
@@ -57,7 +57,8 @@ val make :
   sender:string ->
   recipient:string ->
   subject:string ->
-  content:string ->
+  text_content:string ->
+  html_content:string ->
   ?cc:string list ->
   ?bcc:string list ->
   html:bool ->
@@ -76,7 +77,9 @@ val bcc : t -> string list
 
 val cc : t -> string list
 
-val content : t -> string
+val text_content : t -> string
+
+val html_content : t -> string
 
 val subject : t -> string
 
@@ -84,7 +87,9 @@ val recipient : t -> string
 
 val sender : t -> string
 
-val set_content : string -> t -> t
+val set_text_content : string -> t -> t
+
+val set_html_content : string -> t -> t
 
 val pp : Format.formatter -> t -> unit
 
