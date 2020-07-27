@@ -46,7 +46,9 @@ module Template = struct
       | [] -> value
       | (k, v) :: data -> render_value data @@ replace_element value k v
     in
-    render_value data template.content_text
+    let text = render_value data template.content_text in
+    let html = render_value data template.content_html in
+    (text, html)
 
   module Data = struct
     type t = (string * string) list [@@deriving show, eq]
@@ -63,7 +65,8 @@ type t = {
   sender : string;
   recipient : string;
   subject : string;
-  content : string;
+  text_content : string;
+  html_content : string;
   cc : string list;
   bcc : string list;
   html : bool;
@@ -83,4 +86,6 @@ module DevInbox = struct
   let set email = inbox := Some email
 end
 
-let set_content content email = { email with content }
+let set_text_content text_content email = { email with text_content }
+
+let set_html_content html_content email = { email with html_content }
