@@ -99,7 +99,7 @@ module MakePolling
       let* job_run_status = run_job ctx input_string ~job ~job_instance in
       let job_instance =
         job_instance |> JobInstance.incr_tries
-        |> JobInstance.set_last_ran_at now
+        |> JobInstance.update_next_run_at job
       in
       let job_instance =
         match job_run_status with

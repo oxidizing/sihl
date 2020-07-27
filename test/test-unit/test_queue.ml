@@ -53,9 +53,10 @@ let should_run_job _ () =
   in
   let actual = Sihl.Queue.Core.JobInstance.should_run ~job_instance ~now in
   Alcotest.(check bool) "succeeded job should not run" false actual;
+  let workable_job = job |> Sihl.Queue.Core.WorkableJob.of_job in
   let job_instance =
     Sihl.Queue.Core.JobInstance.create ~input:None ~delay:None ~now job
-    |> Sihl.Queue.Core.JobInstance.set_last_ran_at now
+    |> Sihl.Queue.Core.JobInstance.update_next_run_at workable_job
   in
   let actual = Sihl.Queue.Core.JobInstance.should_run ~job_instance ~now in
   Alcotest.(check bool)

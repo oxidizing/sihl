@@ -17,8 +17,9 @@ module Email =
 module PasswordReset =
   Test_common.Test.PasswordReset.Make (Service.Db) (Service.Repo) (Service.User)
     (Service.PasswordReset)
+module Queue = Test_common.Test.Queue.Make (Service.Repo) (Service.Queue)
 
-let test_suite _ =
+let test_suite ctx =
   [
     Token.test_suite;
     Session.test_suite;
@@ -26,6 +27,8 @@ let test_suite _ =
     User.test_suite;
     Email.test_suite;
     PasswordReset.test_suite;
+    (* We need to add the DB Pool to the scheduler context *)
+    Queue.test_suite ctx Service.Db.add_pool;
   ]
 
 let config =
@@ -35,6 +38,7 @@ let config =
 
 let services : (module Sihl.Core.Container.SERVICE) list =
   [
+    (module Service.Db);
     (module Service.Log);
     (module Service.Config);
     (module Service.Token);
@@ -43,6 +47,7 @@ let services : (module Sihl.Core.Container.SERVICE) list =
     (module Service.Storage);
     (module Service.EmailTemplate);
     (module Service.PasswordReset);
+    (module Service.Queue);
   ]
 
 let () =

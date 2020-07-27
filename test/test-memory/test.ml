@@ -7,10 +7,10 @@ module Queue = Test_common.Test.Queue.Make (Service.Repo) (Service.Queue)
 
 let config = Sihl.Config.create ~development:[] ~test:[] ~production:[]
 
-let test_suite ctx = [ Queue.test_suite ctx ]
+let test_suite ctx = [ Queue.test_suite ctx Fn.id ]
 
 let services : (module Sihl.Core.Container.SERVICE) list =
-  [ (module Service.Log) ]
+  [ (module Service.Log); (module Service.Queue) ]
 
 let () =
   let ctx = Sihl.Core.Ctx.empty in
