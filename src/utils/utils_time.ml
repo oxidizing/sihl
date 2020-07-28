@@ -34,3 +34,33 @@ let ptime_of_yojson yojson =
   with
   | Ok (ptime, _, _) -> Ok ptime
   | Error (`Msg msg) -> Error msg
+
+let ptime_of_date_string date =
+  let date =
+    date |> String.split ~on:'-'
+    |> List.map ~f:(fun str -> Option.try_with (fun () -> Int.of_string str))
+    |> List.map
+         ~f:
+           (Result.of_option
+              ~error:
+                "Invalid date string provided, make sure that year, month and \
+                 date are ints")
+    |> Result.all
+  in
+  match date with
+  | Ok [ year; month; day ] ->
+      Ptime.of_date (year, month, day)
+      |> Result.of_option
+           ~error:"Invalid date provided, only format 1990-12-01 is accepted"
+  | Ok _ -> Error "Invalid date provided, only format 1990-12-01 is accepted"
+  | Error msg -> Error msg
+
+let ptime_to_date_string ptime =
+  let year, month, day = Ptime.to_date ptime in
+  let month =
+    if month < 10 then Printf.sprintf "0%d" month else Printf.sprintf "%d" month
+  in
+  let day =
+    if day < 10 then Printf.sprintf "0%d" day else Printf.sprintf "%d" day
+  in
+  Printf.sprintf "%d-%s-%s" year month day
