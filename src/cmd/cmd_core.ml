@@ -2,8 +2,7 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-type fn = Core_ctx.t -> string list -> (unit, string) Result.t Lwt.t
-[@@deriving show]
+type fn = string list -> (unit, string) Result.t Lwt.t [@@deriving show]
 
 type t = { name : string; description : string; fn : fn } [@@deriving fields]
 
@@ -35,11 +34,11 @@ This is a list of all supported commands:
 |}
     command_list
 
-let execute ctx command args =
+let execute command args =
   let fn = fn command in
   let description = description command in
   (* wait for the execution to end *)
-  let result = Lwt_main.run (fn ctx args) in
+  let result = Lwt_main.run (fn args) in
   match result with
   | Ok _ -> Lwt.return ()
   | Error "wrong usage" ->
@@ -50,7 +49,7 @@ let execute ctx command args =
 
 module Builtin = struct
   module Version = struct
-    let fn _ args =
+    let fn args =
       match args with
       | "version" :: _ -> Lwt.return @@ Ok (Logs.info (fun m -> m "v0.0.1"))
       | _ -> Lwt.return @@ Error "wrong usage"
@@ -64,7 +63,7 @@ module Builtin = struct
       let* () = Lwt_unix.sleep 60.0 in
       wait ()
 
-    let fn start _ args =
+    let fn start args =
       match args with
       | "start" :: _ ->
           let* _ = start () in
@@ -77,7 +76,7 @@ module Builtin = struct
   end
 
   module Migrate = struct
-    let fn migrate _ args =
+    let fn migrate args =
       match args with
       | "migrate" :: _ -> migrate ()
       | _ -> Lwt.return @@ Error "wrong usage"
