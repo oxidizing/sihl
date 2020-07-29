@@ -7,7 +7,7 @@ let test_email_rendering_simple _ () =
     Sihl.Email.Template.render data
       (Sihl.Email.Template.make ~text:"{foo}" "test")
   in
-  let _ = Alcotest.(check string) "Renders template" "bar" actual in
+  Alcotest.(check string) "Renders template" "bar" actual;
   let data =
     Sihl.Email.Template.Data.empty
     |> Sihl.Email.Template.Data.add ~key:"foo" ~value:"hey"

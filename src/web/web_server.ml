@@ -7,4 +7,4 @@ type middleware_stack = Web_server_core.middleware_stack
 
 type stacked_routes = Web_server_core.stacked_routes
 
-let register_routes = Web_server_service.register_routes
+let register_routes = Web_server_service.registered_routes
