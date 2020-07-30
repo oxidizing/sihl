@@ -79,32 +79,29 @@ struct
               in
               Logs.err (fun m -> m "%s" msg);
               Lwt.return @@ Error msg )
-      | { label; statement; check_fk = false } :: steps ->
-          let ( let* ) = Lwt.bind in
-          Db.single_connection ctx (fun ctx ->
-              let* _ = Db.set_fk_check ~check:false |> Db.query ctx in
-              Logs.debug (fun m ->
-                  m "MIGRATION: Running %s without fk checks" label);
-              let query (module Connection : Caqti_lwt.CONNECTION) =
-                let req = Caqti_request.exec Caqti_type.unit statement in
-                Connection.exec req () |> Lwt_result.map_err Caqti_error.show
+      | { label; statement; check_fk = false } :: steps -> (
+          let* _ = Db.set_fk_check ~check:false |> Db.query ctx in
+          Logs.debug (fun m ->
+              m "MIGRATION: Running %s without fk checks" label);
+          let query (module Connection : Caqti_lwt.CONNECTION) =
+            let req = Caqti_request.exec Caqti_type.unit statement in
+            Connection.exec req () |> Lwt_result.map_err Caqti_error.show
+          in
+          Db.query ctx query >>= function
+          | Ok () ->
+              let* _ = Db.set_fk_check ~check:true |> Db.query ctx in
+              Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
+              let* _ = increment ctx ~namespace in
+              run steps
+          | Error err ->
+              let* _ = Db.set_fk_check ~check:true |> Db.query ctx in
+              let msg =
+                Printf.sprintf
+                  "MIGRATION: Error while running migration for %s %s" namespace
+                  err
               in
-              Db.query ctx query >>= function
-              | Ok () ->
-                  let* _ = Db.set_fk_check ~check:true |> Db.query ctx in
-                  Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
-                  let* _ = increment ctx ~namespace in
-                  run steps
-              | Error err ->
-                  let* _ = Db.set_fk_check ~check:true |> Db.query ctx in
-                  let msg =
-                    Printf.sprintf
-                      "MIGRATION: Error while running migration for %s %s"
-                      namespace err
-                  in
-                  Logs.err (fun m -> m "%s" msg);
-                  Lwt.return @@ Error msg)
-          |> Lwt.map Result.ok_or_failwith
+              Logs.err (fun m -> m "%s" msg);
+              Lwt.return @@ Error msg )
     in
     let () =
       match List.length steps with
@@ -140,7 +137,10 @@ struct
         Lwt.return @@ Ok state )
     in
     let migration_to_apply = Model.steps_to_apply migration state in
-    let* () = execute_steps ctx migration_to_apply in
+    let* result =
+      Db.single_connection ctx (fun ctx -> execute_steps ctx migration_to_apply)
+    in
+    let* () = Lwt.return result in
     let* _ = mark_clean ctx ~namespace in
     Lwt.return @@ Ok ()
 

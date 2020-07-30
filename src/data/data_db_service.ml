@@ -91,11 +91,10 @@ let atomic ctx ?(no_rollback = false) f =
                 Lwt.return @@ Error msg
             | Ok () ->
                 Logs.debug (fun m -> m "DB TX: Started transaction");
-                let ctx =
+                let ctx_with_connection =
                   Core_ctx.add ctx_key_connection (module Connection) ctx
                 in
-                let* f_result = f ctx in
-                let _ = Core_ctx.remove ctx_key_connection ctx in
+                let* f_result = f ctx_with_connection in
                 let* commit_rollback_result =
                   match (f_result, no_rollback) with
                   | Error _, false ->
@@ -148,20 +147,15 @@ let single_connection ctx f =
       in
       Logs.debug (fun m ->
           m "DB: Pool usage: %i/%i" n_connections max_connections);
-      Logs.debug (fun m -> m "DB: Fetched connection pool from context");
       let* pool_result =
         Caqti_lwt.Pool.use
           (fun connection ->
+            Logs.debug (fun m -> m "DB: Fetched connection pool from context");
             let (module Connection : Caqti_lwt.CONNECTION) = connection in
-            let ctx = Core_ctx.add ctx_key_connection (module Connection) ctx in
-            let* f_result = f ctx in
-            let _ = Core_ctx.remove ctx_key_connection ctx in
-            Lwt_result.return f_result
-            |> Lwt_result.map_err (fun error ->
-                   Logs.err (fun m ->
-                       m "DB: Failed to run on single connection %s"
-                         (Caqti_error.show error));
-                   error))
+            let ctx_with_connection =
+              Core_ctx.add ctx_key_connection (module Connection) ctx
+            in
+            f ctx_with_connection |> Lwt.map Result.return)
           pool
       in
       Logs.debug (fun m -> m "DB: Putting back connection to pool");
