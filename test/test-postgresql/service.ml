@@ -4,7 +4,8 @@ module Log = Sihl.Log.Service
 module Config = Sihl.Config.Service
 module Repo = Sihl.Data.Repo.Service
 module MigrationRepo = Sihl.Data.Migration.Service.Repo.PostgreSql
-module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
+module Cmd = Sihl.Cmd.Service
+module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
 
 (* Repositories *)
 module SessionRepo =

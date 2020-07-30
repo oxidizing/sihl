@@ -3,14 +3,11 @@ module Model = Data_migration_core
 
 let ( let* ) = Lwt_result.bind
 
-module Make (Db : Data_db_sig.SERVICE) (MigrationRepo : Data_migration_sig.REPO) :
-  Data_migration_sig.SERVICE = struct
-  let on_init _ = Lwt.return @@ Ok ()
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
-
+module Make
+    (CmdService : Cmd.Sig.SERVICE)
+    (Db : Data_db_sig.SERVICE)
+    (MigrationRepo : Data_migration_sig.REPO) : Data_migration_sig.SERVICE =
+struct
   let setup ctx =
     Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     MigrationRepo.create_table_if_not_exists |> Db.query ctx
@@ -164,6 +161,19 @@ module Make (Db : Data_db_sig.SERVICE) (MigrationRepo : Data_migration_sig.REPO)
     run migrations ctx
 
   let run_all ctx = Lwt_result.bind (get_migrations ctx) execute
+
+  let migrate_cmd =
+    Cmd.make ~name:"migrate" ~description:"Run all migrations"
+      ~fn:(fun _ ->
+        let ctx = Core.Ctx.empty |> Db.add_pool in
+        run_all ctx)
+      ()
+
+  let on_init ctx = CmdService.register_command ctx migrate_cmd
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
 end
 
 module Repo = struct
