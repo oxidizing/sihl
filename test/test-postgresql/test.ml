@@ -26,11 +26,22 @@ let services : (module Sihl.Core.Container.SERVICE) list =
   ]
 
 let () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty |> Service.Db.add_pool in
   Lwt_main.run
     (let* () =
-       let* () = Service.Test.services ctx ~config ~services in
-       Lwt.return ()
+       Sihl.Core.Container.register_services ctx services
+       |> Lwt.map Result.ok_or_failwith
+     in
+     let* () =
+       Service.Config.register_config ctx config
+       |> Lwt.map Result.ok_or_failwith
      in
      let ctx = Service.Db.add_pool ctx in
+     let* () =
+       Sihl.Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith
+     in
+     let* () =
+       Service.Migration.run_all ctx |> Lwt.map Base.Result.ok_or_failwith
+     in
+     let* () = Service.Migration.run_all ctx |> Lwt.map Result.ok_or_failwith in
      run "postgresql" @@ test_suite ctx)
