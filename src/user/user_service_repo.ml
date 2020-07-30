@@ -33,7 +33,7 @@ CREATE TABLE user_users (
 
     let migration () =
       Data.Migration.(
-        empty "users" |> add_step fix_collation |> add_step create_users_table)
+        empty "user" |> add_step fix_collation |> add_step create_users_table)
   end
 
   module Model = User_core.User
@@ -238,7 +238,7 @@ CREATE TABLE user_users (
 |sql}
 
     let migration () =
-      Data.Migration.(empty "users" |> add_step create_users_table)
+      Data.Migration.(empty "user" |> add_step create_users_table)
   end
 
   module Model = User_core.User
