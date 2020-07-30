@@ -23,7 +23,9 @@ module type SERVICE = sig
     Core.Ctx.t -> (Data_migration_core.Migration.t list, string) Lwt_result.t
 
   val execute :
-    Data_migration_core.Migration.t list -> (unit, string) Result.t Lwt.t
+    Core.Ctx.t ->
+    Data_migration_core.Migration.t list ->
+    (unit, string) Result.t Lwt.t
 
   val run_all : Core.Ctx.t -> (unit, string) Lwt_result.t
 end

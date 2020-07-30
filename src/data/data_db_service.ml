@@ -46,8 +46,7 @@ let query ctx f =
     (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)
   with
   | Some connection, _ ->
-      Logs.debug (fun m ->
-          m "DB TX: Open transaction found, running queries on tx connection");
+      Logs.debug (fun m -> m "DB: Running query on single connection");
       f connection
   | None, Some pool ->
       Caqti_lwt.Pool.use

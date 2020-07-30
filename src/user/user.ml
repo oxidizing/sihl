@@ -4,7 +4,6 @@ module Sig = User_sig
 module Authz = User_authz
 module Service = User_service
 module Seed = User_seed
-module Cmd = User_cmd
 module PasswordReset = User_password_reset
 
 let ctx_add_user user ctx = Core.Ctx.add ctx_key user ctx

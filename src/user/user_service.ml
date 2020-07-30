@@ -5,15 +5,10 @@ let ( let* ) = Lwt_result.bind
 module Repo = User_service_repo
 module User = User_core.User
 
-module Make (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
-  let on_init ctx =
-    let* () = Repo.register_migration ctx in
-    Repo.register_cleaner ctx
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
-
+module Make
+    (CmdService : Cmd.Sig.SERVICE)
+    (DbService : Data.Db.Sig.SERVICE)
+    (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
   let get ctx ~user_id = Repo.get ctx ~id:user_id
 
   let get_exn ctx ~user ~msg =
@@ -105,4 +100,25 @@ module Make (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
         if User.matches_password password user then Lwt_result.return @@ Ok user
         else Lwt_result.return @@ Error "Invalid email or password provided"
     | Error msg -> Lwt_result.return @@ Error msg
+
+  let create_admin_cmd =
+    Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
+      ~description:"Create an admin user"
+      ~fn:(fun args ->
+        match args with
+        | [ username; email; password ] ->
+            let ctx = Core.Ctx.empty |> DbService.add_pool in
+            create_admin ctx ~email ~password ~username:(Some username)
+            |> Lwt_result.map ignore
+        | _ -> Lwt_result.fail "Usage: <username> <email> <password>")
+      ()
+
+  let on_init ctx =
+    let* () = Repo.register_migration ctx in
+    let* () = Cmd_service.register_command ctx create_admin_cmd in
+    Repo.register_cleaner ctx
+
+  let on_start _ = Lwt.return @@ Ok ()
+
+  let on_stop _ = Lwt.return @@ Ok ()
 end
