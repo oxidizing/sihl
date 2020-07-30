@@ -164,6 +164,7 @@ let single_connection ctx f =
                    error))
           pool
       in
+      Logs.debug (fun m -> m "DB: Putting back connection to pool");
       match pool_result with
       | Ok result_ok ->
           (* All good, return result of f ctx *)

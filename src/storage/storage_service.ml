@@ -195,6 +195,12 @@ WHERE
       in
       Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
+    let fix_collation =
+      Data.Migration.create_step ~label:"fix collation"
+        {sql|
+SET collation_server = 'utf8mb4_unicode_ci';
+|sql}
+
     let create_blobs_table =
       Data.Migration.create_step ~label:"create blobs table"
         {sql|
@@ -228,7 +234,7 @@ CREATE TABLE IF NOT EXISTS storage_handles (
 
     let migration () =
       Data.Migration.(
-        empty "storage"
+        empty "storage" |> add_step fix_collation
         |> add_step create_blobs_table
         |> add_step create_handles_table)
 
