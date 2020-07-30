@@ -10,8 +10,6 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
      Log.debug (fun m -> m "APP: Register config");
      let* () = Kernel.Config.register_config ctx App.config in
      let ctx = Kernel.Db.add_pool ctx in
-     Log.debug (fun m -> m "APP: Run migrations");
-     let* () = Kernel.Migration.run_all ctx in
      Log.debug (fun m -> m "APP: Register routes");
      let* () = Kernel.WebServer.register_routes ctx App.routes in
      Log.debug (fun m -> m "APP: Register commands");
