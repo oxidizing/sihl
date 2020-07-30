@@ -160,7 +160,12 @@ struct
     let ctx = Db.ctx_with_pool () in
     run migrations ctx
 
-  let run_all ctx = Lwt_result.bind (get_migrations ctx) execute
+  let run_all ctx =
+    let* result =
+      Db.single_connection ctx (fun ctx ->
+          Lwt_result.bind (get_migrations ctx) execute)
+    in
+    Lwt.return result
 
   let migrate_cmd =
     Cmd.make ~name:"migrate" ~description:"Run all migrations"

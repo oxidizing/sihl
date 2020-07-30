@@ -138,6 +138,45 @@ let atomic ctx ?(no_rollback = false) f =
       Logs.info (fun m -> m "Have you applied the DB middleware?");
       Lwt.return (Error "No connection pool found")
 
+let single_connection ctx f =
+  let ( let* ) = Lwt.bind in
+  match Core_ctx.find ctx_key_pool ctx with
+  | Some pool -> (
+      let n_connections = Caqti_lwt.Pool.size pool in
+      let max_connections =
+        Config.read_int ~default:10 "DATABASE_POOL_SIZE"
+        |> Result.ok_or_failwith
+      in
+      Logs.debug (fun m ->
+          m "DB: Pool usage: %i/%i" n_connections max_connections);
+      Logs.debug (fun m -> m "DB: Fetched connection pool from context");
+      let* pool_result =
+        Caqti_lwt.Pool.use
+          (fun connection ->
+            let (module Connection : Caqti_lwt.CONNECTION) = connection in
+            let ctx = Core_ctx.add ctx_key_connection (module Connection) ctx in
+            let* f_result = f ctx in
+            let _ = Core_ctx.remove ctx_key_connection ctx in
+            Lwt_result.return f_result
+            |> Lwt_result.map_err (fun error ->
+                   Logs.err (fun m ->
+                       m "DB: Failed to run on single connection %s"
+                         (Caqti_error.show error));
+                   error))
+          pool
+      in
+      match pool_result with
+      | Ok result_ok ->
+          (* All good, return result of f ctx *)
+          result_ok |> Result.return |> Lwt.return
+      | Error pool_err ->
+          (* Failed to start, commit or rollback transaction *)
+          Caqti_error.show pool_err |> Result.fail |> Lwt.return )
+  | None ->
+      Logs.err (fun m -> m "No connection pool found");
+      Logs.info (fun m -> m "Have you applied the DB middleware?");
+      Lwt.return (Error "No connection pool found")
+
 let set_fk_check conn ~check =
   let module Connection = (val conn : Caqti_lwt.CONNECTION) in
   let request =

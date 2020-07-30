@@ -25,5 +25,10 @@ module type SERVICE = sig
     (Core_ctx.t -> ('a, 'e) Lwt_result.t) ->
     (('a, 'e) Result.t, string) Lwt_result.t
 
+  val single_connection :
+    Core_ctx.t ->
+    (Core_ctx.t -> ('a, 'e) Lwt_result.t) ->
+    (('a, 'e) Result.t, string) Lwt_result.t
+
   val set_fk_check : connection -> check:bool -> (unit, string) Result.t Lwt.t
 end
