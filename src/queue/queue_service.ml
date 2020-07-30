@@ -153,7 +153,7 @@ module MakePolling
     let combined_context_fn =
       jobs
       |> List.map ~f:WorkableJob.with_context
-      |> List.fold_left ~init:Fn.id ~f:Fn.compose
+      |> List.fold ~init:Fn.id ~f:Fn.compose
     in
     (* This function run every second, the request context gets created here with each tick *)
     let scheduled_function () =

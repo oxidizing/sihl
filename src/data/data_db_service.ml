@@ -171,12 +171,13 @@ let single_connection ctx f =
       Logs.info (fun m -> m "Have you applied the DB middleware?");
       Lwt.return (Error "No connection pool found")
 
-let set_fk_check conn ~check =
-  let module Connection = (val conn : Caqti_lwt.CONNECTION) in
-  let request =
-    Caqti_request.exec Caqti_type.bool
-      {sql|
+let set_fk_check_request =
+  Caqti_request.exec Caqti_type.bool
+    {sql|
         SET FOREIGN_KEY_CHECKS = ?;
            |sql}
-  in
-  Connection.exec request check |> Lwt_result.map_err Caqti_error.show
+
+let set_fk_check conn ~check =
+  let module Connection = (val conn : Caqti_lwt.CONNECTION) in
+  Connection.exec set_fk_check_request check
+  |> Lwt_result.map_err Caqti_error.show

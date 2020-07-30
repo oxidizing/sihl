@@ -76,12 +76,9 @@ module MakeMariaDb
     (DbService : Data.Db.Sig.SERVICE)
     (RepoService : Data.Repo.Sig.SERVICE)
     (MigrationService : Data.Migration.Sig.SERVICE) : Queue_sig.REPO = struct
-  let enqueue ctx ~job_instance =
-    DbService.query ctx (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Model.t
-            {sql|
+  let enqueue_request =
+    Caqti_request.exec Model.t
+      {sql|
         INSERT INTO queue_jobs (
           uuid,
           name,
@@ -100,16 +97,16 @@ module MakeMariaDb
           ?
         )
         |sql}
-        in
-        Connection.exec request job_instance
-        |> Lwt_result.map_err Caqti_error.show)
 
-  let update ctx ~job_instance =
+  let enqueue ctx ~job_instance =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Model.t
-            {sql|
+        Connection.exec enqueue_request job_instance
+        |> Lwt_result.map_err Caqti_error.show)
+
+  let update_request =
+    Caqti_request.exec Model.t
+      {sql|
         UPDATE queue_jobs
         SET
           name = $2,
@@ -121,16 +118,16 @@ module MakeMariaDb
         WHERE
           queue_jobs.uuid = $1
         |sql}
-        in
-        Connection.exec request job_instance
-        |> Lwt_result.map_err Caqti_error.show)
 
-  let find_workable ctx =
+  let update ctx ~job_instance =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.collect Caqti_type.unit Model.t
-            {sql|
+        Connection.exec update_request job_instance
+        |> Lwt_result.map_err Caqti_error.show)
+
+  let find_workable_request =
+    Caqti_request.collect Caqti_type.unit Model.t
+      {sql|
         SELECT
           uuid,
           name,
@@ -146,27 +143,28 @@ module MakeMariaDb
           AND tries < max_tries
         ORDER BY id DESC
         |sql}
-        in
-        Connection.collect_list request ()
+
+  let find_workable ctx =
+    DbService.query ctx (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Connection.collect_list find_workable_request ()
         |> Lwt_result.map_err Caqti_error.show)
+
+  let clean_request =
+    Caqti_request.exec Caqti_type.unit
+      {sql|
+        TRUNCATE TABLE email_templates;
+         |sql}
 
   let clean ctx =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request =
-          Caqti_request.exec Caqti_type.unit
-            {sql|
-        TRUNCATE TABLE email_templates;
-         |sql}
-        in
-        Connection.exec request () |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show)
 
   module Migration = struct
     let fix_collation =
       Data.Migration.create_step ~label:"fix collation"
-        {sql|
-SET collation_server = 'utf8mb4_unicode_ci';
-|sql}
+        "SET collation_server = 'utf8mb4_unicode_ci';"
 
     let create_jobs_table =
       Data.Migration.create_step ~label:"create jobs table"

@@ -6,11 +6,9 @@ struct
   module Sql = struct
     module Model = Token_core
 
-    let find connection ~value =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.find Caqti_type.string Model.t
-          {sql|
+    let find_request =
+      Caqti_request.find Caqti_type.string Model.t
+        {sql|
         SELECT
           uuid,
           token_value,
@@ -22,33 +20,19 @@ struct
         FROM token_tokens
         WHERE token_tokens.token_value = ?
         |sql}
-      in
-      Connection.find request value |> Lwt_result.map_err Caqti_error.show
+
+    let find connection ~value =
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.find find_request value |> Lwt_result.map_err Caqti_error.show
 
     let find_opt connection ~value =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.find Caqti_type.string Model.t
-          {sql|
-        SELECT
-          uuid,
-          token_value,
-          token_data,
-          token_kind,
-          status,
-          expires_at,
-          created_at
-        FROM token_tokens
-        WHERE token_tokens.token_value = ?
-        |sql}
-      in
-      Connection.find_opt request value |> Lwt_result.map_err Caqti_error.show
+      Connection.find_opt find_request value
+      |> Lwt_result.map_err Caqti_error.show
 
-    let insert connection ~token =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Model.t
-          {sql|
+    let insert_request =
+      Caqti_request.exec Model.t
+        {sql|
         INSERT INTO token_tokens (
           uuid,
           token_value,
@@ -67,15 +51,18 @@ struct
           $7
         )
 |sql}
-      in
-      Connection.exec request token |> Lwt_result.map_err Caqti_error.show
+
+    let insert connection ~token =
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.exec insert_request token
+      |> Lwt_result.map_err Caqti_error.show
+
+    let clean_request =
+      Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
 
     let clean connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
-      in
-      Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+      Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show
   end
 
   module Migration = struct

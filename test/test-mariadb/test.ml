@@ -63,10 +63,9 @@ let () =
      in
      let ctx = Service.Db.add_pool ctx in
      let* () =
-       Sihl.Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith
-     in
-     let* () =
        Service.Migration.run_all ctx |> Lwt.map Base.Result.ok_or_failwith
      in
-     let* () = Service.Migration.run_all ctx |> Lwt.map Result.ok_or_failwith in
+     let* () =
+       Sihl.Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith
+     in
      run "mariadb" @@ test_suite ctx)

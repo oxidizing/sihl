@@ -68,12 +68,9 @@ module Repo = struct
         custom ~encode ~decode
           Caqti_type.(tup2 string (tup2 string (tup2 int (tup2 string string)))))
 
-    let insert_file ctx ~file =
-      DbService.query ctx (fun connection ->
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec stored_file
-              {sql|
+    let insert_request =
+      Caqti_request.exec stored_file
+        {sql|
 INSERT INTO storage_handles (
   uuid,
   filename,
@@ -88,15 +85,16 @@ INSERT INTO storage_handles (
   UNHEX(REPLACE(?, '-', ''))
 )
 |sql}
-          in
-          Connection.exec request file |> Lwt_result.map_err Caqti_error.show)
 
-    let update_file ctx ~file =
+    let insert_file ctx ~file =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec stored_file
-              {sql|
+          Connection.exec insert_request file
+          |> Lwt_result.map_err Caqti_error.show)
+
+    let update_file_request =
+      Caqti_request.exec stored_file
+        {sql|
 UPDATE storage_handles SET
   filename = $2,
   filesize = $3,
@@ -105,15 +103,16 @@ UPDATE storage_handles SET
 WHERE
   storage_handles.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
-          in
-          Connection.exec request file |> Lwt_result.map_err Caqti_error.show)
 
-    let get_file ctx ~id =
+    let update_file ctx ~file =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string stored_file
-              {sql|
+          Connection.exec update_file_request file
+          |> Lwt_result.map_err Caqti_error.show)
+
+    let get_file_request =
+      Caqti_request.find_opt Caqti_type.string stored_file
+        {sql|
 SELECT
   uuid,
   filename,
@@ -123,30 +122,32 @@ SELECT
 FROM storage_handles
 WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
-          in
-          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show)
 
-    let get_blob ctx ~id =
+    let get_file ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string Caqti_type.string
-              {sql|
+          Connection.find_opt get_file_request id
+          |> Lwt_result.map_err Caqti_error.show)
+
+    let get_blob_request =
+      Caqti_request.find_opt Caqti_type.string Caqti_type.string
+        {sql|
 SELECT
   asset_data
 FROM storage_blobs
 WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
 |sql}
-          in
-          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show)
 
-    let insert_blob ctx ~id ~blob =
+    let get_blob ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec
-              Caqti_type.(tup2 string string)
-              {sql|
+          Connection.find_opt get_blob_request id
+          |> Lwt_result.map_err Caqti_error.show)
+
+    let insert_blob_request =
+      Caqti_request.exec
+        Caqti_type.(tup2 string string)
+        {sql|
 INSERT INTO storage_blobs (
   uuid,
   asset_data
@@ -155,45 +156,50 @@ INSERT INTO storage_blobs (
   ?
 )
 |sql}
-          in
-          Connection.exec request (id, blob)
-          |> Lwt_result.map_err Caqti_error.show)
 
-    let update_blob ctx ~id ~blob =
+    let insert_blob ctx ~id ~blob =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec
-              Caqti_type.(tup2 string string)
-              {sql|
+          Connection.exec insert_blob_request (id, blob)
+          |> Lwt_result.map_err Caqti_error.show)
+
+    let update_blob_request =
+      Caqti_request.exec
+        Caqti_type.(tup2 string string)
+        {sql|
 UPDATE storage_blobs SET
   asset_data = $2
 WHERE
   storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
 |sql}
-          in
-          Connection.exec request (id, blob)
+
+    let update_blob ctx ~id ~blob =
+      DbService.query ctx (fun connection ->
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec update_blob_request (id, blob)
           |> Lwt_result.map_err Caqti_error.show)
+
+    let clean_handles_request =
+      Caqti_request.exec Caqti_type.unit
+        {sql|
+           TRUNCATE storage_handles;
+          |sql}
 
     let clean_handles connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
-           TRUNCATE storage_handles;
+      Connection.exec clean_handles_request ()
+      |> Lwt_result.map_err Caqti_error.show
+
+    let clean_blobs_request =
+      Caqti_request.exec Caqti_type.unit
+        {sql|
+           TRUNCATE storage_blobs;
           |sql}
-      in
-      Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
     let clean_blobs connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
-           TRUNCATE storage_blobs;
-          |sql}
-      in
-      Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+      Connection.exec clean_blobs_request ()
+      |> Lwt_result.map_err Caqti_error.show
 
     let fix_collation =
       Data.Migration.create_step ~label:"fix collation"
