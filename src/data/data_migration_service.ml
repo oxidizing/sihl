@@ -63,7 +63,9 @@ struct
       | Model.Migration.{ label; statement; check_fk = true } :: steps -> (
           Logs.debug (fun m -> m "MIGRATION: Running %s" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
-            let req = Caqti_request.exec Caqti_type.unit statement in
+            let req =
+              Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+            in
             Connection.exec req () |> Lwt_result.map_err Caqti_error.show
           in
           Db.query ctx query >>= function
@@ -84,7 +86,9 @@ struct
           Logs.debug (fun m ->
               m "MIGRATION: Running %s without fk checks" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
-            let req = Caqti_request.exec Caqti_type.unit statement in
+            let req =
+              Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+            in
             Connection.exec req () |> Lwt_result.map_err Caqti_error.show
           in
           Db.query ctx query >>= function
