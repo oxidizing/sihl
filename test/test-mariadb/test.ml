@@ -47,7 +47,6 @@ let services : (module Sihl.Core.Container.SERVICE) list =
     (module Service.Storage);
     (module Service.EmailTemplate);
     (module Service.PasswordReset);
-    (module Service.Queue);
   ]
 
 let () =
