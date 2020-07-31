@@ -18,6 +18,8 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
      let* () = Kernel.Schedule.register_schedules ctx App.schedules in
      Log.debug (fun m -> m "APP: Start services");
      let* () = Core.Container.start_services ctx in
+     Log.debug (fun m -> m "APP: Start app");
+     let* () = App.on_start ctx in
      App.on_start ctx)
     |> Lwt_result.map_err (fun msg ->
            Log.err (fun m -> m "APP: Failed to start app %s" msg);
