@@ -22,3 +22,5 @@ let scheduled_function schedule = schedule.fn
 let create scheduled_time ~f ~label = { label; scheduled_time; fn = f }
 
 let every_second = Every Utils.Time.OneSecond
+
+let every_hour = Every Utils.Time.OneHour
