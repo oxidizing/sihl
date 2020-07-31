@@ -45,9 +45,7 @@ let query ctx f =
   match
     (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)
   with
-  | Some connection, _ ->
-      Logs.debug (fun m -> m "DB: Running query on single connection");
-      f connection
+  | Some connection, _ -> f connection
   | None, Some pool ->
       Caqti_lwt.Pool.use
         (fun connection ->
