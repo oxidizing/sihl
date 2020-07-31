@@ -29,10 +29,6 @@ module MakePolling
         Log.warn (fun m -> m "QUEUE: Can not stop schedule");
         Lwt_result.return ()
 
-  let register_jobs _ ~jobs =
-    registered_jobs := jobs |> List.map ~f:WorkableJob.of_job;
-    Lwt.return ()
-
   let dispatch ctx ~job ?delay input =
     let name = Job.name job in
     Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);
@@ -126,26 +122,29 @@ module MakePolling
              "QUEUE: Failure while finding pending job instances " ^ msg)
       |> Lwt.map Result.ok_or_failwith
     in
-    Log.debug (fun m ->
-        m "QUEUE: Start working queue of length %d"
-          (List.length pending_job_instances));
+    let n_job_instances = List.length pending_job_instances in
+    if n_job_instances > 0 then (
+      Log.debug (fun m ->
+          m "QUEUE: Start working queue of length %d"
+            (List.length pending_job_instances));
 
-    let rec loop job_instances jobs =
-      match job_instances with
-      | [] -> Lwt.return ()
-      | job_instance :: job_instances -> (
-          let job =
-            List.find jobs ~f:(fun job ->
-                job |> WorkableJob.name
-                |> String.equal (JobInstance.name job_instance))
-          in
-          match job with
-          | None -> loop job_instances jobs
-          | Some job -> work_job ctx ~job ~job_instance )
-    in
-    let* () = loop pending_job_instances jobs in
-    Log.debug (fun m -> m "QUEUE: Finish working queue");
-    Lwt.return ()
+      let rec loop job_instances jobs =
+        match job_instances with
+        | [] -> Lwt.return ()
+        | job_instance :: job_instances -> (
+            let job =
+              List.find jobs ~f:(fun job ->
+                  job |> WorkableJob.name
+                  |> String.equal (JobInstance.name job_instance))
+            in
+            match job with
+            | None -> loop job_instances jobs
+            | Some job -> work_job ctx ~job ~job_instance )
+      in
+      let* () = loop pending_job_instances jobs in
+      Log.debug (fun m -> m "QUEUE: Finish working queue");
+      Lwt.return () )
+    else Lwt.return ()
 
   let on_start ctx =
     let jobs = !registered_jobs in
@@ -174,6 +173,11 @@ module MakePolling
       Logs.debug (fun m ->
           m "QUEUE: No workable jobs found, don't start job queue");
       Lwt_result.return () )
+
+  let register_jobs _ ~jobs =
+    let jobs_to_register = jobs |> List.map ~f:WorkableJob.of_job in
+    registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
+    Lwt.return ()
 end
 
 module Repo = Queue_service_repo
