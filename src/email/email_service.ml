@@ -72,11 +72,9 @@ module Template = struct
       module Sql = struct
         module Model = Email_core.Template
 
-        let get connection ~id =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string Model.t
-              {sql|
+        let get_request =
+          Caqti_request.find_opt Caqti_type.string Model.t
+            {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -92,14 +90,15 @@ module Template = struct
         FROM email_templates
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
-          in
-          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-        let get_by_name connection ~name =
+        let get connection ~id =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string Model.t
-              {sql|
+          Connection.find_opt get_request id
+          |> Lwt_result.map_err Caqti_error.show
+
+        let get_by_name_request =
+          Caqti_request.find_opt Caqti_type.string Model.t
+            {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -115,15 +114,15 @@ module Template = struct
         FROM email_templates
         WHERE email_templates.name = ?
         |sql}
-          in
-          Connection.find_opt request name
+
+        let get_by_name connection ~name =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.find_opt get_by_name_request name
           |> Lwt_result.map_err Caqti_error.show
 
-        let insert connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Model.t
-              {sql|
+        let insert_request =
+          Caqti_request.exec Model.t
+            {sql|
         INSERT INTO email_templates (
           uuid,
           name,
@@ -138,15 +137,15 @@ module Template = struct
           ?
         )
         |sql}
-          in
-          Connection.exec request template
+
+        let insert connection ~template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec insert_request template
           |> Lwt_result.map_err Caqti_error.show
 
-        let update connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Model.t
-              {sql|
+        let update_request =
+          Caqti_request.exec Model.t
+            {sql|
         UPDATE email_templates
         SET
           name = $2,
@@ -155,27 +154,28 @@ module Template = struct
           created_at = $5
         WHERE email_templates.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
-          in
-          Connection.exec request template
+
+        let update connection ~template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec update_request template
           |> Lwt_result.map_err Caqti_error.show
+
+        let clean_request =
+          Caqti_request.exec Caqti_type.unit
+            {sql|
+        TRUNCATE TABLE email_templates;
+         |sql}
 
         let clean connection =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Caqti_type.unit
-              {sql|
-        TRUNCATE TABLE email_templates;
-         |sql}
-          in
-          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+          Connection.exec clean_request ()
+          |> Lwt_result.map_err Caqti_error.show
       end
 
       module Migration = struct
         let fix_collation =
           Data.Migration.create_step ~label:"fix collation"
-            {sql|
-SET collation_server = 'utf8mb4_unicode_ci';
-|sql}
+            "SET collation_server = 'utf8mb4_unicode_ci'"
 
         let create_templates_table =
           Data.Migration.create_step ~label:"create templates table"
@@ -223,11 +223,9 @@ CREATE TABLE email_templates (
       module Sql = struct
         module Model = Email_core.Template
 
-        let get connection ~id =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string Model.t
-              {sql|
+        let get_request =
+          Caqti_request.find_opt Caqti_type.string Model.t
+            {sql|
         SELECT
           uuid,
           name,
@@ -237,14 +235,15 @@ CREATE TABLE email_templates (
         FROM email_templates
         WHERE email_templates.uuid = ?
         |sql}
-          in
-          Connection.find_opt request id |> Lwt_result.map_err Caqti_error.show
 
-        let get_by_name connection ~name =
+        let get connection ~id =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.find_opt Caqti_type.string Model.t
-              {sql|
+          Connection.find_opt get_request id
+          |> Lwt_result.map_err Caqti_error.show
+
+        let get_by_name_request =
+          Caqti_request.find_opt Caqti_type.string Model.t
+            {sql|
         SELECT
           uuid,
           name,
@@ -254,15 +253,15 @@ CREATE TABLE email_templates (
         FROM email_templates
         WHERE email_templates.name = ?
         |sql}
-          in
-          Connection.find_opt request name
+
+        let get_by_name connection ~name =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.find_opt get_by_name_request name
           |> Lwt_result.map_err Caqti_error.show
 
-        let insert connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Model.t
-              {sql|
+        let insert_request =
+          Caqti_request.exec Model.t
+            {sql|
         INSERT INTO email_templates (
           uuid,
           name,
@@ -277,15 +276,15 @@ CREATE TABLE email_templates (
           ?
         )
         |sql}
-          in
-          Connection.exec request template
+
+        let insert connection ~template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec insert_request template
           |> Lwt_result.map_err Caqti_error.show
 
-        let update connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Model.t
-              {sql|
+        let update_request =
+          Caqti_request.exec Model.t
+            {sql|
         UPDATE email_templates
         SET
           name = $2,
@@ -294,19 +293,20 @@ CREATE TABLE email_templates (
           created_at = $5
         WHERE email_templates.uuid = $1
         |sql}
-          in
-          Connection.exec request template
+
+        let update connection ~template =
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec update_request template
           |> Lwt_result.map_err Caqti_error.show
+
+        let clean_request =
+          Caqti_request.exec Caqti_type.unit
+            "TRUNCATE TABLE email_templates CASCADE;"
 
         let clean connection =
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          let request =
-            Caqti_request.exec Caqti_type.unit
-              {sql|
-        TRUNCATE TABLE email_templates CASCADE;
-         |sql}
-          in
-          Connection.exec request () |> Lwt_result.map_err Caqti_error.show
+          Connection.exec clean_request ()
+          |> Lwt_result.map_err Caqti_error.show
       end
 
       module Migration = struct

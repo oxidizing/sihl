@@ -63,7 +63,9 @@ struct
       | Model.Migration.{ label; statement; check_fk = true } :: steps -> (
           Logs.debug (fun m -> m "MIGRATION: Running %s" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
-            let req = Caqti_request.exec Caqti_type.unit statement in
+            let req =
+              Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+            in
             Connection.exec req () |> Lwt_result.map_err Caqti_error.show
           in
           Db.query ctx query >>= function
@@ -84,7 +86,9 @@ struct
           Logs.debug (fun m ->
               m "MIGRATION: Running %s without fk checks" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
-            let req = Caqti_request.exec Caqti_type.unit statement in
+            let req =
+              Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+            in
             Connection.exec req () |> Lwt_result.map_err Caqti_error.show
           in
           Db.query ctx query >>= function
@@ -179,11 +183,9 @@ end
 
 module Repo = struct
   module MariaDb = struct
-    let create_table_if_not_exists connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
+    let create_request =
+      Caqti_request.exec Caqti_type.unit
+        {sql|
 CREATE TABLE IF NOT EXISTS core_migration_state (
   namespace VARCHAR(128) NOT NULL,
   version INTEGER,
@@ -191,15 +193,15 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
   PRIMARY KEY (namespace)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
  |sql}
-      in
-      Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
-    let get connection ~namespace =
+    let create_table_if_not_exists connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.find_opt Caqti_type.string
-          Caqti_type.(tup3 string int bool)
-          {sql|
+      Connection.exec create_request () |> Lwt_result.map_err Caqti_error.show
+
+    let get_request =
+      Caqti_request.find_opt Caqti_type.string
+        Caqti_type.(tup3 string int bool)
+        {sql|
 SELECT
   namespace,
   version,
@@ -207,19 +209,19 @@ SELECT
 FROM core_migration_state
 WHERE namespace = ?;
 |sql}
-      in
+
+    let get connection ~namespace =
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let* result =
-        Connection.find_opt request namespace
+        Connection.find_opt get_request namespace
         |> Lwt_result.map_err Caqti_error.show
       in
       Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
 
-    let upsert connection ~state =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec
-          Caqti_type.(tup3 string int bool)
-          {sql|
+    let upsert_request =
+      Caqti_request.exec
+        Caqti_type.(tup3 string int bool)
+        {sql|
 INSERT INTO core_migration_state (
   namespace,
   version,
@@ -232,32 +234,32 @@ INSERT INTO core_migration_state (
 version = VALUES(version),
 dirty = VALUES(dirty)
 |sql}
-      in
-      Connection.exec request (Model.to_tuple state)
+
+    let upsert connection ~state =
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.exec upsert_request (Model.to_tuple state)
       |> Lwt_result.map_err Caqti_error.show
   end
 
   module PostgreSql = struct
-    let create_table_if_not_exists connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec Caqti_type.unit
-          {sql|
+    let create_request =
+      Caqti_request.exec Caqti_type.unit
+        {sql|
 CREATE TABLE IF NOT EXISTS core_migration_state (
   namespace VARCHAR(128) NOT NULL PRIMARY KEY,
   version INTEGER,
   dirty BOOL NOT NULL
 );
  |sql}
-      in
-      Connection.exec request () |> Lwt_result.map_err Caqti_error.show
 
-    let get connection ~namespace =
+    let create_table_if_not_exists connection =
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.find_opt Caqti_type.string
-          Caqti_type.(tup3 string int bool)
-          {sql|
+      Connection.exec create_request () |> Lwt_result.map_err Caqti_error.show
+
+    let get_request =
+      Caqti_request.find_opt Caqti_type.string
+        Caqti_type.(tup3 string int bool)
+        {sql|
 SELECT
   namespace,
   version,
@@ -265,19 +267,19 @@ SELECT
 FROM core_migration_state
 WHERE namespace = ?;
 |sql}
-      in
+
+    let get connection ~namespace =
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let* result =
-        Connection.find_opt request namespace
+        Connection.find_opt get_request namespace
         |> Lwt_result.map_err Caqti_error.show
       in
       Lwt.return @@ Ok (result |> Option.map ~f:Model.of_tuple)
 
-    let upsert connection ~state =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let request =
-        Caqti_request.exec
-          Caqti_type.(tup3 string int bool)
-          {sql|
+    let upsert_request =
+      Caqti_request.exec
+        Caqti_type.(tup3 string int bool)
+        {sql|
 INSERT INTO core_migration_state (
   namespace,
   version,
@@ -290,8 +292,10 @@ INSERT INTO core_migration_state (
 DO UPDATE SET version = EXCLUDED.version,
 dirty = EXCLUDED.dirty
 |sql}
-      in
-      Connection.exec request (Model.to_tuple state)
+
+    let upsert connection ~state =
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.exec upsert_request (Model.to_tuple state)
       |> Lwt_result.map_err Caqti_error.show
   end
 end
