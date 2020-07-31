@@ -19,7 +19,10 @@ module Job = struct
   [@@deriving show, fields]
 
   let create ~name ?(with_context = fun ctx -> ctx) ~input_to_string
-      ~string_to_input ~handle ~failed () =
+      ~string_to_input ~handle ?failed () =
+    let failed =
+      failed |> Option.value ~default:(fun _ -> Lwt_result.return ())
+    in
     {
       name;
       with_context;
