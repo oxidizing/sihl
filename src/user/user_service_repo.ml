@@ -15,7 +15,7 @@ SET collation_server = 'utf8mb4_unicode_ci';
     let create_users_table =
       Data.Migration.create_step ~label:"create users table"
         {sql|
-CREATE TABLE user_users (
+CREATE TABLE IF NOT EXISTS user_users (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   email VARCHAR(128) NOT NULL,
@@ -226,7 +226,7 @@ struct
     let create_users_table =
       Data.Migration.create_step ~label:"create users table"
         {sql|
-CREATE TABLE user_users (
+CREATE TABLE IF NOT EXISTS user_users (
   id serial,
   uuid uuid NOT NULL,
   email VARCHAR(128) NOT NULL,

@@ -169,7 +169,7 @@ module MakeMariaDb
     let create_jobs_table =
       Data.Migration.create_step ~label:"create jobs table"
         {sql|
-CREATE TABLE queue_jobs (
+CREATE TABLE IF NOT EXISTS queue_jobs (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   name VARCHAR(128) NOT NULL,

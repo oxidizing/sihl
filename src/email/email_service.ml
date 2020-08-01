@@ -180,7 +180,7 @@ module Template = struct
         let create_templates_table =
           Data.Migration.create_step ~label:"create templates table"
             {sql|
-CREATE TABLE email_templates (
+CREATE TABLE IF NOT EXISTS email_templates (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   name VARCHAR(128) NOT NULL,
@@ -313,7 +313,7 @@ CREATE TABLE email_templates (
         let create_templates_table =
           Data.Migration.create_step ~label:"create templates table"
             {sql|
-CREATE TABLE email_templates (
+CREATE TABLE IF NOT EXISTS email_templates (
   id SERIAL,
   uuid UUID NOT NULL,
   name VARCHAR(128) NOT NULL,

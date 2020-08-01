@@ -168,7 +168,7 @@ module Repo = struct
       let create_sessions_table =
         Data.Migration.create_step ~label:"create sessions table"
           {sql|
-CREATE TABLE session_sessions (
+CREATE TABLE IF NOT EXISTS session_sessions (
   id serial,
   session_key VARCHAR(64) NOT NULL,
   session_data VARCHAR(1024) NOT NULL,
@@ -303,7 +303,7 @@ CREATE TABLE session_sessions (
       let create_sessions_table =
         Data.Migration.create_step ~label:"create sessions table"
           {sql|
-CREATE TABLE session_sessions (
+CREATE TABLE IF NOT EXISTS session_sessions (
   id serial,
   session_key VARCHAR NOT NULL,
   session_data TEXT NOT NULL,

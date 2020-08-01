@@ -73,7 +73,7 @@ struct
     let create_tokens_table =
       Data.Migration.create_step ~label:"create tokens table"
         {sql|
-CREATE TABLE token_tokens (
+CREATE TABLE IF NOT EXISTS token_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
   uuid BINARY(16) NOT NULL,
   token_value VARCHAR(128) NOT NULL,
