@@ -44,9 +44,4 @@ module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
     in
     loop () |> ignore;
     stop_schedule
-
-  let register_schedules _ _ =
-    Logs.warn (fun m ->
-        m "SCHEDULE: Registration of schedules is not implemented");
-    Lwt_result.return ()
 end

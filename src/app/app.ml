@@ -15,7 +15,7 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
      Log.debug (fun m -> m "APP: Register commands");
      let* () = Kernel.Cmd.register_commands ctx App.commands in
      Log.debug (fun m -> m "APP: Register schedules");
-     let* () = Kernel.Schedule.register_schedules ctx App.schedules in
+     let _ = App.schedules |> List.map (Kernel.Schedule.schedule ctx) in
      Log.debug (fun m -> m "APP: Start services");
      let* () = Core.Container.start_services ctx in
      Log.debug (fun m -> m "APP: Start app");
