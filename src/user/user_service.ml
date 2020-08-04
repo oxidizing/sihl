@@ -19,7 +19,13 @@ module Make
         Logs.err (fun m -> m "%s" msg);
         Lwt_result.fail msg
 
-  let get_by_email ctx ~email = Repo.get_by_email ctx ~email
+  let get_by_email ctx ~email =
+    (* TODO add support for lowercase UTF-8
+     * String.lowercase only supports US-ASCII, but
+     * email addresses can contain other letters
+     * (https://tools.ietf.org/html/rfc6531) like umlauts.
+     *)
+    Repo.get_by_email ctx ~email:(String.lowercase email)
 
   let get_all ctx ~query = Repo.get_all ctx ~query
 
