@@ -30,7 +30,13 @@ module User = struct
     let hash = new_password |> Utils.Hashing.hash |> Result.ok_or_failwith in
     { user with password = hash }
 
-  let set_user_details user ~email ~username = { user with email; username }
+  let set_user_details user ~email ~username =
+    (* TODO add support for lowercase UTF-8
+     * String.lowercase only supports US-ASCII, but
+     * email addresses can contain other letters
+     * (https://tools.ietf.org/html/rfc6531) like umlauts.
+     *)
+    { user with email = String.lowercase email; username }
 
   let is_admin user = user.admin
 
@@ -70,7 +76,12 @@ module User = struct
     let hash = password |> Utils.Hashing.hash |> Result.ok_or_failwith in
     {
       id = Data.Id.random () |> Data.Id.to_string;
-      email;
+      (* TODO add support for lowercase UTF-8
+       * String.lowercase only supports US-ASCII, but
+       * email addresses can contain other letters
+       * (https://tools.ietf.org/html/rfc6531) like umlauts.
+       *)
+      email = String.lowercase email;
       password = hash;
       username;
       admin;
