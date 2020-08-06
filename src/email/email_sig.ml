@@ -54,22 +54,29 @@ module Template = struct
 end
 
 module ConfigProvider = struct
+  (** Read the configurations from environment variables and set sane defaults.
+[SMTP_SENDER]: Sender address from where the emails come from
+[SMTP_HOST]: Host address of the SMTP server
+[SMTP_USERNAME]: Username for the SMTP server login
+[SMTP_USERNAME]: Password for the SMTP server login
+[SMTP_PORT]: Port number, default is 587
+[SMTP_START_TLS]: Whether to use TLS, default is true
+[CA_DIR]: Location of root CA certificates on the file system, default is /etc/ssl/certs
+*)
   module type SMTP = sig
-    val smtp_sender : Core.Ctx.t -> (string, string) Lwt_result.t
+    val sender : Core.Ctx.t -> (string, string) Lwt_result.t
 
-    val smtp_username : Core.Ctx.t -> (string, string) Lwt_result.t
+    val username : Core.Ctx.t -> (string, string) Lwt_result.t
 
-    val smtp_password : Core.Ctx.t -> (string, string) Lwt_result.t
+    val password : Core.Ctx.t -> (string, string) Lwt_result.t
 
-    val smtp_host : Core.Ctx.t -> (string, string) Lwt_result.t
+    val host : Core.Ctx.t -> (string, string) Lwt_result.t
 
-    val smtp_port : Core.Ctx.t -> (int option, string) Lwt_result.t
+    val port : Core.Ctx.t -> (int option, string) Lwt_result.t
 
-    (* Use None for detault *)
+    val start_tls : Core.Ctx.t -> (bool, string) Lwt_result.t
 
-    val smtp_starttls : Core.Ctx.t -> (bool, string) Lwt_result.t
-
-    val smtp_ca_dir : Core.Ctx.t -> (string, string) Lwt_result.t
+    val ca_dir : Core.Ctx.t -> (string, string) Lwt_result.t
   end
 
   module type SENDGRID = sig

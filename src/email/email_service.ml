@@ -2,6 +2,29 @@ open Base
 
 let ( let* ) = Lwt_result.bind
 
+module EnvConfigProvider : Email_sig.ConfigProvider.SMTP = struct
+  let sender _ = Lwt.return @@ Config.read_string "SMTP_SENDER"
+
+  let host _ = Lwt.return @@ Config.read_string "SMTP_HOST"
+
+  let username _ = Lwt.return @@ Config.read_string "SMTP_USERNAME"
+
+  let password _ = Lwt.return @@ Config.read_string "SMTP_PASSWORD"
+
+  let port _ =
+    Lwt.return
+    @@
+    match Config.read_int "SMTP_PORT" with
+    | Ok port -> Ok (Some port)
+    | Error _ -> Ok None
+
+  let start_tls _ = Lwt.return @@ Config.read_bool "SMTP_START_TLS"
+
+  let ca_dir _ =
+    Lwt_result.return
+    @@ Config.read_string_default ~default:"/etc/ssl/certs" "CA_DIR"
+end
+
 module Template = struct
   module Make (Repo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE =
   struct
@@ -421,13 +444,13 @@ Html:
         Letters.build_email ~from:email.sender ~recipients
           ~subject:email.subject ~body
       in
-      let* sender = ConfigProvider.smtp_sender request in
-      let* username = ConfigProvider.smtp_username request in
-      let* password = ConfigProvider.smtp_password request in
-      let* hostname = ConfigProvider.smtp_host request in
-      let* port = ConfigProvider.smtp_port request in
-      let* with_starttls = ConfigProvider.smtp_starttls request in
-      let* ca_dir = ConfigProvider.smtp_ca_dir request in
+      let* sender = ConfigProvider.sender request in
+      let* username = ConfigProvider.username request in
+      let* password = ConfigProvider.password request in
+      let* hostname = ConfigProvider.host request in
+      let* port = ConfigProvider.port request in
+      let* with_starttls = ConfigProvider.start_tls request in
+      let* ca_dir = ConfigProvider.ca_dir request in
       let config : Letters.config =
         { sender; username; password; hostname; port; with_starttls; ca_dir }
       in
