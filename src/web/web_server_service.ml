@@ -22,14 +22,7 @@ module Make (CmdService : Cmd.Sig.SERVICE) : Web_server_sig.SERVICE = struct
     let _ = Opium.Std.App.start app in
     run_forever ()
 
-  let start_cmd =
-    Cmd.make ~name:"start" ~description:"Starts the web server"
-      ~fn:(fun _ ->
-        let ctx = Core.Ctx.empty in
-        start_server ctx |> Lwt.map Result.return)
-      ()
-
-  let on_init ctx = CmdService.register_command ctx start_cmd
+  let on_init _ = Lwt_result.return ()
 
   let on_start _ = Lwt_result.return ()
 
