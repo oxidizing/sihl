@@ -10,6 +10,11 @@ let is_testing () =
   |> Option.value ~default:"development"
   |> String.equal "test"
 
+let is_production () =
+  Sys.getenv "SIHL_ENV"
+  |> Option.value ~default:"development"
+  |> String.equal "production"
+
 let read_string_default ~default key =
   let value =
     Option.first_some (Sys.getenv key)
