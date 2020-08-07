@@ -46,7 +46,9 @@ let public_serve t ~requested ~request_if_none_match ?etag_of_fname ?headers ()
         if resp |> fst |> Cohttp.Response.status = `Not_found then `Not_found
         else `Ok (Response.of_response_body resp)
 
-let m ~local_path ~uri_prefix ?headers ?etag_of_fname () =
+let m ~local_path_f ~uri_prefix_f ?headers ?etag_of_fname () =
+  let local_path = local_path_f () in
+  let uri_prefix = uri_prefix_f () in
   let filter handler ctx =
     if Web_req.is_get ctx then
       let local_map = { prefix = uri_prefix; local_path } in

@@ -21,8 +21,8 @@ module Authn = Web_middleware_authn
 val error : unit -> t
 
 val static :
-  local_path:string ->
-  uri_prefix:string ->
+  local_path_f:(unit -> string) ->
+  uri_prefix_f:(unit -> string) ->
   ?headers:Cohttp.Header.t ->
   ?etag_of_fname:(string -> string) ->
   unit ->
