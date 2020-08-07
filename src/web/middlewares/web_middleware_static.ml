@@ -47,9 +47,10 @@ let public_serve t ~requested ~request_if_none_match ?etag_of_fname ?headers ()
         else `Ok (Response.of_response_body resp)
 
 let m ~local_path_f ~uri_prefix_f ?headers ?etag_of_fname () =
-  let local_path = local_path_f () in
-  let uri_prefix = uri_prefix_f () in
   let filter handler ctx =
+    let local_path = local_path_f () in
+    let uri_prefix = uri_prefix_f () in
+
     if Web_req.is_get ctx then
       let local_map = { prefix = uri_prefix; local_path } in
       let local_path = ctx |> Web_req.get_uri |> Uri.path in
