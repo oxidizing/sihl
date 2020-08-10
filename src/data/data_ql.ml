@@ -78,7 +78,7 @@ module Sql = struct
            | Sort.Desc value -> Printf.sprintf "%s DESC" value)
       |> String.concat ~sep:", "
     in
-    (Printf.sprintf "ORDER BY %s" sorts, [])
+    if String.is_empty sorts then "" else Printf.sprintf "ORDER BY %s" sorts
 
   let filter_criterion_to_string criterion =
     let op_string =
@@ -137,10 +137,10 @@ module Sql = struct
       |> Option.map ~f:(filter field_whitelist)
       |> Option.value ~default:("", [])
     in
-    let sort_qs, sort_values =
+    let sort_qs =
       query.sort
       |> Option.map ~f:(sort field_whitelist)
-      |> Option.value ~default:("", [])
+      |> Option.value ~default:""
     in
     let limit_fragment = get_limit query |> Option.map ~f:limit in
     let offset_fragment = get_offset query |> Option.map ~f:offset in
@@ -154,7 +154,7 @@ module Sql = struct
     ( filter_qs,
       sort_qs,
       pagination_qs,
-      List.concat [ filter_values; sort_values; pagination_values ] )
+      List.concat [ filter_values; pagination_values ] )
 
   let to_string field_whitelist query =
     let filter_fragment, sort_fragment, pagination_fragment, values =

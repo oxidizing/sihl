@@ -55,6 +55,14 @@ let to_sql_sort _ () =
   Alcotest.(check (list string) "equals value" [] values);
   Lwt.return ()
 
+let to_sql_sort_empty_whitelist _ () =
+  let query = Sihl.Data.Ql.(empty |> set_sort [ Asc "foo"; Desc "bar" ]) in
+  let actual, values = Sihl.Data.Ql.to_sql [] query in
+  let expected = "" in
+  Alcotest.(check string "equals query" expected actual);
+  Alcotest.(check (list string) "equals value" [] values);
+  Lwt.return ()
+
 let to_sql_filter _ () =
   let whitelist = [ "foo"; "fooz"; "some" ] in
   let criterion1 =
