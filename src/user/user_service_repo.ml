@@ -39,9 +39,13 @@ CREATE TABLE IF NOT EXISTS user_users (
   module Model = User_core.User
 
   let get_all ctx ~query =
-    let filter_whitelist = [ "email"; "username"; "status"; "admin" ] in
+    let fields =
+      [
+        "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at";
+      ]
+    in
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      Data.Ql.to_sql_fragments filter_whitelist query
+      Data.Ql.to_sql_fragments fields query
     in
     let rec create_param values param =
       match values with
@@ -249,9 +253,13 @@ CREATE TABLE IF NOT EXISTS user_users (
   module Model = User_core.User
 
   let get_all ctx ~query =
-    let filter_whitelist = [ "email"; "username"; "status"; "admin" ] in
+    let fields =
+      [
+        "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at";
+      ]
+    in
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      Data.Ql.to_sql_fragments filter_whitelist query
+      Data.Ql.to_sql_fragments fields query
     in
     let rec create_param values param =
       match values with
