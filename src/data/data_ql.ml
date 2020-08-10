@@ -15,6 +15,8 @@ module Sort = struct
   [@@deriving show, eq, sexp, yojson]
 
   type t = criterion list [@@deriving show, eq, sexp, yojson]
+
+  let criterion_value = function Asc value -> value | Desc value -> value
 end
 
 module Page = struct
@@ -59,24 +61,24 @@ let get_limit query = query.page.limit
 let get_offset query = query.page.offset
 
 module Sql = struct
+  let is_field_whitelisted whitelist field =
+    whitelist |> List.find ~f:(String.equal field) |> Option.is_some
+
   let limit limit = ("LIMIT ?", [ Int.to_string limit ])
 
   let offset offset = ("OFFSET ?", [ Int.to_string offset ])
 
-  let sort sort =
-    let values = ref [] in
+  let sort whitelist sort =
     let sorts =
       sort
+      |> List.filter ~f:(fun criterion ->
+             criterion |> Sort.criterion_value |> is_field_whitelisted whitelist)
       |> List.map ~f:(function
-           | Sort.Asc value ->
-               values := List.concat [ !values; [ value ] ];
-               "? ASC"
-           | Sort.Desc value ->
-               values := List.concat [ !values; [ value ] ];
-               "? DESC")
+           | Sort.Asc value -> Printf.sprintf "%s ASC" value
+           | Sort.Desc value -> Printf.sprintf "%s DESC" value)
       |> String.concat ~sep:", "
     in
-    (Printf.sprintf "ORDER BY %s" sorts, !values)
+    (Printf.sprintf "ORDER BY %s" sorts, [])
 
   let filter_criterion_to_string criterion =
     let op_string =
@@ -84,12 +86,10 @@ module Sql = struct
     in
     Printf.sprintf "%s %s ?" criterion.key op_string
 
-  let is_whitelisted whitelist filter =
+  let is_filter_whitelisted whitelist filter =
     match filter with
     | Filter.C criterion ->
-        whitelist
-        |> List.find ~f:(String.equal Filter.(criterion.key))
-        |> Option.is_some
+        is_field_whitelisted whitelist Filter.(criterion.key)
     | _ -> true
 
   let filter whitelist filter =
@@ -104,7 +104,7 @@ module Sql = struct
         | Or [] -> ""
         | And filters ->
             let whitelisted_filters =
-              filters |> List.filter ~f:(is_whitelisted whitelist)
+              filters |> List.filter ~f:(is_filter_whitelisted whitelist)
             in
             let criterions_string =
               whitelisted_filters |> List.map ~f:to_string
@@ -115,7 +115,7 @@ module Sql = struct
             else Printf.sprintf "%s" criterions_string
         | Or filters ->
             let whitelisted_filters =
-              filters |> List.filter ~f:(is_whitelisted whitelist)
+              filters |> List.filter ~f:(is_filter_whitelisted whitelist)
             in
             let criterions_string =
               whitelisted_filters |> List.map ~f:to_string
@@ -131,14 +131,16 @@ module Sql = struct
     in
     (result, !values)
 
-  let to_fragments filter_whitelist query =
+  let to_fragments field_whitelist query =
     let filter_qs, filter_values =
       query.filter
-      |> Option.map ~f:(filter filter_whitelist)
+      |> Option.map ~f:(filter field_whitelist)
       |> Option.value ~default:("", [])
     in
     let sort_qs, sort_values =
-      query.sort |> Option.map ~f:sort |> Option.value ~default:("", [])
+      query.sort
+      |> Option.map ~f:(sort field_whitelist)
+      |> Option.value ~default:("", [])
     in
     let limit_fragment = get_limit query |> Option.map ~f:limit in
     let offset_fragment = get_offset query |> Option.map ~f:offset in
@@ -154,9 +156,9 @@ module Sql = struct
       pagination_qs,
       List.concat [ filter_values; sort_values; pagination_values ] )
 
-  let to_string filter_whitelist query =
+  let to_string field_whitelist query =
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      to_fragments filter_whitelist query
+      to_fragments field_whitelist query
     in
     let qs =
       List.filter

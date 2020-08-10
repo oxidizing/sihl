@@ -49,10 +49,10 @@ let to_sql_limit_offset _ () =
 
 let to_sql_sort _ () =
   let query = Sihl.Data.Ql.(empty |> set_sort [ Asc "foo"; Desc "bar" ]) in
-  let actual, values = Sihl.Data.Ql.to_sql [] query in
-  let expected = "ORDER BY ? ASC, ? DESC" in
+  let actual, values = Sihl.Data.Ql.to_sql [ "foo"; "bar" ] query in
+  let expected = "ORDER BY foo ASC, bar DESC" in
   Alcotest.(check string "equals query" expected actual);
-  Alcotest.(check (list string) "equals value" [ "foo"; "bar" ] values);
+  Alcotest.(check (list string) "equals value" [] values);
   Lwt.return ()
 
 let to_sql_filter _ () =
@@ -121,13 +121,13 @@ let to_sql _ () =
       |> set_filter filter_criterions
       |> set_sort sort_criterion |> set_limit 10 |> set_offset 1)
   in
-  let filter_whitelist = [ "foo"; "fooz"; "some" ] in
-  let query, values = Sihl.Data.Ql.to_sql filter_whitelist query in
+  let whitelist = [ "foo"; "fooz"; "some"; "bar" ] in
+  let query, values = Sihl.Data.Ql.to_sql whitelist query in
   let expected_query =
-    "WHERE ((foo = ? AND fooz LIKE ?) OR some LIKE ?) ORDER BY ? ASC, ? DESC \
-     LIMIT ? OFFSET ?"
+    "WHERE ((foo = ? AND fooz LIKE ?) OR some LIKE ?) ORDER BY foo ASC, bar \
+     DESC LIMIT ? OFFSET ?"
   in
-  let expected_values = [ "bar"; "baz"; "where"; "foo"; "bar"; "10"; "1" ] in
+  let expected_values = [ "bar"; "baz"; "where"; "10"; "1" ] in
   Alcotest.(check string "query equals" expected_query query);
   Alcotest.(check (list string) "values equals" expected_values values);
   Lwt.return ()
@@ -153,18 +153,16 @@ let to_sql_fragments _ () =
       |> set_filter filter_criterions
       |> set_sort sort_criterion |> set_limit 10 |> set_offset 1)
   in
-  let filter_whitelist = [ "foo"; "fooz"; "some" ] in
+  let filter_whitelist = [ "foo"; "fooz"; "some"; "bar" ] in
   let filter, sort, pagination, values =
     Sihl.Data.Ql.to_sql_fragments filter_whitelist query
   in
   Alcotest.(
-    check (list string) "values"
-      [ "bar"; "baz"; "where"; "foo"; "bar"; "10"; "1" ]
-      values);
+    check (list string) "values" [ "bar"; "baz"; "where"; "10"; "1" ] values);
   Alcotest.(
     check string "filters" "WHERE ((foo = ? AND fooz LIKE ?) OR some LIKE ?)"
       filter);
-  Alcotest.(check string "sort query" "ORDER BY ? ASC, ? DESC" sort);
+  Alcotest.(check string "sort query" "ORDER BY foo ASC, bar DESC" sort);
   Alcotest.(check string "pagination query" "LIMIT ? OFFSET ?" pagination);
   Lwt.return ()
 
