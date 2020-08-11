@@ -78,8 +78,7 @@ module MakePolling
             Lwt.return None
         | Ok () ->
             Logs.err (fun m ->
-                m "QUEUE: Failure while cleaning up job instance %a" Uuidm.pp
-                  job_instance_id);
+                m "QUEUE: Clean up job %a" Uuidm.pp job_instance_id);
             Lwt.return None )
     | Ok () ->
         Logs.debug (fun m ->
