@@ -6,6 +6,8 @@ module type REPOSITORY = sig
   val find_opt : Core.Ctx.t -> value:string -> Token_core.t option Lwt.t
 
   val insert : Core.Ctx.t -> token:Token_core.t -> unit Lwt.t
+
+  val update : Core.Ctx.t -> token:Token_core.t -> unit Lwt.t
 end
 
 module type SERVICE = sig
