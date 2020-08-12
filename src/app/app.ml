@@ -2,7 +2,42 @@ module Sig = App_sig
 
 let ( let* ) = Lwt_result.bind
 
-module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
+module Make (Kernel : Sig.KERNEL) = struct
+  type t = {
+    config : Config.t;
+    routes : Web.Server.stacked_routes;
+    services : (module Core.Container.SERVICE) list;
+    schedules : Schedule.t list;
+    commands : Cmd.t list;
+    on_start : Core.Ctx.t -> unit Lwt.t;
+    on_stop : Core.Ctx.t -> unit Lwt.t;
+  }
+
+  let empty =
+    {
+      config = Config.create ~development:[] ~test:[] ~production:[];
+      routes = [];
+      services = [];
+      schedules = [];
+      commands = [];
+      on_start = (fun _ -> Lwt.return ());
+      on_stop = (fun _ -> Lwt.return ());
+    }
+
+  let with_config config app = { app with config }
+
+  let with_routes routes app = { app with routes }
+
+  let with_services services app = { app with services }
+
+  let with_schedules schedules app = { app with schedules }
+
+  let with_commands commands app = { app with commands }
+
+  let on_start on_start app = { app with on_start }
+
+  let on_stop on_stop app = { app with on_stop }
+
   let start_cmd =
     Cmd.make ~name:"start" ~help:"<with_migration>"
       ~description:
@@ -20,29 +55,29 @@ module Make (Kernel : Sig.KERNEL) (App : Sig.APP) = struct
         | _ -> Lwt_result.fail "Example usage: start with_migration")
       ()
 
-  let start_app () =
-    (let ctx = Core.Ctx.empty in
-     Log.debug (fun m -> m "APP: Register services");
-     let* () = Core.Container.register_services ctx App.services in
-     Log.debug (fun m -> m "APP: Register config");
-     let* () = Kernel.Config.register_config ctx App.config in
-     let ctx = Kernel.Db.add_pool ctx in
-     Log.debug (fun m -> m "APP: Register routes");
-     let* () = Kernel.WebServer.register_routes ctx App.routes in
-     Log.debug (fun m -> m "APP: Register commands");
-     let commands = List.cons start_cmd App.commands in
-     let* () = Kernel.Cmd.register_commands ctx commands in
-     Log.debug (fun m -> m "APP: Register schedules");
-     let _ = App.schedules |> List.map (Kernel.Schedule.schedule ctx) in
-     Log.debug (fun m -> m "APP: Start services");
-     let* () = Core.Container.start_services ctx in
-     Log.debug (fun m -> m "APP: Start app");
-     let* () = App.on_start ctx in
-     App.on_start ctx)
-    |> Lwt_result.map_err (fun msg ->
-           Log.err (fun m -> m "APP: Failed to start app %s" msg);
-           msg)
-    |> Lwt.map Base.Result.ok_or_failwith
-
-  let run () = Lwt_main.run (Lwt.bind (start_app ()) Kernel.Cmd.run)
+  let run app =
+    Lwt_main.run
+      (Lwt.bind
+         ( (let ctx = Core.Ctx.empty in
+            Log.debug (fun m -> m "APP: Register services");
+            let* () = Core.Container.register_services ctx app.services in
+            Log.debug (fun m -> m "APP: Register config");
+            let* () = Kernel.Config.register_config ctx app.config in
+            let ctx = Kernel.Db.add_pool ctx in
+            Log.debug (fun m -> m "APP: Register routes");
+            let* () = Kernel.WebServer.register_routes ctx app.routes in
+            Log.debug (fun m -> m "APP: Register commands");
+            let commands = List.cons start_cmd app.commands in
+            let* () = Kernel.Cmd.register_commands ctx commands in
+            Log.debug (fun m -> m "APP: Register schedules");
+            let _ = app.schedules |> List.map (Kernel.Schedule.schedule ctx) in
+            Log.debug (fun m -> m "APP: Start services");
+            let* () = Core.Container.start_services ctx in
+            Log.debug (fun m -> m "APP: Start app");
+            app.on_start ctx |> Lwt.map Result.ok)
+         |> Lwt_result.map_err (fun msg ->
+                Log.err (fun m -> m "APP: Failed to start app %s" msg);
+                msg)
+         |> Lwt.map Base.Result.ok_or_failwith )
+         Kernel.Cmd.run)
 end
