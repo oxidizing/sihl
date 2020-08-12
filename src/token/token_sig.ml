@@ -31,4 +31,7 @@ module type SERVICE = sig
 
   val find_opt : Core.Ctx.t -> value:string -> unit -> Token_core.t option Lwt.t
   (** Returns an active and non-expired token. *)
+
+  val invalidate : Core.Ctx.t -> token:Token_core.t -> unit -> unit Lwt.t
+  (** Invalidates a token, subject to deletion *)
 end
