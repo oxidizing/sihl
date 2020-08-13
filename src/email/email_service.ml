@@ -406,10 +406,21 @@ Html:
 |}
         sender recipient subject text_content html_content
 
-    let send request email =
-      let* email = TemplateService.render request email in
+    let send ctx email =
+      let ( let* ) = Lwt.bind in
+      let* email =
+        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
+      in
       let to_print = email |> show in
-      Lwt.return @@ Ok (Caml.print_endline to_print)
+      Lwt.return (Caml.print_endline to_print)
+
+    let bulk_send ctx emails =
+      let rec loop emails =
+        match emails with
+        | email :: emails -> Lwt.bind (send ctx email) (fun _ -> loop emails)
+        | [] -> Lwt.return ()
+      in
+      loop emails
   end
 
   module Smtp
@@ -424,9 +435,12 @@ Html:
 
     let on_stop _ = Lwt.return @@ Ok ()
 
-    let send request email =
+    let send ctx email =
+      let ( let* ) = Lwt.bind in
       (* TODO: how to get config for sending emails? *)
-      let* rendered = TemplateService.render request email in
+      let* rendered =
+        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
+      in
       let recipients =
         List.concat
           [
@@ -444,17 +458,31 @@ Html:
         Letters.build_email ~from:email.sender ~recipients
           ~subject:email.subject ~body
       in
-      let* sender = ConfigProvider.sender request in
-      let* username = ConfigProvider.username request in
-      let* password = ConfigProvider.password request in
-      let* hostname = ConfigProvider.host request in
-      let* port = ConfigProvider.port request in
-      let* with_starttls = ConfigProvider.start_tls request in
-      let* ca_dir = ConfigProvider.ca_dir request in
+      let* sender =
+        ConfigProvider.sender ctx |> Lwt.map Result.ok_or_failwith
+      in
+      let* username =
+        ConfigProvider.username ctx |> Lwt.map Result.ok_or_failwith
+      in
+      let* password =
+        ConfigProvider.password ctx |> Lwt.map Result.ok_or_failwith
+      in
+      let* hostname =
+        ConfigProvider.host ctx |> Lwt.map Result.ok_or_failwith
+      in
+      let* port = ConfigProvider.port ctx |> Lwt.map Result.ok_or_failwith in
+      let* with_starttls =
+        ConfigProvider.start_tls ctx |> Lwt.map Result.ok_or_failwith
+      in
+      let* ca_dir =
+        ConfigProvider.ca_dir ctx |> Lwt.map Result.ok_or_failwith
+      in
       let config : Letters.config =
         { sender; username; password; hostname; port; with_starttls; ca_dir }
       in
-      Letters.send ~config ~recipients ~message
+      Letters.send ~config ~recipients ~message |> Lwt.map Result.ok_or_failwith
+
+    let bulk_send _ _ = Lwt.return ()
   end
 
   module SendGrid
@@ -499,8 +527,11 @@ Html:
     let sendgrid_send_url =
       "https://api.sendgrid.com/v3/mail/send" |> Uri.of_string
 
-    let send request email =
-      let* token = ConfigProvider.api_key request in
+    let send ctx email =
+      let ( let* ) = Lwt.bind in
+      let* token =
+        ConfigProvider.api_key ctx |> Lwt.map Result.ok_or_failwith
+      in
       let headers =
         Cohttp.Header.of_list
           [
@@ -508,7 +539,9 @@ Html:
             ("content-type", "application/json");
           ]
       in
-      let* email = TemplateService.render request email in
+      let* email =
+        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
+      in
       let sender = Email_core.sender email in
       let recipient = Email_core.recipient email in
       let subject = Email_core.subject email in
@@ -520,23 +553,22 @@ Html:
         Cohttp_lwt_unix.Client.post
           ~body:(Cohttp_lwt.Body.of_string req_body)
           ~headers sendgrid_send_url
-        |> Lwt.map Result.return
       in
       let status = Cohttp.Response.status resp |> Cohttp.Code.code_of_status in
       match status with
       | 200 | 202 ->
           Logs.info (fun m -> m "EMAIL: Successfully sent email using sendgrid");
-          Lwt.return @@ Ok ()
+          Lwt.return ()
       | _ ->
-          let* body =
-            Cohttp_lwt.Body.to_string resp_body |> Lwt.map Result.return
-          in
+          let* body = Cohttp_lwt.Body.to_string resp_body in
           Logs.err (fun m ->
               m
                 "EMAIL: Sending email using sendgrid failed with http status \
                  %i and body %s"
                 status body);
-          Lwt.return @@ Error "EMAIL: Failed to send email"
+          failwith "EMAIL: Failed to send email"
+
+    let bulk_send _ _ = Lwt.return ()
   end
 
   module Memory (TemplateService : Email_sig.Template.SERVICE) :
@@ -549,68 +581,81 @@ Html:
 
     let on_stop _ = Lwt.return @@ Ok ()
 
-    let send request email =
-      let* email = TemplateService.render request email in
+    let send ctx email =
+      let ( let* ) = Lwt.bind in
+      let* email =
+        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
+      in
       Email_core.DevInbox.set email;
-      Lwt.return @@ Ok ()
+      Lwt.return ()
+
+    let bulk_send ctx emails =
+      let rec loop emails =
+        match emails with
+        | email :: emails -> Lwt.bind (send ctx email) (fun _ -> loop emails)
+        | [] -> Lwt.return ()
+      in
+      loop emails
   end
 end
 
-module Delayed = struct
-  module Make
-      (EmailService : Email_sig.SERVICE)
-      (DbService : Data.Db.Sig.SERVICE)
-      (QueueService : Queue_sig.SERVICE) : Email_sig.Delayed.SERVICE = struct
-    module EmailService = EmailService
+(** Use this functor to create an email service that sends emails using the job queue. This is useful if you need to answer a request quickly while sending the email in the background *)
+module MakeDelayed
+    (EmailService : Email_sig.SERVICE)
+    (DbService : Data.Db.Sig.SERVICE)
+    (QueueService : Queue_sig.SERVICE) : Email_sig.SERVICE = struct
+  module Template = EmailService.Template
 
-    module Job = struct
-      let input_to_string email =
-        email |> Email_core.to_yojson |> Yojson.Safe.to_string |> Option.return
+  module Job = struct
+    let input_to_string email =
+      email |> Email_core.to_yojson |> Yojson.Safe.to_string |> Option.return
 
-      let string_to_input email =
-        match email with
-        | None ->
-            Log.err (fun m ->
-                m
-                  "DELAYED_EMAIL: Serialized email string was NULL, can not \
-                   deserialize email. Please fix the string manually and reset \
-                   the job instance.");
-            Error "Invalid serialized email string received"
-        | Some email ->
-            email |> Utils.Json.parse |> Result.bind ~f:Email_core.of_yojson
+    let string_to_input email =
+      match email with
+      | None ->
+          Log.err (fun m ->
+              m
+                "DELAYED_EMAIL: Serialized email string was NULL, can not \
+                 deserialize email. Please fix the string manually and reset \
+                 the job instance.");
+          Error "Invalid serialized email string received"
+      | Some email ->
+          email |> Utils.Json.parse |> Result.bind ~f:Email_core.of_yojson
 
-      let handle ctx ~input = EmailService.send ctx input
+    let handle ctx ~input = EmailService.send ctx input |> Lwt.map Result.return
 
-      (** Nothing to clean up, sending emails is a side effect *)
-      let failed _ = Lwt_result.return ()
+    (** Nothing to clean up, sending emails is a side effect *)
+    let failed _ = Lwt_result.return ()
 
-      let job =
-        Queue_core.Job.create ~name:"send_email"
-          ~with_context:DbService.add_pool ~input_to_string ~string_to_input
-          ~handle ~failed ()
-        |> Queue_core.Job.set_max_tries 10
-        |> Queue_core.Job.set_retry_delay Utils.Time.OneHour
-    end
-
-    let on_init ctx =
-      QueueService.register_jobs ctx ~jobs:[ Job.job ] |> Lwt.map Result.return
-
-    let on_start _ = Lwt.return @@ Ok ()
-
-    let on_stop _ = Lwt.return @@ Ok ()
-
-    let send_later ctx email = QueueService.dispatch ctx ~job:Job.job email
-
-    let bulk_send_later ctx emails =
-      DbService.atomic ctx (fun ctx ->
-          let rec loop emails =
-            match emails with
-            | email :: emails ->
-                Lwt.bind (send_later ctx email) (fun () -> loop emails)
-            | [] -> Lwt.return ()
-          in
-          loop emails |> Lwt.map Result.return)
-      |> Lwt.map Result.ok_or_failwith
-      |> Lwt.map Result.ok_or_failwith
+    let job =
+      Queue_core.Job.create ~name:"send_email" ~with_context:DbService.add_pool
+        ~input_to_string ~string_to_input ~handle ~failed ()
+      |> Queue_core.Job.set_max_tries 10
+      |> Queue_core.Job.set_retry_delay Utils.Time.OneHour
   end
+
+  let on_init ctx =
+    let* () = EmailService.on_init ctx in
+    QueueService.register_jobs ctx ~jobs:[ Job.job ] |> Lwt.map Result.return
+
+  let on_start ctx =
+    let* () = EmailService.on_start ctx in
+    Lwt.return @@ Ok ()
+
+  let on_stop ctx =
+    let* () = EmailService.on_stop ctx in
+    Lwt.return @@ Ok ()
+
+  let send ctx email = QueueService.dispatch ctx ~job:Job.job email
+
+  let bulk_send ctx emails =
+    DbService.atomic ctx (fun ctx ->
+        let rec loop emails =
+          match emails with
+          | email :: emails -> Lwt.bind (send ctx email) (fun () -> loop emails)
+          | [] -> Lwt.return ()
+        in
+        loop emails |> Lwt.map Result.return)
+    |> Lwt.map Result.ok_or_failwith
+    |> Lwt.map Result.ok_or_failwith
 end
