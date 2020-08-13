@@ -61,7 +61,6 @@ module Make (Kernel : Sig.KERNEL) = struct
          ( (let ctx = Core.Ctx.empty in
             Log.debug (fun m -> m "APP: Register config");
             let* () = Kernel.Config.register_config ctx app.config in
-            let ctx = Kernel.Db.add_pool ctx in
             Log.debug (fun m -> m "APP: Register routes");
             let* () = Kernel.WebServer.register_routes ctx app.routes in
             Log.debug (fun m -> m "APP: Register commands");
