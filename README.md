@@ -240,26 +240,50 @@ and visit `http://localhost:3000/site/hello`.
 
 ## Concepts
 
-
 In essence, Sihl is just a tiny core (about 100 lines) that deals with loading services and their dependencies. Every feature is built using services. 
 
 ### Services
 
-A service is a unit that provides some functionality. Most of the time services are just a set of functions living in a namespace. Some services can be initialized and destroyed, they have a life cycle.
+A service is a unit that provides some functionality. Most of the time, a service is just a collection of functions that belong together. This would be the equivalent of a class with just static methods in OOP. Some services, on the other hand, can be initialized and destroyed. Sihl takes care of initializing and destroying them.
 
-Sihl provides service interfaces in the form of OCaml module types. This can be implemented using various underlying technologies.
+Sihl provides service interfaces and some service implementations. As an example, Sihl provides default implementation of the user service for user management with support for MariaDB and PostgreSQL. 
 
-When you create a Sihl app, you usually start out with your service setup in a file `service.ml`. There you list all services that you are going to use in your project. Using parameterized modules, we can compose large services out of simple and small services. This service composition is statically checked and you can use it throughout your project.
+When you create a Sihl app, you usually start out with your service setup in a file `service.ml`. There, you list all services that you are going to use in the project. We can compose large services out of simple and small services using parameterized modules. This service composition is statically checked and you can use it throughout your project.
 
 Sihl has to be made aware of the services you are going to use. That is why the second step of setting of services is done in the app description file.
 
 ### App
 
-A Sihl app is described in a `app.ml` file. Here you glue services from `service.ml`, your own code and various other components together. It is the main entry point to your application.
+A Sihl app is described in a `app.ml`. Here you glue services from `service.ml`, your own code and various other components together. It is the main entry point to your application.
 
 #### Folder structure
 
-[TODO]
+Let's have a look at the folder structure of an example project called `pizza-shop`.
+
+```
+.
+├── service
+│   ├── dune 
+│   ├── service.ml 
+├── app
+│   ├── dune 
+│   ├── app.ml
+├── components
+│   ├── pizza-delivery
+│   │   ├── model.ml
+│   │   ├── service.ml
+│   │   ├── repo.ml
+│   ├── pizza-order-taking
+│   │   ├── model.ml
+│   │   ├── service.ml
+│   │   ├── repo.ml
+│   │   ├── cmd.ml
+├── web
+│   ├── routes.ml
+│   ├── middlewares.ml
+├── cli
+│   ├── cmd.ml
+```
 
 ## Usage
 
