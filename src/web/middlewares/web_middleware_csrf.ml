@@ -17,9 +17,12 @@ struct
       let _ =
         match res with
         | Ok token -> TokenService.invalidate ctx ~token ()
-        | Error _ ->
-            Logs.err (fun m -> m "MIDDLEWARE: Failed to retrieve CSRF token");
-            MessageService.set ctx ~error:[ "TODO ERROR MESSAGE" ] ()
+        | Error msg ->
+            LogService.err (fun m ->
+                m "MIDDLEWARE: Failed to retrieve CSRF token. %s" msg);
+            MessageService.set ctx
+              ~error:[ "MIDDLEWARE: Failed to retrieve CSRF token" ]
+              ()
       in
       let* token = TokenService.create ctx ~kind:"csrf" () in
       let ctx =
