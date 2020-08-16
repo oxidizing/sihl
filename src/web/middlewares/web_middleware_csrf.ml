@@ -1,15 +1,11 @@
 let ( let* ) = Lwt.bind
 
-module CsrfService = struct
-  let add_to_ctx ctx ~token () =
-    let open Core_ctx in
-    let key : Token.t key = create_key () in
-    add key token ctx
-end
+let ctx_token_key : Token.t Core.Ctx.key = Core.Ctx.create_key ()
 
 module Make
     (MessageService : Message.Sig.Service)
-    (TokenService : Token.Sig.SERVICE) =
+    (TokenService : Token.Sig.SERVICE)
+    (LogService : Log.Sig.SERVICE) =
 struct
   let m () =
     let filter handler ctx =
@@ -28,10 +24,11 @@ struct
       let* token = TokenService.create ctx ~kind:"csrf" () in
       let ctx =
         match token with
-        | Ok token -> CsrfService.add_to_ctx ctx ~token ()
+        | Ok token -> Core_ctx.add ctx_token_key token ctx
         | Error msg ->
-            Logs.err (fun m -> m "MIDDLEWARE: Could not create token %s" msg);
-            ctx
+            LogService.err (fun m ->
+                m "MIDDLEWARE: Could not create CSRF token. %s" msg);
+            failwith "MIDDLEWARE: Could not create CSRF token."
       in
       handler ctx
     in

@@ -17,13 +17,12 @@ module Security = Web_middleware_security
 module Static = Web_middleware_static
 module Session = Web_middleware_session
 module Authn = Web_middleware_authn
+module MakeCsrf = Web_middleware_csrf.Make
 
 let error = Web_middleware_error.m
 
 let static = Web_middleware_static.m
 
 let cookie = Web_middleware_cookie.m
-
-let csrf = Web_middleware_csrf.m
 
 let create = Web_middleware_core.create
