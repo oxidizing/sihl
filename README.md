@@ -1,4 +1,3 @@
-<!-- PROJECT SHIELDS -->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -6,8 +5,6 @@
 [![MIT License][license-shield]][license-url]
 
 
-
-<!-- PROJECT LOGO -->
 <br />
 <p align="center">
   <a href="https://github.com/oxidizing/sihl">
@@ -205,7 +202,7 @@ let hello_api =
       Sihl.Web.Res.(json |> set_body {|{"msg":"Hello!"}|}) |> Lwt.return)
 
 let routes =
-  [ ("page", [ hello_page ], []); ("api", [ hello_api ], []) ]
+  [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
 
 module App = Sihl.App.Make (Service)
 
@@ -236,7 +233,9 @@ You should see a `start` CLI command. This comes from `Service.WebServer` which 
 ./_build/default/app.exe start
 ```
 
-and visit `http://localhost:3000/site/hello`.
+and visit `http://localhost:3000/site/hello/` or `http://localhost:3000/api/hello/`.
+
+Find a simple starter project [here](https://github.com/oxidizing/sihl-simple-starter) similar to our small example.
 
 ## Concepts
 
@@ -244,7 +243,8 @@ In essence, Sihl is just a tiny core (about 100 lines) that deals with loading s
 
 ### Services
 
-A service is a unit that provides some functionality. Most of the time, a service is just a collection of functions that belong together. This would be the equivalent of a class with just static methods in OOP. Some services, on the other hand, can be initialized and destroyed. Sihl takes care of initializing and destroying them.
+A service is a unit that provides some functionality. Most of the time, a service is just a collection of functions that belong together. This would be the equivalent of a class with just static methods in object-oriented programming. However, some services can be started and stopped which gives them a lifecycle.
+Sihl makes sure that services with lifecycles are started and stopped in the right order.
 
 Sihl provides service interfaces and some service implementations. As an example, Sihl provides default implementation of the user service for user management with support for MariaDB and PostgreSQL. 
 
@@ -284,6 +284,10 @@ Let's have a look at the folder structure of an example project called `pizza-sh
 ├── cli
 │   ├── cmd.ml
 ```
+
+There is an emphasis on the separation of the business logic from web stuff. Your app is just a set of services, models and repositories and it is not concerned with HTTP, databases, CLIs or other infrastructure topics.
+
+[TODO goe through folders]
 
 ## Usage
 
