@@ -31,6 +31,8 @@ let make ~id ~data ~kind ?(expires_in = Utils.Time.OneDay) ?now () =
   let status = Status.Active in
   { id; value; data; kind; status; expires_at; created_at = Ptime_clock.now () }
 
+let invalidate token = { token with status = Inactive }
+
 let alco = Alcotest.testable pp equal
 
 let t =

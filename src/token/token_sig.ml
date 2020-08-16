@@ -33,5 +33,5 @@ module type SERVICE = sig
   (** Returns an active and non-expired token. *)
 
   val invalidate : Core.Ctx.t -> token:Token_core.t -> unit -> unit Lwt.t
-  (** Invalidates a token, subject to deletion *)
+  (** Invalidate a token by marking it as such in the database and therefore marking it "to be deleted" *)
 end

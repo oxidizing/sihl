@@ -33,5 +33,5 @@ module Make (Db : Data_db_sig.SERVICE) (Repo : Token_sig.REPOSITORY) :
     Lwt.return result
 
   let invalidate ctx ~token () =
-    Repo.update ctx ~token:{ token with status = Inactive }
+    Repo.update ctx ~token:(Token_core.invalidate token)
 end

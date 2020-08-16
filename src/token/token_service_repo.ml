@@ -61,14 +61,12 @@ struct
         {sql|
         UPDATE token_tokens
         SET
-          uuid = $1,
-          token_value = $2,
           token_data = $3,
           token_kind = $4,
           status = $5,
           expires_at = $6,
           created_at = $7
-        WHERE token_tokens.token_value = ?
+        WHERE token_tokens.token_value = $2
         |sql}
 
     let update connection ~token =
