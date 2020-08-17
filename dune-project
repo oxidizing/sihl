@@ -30,6 +30,9 @@
   (yojson (>= 1.7.0))
   (ppx_deriving_yojson (>= 3.5.2))
 
+  ;; Algorithms
+  (tsort (>= 2.0.0))
+
   ;; SSL && TLS
   (tls (>= 0.11.1))
   (ssl (>= 0.5.9))
