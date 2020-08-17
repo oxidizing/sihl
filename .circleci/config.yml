@@ -44,7 +44,10 @@ jobs:
           name: Install OCaml runtime dependencies
           command: opam install -y caqti-driver-postgresql caqti-driver-mariadb
       - run:
-          name: Test
+          name: Unit tests
+          command: opam config exec -- make test
+      - run:
+          name: Integration tests
           command: opam config exec -- make test-all
 
 workflows:

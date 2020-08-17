@@ -1,20 +1,16 @@
+.PHONY: all test clean
+
 build:
 	@dune build @install
 
 clean:
 	@dune clean
 
-test-mariadb:
-	SIHL_ENV=test dune runtest --force test/test-mariadb
+test:
+	SIHL_ENV=test dune test
 
-test-postgresql:
-	SIHL_ENV=test dune runtest --force test/test-postgresql
-
-test-dev:
-	SIHL_ENV=test dune runtest -w test/test-unit test/test-memory
-
-test-all:
-	SIHL_ENV=test dune runtest --force test
+test-slow:
+	SIHL_ENV=test dune build @runtest-all --force test
 
 doc:
 	dune build @doc
