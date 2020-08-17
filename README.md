@@ -67,38 +67,43 @@
 
 Let's start by clarifying what Sihl is not:
 
-* It is not an MVC framework like Rails that let's you generate models, controllers and views quickly. It doesn't use convention over configuration and instead tries to be as explicit as necessary. We think the speedup of generating MVC and auto-wiring pales in comparison to the long-term maintanability concerns.
-* It is not a micro-service framework that deals with problems of distributed systems. Use your favorite FaaS/PaaS/container orchestrator/micro-service toolkit for the wiring and Sihl for the business logic.
-* It is not a web framework consisting of http routing, a generic middleware mechanism and some default middlewares. While Sihl provides these things, you could use any other solution with a Sihl app to take care of the web stuff. Sihl aims to tackle a broader range of infrastructure, so you can solve domain problems.
+#### No MVC framework
 
-Now that we have that out of the way, let's have a look what Sihl *is*.
+Sihl will not help you generate models, controllers and views quickly. 
+It doesn't use convention over configuration and instead tries to be as explicit as necessary. We think the speedup of generating MVC and auto-wiring pales in comparison to the long-term maintanability concerns
+
+#### No microservice framework
+
+Sihl encourages you to build things in a service-oriented way, but it's not a microservice framework that deals with problems of distributed systems. Use your favorite FaaS/PaaS/container orchestrator/micro-service toolkit to deal with that and Sihl for the business logic.
 
 ### What Sihl is
 
-Sihl is a high-level application framework that can (and is) used for web development. It provides a set of composable building blocks and recipes that allow you to develop (web) apps quickly and maintanable at the same time.
-It relies heavily on OCaml, its module and static type system and on functional programming to make development fun and safe.
+Now that we have that out of the way, let's have a look what Sihl *is*.
 
-Things like database migrations, HTTP routing, user management, sessions, logging, emailing, job queues and schedules are topics that Sihl takes care of.
+Sihl is a high-level application framework that can be used for web development. It provides a set of composable building blocks and recipes that allow you to develop (web) apps quickly but sustainably. 
+Statically typed functional programming with OCaml makes web development fun and safe.
 
-### Why another web framework?
+Things like database migrations, HTTP routing, user management, sessions, logging, emailing, job queues and schedules are just a few of all the topics Sihl takes care of.
 
-Because all other framework didn't grow here.
+### Do we need another web framework?
 
-On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our tools and product. An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl using OCaml. We believe OCaml is a phenomenal host, even though its house of web development is small at the moment.
+Yes, because all other frameworks didn't grow here.
 
-Sihl is built on OCaml because OCaml...
+On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our tools and product. 
+An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl with OCaml. We believe OCaml is a phenomenal host, even though its house of web development is small at the moment.
 
-* ...runs fast 
-* ...compiles *really* fast 
-* ...is portable and works well on Linux
-* ...is strict but not pure
-* ...is fun to use
+Sihl is built on OCaml because OCaml ...
+
+* ... runs fast 
+* ... compiles *really* fast 
+* ... is portable and works well on Linux
+* ... is strict but not pure
+* ... is fun to use
 
 But the final and most important reason is the module system, which gives Sihl its modularity and strong compile-time guarantees about a project setup.
+Sihl uses OCaml modules for statically typed dependency injection. If your app compiles, the dependencies are wired up correctly. You can not use what's not there.
 
-Sihl uses OCaml modules for statically typed dependency injection. If your app compiles, the dependencies are wired up correctly. You can not use what is not there.
-
-You can read the [concepts](#concepts) to learn more about it.
+Learn more about it in the [concepts](#concepts).
 
 ## Getting Started
 
