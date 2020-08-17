@@ -59,8 +59,6 @@ module Make (Kernel : Sig.KERNEL) = struct
     Lwt_main.run
       (Lwt.bind
          ( (let ctx = Core.Ctx.empty in
-            Log.debug (fun m -> m "APP: Register services");
-            let* () = Core.Container.register_services ctx app.services in
             Log.debug (fun m -> m "APP: Register config");
             let* () = Kernel.Config.register_config ctx app.config in
             let ctx = Kernel.Db.add_pool ctx in
@@ -72,7 +70,9 @@ module Make (Kernel : Sig.KERNEL) = struct
             Log.debug (fun m -> m "APP: Register schedules");
             let _ = app.schedules |> List.map (Kernel.Schedule.schedule ctx) in
             Log.debug (fun m -> m "APP: Start services");
-            let* () = Core.Container.start_services ctx in
+            let* _, ctx =
+              Core.Container.start_services app.services |> Lwt.map Result.ok
+            in
             Log.debug (fun m -> m "APP: Start app");
             app.on_start ctx |> Lwt.map Result.ok)
          |> Lwt_result.map_err (fun msg ->

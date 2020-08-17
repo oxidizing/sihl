@@ -2,24 +2,6 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-module Make
-    (MigrationService : Data.Migration.Sig.SERVICE)
-    (ConfigService : Config.Sig.SERVICE) =
-struct
-  let services ctx ~config ~services =
-    let* () =
-      Core.Container.register_services ctx services
-      |> Lwt.map Result.ok_or_failwith
-    in
-    let* () =
-      ConfigService.register_config ctx config |> Lwt.map Result.ok_or_failwith
-    in
-    let* () =
-      Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith
-    in
-    MigrationService.run_all ctx |> Lwt.map Base.Result.ok_or_failwith
-end
-
 let middleware_stack ctx ?handler stack =
   let handler =
     Option.value ~default:(fun _ -> Lwt.return @@ Web.Res.html) handler

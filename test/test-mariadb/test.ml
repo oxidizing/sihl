@@ -54,18 +54,12 @@ let () =
   let ctx = Sihl.Core.Ctx.empty in
   Lwt_main.run
     (let* () =
-       Sihl.Core.Container.register_services ctx services
-       |> Lwt.map Result.ok_or_failwith
-     in
-     let* () =
        Service.Config.register_config ctx config
        |> Lwt.map Result.ok_or_failwith
      in
      let ctx = Service.Db.add_pool ctx in
+     let* _ = Sihl.Core.Container.start_services services in
      let* () =
        Service.Migration.run_all ctx |> Lwt.map Base.Result.ok_or_failwith
-     in
-     let* () =
-       Sihl.Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith
      in
      run "mariadb" @@ test_suite ctx)

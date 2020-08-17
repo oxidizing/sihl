@@ -14,21 +14,6 @@ module MakePolling
     (Log : Log_sig.SERVICE)
     (ScheduleService : Schedule.Sig.SERVICE)
     (Repo : Queue_sig.REPO) : Queue_sig.SERVICE = struct
-  let on_init ctx =
-    let ( let* ) = Lwt_result.bind in
-    let* () = Repo.register_migration ctx in
-    Repo.register_cleaner ctx
-
-  let on_stop _ =
-    registered_jobs := [];
-    match !stop_schedule with
-    | Some stop_schedule ->
-        stop_schedule ();
-        Lwt_result.return ()
-    | None ->
-        Log.warn (fun m -> m "QUEUE: Can not stop schedule");
-        Lwt_result.return ()
-
   let dispatch ctx ~job ?delay input =
     let name = Job.name job in
     Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);
@@ -145,7 +130,12 @@ module MakePolling
       Lwt.return () )
     else Lwt.return ()
 
-  let on_start ctx =
+  let register_jobs _ ~jobs =
+    let jobs_to_register = jobs |> List.map ~f:WorkableJob.of_job in
+    registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
+    Lwt.return ()
+
+  let start_queue ctx =
     let jobs = !registered_jobs in
     let n_jobs = List.length jobs in
     if n_jobs > 0 then (
@@ -173,10 +163,26 @@ module MakePolling
           m "QUEUE: No workable jobs found, don't start job queue");
       Lwt_result.return () )
 
-  let register_jobs _ ~jobs =
-    let jobs_to_register = jobs |> List.map ~f:WorkableJob.of_job in
-    registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
-    Lwt.return ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "queue"
+      ~dependencies:[ ScheduleService.lifecycle; Log.lifecycle ]
+      (fun ctx ->
+        let* () =
+          Repo.register_migration ctx |> Lwt.map Result.ok_or_failwith
+        in
+        let* () = Repo.register_cleaner ctx |> Lwt.map Result.ok_or_failwith in
+        start_queue ctx
+        |> Lwt.map Result.ok_or_failwith
+        |> Lwt.map (fun () -> ctx))
+      (fun _ ->
+        registered_jobs := [];
+        match !stop_schedule with
+        | Some stop_schedule ->
+            stop_schedule ();
+            Lwt.return ()
+        | None ->
+            Log.warn (fun m -> m "QUEUE: Can not stop schedule");
+            Lwt.return ())
 end
 
 module Repo = Queue_service_repo

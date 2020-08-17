@@ -13,11 +13,10 @@ module Registry = struct
     registry := List.concat [ !registry; cleaners ]
 end
 
-let on_init _ = Lwt_result.return ()
-
-let on_start _ = Lwt_result.return ()
-
-let on_stop _ = Lwt_result.return ()
+let lifecycle =
+  Core.Container.Lifecycle.make "repo"
+    (fun ctx -> Lwt.return ctx)
+    (fun _ -> Lwt.return ())
 
 let register_cleaner _ cleaner =
   Registry.register cleaner;

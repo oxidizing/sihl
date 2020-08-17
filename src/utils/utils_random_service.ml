@@ -5,10 +5,9 @@ let rec rand result n =
 let base64 ~bytes =
   Base64.encode_string ~alphabet:Base64.uri_safe_alphabet @@ rand "" bytes
 
-let on_init _ =
-  Random.self_init ();
-  Lwt_result.return ()
-
-let on_start _ = Lwt_result.return ()
-
-let on_stop _ = Lwt_result.return ()
+let lifecycle =
+  Core.Container.Lifecycle.make "log"
+    (fun ctx ->
+      Random.self_init ();
+      Lwt.return ctx)
+    (fun _ -> Lwt.return ())

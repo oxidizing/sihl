@@ -1,12 +1,6 @@
 open Base
 open Data_db_core
 
-let on_init _ = Lwt_result.return ()
-
-let on_start _ = Lwt_result.return ()
-
-let on_stop _ = Lwt_result.return ()
-
 let create_pool () =
   match !pool_ref with
   | Some pool ->
@@ -38,6 +32,12 @@ let ctx_with_pool () =
 let add_pool ctx =
   let pool = create_pool () |> Result.ok_or_failwith in
   ctx_add_pool pool ctx
+
+let lifecycle =
+  Core.Container.Lifecycle.make "db"
+    ~dependencies:[ Config_service.lifecycle ]
+    (fun ctx -> ctx |> add_pool |> Lwt.return)
+    (fun _ -> Lwt.return ())
 
 let query_connection conn f = f conn |> Lwt_result.map_err Caqti_error.show
 

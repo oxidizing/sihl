@@ -1,14 +1,33 @@
-module type SERVICE = sig
-  val on_init : Core_ctx.t -> (unit, string) Lwt_result.t
+module Lifecycle : sig
+  type t
 
-  val on_start : Core_ctx.t -> (unit, string) Lwt_result.t
+  val stop : t -> Core_ctx.t -> unit Lwt.t
 
-  val on_stop : Core_ctx.t -> (unit, string) Lwt_result.t
+  val start : t -> Core_ctx.t -> Core_ctx.t Lwt.t
+
+  val dependencies : t -> t list
+
+  val module_name : t -> string
+
+  val make :
+    string ->
+    ?dependencies:t list ->
+    (Core_ctx.t -> Core_ctx.t Lwt.t) ->
+    (Core_ctx.t -> unit Lwt.t) ->
+    t
 end
 
-val register_services :
-  Core_ctx.t -> (module SERVICE) list -> (unit, string) Lwt_result.t
+module type SERVICE = sig
+  val lifecycle : Lifecycle.t
+end
 
-val start_services : Core_ctx.t -> (unit, string) Lwt_result.t
+val collect_all_lifecycles :
+  (module SERVICE) list ->
+  (string, Lifecycle.t, Base.String.comparator_witness) Base.Map.t
 
-val stop_services : Core_ctx.t -> (unit, string) Lwt_result.t
+val top_sort_lifecycles : (module SERVICE) list -> Lifecycle.t list
+
+val start_services :
+  (module SERVICE) list -> ((module SERVICE) list * Core_ctx.t) Lwt.t
+
+val stop_services : Core_ctx.t -> (module SERVICE) list -> unit Lwt.t

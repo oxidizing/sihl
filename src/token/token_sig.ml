@@ -10,7 +10,7 @@ module type REPOSITORY = sig
 end
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core_container.SERVICE
 
   val create :
     Core.Ctx.t ->

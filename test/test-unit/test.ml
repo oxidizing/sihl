@@ -2,7 +2,13 @@ open Alcotest_lwt
 
 let suite =
   [
-    ("config", []);
+    ( "container",
+      [
+        test_case "order all dependencies" `Quick
+          Test_container.order_all_dependencies;
+        test_case "order simple dependency list" `Quick
+          Test_container.order_simple_dependency_list;
+      ] );
     ( "http",
       [
         test_case "require url encoded body" `Quick

@@ -4,13 +4,14 @@ open Storage_model
 let ( let* ) = Lwt_result.bind
 
 module Make (Repo : REPO) : SERVICE = struct
-  let on_init ctx =
-    let* () = Repo.register_migration ctx in
-    Repo.register_cleaner ctx
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "storage"
+      (fun ctx ->
+        (let* () = Repo.register_migration ctx in
+         Repo.register_cleaner ctx)
+        |> Lwt.map Base.Result.ok_or_failwith
+        |> Lwt.map (fun () -> ctx))
+      (fun _ -> Lwt.return ())
 
   let get_file ctx ~id = Repo.get_file ctx ~id
 

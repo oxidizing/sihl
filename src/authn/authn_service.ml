@@ -3,11 +3,11 @@ let ( let* ) = Lwt_result.bind
 module Make
     (SessionService : Session.Sig.SERVICE)
     (UserService : User.Sig.SERVICE) : Authn_sig.SERVICE = struct
-  let on_init _ = Lwt.return @@ Ok ()
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "authn"
+      ~dependencies:[ SessionService.lifecycle; UserService.lifecycle ]
+      (fun ctx -> Lwt.return ctx)
+      (fun _ -> Lwt.return ())
 
   let find_user_in_session ctx =
     let* user_id = SessionService.get_value ctx ~key:"authn" in

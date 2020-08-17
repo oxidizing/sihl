@@ -10,11 +10,11 @@ end
 
 module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) :
   User_password_reset_sig.SERVICE = struct
-  let on_init _ = Lwt.return @@ Ok ()
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "password-reset"
+      ~dependencies:[ TokenService.lifecycle; UserService.lifecycle ]
+      (fun ctx -> Lwt.return ctx)
+      (fun _ -> Lwt.return ())
 
   let create_reset_token ctx ~email =
     let* user = UserService.get_by_email ctx ~email in

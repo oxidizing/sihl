@@ -9,7 +9,7 @@ module Make
 struct
   let dispatched_job_gets_processed ctx with_context _ () =
     let has_ran_job = ref false in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
@@ -22,17 +22,17 @@ struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
-    let* () = QueueService.on_start ctx |> Lwt.map Result.ok_or_failwith in
+    let* _ = Sihl.Core.Container.start_services [ (module QueueService) ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let () = Alcotest.(check bool "has processed job" true !has_ran_job) in
     Lwt.return ()
 
   let two_dispatched_jobs_get_processed ctx with_context _ () =
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job1 =
       Sihl.Queue.create_job ~name:"foo1" ~with_context
@@ -55,18 +55,18 @@ struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job1; job2 ] in
-    let* () = QueueService.on_start ctx |> Lwt.map Result.ok_or_failwith in
+    let* _ = Sihl.Core.Container.start_services [ (module QueueService) ] in
     let* () = QueueService.dispatch ctx ~job:job1 () in
     let* () = QueueService.dispatch ctx ~job:job2 () in
     let* () = Lwt_unix.sleep 4.0 in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let () = Alcotest.(check bool "has processed job1" true !has_ran_job1) in
     let () = Alcotest.(check bool "has processed job2" true !has_ran_job1) in
     Lwt.return ()
 
   let cleans_up_job_after_error ctx with_context _ () =
     let has_cleaned_up_job = ref false in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
@@ -79,10 +79,10 @@ struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
-    let* () = QueueService.on_start ctx |> Lwt.map Result.ok_or_failwith in
+    let* _ = Sihl.Core.Container.start_services [ (module QueueService) ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let () =
       Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
     in
@@ -90,7 +90,7 @@ struct
 
   let cleans_up_job_after_exception ctx with_context _ () =
     let has_cleaned_up_job = ref false in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
@@ -103,10 +103,10 @@ struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
-    let* () = QueueService.on_start ctx |> Lwt.map Result.ok_or_failwith in
+    let* _ = Sihl.Core.Container.start_services [ (module QueueService) ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let () =
       Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
     in
@@ -116,7 +116,7 @@ struct
     let custom_ctx_key : string Sihl.Core.Ctx.key =
       Sihl.Core.Ctx.create_key ()
     in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
     let has_custom_ctx_string = ref false in
     let custom_with_context =
@@ -137,10 +137,10 @@ struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
-    let* () = QueueService.on_start ctx |> Lwt.map Result.ok_or_failwith in
+    let* _ = Sihl.Core.Container.start_services [ (module QueueService) ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = QueueService.on_stop ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
     let () =
       Alcotest.(check bool "has custom ctx string" true !has_custom_ctx_string)
     in
