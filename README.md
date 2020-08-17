@@ -61,7 +61,7 @@
 
 ## About 
 
-[Get started](#getting-started) if you want to skip the blah blah.
+You want to skip the "blah blah" and go straight to the code? [Get started here.](#getting-started)
 
 ### What Sihl is not
 
