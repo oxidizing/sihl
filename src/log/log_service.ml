@@ -10,13 +10,12 @@ let get_level () =
   | Some "error" -> Error
   | _ -> Warning
 
-let on_init _ =
-  let log_level = Some (get_level ()) in
-  Logs_fmt.reporter () |> set_reporter;
-  set_level log_level;
-  debug (fun m -> m "LOGGER: Logger set up");
-  Lwt_result.return ()
-
-let on_start _ = Lwt_result.return ()
-
-let on_stop _ = Lwt_result.return ()
+let lifecycle =
+  Core.Container.Lifecycle.make "log"
+    (fun ctx ->
+      let log_level = Some (get_level ()) in
+      Logs_fmt.reporter () |> set_reporter;
+      set_level log_level;
+      debug (fun m -> m "LOGGER: Logger set up");
+      Lwt.return ctx)
+    (fun _ -> Lwt.return ())

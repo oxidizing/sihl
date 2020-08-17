@@ -21,6 +21,7 @@
   jwto
   letters
   alcotest
+  tsort
 )
  (preprocess
   (pps

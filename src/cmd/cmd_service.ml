@@ -4,11 +4,10 @@ let ( let* ) = Lwt.bind
 
 let registered_commands : Cmd_core.t list ref = ref []
 
-let on_init _ = Lwt_result.return ()
-
-let on_start _ = Lwt_result.return ()
-
-let on_stop _ = Lwt_result.return ()
+let lifecycle =
+  Core.Container.Lifecycle.make "cmd"
+    (fun ctx -> Lwt.return ctx)
+    (fun _ -> Lwt.return ())
 
 let register_commands _ commands =
   registered_commands := List.concat [ !registered_commands; commands ];

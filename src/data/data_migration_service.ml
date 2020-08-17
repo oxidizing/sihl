@@ -174,11 +174,14 @@ struct
         run_all ctx)
       ()
 
-  let on_init ctx = CmdService.register_command ctx migrate_cmd
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "migration"
+      ~dependencies:[ CmdService.lifecycle; Db.lifecycle ]
+      (fun ctx ->
+        CmdService.register_command ctx migrate_cmd
+        |> Lwt.map Result.ok_or_failwith
+        |> Lwt.map (fun () -> ctx))
+      (fun _ -> Lwt.return ())
 end
 
 module Repo = struct

@@ -13,16 +13,6 @@ let services : (module Sihl.Core.Container.SERVICE) list =
   [ (module Service.Log); (module Service.Queue) ]
 
 let () =
-  let ctx = Sihl.Core.Ctx.empty in
   Lwt_main.run
-    (let* () =
-       let* () =
-         Sihl.Core.Container.register_services ctx services
-         |> Lwt.map Result.ok_or_failwith
-       in
-       let* () =
-         Sihl.Core.Container.start_services ctx |> Lwt.map Result.ok_or_failwith
-       in
-       Lwt.return ()
-     in
+    (let* _, ctx = Sihl.Core.Container.start_services services in
      run "memory" @@ test_suite ctx)

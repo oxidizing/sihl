@@ -119,12 +119,14 @@ module Make
         | _ -> Lwt_result.fail "Usage: <username> <email> <password>")
       ()
 
-  let on_init ctx =
-    let* () = Repo.register_migration ctx in
-    let* () = Cmd_service.register_command ctx create_admin_cmd in
-    Repo.register_cleaner ctx
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "user"
+      ~dependencies:[ CmdService.lifecycle; DbService.lifecycle ]
+      (fun ctx ->
+        (let* () = Repo.register_migration ctx in
+         let* () = Repo.register_cleaner ctx in
+         Cmd_service.register_command ctx create_admin_cmd)
+        |> Lwt.map Result.ok_or_failwith
+        |> Lwt.map (fun () -> ctx))
+      (fun _ -> Lwt.return ())
 end

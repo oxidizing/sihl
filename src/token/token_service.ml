@@ -5,13 +5,14 @@ let ( let* ) = Lwt_result.bind
 
 module Make (Db : Data_db_sig.SERVICE) (Repo : Token_sig.REPOSITORY) :
   Token_sig.SERVICE = struct
-  let on_init ctx =
-    let* () = Repo.register_migration ctx in
-    Repo.register_cleaner ctx
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "token"
+      (fun ctx ->
+        (let* () = Repo.register_migration ctx in
+         Repo.register_cleaner ctx)
+        |> Lwt.map Result.ok_or_failwith
+        |> Lwt.map (fun () -> ctx))
+      (fun _ -> Lwt.return ())
 
   let find_opt ctx ~value () = Repo.find_opt ctx ~value
 

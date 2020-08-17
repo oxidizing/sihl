@@ -3,13 +3,14 @@ open Base
 let ( let* ) = Lwt_result.bind
 
 module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
-  let on_init ctx =
-    let* () = Repo.register_migration ctx in
-    Repo.register_cleaner ctx
-
-  let on_start _ = Lwt.return @@ Ok ()
-
-  let on_stop _ = Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "session"
+      (fun ctx ->
+        (let* () = Repo.register_migration ctx in
+         Repo.register_cleaner ctx)
+        |> Lwt.map Result.ok_or_failwith
+        |> Lwt.map (fun () -> ctx))
+      (fun _ -> Lwt.return ())
 
   let require_session_key ctx =
     Core.Ctx.find Session_sig.ctx_session_key ctx

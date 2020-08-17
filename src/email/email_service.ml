@@ -28,13 +28,14 @@ end
 module Template = struct
   module Make (Repo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE =
   struct
-    let on_init ctx =
-      let* () = Repo.register_migration ctx in
-      Repo.register_cleaner ctx
-
-    let on_start _ = Lwt.return @@ Ok ()
-
-    let on_stop _ = Lwt.return @@ Ok ()
+    let lifecycle =
+      Core.Container.Lifecycle.make "template"
+        (fun ctx ->
+          (let* () = Repo.register_migration ctx in
+           Repo.register_cleaner ctx)
+          |> Lwt.map Result.ok_or_failwith
+          |> Lwt.map (fun () -> ctx))
+        (fun _ -> Lwt.return ())
 
     let get ctx ~id = Repo.get ctx ~id
 
@@ -376,11 +377,11 @@ module Make = struct
     Email_sig.SERVICE = struct
     module Template = TemplateService
 
-    let on_init req = TemplateService.on_init req
-
-    let on_start _ = Lwt.return @@ Ok ()
-
-    let on_stop _ = Lwt.return @@ Ok ()
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        (fun ctx -> Lwt.return ctx)
+        (fun _ -> Lwt.return ())
 
     let show email =
       let sender = Email_core.sender email in
@@ -429,11 +430,11 @@ Html:
   struct
     module Template = TemplateService
 
-    let on_init req = TemplateService.on_init req
-
-    let on_start _ = Lwt.return @@ Ok ()
-
-    let on_stop _ = Lwt.return @@ Ok ()
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        (fun ctx -> Lwt.return ctx)
+        (fun _ -> Lwt.return ())
 
     let send ctx email =
       let ( let* ) = Lwt.bind in
@@ -491,11 +492,11 @@ Html:
   struct
     module Template = TemplateService
 
-    let on_init req = TemplateService.on_init req
-
-    let on_start _ = Lwt.return @@ Ok ()
-
-    let on_stop _ = Lwt.return @@ Ok ()
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        (fun ctx -> Lwt.return ctx)
+        (fun _ -> Lwt.return ())
 
     let body ~recipient ~subject ~sender ~content =
       Printf.sprintf
@@ -575,11 +576,11 @@ Html:
     Email_sig.SERVICE = struct
     module Template = TemplateService
 
-    let on_init req = TemplateService.on_init req
-
-    let on_start _ = Lwt.return @@ Ok ()
-
-    let on_stop _ = Lwt.return @@ Ok ()
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        (fun ctx -> Lwt.return ctx)
+        (fun _ -> Lwt.return ())
 
     let send ctx email =
       let ( let* ) = Lwt.bind in
@@ -634,17 +635,14 @@ module MakeDelayed
       |> Queue_core.Job.set_retry_delay Utils.Time.OneHour
   end
 
-  let on_init ctx =
-    let* () = EmailService.on_init ctx in
-    QueueService.register_jobs ctx ~jobs:[ Job.job ] |> Lwt.map Result.return
-
-  let on_start ctx =
-    let* () = EmailService.on_start ctx in
-    Lwt.return @@ Ok ()
-
-  let on_stop ctx =
-    let* () = EmailService.on_stop ctx in
-    Lwt.return @@ Ok ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "email"
+      ~dependencies:
+        [ EmailService.lifecycle; DbService.lifecycle; QueueService.lifecycle ]
+      (fun ctx ->
+        QueueService.register_jobs ctx ~jobs:[ Job.job ]
+        |> Lwt.map (fun () -> ctx))
+      (fun _ -> Lwt.return ())
 
   let send ctx email = QueueService.dispatch ctx ~job:Job.job email
 

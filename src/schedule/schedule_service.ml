@@ -3,11 +3,10 @@ open Base
 let ( let* ) = Lwt.bind
 
 module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
-  let on_init _ = Lwt_result.return ()
-
-  let on_start _ = Lwt_result.return ()
-
-  let on_stop _ = Lwt_result.return ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "schedule" ~dependencies:[ Log.lifecycle ]
+      (fun ctx -> Lwt.return ctx)
+      (fun _ -> Lwt.return ())
 
   let schedule _ schedule =
     let should_stop = ref false in

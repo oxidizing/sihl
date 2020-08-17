@@ -22,11 +22,11 @@ module Make (CmdService : Cmd.Sig.SERVICE) : Web_server_sig.SERVICE = struct
     let _ = Opium.Std.App.start app in
     run_forever ()
 
-  let on_init _ = Lwt_result.return ()
-
-  let on_start _ = Lwt_result.return ()
-
-  let on_stop _ = Lwt_result.return ()
+  let lifecycle =
+    Core.Container.Lifecycle.make "webserver"
+      ~dependencies:[ CmdService.lifecycle ]
+      (fun ctx -> Lwt.return ctx)
+      (fun _ -> Lwt.return ())
 
   let register_routes _ routes = Lwt_result.return (registered_routes := routes)
 end
