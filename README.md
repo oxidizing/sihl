@@ -38,7 +38,6 @@
 * [Concepts](#concepts)
   * [Services](#services)
   * [App](#app)
-    * [Folder structure](#folder-structure)
 * [Usage](#usage)
   * [Configuration](#configuration)
   * [Web](#web)
@@ -52,9 +51,7 @@
   * [Session](#session)
   * [Schedule](#schedule)
   * [Email](#email)
-    * [Delayed Email](#delayed-email)
   * [Job queue](#job-queue)
-    * [Polling job queue](#polling-job-queue_)
   * [Storage](#storage)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
@@ -63,6 +60,8 @@
 * [Acknowledgements](#acknowledgements)
 
 ## About 
+
+[Get started](#getting-started) if you want to skip the blah blah.
 
 ### What Sihl is not
 
@@ -79,51 +78,31 @@ Now that we have that out of the way, let's have a look what Sihl *is*.
 Sihl is a high-level application framework that can (and is) used for web development. It provides a set of composable building blocks and recipes that allow you to develop (web) apps quickly and maintanable at the same time.
 It relies heavily on OCaml, its module and static type system and on functional programming to make development fun and safe.
 
-In order to get an idea of the responsibility Sihl claims, here is a non-exhaustive list of features:
+Things like database migrations, HTTP routing, user management, sessions, logging, emailing, job queues and schedules are topics that Sihl takes care of.
 
-* Database migrations, connection pooling and transaction handling
-* Web (routes, middlewares, web server)
-* User management
-* Sessions
-* Random bytes
-* Tokens, JWT
-* Templating
-* Custom CLI commands
-* Authorization
-* Authentication
-* Testing
-* HTTP Query Language
-* Logging
-* Email 
-* Job queue
-* Scheduler
-* Block Storage
-
-### But why?
+### Why another web framework?
 
 Because all other framework didn't grow here.
 
-On a more serious note, an evaluation of languages and tools lead us to build the 5th iteration using OCaml. We believe OCaml and Reason are very nice hosts, even though their house of web development is currently small.
+On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our tools and product. An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl using OCaml. We believe OCaml is a phenomenal host, even though its house of web development is small at the moment.
 
-Some of the reasons Sihl uses OCaml:
+Sihl is built on OCaml because OCaml...
 
-* OCaml runs fast (not Rust fast, but maybe something like Go fast)
-* OCaml compiles *really* fast (Go fast)
-* OCaml is portable (and treats Linux as first class citizen)
-* OCaml's type system is powerful but the language is surprisingly simple
-* OCaml is strict but not pure
+* ...runs fast 
+* ...compiles *really* fast 
+* ...is portable and works well on Linux
+* ...is strict but not pure
+* ...is fun to use
 
-And the final and most important one:
+But the final and most important reason is the module system, which gives Sihl its modularity and strong compile-time guarantees about a project setup.
 
-* OCaml's module system allows Sihl's modularity and strong compile-time guarantees
+Sihl uses OCaml modules for statically typed dependency injection. If your app compiles, the dependencies are wired up correctly. You can not use what is not there.
 
-Sihl uses OCaml modules for statically typed dependency injection. The goal is that if your app compiles, it is wired up correctly.
-
-You can read the [concepts](#concepts) for more information.
+You can read the [concepts](#concepts) to learn more about it.
 
 ## Getting Started
 
-Following are the steps to quickly get started.
+Following are the steps to quickly get started with a minimal running web server.
 
 ### Prerequisites
 
