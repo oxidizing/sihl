@@ -38,7 +38,6 @@
 * [Concepts](#concepts)
   * [Services](#services)
   * [App](#app)
-    * [Folder structure](#folder-structure)
 * [Usage](#usage)
   * [Configuration](#configuration)
   * [Web](#web)
@@ -235,7 +234,7 @@ You should see a `start` CLI command. This comes from `Service.WebServer` which 
 
 and visit `http://localhost:3000/site/hello/` or `http://localhost:3000/api/hello/`.
 
-Find a simple starter project [here](https://github.com/oxidizing/sihl-simple-starter) similar to our small example.
+Find a simple starter project [here](https://github.com/oxidizing/sihl-minimal-starter) similar to our small example.
 
 ## Concepts
 
