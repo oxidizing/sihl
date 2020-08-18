@@ -1,8 +1,6 @@
 version: 2.1
 jobs:
   build:
-    branches:
-      ignore: gh-pages
     docker:
       - image: ocaml/opam2:4.08
         environment:
@@ -56,4 +54,8 @@ workflows:
   version: 2
   build:
     jobs:
-      - build
+      - build:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
