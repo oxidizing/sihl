@@ -227,12 +227,11 @@ In essence, Sihl is just a tiny core (about 100 lines) that deals with loading s
 
 ### Services
 
-A service is a unit that provides some functionality. Most of the time, a service is just a collection of functions that belong together. This would be the equivalent of a class with just static methods in object-oriented programming. However, some services can be started and stopped which gives them a lifecycle.
-Sihl makes sure that services with lifecycles are started and stopped in the right order.
+A service is a unit that provides some functionality. Most of the time, a service is just a namespace so functions that belong together are together. This would be the equivalent of a class with just static methods in object-oriented programming. However, some services can be started and stopped. These services have a lifecycles which is taken care of by Sihl.
 
-Sihl provides service interfaces and some service implementations. As an example, Sihl provides default implementation of the user service for user management with support for MariaDB and PostgreSQL. 
+Sihl provides service interfaces and some implementations. As an example, Sihl provides a default implementation of the user service for user management with support for MariaDB and PostgreSQL. 
 
-When you create a Sihl app, you usually start out with your service setup in a file `service.ml`. There, you list all services that you are going to use in the project. We can compose large services out of simple and small services using parameterized modules. This service composition is statically checked and you can use it throughout your project.
+When you create a Sihl app, you usually start out with your service setup in a file `service.ml`. There, you list all services that you are going to use in the project. We can compose large services out of simple and small services using parameterized modules. This service composition is statically checked and it can be used throughout your own project.
 
 Sihl has to be made aware of the services you are going to use. That is why the second step of setting of services is done in the app description file.
 
@@ -269,9 +268,15 @@ Let's have a look at the folder structure of an example project called `pizza-sh
 │   ├── cmd.ml
 ```
 
-There is an emphasis on the separation of the business logic from web stuff. Your app is just a set of services, models and repositories and it is not concerned with HTTP, databases, CLIs or other infrastructure topics.
+There is a strong emphasis on the separation of business logic from everything else. In this example, the domain layer is split up into two parts `pizza-delivery` and `pizza-order-taking`. Note that all the business rules live in that layer. 
 
-[TODO goe through folders]
+A set of services, models and repos on its own is not that useful. In order to make it useful, we need to expose it to users. A typical web app does that through HTTP and a few CLI commands, which are primary used for development.
+
+Everything regarding HTTP, routing, GraphQL, REST, JSON, middlewares lives in `web`. `web` is allowed to use any service.
+
+The folder `app` contains `app.ml` which describes a Sihl app. 
+
+In the folder `service` contains the service configuration `service.ml`. This is the static setup of all services that are usable throughout the project.
 
 ## Usage
 
