@@ -16,7 +16,7 @@
   <p align="center">
     A framework for statically typed functional web development in OCaml and Reason.
     <br />
-    <a href="https://github.com/oxidizing/sihl"><strong>Explore the docs »</strong></a>
+    <a href="https://oxidizing.github.io/sihl/"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/oxidizing/sihl-example-issues">View Example Project</a>
