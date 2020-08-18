@@ -1,6 +1,8 @@
 version: 2.1
 jobs:
   build:
+    branches:
+      ignore: gh-pages
     docker:
       - image: ocaml/opam2:4.08
         environment:
@@ -48,7 +50,7 @@ jobs:
           command: opam config exec -- make test
       - run:
           name: Integration tests
-          command: opam config exec -- make test-all
+          command: opam config exec -- make test-slow
 
 workflows:
   version: 2

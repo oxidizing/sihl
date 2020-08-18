@@ -35,7 +35,3 @@
   )))
 
 (include_subdirs unqualified)
-
-(documentation
- (package sihl)
-  (mld_files index))
