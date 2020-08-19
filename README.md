@@ -3,6 +3,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+[![Release date][release-date]][release-date]
 
 
 <br />
@@ -14,7 +15,7 @@
   <h3 align="center">Sihl</h3>
 
   <p align="center">
-    A framework for statically typed functional web development in OCaml and Reason.
+    A web framework for functional web development in OCaml and Reason.
     <br />
     <a href="https://oxidizing.github.io/sihl/"><strong>Explore the docs »</strong></a>
     <br />
@@ -425,4 +426,5 @@ Sihl would not be possible without amazing projects like following:
 [issues-url]: https://github.com/oxidizing/sihl/issues
 [license-shield]: https://img.shields.io/github/license/oxidizing/sihl.svg?style=flat-square
 [license-url]: https://github.com/oxidizing/sihl/blob/master/LICENSE.txt
+[release-date]: https://img.shields.io/github/release-date/oxidizing/sihl
 
