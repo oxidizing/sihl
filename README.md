@@ -178,31 +178,22 @@ We want a simple web service without any database (and thus no migrations), so l
 app.ml:
 
 ```ocaml
-let services: (module Sihl.Core.Container.SERVICE) list =
-  [
-    (module Service.WebServer);
-  ]
+let services : (module Sihl.Core.Container.SERVICE) list =
+  [ (module Service.WebServer) ]
 
 let hello_page =
-  Sihl.Web.Route.get "/hello" (fun _ ->
+  Sihl.Web.Route.get "/hello/" (fun _ ->
       Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
 
 let hello_api =
-  Sihl.Web.Route.get "/hello" (fun _ ->
+  Sihl.Web.Route.get "/hello/" (fun _ ->
       Sihl.Web.Res.(json |> set_body {|{"msg":"Hello!"}|}) |> Lwt.return)
 
-let routes =
-  [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
+let routes = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
 
 module App = Sihl.App.Make (Service)
 
-let _ =
-  App.(
-    empty
-    |> with_services services
-    |> with_routes routes
-    |> run
-  )
+let _ = App.(empty |> with_services services |> with_routes routes |> run)
 ```
 
 You can build (and watch) this project with
@@ -378,22 +369,24 @@ let services: (module Sihl.Core.Container.SERVICE) list =
     (module Service.WebServer);
     ...
   ]
-
 ...
-
-let _ =
-  App.(
-    empty
-    |> with_services services
-    |> with_routes routes
-    |> run
-  )
-
 ```
 
 #### Route
 
-[TODO]
+```ocaml
+let hello_page =
+  Sihl.Web.Route.get "/hello/" (fun _ ->
+      Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
+
+let hello_api =
+  Sihl.Web.Route.get "/hello/" (fun _ ->
+      Sihl.Web.Res.(json |> set_body {|{"msg":"Hello!"}|}) |> Lwt.return)
+
+let routes = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
+
+let _ = App.(empty |> with_services services |> with_routes routes |> run)
+```
 
 #### Middleware
 
