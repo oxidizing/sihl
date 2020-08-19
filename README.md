@@ -44,16 +44,21 @@
   * [Web](#web)
     * [Route](#route)
     * [Middleware](#middleware)
+    * [Template](#template)
   * [Database](#database)
   * [CLI](#cli)
+  * [Logging](#logging)
   * [User](#user)
+  * [Authentication](#authentication)
   * [Authorization](#authorization)
+  * [Message](#message)
   * [Token](#token)
   * [Session](#session)
   * [Schedule](#schedule)
   * [Email](#email)
   * [Job queue](#job-queue)
   * [Storage](#storage)
+  * [Testing](#testing)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -349,35 +354,146 @@ let config =
 The environment variables override the configuration provided as data like above.
 
 ### Web
-[TODO]
+
+Use the [web server service](https://oxidizing.github.io/sihl/sihl/Sihl__/Web_server_sig/module-type-SERVICE/index.html) to register HTTP routes and to start a web server.
+
+#### Installation
+
+`service.ml`:
+
+```ocaml
+...
+module Cmd = Sihl.Cmd.Service
+module WebServer = Sihl.Web.Server.Service.Make (Cmd)
+...
+```
+
+`app.ml`:
+
+```ocaml
+...
+let services: (module Sihl.Core.Container.SERVICE) list =
+  [
+    ...
+    (module Service.WebServer);
+    ...
+  ]
+
+...
+
+let _ =
+  App.(
+    empty
+    |> with_services services
+    |> with_routes routes
+    |> run
+  )
+
+```
+
 #### Route
+
 [TODO]
+
 #### Middleware
+
 [TODO]
+
+#### Template
+
+[TODO]
+
 ### Database
-[TODO]
+
+The [database service](https://oxidizing.github.io/sihl/sihl/Sihl__/Database_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### CLI
-[TODO]
+
+The [command line service](https://oxidizing.github.io/sihl/sihl/Sihl__/Cmd_sig/module-type-SERVICE/index.html).
+ 
+[TODO] 
+
+### Logging
+
+The [logging service](https://oxidizing.github.io/sihl/sihl/Sihl__/Log_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### User
-[TODO]
+
+The [user service](https://oxidizing.github.io/sihl/sihl/Sihl__/User_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
+### Authentication
+
+The [authentication service](https://oxidizing.github.io/sihl/sihl/Sihl__/Authn_sig/module-type-SERVICE/index.html). 
+
+[TODO] 
+
 ### Authorization
-[TODO]
+
+[Authorization](https://oxidizing.github.io/sihl/sihl/Sihl/Authz/index.html) is not implemented as a service as it provides only simple pure functions. 
+
+### Message
+
+The [message service](https://oxidizing.github.io/sihl/sihl/Sihl__/Message_sig/module-type-SERVICE/index.html). 
+
+[TODO] 
+
 ### Token
-[TODO]
+
+The [token service](https://oxidizing.github.io/sihl/sihl/Sihl__/Token_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### Session
-[TODO]
+
+The [session service](https://oxidizing.github.io/sihl/sihl/Sihl__/Session_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### Schedule
-[TODO]
+
+The [schedule service](https://oxidizing.github.io/sihl/sihl/Sihl__/Schedule_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### Email
-[TODO]
+
+The [email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 #### Delayed Email
-[TODO]
+
+The [delayed email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html) looks exactly the same as the usual email service.
+
+[TODO] 
+
 ### Job queue
-[TODO]
+
+The [job queue service](https://oxidizing.github.io/sihl/sihl/Sihl__/Queue_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 #### Polling job queue
-[TODO]
+
+The [polling job queue service](https://oxidizing.github.io/sihl/sihl/Sihl__/Queue_sig/module-type-SERVICE/index.html) looks exactly the same as the normal queue service.
+
+[TODO] 
+
 ### Storage
-[TODO]
+
+The [storage service](https://oxidizing.github.io/sihl/sihl/Sihl__/Storage_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
+### Testing
+
+[TODO] 
 
 ## Roadmap
 

@@ -18,14 +18,18 @@ module type SERVICE = sig
 
   val register :
     Core.Ctx.t -> Data_migration_core.Migration.t -> (unit, string) Lwt_result.t
+  (** Register a migration, so it can be run by the service. *)
 
   val get_migrations :
     Core.Ctx.t -> (Data_migration_core.Migration.t list, string) Lwt_result.t
+  (** Get all registered migrations. *)
 
   val execute :
     Core.Ctx.t ->
     Data_migration_core.Migration.t list ->
     (unit, string) Result.t Lwt.t
+  (** Run a list of migrations. *)
 
   val run_all : Core.Ctx.t -> (unit, string) Lwt_result.t
+  (** Run all registered migrations. *)
 end

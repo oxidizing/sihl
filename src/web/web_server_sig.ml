@@ -1,10 +1,15 @@
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val start_server : Core.Ctx.t -> unit Lwt.t
-
   val register_routes :
     Core_ctx.t ->
     Web_server_core.stacked_routes ->
     (unit, string) Result.t Lwt.t
+  (** Register HTTP routes that are served by the web server. *)
+
+  val start_server : Core.Ctx.t -> unit Lwt.t
+  (** Start a HTTP server.
+
+      This Lwt.t resolves immediately and the web server starts in the background. The web server serves the registered routes.
+*)
 end

@@ -39,8 +39,6 @@ let lifecycle =
     (fun ctx -> ctx |> add_pool |> Lwt.return)
     (fun _ -> Lwt.return ())
 
-let query_connection conn f = f conn |> Lwt_result.map_err Caqti_error.show
-
 let query ctx f =
   match
     (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)

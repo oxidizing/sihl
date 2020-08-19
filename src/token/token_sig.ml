@@ -19,15 +19,20 @@ module type SERVICE = sig
     ?expires_in:Utils.Time.duration ->
     unit ->
     (Token_core.t, string) Result.t Lwt.t
+  (** Create a token and store a token.
+
+      Provide [expires_in] to define a duration in which the token is valid, default is one day.
+      Provide [data] to store optional data as string.
+*)
 
   val find :
     Core.Ctx.t -> value:string -> unit -> (Token_core.t, string) Result.t Lwt.t
-  (** Returns an active and non-expired token *)
+  (** Returns an active and non-expired token. *)
 
   val find_opt :
     Core.Ctx.t ->
     value:string ->
     unit ->
     (Token_core.t option, string) Result.t Lwt.t
-  (** Returns an active and non-expired token *)
+  (** Returns an active and non-expired token. *)
 end
