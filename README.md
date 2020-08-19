@@ -217,7 +217,7 @@ You should see a `start` CLI command. This comes from `Service.WebServer` which 
 ./_build/default/app.exe start
 ```
 
-and visit `http://localhost:3000/site/hello/` or `http://localhost:3000/api/hello/`.
+and visit `http://localhost:3000/page/hello/` or `http://localhost:3000/api/hello/`.
 
 Find a simple starter project [here](https://github.com/oxidizing/sihl-minimal-starter) similar to our small example.
 
