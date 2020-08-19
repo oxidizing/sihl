@@ -3,7 +3,10 @@ module type SERVICE = sig
 
   val create_reset_token :
     Core.Ctx.t -> email:string -> (Token.t option, string) Result.t Lwt.t
-  (** If there is no user with [email] the return value is None*)
+  (** Create and store a reset token.
+
+      Returns [None] if there is no user with [email]. The reset token can be used with [reset_password] to set the password without knowing the old password.
+*)
 
   val reset_password :
     Core.Ctx.t ->
@@ -11,4 +14,5 @@ module type SERVICE = sig
     password:string ->
     password_confirmation:string ->
     ((unit, string) Result.t, string) Result.t Lwt.t
+  (** Set the password of a user associated with the reset [token]. *)
 end

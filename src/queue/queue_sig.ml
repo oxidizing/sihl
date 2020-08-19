@@ -18,7 +18,10 @@ module type SERVICE = sig
 
   val dispatch :
     Core.Ctx.t -> job:'a Job.t -> ?delay:Utils.Time.duration -> 'a -> unit Lwt.t
-  (** Queue a [job] for processing. Use [delay] to run the job after a certain amount of time. *)
+  (** Queue a [job] for processing. Use [delay] to run the initially job after a certain amount of time. *)
 
   val register_jobs : Core.Ctx.t -> jobs:'a Job.t list -> unit Lwt.t
+  (** Register jobs that can be dispatched.
+
+    Only registered jobs can be dispatched. Dispatching a job that was not registered does nothing. *)
 end

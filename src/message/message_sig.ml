@@ -22,4 +22,10 @@ module type Service = sig
     ?info:string list ->
     unit ->
     (unit, string) Lwt_result.t
+  (** Set flash message for the current session.
+
+      Flash messages can be used to transport information across request response lifecycles. The typical use case is giving a user feedback after a form submission.
+
+      Requires middlewares: Session & Message
+*)
 end

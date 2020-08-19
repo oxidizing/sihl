@@ -64,6 +64,9 @@ module type SERVICE = sig
     password_confirmation:string ->
     unit ->
     ((User_core.User.t, string) Result.t, string) Result.t Lwt.t
+  (** Set the password of a user without knowing the old password.
+
+      This feature is typically used by admins. *)
 
   val create_user :
     Core.Ctx.t ->
@@ -71,6 +74,7 @@ module type SERVICE = sig
     password:string ->
     username:string option ->
     (User_core.User.t, string) Result.t Lwt.t
+  (** Create and store a user. *)
 
   val create_admin :
     Core.Ctx.t ->
@@ -78,6 +82,7 @@ module type SERVICE = sig
     password:string ->
     username:string option ->
     (User_core.User.t, string) Result.t Lwt.t
+  (** Create and store a user that is also an admin. *)
 
   val register :
     Core_ctx.t ->
@@ -88,10 +93,15 @@ module type SERVICE = sig
     password_confirmation:string ->
     unit ->
     ((User_core.User.t, string) result, string) Lwt_result.t
+  (** Create and store new user.
+
+      Provide [password_policy] to check whether the password fulfills cretain criteria.
+*)
 
   val login :
     Core_ctx.t ->
     email:string ->
     password:string ->
     ((User_core.User.t, string) result, string) Lwt_result.t
+  (** Find user by email if password matches. *)
 end

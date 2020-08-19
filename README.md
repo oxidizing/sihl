@@ -3,6 +3,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+[![Release date][release-date]][release-date]
 
 
 <br />
@@ -14,7 +15,7 @@
   <h3 align="center">Sihl</h3>
 
   <p align="center">
-    A framework for statically typed functional web development in OCaml and Reason.
+    A web framework for functional web development in OCaml and Reason.
     <br />
     <a href="https://oxidizing.github.io/sihl/"><strong>Explore the docs »</strong></a>
     <br />
@@ -43,16 +44,21 @@
   * [Web](#web)
     * [Route](#route)
     * [Middleware](#middleware)
+    * [Template](#template)
   * [Database](#database)
   * [CLI](#cli)
+  * [Logging](#logging)
   * [User](#user)
+  * [Authentication](#authentication)
   * [Authorization](#authorization)
+  * [Message](#message)
   * [Token](#token)
   * [Session](#session)
   * [Schedule](#schedule)
   * [Email](#email)
   * [Job queue](#job-queue)
   * [Storage](#storage)
+  * [Testing](#testing)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
 * [License](#license)
@@ -217,7 +223,7 @@ You should see a `start` CLI command. This comes from `Service.WebServer` which 
 ./_build/default/app.exe start
 ```
 
-and visit `http://localhost:3000/site/hello/` or `http://localhost:3000/api/hello/`.
+and visit `http://localhost:3000/page/hello/` or `http://localhost:3000/api/hello/`.
 
 Find a simple starter project [here](https://github.com/oxidizing/sihl-minimal-starter) similar to our small example.
 
@@ -283,37 +289,211 @@ In the folder `service` contains the service configuration `service.ml`. This is
 See the [open issues](https://github.com/github_username/repo/issues) for a list of proposed features (and known issues).
 
 ### Configuration
-[TODO]
+
+Some services need to be configured. An email service using an SMTP transport needs to know SMTP credentials in order to send emails and a database service needs to know the `DATABASE_URL` in order to establish a connection to the database.
+
+A configuration is a simple map where the keys and values are strings.
+
+There are two ways to deal with configuration.
+
+#### Service configuration provider
+
+Most services need a configuration provider in the service setup file. Let's have a look at the SMTP email service. 
+
+```ocaml
+(* Email template service setup, is responsible for rendering emails *)
+module EmailTemplateRepo =
+  Sihl.Email.Service.Template.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
+
+(* The provided EnvConfigProvider reads configuratin from env variables *)
+module EmailConfigProvider = Sihl.Email.Service.EnvConfigProvider
+
+(* The email service requires a configuration provider. It uses it to 
+   fetch configuration on its own. *)
+module Email =
+  Sihl.Email.Service.Make.Smtp(EmailTemplate, EmailConfigProvider)
+```
+
+The type of `EmailConfigProvider` is different from service implementation to service implementation. The type of the config provider for SMTP is: 
+
+
+```ocaml
+val sender : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val username : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val password : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val host : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val port : Core.Ctx.t -> (int option, string) Lwt_result.t
+
+val start_tls : Core.Ctx.t -> (bool, string) Lwt_result.t
+
+val ca_dir : Core.Ctx.t -> (string, string) Lwt_result.t
+```
+
+Note that it returns the configuration asynchronously. This is not needed when reading environment variables, but it allows you to implement your own config provider that reads configuration from elsewhere in a non-blocking way.
+
+#### Configuration service
+
+Use the [configuration service](https://oxidizing.github.io/sihl/sihl/Sihl__/Config_sig/module-type-SERVICE/index.html) to read configuration from various sources.
+
+A configuration is just a record holding configuration maps for `development`, `test`, and `production`.
+
+```ocaml
+let config =
+  Sihl.Config.create
+    ~development:
+      [ ("DATABASE_URL", "mariadb://root:password@127.0.0.1:3306/dev") ]
+    ~test:[ ("DATABASE_URL", "mariadb://root:password@127.0.0.1:3306/test") ]
+    ~production:[]
+```
+
+The environment variables override the configuration provided as data like above.
+
 ### Web
-[TODO]
+
+Use the [web server service](https://oxidizing.github.io/sihl/sihl/Sihl__/Web_server_sig/module-type-SERVICE/index.html) to register HTTP routes and to start a web server.
+
+#### Installation
+
+`service.ml`:
+
+```ocaml
+...
+module Cmd = Sihl.Cmd.Service
+module WebServer = Sihl.Web.Server.Service.Make (Cmd)
+...
+```
+
+`app.ml`:
+
+```ocaml
+...
+let services: (module Sihl.Core.Container.SERVICE) list =
+  [
+    ...
+    (module Service.WebServer);
+    ...
+  ]
+
+...
+
+let _ =
+  App.(
+    empty
+    |> with_services services
+    |> with_routes routes
+    |> run
+  )
+
+```
+
 #### Route
+
 [TODO]
+
 #### Middleware
+
 [TODO]
+
+#### Template
+
+[TODO]
+
 ### Database
-[TODO]
+
+The [database service](https://oxidizing.github.io/sihl/sihl/Sihl__/Database_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### CLI
-[TODO]
+
+The [command line service](https://oxidizing.github.io/sihl/sihl/Sihl__/Cmd_sig/module-type-SERVICE/index.html).
+ 
+[TODO] 
+
+### Logging
+
+The [logging service](https://oxidizing.github.io/sihl/sihl/Sihl__/Log_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### User
-[TODO]
+
+The [user service](https://oxidizing.github.io/sihl/sihl/Sihl__/User_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
+### Authentication
+
+The [authentication service](https://oxidizing.github.io/sihl/sihl/Sihl__/Authn_sig/module-type-SERVICE/index.html). 
+
+[TODO] 
+
 ### Authorization
-[TODO]
+
+[Authorization](https://oxidizing.github.io/sihl/sihl/Sihl/Authz/index.html) is not implemented as a service as it provides only simple pure functions. 
+
+### Message
+
+The [message service](https://oxidizing.github.io/sihl/sihl/Sihl__/Message_sig/module-type-SERVICE/index.html). 
+
+[TODO] 
+
 ### Token
-[TODO]
+
+The [token service](https://oxidizing.github.io/sihl/sihl/Sihl__/Token_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### Session
-[TODO]
+
+The [session service](https://oxidizing.github.io/sihl/sihl/Sihl__/Session_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### Schedule
-[TODO]
+
+The [schedule service](https://oxidizing.github.io/sihl/sihl/Sihl__/Schedule_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 ### Email
-[TODO]
+
+The [email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 #### Delayed Email
-[TODO]
+
+The [delayed email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html) looks exactly the same as the usual email service.
+
+[TODO] 
+
 ### Job queue
-[TODO]
+
+The [job queue service](https://oxidizing.github.io/sihl/sihl/Sihl__/Queue_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
 #### Polling job queue
-[TODO]
+
+The [polling job queue service](https://oxidizing.github.io/sihl/sihl/Sihl__/Queue_sig/module-type-SERVICE/index.html) looks exactly the same as the normal queue service.
+
+[TODO] 
+
 ### Storage
-[TODO]
+
+The [storage service](https://oxidizing.github.io/sihl/sihl/Sihl__/Storage_sig/module-type-SERVICE/index.html).
+
+[TODO] 
+
+### Testing
+
+[TODO] 
 
 ## Roadmap
 
@@ -362,4 +542,5 @@ Sihl would not be possible without amazing projects like following:
 [issues-url]: https://github.com/oxidizing/sihl/issues
 [license-shield]: https://img.shields.io/github/license/oxidizing/sihl.svg?style=flat-square
 [license-url]: https://github.com/oxidizing/sihl/blob/master/LICENSE.txt
+[release-date]: https://img.shields.io/github/release-date/oxidizing/sihl
 

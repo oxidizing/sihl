@@ -88,8 +88,11 @@ module type SERVICE = sig
   include Core_container.SERVICE
 
   module Template : Template.SERVICE
+  (** A template service to manage email templates. *)
 
   val send : Core.Ctx.t -> Email_core.t -> unit Lwt.t
+  (** Send email. *)
 
   val bulk_send : Core.Ctx.t -> Email_core.t list -> unit Lwt.t
+  (** Send multiple emails. If sending of one of them fails, the function fails.*)
 end
