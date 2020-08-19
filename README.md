@@ -283,7 +283,70 @@ In the folder `service` contains the service configuration `service.ml`. This is
 See the [open issues](https://github.com/github_username/repo/issues) for a list of proposed features (and known issues).
 
 ### Configuration
-[TODO]
+
+Some services need to be configured. An email service using an SMTP transport needs to know SMTP credentials in order to send emails and a database service needs to know the `DATABASE_URL` in order to establish a connection to the database.
+
+A configuration is a simple map where the keys and values are strings.
+
+There are two ways to deal with configuration.
+
+#### Service configuration provider
+
+Most services need a configuration provider in the service setup file. Let's have a look at the SMTP email service. 
+
+```ocaml
+(* Email template service setup, is responsible for rendering emails *)
+module EmailTemplateRepo =
+  Sihl.Email.Service.Template.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
+
+(* The provided EnvConfigProvider reads configuratin from env variables *)
+module EmailConfigProvider = Sihl.Email.Service.EnvConfigProvider
+
+(* The email service requires a configuration provider. It uses it to 
+   fetch configuration on its own. *)
+module Email =
+  Sihl.Email.Service.Make.Smtp(EmailTemplate, EmailConfigProvider)
+```
+
+The type of `EmailConfigProvider` is different from service implementation to service implementation. The type of the config provider for SMTP is: 
+
+
+```ocaml
+val sender : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val username : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val password : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val host : Core.Ctx.t -> (string, string) Lwt_result.t
+
+val port : Core.Ctx.t -> (int option, string) Lwt_result.t
+
+val start_tls : Core.Ctx.t -> (bool, string) Lwt_result.t
+
+val ca_dir : Core.Ctx.t -> (string, string) Lwt_result.t
+```
+
+Note that it returns the configuration asynchronously. This is not needed when reading environment variables, but it allows you to implement your own config provider that reads configuration from elsewhere in a non-blocking way.
+
+#### Configuration service
+
+Use the [configuration service](https://oxidizing.github.io/sihl/sihl/Sihl__/Config_sig/module-type-SERVICE/index.html) to read configuration from various sources.
+
+A configuration is just a record holding configuration maps for `development`, `test`, and `production`.
+
+```ocaml
+let config =
+  Sihl.Config.create
+    ~development:
+      [ ("DATABASE_URL", "mariadb://root:password@127.0.0.1:3306/dev") ]
+    ~test:[ ("DATABASE_URL", "mariadb://root:password@127.0.0.1:3306/test") ]
+    ~production:[]
+```
+
+The environment variables override the configuration provided as data like above.
+
 ### Web
 [TODO]
 #### Route
