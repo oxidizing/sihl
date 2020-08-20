@@ -397,7 +397,7 @@ let _ = App.(empty |> with_services services |> with_routes routes |> run)
 
 ### Database
 
-Use the [database service](https://oxidizing.github.io/sihl/sihl/Sihl__/Database_sig/module-type-SERVICE/index.html) to connect to databases and to run queries.
+Use the [database service](https://oxidizing.github.io/sihl/sihl/Sihl__/Database_sig/module-type-SERVICE/index.html) to connect to databases and to run queries. This service is used by many other services.
 
 #### Installation
 
@@ -516,9 +516,69 @@ let get_pizza_order =
 
 ### CLI
 
-The [command line service](https://oxidizing.github.io/sihl/sihl/Sihl__/Cmd_sig/module-type-SERVICE/index.html).
+The [command line service](https://oxidizing.github.io/sihl/sihl/Sihl__/Cmd_sig/module-type-SERVICE/index.html) takes care of registering CLI commands and running them.
+
+This is the main entry point into your Sihl app. You can list all commands by running the executable. 
+
+Services can register command with the command service. This is why a lot of services have a dependency on it. All the built-in commands are contributed by individual services using this mechanism. 
+Examples for those commands are:
+
+* `migrate` is registered by the migration service and it runs the migrations 
+* `start` is registered by the web server service and it starts the web server
+* `createadmin` is registered by the user service and it creates an admin user, useful to bootstrap your app so you have one user to log in
+
+You can contribute your custom commands the same way to interact with your app through the CLI. This can be very handy for development and administration. You sometimes want to call services without going through the HTTP stack, authentication, validation and authorization layers.
  
-[TODO] 
+#### Installation
+
+`service.ml`:
+
+```ocaml
+...
+module Cmd = Sihl.Cmd.Service
+...
+```
+
+`app.ml`:
+
+```ocaml
+...
+let services: (module Sihl.Core.Container.SERVICE) list =
+  [
+    ...
+    (module Service.Cmd);
+    ...
+  ]
+...
+```
+
+#### Usage
+
+This is how the `createadmin` command is implemented:
+
+```ocaml
+...
+
+  let create_admin_cmd =
+    Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
+      ~description:"Create an admin user"
+      ~fn:(fun args ->
+        match args with
+        | [ username; email; password ] ->
+            let ctx = Core.Ctx.empty |> DbService.add_pool in
+            User_service.create_admin ctx ~email ~password ~username:(Some username)
+            |> Lwt_result.map ignore
+        | _ -> Lwt_result.fail "Usage: <username> <email> <password>")
+      ()
+
+  let _ =
+    App.(empty 
+    |> with_services services 
+    |> with_commands [ create_admin_cmd ] 
+    |> run)
+
+...
+```
 
 ### Logging
 
