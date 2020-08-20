@@ -42,9 +42,6 @@
 * [Usage](#usage)
   * [Configuration](#configuration)
   * [Web](#web)
-    * [Route](#route)
-    * [Middleware](#middleware)
-    * [Template](#template)
   * [Database](#database)
   * [CLI](#cli)
   * [Logging](#logging)
@@ -374,6 +371,8 @@ let services: (module Sihl.Core.Container.SERVICE) list =
 
 #### Route
 
+Create routes, assign them to a path and to a list of middlewares:
+
 ```ocaml
 let hello_page =
   Sihl.Web.Route.get "/hello/" (fun _ ->
@@ -398,9 +397,95 @@ let _ = App.(empty |> with_services services |> with_routes routes |> run)
 
 ### Database
 
-The [database service](https://oxidizing.github.io/sihl/sihl/Sihl__/Database_sig/module-type-SERVICE/index.html).
+Use the [database service](https://oxidizing.github.io/sihl/sihl/Sihl__/Database_sig/module-type-SERVICE/index.html) to connect to databases and to run queries.
 
-[TODO] 
+#### Installation
+
+The database service uses [caqti](https://github.com/paurkedal/ocaml-caqti) under the hood. Caqti can dynamically load the correct driver based on the `DATABASE_URL` (postgresql://). 
+
+Caqti supports following databases (caqti drivers):
+
+* PostgreSQL (caqti-driver-postgresql)
+* MariaDB (caqti-driver-mariadb)
+* SQLite (caqti-driver-sqlite)
+
+`service.ml`:
+
+```ocaml
+...
+module Db = Sihl.Data.Db.Service
+...
+```
+
+Install one of the drivers listed above.
+
+```sh
+opam install caqti-driver-postgresql
+```
+
+`dune`:
+```
+...
+caqti-driver-postgresql
+...
+```
+
+#### Usage
+
+Register the database middleware, so other services can query the database with the context that contains the database pool.
+
+```ocaml
+module DbMiddleware = Sihl.Web.Middleware.Db.Make (Service.Db)
+let middlewares = [ 
+  ...
+  DbMiddleware.m();
+  ...
+]
+```
+
+The database service should be used mostly in repositories and not in services themselves.
+
+`pizza_order_repo.ml`:
+
+```ocaml
+module MakePostgreSql 
+    (DbService: Sihl.Data.Db.Sig.SERVICE) : Pizza_order_sig.REPO =
+struct
+
+  let find_request =
+    Caqti_request.find_opt Caqti_type.string Model.t
+      {sql|
+        SELECT
+          uuid,
+          customer,
+          pizza,
+          amount,
+          status,
+          confirmed,
+          created_at,
+          updated_at
+        FROM pizza_orders 
+        WHERE pizza_orders.uuid = ?::uuid
+        |sql}
+
+  let find ctx ~id =
+    DbService.query ctx (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Connection.find_opt get_request id
+        |> Lwt_result.map_err Caqti_error.show)
+
+end
+```
+
+`pizza_order_service.ml`:
+
+```ocaml
+module Make 
+    (Repo: Pizza_order_sig.REPO) : Pizza_order_sig.SERVICE = struct
+
+    let find ctx ~id = Repo.find ctx ~id
+end
+```
 
 ### CLI
 
