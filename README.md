@@ -64,6 +64,8 @@
 
 ## About 
 
+Note that even though Sihl is being used in production, the API is still under active development.
+
 [I don't care, show me some code!](#getting-started)
 
 ### What Sihl is not
@@ -856,7 +858,7 @@ Use the [storage service](https://oxidizing.github.io/sihl/sihl/Sihl__/Storage_s
 
 ## Roadmap
 
-[TODO long-term plan, planned changes, vision]
+Our main goal is to stabilize the service APIs, so updating Sihl in the future becomes easier. We would like to attract contributions for service contributions, once the framework reaches some level of maturity.
 
 ## Contributing
 
