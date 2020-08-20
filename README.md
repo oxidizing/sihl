@@ -417,6 +417,15 @@ module Db = Sihl.Data.Db.Service
 ...
 ```
 
+`app.ml`:
+
+```ocaml
+let services : (module Sihl.Core.Container.SERVICE) list =
+  [ (module Service.Db) ]
+
+let _ = App.(empty |> with_services services |> run)
+```
+
 Install one of the drivers listed above.
 
 ```sh
