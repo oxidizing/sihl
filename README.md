@@ -389,11 +389,43 @@ let _ = App.(empty |> with_services services |> with_routes routes |> run)
 
 #### Middleware
 
-[TODO]
+A middleware is a function that takes a handler as input and returns a handler. It is typically used to add content to  the request context. Have a look at following examples of middlewares that ship with Sihl:
 
+`web_middleware_db.ml`:
+```ocaml
+module Make (Db : Data_db_sig.SERVICE) = struct
+  let m () =
+    let filter handler ctx =
+      let ctx = Db.add_pool ctx in
+      handler ctx
+    in
+    Web_middleware_core.create ~name:"database" filter
+end
+```
+
+`web_middleware_message.ml`:
+```ocaml
+let ( let* ) = Lwt.bind
+
+module Make (MessageService : Message.Sig.Service) = struct
+  let m () =
+    let filter handler ctx =
+      let* result = MessageService.rotate ctx in
+      match result with
+      | Ok (Some message) ->
+          let ctx = Message.ctx_add message ctx in
+          handler ctx
+      | Ok None -> handler ctx
+      | Error msg ->
+          Logs.err (fun m -> m "MIDDLEWARE: Can not rotate messages %s" msg);
+          handler ctx
+    in
+    Web_middleware_core.create ~name:"message" filter
+end
+```
 #### Template
 
-[TODO]
+Rendering templates is not done by Sihl directly. We recommend to use [TyXML](https://ocsigen.org/tyxml/4.4.0/manual/intro) to turn valid HTML data into strings.
 
 ### Database
 
@@ -582,47 +614,171 @@ This is how the `createadmin` command is implemented:
 
 ### Logging
 
-The [logging service](https://oxidizing.github.io/sihl/sihl/Sihl__/Log_sig/module-type-SERVICE/index.html).
+The [logging service](https://oxidizing.github.io/sihl/sihl/Sihl__/Log_sig/module-type-SERVICE/index.html) is used to report with various log levels and to log to various backends like the file system or stdout.
 
-[TODO] 
+#### Installation
+
+`service.ml`:
+
+```ocaml
+...
+module Log = Sihl.Log.Service
+...
+```
+
+#### Usage
+
+```ocaml
+Log.err (fun m -> m "Oh now, something went wrong! %s" msg)
+```
 
 ### User
 
-The [user service](https://oxidizing.github.io/sihl/sihl/Sihl__/User_sig/module-type-SERVICE/index.html).
+The [user service](https://oxidizing.github.io/sihl/sihl/Sihl__/User_sig/module-type-SERVICE/index.html) deals with creating, deleting, updating, finding, registering and logging in of users.
+
+User handling is a common task in web development, so Sihl comes with a minimal user model `Sihl.User.t`.
+
+#### Installation
+
+`service.ml`:
+
+```ocaml
+...
+(* Dependencies *)
+module Repo = Sihl.Data.Repo.Service
+module Cmd = Sihl.Cmd.Service
+module Db = Sihl.Data.Db.Service
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
+module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
+
+(* User service setup*)
+module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module User = Sihl.User.Service.Make (Cmd) (Db) (UserRepo)
+...
+```
+
+`app.ml`:
+
+```ocaml
+...
+let services: (module Sihl.Core.Container.SERVICE) list =
+  [
+    ...
+    (module Service.User);
+    ...
+  ]
+...
+```
+
+#### Usage
 
 [TODO] 
 
 ### Authentication
 
-The [authentication service](https://oxidizing.github.io/sihl/sihl/Sihl__/Authn_sig/module-type-SERVICE/index.html). 
+The [authentication service](https://oxidizing.github.io/sihl/sihl/Sihl__/Authn_sig/module-type-SERVICE/index.html) is used to verify whether a user is really who they claim they are. 
+
+#### Installation
+
+`service.ml`:
+
+```ocaml
+...
+(* Dependencies *)
+module Db = Sihl.Data.Db.Service
+module Repo = Sihl.Data.Repo.Service
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
+module Cmd = Sihl.Cmd.Service
+module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
+module SessionRepo =
+  Sihl.Session.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module Session = Sihl.Session.Service.Make (SessionRepo)
+module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module User = Sihl.User.Service.Make (Cmd) (Db) (UserRepo)
+
+(* Authn service setup *)
+module Authn = Sihl.Authn.Service.Make (Session) (User)
+...
+```
+
+`app.ml`:
+
+```ocaml
+...
+let services: (module Sihl.Core.Container.SERVICE) list =
+  [
+    ...
+    (module Service.Authn);
+    ...
+  ]
+...
+```
+
+#### Usage
 
 [TODO] 
 
 ### Authorization
 
-[Authorization](https://oxidizing.github.io/sihl/sihl/Sihl/Authz/index.html) is not implemented as a service as it provides only simple pure functions. 
+[Authorization](https://oxidizing.github.io/sihl/sihl/Sihl/Authz/index.html) is provide as a small set of pure functions, so there is no installation step. It can be used to check whether a user is allowed to do certain things.
+
+#### Usage
+
+[TODO]
 
 ### Message
 
-The [message service](https://oxidizing.github.io/sihl/sihl/Sihl__/Message_sig/module-type-SERVICE/index.html). 
+#### Installation
+
+[TODO]
+
+#### Usage
+
+The [message service](https://oxidizing.github.io/sihl/sihl/Sihl__/Message_sig/module-type-SERVICE/index.html) can be used to set and retrieve flash messages. Flash messages are often used to carry error messages across request-response lifecycles when using server side rendered forms.
+
+#### Installation
+
+[TODO] 
+
+#### Usage
 
 [TODO] 
 
 ### Token
 
-The [token service](https://oxidizing.github.io/sihl/sihl/Sihl__/Token_sig/module-type-SERVICE/index.html).
+The [token service](https://oxidizing.github.io/sihl/sihl/Sihl__/Token_sig/module-type-SERVICE/index.html) provides an API to generate tokens that carry some data and expire after a certain amount of time. It takes care of secure random byte generation and the persistence and validation of tokens.
+
+#### Installation
+
+[TODO]
+
+#### Usage
 
 [TODO] 
 
 ### Session
 
-The [session service](https://oxidizing.github.io/sihl/sihl/Sihl__/Session_sig/module-type-SERVICE/index.html).
+The [session service](https://oxidizing.github.io/sihl/sihl/Sihl__/Session_sig/module-type-SERVICE/index.html) provides an API to a key-value store where the scope is a user session. Anonymous users can have unauthenticated user sessions.
+
+The message service uses anonymous sessions to store the message that should be displayed upon next request.
+
+#### Installation
 
 [TODO] 
+
+#### Usage
+
+[TODO]
 
 ### Schedule
 
 The [schedule service](https://oxidizing.github.io/sihl/sihl/Sihl__/Schedule_sig/module-type-SERVICE/index.html).
+
+#### Installation
+
+[TODO]
+
+#### Usage
 
 [TODO] 
 
@@ -630,31 +786,55 @@ The [schedule service](https://oxidizing.github.io/sihl/sihl/Sihl__/Schedule_sig
 
 The [email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html).
 
+#### Installation
+
+[TODO]
+
+#### Usage
+
 [TODO] 
 
-#### Delayed Email
+#### Implementations
 
-The [delayed email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html) looks exactly the same as the usual email service.
+##### Delayed email
 
-[TODO] 
+The [delayed email service](https://oxidizing.github.io/sihl/sihl/Sihl__/Email_sig/module-type-SERVICE/index.html) looks exactly the same as the usual email service. 
 
 ### Job queue
 
 The [job queue service](https://oxidizing.github.io/sihl/sihl/Sihl__/Queue_sig/module-type-SERVICE/index.html).
 
+#### Installation
+
 [TODO] 
 
-#### Polling job queue
+#### Usage
+
+[TODO] 
+
+#### Implementations
+
+##### Polling job queue
 
 The [polling job queue service](https://oxidizing.github.io/sihl/sihl/Sihl__/Queue_sig/module-type-SERVICE/index.html) looks exactly the same as the normal queue service.
 
-[TODO] 
+[TODO]
 
 ### Storage
 
-The [storage service](https://oxidizing.github.io/sihl/sihl/Sihl__/Storage_sig/module-type-SERVICE/index.html).
+Use the [storage service](https://oxidizing.github.io/sihl/sihl/Sihl__/Storage_sig/module-type-SERVICE/index.html) to store and retrieve large files in block storages. 
+
+#### Installation
+
+[TODO]
+
+#### Usage
 
 [TODO] 
+
+#### Implementations
+
+[TODO fs, s3]
 
 ### Testing
 
@@ -662,7 +842,7 @@ The [storage service](https://oxidizing.github.io/sihl/sihl/Sihl__/Storage_sig/m
 
 ## Roadmap
 
-[TODO long-term plan]
+[TODO long-term plan, planned changes, vision]
 
 ## Contributing
 
