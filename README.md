@@ -15,7 +15,7 @@
   <h3 align="center">Sihl</h3>
 
   <p align="center">
-    A web framework for functional web development in OCaml and Reason.
+    The modular functional web framework.
     <br />
     <a href="https://oxidizing.github.io/sihl/"><strong>Explore the docs »</strong></a>
     <br />
@@ -107,6 +107,20 @@ But the final and most important reason is the module system, which gives Sihl i
 Sihl uses OCaml modules for statically typed dependency injection. If your app compiles, the dependencies are wired up correctly. You can not use what's not there.
 
 Learn more about it in the [concepts](#concepts).
+
+### Design goals
+
+#### Modularity
+
+[property inherited from OCaml]
+
+#### Pragmatism over purity
+
+[use what works, just enough abstraction, not too alien for new devs]
+
+#### Fun
+
+[longterm maintanability, minimize frustration with framework]
 
 ## Getting Started
 

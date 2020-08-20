@@ -14,8 +14,8 @@
 
 (package
  (name sihl)
- (synopsis "A web framework for Reason and OCaml")
- (description "A web framework for Reason and OCaml to build apps rapidly.")
+ (synopsis "The modular functional web framework.")
+ (description "Build web apps fast with long-term maintanability in mind.")
  (depends
   ;; General system dependencies
   (dune (>= 2.4))
