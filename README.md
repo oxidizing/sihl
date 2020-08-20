@@ -496,6 +496,24 @@ module Make
 end
 ```
 
+Then you can use the service:
+
+```ocaml
+module PizzaOrderRepo = Pizza_order_repo.MakePostgreSql (Service.Db)
+module PizzaOrderService = Pizza_order_service.Make (PizzaOrderRepo)
+
+let get_pizza_order =
+  Sihl.Web.Route.get "/pizza-orders/:id" (fun ctx ->
+      Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
+
+let get_pizza_order =
+  Sihl.Web.Route.get "/pizza-orders/:id" (fun ctx ->
+      let id = Sihl.Web.Req.param ctx "id" in
+      let pizza = PizzaOrderService.find ctx ~id in
+      ...
+      )
+```
+
 ### CLI
 
 The [command line service](https://oxidizing.github.io/sihl/sihl/Sihl__/Cmd_sig/module-type-SERVICE/index.html).
