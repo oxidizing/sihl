@@ -58,7 +58,7 @@ module ConfigProvider = struct
 [SMTP_SENDER]: Sender address from where the emails come from
 [SMTP_HOST]: Host address of the SMTP server
 [SMTP_USERNAME]: Username for the SMTP server login
-[SMTP_USERNAME]: Password for the SMTP server login
+[SMTP_PASSWORD]: Password for the SMTP server login
 [SMTP_PORT]: Port number, default is 587
 [SMTP_START_TLS]: Whether to use TLS, default is true
 [CA_DIR]: Location of root CA certificates on the file system, default is /etc/ssl/certs

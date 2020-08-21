@@ -15,7 +15,7 @@
 (package
  (name sihl)
  (synopsis "The modular functional web framework")
- (description "Build web apps fast with long-term maintanability in mind.")
+ (description "Build web apps fast with long-term maintainability in mind.")
  (depends
   ;; General system dependencies
   (dune (>= 2.4))
