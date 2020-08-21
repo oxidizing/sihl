@@ -1,8 +1,6 @@
 open Base
+open Lwt.Syntax
 open Alcotest_lwt
-
-let ( let* ) = Lwt.bind
-
 module Token =
   Test_common.Test.Token.Make (Service.Db) (Service.Repo) (Service.Token)
 module Session =
@@ -53,13 +51,8 @@ let services : (module Sihl.Core.Container.SERVICE) list =
 let () =
   let ctx = Sihl.Core.Ctx.empty in
   Lwt_main.run
-    (let* () =
-       Service.Config.register_config ctx config
-       |> Lwt.map Result.ok_or_failwith
-     in
+    (let* () = Service.Config.register_config ctx config in
      let ctx = Service.Db.add_pool ctx in
      let* _ = Sihl.Core.Container.start_services services in
-     let* () =
-       Service.Migration.run_all ctx |> Lwt.map Base.Result.ok_or_failwith
-     in
+     let* () = Service.Migration.run_all ctx in
      run "mariadb" @@ test_suite ctx)

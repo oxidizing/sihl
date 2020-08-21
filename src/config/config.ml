@@ -28,10 +28,10 @@ let read_string ?default key =
       (Map.find (Config_core.Internal.get ()) key)
   in
   match (default, value) with
-  | _, Some value -> Ok value
-  | Some default, None -> Ok default
+  | _, Some value -> value
+  | Some default, None -> default
   | None, None ->
-      Error (Printf.sprintf "CONFIG: Configuration %s not found" key)
+      failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
 
 let read_int ?default key =
   let value =
@@ -41,12 +41,13 @@ let read_int ?default key =
   match (default, value) with
   | _, Some value -> (
       match Option.try_with (fun () -> Base.Int.of_string value) with
-      | Some value -> Ok value
+      | Some value -> value
       | None ->
-          Error (Printf.sprintf "CONFIG: Configuration %s is not a int" key) )
-  | Some default, None -> Ok default
+          failwith (Printf.sprintf "CONFIG: Configuration %s is not a int" key)
+      )
+  | Some default, None -> default
   | None, None ->
-      Error (Printf.sprintf "CONFIG: Configuration %s not found" key)
+      failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
 
 let read_bool ?default key =
   let value =
@@ -56,9 +57,10 @@ let read_bool ?default key =
   match (default, value) with
   | _, Some value -> (
       match Caml.bool_of_string_opt value with
-      | Some value -> Ok value
+      | Some value -> value
       | None ->
-          Error (Printf.sprintf "CONFIG: Configuration %s is not a int" key) )
-  | Some default, None -> Ok default
+          failwith (Printf.sprintf "CONFIG: Configuration %s is not a int" key)
+      )
+  | Some default, None -> default
   | None, None ->
-      Error (Printf.sprintf "CONFIG: Configuration %s not found" key)
+      failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)

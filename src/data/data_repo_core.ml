@@ -1,4 +1,4 @@
-type cleaner = Core.Ctx.t -> (unit, string) Result.t Lwt.t
+type cleaner = Core.Ctx.t -> unit Lwt.t
 
 module Meta = struct
   type t = { total : int } [@@deriving show, eq, fields, make]

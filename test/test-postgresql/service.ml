@@ -1,9 +1,9 @@
 (* Essential services *)
-module Db = Sihl.Data.Db.Service
 module Log = Sihl.Log.Service
 module Config = Sihl.Config.Service
+module Db = Sihl.Data.Db.Service.Make (Config) (Log)
 module Repo = Sihl.Data.Repo.Service
-module MigrationRepo = Sihl.Data.Migration.Service.Repo.PostgreSql
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakePostgreSql (Db)
 module Cmd = Sihl.Cmd.Service
 module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
 

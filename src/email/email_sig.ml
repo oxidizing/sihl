@@ -2,54 +2,37 @@ module Template = struct
   module type SERVICE = sig
     include Core_container.SERVICE
 
-    val get :
-      Core.Ctx.t ->
-      id:string ->
-      (Email_core.Template.t option, string) Result.t Lwt.t
+    val get : Core.Ctx.t -> id:string -> Email_core.Template.t option Lwt.t
 
     val get_by_name :
-      Core.Ctx.t ->
-      name:string ->
-      (Email_core.Template.t option, string) Result.t Lwt.t
+      Core.Ctx.t -> name:string -> Email_core.Template.t option Lwt.t
 
     val create :
       Core.Ctx.t ->
       name:string ->
       html:string ->
       text:string ->
-      (Email_core.Template.t, string) Result.t Lwt.t
+      Email_core.Template.t Lwt.t
 
     val update :
       Core.Ctx.t ->
       template:Email_core.Template.t ->
-      (Email_core.Template.t, string) Result.t Lwt.t
+      Email_core.Template.t Lwt.t
 
-    val render :
-      Core.Ctx.t -> Email_core.t -> (Email_core.t, string) Result.t Lwt.t
+    val render : Core.Ctx.t -> Email_core.t -> Email_core.t Lwt.t
   end
 
   module type REPO = sig
     include Data.Repo.Sig.REPO
 
-    val get :
-      Core.Ctx.t ->
-      id:string ->
-      (Email_core.Template.t option, string) Result.t Lwt.t
+    val get : Core.Ctx.t -> id:string -> Email_core.Template.t option Lwt.t
 
     val get_by_name :
-      Core.Ctx.t ->
-      name:string ->
-      (Email_core.Template.t option, string) Result.t Lwt.t
+      Core.Ctx.t -> name:string -> Email_core.Template.t option Lwt.t
 
-    val insert :
-      Core.Ctx.t ->
-      template:Email_core.Template.t ->
-      (unit, string) Result.t Lwt.t
+    val insert : Core.Ctx.t -> template:Email_core.Template.t -> unit Lwt.t
 
-    val update :
-      Core.Ctx.t ->
-      template:Email_core.Template.t ->
-      (unit, string) Result.t Lwt.t
+    val update : Core.Ctx.t -> template:Email_core.Template.t -> unit Lwt.t
   end
 end
 
@@ -64,23 +47,23 @@ module ConfigProvider = struct
 [CA_DIR]: Location of root CA certificates on the file system, default is /etc/ssl/certs
 *)
   module type SMTP = sig
-    val sender : Core.Ctx.t -> (string, string) Lwt_result.t
+    val sender : Core.Ctx.t -> string Lwt.t
 
-    val username : Core.Ctx.t -> (string, string) Lwt_result.t
+    val username : Core.Ctx.t -> string Lwt.t
 
-    val password : Core.Ctx.t -> (string, string) Lwt_result.t
+    val password : Core.Ctx.t -> string Lwt.t
 
-    val host : Core.Ctx.t -> (string, string) Lwt_result.t
+    val host : Core.Ctx.t -> string Lwt.t
 
-    val port : Core.Ctx.t -> (int option, string) Lwt_result.t
+    val port : Core.Ctx.t -> int option Lwt.t
 
-    val start_tls : Core.Ctx.t -> (bool, string) Lwt_result.t
+    val start_tls : Core.Ctx.t -> bool Lwt.t
 
-    val ca_dir : Core.Ctx.t -> (string, string) Lwt_result.t
+    val ca_dir : Core.Ctx.t -> string Lwt.t
   end
 
   module type SENDGRID = sig
-    val api_key : Core.Ctx.t -> (string, string) Lwt_result.t
+    val api_key : Core.Ctx.t -> string Lwt.t
   end
 end
 

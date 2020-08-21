@@ -1,6 +1,5 @@
 open Base
-
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 let kind = "password_reset"
 
@@ -28,11 +27,11 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
         let* token =
           TokenService.create ctx ~kind ~data ~expires_in:Utils.Time.OneDay ()
         in
-        Lwt_result.return @@ Some token
+        Lwt.return @@ Some token
     | None ->
         Logs.warn (fun m ->
             m "PASSWORD_RESET: No user found with email %s" email);
-        Lwt_result.return None
+        Lwt.return None
 
   let reset_password ctx ~token ~password ~password_confirmation =
     let* token = TokenService.find_opt ctx ~value:token () in
@@ -47,17 +46,17 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
       |> Result.map ~f:TokenData.user_id
     in
     match user_id with
-    | Error msg -> Lwt_result.return @@ Error msg
+    | Error msg -> Lwt.return @@ Error msg
     | Ok user_id -> (
         let* user = UserService.get ctx ~user_id in
         match user with
         | None ->
-            Lwt_result.return
+            Lwt.return
             @@ Error (Printf.sprintf "User with id %s not found" user_id)
         | Some user ->
             let* result =
               UserService.set_password ctx ~user ~password
                 ~password_confirmation ()
             in
-            Lwt_result.return @@ Result.map ~f:(fun _ -> ()) result )
+            Lwt.return @@ Result.map ~f:(fun _ -> ()) result )
 end

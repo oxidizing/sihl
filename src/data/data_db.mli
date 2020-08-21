@@ -12,6 +12,3 @@ type connection = (module Caqti_lwt.CONNECTION)
 val ctx_key_connection : connection Core_ctx.key
 
 val middleware_key_connection : connection Opium.Hmap.key
-
-val set_fk_check :
-  (module Caqti_lwt.CONNECTION) -> check:bool -> (unit, string) Lwt_result.t

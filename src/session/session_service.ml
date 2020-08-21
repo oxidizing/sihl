@@ -1,6 +1,5 @@
 open Base
-
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
   let lifecycle =
@@ -8,24 +7,22 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
       (fun ctx ->
         (let* () = Repo.register_migration ctx in
          Repo.register_cleaner ctx)
-        |> Lwt.map Result.ok_or_failwith
         |> Lwt.map (fun () -> ctx))
       (fun _ -> Lwt.return ())
 
   let require_session_key ctx =
     Core.Ctx.find Session_sig.ctx_session_key ctx
     |> Result.of_option ~error:"SESSION: No session found in context"
-    |> Lwt.return
+    |> Result.ok_or_failwith |> Lwt.return
 
   let set_value ctx ~key ~value =
     let* session_key = require_session_key ctx in
     let* session = Repo.get ctx ~key:session_key in
     match session with
     | None ->
-        Lwt.return
-        @@ Ok
-             (Logs.warn (fun m ->
-                  m "SESSION: Provided session key has no session in DB"))
+        Logs.warn (fun m ->
+            m "SESSION: Provided session key has no session in DB");
+        failwith "SESSION: Provided session key has no session in DB"
     | Some session ->
         let session = Session_core.set ~key ~value session in
         Repo.update ctx session
@@ -35,10 +32,9 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
     let* session = Repo.get ctx ~key:session_key in
     match session with
     | None ->
-        Lwt.return
-        @@ Ok
-             (Logs.warn (fun m ->
-                  m "SESSION: Provided session key has no session in DB"))
+        Logs.warn (fun m ->
+            m "SESSION: Provided session key has no session in DB");
+        failwith "SESSION: Provided session key has no session in DB"
     | Some session ->
         let session = Session_core.remove ~key session in
         Repo.update ctx session
@@ -50,9 +46,8 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
     | None ->
         Logs.warn (fun m ->
             m "SESSION: Provided session key has no session in DB");
-        Lwt.return @@ Ok None
-    | Some session ->
-        Session_core.get key session |> Result.return |> Lwt.return
+        Lwt.return None
+    | Some session -> Session_core.get key session |> Lwt.return
 
   let get_session ctx ~key = Repo.get ctx ~key
 
@@ -67,7 +62,7 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
           Session_core.set ~key ~value session)
     in
     let* () = insert_session ctx ~session in
-    Lwt_result.return session
+    Lwt.return session
 end
 
 module Repo = struct
@@ -89,10 +84,9 @@ module Repo = struct
         FROM session_sessions
         |sql}
 
-      let get_all connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list get_all_request ()
-        |> Lwt_result.map_err Caqti_error.show
+      let get_all ctx =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.collect_list get_all_request ())
 
       let get_request =
         Caqti_request.find_opt Caqti_type.string Model.t
@@ -105,10 +99,9 @@ module Repo = struct
         WHERE session_sessions.session_key = ?
         |sql}
 
-      let get connection ~id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id
-        |> Lwt_result.map_err Caqti_error.show
+      let get ctx ~key =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.find_opt get_request key)
 
       let insert_request =
         Caqti_request.exec Model.t
@@ -124,10 +117,9 @@ module Repo = struct
         )
         |sql}
 
-      let insert connection ~session =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request session
-        |> Lwt_result.map_err Caqti_error.show
+      let insert ctx session =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec insert_request session)
 
       let update_request =
         Caqti_request.exec Model.t
@@ -138,10 +130,9 @@ module Repo = struct
         WHERE session_key = $1
         |sql}
 
-      let update connection ~session =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request session
-        |> Lwt_result.map_err Caqti_error.show
+      let update ctx session =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec update_request session)
 
       let delete_request =
         Caqti_request.exec Caqti_type.string
@@ -150,9 +141,9 @@ module Repo = struct
       WHERE session_sessions.session_key = ?
       |sql}
 
-      let delete connection ~id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_request id |> Lwt_result.map_err Caqti_error.show
+      let delete ctx ~key =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec delete_request key)
 
       let clean_request =
         Caqti_request.exec Caqti_type.unit
@@ -160,9 +151,9 @@ module Repo = struct
            TRUNCATE session_sessions;
           |sql}
 
-      let clean connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show
+      let clean ctx =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec clean_request ())
     end
 
     module Migration = struct
@@ -188,22 +179,21 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 
     let register_cleaner ctx =
       let cleaner ctx =
-        let ( let* ) = Lwt_result.bind in
-        let* () = Data.Db.set_fk_check ~check:false |> DbService.query ctx in
-        let* () = Sql.clean |> DbService.query ctx in
-        Data.Db.set_fk_check ~check:true |> DbService.query ctx
+        let* () = DbService.set_fk_check ctx ~check:false in
+        let* () = Sql.clean ctx in
+        DbService.set_fk_check ctx ~check:true
       in
       RepoService.register_cleaner ctx cleaner
 
-    let get_all ctx = Sql.get_all |> DbService.query ctx
+    let get_all = Sql.get_all
 
-    let get ctx ~key = Sql.get ~id:key |> DbService.query ctx
+    let get = Sql.get
 
-    let insert ctx session = Sql.insert ~session |> DbService.query ctx
+    let insert = Sql.insert
 
-    let update ctx session = Sql.update ~session |> DbService.query ctx
+    let update = Sql.update
 
-    let delete ctx ~key = Sql.delete ~id:key |> DbService.query ctx
+    let delete = Sql.delete
   end
 
   module MakePostgreSql
@@ -224,10 +214,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         FROM session_sessions
         |sql}
 
-      let get_all connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list get_all_request ()
-        |> Lwt_result.map_err Caqti_error.show
+      let get_all ctx =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.collect_list get_all_request ())
 
       let get_request =
         Caqti_request.find_opt Caqti_type.string Model.t
@@ -240,10 +229,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         WHERE session_sessions.session_key = ?
         |sql}
 
-      let get connection ~id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id
-        |> Lwt_result.map_err Caqti_error.show
+      let get ctx ~key =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.find_opt get_request key)
 
       let insert_request =
         Caqti_request.exec Model.t
@@ -259,10 +247,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         )
         |sql}
 
-      let insert connection ~session =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request session
-        |> Lwt_result.map_err Caqti_error.show
+      let insert ctx session =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec insert_request session)
 
       let update_request =
         Caqti_request.exec Model.t
@@ -273,10 +260,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         WHERE session_key = $1
         |sql}
 
-      let update connection ~session =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request session
-        |> Lwt_result.map_err Caqti_error.show
+      let update ctx session =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec update_request session)
 
       let delete_request =
         Caqti_request.exec Caqti_type.string
@@ -285,9 +271,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       WHERE session_sessions.session_key = ?
            |sql}
 
-      let delete connection ~id =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_request id |> Lwt_result.map_err Caqti_error.show
+      let delete ctx ~key =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec delete_request key)
 
       let clean_request =
         Caqti_request.exec Caqti_type.unit
@@ -295,9 +281,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         TRUNCATE TABLE session_sessions CASCADE;
         |sql}
 
-      let clean connection =
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show
+      let clean ctx =
+        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+            Connection.exec clean_request ())
     end
 
     module Migration = struct
@@ -321,18 +307,16 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     let register_migration ctx =
       MigrationService.register ctx (Migration.migration ())
 
-    let register_cleaner ctx =
-      let cleaner ctx = Sql.clean |> DbService.query ctx in
-      RepoService.register_cleaner ctx cleaner
+    let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
 
-    let get_all ctx = Sql.get_all |> DbService.query ctx
+    let get_all = Sql.get_all
 
-    let get ctx ~key = Sql.get ~id:key |> DbService.query ctx
+    let get = Sql.get
 
-    let insert ctx session = Sql.insert ~session |> DbService.query ctx
+    let insert = Sql.insert
 
-    let update ctx session = Sql.update ~session |> DbService.query ctx
+    let update = Sql.update
 
-    let delete ctx ~key = Sql.delete ~id:key |> DbService.query ctx
+    let delete = Sql.delete
   end
 end
