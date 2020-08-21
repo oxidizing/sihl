@@ -42,7 +42,11 @@
 * [Usage](#usage)
   * [Configuration](#configuration)
   * [Web](#web)
+    * [Route](#route)
+    * [Middleware](#middleware)
+    * [Template](#template)
   * [Database](#database)
+    * [Migration](#migration)
   * [CLI](#cli)
   * [Logging](#logging)
   * [User](#user)
@@ -271,6 +275,8 @@ Sihl provides service interfaces and some implementations. As an example, Sihl p
 When you create a Sihl app, you usually start out with your service setup in a file `service.ml`. There, you list all services that you are going to use in the project. We can compose large services out of simple and small services using parameterized modules. This service composition is statically checked and it can be used throughout your own project.
 
 Sihl has to be made aware of the services you are going to use. That is why the second step of setting of services is done in the app description file.
+
+[TODO explain lifecycles]
 
 ### App
 
@@ -588,6 +594,10 @@ let get_pizza_order =
       ...
       )
 ```
+
+### Migration
+
+[TODO]
 
 ### CLI
 

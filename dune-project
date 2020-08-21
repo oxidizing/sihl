@@ -14,7 +14,7 @@
 
 (package
  (name sihl)
- (synopsis "The modular functional web framework.")
+ (synopsis "The modular functional web framework")
  (description "Build web apps fast with long-term maintanability in mind.")
  (depends
   ;; General system dependencies
