@@ -145,7 +145,34 @@ opam install dune
 
 ### Installation
 
+To create the switch with the proper compiler version: 
 ```sh
+opam switch create 4.08.1
+opam switch 4.08.1
+```
+
+To install the database driver dependencies for MariaDB and PostgreSQL:
+```sh
+(Ubuntu)
+sudo apt-get install -y libmariadbclient-dev libpq-dev
+
+(Arch)
+pacman -S mariadb-libs postgresql-libs
+```
+
+To install `inotifywait` to watch your build:
+```sh
+(Ubuntu)
+sudo apt-get install -y inotify-tools
+
+(Arch)
+pacman -S inotify-tools
+```
+
+To install all dependencies and Sihl:
+```sh
+opam install .
+opam install caqti-driver-mariadb caqti-driver-postgresql
 opam install sihl
 ```
 
