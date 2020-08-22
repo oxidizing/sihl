@@ -1,7 +1,5 @@
 open Base
-
-let ( let* ) = Lwt.bind
-
+open Lwt.Syntax
 module Job = Queue_core.Job
 module WorkableJob = Queue_core.WorkableJob
 module JobInstance = Queue_core.JobInstance
@@ -20,9 +18,6 @@ module MakePolling
     let now = Ptime_clock.now () in
     let job_instance = JobInstance.create ~input ~delay ~now job in
     Repo.enqueue ctx ~job_instance
-    |> Lwt_result.map_err (fun msg ->
-           "QUEUE: Failure while enqueuing job instance: " ^ msg)
-    |> Lwt.map Result.ok_or_failwith
 
   let run_job ctx input ~job ~job_instance =
     let job_instance_id = JobInstance.id job_instance in
@@ -90,9 +85,6 @@ module MakePolling
         | Some () -> JobInstance.set_succeeded job_instance
       in
       update ctx ~job_instance
-      |> Lwt_result.map_err (fun msg ->
-             "QUEUE: Failure while updating job instance: " ^ msg)
-      |> Lwt.map Result.ok_or_failwith
     else (
       Log.debug (fun m ->
           m "QUEUE: Not going to run job instance %a" JobInstance.pp
@@ -100,12 +92,7 @@ module MakePolling
       Lwt.return () )
 
   let work_queue ctx ~jobs =
-    let* pending_job_instances =
-      Repo.find_workable ctx
-      |> Lwt_result.map_err (fun msg ->
-             "QUEUE: Failure while finding pending job instances " ^ msg)
-      |> Lwt.map Result.ok_or_failwith
-    in
+    let* pending_job_instances = Repo.find_workable ctx in
     let n_job_instances = List.length pending_job_instances in
     if n_job_instances > 0 then (
       Log.debug (fun m ->
@@ -167,10 +154,8 @@ module MakePolling
     Core.Container.Lifecycle.make "queue"
       ~dependencies:[ ScheduleService.lifecycle; Log.lifecycle ]
       (fun ctx ->
-        let* () =
-          Repo.register_migration ctx |> Lwt.map Result.ok_or_failwith
-        in
-        let* () = Repo.register_cleaner ctx |> Lwt.map Result.ok_or_failwith in
+        let* () = Repo.register_migration ctx in
+        let* () = Repo.register_cleaner ctx in
         start_queue ctx
         |> Lwt.map Result.ok_or_failwith
         |> Lwt.map (fun () -> ctx))

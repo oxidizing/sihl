@@ -2,7 +2,7 @@ open Base
 
 let ( let* ) = Lwt.bind
 
-type fn = string list -> (unit, string) Result.t Lwt.t [@@deriving show]
+type fn = string list -> unit Lwt.t [@@deriving show]
 
 type t = { name : string; help : string option; description : string; fn : fn }
 [@@deriving show, fields, make]

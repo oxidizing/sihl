@@ -1,4 +1,4 @@
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 module MakeMariaDb
     (DbService : Data.Db.Sig.SERVICE)
@@ -86,20 +86,19 @@ CREATE TABLE IF NOT EXISTS user_users (
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request = Caqti_request.collect ~oneshot:true pt Model.t query in
-        let* users =
-          Connection.collect_list request pv
-          |> Lwt_result.map_err Caqti_error.show
-        in
+        let* users = Connection.collect_list request pv in
         let request =
           Caqti_request.find ~oneshot:true Caqti_type.unit Caqti_type.int
             "SELECT FOUND_ROWS()"
         in
         let* meta =
           Connection.find request ()
-          |> Lwt_result.map_err Caqti_error.show
           |> Lwt_result.map (fun total -> Data.Repo.Meta.make ~total)
         in
-        Lwt_result.return (users, meta))
+        match (users, meta) with
+        | Ok users, Ok meta -> Lwt.return @@ Ok (users, meta)
+        | _, Error error -> Lwt.return @@ Error error
+        | Error error, _ -> Lwt.return @@ Error error)
 
   let get_request =
     Caqti_request.find_opt Caqti_type.string Model.t
@@ -126,8 +125,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get ctx ~id =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.find_opt get_request id)
 
   let get_by_email_request =
     Caqti_request.find_opt Caqti_type.string Model.t
@@ -154,8 +152,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get_by_email ctx ~email =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.find_opt get_by_email_request email)
 
   let insert_request =
     Caqti_request.exec Model.t
@@ -184,8 +181,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let insert ctx ~user =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request user
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec insert_request user)
 
   let update_request =
     Caqti_request.exec Model.t
@@ -204,21 +200,18 @@ CREATE TABLE IF NOT EXISTS user_users (
   let update ctx ~user =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request user
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec update_request user)
 
   let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE user_users;"
 
-  let clean connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show
+  let clean ctx =
+    DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request ())
 
   let register_migration ctx =
     MigrationService.register ctx (Migration.migration ())
 
-  let register_cleaner ctx =
-    let cleaner ctx = clean |> DbService.query ctx in
-    RepoService.register_cleaner ctx cleaner
+  let register_cleaner ctx = RepoService.register_cleaner ctx clean
 end
 
 module MakePostgreSql
@@ -293,12 +286,13 @@ CREATE TABLE IF NOT EXISTS user_users (
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request = Caqti_request.collect ~oneshot:true pt Model.t query in
-        let* users =
-          Connection.collect_list request pv
-          |> Lwt_result.map_err Caqti_error.show
-        in
+        let* users = Connection.collect_list request pv in
         (* TODO Find out best way to get total rows for that query without limit *)
-        Lwt_result.return (users, Data.Repo.Meta.make ~total:(List.length users)))
+        match users with
+        | Ok users ->
+            let meta = Data.Repo.Meta.make ~total:(List.length users) in
+            Lwt.return @@ Ok (users, meta)
+        | Error error -> Lwt.return @@ Error error)
 
   let get_request =
     Caqti_request.find_opt Caqti_type.string Model.t
@@ -319,8 +313,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get ctx ~id =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.find_opt get_request id)
 
   let get_by_email_request =
     Caqti_request.find_opt Caqti_type.string Model.t
@@ -341,8 +334,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get_by_email ctx ~email =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.find_opt get_by_email_request email)
 
   let insert_request =
     Caqti_request.exec Model.t
@@ -371,8 +363,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let insert ctx ~user =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request user
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec insert_request user)
 
   let update_request =
     Caqti_request.exec Model.t
@@ -392,20 +383,17 @@ CREATE TABLE IF NOT EXISTS user_users (
   let update ctx ~user =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request user
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec update_request user)
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE user_users CASCADE;"
 
-  let clean connection =
-    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-    Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show
+  let clean ctx =
+    DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request ())
 
   let register_migration ctx =
     MigrationService.register ctx (Migration.migration ())
 
-  let register_cleaner ctx =
-    let cleaner ctx = clean |> DbService.query ctx in
-    RepoService.register_cleaner ctx cleaner
+  let register_cleaner ctx = RepoService.register_cleaner ctx clean
 end

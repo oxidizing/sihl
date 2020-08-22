@@ -1,7 +1,5 @@
 open Base
 
-let ( let* ) = Lwt.bind
-
 let run_forever () =
   let p, _ = Lwt.wait () in
   p
@@ -28,5 +26,5 @@ module Make (CmdService : Cmd.Sig.SERVICE) : Web_server_sig.SERVICE = struct
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
-  let register_routes _ routes = Lwt_result.return (registered_routes := routes)
+  let register_routes _ routes = Lwt.return (registered_routes := routes)
 end

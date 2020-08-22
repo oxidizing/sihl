@@ -4,13 +4,11 @@ module JobInstance = Queue_core.JobInstance
 module type REPO = sig
   include Data.Repo.Sig.REPO
 
-  val enqueue :
-    Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t
+  val enqueue : Core.Ctx.t -> job_instance:JobInstance.t -> unit Lwt.t
 
-  val find_workable : Core.Ctx.t -> (JobInstance.t list, string) Result.t Lwt.t
+  val find_workable : Core.Ctx.t -> JobInstance.t list Lwt.t
 
-  val update :
-    Core.Ctx.t -> job_instance:JobInstance.t -> (unit, string) Result.t Lwt.t
+  val update : Core.Ctx.t -> job_instance:JobInstance.t -> unit Lwt.t
 end
 
 module type SERVICE = sig

@@ -21,11 +21,11 @@ end
 module Internal : sig
   type t = (string, string, String.comparator_witness) Map.t
 
-  val of_list : Config.key_value list -> (t, string) Result.t
+  val of_list : Config.key_value list -> t
 
   val read_by_env : Config.t -> Config.key_value list
 
-  val register : Config.t -> (unit, string) Result.t
+  val register : Config.t -> unit
 
   val get : unit -> t
 end = struct
@@ -36,9 +36,9 @@ end = struct
   let of_list kvs =
     match Map.of_alist (module String) kvs with
     | `Duplicate_key msg ->
-        Error
+        failwith
           ("CONFIG: Duplicate key detected while creating configuration: " ^ msg)
-    | `Ok map -> Ok map
+    | `Ok map -> map
 
   let read_by_env setting =
     match Sys.getenv "SIHL_ENV" |> Option.value ~default:"development" with
@@ -48,11 +48,9 @@ end = struct
 
   let register config =
     let config = config |> read_by_env |> of_list in
-    match (config, !state) with
-    | Ok config, None -> Ok (state := Some config)
-    | Ok _, Some _ ->
-        Error "CONFIG: There were already configurations registered"
-    | Error msg, _ -> Error msg
+    match !state with
+    | None -> state := Some config
+    | Some _ -> failwith "CONFIG: There were already configurations registered"
 
   let get () =
     Option.value_exn

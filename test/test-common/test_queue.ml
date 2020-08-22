@@ -10,7 +10,7 @@ struct
   let dispatched_job_gets_processed ctx with_context _ () =
     let has_ran_job = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
@@ -33,7 +33,7 @@ struct
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let job1 =
       Sihl.Queue.create_job ~name:"foo1" ~with_context
         ~input_to_string:(fun _ -> None)
@@ -67,7 +67,7 @@ struct
   let cleans_up_job_after_error ctx with_context _ () =
     let has_cleaned_up_job = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
@@ -91,7 +91,7 @@ struct
   let cleans_up_job_after_exception ctx with_context _ () =
     let has_cleaned_up_job = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let job =
       Sihl.Queue.create_job ~name:"foo" ~with_context
         ~input_to_string:(fun _ -> None)
@@ -117,7 +117,7 @@ struct
       Sihl.Core.Ctx.create_key ()
     in
     let* () = Sihl.Core.Container.stop_services ctx [ (module QueueService) ] in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let has_custom_ctx_string = ref false in
     let custom_with_context =
       Fn.compose with_context (fun ctx ->

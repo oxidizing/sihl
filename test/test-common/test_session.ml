@@ -12,12 +12,10 @@ struct
 
   let test_anonymous_request_returns_cookie _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let stack = [ Middleware.m () ] in
     let* _ = Sihl.Test.middleware_stack ctx stack in
-    let* sessions =
-      SessionService.get_all_sessions ctx |> Lwt.map Result.ok_or_failwith
-    in
+    let* sessions = SessionService.get_all_sessions ctx in
     let () =
       Alcotest.(check int "Has created session" 1 (List.length sessions))
     in
@@ -25,22 +23,15 @@ struct
 
   let test_requests_persist_session_variables _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let stack = [ Middleware.m () ] in
     let handler ctx =
       Logs.debug (fun m -> m "two %s" (Sihl.Core.Ctx.id ctx));
-      let* () =
-        SessionService.set_value ctx ~key:"foo" ~value:"bar"
-        |> Lwt.map Result.ok_or_failwith
-      in
+      let* () = SessionService.set_value ctx ~key:"foo" ~value:"bar" in
       Lwt.return @@ Sihl.Web.Res.html
     in
     let* _ = Sihl.Test.middleware_stack ctx ~handler stack in
-    let* session =
-      SessionService.get_all_sessions ctx
-      |> Lwt.map Result.ok_or_failwith
-      |> Lwt.map List.hd_exn
-    in
+    let* session = SessionService.get_all_sessions ctx |> Lwt.map List.hd_exn in
     let () =
       Alcotest.(
         check (option string) "Has created session with session value"

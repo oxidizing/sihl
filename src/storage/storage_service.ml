@@ -1,7 +1,6 @@
 open Storage_sig
 open Storage_model
-
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 module Make (Repo : REPO) : SERVICE = struct
   let lifecycle =
@@ -9,7 +8,6 @@ module Make (Repo : REPO) : SERVICE = struct
       (fun ctx ->
         (let* () = Repo.register_migration ctx in
          Repo.register_cleaner ctx)
-        |> Lwt.map Base.Result.ok_or_failwith
         |> Lwt.map (fun () -> ctx))
       (fun _ -> Lwt.return ())
 
@@ -19,32 +17,32 @@ module Make (Repo : REPO) : SERVICE = struct
     let blob_id = Data.Id.random () |> Data.Id.to_string in
     let* blob =
       match Base64.decode base64 with
-      | Error (`Msg msg) -> Lwt_result.fail msg
-      | Ok blob -> Lwt_result.return blob
+      | Error (`Msg msg) -> failwith msg
+      | Ok blob -> Lwt.return blob
     in
     let* () = Repo.insert_blob ctx ~id:blob_id ~blob in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
     let* () = Repo.insert_file ctx ~file:stored_file in
-    Lwt.return @@ Ok stored_file
+    Lwt.return stored_file
 
   let update_base64 ctx ~file ~base64 =
     let blob_id = StoredFile.blob file in
     let* blob =
       match Base64.decode base64 with
-      | Error (`Msg msg) -> Lwt_result.fail msg
-      | Ok blob -> Lwt_result.return blob
+      | Error (`Msg msg) -> failwith msg
+      | Ok blob -> Lwt.return blob
     in
     let* () = Repo.update_blob ctx ~id:blob_id ~blob in
     let* () = Repo.update_file ctx ~file in
-    Lwt.return @@ Ok file
+    Lwt.return file
 
   let get_data_base64 ctx ~file =
     let blob_id = StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
-    | Some (Error (`Msg msg)) -> Lwt_result.fail msg
-    | Some (Ok blob) -> Lwt_result.return @@ Some blob
-    | None -> Lwt_result.return None
+    | Some (Error (`Msg msg)) -> failwith msg
+    | Some (Ok blob) -> Lwt.return @@ Some blob
+    | None -> Lwt.return None
 end
 
 module Repo = struct
@@ -90,8 +88,7 @@ INSERT INTO storage_handles (
     let insert_file ctx ~file =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec insert_request file
-          |> Lwt_result.map_err Caqti_error.show)
+          Connection.exec insert_request file)
 
     let update_file_request =
       Caqti_request.exec stored_file
@@ -108,8 +105,7 @@ WHERE
     let update_file ctx ~file =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec update_file_request file
-          |> Lwt_result.map_err Caqti_error.show)
+          Connection.exec update_file_request file)
 
     let get_file_request =
       Caqti_request.find_opt Caqti_type.string stored_file
@@ -127,8 +123,7 @@ WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
     let get_file ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.find_opt get_file_request id
-          |> Lwt_result.map_err Caqti_error.show)
+          Connection.find_opt get_file_request id)
 
     let get_blob_request =
       Caqti_request.find_opt Caqti_type.string Caqti_type.string
@@ -142,8 +137,7 @@ WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
     let get_blob ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.find_opt get_blob_request id
-          |> Lwt_result.map_err Caqti_error.show)
+          Connection.find_opt get_blob_request id)
 
     let insert_blob_request =
       Caqti_request.exec
@@ -161,8 +155,7 @@ INSERT INTO storage_blobs (
     let insert_blob ctx ~id ~blob =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec insert_blob_request (id, blob)
-          |> Lwt_result.map_err Caqti_error.show)
+          Connection.exec insert_blob_request (id, blob))
 
     let update_blob_request =
       Caqti_request.exec
@@ -177,8 +170,7 @@ WHERE
     let update_blob ctx ~id ~blob =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec update_blob_request (id, blob)
-          |> Lwt_result.map_err Caqti_error.show)
+          Connection.exec update_blob_request (id, blob))
 
     let clean_handles_request =
       Caqti_request.exec Caqti_type.unit
@@ -186,10 +178,9 @@ WHERE
            TRUNCATE storage_handles;
           |sql}
 
-    let clean_handles connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec clean_handles_request ()
-      |> Lwt_result.map_err Caqti_error.show
+    let clean_handles ctx =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec clean_handles_request ())
 
     let clean_blobs_request =
       Caqti_request.exec Caqti_type.unit
@@ -197,10 +188,9 @@ WHERE
            TRUNCATE storage_blobs;
           |sql}
 
-    let clean_blobs connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec clean_blobs_request ()
-      |> Lwt_result.map_err Caqti_error.show
+    let clean_blobs ctx =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec clean_blobs_request ())
 
     let fix_collation =
       Data.Migration.create_step ~label:"fix collation"
@@ -249,11 +239,10 @@ CREATE TABLE IF NOT EXISTS storage_handles (
 
     let register_cleaner ctx =
       let cleaner ctx =
-        let ( let* ) = Lwt_result.bind in
-        let* () = Data.Db.set_fk_check ~check:false |> DbService.query ctx in
-        let* () = clean_handles |> DbService.query ctx in
-        let* () = clean_blobs |> DbService.query ctx in
-        Data.Db.set_fk_check ~check:true |> DbService.query ctx
+        let* () = DbService.set_fk_check ctx ~check:false in
+        let* () = clean_handles ctx in
+        let* () = clean_blobs ctx in
+        DbService.set_fk_check ctx ~check:true
       in
       RepoService.register_cleaner ctx cleaner
   end

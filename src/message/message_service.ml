@@ -1,7 +1,5 @@
 open Base
-
-let ( let* ) = Lwt_result.bind
-
+open Lwt.Syntax
 module Entry = Message_core.Entry
 
 let session_key = "message"
@@ -10,20 +8,20 @@ module Make (SessionService : Session.Sig.SERVICE) = struct
   let fetch_entry ctx =
     let* entry = SessionService.get_value ~key:session_key ctx in
     match entry with
-    | None -> Lwt.return @@ Ok None
+    | None -> Lwt.return None
     | Some entry -> (
         match entry |> Entry.of_string with
-        | Ok entry -> Lwt.return @@ Ok (Some entry)
+        | Ok entry -> Lwt.return (Some entry)
         | Error msg ->
             Logs.warn (fun m ->
                 m "MESSAGE: Invalid flash message in session %s" msg);
-            Lwt.return @@ Ok None )
+            Lwt.return None )
 
   let find_current ctx =
     let* entry = fetch_entry ctx in
     match entry with
-    | None -> Lwt.return @@ Ok None
-    | Some entry -> Lwt.return @@ Ok (Entry.current entry)
+    | None -> Lwt.return None
+    | Some entry -> Lwt.return (Entry.current entry)
 
   let set_next ctx message =
     let* entry = fetch_entry ctx in
@@ -40,19 +38,19 @@ module Make (SessionService : Session.Sig.SERVICE) = struct
   let rotate ctx =
     let* entry = fetch_entry ctx in
     match entry with
-    | None -> Lwt.return @@ Ok None
+    | None -> Lwt.return None
     | Some entry ->
         let seralized_entry = entry |> Entry.rotate |> Entry.to_string in
         let* () =
           SessionService.set_value ctx ~key:session_key ~value:seralized_entry
         in
-        Lwt_result.return @@ Message_core.Entry.next entry
+        Lwt.return @@ Message_core.Entry.next entry
 
   let current ctx =
     let* entry = find_current ctx in
     match entry with
-    | None -> Lwt.return @@ Ok None
-    | Some message -> Lwt.return @@ Ok (Some message)
+    | None -> Lwt.return None
+    | Some message -> Lwt.return (Some message)
 
   let set ctx ?(error = []) ?(warning = []) ?(success = []) ?(info = []) () =
     let message =

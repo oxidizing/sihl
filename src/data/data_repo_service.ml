@@ -1,6 +1,5 @@
 open Data_repo_core
-
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 module Registry = struct
   let registry : cleaner list ref = ref []
@@ -20,17 +19,17 @@ let lifecycle =
 
 let register_cleaner _ cleaner =
   Registry.register cleaner;
-  Lwt.return @@ Ok ()
+  Lwt.return ()
 
 let register_cleaners _ cleaners =
   Registry.register_cleaners cleaners;
-  Lwt.return @@ Ok ()
+  Lwt.return ()
 
 let clean_all ctx =
   let cleaners = Registry.get_all () in
   let rec clean_repos cleaners =
     match cleaners with
-    | [] -> Lwt.return @@ Ok ()
+    | [] -> Lwt.return ()
     | cleaner :: cleaners ->
         let* () = cleaner ctx in
         clean_repos cleaners

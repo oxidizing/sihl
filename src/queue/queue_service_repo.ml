@@ -12,22 +12,22 @@ struct
     let cleaner _ =
       state := Map.empty (module String);
       ordered_ids := [];
-      Lwt_result.return ()
+      Lwt.return ()
     in
     RepoService.register_cleaner ctx cleaner
 
-  let register_migration _ = Lwt_result.return ()
+  let register_migration _ = Lwt.return ()
 
   let enqueue _ ~job_instance =
     let id = JobInstance.id job_instance |> Data.Id.to_string in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add_exn !state ~key:id ~data:job_instance;
-    Lwt_result.return ()
+    Lwt.return ()
 
   let update _ ~job_instance =
     let id = JobInstance.id job_instance |> Data.Id.to_string in
     state := Map.set !state ~key:id ~data:job_instance;
-    Lwt_result.return ()
+    Lwt.return ()
 
   let find_workable _ =
     let all_job_instances =
@@ -43,7 +43,7 @@ struct
       | None :: job_instances -> filter_pending job_instances result
       | [] -> result
     in
-    Lwt_result.return @@ filter_pending all_job_instances []
+    Lwt.return @@ filter_pending all_job_instances []
 end
 
 module Model = struct
@@ -101,8 +101,7 @@ module MakeMariaDb
   let enqueue ctx ~job_instance =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec enqueue_request job_instance
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec enqueue_request job_instance)
 
   let update_request =
     Caqti_request.exec Model.t
@@ -122,8 +121,7 @@ module MakeMariaDb
   let update ctx ~job_instance =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request job_instance
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec update_request job_instance)
 
   let find_workable_request =
     Caqti_request.collect Caqti_type.unit Model.t
@@ -147,8 +145,7 @@ module MakeMariaDb
   let find_workable ctx =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list find_workable_request ()
-        |> Lwt_result.map_err Caqti_error.show)
+        Connection.collect_list find_workable_request ())
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit
@@ -159,7 +156,7 @@ module MakeMariaDb
   let clean ctx =
     DbService.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show)
+        Connection.exec clean_request ())
 
   module Migration = struct
     let fix_collation =

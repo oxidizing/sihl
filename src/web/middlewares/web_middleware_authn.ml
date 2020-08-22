@@ -5,13 +5,10 @@ module Make (AuthnService : Authn.Sig.SERVICE) = struct
     let filter handler ctx =
       let* user = AuthnService.find_user_in_session ctx in
       match user with
-      | Ok (Some user) ->
+      | Some user ->
           let ctx = User.ctx_add_user user ctx in
           handler ctx
-      | Ok None -> handler ctx
-      | Error msg ->
-          Logs.err (fun m -> m "MIDDLEWARE: Failed to authenticate %s" msg);
-          failwith msg
+      | None -> handler ctx
     in
     Web_middleware_core.create ~name:"authn_session" filter
 

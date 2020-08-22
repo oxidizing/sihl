@@ -21,14 +21,13 @@ struct
         WHERE token_tokens.token_value = ?
         |sql}
 
-    let find connection ~value =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find find_request value |> Lwt_result.map_err Caqti_error.show
+    let find ctx ~value =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.find find_request value)
 
-    let find_opt connection ~value =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find_opt find_request value
-      |> Lwt_result.map_err Caqti_error.show
+    let find_opt ctx ~value =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.find_opt find_request value)
 
     let insert_request =
       Caqti_request.exec Model.t
@@ -52,17 +51,16 @@ struct
         )
 |sql}
 
-    let insert connection ~token =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec insert_request token
-      |> Lwt_result.map_err Caqti_error.show
+    let insert ctx ~token =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec insert_request token)
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
 
-    let clean connection =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec clean_request () |> Lwt_result.map_err Caqti_error.show
+    let clean ctx =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec clean_request ())
   end
 
   module Migration = struct
@@ -96,13 +94,11 @@ CREATE TABLE IF NOT EXISTS token_tokens (
   let register_migration ctx =
     MigrationService.register ctx (Migration.migration ())
 
-  let register_cleaner ctx =
-    let cleaner ctx = Sql.clean |> DbService.query ctx in
-    RepoService.register_cleaner ctx cleaner
+  let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
 
-  let find ctx ~value = Sql.find ~value |> DbService.query ctx
+  let find = Sql.find
 
-  let find_opt ctx ~value = Sql.find_opt ~value |> DbService.query ctx
+  let find_opt = Sql.find_opt
 
-  let insert ctx ~token = Sql.insert ~token |> DbService.query ctx
+  let insert = Sql.insert
 end

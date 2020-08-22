@@ -1,6 +1,5 @@
 open Base
-
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 module EnvConfigProvider : Email_sig.ConfigProvider.SMTP = struct
   let sender _ = Lwt.return @@ Config.read_string "SMTP_SENDER"
@@ -11,18 +10,12 @@ module EnvConfigProvider : Email_sig.ConfigProvider.SMTP = struct
 
   let password _ = Lwt.return @@ Config.read_string "SMTP_PASSWORD"
 
-  let port _ =
-    Lwt.return
-    @@
-    match Config.read_int "SMTP_PORT" with
-    | Ok port -> Ok (Some port)
-    | Error _ -> Ok None
+  let port _ = Config.read_int "SMTP_PORT" |> Option.return |> Lwt.return
 
   let start_tls _ = Lwt.return @@ Config.read_bool "SMTP_START_TLS"
 
   let ca_dir _ =
-    Lwt_result.return
-    @@ Config.read_string_default ~default:"/etc/ssl/certs" "CA_DIR"
+    Lwt.return @@ Config.read_string_default ~default:"/etc/ssl/certs" "CA_DIR"
 end
 
 module Template = struct
@@ -33,7 +26,6 @@ module Template = struct
         (fun ctx ->
           (let* () = Repo.register_migration ctx in
            Repo.register_cleaner ctx)
-          |> Lwt.map Result.ok_or_failwith
           |> Lwt.map (fun () -> ctx))
         (fun _ -> Lwt.return ())
 
@@ -48,7 +40,7 @@ module Template = struct
       let* created = Repo.get ctx ~id in
       created
       |> Result.of_option ~error:"Could not create email template"
-      |> Lwt.return
+      |> Result.ok_or_failwith |> Lwt.return
 
     let update ctx ~template =
       let* () = Repo.update ctx ~template in
@@ -56,7 +48,7 @@ module Template = struct
       let* created = Repo.get ctx ~id in
       created
       |> Result.of_option ~error:"Could not update email template"
-      |> Lwt.return
+      |> Result.ok_or_failwith |> Lwt.return
 
     let render ctx email =
       let template_id = Email_core.template_id email in
@@ -73,18 +65,15 @@ module Template = struct
                    ~error:
                      (Printf.sprintf "Template with id %s not found"
                         template_id)
-              |> Lwt.return
+              |> Result.ok_or_failwith |> Lwt.return
             in
-            let render_result =
-              Email_core.Template.render template_data template
-            in
-            Lwt.return @@ Ok render_result
-        | None -> Lwt.return @@ Ok (text_content, html_content)
+            Email_core.Template.render template_data template |> Lwt.return
+        | None -> Lwt.return (text_content, html_content)
       in
       email
       |> Email_core.set_text_content text_content
       |> Email_core.set_html_content html_content
-      |> Result.return |> Lwt.return
+      |> Lwt.return
   end
 
   module Repo = struct
@@ -115,10 +104,9 @@ module Template = struct
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
 
-        let get connection ~id =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.find_opt get_request id
-          |> Lwt_result.map_err Caqti_error.show
+        let get ctx ~id =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.find_opt get_request id)
 
         let get_by_name_request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -139,10 +127,9 @@ module Template = struct
         WHERE email_templates.name = ?
         |sql}
 
-        let get_by_name connection ~name =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.find_opt get_by_name_request name
-          |> Lwt_result.map_err Caqti_error.show
+        let get_by_name ctx ~name =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.find_opt get_by_name_request name)
 
         let insert_request =
           Caqti_request.exec Model.t
@@ -162,10 +149,9 @@ module Template = struct
         )
         |sql}
 
-        let insert connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec insert_request template
-          |> Lwt_result.map_err Caqti_error.show
+        let insert ctx ~template =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.exec insert_request template)
 
         let update_request =
           Caqti_request.exec Model.t
@@ -179,10 +165,9 @@ module Template = struct
         WHERE email_templates.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
 
-        let update connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec update_request template
-          |> Lwt_result.map_err Caqti_error.show
+        let update ctx ~template =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.exec update_request template)
 
         let clean_request =
           Caqti_request.exec Caqti_type.unit
@@ -190,10 +175,9 @@ module Template = struct
         TRUNCATE TABLE email_templates;
          |sql}
 
-        let clean connection =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec clean_request ()
-          |> Lwt_result.map_err Caqti_error.show
+        let clean ctx =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.exec clean_request ())
       end
 
       module Migration = struct
@@ -226,17 +210,15 @@ CREATE TABLE IF NOT EXISTS email_templates (
       let register_migration ctx =
         MigrationService.register ctx (Migration.migration ())
 
-      let register_cleaner ctx =
-        let cleaner ctx = Sql.clean |> DbService.query ctx in
-        RepoService.register_cleaner ctx cleaner
+      let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
 
-      let get ctx ~id = Sql.get ~id |> DbService.query ctx
+      let get = Sql.get
 
-      let get_by_name ctx ~name = Sql.get_by_name ~name |> DbService.query ctx
+      let get_by_name = Sql.get_by_name
 
-      let insert ctx ~template = Sql.insert ~template |> DbService.query ctx
+      let insert = Sql.insert
 
-      let update ctx ~template = Sql.update ~template |> DbService.query ctx
+      let update = Sql.update
     end
 
     module MakePostgreSql
@@ -260,10 +242,9 @@ CREATE TABLE IF NOT EXISTS email_templates (
         WHERE email_templates.uuid = ?
         |sql}
 
-        let get connection ~id =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.find_opt get_request id
-          |> Lwt_result.map_err Caqti_error.show
+        let get ctx ~id =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.find_opt get_request id)
 
         let get_by_name_request =
           Caqti_request.find_opt Caqti_type.string Model.t
@@ -278,10 +259,9 @@ CREATE TABLE IF NOT EXISTS email_templates (
         WHERE email_templates.name = ?
         |sql}
 
-        let get_by_name connection ~name =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.find_opt get_by_name_request name
-          |> Lwt_result.map_err Caqti_error.show
+        let get_by_name ctx ~name =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.find_opt get_by_name_request name)
 
         let insert_request =
           Caqti_request.exec Model.t
@@ -301,10 +281,9 @@ CREATE TABLE IF NOT EXISTS email_templates (
         )
         |sql}
 
-        let insert connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec insert_request template
-          |> Lwt_result.map_err Caqti_error.show
+        let insert ctx ~template =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.exec insert_request template)
 
         let update_request =
           Caqti_request.exec Model.t
@@ -318,19 +297,17 @@ CREATE TABLE IF NOT EXISTS email_templates (
         WHERE email_templates.uuid = $1
         |sql}
 
-        let update connection ~template =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec update_request template
-          |> Lwt_result.map_err Caqti_error.show
+        let update ctx ~template =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.exec update_request template)
 
         let clean_request =
           Caqti_request.exec Caqti_type.unit
             "TRUNCATE TABLE email_templates CASCADE;"
 
-        let clean connection =
-          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-          Connection.exec clean_request ()
-          |> Lwt_result.map_err Caqti_error.show
+        let clean ctx =
+          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+              Connection.exec clean_request ())
       end
 
       module Migration = struct
@@ -357,17 +334,15 @@ CREATE TABLE IF NOT EXISTS email_templates (
       let register_migration ctx =
         MigrationService.register ctx (Migration.migration ())
 
-      let register_cleaner ctx =
-        let cleaner ctx = Sql.clean |> DbService.query ctx in
-        RepoService.register_cleaner ctx cleaner
+      let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
 
-      let get ctx ~id = Sql.get ~id |> DbService.query ctx
+      let get = Sql.get
 
-      let get_by_name ctx ~name = Sql.get_by_name ~name |> DbService.query ctx
+      let get_by_name = Sql.get_by_name
 
-      let insert ctx ~template = Sql.insert ~template |> DbService.query ctx
+      let insert = Sql.insert
 
-      let update ctx ~template = Sql.update ~template |> DbService.query ctx
+      let update = Sql.update
     end
   end
 end
@@ -408,10 +383,7 @@ Html:
         sender recipient subject text_content html_content
 
     let send ctx email =
-      let ( let* ) = Lwt.bind in
-      let* email =
-        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
-      in
+      let* email = TemplateService.render ctx email in
       let to_print = email |> show in
       Lwt.return (Caml.print_endline to_print)
 
@@ -437,11 +409,8 @@ Html:
         (fun _ -> Lwt.return ())
 
     let send ctx email =
-      let ( let* ) = Lwt.bind in
       (* TODO: how to get config for sending emails? *)
-      let* rendered =
-        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
-      in
+      let* rendered = TemplateService.render ctx email in
       let recipients =
         List.concat
           [
@@ -459,25 +428,13 @@ Html:
         Letters.build_email ~from:email.sender ~recipients
           ~subject:email.subject ~body
       in
-      let* sender =
-        ConfigProvider.sender ctx |> Lwt.map Result.ok_or_failwith
-      in
-      let* username =
-        ConfigProvider.username ctx |> Lwt.map Result.ok_or_failwith
-      in
-      let* password =
-        ConfigProvider.password ctx |> Lwt.map Result.ok_or_failwith
-      in
-      let* hostname =
-        ConfigProvider.host ctx |> Lwt.map Result.ok_or_failwith
-      in
-      let* port = ConfigProvider.port ctx |> Lwt.map Result.ok_or_failwith in
-      let* with_starttls =
-        ConfigProvider.start_tls ctx |> Lwt.map Result.ok_or_failwith
-      in
-      let* ca_dir =
-        ConfigProvider.ca_dir ctx |> Lwt.map Result.ok_or_failwith
-      in
+      let* sender = ConfigProvider.sender ctx in
+      let* username = ConfigProvider.username ctx in
+      let* password = ConfigProvider.password ctx in
+      let* hostname = ConfigProvider.host ctx in
+      let* port = ConfigProvider.port ctx in
+      let* with_starttls = ConfigProvider.start_tls ctx in
+      let* ca_dir = ConfigProvider.ca_dir ctx in
       let config : Letters.config =
         { sender; username; password; hostname; port; with_starttls; ca_dir }
       in
@@ -529,10 +486,7 @@ Html:
       "https://api.sendgrid.com/v3/mail/send" |> Uri.of_string
 
     let send ctx email =
-      let ( let* ) = Lwt.bind in
-      let* token =
-        ConfigProvider.api_key ctx |> Lwt.map Result.ok_or_failwith
-      in
+      let* token = ConfigProvider.api_key ctx in
       let headers =
         Cohttp.Header.of_list
           [
@@ -540,9 +494,7 @@ Html:
             ("content-type", "application/json");
           ]
       in
-      let* email =
-        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
-      in
+      let* email = TemplateService.render ctx email in
       let sender = Email_core.sender email in
       let recipient = Email_core.recipient email in
       let subject = Email_core.subject email in
@@ -583,10 +535,7 @@ Html:
         (fun _ -> Lwt.return ())
 
     let send ctx email =
-      let ( let* ) = Lwt.bind in
-      let* email =
-        TemplateService.render ctx email |> Lwt.map Result.ok_or_failwith
-      in
+      let* email = TemplateService.render ctx email in
       Email_core.DevInbox.set email;
       Lwt.return ()
 
@@ -653,7 +602,5 @@ module MakeDelayed
           | email :: emails -> Lwt.bind (send ctx email) (fun () -> loop emails)
           | [] -> Lwt.return ()
         in
-        loop emails |> Lwt.map Result.return)
-    |> Lwt.map Result.ok_or_failwith
-    |> Lwt.map Result.ok_or_failwith
+        loop emails)
 end

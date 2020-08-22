@@ -1,7 +1,5 @@
 open Base
-
-let ( let* ) = Lwt_result.bind
-
+open Lwt.Syntax
 module Repo = User_service_repo
 module User = User_core.User
 
@@ -14,10 +12,10 @@ module Make
   let get_exn ctx ~user ~msg =
     let* user = get ctx ~user_id:(User.id user) in
     match user with
-    | Some user -> Lwt_result.return user
+    | Some user -> Lwt.return user
     | None ->
         Logs.err (fun m -> m "%s" msg);
-        Lwt_result.fail msg
+        failwith msg
 
   let get_by_email ctx ~email =
     (* TODO add support for lowercase UTF-8
@@ -38,8 +36,8 @@ module Make
     | Ok () ->
         let updated_user = User.set_user_password user new_password in
         let* () = Repo.update ~user:updated_user ctx in
-        Lwt_result.return @@ Ok updated_user
-    | Error msg -> Lwt_result.return @@ Error msg
+        Lwt.return @@ Ok updated_user
+    | Error msg -> Lwt.return @@ Error msg
 
   let update_details ctx ~user ~email ~username =
     let updated_user = User.set_user_details user ~email ~username in
@@ -51,34 +49,34 @@ module Make
     let* result =
       User.validate_new_password ~password ~password_confirmation
         ~password_policy
-      |> Lwt_result.return
+      |> Lwt.return
     in
     match result with
-    | Error msg -> Lwt_result.return @@ Error msg
+    | Error msg -> Lwt.return @@ Error msg
     | Ok () ->
         let updated_user = User.set_user_password user password in
         let* () = Repo.update ctx ~user:updated_user in
-        Lwt_result.return @@ Ok updated_user
+        Lwt_result.return updated_user
 
   let create_user ctx ~email ~password ~username =
     let user =
       User.create ~email ~password ~username ~admin:false ~confirmed:false
     in
     let* () = Repo.insert ctx ~user in
-    Lwt.return @@ Ok user
+    Lwt.return user
 
   let create_admin ctx ~email ~password ~username =
     let* user = Repo.get_by_email ctx ~email in
     let* () =
       match user with
-      | Some _ -> Lwt.return @@ Error "Email already taken"
-      | None -> Lwt.return @@ Ok ()
+      | Some _ -> failwith "Email already taken"
+      | None -> Lwt.return ()
     in
     let user =
       User.create ~email ~password ~username ~admin:true ~confirmed:true
     in
     let* () = Repo.insert ctx ~user in
-    Lwt.return @@ Ok user
+    Lwt.return user
 
   let register ctx ?(password_policy = User.default_password_policy) ?username
       ~email ~password ~password_confirmation () =
@@ -86,26 +84,24 @@ module Make
       User.validate_new_password ~password ~password_confirmation
         ~password_policy
     with
-    | Error msg -> Lwt_result.return @@ Error msg
+    | Error msg -> Lwt_result.fail msg
     | Ok () -> (
         let* user = get_by_email ctx ~email in
         match user with
         | None ->
-            create_user ctx ~username ~email ~password
-            |> Lwt_result.map (fun user -> Ok user)
-        | Some _ -> Lwt_result.return (Error "Invalid email address provided") )
+            create_user ctx ~username ~email ~password |> Lwt.map Result.return
+        | Some _ -> Lwt_result.fail "Invalid email address provided" )
 
   let login ctx ~email ~password =
     let* user =
       get_by_email ctx ~email
-      |> Lwt_result.map
-           (Result.of_option ~error:"Invalid email or password provided")
+      |> Lwt.map (Result.of_option ~error:"Invalid email or password provided")
     in
     match user with
     | Ok user ->
-        if User.matches_password password user then Lwt_result.return @@ Ok user
-        else Lwt_result.return @@ Error "Invalid email or password provided"
-    | Error msg -> Lwt_result.return @@ Error msg
+        if User.matches_password password user then Lwt_result.return user
+        else Lwt_result.fail "Invalid email or password provided"
+    | Error msg -> Lwt_result.fail msg
 
   let create_admin_cmd =
     Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
@@ -115,8 +111,8 @@ module Make
         | [ username; email; password ] ->
             let ctx = Core.Ctx.empty |> DbService.add_pool in
             create_admin ctx ~email ~password ~username:(Some username)
-            |> Lwt_result.map ignore
-        | _ -> Lwt_result.fail "Usage: <username> <email> <password>")
+            |> Lwt.map ignore
+        | _ -> failwith "Usage: <username> <email> <password>")
       ()
 
   let lifecycle =
@@ -126,7 +122,6 @@ module Make
         (let* () = Repo.register_migration ctx in
          let* () = Repo.register_cleaner ctx in
          Cmd_service.register_command ctx create_admin_cmd)
-        |> Lwt.map Result.ok_or_failwith
-        |> Lwt.map (fun () -> ctx))
+        |> Lwt.map (fun _ -> ctx))
       (fun _ -> Lwt.return ())
 end

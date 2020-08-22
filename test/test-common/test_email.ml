@@ -10,16 +10,14 @@ module Make
 struct
   let create_template _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let* created =
       EmailTemplateService.create ctx ~name:"foo" ~html:"some html"
         ~text:"some text"
-      |> Lwt.map Result.ok_or_failwith
     in
     let id = Sihl.Email.Template.id created in
     let* template =
       EmailTemplateService.get ctx ~id
-      |> Lwt.map Result.ok_or_failwith
       |> Lwt.map (Result.of_option ~error:"Template not found")
       |> Lwt.map Result.ok_or_failwith
     in
@@ -32,17 +30,13 @@ struct
 
   let update_template _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let* created =
       EmailTemplateService.create ctx ~name:"foo" ~html:"some html"
         ~text:"some text"
-      |> Lwt.map Result.ok_or_failwith
     in
     let updated = Sihl.Email.Template.set_name "newname" created in
-    let* template =
-      EmailTemplateService.update ctx ~template:updated
-      |> Lwt.map Result.ok_or_failwith
-    in
+    let* template = EmailTemplateService.update ctx ~template:updated in
     Alcotest.(check string "name" "newname" (Sihl.Email.Template.name template));
     Lwt.return ()
 
