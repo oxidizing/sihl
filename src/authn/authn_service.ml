@@ -10,13 +10,13 @@ module Make
       (fun _ -> Lwt.return ())
 
   let find_user_in_session ctx =
-    let* user_id = SessionService.get_value ctx ~key:"authn" in
+    let* user_id = SessionService.get ctx ~key:"authn" in
     match user_id with
     | None -> Lwt.return None
     | Some user_id -> UserService.get ctx ~user_id
 
   let authenticate_session ctx user =
-    SessionService.set_value ctx ~key:"authn" ~value:(User.id user)
+    SessionService.set ctx ~key:"authn" ~value:(User.id user)
 
-  let unauthenticate_session ctx = SessionService.remove_value ctx ~key:"authn"
+  let unauthenticate_session ctx = SessionService.unset ctx ~key:"authn"
 end

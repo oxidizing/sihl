@@ -12,8 +12,6 @@ val make : ?expire_date:Ptime.t -> Ptime.t -> t
 
 val key : t -> string
 
-val add_to_ctx : t -> Core.Ctx.t -> Core.Ctx.t
-
 val data : t -> (string, string, Base.String.comparator_witness) Base.Map.t
 
 val is_expired : Ptime.t -> t -> bool

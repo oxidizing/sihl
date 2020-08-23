@@ -1,8 +1,6 @@
 open Base
 open Alcotest_lwt
-
-let ( let* ) = Lwt.bind
-
+open Lwt.Syntax
 module Queue = Test_common.Test.Queue.Make (Service.Repo) (Service.Queue)
 
 let config = Sihl.Config.create ~development:[] ~test:[] ~production:[]

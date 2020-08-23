@@ -1,6 +1,5 @@
 open Base
-
-let ( let* ) = Lwt.bind
+open Lwt.Syntax
 
 module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
   let lifecycle =

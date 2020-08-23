@@ -454,7 +454,7 @@ end
 
 `web_middleware_message.ml`:
 ```ocaml
-let ( let* ) = Lwt.bind
+open Lwt.Syntax
 
 module Make (MessageService : Message.Sig.Service) = struct
   let m () =

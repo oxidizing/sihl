@@ -20,7 +20,7 @@ module QueueRepo = Sihl.Queue.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
 
 (* Services *)
 module Token = Sihl.Token.Service.Make (Db) (TokenRepo)
-module Session = Sihl.Session.Service.Make (SessionRepo)
+module Session = Sihl.Session.Service.Make (Log) (SessionRepo)
 module User = Sihl.User.Service.Make (Cmd) (Db) (UserRepo)
 module Storage = Sihl.Storage.Service.Make (StorageRepo)
 module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)

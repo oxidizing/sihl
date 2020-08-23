@@ -6,7 +6,7 @@ module Make (SessionService : Session.Sig.SERVICE) = struct
     let filter handler ctx =
       match Web_req.cookie_data ctx ~key:cookie_key with
       | Some session_key -> (
-          let* session = SessionService.get_session ctx ~key:session_key in
+          let* session = SessionService.find_opt ctx ~key:session_key in
           match session with
           | Some session ->
               let* session =
@@ -17,18 +17,18 @@ module Make (SessionService : Session.Sig.SERVICE) = struct
                   Lwt.return session )
                 else Lwt.return session
               in
-              let ctx = Session.add_to_ctx session ctx in
+              let ctx = SessionService.add_to_ctx session ctx in
               handler ctx
           | None ->
               let* session = SessionService.create ctx [] in
-              let ctx = Session.add_to_ctx session ctx in
+              let ctx = SessionService.add_to_ctx session ctx in
               let* res = handler ctx in
               res
               |> Web_res.set_cookie ~key:cookie_key ~data:session.key
               |> Lwt.return )
       | None ->
           let* session = SessionService.create ctx [] in
-          let ctx = Session.add_to_ctx session ctx in
+          let ctx = SessionService.add_to_ctx session ctx in
           let* res = handler ctx in
           res
           |> Web_res.set_cookie ~key:cookie_key ~data:session.key

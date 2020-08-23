@@ -1,7 +1,12 @@
 open Base
 open Lwt.Syntax
 
-module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
+let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
+
+exception SessionNotFound of string
+
+module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
+  Session_sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "session"
       (fun ctx ->
@@ -10,50 +15,16 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
         |> Lwt.map (fun () -> ctx))
       (fun _ -> Lwt.return ())
 
+  let add_to_ctx session ctx =
+    Core.Ctx.add ctx_key (Session_core.key session) ctx
+
   let require_session_key ctx =
-    Core.Ctx.find Session_sig.ctx_session_key ctx
-    |> Result.of_option ~error:"SESSION: No session found in context"
-    |> Result.ok_or_failwith |> Lwt.return
-
-  let set_value ctx ~key ~value =
-    let* session_key = require_session_key ctx in
-    let* session = Repo.get ctx ~key:session_key in
-    match session with
+    match Core.Ctx.find ctx_key ctx with
     | None ->
-        Logs.warn (fun m ->
-            m "SESSION: Provided session key has no session in DB");
-        failwith "SESSION: Provided session key has no session in DB"
-    | Some session ->
-        let session = Session_core.set ~key ~value session in
-        Repo.update ctx session
-
-  let remove_value ctx ~key =
-    let* session_key = require_session_key ctx in
-    let* session = Repo.get ctx ~key:session_key in
-    match session with
-    | None ->
-        Logs.warn (fun m ->
-            m "SESSION: Provided session key has no session in DB");
-        failwith "SESSION: Provided session key has no session in DB"
-    | Some session ->
-        let session = Session_core.remove ~key session in
-        Repo.update ctx session
-
-  let get_value ctx ~key =
-    let* session_key = require_session_key ctx in
-    let* session = Repo.get ctx ~key:session_key in
-    match session with
-    | None ->
-        Logs.warn (fun m ->
-            m "SESSION: Provided session key has no session in DB");
-        Lwt.return None
-    | Some session -> Session_core.get key session |> Lwt.return
-
-  let get_session ctx ~key = Repo.get ctx ~key
-
-  let get_all_sessions ctx = Repo.get_all ctx
-
-  let insert_session ctx ~session = Repo.insert ctx session
+        Log.err (fun m -> m "SESSION: No session found in context");
+        Log.info (fun m -> m "HINT: Have you applied the session middleware?");
+        raise (SessionNotFound "No session found in context")
+    | Some session -> session
 
   let create ctx data =
     let empty_session = Session_core.make (Ptime_clock.now ()) in
@@ -61,8 +32,38 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
       List.fold data ~init:empty_session ~f:(fun session (key, value) ->
           Session_core.set ~key ~value session)
     in
-    let* () = insert_session ctx ~session in
+    let* () = Repo.insert ctx session in
     Lwt.return session
+
+  let find_opt = Repo.find_opt
+
+  let find ctx ~key =
+    let* session = Repo.find_opt ctx ~key in
+    match session with
+    | Some session -> Lwt.return session
+    | None ->
+        Log.err (fun m ->
+            m "SESSION: Session with key %s not found in database" key);
+        raise (SessionNotFound "Session not found")
+
+  let find_all = Repo.find_all
+
+  let set ctx ~key ~value =
+    let session_key = require_session_key ctx in
+    let* session = find ctx ~key:session_key in
+    let session = Session_core.set ~key ~value session in
+    Repo.update ctx session
+
+  let unset ctx ~key =
+    let session_key = require_session_key ctx in
+    let* session = find ctx ~key:session_key in
+    let session = Session_core.remove ~key session in
+    Repo.update ctx session
+
+  let get ctx ~key =
+    let session_key = require_session_key ctx in
+    let* session = find ctx ~key:session_key in
+    Session_core.get key session |> Lwt.return
 end
 
 module Repo = struct
@@ -74,7 +75,7 @@ module Repo = struct
     module Sql = struct
       module Model = Session_core
 
-      let get_all_request =
+      let find_all_request =
         Caqti_request.find Caqti_type.unit Model.t
           {sql|
         SELECT
@@ -84,11 +85,11 @@ module Repo = struct
         FROM session_sessions
         |sql}
 
-      let get_all ctx =
+      let find_all ctx =
         DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.collect_list get_all_request ())
+            Connection.collect_list find_all_request ())
 
-      let get_request =
+      let find_opt_request =
         Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
@@ -99,9 +100,9 @@ module Repo = struct
         WHERE session_sessions.session_key = ?
         |sql}
 
-      let get ctx ~key =
+      let find_opt ctx ~key =
         DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.find_opt get_request key)
+            Connection.find_opt find_opt_request key)
 
       let insert_request =
         Caqti_request.exec Model.t
@@ -185,9 +186,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       in
       RepoService.register_cleaner ctx cleaner
 
-    let get_all = Sql.get_all
+    let find_all = Sql.find_all
 
-    let get = Sql.get
+    let find_opt = Sql.find_opt
 
     let insert = Sql.insert
 
@@ -204,7 +205,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     module Sql = struct
       module Model = Session_core
 
-      let get_all_request =
+      let find_all_request =
         Caqti_request.find Caqti_type.unit Model.t
           {sql|
         SELECT
@@ -214,11 +215,11 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         FROM session_sessions
         |sql}
 
-      let get_all ctx =
+      let find_all ctx =
         DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.collect_list get_all_request ())
+            Connection.collect_list find_all_request ())
 
-      let get_request =
+      let find_opt_request =
         Caqti_request.find_opt Caqti_type.string Model.t
           {sql|
         SELECT
@@ -229,9 +230,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         WHERE session_sessions.session_key = ?
         |sql}
 
-      let get ctx ~key =
+      let find_opt ctx ~key =
         DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.find_opt get_request key)
+            Connection.find_opt find_opt_request key)
 
       let insert_request =
         Caqti_request.exec Model.t
@@ -309,9 +310,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 
     let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
 
-    let get_all = Sql.get_all
+    let find_all = Sql.find_all
 
-    let get = Sql.get
+    let find_opt = Sql.find_opt
 
     let insert = Sql.insert
 
