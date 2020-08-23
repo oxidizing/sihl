@@ -15,7 +15,7 @@ module EmailTemplateRepo =
   Sihl.Email.Service.Template.Repo.MakePostgreSql (Db) (Repo) (Migration)
 
 (* Services *)
-module Session = Sihl.Session.Service.Make (SessionRepo)
+module Session = Sihl.Session.Service.Make (Log) (SessionRepo)
 module User = Sihl.User.Service.Make (Cmd) (Db) (UserRepo)
 module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
 module Schedule = Sihl.Schedule.Service.Make (Log)

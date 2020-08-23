@@ -6,7 +6,7 @@ let session_key = "message"
 
 module Make (SessionService : Session.Sig.SERVICE) = struct
   let fetch_entry ctx =
-    let* entry = SessionService.get_value ~key:session_key ctx in
+    let* entry = SessionService.get ~key:session_key ctx in
     match entry with
     | None -> Lwt.return None
     | Some entry -> (
@@ -29,20 +29,20 @@ module Make (SessionService : Session.Sig.SERVICE) = struct
     | None ->
         (* No entry found, creating new one *)
         let entry = Entry.create message |> Entry.to_string in
-        SessionService.set_value ctx ~key:session_key ~value:entry
+        SessionService.set ctx ~key:session_key ~value:entry
     | Some entry ->
         (* Overriding next message in existing entry *)
         let entry = Entry.set_next message entry |> Entry.to_string in
-        SessionService.set_value ctx ~key:session_key ~value:entry
+        SessionService.set ctx ~key:session_key ~value:entry
 
   let rotate ctx =
     let* entry = fetch_entry ctx in
     match entry with
     | None -> Lwt.return None
     | Some entry ->
-        let seralized_entry = entry |> Entry.rotate |> Entry.to_string in
+        let serialized_entry = entry |> Entry.rotate |> Entry.to_string in
         let* () =
-          SessionService.set_value ctx ~key:session_key ~value:seralized_entry
+          SessionService.set ctx ~key:session_key ~value:serialized_entry
         in
         Lwt.return @@ Message_core.Entry.next entry
 
