@@ -1,6 +1,5 @@
 open Base
-
-let ( let* ) = Lwt_result.bind
+open Lwt.Syntax
 
 type t = Opium_kernel.Request.t
 
@@ -94,12 +93,10 @@ let urlencoded_list ?body ctx =
   let req = get_req ctx in
   let* body =
     match body with
-    | Some body -> Lwt.return @@ Ok body
-    | None ->
-        req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
-        |> Lwt.map Result.return
+    | Some body -> Lwt.return body
+    | None -> req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
   in
-  body |> Uri.pct_decode |> Uri.query_of_encoded |> Result.return |> Lwt.return
+  body |> Uri.pct_decode |> Uri.query_of_encoded |> Lwt.return
 
 let urlencoded ?body ctx key =
   let req = get_req ctx in
@@ -108,79 +105,89 @@ let urlencoded ?body ctx key =
      the body stream from the request *)
   let* body =
     match body with
-    | Some body -> Lwt.return @@ Ok body
-    | None ->
-        req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
-        |> Lwt.map Result.return
+    | Some body -> Lwt.return body
+    | None -> req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
   in
   match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
-  | None ->
-      Lwt.return @@ Error (Printf.sprintf "Please provide params '%s.'" key)
-  | Some value -> Lwt.return @@ Ok value
+  | None -> Lwt.return None
+  | Some value -> Lwt.return @@ Some value
 
 let urlencoded2 ctx key1 key2 =
   let* body =
     ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
-    |> Lwt.map Result.return
   in
   let* value1 = urlencoded ~body ctx key1 in
   let* value2 = urlencoded ~body ctx key2 in
-  Lwt.return @@ Ok (value1, value2)
+  Lwt.return @@ Option.both value1 value2
 
 let urlencoded3 ctx key1 key2 key3 =
   let* body =
     ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
-    |> Lwt.map Result.return
   in
   let* value1 = urlencoded ~body ctx key1 in
   let* value2 = urlencoded ~body ctx key2 in
   let* value3 = urlencoded ~body ctx key3 in
-  Lwt.return @@ Ok (value1, value2, value3)
+  match (value1, value2, value3) with
+  | Some value1, Some value2, Some value3 ->
+      Lwt.return @@ Some (value1, value2, value3)
+  | _ -> Lwt.return None
 
 let urlencoded4 ctx key1 key2 key3 key4 =
   let* body =
     ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
-    |> Lwt.map Result.return
   in
   let* value1 = urlencoded ~body ctx key1 in
   let* value2 = urlencoded ~body ctx key2 in
   let* value3 = urlencoded ~body ctx key3 in
   let* value4 = urlencoded ~body ctx key4 in
-  Lwt.return @@ Ok (value1, value2, value3, value4)
+  match (value1, value2, value3, value4) with
+  | Some value1, Some value2, Some value3, Some value4 ->
+      Lwt.return @@ Some (value1, value2, value3, value4)
+  | _ -> Lwt.return None
 
 let urlencoded5 ctx key1 key2 key3 key4 key5 =
   let* body =
     ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
-    |> Lwt.map Result.return
   in
   let* value1 = urlencoded ~body ctx key1 in
   let* value2 = urlencoded ~body ctx key2 in
   let* value3 = urlencoded ~body ctx key3 in
   let* value4 = urlencoded ~body ctx key4 in
   let* value5 = urlencoded ~body ctx key5 in
-  Lwt.return @@ Ok (value1, value2, value3, value4, value5)
+  match (value1, value2, value3, value4, value5) with
+  | Some value1, Some value2, Some value3, Some value4, Some value5 ->
+      Lwt.return @@ Some (value1, value2, value3, value4, value5)
+  | _ -> Lwt.return None
 
-let param ctx =
+let param ctx key =
   let req = get_req ctx in
-  Opium.Std.param req
+  Option.try_with (fun () -> Opium.Std.param req key)
 
-let param2 ctx key1 key2 = (param ctx key1, param ctx key2)
+let param2 ctx key1 key2 = Option.both (param ctx key1) (param ctx key2)
 
-let param3 ctx key1 key2 key3 = (param ctx key1, param ctx key2, param ctx key3)
+let param3 ctx key1 key2 key3 =
+  match (param ctx key1, param ctx key2, param ctx key3) with
+  | Some p1, Some p2, Some p3 -> Some (p1, p2, p3)
+  | _ -> None
 
 let param4 ctx key1 key2 key3 key4 =
-  (param ctx key1, param ctx key2, param ctx key3, param ctx key4)
+  match (param ctx key1, param ctx key2, param ctx key3, param ctx key4) with
+  | Some p1, Some p2, Some p3, Some p4 -> Some (p1, p2, p3, p4)
+  | _ -> None
 
 let param5 ctx key1 key2 key3 key4 key5 =
-  ( param ctx key1,
-    param ctx key2,
-    param ctx key3,
-    param ctx key4,
-    param ctx key5 )
+  match
+    ( param ctx key1,
+      param ctx key2,
+      param ctx key3,
+      param ctx key4,
+      param ctx key5 )
+  with
+  | Some p1, Some p2, Some p3, Some p4, Some p5 -> Some (p1, p2, p3, p4, p5)
+  | _ -> None
 
 let require_body ctx decode =
   let* body =
     ctx |> get_req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string
-    |> Lwt.map Result.return
   in
   body |> Utils.Json.parse |> Result.bind ~f:decode |> Lwt.return

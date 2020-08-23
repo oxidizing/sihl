@@ -1,7 +1,6 @@
 open Alcotest_lwt
 open Base
-
-let ( let* ) = Lwt.bind
+open Lwt.Syntax
 
 module Make
     (DbService : Sihl.Data.Db.Sig.SERVICE)

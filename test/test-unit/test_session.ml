@@ -1,7 +1,5 @@
 open Base
 
-let ( let* ) = Lwt.bind
-
 let session_not_expired _ () =
   let expire_date =
     Option.value_exn

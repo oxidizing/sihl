@@ -1,3 +1,5 @@
+open Lwt.Syntax
+
 module Lifecycle = struct
   type t = {
     module_name : string;
@@ -62,7 +64,8 @@ let start_services services =
     match lifecycles with
     | lifecycle :: lifecycles ->
         let f = Lifecycle.start lifecycle in
-        Lwt.bind (f ctx) (fun ctx -> loop ctx lifecycles)
+        let* ctx = f ctx in
+        loop ctx lifecycles
     | [] -> Lwt.return ctx
   in
   loop ctx lifecycles |> Lwt.map (fun ctx -> (services, ctx))
@@ -74,7 +77,8 @@ let stop_services ctx services =
     match lifecycles with
     | lifecycle :: lifecycles ->
         let f = Lifecycle.stop lifecycle in
-        Lwt.bind (f ctx) (fun () -> loop lifecycles)
+        let* () = f ctx in
+        loop lifecycles
     | [] -> Lwt.return ()
   in
   loop lifecycles

@@ -60,21 +60,19 @@ val query3 :
   string ->
   (string, string) result * (string, string) result * (string, string) result
 
-val urlencoded_list :
-  ?body:string -> Core.Ctx.t -> (Query.t, string) Lwt_result.t
+val urlencoded_list : ?body:string -> Core.Ctx.t -> Query.t Lwt.t
 
-val urlencoded :
-  ?body:string -> Core.Ctx.t -> string -> (string, string) Lwt_result.t
+val urlencoded : ?body:string -> Core.Ctx.t -> string -> string option Lwt.t
 
 val urlencoded2 :
-  Core.Ctx.t -> string -> string -> (string * string, string) Lwt_result.t
+  Core.Ctx.t -> string -> string -> (string * string) option Lwt.t
 
 val urlencoded3 :
   Core.Ctx.t ->
   string ->
   string ->
   string ->
-  (string * string * string, string) Lwt_result.t
+  (string * string * string) option Lwt.t
 
 val urlencoded4 :
   Core.Ctx.t ->
@@ -82,7 +80,7 @@ val urlencoded4 :
   string ->
   string ->
   string ->
-  (string * string * string * string, string) Lwt_result.t
+  (string * string * string * string) option Lwt.t
 
 val urlencoded5 :
   Core.Ctx.t ->
@@ -91,14 +89,14 @@ val urlencoded5 :
   string ->
   string ->
   string ->
-  (string * string * string * string * string, string) Lwt_result.t
+  (string * string * string * string * string) option Lwt.t
 
-val param : Core.Ctx.t -> string -> string
+val param : Core.Ctx.t -> string -> string option
 
-val param2 : Core.Ctx.t -> string -> string -> string * string
+val param2 : Core.Ctx.t -> string -> string -> (string * string) option
 
 val param3 :
-  Core.Ctx.t -> string -> string -> string -> string * string * string
+  Core.Ctx.t -> string -> string -> string -> (string * string * string) option
 
 val param4 :
   Core.Ctx.t ->
@@ -106,7 +104,7 @@ val param4 :
   string ->
   string ->
   string ->
-  string * string * string * string
+  (string * string * string * string) option
 
 val param5 :
   Core.Ctx.t ->
@@ -115,7 +113,7 @@ val param5 :
   string ->
   string ->
   string ->
-  string * string * string * string * string
+  (string * string * string * string * string) option
 
 val require_body :
   Core.Ctx.t ->
