@@ -69,10 +69,9 @@ struct
         WHERE token_tokens.token_value = $2
         |sql}
 
-    let update connection ~token =
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec update_request token
-      |> Lwt_result.map_err Caqti_error.show
+    let update ctx ~token =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec update_request token)
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
@@ -121,6 +120,5 @@ struct
 
   let insert = Sql.insert
 
-  (* TODO [aerben] write like insert above *)
-  let update ctx ~token = Sql.update ~token |> DbService.query ctx
+  let update = Sql.update
 end

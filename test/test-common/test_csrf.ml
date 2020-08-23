@@ -5,16 +5,14 @@ open Lwt.Syntax
 module Make
     (DbService : Sihl.Data.Db.Sig.SERVICE)
     (RepoService : Sihl.Data.Repo.Sig.SERVICE)
-    (MessageService : Sihl.Message.Sig.Service)
     (TokenService : Sihl.Token.Sig.SERVICE)
     (Log : Sihl.Log.Sig.SERVICE) =
 struct
-  module Middleware =
-    Sihl.Web.Middleware.Csrf.Make (MessageService) (TokenService) (Log)
+  module Middleware = Sihl.Web.Middleware.Csrf.Make (TokenService) (Log)
 
   let get_request_yields_no_token _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx |> Lwt.map Result.ok_or_failwith in
+    let* () = RepoService.clean_all ctx in
     let middleware = Middleware.m () in
     let handler ctx =
       let token = Sihl.Web.Middleware.Csrf.get_token ctx in
