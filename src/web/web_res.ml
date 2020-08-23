@@ -65,6 +65,8 @@ let set_cookie ~key ~data res =
 
 let set_status status res = { res with status }
 
+let get_status res = res.status
+
 let to_opium res =
   match res.opium_res with
   | Some res -> res

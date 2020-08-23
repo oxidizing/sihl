@@ -20,4 +20,6 @@ val set_cookie : key:string -> data:string -> t -> t
 
 val set_status : int -> t -> t
 
+val get_status : t -> int
+
 val to_opium : t -> Opium_kernel.Response.t

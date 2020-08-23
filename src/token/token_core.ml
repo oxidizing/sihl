@@ -10,6 +10,8 @@ module Status = struct
     | "active" -> Ok Active
     | "inactive" -> Ok Inactive
     | _ -> Error (Printf.sprintf "Invalid token status %s provided" str)
+
+  let alco = Alcotest.testable pp equal
 end
 
 type t = {
