@@ -17,7 +17,6 @@ module Security = Web_middleware_security
 module Static = Web_middleware_static
 module Session = Web_middleware_session
 module Authn = Web_middleware_authn
-module MakeCsrf = Web_middleware_csrf.Make
 
 val error : unit -> t
 
