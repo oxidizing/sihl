@@ -34,7 +34,7 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
         Lwt.return None
 
   let reset_password ctx ~token ~password ~password_confirmation =
-    let* token = TokenService.find_opt ctx ~value:token () in
+    let* token = TokenService.find_opt ctx token in
     let token =
       Result.of_option ~error:"Invalid or expired token provided" token
     in

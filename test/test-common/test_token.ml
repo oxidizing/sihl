@@ -12,7 +12,7 @@ struct
     let* () = RepoService.clean_all ctx in
     let* created = TokenService.create ctx ~kind:"test" ~data:"foo" () in
     let created_value = Sihl.Token.value created in
-    let* found = TokenService.find ctx ~value:created_value () in
+    let* found = TokenService.find ctx created_value in
     let () =
       Alcotest.(check Sihl.Token.alco "Has created session" created found)
     in
