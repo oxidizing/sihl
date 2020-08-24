@@ -4,14 +4,14 @@ let run_forever () =
   let p, _ = Lwt.wait () in
   p
 
-let registered_routes : Web_server_core.stacked_routes ref = ref []
+let registered_endpoints : Web_server_core.endpoint list ref = ref []
 
 module Make (CmdService : Cmd.Sig.SERVICE) : Web_server_sig.SERVICE = struct
   let start_server _ =
     Logs.debug (fun m -> m "WEB: Starting HTTP server");
     let app = Opium.Std.App.(empty |> port 3000 |> cmd_name "Sihl App") in
     let builders =
-      Web_server_core.stacked_routes_to_opium_builders !registered_routes
+      Web_server_core.endpoints_to_opium_builders !registered_endpoints
     in
     let app =
       List.fold ~f:(fun app builder -> builder app) ~init:app builders
@@ -26,5 +26,5 @@ module Make (CmdService : Cmd.Sig.SERVICE) : Web_server_sig.SERVICE = struct
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
-  let register_routes _ routes = Lwt.return (registered_routes := routes)
+  let register_endpoints _ routes = Lwt.return (registered_endpoints := routes)
 end

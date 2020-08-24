@@ -233,11 +233,11 @@ let hello_api =
   Sihl.Web.Route.get "/hello/" (fun _ ->
       Sihl.Web.Res.(json |> set_body {|{"msg":"Hello!"}|}) |> Lwt.return)
 
-let routes = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
+let endpoints = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
 
 module App = Sihl.App.Make (Service)
 
-let _ = App.(empty |> with_services services |> with_routes routes |> run)
+let _ = App.(empty |> with_services services |> with_endpoints endpoints |> run)
 ```
 
 You can build (and watch) this project with
@@ -431,9 +431,9 @@ let hello_api =
   Sihl.Web.Route.get "/hello/" (fun _ ->
       Sihl.Web.Res.(json |> set_body {|{"msg":"Hello!"}|}) |> Lwt.return)
 
-let routes = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
+let endpoints = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
 
-let _ = App.(empty |> with_services services |> with_routes routes |> run)
+let _ = App.(empty |> with_services services |> with_endpoints endpoints |> run)
 ```
 
 #### Middleware

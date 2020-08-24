@@ -4,10 +4,10 @@ type routes = Web_route.t list
 
 type middleware_stack = Web_middleware.stack
 
-type stacked_routes = (string * routes * middleware_stack) list
+type endpoint = string * routes * middleware_stack
 
-let stacked_routes_to_opium_builders stacked_routes =
-  stacked_routes
+let endpoints_to_opium_builders endpoints =
+  endpoints
   |> List.map ~f:(fun (prefix, routes, middleware_stack) ->
          routes
          |> List.map ~f:(Web_route.prefix prefix)

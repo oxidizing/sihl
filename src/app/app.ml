@@ -4,7 +4,7 @@ module Sig = App_sig
 module Make (Kernel : Sig.KERNEL) = struct
   type t = {
     config : Config.t;
-    routes : Web.Server.stacked_routes;
+    endpoints : Web.Server.endpoint list;
     services : (module Core.Container.SERVICE) list;
     schedules : Schedule.t list;
     commands : Cmd.t list;
@@ -15,7 +15,7 @@ module Make (Kernel : Sig.KERNEL) = struct
   let empty =
     {
       config = Config.create ~development:[] ~test:[] ~production:[];
-      routes = [];
+      endpoints = [];
       services = [];
       schedules = [];
       commands = [];
@@ -25,7 +25,7 @@ module Make (Kernel : Sig.KERNEL) = struct
 
   let with_config config app = { app with config }
 
-  let with_routes routes app = { app with routes }
+  let with_endpoints endpoints app = { app with endpoints }
 
   let with_services services app = { app with services }
 
@@ -60,7 +60,7 @@ module Make (Kernel : Sig.KERNEL) = struct
        Log.debug (fun m -> m "APP: Register config");
        let* () = Kernel.Config.register_config ctx app.config in
        Log.debug (fun m -> m "APP: Register routes");
-       let* () = Kernel.WebServer.register_routes ctx app.routes in
+       let* () = Kernel.WebServer.register_endpoints ctx app.endpoints in
        Log.debug (fun m -> m "APP: Register commands");
        let commands = List.cons start_cmd app.commands in
        let* () = Kernel.Cmd.register_commands ctx commands in

@@ -7,7 +7,7 @@ module Make : functor (Kernel : App_sig.KERNEL) -> sig
 
   val with_config : Config.t -> t -> t
 
-  val with_routes : Web.Server.stacked_routes -> t -> t
+  val with_endpoints : Web.Server.endpoint list -> t -> t
 
   val with_services : (module Core.Container.SERVICE) list -> t -> t
 
