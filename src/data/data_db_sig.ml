@@ -3,8 +3,9 @@ open Data_db_core
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val create_pool : unit -> (pool, string) result
-  (** Create a database connection pool. *)
+  val create_pool : unit -> pool
+  (** Create a database connection pool.
+      Raises [Data_db_core.Exception]. *)
 
   val ctx_with_pool : unit -> Core_ctx.t
   (** Create a database connection pool and attach the pool to an empty context. *)

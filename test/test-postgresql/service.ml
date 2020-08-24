@@ -17,6 +17,7 @@ module EmailTemplateRepo =
 
 (* Services *)
 module Session = Sihl.Session.Service.Make (Log) (SessionRepo)
-module User = Sihl.User.Service.Make (Cmd) (Db) (UserRepo)
-module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
+module User = Sihl.User.Service.Make (Log) (Cmd) (Db) (UserRepo)
+module EmailTemplate =
+  Sihl.Email.Service.Template.Make (Log) (EmailTemplateRepo)
 module Schedule = Sihl.Schedule.Service.Make (Log)

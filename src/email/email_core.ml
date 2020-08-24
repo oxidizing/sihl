@@ -1,3 +1,5 @@
+exception Exception of string
+
 module Template = struct
   type t = {
     id : string;

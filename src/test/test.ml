@@ -1,6 +1,7 @@
 open Base
+open Lwt.Syntax
 
-let ( let* ) = Lwt.bind
+exception Exception of string
 
 let middleware_stack ctx ?handler stack =
   let handler =
@@ -15,4 +16,4 @@ let seed ctx seed_fn =
   let* result = seed_fn ctx in
   match result with
   | Ok result -> Lwt.return result
-  | Error msg -> failwith ("Failed to run seed " ^ msg)
+  | Error msg -> raise (Exception ("Failed to run seed " ^ msg))

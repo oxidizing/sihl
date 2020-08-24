@@ -1,5 +1,4 @@
 module Model = Data_migration_core
-module Cmd = Data_migration_cmd
 module Sig = Data_migration_sig
 module Service = Data_migration_service
 

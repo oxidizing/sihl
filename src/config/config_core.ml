@@ -1,5 +1,7 @@
 open Base
 
+exception Exception of string
+
 module Config = struct
   type key_value = string * string
 
@@ -36,8 +38,10 @@ end = struct
   let of_list kvs =
     match Map.of_alist (module String) kvs with
     | `Duplicate_key msg ->
-        failwith
-          ("CONFIG: Duplicate key detected while creating configuration: " ^ msg)
+        raise
+          (Exception
+             ( "CONFIG: Duplicate key detected while creating configuration: "
+             ^ msg ))
     | `Ok map -> map
 
   let read_by_env setting =
@@ -50,7 +54,8 @@ end = struct
     let config = config |> read_by_env |> of_list in
     match !state with
     | None -> state := Some config
-    | Some _ -> failwith "CONFIG: There were already configurations registered"
+    | Some _ ->
+        raise (Exception "CONFIG: There were already configurations registered")
 
   let get () =
     Option.value_exn

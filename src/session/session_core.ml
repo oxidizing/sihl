@@ -1,26 +1,27 @@
 open Base
 
+exception Exception of string
+
 type data = (string, string, String.comparator_witness) Map.t
 
 type t = { key : string; data : data; expire_date : Ptime.t }
 
+(* TODO [jerben] Consider moving date stuff into Utils.Time *)
 let one_week = 60 * 60 * 24 * 7
 
 let default_expiration_date now =
-  match one_week |> Ptime.Span.of_int_s |> Ptime.add_span now with
-  | Some date -> date
-  | None ->
-      let msg = "SESSION APP: Setting default expiration went wrong" in
-      Logs.err (fun m -> m "%s" msg);
-      failwith msg
+  one_week |> Ptime.Span.of_int_s |> Ptime.add_span now
 
 let make ?expire_date now =
-  {
-    key = Utils.Random.base64 ~bytes:10;
-    data = Map.empty (module String);
-    expire_date =
-      Option.value ~default:(default_expiration_date now) expire_date;
-  }
+  match Option.first_some expire_date (default_expiration_date now) with
+  | Some expire_date ->
+      Some
+        {
+          key = Utils.Random.base64 ~bytes:10;
+          data = Map.empty (module String);
+          expire_date;
+        }
+  | None -> None
 
 let key session = session.key
 

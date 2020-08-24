@@ -15,9 +15,10 @@ module Make (Repo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
 
   let find ctx value =
     let* token = find_opt ctx value in
-    token
-    |> Result.of_option ~error:(Printf.sprintf "Token %s not found" value)
-    |> Result.ok_or_failwith |> Lwt.return
+    match token with
+    | Some token -> Lwt.return token
+    | None ->
+        raise (Token_core.Exception (Printf.sprintf "Token %s not found" value))
 
   let create ctx ~kind ?data ?expires_in () =
     let expires_in = Option.value ~default:Utils.Time.OneDay expires_in in

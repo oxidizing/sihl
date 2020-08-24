@@ -1,8 +1,8 @@
 open Base
 
-let ( let* ) = Lwt.bind
-
 type fn = string list -> unit Lwt.t [@@deriving show]
+
+exception Invalid_usage of string
 
 type t = { name : string; help : string option; description : string; fn : fn }
 [@@deriving show, fields, make]

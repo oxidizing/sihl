@@ -1,8 +1,8 @@
 open Storage_sig
-open Storage_model
+open Storage_core
 open Lwt.Syntax
 
-module Make (Repo : REPO) : SERVICE = struct
+module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "storage"
       (fun ctx ->
@@ -17,7 +17,11 @@ module Make (Repo : REPO) : SERVICE = struct
     let blob_id = Data.Id.random () |> Data.Id.to_string in
     let* blob =
       match Base64.decode base64 with
-      | Error (`Msg msg) -> failwith msg
+      | Error (`Msg msg) ->
+          Log.err (fun m ->
+              m "STORAGE: Could not upload base64 content of file %a" File.pp
+                file);
+          raise (Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.insert_blob ctx ~id:blob_id ~blob in
@@ -29,7 +33,11 @@ module Make (Repo : REPO) : SERVICE = struct
     let blob_id = StoredFile.blob file in
     let* blob =
       match Base64.decode base64 with
-      | Error (`Msg msg) -> failwith msg
+      | Error (`Msg msg) ->
+          Log.err (fun m ->
+              m "STORAGE: Could not upload base64 content of file %a"
+                StoredFile.pp file);
+          raise (Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.update_blob ctx ~id:blob_id ~blob in
@@ -40,7 +48,11 @@ module Make (Repo : REPO) : SERVICE = struct
     let blob_id = StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
-    | Some (Error (`Msg msg)) -> failwith msg
+    | Some (Error (`Msg msg)) ->
+        Log.err (fun m ->
+            m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
+              file);
+        raise (Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
 end
