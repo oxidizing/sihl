@@ -4,7 +4,8 @@ module Entry = Message_core.Entry
 
 let session_key = "message"
 
-module Make (SessionService : Session.Sig.SERVICE) = struct
+module Make (Log : Log.Sig.SERVICE) (SessionService : Session.Sig.SERVICE) =
+struct
   let fetch_entry ctx =
     let* entry = SessionService.get ~key:session_key ctx in
     match entry with
@@ -13,7 +14,7 @@ module Make (SessionService : Session.Sig.SERVICE) = struct
         match entry |> Entry.of_string with
         | Ok entry -> Lwt.return (Some entry)
         | Error msg ->
-            Logs.warn (fun m ->
+            Log.warn (fun m ->
                 m "MESSAGE: Invalid flash message in session %s" msg);
             Lwt.return None )
 

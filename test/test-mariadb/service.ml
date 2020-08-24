@@ -1,11 +1,12 @@
 (* Essential services *)
 module Log = Sihl.Log.Service
-module Config = Sihl.Config.Service
+module Config = Sihl.Config.Service.Make (Log)
 module Db = Sihl.Data.Db.Service.Make (Config) (Log)
 module Repo = Sihl.Data.Repo.Service
 module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
 module Cmd = Sihl.Cmd.Service
-module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
+module Migration =
+  Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
 
 (* Repositories *)
 module TokenRepo = Sihl.Token.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
