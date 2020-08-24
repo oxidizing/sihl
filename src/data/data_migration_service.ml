@@ -3,12 +3,13 @@ open Lwt.Syntax
 module Model = Data_migration_core
 
 module Make
+    (Log : Log.Sig.SERVICE)
     (CmdService : Cmd.Sig.SERVICE)
     (Db : Data_db_sig.SERVICE)
     (MigrationRepo : Data_migration_sig.REPO) : Data_migration_sig.SERVICE =
 struct
   let setup ctx =
-    Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
+    Log.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     MigrationRepo.create_table_if_not_exists ctx
 
   let has ctx ~namespace =
@@ -57,7 +58,7 @@ struct
       match steps with
       | [] -> Lwt.return ()
       | Model.Migration.{ label; statement; check_fk = true } :: steps ->
-          Logs.debug (fun m -> m "MIGRATION: Running %s" label);
+          Log.debug (fun m -> m "MIGRATION: Running %s" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
             let req =
               Caqti_request.exec ~oneshot:true Caqti_type.unit statement
@@ -65,13 +66,12 @@ struct
             Connection.exec req ()
           in
           let* () = Db.query ctx query in
-          Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
+          Log.debug (fun m -> m "MIGRATION: Ran %s" label);
           let* _ = increment ctx ~namespace in
           run steps
       | { label; statement; check_fk = false } :: steps ->
           let* () = Db.set_fk_check ctx ~check:false in
-          Logs.debug (fun m ->
-              m "MIGRATION: Running %s without fk checks" label);
+          Log.debug (fun m -> m "MIGRATION: Running %s without fk checks" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
             let req =
               Caqti_request.exec ~oneshot:true Caqti_type.unit statement
@@ -80,24 +80,24 @@ struct
           in
           let* () = Db.query ctx query in
           let* () = Db.set_fk_check ctx ~check:true in
-          Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
+          Log.debug (fun m -> m "MIGRATION: Ran %s" label);
           let* _ = increment ctx ~namespace in
           run steps
     in
     let () =
       match List.length steps with
       | 0 ->
-          Logs.debug (fun m ->
+          Log.debug (fun m ->
               m "MIGRATION: No migrations to apply for %s" namespace)
       | n ->
-          Logs.debug (fun m ->
+          Log.debug (fun m ->
               m "MIGRATION: Applying %i migrations for %s" n namespace)
     in
     run steps
 
   let execute_migration ctx migration =
     let namespace, _ = migration in
-    Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
+    Log.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
     let* () = setup ctx in
     let* has_state = has ctx ~namespace in
     let* state =
@@ -108,11 +108,11 @@ struct
             Printf.sprintf
               "Dirty migration found for %s, has to be fixed manually" namespace
           in
-          Logs.err (fun m -> m "MIGRATION: %s" msg);
+          Log.err (fun m -> m "MIGRATION: %s" msg);
           failwith msg )
         else mark_dirty ctx ~namespace
       else (
-        Logs.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
+        Log.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
         let state = Model.create ~namespace in
         let* () = upsert ctx state in
         Lwt.return state )
@@ -127,9 +127,9 @@ struct
   let execute ctx migrations =
     let n = List.length migrations in
     if n > 0 then
-      Logs.debug (fun m ->
+      Log.debug (fun m ->
           m "MIGRATION: Executing %i migrations" (List.length migrations))
-    else Logs.debug (fun m -> m "MIGRATION: No migrations to execute");
+    else Log.debug (fun m -> m "MIGRATION: No migrations to execute");
     let open Lwt in
     let rec run migrations ctx =
       match migrations with

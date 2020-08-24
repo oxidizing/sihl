@@ -1,66 +1,21 @@
-open Base
 module Service = Config_service
 module Sig = Config_sig
-include Config_core.Config
+
+type t = Config_core.Config.t
 
 let create = Config_core.Config.create
 
+(* TODO [jerben] Remove these two and explicitly inject config service where those are used *)
 let is_testing () =
+  let open Base in
   Sys.getenv "SIHL_ENV"
   |> Option.value ~default:"development"
   |> String.equal "test"
 
-let is_production () =
-  Sys.getenv "SIHL_ENV"
-  |> Option.value ~default:"development"
-  |> String.equal "production"
-
 let read_string_default ~default key =
+  let open Base in
   let value =
     Option.first_some (Sys.getenv key)
       (Map.find (Config_core.Internal.get ()) key)
   in
   Option.value value ~default
-
-let read_string ?default key =
-  let value =
-    Option.first_some (Sys.getenv key)
-      (Map.find (Config_core.Internal.get ()) key)
-  in
-  match (default, value) with
-  | _, Some value -> value
-  | Some default, None -> default
-  | None, None ->
-      failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
-
-let read_int ?default key =
-  let value =
-    Option.first_some (Sys.getenv key)
-      (Map.find (Config_core.Internal.get ()) key)
-  in
-  match (default, value) with
-  | _, Some value -> (
-      match Option.try_with (fun () -> Base.Int.of_string value) with
-      | Some value -> value
-      | None ->
-          failwith (Printf.sprintf "CONFIG: Configuration %s is not a int" key)
-      )
-  | Some default, None -> default
-  | None, None ->
-      failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
-
-let read_bool ?default key =
-  let value =
-    Option.first_some (Sys.getenv key)
-      (Map.find (Config_core.Internal.get ()) key)
-  in
-  match (default, value) with
-  | _, Some value -> (
-      match Caml.bool_of_string_opt value with
-      | Some value -> value
-      | None ->
-          failwith (Printf.sprintf "CONFIG: Configuration %s is not a int" key)
-      )
-  | Some default, None -> default
-  | None, None ->
-      failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)

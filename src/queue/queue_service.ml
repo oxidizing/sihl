@@ -34,7 +34,7 @@ module MakePolling
     in
     match result with
     | Error msg -> (
-        Logs.err (fun m ->
+        Log.err (fun m ->
             m "QUEUE: Failure while running job instance %a %s" JobInstance.pp
               job_instance msg);
         let* result =
@@ -50,18 +50,18 @@ module MakePolling
         in
         match result with
         | Error msg ->
-            Logs.err (fun m ->
+            Log.err (fun m ->
                 m
                   "QUEUE: Failure while run failure handler for job instance \
                    %a %s"
                   JobInstance.pp job_instance msg);
             Lwt.return None
         | Ok () ->
-            Logs.err (fun m ->
+            Log.err (fun m ->
                 m "QUEUE: Clean up job %a" Uuidm.pp job_instance_id);
             Lwt.return None )
     | Ok () ->
-        Logs.debug (fun m ->
+        Log.debug (fun m ->
             m "QUEUE: Successfully ran job instance %a" Uuidm.pp job_instance_id);
         Lwt.return @@ Some ()
 
@@ -126,7 +126,7 @@ module MakePolling
     let jobs = !registered_jobs in
     let n_jobs = List.length jobs in
     if n_jobs > 0 then (
-      Logs.debug (fun m ->
+      Log.debug (fun m ->
           m "QUEUE: Start queue with %d jobs" (List.length jobs));
       (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
       let combined_context_fn =
@@ -146,7 +146,7 @@ module MakePolling
       stop_schedule := Some (ScheduleService.schedule ctx schedule);
       Lwt_result.return () )
     else (
-      Logs.debug (fun m ->
+      Log.debug (fun m ->
           m "QUEUE: No workable jobs found, don't start job queue");
       Lwt_result.return () )
 

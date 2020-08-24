@@ -1,7 +1,8 @@
 open Base
 open Lwt.Syntax
 
-module EnvConfigProvider : Email_sig.ConfigProvider.SMTP = struct
+module EnvConfigProvider (Config : Config_sig.SERVICE) :
+  Email_sig.ConfigProvider.SMTP = struct
   let sender _ = Lwt.return @@ Config.read_string "SMTP_SENDER"
 
   let host _ = Lwt.return @@ Config.read_string "SMTP_HOST"
@@ -444,6 +445,7 @@ Html:
   end
 
   module SendGrid
+      (Log : Log_sig.SERVICE)
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SENDGRID) : Email_sig.SERVICE =
   struct
@@ -510,11 +512,11 @@ Html:
       let status = Cohttp.Response.status resp |> Cohttp.Code.code_of_status in
       match status with
       | 200 | 202 ->
-          Logs.info (fun m -> m "EMAIL: Successfully sent email using sendgrid");
+          Log.info (fun m -> m "EMAIL: Successfully sent email using sendgrid");
           Lwt.return ()
       | _ ->
           let* body = Cohttp_lwt.Body.to_string resp_body in
-          Logs.err (fun m ->
+          Log.err (fun m ->
               m
                 "EMAIL: Sending email using sendgrid failed with http status \
                  %i and body %s"
@@ -551,6 +553,7 @@ end
 
 (** Use this functor to create an email service that sends emails using the job queue. This is useful if you need to answer a request quickly while sending the email in the background *)
 module MakeDelayed
+    (Log : Log.Sig.SERVICE)
     (EmailService : Email_sig.SERVICE)
     (DbService : Data.Db.Sig.SERVICE)
     (QueueService : Queue_sig.SERVICE) : Email_sig.SERVICE = struct

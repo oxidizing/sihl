@@ -7,19 +7,7 @@ module type SERVICE = sig
 
   type src
 
-  val default : src
-
-  module Src : sig
-    type t = src
-  end
-
   module Tag : sig
-    type 'a def
-
-    type def_e = Def : 'a def -> def_e
-
-    type t = V : 'a def * 'a -> t
-
     type set
   end
 
