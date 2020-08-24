@@ -11,10 +11,10 @@ module Make (Repo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
         |> Lwt.map (fun () -> ctx))
       (fun _ -> Lwt.return ())
 
-  let find_opt ctx ~value () = Repo.find_opt ctx ~value
+  let find_opt ctx value = Repo.find_opt ctx ~value
 
-  let find ctx ~value () =
-    let* token = find_opt ctx ~value () in
+  let find ctx value =
+    let* token = find_opt ctx value in
     token
     |> Result.of_option ~error:(Printf.sprintf "Token %s not found" value)
     |> Result.ok_or_failwith |> Lwt.return
@@ -25,5 +25,5 @@ module Make (Repo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
     let token = Token_core.make ~id ~kind ~data ~expires_in () in
     let* () = Repo.insert ctx ~token in
     let value = Token_core.value token in
-    find ctx ~value ()
+    find ctx value
 end

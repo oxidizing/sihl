@@ -24,9 +24,9 @@ module type SERVICE = sig
       Provide [data] to store optional data as string.
 *)
 
-  val find : Core.Ctx.t -> value:string -> unit -> Token_core.t Lwt.t
+  val find : Core.Ctx.t -> string -> Token_core.t Lwt.t
   (** Returns an active and non-expired token. *)
 
-  val find_opt : Core.Ctx.t -> value:string -> unit -> Token_core.t option Lwt.t
+  val find_opt : Core.Ctx.t -> string -> Token_core.t option Lwt.t
   (** Returns an active and non-expired token. *)
 end
