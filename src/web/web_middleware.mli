@@ -1,8 +1,10 @@
 type t = Web_middleware_core.t
 
 type stack = Web_middleware_core.stack
+(** A middleware stack is a list of middlewares. *)
 
-val apply : t -> Web_route.t -> Web_route.t
+val apply : t -> Web_route.handler -> Web_route.handler
+(** [apply m h] applies the middleware [m] with the handler [h], so that the middleware logic wraps the handler. *)
 
 val apply_stack : stack -> Web_route.t -> Web_route.t
 
@@ -33,3 +35,4 @@ val cookie : unit -> t
 val csrf : unit -> t
 
 val create : name:string -> (Web_route.handler -> Web_route.handler) -> t
+(** [create ~name (h -> h)] create a middleware with [name]. *)
