@@ -7,6 +7,18 @@ let get_token ctx = Core_ctx.find ctx_token_key ctx
 
 exception Invalid_csrf_token of string
 
+(* TODO [aerben] rebase *)
+(* TODO [aerben] salt token *)
+(* TODO [aerben] remove unit for non-optional fns *)
+(* TODO [aerben] use sessionservice, see if already has unexpired token, if yes, just create new salt, if no, create new token and new salt, maybe see if sessions expire too, then dont need token expiry, salting and hashing has to be fast! *)
+(* TODO [aerben] (https://docs.djangoproject.com/en/3.0/ref/csrf/#how-it-works)
+Check other Django specifics namely:
+   - No tokens for HEAD, OPTIONS or TRACE
+   - Testing views with custom HTTP client
+   - Allow Sihl user to make views exempt
+   - Enable subdomain
+   - HTML caching token handling
+*)
 module Make (TokenService : Token.Sig.SERVICE) (Log : Log.Sig.SERVICE) = struct
   let m () =
     let filter handler ctx =
