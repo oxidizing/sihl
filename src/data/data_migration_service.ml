@@ -22,9 +22,10 @@ struct
     match state with
     | Some state -> state
     | None ->
-        failwith
-          (Printf.sprintf "MIGRATION: Could not get migration state for %s"
-             namespace)
+        raise
+          (Data_migration_core.Exception
+             (Printf.sprintf "MIGRATION: Could not get migration state for %s"
+                namespace))
 
   let upsert ctx state = MigrationRepo.upsert ctx ~state
 
@@ -109,7 +110,7 @@ struct
               "Dirty migration found for %s, has to be fixed manually" namespace
           in
           Log.err (fun m -> m "MIGRATION: %s" msg);
-          failwith msg )
+          raise (Data_migration_core.Exception msg) )
         else mark_dirty ctx ~namespace
       else (
         Log.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
@@ -137,7 +138,11 @@ struct
       | migration :: migrations -> (
           execute_migration ctx migration >>= function
           | Ok () -> run migrations ctx
-          | Error err -> failwith err )
+          | Error err ->
+              Log.err (fun m ->
+                  m "MIGRATION: Error while running migration %a: %s"
+                    Model.Migration.pp migration err);
+              raise (Model.Exception err) )
     in
     run migrations ctx
 

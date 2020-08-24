@@ -1,5 +1,7 @@
 open Lwt.Syntax
 
+exception Exception of string
+
 module Lifecycle = struct
   type t = {
     module_name : string;
@@ -52,9 +54,10 @@ let top_sort_lifecycles services =
       |> List.rev
   | Tsort.ErrorCycle remaining_names ->
       let msg = String.concat ", " remaining_names in
-      failwith
-      @@ "CONTAINER: Cycle detected while starting services. These are the \
-          services after the cycle: " ^ msg
+      raise
+        (Exception
+           ( "CONTAINER: Cycle detected while starting services. These are the \
+              services after the cycle: " ^ msg ))
 
 let start_services services =
   Logs.info (fun m -> m "CONTAINER: Start services");

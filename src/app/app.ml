@@ -51,7 +51,7 @@ module Make (Kernel : Sig.KERNEL) = struct
         | [] ->
             let ctx = Core.Ctx.empty in
             Kernel.WebServer.start_server ctx
-        | _ -> failwith "Example usage: start with_migration")
+        | _ -> raise (Cmd.Invalid_usage "Example usage: start with_migration"))
       ()
 
   let run app =

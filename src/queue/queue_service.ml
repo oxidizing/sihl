@@ -144,11 +144,11 @@ module MakePolling
           ~label:"job_queue"
       in
       stop_schedule := Some (ScheduleService.schedule ctx schedule);
-      Lwt_result.return () )
+      Lwt.return () )
     else (
       Log.debug (fun m ->
           m "QUEUE: No workable jobs found, don't start job queue");
-      Lwt_result.return () )
+      Lwt.return () )
 
   let lifecycle =
     Core.Container.Lifecycle.make "queue"
@@ -156,9 +156,7 @@ module MakePolling
       (fun ctx ->
         let* () = Repo.register_migration ctx in
         let* () = Repo.register_cleaner ctx in
-        start_queue ctx
-        |> Lwt.map Result.ok_or_failwith
-        |> Lwt.map (fun () -> ctx))
+        start_queue ctx |> Lwt.map (fun () -> ctx))
       (fun _ ->
         registered_jobs := [];
         match !stop_schedule with

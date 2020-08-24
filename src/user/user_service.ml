@@ -4,6 +4,7 @@ module Repo = User_service_repo
 module User = User_core.User
 
 module Make
+    (Log : Log.Sig.SERVICE)
     (CmdService : Cmd.Sig.SERVICE)
     (DbService : Data.Db.Sig.SERVICE)
     (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
@@ -14,8 +15,8 @@ module Make
     match user with
     | Some user -> Lwt.return user
     | None ->
-        Logs.err (fun m -> m "%s" msg);
-        failwith msg
+        Log.err (fun m -> m "USER: %s" msg);
+        raise (User_core.Exception msg)
 
   let get_by_email ctx ~email =
     (* TODO add support for lowercase UTF-8
@@ -34,7 +35,15 @@ module Make
         ~new_password_confirmation ~password_policy
     with
     | Ok () ->
-        let updated_user = User.set_user_password user new_password in
+        let updated_user =
+          match User.set_user_password user new_password with
+          | Ok user -> user
+          | Error msg ->
+              Log.err (fun m ->
+                  m "USER: Can not update password of user %s: %s"
+                    (User.email user) msg);
+              raise (User_core.Exception msg)
+        in
         let* () = Repo.update ~user:updated_user ctx in
         Lwt.return @@ Ok updated_user
     | Error msg -> Lwt.return @@ Error msg
@@ -54,13 +63,25 @@ module Make
     match result with
     | Error msg -> Lwt.return @@ Error msg
     | Ok () ->
-        let updated_user = User.set_user_password user password in
+        let updated_user =
+          match User.set_user_password user password with
+          | Ok user -> user
+          | Error msg ->
+              Log.err (fun m ->
+                  m "USER: Can not set password of user %s: %s"
+                    (User.email user) msg);
+              raise (User_core.Exception msg)
+        in
         let* () = Repo.update ctx ~user:updated_user in
         Lwt_result.return updated_user
 
   let create_user ctx ~email ~password ~username =
     let user =
-      User.create ~email ~password ~username ~admin:false ~confirmed:false
+      match
+        User.create ~email ~password ~username ~admin:false ~confirmed:false
+      with
+      | Ok user -> user
+      | Error msg -> raise (User_core.Exception msg)
     in
     let* () = Repo.insert ctx ~user in
     Lwt.return user
@@ -69,11 +90,21 @@ module Make
     let* user = Repo.get_by_email ctx ~email in
     let* () =
       match user with
-      | Some _ -> failwith "Email already taken"
+      | Some _ ->
+          Log.err (fun m ->
+              m "USER: Can not create admin %s since the email is already taken"
+                email);
+          raise (User_core.Exception "Email already taken")
       | None -> Lwt.return ()
     in
     let user =
-      User.create ~email ~password ~username ~admin:true ~confirmed:true
+      match
+        User.create ~email ~password ~username ~admin:true ~confirmed:true
+      with
+      | Ok user -> user
+      | Error msg ->
+          Log.err (fun m -> m "USER: Can not create admin %s %s" email msg);
+          raise (User_core.Exception msg)
     in
     let* () = Repo.insert ctx ~user in
     Lwt.return user
@@ -112,7 +143,7 @@ module Make
             let ctx = Core.Ctx.empty |> DbService.add_pool in
             create_admin ctx ~email ~password ~username:(Some username)
             |> Lwt.map ignore
-        | _ -> failwith "Usage: <username> <email> <password>")
+        | _ -> raise (Cmd.Invalid_usage "Usage: <username> <email> <password>"))
       ()
 
   let lifecycle =

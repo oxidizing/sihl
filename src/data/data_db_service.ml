@@ -9,7 +9,7 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
     | Some pool ->
         Log.debug (fun m ->
             m "DB: Skipping pool creation, re-using existing pool");
-        Ok pool
+        pool
     | None -> (
         let pool_size = Config.read_int ~default:10 "DATABASE_POOL_SIZE" in
         Log.debug (fun m -> m "DB: Create pool with size %i" pool_size);
@@ -18,18 +18,18 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         |> function
         | Ok pool ->
             pool_ref := Some pool;
-            Ok pool
+            pool
         | Error err ->
             let msg = "DB: Failed to connect to DB pool" in
             Log.err (fun m -> m "%s %s" msg (Caqti_error.show err));
-            Error msg )
+            raise (Exception ("DB: Failed to create pool " ^ msg)) )
 
   let ctx_with_pool () =
-    let pool = create_pool () |> Result.ok_or_failwith in
+    let pool = create_pool () in
     Core_ctx.(empty |> ctx_add_pool pool)
 
   let add_pool ctx =
-    let pool = create_pool () |> Result.ok_or_failwith in
+    let pool = create_pool () in
     ctx_add_pool pool ctx
 
   let lifecycle =
@@ -55,24 +55,36 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
     match
       (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)
     with
-    | Some connection, _ ->
-        f connection
-        |> Lwt_result.map_err (fun error ->
-               let msg = Caqti_error.show error in
-               Log.err (fun m -> m "DB: %s" msg);
-               msg)
-        |> Lwt.map Result.ok_or_failwith
-    | None, Some pool ->
-        Caqti_lwt.Pool.use f pool
-        |> Lwt_result.map_err (fun error ->
-               let msg = Caqti_error.show error in
-               Log.err (fun m -> m "DB: %s" msg);
-               msg)
-        |> Lwt.map Result.ok_or_failwith
+    | Some connection, _ -> (
+        let* result =
+          f connection
+          |> Lwt_result.map_err (fun error ->
+                 let msg = Caqti_error.show error in
+                 Log.err (fun m -> m "DB: %s" msg);
+                 msg)
+        in
+        match result with
+        | Ok result -> Lwt.return result
+        | Error msg ->
+            Log.err (fun m -> m "DB: %s" msg);
+            raise (Exception msg) )
+    | None, Some pool -> (
+        let* result =
+          Caqti_lwt.Pool.use f pool
+          |> Lwt_result.map_err (fun error ->
+                 let msg = Caqti_error.show error in
+                 Log.err (fun m -> m "DB: %s" msg);
+                 msg)
+        in
+        match result with
+        | Ok result -> Lwt.return result
+        | Error msg ->
+            Log.err (fun m -> m "DB: %s" msg);
+            raise (Exception msg) )
     | None, None ->
         Log.err (fun m -> m "DB: No connection pool found");
         Log.info (fun m -> m "DB: Have you applied the DB middleware?");
-        failwith "DB: No connection pool found"
+        raise (Exception "No connection pool found")
 
   let atomic ctx ?(no_rollback = false) f =
     let f = safe_f f in
@@ -138,14 +150,14 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         | Ok (Ok result) ->
             (* All good, return result of f ctx *)
             Lwt.return result
-        | Ok (Error err) -> err |> Caqti_error.show |> failwith
+        | Ok (Error err) -> raise (Exception (err |> Caqti_error.show))
         | Error pool_err ->
             (* Failed to start, commit or rollback transaction *)
-            pool_err |> Caqti_error.show |> failwith )
+            raise (Exception (pool_err |> Caqti_error.show)) )
     | None ->
         Log.err (fun m -> m "No connection pool found");
         Log.info (fun m -> m "Have you applied the DB middleware?");
-        failwith "No connection pool found"
+        raise (Exception "No connection pool found")
 
   let single_connection ctx f =
     let f = safe_f f in
@@ -173,20 +185,17 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         | Ok (Ok result) ->
             (* All good, return result of f ctx *)
             Lwt.return result
-        | Ok (Error err) -> err |> Caqti_error.show |> failwith
+        | Ok (Error err) -> raise (Exception (err |> Caqti_error.show))
         | Error pool_err ->
             (* Failed to start, commit or rollback transaction *)
-            pool_err |> Caqti_error.show |> failwith )
+            raise (Exception (pool_err |> Caqti_error.show)) )
     | None ->
         Log.err (fun m -> m "No connection pool found");
         Log.info (fun m -> m "Have you applied the DB middleware?");
-        failwith "No connection pool found"
+        raise (Exception "No connection pool found")
 
   let set_fk_check_request =
-    Caqti_request.exec Caqti_type.bool
-      {sql|
-        SET FOREIGN_KEY_CHECKS = ?;
-           |sql}
+    Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
 
   let set_fk_check ctx ~check =
     query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->

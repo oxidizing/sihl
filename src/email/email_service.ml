@@ -20,8 +20,8 @@ module EnvConfigProvider (Config : Config_sig.SERVICE) :
 end
 
 module Template = struct
-  module Make (Repo : Email_sig.Template.REPO) : Email_sig.Template.SERVICE =
-  struct
+  module Make (Log : Log.Sig.SERVICE) (Repo : Email_sig.Template.REPO) :
+    Email_sig.Template.SERVICE = struct
     let lifecycle =
       Core.Container.Lifecycle.make "template"
         (fun ctx ->
@@ -39,17 +39,25 @@ module Template = struct
       let* () = Repo.insert ctx ~template in
       let id = Email_core.Template.id template in
       let* created = Repo.get ctx ~id in
-      created
-      |> Result.of_option ~error:"Could not create email template"
-      |> Result.ok_or_failwith |> Lwt.return
+      match created with
+      | None ->
+          Log.err (fun m ->
+              m "EMAIL: Could not create template %a" Email_core.Template.pp
+                template);
+          raise (Email_core.Exception "Could not create email template")
+      | Some created -> Lwt.return created
 
     let update ctx ~template =
       let* () = Repo.update ctx ~template in
       let id = Email_core.Template.id template in
       let* created = Repo.get ctx ~id in
-      created
-      |> Result.of_option ~error:"Could not update email template"
-      |> Result.ok_or_failwith |> Lwt.return
+      match created with
+      | None ->
+          Log.err (fun m ->
+              m "EMAIL: Could not update template %a" Email_core.Template.pp
+                template);
+          raise (Email_core.Exception "Could not create email template")
+      | Some created -> Lwt.return created
 
     let render ctx email =
       let template_id = Email_core.template_id email in
@@ -61,12 +69,13 @@ module Template = struct
         | Some template_id ->
             let* template = Repo.get ctx ~id:template_id in
             let* template =
-              template
-              |> Result.of_option
-                   ~error:
-                     (Printf.sprintf "Template with id %s not found"
-                        template_id)
-              |> Result.ok_or_failwith |> Lwt.return
+              match template with
+              | None ->
+                  raise
+                    (Email_core.Exception
+                       (Printf.sprintf "Template with id %s not found"
+                          template_id))
+              | Some template -> Lwt.return template
             in
             Email_core.Template.render template_data template |> Lwt.return
         | None -> Lwt.return (text_content, html_content)
@@ -439,7 +448,10 @@ Html:
       let config : Letters.config =
         { sender; username; password; hostname; port; with_starttls; ca_dir }
       in
-      Letters.send ~config ~recipients ~message |> Lwt.map Result.ok_or_failwith
+      Letters.send ~config ~recipients ~message
+      |> Lwt.map (function
+           | Ok () -> ()
+           | Error msg -> raise (Email_core.Exception msg))
 
     let bulk_send _ _ = Lwt.return ()
   end
@@ -521,7 +533,7 @@ Html:
                 "EMAIL: Sending email using sendgrid failed with http status \
                  %i and body %s"
                 status body);
-          failwith "EMAIL: Failed to send email"
+          raise (Email_core.Exception "EMAIL: Failed to send email")
 
     let bulk_send _ _ = Lwt.return ()
   end

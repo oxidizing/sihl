@@ -36,7 +36,9 @@ module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
     | _, Some value -> value
     | Some default, None -> default
     | None, None ->
-        failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
+        raise
+          (Config_core.Exception
+             (Printf.sprintf "CONFIG: Configuration %s not found" key))
 
   let read_int ?default key =
     let value =
@@ -48,11 +50,14 @@ module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
         match Option.try_with (fun () -> Base.Int.of_string value) with
         | Some value -> value
         | None ->
-            failwith
-              (Printf.sprintf "CONFIG: Configuration %s is not a int" key) )
+            raise
+              (Config_core.Exception
+                 (Printf.sprintf "CONFIG: Configuration %s is not a int" key)) )
     | Some default, None -> default
     | None, None ->
-        failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
+        raise
+          (Config_core.Exception
+             (Printf.sprintf "CONFIG: Configuration %s not found" key))
 
   let read_bool ?default key =
     let value =
@@ -64,9 +69,12 @@ module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
         match Caml.bool_of_string_opt value with
         | Some value -> value
         | None ->
-            failwith
-              (Printf.sprintf "CONFIG: Configuration %s is not a int" key) )
+            raise
+              (Config_core.Exception
+                 (Printf.sprintf "CONFIG: Configuration %s is not a int" key)) )
     | Some default, None -> default
     | None, None ->
-        failwith (Printf.sprintf "CONFIG: Configuration %s not found" key)
+        raise
+          (Config_core.Exception
+             (Printf.sprintf "CONFIG: Configuration %s not found" key))
 end

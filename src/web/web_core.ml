@@ -1,3 +1,5 @@
+exception Exception of string
+
 type content_type = Html | Json | Pdf [@@deriving show, eq]
 
 let show_content_type = function

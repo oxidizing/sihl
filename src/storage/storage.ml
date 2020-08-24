@@ -1,3 +1,3 @@
 module Service = Storage_service
 module Sig = Storage_sig
-include Storage_model
+include Storage_core

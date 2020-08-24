@@ -1,5 +1,7 @@
 open Base
 
+exception Exception of string
+
 type pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 
 let ctx_key_pool : pool Core_ctx.key = Core_ctx.create_key ()

@@ -16,9 +16,9 @@ let create_and_add_to_ctx ?(body = "") ?(uri = "/") ctx =
   add_to_ctx req ctx
 
 let get_req ctx =
-  Core.Ctx.find key ctx
-  |> Result.of_option ~error:"No HTTP request found in context"
-  |> Result.ok_or_failwith
+  match Core.Ctx.find key ctx with
+  | None -> raise (Web_core.Exception "No HTTP request found in context")
+  | Some req -> req
 
 module Query = struct
   type t = (string * string list) list [@@deriving eq, show, yojson]

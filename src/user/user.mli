@@ -51,7 +51,7 @@ val alcotest : t Alcotest.testable
 
 val confirm : t -> t
 
-val set_user_password : t -> string -> t
+val set_user_password : t -> string -> (t, string) Result.t
 
 val set_user_details : t -> email:string -> username:string option -> t
 
@@ -77,15 +77,14 @@ val validate_change_password :
   password_policy:(string -> (unit, string) Result.t) ->
   (unit, string) Result.t
 
+(* TODO [jerben] Make this a service call, it should not be possible to create a user that is not in the data base *)
 val create :
   email:string ->
   password:string ->
   username:string option ->
   admin:bool ->
   confirmed:bool ->
-  t
-
-val system : t
+  (t, string) Result.t
 
 val t : t Caqti_type.t
 

@@ -1,3 +1,5 @@
+exception Exception of string
+
 module File = struct
   type t = { id : string; filename : string; filesize : int; mime : string }
   [@@deriving fields, yojson, show, eq, make]

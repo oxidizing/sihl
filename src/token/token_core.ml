@@ -1,5 +1,7 @@
 open Base
 
+exception Exception of string
+
 module Status = struct
   type t = Active | Inactive [@@deriving yojson, show, eq]
 

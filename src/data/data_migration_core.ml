@@ -1,5 +1,7 @@
 open Base
 
+exception Exception of string
+
 type t = { namespace : string; version : int; dirty : bool }
 
 let create ~namespace = { namespace; version = 0; dirty = true }

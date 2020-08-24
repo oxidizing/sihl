@@ -8,7 +8,7 @@ type data = Session_core.data
 
 type t = Session_core.t
 
-val make : ?expire_date:Ptime.t -> Ptime.t -> t
+val make : ?expire_date:Ptime.t -> Ptime.t -> t option
 
 val key : t -> string
 

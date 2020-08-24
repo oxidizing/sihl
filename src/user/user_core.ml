@@ -1,5 +1,7 @@
 open Base
 
+exception Exception of string
+
 module User = struct
   (* TODO add Status.Active and Status.Inactive *)
   (* TODO roles that are managed by a role service *)
@@ -27,8 +29,8 @@ module User = struct
   let confirm user = { user with confirmed = true }
 
   let set_user_password user new_password =
-    let hash = new_password |> Utils.Hashing.hash |> Result.ok_or_failwith in
-    { user with password = hash }
+    let hash = new_password |> Utils.Hashing.hash in
+    Result.map hash ~f:(fun hash -> { user with password = hash })
 
   let set_user_details user ~email ~username =
     (* TODO add support for lowercase UTF-8
@@ -73,26 +75,23 @@ module User = struct
     Result.all_unit [ matches_old_password; new_password_valid ]
 
   let create ~email ~password ~username ~admin ~confirmed =
-    let hash = password |> Utils.Hashing.hash |> Result.ok_or_failwith in
-    {
-      id = Data.Id.random () |> Data.Id.to_string;
-      (* TODO add support for lowercase UTF-8
-       * String.lowercase only supports US-ASCII, but
-       * email addresses can contain other letters
-       * (https://tools.ietf.org/html/rfc6531) like umlauts.
-       *)
-      email = String.lowercase email;
-      password = hash;
-      username;
-      admin;
-      confirmed;
-      status = "active";
-      created_at = Ptime_clock.now ();
-    }
-
-  let system =
-    create ~email:"system" ~password:"" ~username:None ~admin:true
-      ~confirmed:true
+    let hash = password |> Utils.Hashing.hash in
+    Result.map hash ~f:(fun hash ->
+        {
+          id = Data.Id.random () |> Data.Id.to_string;
+          (* TODO add support for lowercase UTF-8
+           * String.lowercase only supports US-ASCII, but
+           * email addresses can contain other letters
+           * (https://tools.ietf.org/html/rfc6531) like umlauts.
+           *)
+          email = String.lowercase email;
+          password = hash;
+          username;
+          admin;
+          confirmed;
+          status = "active";
+          created_at = Ptime_clock.now ();
+        })
 
   let t =
     let encode m =
@@ -117,34 +116,3 @@ module User = struct
               (tup2 (option string)
                  (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
 end
-
-(* module Email = struct
- *   let sender () =
- *     Sihl.Config.read_string ~default:"hello@oxidizing.io" "EMAIL_SENDER"
- *
- *   let base_url () =
- *     Sihl.Config.read_string ~default:"http://localhost:3000" "BASE_URL"
- *
- *   let create_confirmation token user =
- *     let data =
- *       Sihl.Email.TemplateData.(
- *         empty
- *         |> add ~key:"base_url" ~value:(base_url ())
- *         |> add ~key:"token" ~value:(Sihl.User.Token.value token))
- *     in
- *     Sihl.Email.make ~sender:(sender ()) ~recipient:(Sihl.User.email user)
- *       ~subject:"Email Address Confirmation" ~content:"" ~cc:[] ~bcc:[]
- *       ~html:false ~template_id:"fb7aec3f-2178-4166-beb4-79a3a663e093"
- *       ~template_data:data ()
- *
- *   let create_password_reset token user =
- *     let data =
- *       Sihl.Email.TemplateData.(
- *         empty
- *         |> add ~key:"base_url" ~value:(base_url ())
- *         |> add ~key:"token" ~value:(Sihl.User.Token.value token))
- *     in
- *     Sihl.Email.make ~sender:(sender ()) ~recipient:(Sihl.User.email user)
- *       ~subject:"Password Reset" ~content:"" ~cc:[] ~bcc:[] ~html:false
- *       ~template_id:"fb7aec3f-2178-4166-beb4-79a3a663e092" ~template_data:data ()
- * end *)

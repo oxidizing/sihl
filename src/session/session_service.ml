@@ -3,8 +3,6 @@ open Lwt.Syntax
 
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
-exception SessionNotFound of string
-
 module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
   Session_sig.SERVICE = struct
   let lifecycle =
@@ -23,11 +21,20 @@ module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
     | None ->
         Log.err (fun m -> m "SESSION: No session found in context");
         Log.info (fun m -> m "HINT: Have you applied the session middleware?");
-        raise (SessionNotFound "No session found in context")
+        raise (Session_core.Exception "No session found in context")
     | Some session -> session
 
   let create ctx data =
-    let empty_session = Session_core.make (Ptime_clock.now ()) in
+    let empty_session =
+      match Session_core.make (Ptime_clock.now ()) with
+      | Some session -> session
+      | None ->
+          Log.err (fun m ->
+              m
+                "SESSION: Can not create session, failed to create validity \
+                 time");
+          raise (Session_core.Exception "Can not set session validity time")
+    in
     let session =
       List.fold data ~init:empty_session ~f:(fun session (key, value) ->
           Session_core.set ~key ~value session)
@@ -44,7 +51,7 @@ module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
     | None ->
         Log.err (fun m ->
             m "SESSION: Session with key %s not found in database" key);
-        raise (SessionNotFound "Session not found")
+        raise (Session_core.Exception "Session not found")
 
   let find_all = Repo.find_all
 
