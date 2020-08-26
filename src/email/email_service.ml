@@ -15,8 +15,11 @@ module EnvConfigProvider (Config : Config_sig.SERVICE) :
 
   let start_tls _ = Lwt.return @@ Config.read_bool "SMTP_START_TLS"
 
-  let ca_dir _ =
-    Lwt.return @@ Config.read_string_default ~default:"/etc/ssl/certs" "CA_DIR"
+  let ca_path _ =
+    Config.read_string "SMTP_CA_PATH" |> Option.return |> Lwt.return
+
+  let ca_cert _ =
+    Config.read_string "SMTP_CA_CERT" |> Option.return |> Lwt.return
 end
 
 module Template = struct
@@ -434,24 +437,28 @@ Html:
         | true -> Letters.Html rendered.html_content
         | false -> Letters.Plain rendered.text_content
       in
-      let message =
-        Letters.build_email ~from:email.sender ~recipients
-          ~subject:email.subject ~body
-      in
       let* sender = ConfigProvider.sender ctx in
       let* username = ConfigProvider.username ctx in
       let* password = ConfigProvider.password ctx in
       let* hostname = ConfigProvider.host ctx in
       let* port = ConfigProvider.port ctx in
       let* with_starttls = ConfigProvider.start_tls ctx in
-      let* ca_dir = ConfigProvider.ca_dir ctx in
-      let config : Letters.config =
-        { sender; username; password; hostname; port; with_starttls; ca_dir }
+      let* ca_path = ConfigProvider.ca_path ctx in
+      let* ca_cert = ConfigProvider.ca_cert ctx in
+      let config =
+        Letters.Config.make ~username ~password ~hostname ~with_starttls
+        |> Letters.Config.set_port port
+        |> fun conf ->
+        match (ca_cert, ca_path) with
+        | Some path, _ -> Letters.Config.set_ca_cert path conf
+        | None, Some path -> Letters.Config.set_ca_path path conf
+        | None, None -> conf
       in
-      Letters.send ~config ~recipients ~message
-      |> Lwt.map (function
-           | Ok () -> ()
-           | Error msg -> raise (Email_core.Exception msg))
+      Letters.build_email ~from:email.sender ~recipients ~subject:email.subject
+        ~body
+      |> function
+      | Ok message -> Letters.send ~config ~sender ~recipients ~message
+      | Error msg -> raise (Email_core.Exception msg)
 
     let bulk_send _ _ = Lwt.return ()
   end

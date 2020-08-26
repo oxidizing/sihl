@@ -38,14 +38,27 @@ end
 
 module ConfigProvider = struct
   (** Read the configurations from environment variables and set sane defaults.
-[SMTP_SENDER]: Sender address from where the emails come from
-[SMTP_HOST]: Host address of the SMTP server
-[SMTP_USERNAME]: Username for the SMTP server login
-[SMTP_PASSWORD]: Password for the SMTP server login
-[SMTP_PORT]: Port number, default is 587
-[SMTP_START_TLS]: Whether to use TLS, default is true
-[CA_DIR]: Location of root CA certificates on the file system, default is /etc/ssl/certs
-*)
+
+      [SMTP_SENDER]: Sender address from where the emails come from
+
+      [SMTP_HOST]: Host address of the SMTP server
+
+      [SMTP_USERNAME]: Username for the SMTP server login
+
+      [SMTP_PASSWORD]: Password for the SMTP server login
+
+      [SMTP_PORT]: Port number, default is 587
+
+      [SMTP_START_TLS]: Whether to use TLS, default is true
+
+      [SMTP_CA_PATH]: Location of root CA certificates on the file system
+
+      [SMTP_CA_CERT]: Location of CA certificates bundle on the file system
+
+      Either one of [SMTP_CA_PATH] or [SMTP_CA_CERT] should be passed or neither
+      of them that triggers use of auto detection. If both are provided,
+      [SMTP_CA_PATH] will be ignored.
+ *)
   module type SMTP = sig
     val sender : Core.Ctx.t -> string Lwt.t
 
@@ -59,7 +72,9 @@ module ConfigProvider = struct
 
     val start_tls : Core.Ctx.t -> bool Lwt.t
 
-    val ca_dir : Core.Ctx.t -> string Lwt.t
+    val ca_path : Core.Ctx.t -> string option Lwt.t
+
+    val ca_cert : Core.Ctx.t -> string option Lwt.t
   end
 
   module type SENDGRID = sig
