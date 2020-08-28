@@ -91,10 +91,9 @@ CREATE TABLE IF NOT EXISTS token_tokens (
         empty "tokens" |> add_step fix_collation |> add_step create_tokens_table)
   end
 
-  let register_migration ctx =
-    MigrationService.register ctx (Migration.migration ())
+  let register_migration () = MigrationService.register (Migration.migration ())
 
-  let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
+  let register_cleaner () = RepoService.register_cleaner Sql.clean
 
   let find = Sql.find
 

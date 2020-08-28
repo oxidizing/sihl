@@ -8,15 +8,15 @@ struct
 
   let ordered_ids = ref []
 
-  let register_cleaner ctx =
+  let register_cleaner _ =
     let cleaner _ =
       state := Map.empty (module String);
       ordered_ids := [];
       Lwt.return ()
     in
-    RepoService.register_cleaner ctx cleaner
+    RepoService.register_cleaner cleaner
 
-  let register_migration _ = Lwt.return ()
+  let register_migration () = ()
 
   let enqueue _ ~job_instance =
     let id = JobInstance.id job_instance |> Data.Id.to_string in
@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
         empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
   end
 
-  let register_cleaner ctx = RepoService.register_cleaner ctx clean
+  let register_cleaner () = RepoService.register_cleaner clean
 
-  let register_migration ctx = MigrationService.register ctx Migration.migration
+  let register_migration () = MigrationService.register Migration.migration
 end

@@ -8,9 +8,9 @@ module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
   let lifecycle =
     Core.Container.Lifecycle.make "session"
       (fun ctx ->
-        (let* () = Repo.register_migration ctx in
-         Repo.register_cleaner ctx)
-        |> Lwt.map (fun () -> ctx))
+        Repo.register_migration ();
+        Repo.register_cleaner ();
+        Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
   let add_to_ctx session ctx =
@@ -182,16 +182,16 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         Data.Migration.(empty "session" |> add_step create_sessions_table)
     end
 
-    let register_migration ctx =
-      MigrationService.register ctx (Migration.migration ())
+    let register_migration () =
+      MigrationService.register (Migration.migration ())
 
-    let register_cleaner ctx =
+    let register_cleaner () =
       let cleaner ctx =
         let* () = DbService.set_fk_check ctx ~check:false in
         let* () = Sql.clean ctx in
         DbService.set_fk_check ctx ~check:true
       in
-      RepoService.register_cleaner ctx cleaner
+      RepoService.register_cleaner cleaner
 
     let find_all = Sql.find_all
 
@@ -312,10 +312,10 @@ CREATE TABLE IF NOT EXISTS session_sessions (
         Data.Migration.(empty "session" |> add_step create_sessions_table)
     end
 
-    let register_migration ctx =
-      MigrationService.register ctx (Migration.migration ())
+    let register_migration () =
+      MigrationService.register (Migration.migration ())
 
-    let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
+    let register_cleaner () = RepoService.register_cleaner Sql.clean
 
     let find_all = Sql.find_all
 

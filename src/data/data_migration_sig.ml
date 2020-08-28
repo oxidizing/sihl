@@ -9,7 +9,7 @@ end
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val register : Core.Ctx.t -> Data_migration_core.Migration.t -> unit Lwt.t
+  val register : Data_migration_core.Migration.t -> unit
   (** Register a migration, so it can be run by the service. *)
 
   val get_migrations : Core.Ctx.t -> Data_migration_core.Migration.t list Lwt.t

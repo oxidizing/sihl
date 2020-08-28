@@ -6,9 +6,9 @@ module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "storage"
       (fun ctx ->
-        (let* () = Repo.register_migration ctx in
-         Repo.register_cleaner ctx)
-        |> Lwt.map (fun () -> ctx))
+        Repo.register_migration ();
+        Repo.register_cleaner ();
+        Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
   let get_file ctx ~id = Repo.get_file ctx ~id
@@ -247,16 +247,16 @@ CREATE TABLE IF NOT EXISTS storage_handles (
         |> add_step create_blobs_table
         |> add_step create_handles_table)
 
-    let register_migration ctx = MigrationService.register ctx (migration ())
+    let register_migration () = MigrationService.register (migration ())
 
-    let register_cleaner ctx =
+    let register_cleaner () =
       let cleaner ctx =
         let* () = DbService.set_fk_check ctx ~check:false in
         let* () = clean_handles ctx in
         let* () = clean_blobs ctx in
         DbService.set_fk_check ctx ~check:true
       in
-      RepoService.register_cleaner ctx cleaner
+      RepoService.register_cleaner cleaner
   end
 
   (** TODO Implement postgres repo **)

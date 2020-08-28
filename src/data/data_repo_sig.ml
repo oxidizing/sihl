@@ -1,18 +1,18 @@
 module type REPO = sig
-  val register_migration : Core.Ctx.t -> unit Lwt.t
+  val register_migration : unit -> unit
 
-  val register_cleaner : Core.Ctx.t -> unit Lwt.t
+  val register_cleaner : unit -> unit
 end
 
 module type SERVICE = sig
   include Core.Container.SERVICE
 
-  val register_cleaner : 'a -> Data_repo_core.cleaner -> unit Lwt.t
+  val register_cleaner : Data_repo_core.cleaner -> unit
   (** Register repository cleaner function.
 
       A cleaner function is used during integration testing to efficiently clean repositories. *)
 
-  val register_cleaners : 'a -> Data_repo_core.cleaner list -> unit Lwt.t
+  val register_cleaners : Data_repo_core.cleaner list -> unit
   (** Register repository cleaner functions. *)
 
   val clean_all : Core_ctx.t -> unit Lwt.t

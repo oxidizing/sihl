@@ -25,9 +25,9 @@ module Template = struct
     let lifecycle =
       Core.Container.Lifecycle.make "template"
         (fun ctx ->
-          (let* () = Repo.register_migration ctx in
-           Repo.register_cleaner ctx)
-          |> Lwt.map (fun () -> ctx))
+          Repo.register_migration ();
+          Repo.register_cleaner ();
+          Lwt.return ctx)
         (fun _ -> Lwt.return ())
 
     let get ctx ~id = Repo.get ctx ~id
@@ -217,10 +217,10 @@ CREATE TABLE IF NOT EXISTS email_templates (
             |> add_step create_templates_table)
       end
 
-      let register_migration ctx =
-        MigrationService.register ctx (Migration.migration ())
+      let register_migration () =
+        MigrationService.register (Migration.migration ())
 
-      let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
+      let register_cleaner () = RepoService.register_cleaner Sql.clean
 
       let get = Sql.get
 
@@ -341,10 +341,10 @@ CREATE TABLE IF NOT EXISTS email_templates (
           Data.Migration.(empty "email" |> add_step create_templates_table)
       end
 
-      let register_migration ctx =
-        MigrationService.register ctx (Migration.migration ())
+      let register_migration () =
+        MigrationService.register (Migration.migration ())
 
-      let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
+      let register_cleaner () = RepoService.register_cleaner Sql.clean
 
       let get = Sql.get
 

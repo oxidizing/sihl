@@ -7,13 +7,11 @@ let lifecycle =
     (fun ctx -> Lwt.return ctx)
     (fun _ -> Lwt.return ())
 
-let register_commands _ commands =
-  registered_commands := List.concat [ !registered_commands; commands ];
-  Lwt.return ()
+let register_commands commands =
+  registered_commands := List.concat [ !registered_commands; commands ]
 
-let register_command _ command =
-  registered_commands := List.cons command !registered_commands;
-  Lwt.return ()
+let register_command command =
+  registered_commands := List.cons command !registered_commands
 
 let find_command_by_args commands args =
   args |> List.hd

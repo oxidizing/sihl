@@ -47,9 +47,8 @@ struct
     let* () = upsert ctx updated_state in
     Lwt.return updated_state
 
-  let register _ migration =
-    Data_migration_core.Registry.register migration;
-    Lwt.return ()
+  let register migration =
+    Data_migration_core.Registry.register migration |> ignore
 
   let get_migrations _ = Lwt.return (Data_migration_core.Registry.get_all ())
 
@@ -161,7 +160,8 @@ struct
     Core.Container.Lifecycle.make "migration"
       ~dependencies:[ CmdService.lifecycle; Db.lifecycle ]
       (fun ctx ->
-        CmdService.register_command ctx migrate_cmd |> Lwt.map (fun () -> ctx))
+        CmdService.register_command migrate_cmd;
+        Lwt.return ctx)
       (fun _ -> Lwt.return ())
 end
 

@@ -1,10 +1,10 @@
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val register_commands : Core_ctx.t -> Cmd_core.t list -> unit Lwt.t
+  val register_commands : Cmd_core.t list -> unit
   (** Registered commands can be executed by running the main Sihl app executable. *)
 
-  val register_command : Core_ctx.t -> Cmd_core.t -> unit Lwt.t
+  val register_command : Cmd_core.t -> unit
   (** Registered commands can be executed by running the main Sihl app executable. *)
 
   val run : unit -> unit Lwt.t

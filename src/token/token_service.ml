@@ -6,9 +6,9 @@ module Make (Repo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "token"
       (fun ctx ->
-        (let* () = Repo.register_migration ctx in
-         Repo.register_cleaner ctx)
-        |> Lwt.map (fun () -> ctx))
+        let () = Repo.register_migration () in
+        let () = Repo.register_cleaner () in
+        Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
   let find_opt ctx value = Repo.find_opt ctx ~value

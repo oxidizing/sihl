@@ -150,9 +150,9 @@ module Make
     Core.Container.Lifecycle.make "user"
       ~dependencies:[ CmdService.lifecycle; DbService.lifecycle ]
       (fun ctx ->
-        (let* () = Repo.register_migration ctx in
-         let* () = Repo.register_cleaner ctx in
-         Cmd_service.register_command ctx create_admin_cmd)
-        |> Lwt.map (fun _ -> ctx))
+        Repo.register_migration ();
+        Repo.register_cleaner ();
+        Cmd_service.register_command create_admin_cmd;
+        Lwt.return ctx)
       (fun _ -> Lwt.return ())
 end

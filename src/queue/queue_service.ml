@@ -154,8 +154,8 @@ module MakePolling
     Core.Container.Lifecycle.make "queue"
       ~dependencies:[ ScheduleService.lifecycle; Log.lifecycle ]
       (fun ctx ->
-        let* () = Repo.register_migration ctx in
-        let* () = Repo.register_cleaner ctx in
+        Repo.register_migration ();
+        Repo.register_cleaner ();
         start_queue ctx |> Lwt.map (fun () -> ctx))
       (fun _ ->
         registered_jobs := [];

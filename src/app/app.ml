@@ -58,12 +58,12 @@ module Make (Kernel : Sig.KERNEL) = struct
     Lwt_main.run
       (let ctx = Core.Ctx.empty in
        Kernel.Log.debug (fun m -> m "APP: Register config");
-       let* () = Kernel.Config.register_config ctx app.config in
+       Kernel.Config.register_config app.config;
        Kernel.Log.debug (fun m -> m "APP: Register routes");
-       let* () = Kernel.WebServer.register_endpoints ctx app.endpoints in
+       Kernel.WebServer.register_endpoints app.endpoints;
        Kernel.Log.debug (fun m -> m "APP: Register commands");
        let commands = List.cons start_cmd app.commands in
-       let* () = Kernel.Cmd.register_commands ctx commands in
+       Kernel.Cmd.register_commands commands;
        Kernel.Log.debug (fun m -> m "APP: Register schedules");
        let _ = app.schedules |> List.map (Kernel.Schedule.schedule ctx) in
        Kernel.Log.debug (fun m -> m "APP: Start services");

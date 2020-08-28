@@ -208,10 +208,9 @@ CREATE TABLE IF NOT EXISTS user_users (
     DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_request ())
 
-  let register_migration ctx =
-    MigrationService.register ctx (Migration.migration ())
+  let register_migration () = MigrationService.register (Migration.migration ())
 
-  let register_cleaner ctx = RepoService.register_cleaner ctx clean
+  let register_cleaner () = RepoService.register_cleaner clean
 end
 
 module MakePostgreSql
@@ -392,8 +391,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_request ())
 
-  let register_migration ctx =
-    MigrationService.register ctx (Migration.migration ())
+  let register_migration () = MigrationService.register (Migration.migration ())
 
-  let register_cleaner ctx = RepoService.register_cleaner ctx clean
+  let register_cleaner () = RepoService.register_cleaner clean
 end

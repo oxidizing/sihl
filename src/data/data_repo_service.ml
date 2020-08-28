@@ -17,13 +17,9 @@ let lifecycle =
     (fun ctx -> Lwt.return ctx)
     (fun _ -> Lwt.return ())
 
-let register_cleaner _ cleaner =
-  Registry.register cleaner;
-  Lwt.return ()
+let register_cleaner cleaner = Registry.register cleaner |> ignore
 
-let register_cleaners _ cleaners =
-  Registry.register_cleaners cleaners;
-  Lwt.return ()
+let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
 
 let clean_all ctx =
   let cleaners = Registry.get_all () in

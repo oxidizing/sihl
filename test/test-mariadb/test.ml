@@ -51,8 +51,8 @@ let services : (module Sihl.Core.Container.SERVICE) list =
 let () =
   let ctx = Sihl.Core.Ctx.empty in
   Lwt_main.run
-    (let* () = Service.Config.register_config ctx config in
-     let ctx = Service.Db.add_pool ctx in
-     let* _ = Sihl.Core.Container.start_services services in
-     let* () = Service.Migration.run_all ctx in
-     run "mariadb" @@ test_suite ctx)
+    ( Service.Config.register_config config;
+      let ctx = Service.Db.add_pool ctx in
+      let* _ = Sihl.Core.Container.start_services services in
+      let* () = Service.Migration.run_all ctx in
+      run "mariadb" @@ test_suite ctx )

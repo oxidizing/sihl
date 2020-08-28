@@ -1,8 +1,7 @@
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val register_endpoints :
-    Core_ctx.t -> Web_server_core.endpoint list -> unit Lwt.t
+  val register_endpoints : Web_server_core.endpoint list -> unit
   (** Register HTTP routes that are served by the web server. *)
 
   val start_server : Core.Ctx.t -> unit Lwt.t

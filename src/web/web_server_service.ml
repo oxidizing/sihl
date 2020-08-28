@@ -26,5 +26,5 @@ module Make (CmdService : Cmd.Sig.SERVICE) : Web_server_sig.SERVICE = struct
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
-  let register_endpoints _ routes = Lwt.return (registered_endpoints := routes)
+  let register_endpoints routes = registered_endpoints := routes
 end

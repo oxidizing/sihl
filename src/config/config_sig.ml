@@ -1,7 +1,7 @@
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val register_config : 'a -> Config_core.Config.t -> unit Lwt.t
+  val register_config : Config_core.Config.t -> unit
 
   val is_testing : unit -> bool
 

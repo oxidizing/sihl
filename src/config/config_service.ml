@@ -6,9 +6,9 @@ module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
-  let register_config _ config =
+  let register_config config =
     Log.debug (fun m -> m "CONFIG: Register config");
-    Config_core.Internal.register config |> Lwt.return
+    Config_core.Internal.register config
 
   let is_testing () =
     Sys.getenv "SIHL_ENV"
