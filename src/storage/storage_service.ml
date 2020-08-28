@@ -11,7 +11,13 @@ module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
         Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
-  let get_file ctx ~id = Repo.get_file ctx ~id
+  let find_opt ctx ~id = Repo.get_file ctx ~id
+
+  let find ctx ~id =
+    let* file = Repo.get_file ctx ~id in
+    match file with
+    | None -> raise (Exception ("File not found with id " ^ id))
+    | Some file -> Lwt.return file
 
   let upload_base64 ctx ~file ~base64 =
     let blob_id = Data.Id.random () |> Data.Id.to_string in
@@ -44,7 +50,7 @@ module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
     let* () = Repo.update_file ctx ~file in
     Lwt.return file
 
-  let get_data_base64 ctx ~file =
+  let download_data_base64_opt ctx ~file =
     let blob_id = StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
@@ -55,6 +61,22 @@ module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
         raise (Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
+
+  let download_data_base64 ctx ~file =
+    let blob_id = StoredFile.blob file in
+    let* blob = Repo.get_blob ctx ~id:blob_id in
+    match Option.map Base64.encode blob with
+    | Some (Error (`Msg msg)) ->
+        Log.err (fun m ->
+            m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
+              file);
+        raise (Exception msg)
+    | Some (Ok blob) -> Lwt.return blob
+    | None ->
+        raise
+          (Exception
+             (Format.asprintf "File data not found for file %a" StoredFile.pp
+                file))
 end
 
 module Repo = struct

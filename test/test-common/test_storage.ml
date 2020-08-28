@@ -20,17 +20,11 @@ struct
     let* _ =
       StorageService.upload_base64 ctx ~file ~base64:"ZmlsZWNvbnRlbnQ="
     in
-    let* uploaded_file =
-      StorageService.get_file ctx ~id:file_id
-      |> Lwt.map (fun file ->
-             Option.value_exn file ~message:"No uploaded file found")
-    in
+    let* uploaded_file = StorageService.find ctx ~id:file_id in
     let actual_file = uploaded_file |> Sihl.Storage.StoredFile.file in
     Alcotest.(check alco_file "has same file" file actual_file);
     let* actual_blob =
-      StorageService.get_data_base64 ctx ~file:uploaded_file
-      |> Lwt.map (fun file ->
-             Option.value_exn file ~message:"No uploaded blob found")
+      StorageService.download_data_base64 ctx ~file:uploaded_file
     in
     Alcotest.(check string "has same blob" "ZmlsZWNvbnRlbnQ=" actual_blob);
     Lwt.return ()
@@ -59,9 +53,7 @@ struct
         (Sihl.Storage.StoredFile.file updated_file)
         (Sihl.Storage.StoredFile.file actual_file));
     let* actual_blob =
-      StorageService.get_data_base64 ctx ~file:stored_file
-      |> Lwt.map (fun file ->
-             Option.value_exn file ~message:"No uploaded blob found")
+      StorageService.download_data_base64 ctx ~file:stored_file
     in
     Alcotest.(check string "has updated blob" "bmV3Y29udGVudA==" actual_blob);
     Lwt.return ()
