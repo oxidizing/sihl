@@ -13,7 +13,7 @@ module Make
     let* user_id = SessionService.get ctx ~key:"authn" in
     match user_id with
     | None -> Lwt.return None
-    | Some user_id -> UserService.get ctx ~user_id
+    | Some user_id -> UserService.find_opt ctx ~user_id
 
   let authenticate_session ctx user =
     SessionService.set ctx ~key:"authn" ~value:(User.id user)

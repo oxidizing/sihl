@@ -76,7 +76,7 @@ struct
       Sihl.Data.Ql.Filter.(C { key = "email"; value = "%user1%"; op = Like })
     in
     let query = Sihl.Data.Ql.(empty |> set_limit 10 |> set_filter filter) in
-    let* actual_users, meta = UserService.get_all ctx ~query in
+    let* actual_users, meta = UserService.find_all ctx ~query in
     Alcotest.(check int "has correct meta" 1 (Sihl.Data.Repo.Meta.total meta));
     Alcotest.(
       check (list Sihl.User.alcotest) "has one user" actual_users [ user1 ]);

@@ -16,7 +16,7 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
       (fun _ -> Lwt.return ())
 
   let create_reset_token ctx ~email =
-    let* user = UserService.get_by_email ctx ~email in
+    let* user = UserService.find_by_email_opt ctx ~email in
     match user with
     | Some user ->
         let user_id = User_core.User.id user in
@@ -47,16 +47,10 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
     in
     match user_id with
     | Error msg -> Lwt.return @@ Error msg
-    | Ok user_id -> (
-        let* user = UserService.get ctx ~user_id in
-        match user with
-        | None ->
-            Lwt.return
-            @@ Error (Printf.sprintf "User with id %s not found" user_id)
-        | Some user ->
-            let* result =
-              UserService.set_password ctx ~user ~password
-                ~password_confirmation ()
-            in
-            Lwt.return @@ Result.map ~f:(fun _ -> ()) result )
+    | Ok user_id ->
+        let* user = UserService.find ctx ~user_id in
+        let* result =
+          UserService.set_password ctx ~user ~password ~password_confirmation ()
+        in
+        Lwt.return @@ Result.map ~f:(fun _ -> ()) result
 end

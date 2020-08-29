@@ -18,14 +18,19 @@ end
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val get_all :
+  val find_all :
     Core.Ctx.t ->
     query:Data.Ql.t ->
     (User_core.User.t list * Data.Repo.Meta.t) Lwt.t
 
-  val get : Core.Ctx.t -> user_id:string -> User_core.User.t option Lwt.t
+  val find_opt : Core.Ctx.t -> user_id:string -> User_core.User.t option Lwt.t
 
-  val get_by_email : Core.Ctx.t -> email:string -> User_core.User.t option Lwt.t
+  val find : Core.Ctx.t -> user_id:string -> User_core.User.t Lwt.t
+
+  val find_by_email : Core.Ctx.t -> email:string -> User_core.User.t Lwt.t
+
+  val find_by_email_opt :
+    Core.Ctx.t -> email:string -> User_core.User.t option Lwt.t
 
   val update_password :
     Core.Ctx.t ->

@@ -8,17 +8,17 @@ module Make
     (CmdService : Cmd.Sig.SERVICE)
     (DbService : Data.Db.Sig.SERVICE)
     (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
-  let get ctx ~user_id = Repo.get ctx ~id:user_id
+  let find_opt ctx ~user_id = Repo.get ctx ~id:user_id
 
-  let get_exn ctx ~user ~msg =
-    let* user = get ctx ~user_id:(User.id user) in
-    match user with
+  let find ctx ~user_id =
+    let* m_user = find_opt ctx ~user_id in
+    match m_user with
     | Some user -> Lwt.return user
     | None ->
-        Log.err (fun m -> m "USER: %s" msg);
-        raise (User_core.Exception msg)
+        Log.err (fun m -> m "USER: User not found with id %s" user_id);
+        raise (User_core.Exception "User not found")
 
-  let get_by_email ctx ~email =
+  let find_by_email_opt ctx ~email =
     (* TODO add support for lowercase UTF-8
      * String.lowercase only supports US-ASCII, but
      * email addresses can contain other letters
@@ -26,7 +26,15 @@ module Make
      *)
     Repo.get_by_email ctx ~email:(String.lowercase email)
 
-  let get_all ctx ~query = Repo.get_all ctx ~query
+  let find_by_email ctx ~email =
+    let* user = find_by_email_opt ctx ~email in
+    match user with
+    | Some user -> Lwt.return user
+    | None ->
+        Log.err (fun m -> m "USER: User not found with email %s" email);
+        raise (User_core.Exception "User not found")
+
+  let find_all ctx ~query = Repo.get_all ctx ~query
 
   let update_password ctx ?(password_policy = User.default_password_policy)
       ~user ~old_password ~new_password ~new_password_confirmation () =
@@ -51,7 +59,7 @@ module Make
   let update_details ctx ~user ~email ~username =
     let updated_user = User.set_user_details user ~email ~username in
     let* () = Repo.update ctx ~user:updated_user in
-    get_exn ctx ~user ~msg:("Failed to update user with email " ^ email)
+    find ctx ~user_id:(User.id user)
 
   let set_password ctx ?(password_policy = User.default_password_policy) ~user
       ~password ~password_confirmation () =
@@ -117,22 +125,16 @@ module Make
     with
     | Error msg -> Lwt_result.fail msg
     | Ok () -> (
-        let* user = get_by_email ctx ~email in
+        let* user = find_by_email_opt ctx ~email in
         match user with
         | None ->
             create_user ctx ~username ~email ~password |> Lwt.map Result.return
         | Some _ -> Lwt_result.fail "Invalid email address provided" )
 
   let login ctx ~email ~password =
-    let* user =
-      get_by_email ctx ~email
-      |> Lwt.map (Result.of_option ~error:"Invalid email or password provided")
-    in
-    match user with
-    | Ok user ->
-        if User.matches_password password user then Lwt_result.return user
-        else Lwt_result.fail "Invalid email or password provided"
-    | Error msg -> Lwt_result.fail msg
+    let* user = find_by_email ctx ~email in
+    if User.matches_password password user then Lwt_result.return user
+    else Lwt_result.fail "Invalid email or password provided"
 
   let create_admin_cmd =
     Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
