@@ -64,7 +64,7 @@
   (uuidm (>= 0.9.7))
 
   ;; SMTP
-  (letters (>= 0.1.1))
+  (letters (and (>= 0.1.1) (< 0.2.0)))
 
   ;; Helpers & Generation
   (sexplib (>= 0.13.0))
