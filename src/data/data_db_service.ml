@@ -37,39 +37,12 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
       (fun ctx -> ctx |> add_pool |> Lwt.return)
       (fun _ -> Lwt.return ())
 
-  let safe_f f arg =
-    Lwt.catch
-      (fun () -> f arg |> Lwt.map Result.return)
-      (fun e ->
-        let msg = Caml.Printexc.to_string e
-        and stack = Caml.Printexc.get_backtrace () in
-        let err_msg = Printf.sprintf "DB: %s%s\n" msg stack in
-        Log.err (fun m -> m "DB: %s" err_msg);
-        let caqti_error =
-          Caqti_error.request_failed ~uri:Uri.empty ~query:""
-            (Caqti_error.Msg err_msg)
-        in
-        Lwt_result.fail caqti_error)
-
   let query ctx f =
     match
       (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)
     with
     | Some connection, _ -> (
-        let* result =
-          Lwt.catch
-            (fun () -> f connection)
-            (fun e ->
-              let msg = Caml.Printexc.to_string e
-              and stack = Caml.Printexc.get_backtrace () in
-              let err_msg = Printf.sprintf "DB: %s%s\n" msg stack in
-              Log.err (fun m -> m "DB: %s" err_msg);
-              let caqti_error =
-                Caqti_error.request_failed ~uri:Uri.empty ~query:""
-                  (Caqti_error.Msg err_msg)
-              in
-              Lwt_result.fail caqti_error)
-        in
+        let* result = Lwt.catch (fun () -> f connection) (fun e -> raise e) in
         match result with
         | Ok result -> Lwt.return result
         | Error error ->
@@ -78,17 +51,7 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
             raise (Exception msg) )
     | None, Some pool -> (
         let* result =
-          try Caqti_lwt.Pool.use f pool
-          with e ->
-            let msg = Caml.Printexc.to_string e
-            and stack = Caml.Printexc.get_backtrace () in
-            let err_msg = Printf.sprintf "DB: %s%s\n" msg stack in
-            Log.err (fun m -> m "DB: %s" err_msg);
-            let caqti_error =
-              Caqti_error.request_failed ~uri:Uri.empty ~query:""
-                (Caqti_error.Msg err_msg)
-            in
-            Lwt_result.fail caqti_error
+          Lwt.catch (fun () -> Caqti_lwt.Pool.use f pool) (fun e -> raise e)
         in
         match result with
         | Ok result -> Lwt.return result
@@ -102,7 +65,6 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         raise (Exception "No connection pool found")
 
   let atomic ctx f =
-    let f = safe_f f in
     match Core_ctx.find ctx_key_pool ctx with
     | Some pool -> (
         let n_connections = Caqti_lwt.Pool.size pool in
@@ -129,36 +91,32 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
                   let ctx_with_connection =
                     Core_ctx.add ctx_key_connection (module Connection) ctx
                   in
-                  let* f_result = f ctx_with_connection in
-                  let* () =
-                    match f_result with
-                    | Error _ -> (
-                        let* rollback_result = Connection.rollback () in
-                        match rollback_result with
-                        | Ok () ->
-                            Log.debug (fun m ->
-                                m "DB TX: Successfully rolled back transaction");
-                            Lwt.return ()
-                        | Error error ->
-                            Log.err (fun m ->
-                                m "DB TX: Failed to rollback transaction %s"
-                                  (Caqti_error.show error));
-                            raise @@ Exception "Failed to rollback transaction"
-                        )
-                    | Ok _ -> (
-                        let* commit_result = Connection.commit () in
-                        match commit_result with
-                        | Ok () ->
-                            Log.debug (fun m ->
-                                m "DB TX: Successfully committed transaction");
-                            Lwt.return ()
-                        | Error error ->
-                            Log.err (fun m ->
-                                m "DB TX: Failed to commit transaction %s"
-                                  (Caqti_error.show error));
-                            raise @@ Exception "Failed to commit transaction" )
-                  in
-                  Lwt.return f_result)
+                  Lwt.catch
+                    (fun () ->
+                      let* result = f ctx_with_connection in
+                      let* commit_result = Connection.commit () in
+                      match commit_result with
+                      | Ok () ->
+                          Log.debug (fun m ->
+                              m "DB TX: Successfully committed transaction");
+                          Lwt.return (Ok result)
+                      | Error error ->
+                          Log.err (fun m ->
+                              m "DB TX: Failed to commit transaction %s"
+                                (Caqti_error.show error));
+                          raise @@ Exception "Failed to commit transaction")
+                    (fun e ->
+                      let* rollback_result = Connection.rollback () in
+                      match rollback_result with
+                      | Ok () ->
+                          Log.debug (fun m ->
+                              m "DB TX: Successfully rolled back transaction");
+                          raise e
+                      | Error error ->
+                          Log.err (fun m ->
+                              m "DB TX: Failed to rollback transaction %s"
+                                (Caqti_error.show error));
+                          raise @@ Exception "Failed to rollback transaction"))
             pool
         in
         match pool_result with
@@ -174,7 +132,6 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         raise (Exception "No connection pool found")
 
   let single_connection ctx f =
-    let f = safe_f f in
     match Core_ctx.find ctx_key_pool ctx with
     | Some pool -> (
         let n_connections = Caqti_lwt.Pool.size pool in
@@ -196,10 +153,9 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         in
         Log.debug (fun m -> m "DB: Putting back connection to pool");
         match pool_result with
-        | Ok (Ok result) ->
+        | Ok result ->
             (* All good, return result of f ctx *)
             Lwt.return result
-        | Ok (Error err) -> raise (Exception (err |> Caqti_error.show))
         | Error pool_err ->
             (* Failed to start, commit or rollback transaction *)
             raise (Exception (pool_err |> Caqti_error.show)) )
