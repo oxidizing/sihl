@@ -21,8 +21,7 @@ module type SERVICE = sig
 
       The context has to contain a database connection or a database connection pool.*)
 
-  val atomic :
-    Core_ctx.t -> ?no_rollback:bool -> (Core_ctx.t -> 'a Lwt.t) -> 'a Lwt.t
+  val atomic : Core_ctx.t -> (Core_ctx.t -> 'a Lwt.t) -> 'a Lwt.t
   (** Run a database query atomically on a connection.
 
 The context has to contain a database connection or a database connection pool. Fetch a database connection from context if necessary to make sure, that every query runs on the same connection. *)
