@@ -26,11 +26,6 @@ module type SERVICE = sig
 
 The context has to contain a database connection or a database connection pool. Fetch a database connection from context if necessary to make sure, that every query runs on the same connection. *)
 
-  val single_connection : Core_ctx.t -> (Core_ctx.t -> 'a Lwt.t) -> 'a Lwt.t
-  (** Run a database query on a connection.
-
-      The context has to contain a database connection or a database connection pool. Fetch a database connection from context if necessary to make sure, that every query runs on the same connection. This can be used for prepared statements.*)
-
   val set_fk_check : Core.Ctx.t -> check:bool -> unit Lwt.t
   (** Disables foreign key checks if supported by the database.
 

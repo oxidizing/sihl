@@ -118,9 +118,7 @@ struct
         Lwt.return state )
     in
     let migration_to_apply = Model.steps_to_apply migration state in
-    let* () =
-      Db.single_connection ctx (fun ctx -> execute_steps ctx migration_to_apply)
-    in
+    let* () = execute_steps ctx migration_to_apply in
     let* _ = mark_clean ctx ~namespace in
     Lwt.return @@ Ok ()
 
