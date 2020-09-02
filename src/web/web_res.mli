@@ -4,6 +4,8 @@ val pp : Format.formatter -> t -> unit
 
 val equal : t -> t -> bool
 
+val file : string -> Web_core.content_type -> t
+
 val html : t
 
 val json : t
@@ -20,4 +22,4 @@ val set_cookie : key:string -> data:string -> t -> t
 
 val set_status : int -> t -> t
 
-val to_opium : t -> Opium_kernel.Response.t
+val to_opium : t -> Opium_kernel.Response.t Lwt.t

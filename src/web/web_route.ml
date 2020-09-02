@@ -1,3 +1,4 @@
+open Lwt.Syntax
 module Res = Web_res
 
 type handler = Core.Ctx.t -> Res.t Lwt.t [@@deriving show]
@@ -25,9 +26,8 @@ let all path handler = (All, path, handler)
 let prefix prefix (meth, path, handler) = (meth, prefix ^ path, handler)
 
 let handler_to_opium_handler handler opium_req =
-  Core.Ctx.empty
-  |> Web_req.add_to_ctx opium_req
-  |> handler |> Lwt.map Web_res.to_opium
+  let* handler = Core.Ctx.empty |> Web_req.add_to_ctx opium_req |> handler in
+  handler |> Web_res.to_opium
 
 let to_opium_builder (meth, path, handler) =
   let handler = handler_to_opium_handler handler in
