@@ -10,13 +10,16 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
         |> Lwt.map (fun () -> ctx))
       (fun _ -> Lwt.return ())
 
-  let require_session_key ctx =
+  let require_session_key_opt ctx =
     Core.Ctx.find Session_sig.ctx_session_key ctx
+
+  let require_session_key ctx =
+    require_session_key_opt ctx
     |> Result.of_option ~error:"SESSION: No session found in context"
-    |> Result.ok_or_failwith |> Lwt.return
+    |> Result.ok_or_failwith
 
   let set_value ctx ~key ~value =
-    let* session_key = require_session_key ctx in
+    let session_key = require_session_key ctx in
     let* session = Repo.get ctx ~key:session_key in
     match session with
     | None ->
@@ -28,7 +31,7 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
         Repo.update ctx session
 
   let remove_value ctx ~key =
-    let* session_key = require_session_key ctx in
+    let session_key = require_session_key ctx in
     let* session = Repo.get ctx ~key:session_key in
     match session with
     | None ->
@@ -40,7 +43,7 @@ module Make (Repo : Session_sig.REPO) : Session_sig.SERVICE = struct
         Repo.update ctx session
 
   let get_value ctx ~key =
-    let* session_key = require_session_key ctx in
+    let session_key = require_session_key ctx in
     let* session = Repo.get ctx ~key:session_key in
     match session with
     | None ->

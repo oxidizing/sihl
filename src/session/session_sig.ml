@@ -25,7 +25,7 @@ module type SERVICE = sig
 
   val get_session : Core.Ctx.t -> key:string -> Session_core.t option Lwt.t
 
-  val require_session_key : Core.Ctx.t -> string Lwt.t
+  val require_session_key : Core.Ctx.t -> string
 
   val get_all_sessions : Core.Ctx.t -> Session_core.t list Lwt.t
 
