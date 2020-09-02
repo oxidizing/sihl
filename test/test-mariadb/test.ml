@@ -18,6 +18,7 @@ module PasswordReset =
 module Queue = Test_common.Test.Queue.Make (Service.Repo) (Service.Queue)
 module Csrf =
   Test_common.Test.Csrf.Make (Service.Db) (Service.Repo) (Service.Token)
+    (Service.Session)
     (Service.Log)
 
 let test_suite ctx =

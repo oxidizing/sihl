@@ -2,13 +2,16 @@ open Alcotest_lwt
 open Base
 open Lwt.Syntax
 
+(* TODO [aerben] FIX TESTS*)
 module Make
     (DbService : Sihl.Data.Db.Sig.SERVICE)
     (RepoService : Sihl.Data.Repo.Sig.SERVICE)
     (TokenService : Sihl.Token.Sig.SERVICE)
+    (SessionService : Sihl.Session.Sig.SERVICE)
     (Log : Sihl.Log.Sig.SERVICE) =
 struct
-  module Middleware = Sihl.Web.Middleware.Csrf.Make (TokenService) (Log)
+  module Middleware =
+    Sihl.Web.Middleware.Csrf.Make (TokenService) (Log) (SessionService)
 
   let get_request_yields_token _ () =
     let ctx =
@@ -109,7 +112,7 @@ struct
     Lwt.catch
       (fun () -> Sihl.Web.Route.handler wrapped_route ctx |> Lwt.map ignore)
       (function
-        | Sihl.Web.Middleware.Csrf.Invalid_csrf_token txt ->
+        | Sihl.Web.Middleware.Csrf.No_csrf_token txt ->
             Alcotest.(check string "Raises" "Invalid CSRF token" txt);
             Lwt.return ()
         | exn -> Lwt.fail exn)

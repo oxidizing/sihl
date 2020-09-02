@@ -35,6 +35,10 @@ let make ~id ~data ~kind ?(expires_in = Utils.Time.OneDay) ?now () =
 
 let invalidate token = { token with status = Inactive }
 
+let is_valid token =
+  Status.equal token.status Status.Active
+  && Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())
+
 let alco = Alcotest.testable pp equal
 
 let t =
