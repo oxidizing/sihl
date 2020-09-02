@@ -1,7 +1,7 @@
 open Base
-open Lwt.Syntax
 open Web_core
 
+(* TODO remove all opium references *)
 module OpiumResponse = struct
   (* We want to be able to derive show and eq from our own response type t *)
   type t = Opium_kernel.Response.t
@@ -68,49 +68,31 @@ let redirect path =
     status = 302;
   }
 
+let redirect_path res = res.redirect
+
+let body res = res.body
+
 let set_body str res = { res with body = Some (String str) }
+
+let headers res = res.headers
+
+let set_headers headers res = { res with headers }
+
+let content_type res = res.content_type
 
 let set_content_type content_type res = { res with content_type }
 
+(* TODO this is a hack and has to be removed *)
+let opium_res res = res.opium_res
+
+(* TODO this is a hack and has to be removed *)
 let set_opium_res opium_res res = { res with opium_res = Some opium_res }
+
+let cookies res = res.cookies
 
 let set_cookie ~key ~data res =
   { res with cookies = List.cons (key, data) res.cookies }
 
-let set_status status res = { res with status }
+let status res = res.status
 
-let to_opium res =
-  match res.opium_res with
-  | Some res -> Lwt.return res
-  | None -> (
-      let headers = Cohttp.Header.of_list res.headers in
-      let headers =
-        Cohttp.Header.add headers "Content-Type"
-          (show_content_type res.content_type)
-      in
-      let code = res.status |> Cohttp.Code.status_of_code in
-      let headers =
-        match res.redirect with
-        | Some path -> Cohttp.Header.add headers "Location" path
-        | None -> headers
-      in
-      let cookie_headers =
-        res.cookies
-        |> List.map ~f:(fun cookie ->
-               Cohttp.Cookie.Set_cookie_hdr.make ~secure:false ~path:"/" cookie)
-        |> List.map ~f:Cohttp.Cookie.Set_cookie_hdr.serialize
-      in
-      let headers =
-        List.fold_left cookie_headers ~init:headers ~f:(fun headers (k, v) ->
-            Cohttp.Header.add headers k v)
-      in
-      match res.body with
-      | None -> Opium.Std.respond ~headers ~code (`String "") |> Lwt.return
-      | Some (String body) ->
-          Opium.Std.respond ~headers ~code (`String body) |> Lwt.return
-      | Some (File_path fname) ->
-          let* cohttp_response =
-            Cohttp_lwt_unix.Server.respond_file ~headers ~fname ()
-          in
-          Opium_kernel.Rock.Response.of_response_body cohttp_response
-          |> Lwt.return )
+let set_status status res = { res with status }

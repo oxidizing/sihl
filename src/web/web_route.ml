@@ -1,13 +1,14 @@
-open Lwt.Syntax
-module Res = Web_res
-
-type handler = Core.Ctx.t -> Res.t Lwt.t [@@deriving show]
+type handler = Core.Ctx.t -> Web_res.t Lwt.t [@@deriving show]
 
 let equal_handler _ _ = true
 
 type meth = Get | Post | Put | Delete | All [@@deriving show, eq]
 
 type t = meth * string * handler [@@deriving show, eq]
+
+let meth (meth, _, _) = meth
+
+let path (_, path, _) = path
 
 let handler (_, _, handler) = handler
 
@@ -24,16 +25,3 @@ let delete path handler = (Delete, path, handler)
 let all path handler = (All, path, handler)
 
 let prefix prefix (meth, path, handler) = (meth, prefix ^ path, handler)
-
-let handler_to_opium_handler handler opium_req =
-  let* handler = Core.Ctx.empty |> Web_req.add_to_ctx opium_req |> handler in
-  handler |> Web_res.to_opium
-
-let to_opium_builder (meth, path, handler) =
-  let handler = handler_to_opium_handler handler in
-  match meth with
-  | Get -> Opium.Std.get path handler
-  | Post -> Opium.Std.post path handler
-  | Put -> Opium.Std.put path handler
-  | Delete -> Opium.Std.delete path handler
-  | All -> Opium.Std.all path handler
