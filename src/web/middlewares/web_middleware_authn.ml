@@ -1,12 +1,13 @@
-let ( let* ) = Lwt.bind
+open Lwt.Syntax
 
-module Make (AuthnService : Authn.Sig.SERVICE) = struct
+module Make (AuthnService : Authn.Sig.SERVICE) (UserService : User.Sig.SERVICE) =
+struct
   let session () =
     let filter handler ctx =
-      let* user = AuthnService.find_user_in_session ctx in
+      let* user = AuthnService.find_user_in_session_opt ctx in
       match user with
       | Some user ->
-          let ctx = User.ctx_add_user user ctx in
+          let ctx = UserService.add_user user ctx in
           handler ctx
       | None -> handler ctx
     in
@@ -14,7 +15,7 @@ module Make (AuthnService : Authn.Sig.SERVICE) = struct
 
   let require_user ~login_path_f =
     let filter handler ctx =
-      let user = User.find_user ctx in
+      let user = UserService.require_user_opt ctx in
       match user with
       | Some _ -> handler ctx
       | None ->
@@ -25,7 +26,7 @@ module Make (AuthnService : Authn.Sig.SERVICE) = struct
 
   let require_admin ~login_path_f =
     let filter handler ctx =
-      let user = User.find_user ctx in
+      let user = UserService.require_user_opt ctx in
       match user with
       | Some user ->
           if User.is_admin user then handler ctx
@@ -38,42 +39,3 @@ module Make (AuthnService : Authn.Sig.SERVICE) = struct
     in
     Web_middleware_core.create ~name:"user_require_admin" filter
 end
-
-(* let token () =
- *   let filter handler req =
- *     let ctx = Http.ctx req in
- *     match req |> Request.headers |> Cohttp.Header.get_authorization with
- *     | None -> handler req
- *     | Some (`Other token) -> (
- *         (\* TODO use more robust bearer token parsing *\)
- *         let token =
- *           token |> String.split ~on:' ' |> List.tl_exn |> List.hd_exn
- *         in
- *         let (module UserService : User.Sig.SERVICE) =
- *           Core.Container.fetch_service_exn User.Sig.key
- *         in
- *         let* user =
- *           UserService.get_by_token ctx token
- *           |> Lwt_result.map_err Core.Err.raise_not_authenticated
- *           |> Lwt.map Result.ok_exn
- *         in
- *         match user with
- *         | None -> Core.Err.raise_not_authenticated "No user found"
- *         | Some user ->
- *             let env = Opium.Hmap.add key user (Request.env req) in
- *             let req = { req with Request.env } in
- *             handler req )
- *     | Some (`Basic (email, password)) ->
- *         let (module UserService : User.Sig.SERVICE) =
- *           Core.Container.fetch_service_exn User.Sig.key
- *         in
- *         let* user =
- *           UserService.authenticate_credentials ctx ~email ~password
- *           |> Lwt_result.map_err Core.Err.raise_not_authenticated
- *           |> Lwt.map Result.ok_exn
- *         in
- *         let env = Opium.Hmap.add key user (Request.env req) in
- *         let req = { req with Request.env } in
- *         handler req
- *   in
- *   Rock.Middleware.create ~name:"users.token" ~filter *)

@@ -1,7 +1,12 @@
 module type SERVICE = sig
   include Core_container.SERVICE
 
-  val find_user_in_session : Core.Ctx.t -> User.t option Lwt.t
+  val find_user_in_session_opt : Core.Ctx.t -> User.t option Lwt.t
+  (** Find currently logged in user in the current context.
+
+      Make sure to call [authenticate_session] before or apply the required session and authentication middlewares. *)
+
+  val find_user_in_session : Core.Ctx.t -> User.t Lwt.t
   (** Find currently logged in user in the current context.
 
       Make sure to call [authenticate_session] before or apply the required session and authentication middlewares. *)

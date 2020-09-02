@@ -1,5 +1,7 @@
 open Lwt.Syntax
 
+exception Exception of string
+
 module Make
     (SessionService : Session.Sig.SERVICE)
     (UserService : User.Sig.SERVICE) : Authn_sig.SERVICE = struct
@@ -9,11 +11,17 @@ module Make
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
-  let find_user_in_session ctx =
+  let find_user_in_session_opt ctx =
     let* user_id = SessionService.get ctx ~key:"authn" in
     match user_id with
     | None -> Lwt.return None
     | Some user_id -> UserService.find_opt ctx ~user_id
+
+  let find_user_in_session ctx =
+    let* user_id = SessionService.get ctx ~key:"authn" in
+    match user_id with
+    | None -> raise @@ Exception "No user found in current session"
+    | Some user_id -> UserService.find ctx ~user_id
 
   let authenticate_session ctx user =
     SessionService.set ctx ~key:"authn" ~value:(User.id user)

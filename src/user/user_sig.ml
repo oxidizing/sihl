@@ -18,6 +18,12 @@ end
 module type SERVICE = sig
   include Core_container.SERVICE
 
+  val add_user : User_core.User.t -> Core.Ctx.t -> Core.Ctx.t
+
+  val require_user_opt : Core.Ctx.t -> User_core.User.t option
+
+  val require_user : Core.Ctx.t -> User_core.User.t
+
   val find_all :
     Core.Ctx.t ->
     query:Data.Ql.t ->
@@ -88,7 +94,7 @@ module type SERVICE = sig
     (User_core.User.t, string) Result.t Lwt.t
   (** Create and store new user.
 
-      Provide [password_policy] to check whether the password fulfills cretain criteria.
+      Provide [password_policy] to check whether the password fulfills certain criteria.
 *)
 
   val login :
