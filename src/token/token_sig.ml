@@ -1,9 +1,9 @@
 module type REPOSITORY = sig
   include Data.Repo.Sig.REPO
 
-  val find : Core.Ctx.t -> value:string -> Token_core.t Lwt.t
-
   val find_opt : Core.Ctx.t -> value:string -> Token_core.t option Lwt.t
+
+  val find_by_id_opt : Core.Ctx.t -> id:string -> Token_core.t option Lwt.t
 
   val insert : Core.Ctx.t -> token:Token_core.t -> unit Lwt.t
 
@@ -27,10 +27,17 @@ module type SERVICE = sig
 *)
 
   val find : Core.Ctx.t -> value:string -> unit -> Token_core.t Lwt.t
-  (** Returns an active and non-expired token. *)
+  (** Returns an active and non-expired token. Raises [Failure] if no token is found. *)
 
   val find_opt : Core.Ctx.t -> value:string -> unit -> Token_core.t option Lwt.t
   (** Returns an active and non-expired token. *)
+
+  val find_by_id : Core.Ctx.t -> id:string -> unit -> Token_core.t Lwt.t
+  (** Returns an active and non-expired token by id. Raises [Failure] if no token is found. *)
+
+  val find_by_id_opt :
+    Core.Ctx.t -> id:string -> unit -> Token_core.t option Lwt.t
+  (** Returns an active and non-expired token by id. *)
 
   val invalidate : Core.Ctx.t -> token:Token_core.t -> unit -> unit Lwt.t
   (** Invalidate a token by marking it as such in the database and therefore marking it "to be deleted" *)

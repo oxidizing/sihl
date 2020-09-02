@@ -12,12 +12,31 @@ module Make (Db : Data_db_sig.SERVICE) (Repo : Token_sig.REPOSITORY) :
         |> Lwt.map (fun () -> ctx))
       (fun _ -> Lwt.return ())
 
-  let find_opt ctx ~value () = Repo.find_opt ctx ~value
+  let find_opt ctx ~value () =
+    let* token = Repo.find_opt ctx ~value in
+    Lwt.return
+    @@ Option.bind token ~f:(fun tk ->
+           if Token_core.is_valid tk then token else None)
 
   let find ctx ~value () =
     let* token = find_opt ctx ~value () in
     token
-    |> Result.of_option ~error:(Printf.sprintf "Token %s not found" value)
+    |> Result.of_option
+         ~error:
+           (Printf.sprintf "Token with value %s not found or not valid" value)
+    |> Result.ok_or_failwith |> Lwt.return
+
+  let find_by_id_opt ctx ~id () =
+    let* token = Repo.find_by_id_opt ctx ~id in
+    Lwt.return
+    @@ Option.bind token ~f:(fun tk ->
+           if Token_core.is_valid tk then token else None)
+
+  let find_by_id ctx ~id () =
+    let* token = find_by_id_opt ctx ~id () in
+    token
+    |> Result.of_option
+         ~error:(Printf.sprintf "Token with id %s not found or not valid" id)
     |> Result.ok_or_failwith |> Lwt.return
 
   let create ctx ~kind ?data ?expires_in () =

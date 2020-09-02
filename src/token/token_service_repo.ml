@@ -21,13 +21,28 @@ struct
         WHERE token_tokens.token_value = ?
         |sql}
 
-    let find ctx ~value =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find find_request value)
-
     let find_opt ctx ~value =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_request value)
+
+    let find_by_id_request =
+      Caqti_request.find Data.Id.t_string Model.t
+        {sql|
+        SELECT
+          uuid,
+          token_value,
+          token_data,
+          token_kind,
+          status,
+          expires_at,
+          created_at
+        FROM token_tokens
+        WHERE token_tokens.token_uuid = ?
+        |sql}
+
+    let find_by_id_opt ctx ~id =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.find_opt find_by_id_request id)
 
     let insert_request =
       Caqti_request.exec Model.t
@@ -57,7 +72,6 @@ struct
 
     let update_request =
       Caqti_request.exec Model.t
-        (* TODO Check if correct sql syntax*)
         {sql|
         UPDATE token_tokens
         SET
@@ -114,9 +128,9 @@ struct
 
   let register_cleaner ctx = RepoService.register_cleaner ctx Sql.clean
 
-  let find = Sql.find
-
   let find_opt = Sql.find_opt
+
+  let find_by_id_opt = Sql.find_by_id_opt
 
   let insert = Sql.insert
 
