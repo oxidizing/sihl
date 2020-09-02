@@ -8,6 +8,15 @@ module Make
     (CmdService : Cmd.Sig.SERVICE)
     (DbService : Data.Db.Sig.SERVICE)
     (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
+  let add_user user ctx = Core.Ctx.add User.ctx_key user ctx
+
+  let require_user_opt ctx = Core.Ctx.find User.ctx_key ctx
+
+  let require_user ctx =
+    match Core.Ctx.find User.ctx_key ctx with
+    | None -> raise (User_core.Exception "User not found in context")
+    | Some user -> user
+
   let find_opt ctx ~user_id = Repo.get ctx ~id:user_id
 
   let find ctx ~user_id =

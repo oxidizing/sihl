@@ -7,8 +7,6 @@ module PasswordReset = User_password_reset
 
 type t = User_core.User.t
 
-val ctx_add_user : t -> Core.Ctx.t -> Core.Ctx.t
-
 val confirmed : t -> bool
 
 val admin : t -> bool
@@ -77,17 +75,4 @@ val validate_change_password :
   password_policy:(string -> (unit, string) Result.t) ->
   (unit, string) Result.t
 
-(* TODO [jerben] Make this a service call, it should not be possible to create a user that is not in the data base *)
-val create :
-  email:string ->
-  password:string ->
-  username:string option ->
-  admin:bool ->
-  confirmed:bool ->
-  (t, string) Result.t
-
 val t : t Caqti_type.t
-
-val require_user : Core.Ctx.t -> (t, string) Result.t
-
-val find_user : Core.Ctx.t -> t option
