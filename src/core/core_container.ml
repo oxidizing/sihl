@@ -60,28 +60,34 @@ let top_sort_lifecycles services =
               services after the cycle: " ^ msg ))
 
 let start_services services =
-  Logs.info (fun m -> m "CONTAINER: Start services");
+  print_endline "Starting Sihl...";
   let lifecycles = services |> top_sort_lifecycles in
   let ctx = Core_ctx.empty in
   let rec loop ctx lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
+        print_endline ("Start service: " ^ Lifecycle.module_name lifecycle);
         let f = Lifecycle.start lifecycle in
         let* ctx = f ctx in
         loop ctx lifecycles
     | [] -> Lwt.return ctx
   in
-  loop ctx lifecycles |> Lwt.map (fun ctx -> (services, ctx))
+  let* ctx = loop ctx lifecycles in
+  print_endline "All services online. Ready for Takeoff!";
+  Lwt.return (services, ctx)
 
 let stop_services ctx services =
-  Logs.info (fun m -> m "CONTAINER: Stop services");
+  print_endline "Stopping Sihl...";
   let lifecycles = services |> top_sort_lifecycles in
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
+        print_endline ("Stop service: " ^ Lifecycle.module_name lifecycle);
         let f = Lifecycle.stop lifecycle in
         let* () = f ctx in
         loop lifecycles
     | [] -> Lwt.return ()
   in
-  loop lifecycles
+  let* () = loop lifecycles in
+  print_endline "Stopped Sihl, Good Bye!";
+  Lwt.return ()
