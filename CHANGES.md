@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] - 2020-09-03
+### Fixed
+- Move Opium & Cohttp specific stuff into the web server service implementation to allow for swappable implementation based on something like httpaf
+
+### Added
+- HTTP Response API to respond with file `Sihl.Web.Res.file`
+
 ## [0.1.0] - 2020-09-02
 ### Fixed
 - DB connection leaks caused deadlocks

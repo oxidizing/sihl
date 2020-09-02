@@ -1,5 +1,7 @@
 type t
 
+type meth = Get | Post | Put | Delete | All
+
 val pp : Format.formatter -> t -> unit
 
 val show : t -> string
@@ -9,6 +11,10 @@ val equal : t -> t -> bool
 type handler = Core.Ctx.t -> Web_res.t Lwt.t
 
 val handler : t -> handler
+
+val meth : t -> meth
+
+val path : t -> string
 
 val set_handler : handler -> t -> t
 
@@ -23,5 +29,3 @@ val delete : string -> handler -> t
 val all : string -> handler -> t
 
 val prefix : string -> t -> t
-
-val to_opium_builder : t -> Opium.App.builder
