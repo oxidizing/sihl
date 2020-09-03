@@ -99,7 +99,8 @@ module App = Sihl.App.Make (Service)
 let _ = App.(empty |> with_services services |> with_routes routes |> run)
 ```
 
-This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` starts a web server that is instantaneously serving one route.
+This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` sets up a webserver (which is a service) that handles one route `/page/hello/` and returns HTML containing "Hello!" in the body.
+
 
 Even though you see no type definitions, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
 
