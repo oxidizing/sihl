@@ -2,7 +2,8 @@ open Base
 open Lwt.Syntax
 module Repo = Token_service_repo
 
-module Make (Repo : Token_sig.REPOSITORY) : Token_sig.SERVICE = struct
+module Make (Log : Log_sig.SERVICE) (Repo : Token_sig.REPOSITORY) :
+  Token_sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "token"
       (fun ctx ->

@@ -39,7 +39,7 @@ let order_all_dependencies _ () =
   let services : (module Sihl.Core.Container.SERVICE) list =
     [ (module ServiceD) ]
   in
-  let expected = [ "d"; "c"; "b"; "a" ] in
+  let expected = [ "a"; "b"; "c"; "d" ] in
   let actual =
     services |> Sihl.Core.Container.top_sort_lifecycles
     |> List.map Sihl.Core.Container.Lifecycle.module_name
@@ -51,7 +51,7 @@ let order_simple_dependency_list _ () =
   let services : (module Sihl.Core.Container.SERVICE) list =
     [ (module ServiceB) ]
   in
-  let expected = [ "b"; "a" ] in
+  let expected = [ "a"; "b" ] in
   let actual =
     services |> Sihl.Core.Container.top_sort_lifecycles
     |> List.map Sihl.Core.Container.Lifecycle.module_name

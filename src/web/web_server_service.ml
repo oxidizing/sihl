@@ -85,8 +85,8 @@ module MakeOpium (Log : Log.Sig.SERVICE) (CmdService : Cmd.Sig.SERVICE) :
     run_forever ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "webserver"
-      ~dependencies:[ CmdService.lifecycle ]
+    Core.Container.Lifecycle.make "web-server"
+      ~dependencies:[ Log.lifecycle; CmdService.lifecycle ]
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 

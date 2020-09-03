@@ -99,11 +99,11 @@ module App = Sihl.App.Make (Service)
 let _ = App.(empty |> with_services services |> with_routes routes |> run)
 ```
 
-This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces a binary that is 33 MB in size. Executing `sihl.exe start` starts a web server that is instantaneously serving one route.
+This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` starts a web server that is instantaneously serving one route.
 
-Even though you see no type definition, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
+Even though you see no type definitions, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
 
-It runs fast, maybe. We didn't spend any effort into measuring or tweaking performance yet. First we want to make sure the API somewhat stabilizes. Sihl will never be Rust-fast, but it might be become about Go-fast.
+It runs fast, maybe. We didn't spend any efforts on measuring or tweaking performance yet. We want to make sure the API somewhat stabilizes first. Sihl will never be Rust-fast, but it might be become about Go-fast.
 
 If you need stuff like job queues, emailing or password reset flows, just add one of the provided service implementations or create one yourself by implementing a service interface.
 

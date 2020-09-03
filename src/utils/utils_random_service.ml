@@ -6,7 +6,7 @@ let base64 ~bytes =
   Base64.encode_string ~alphabet:Base64.uri_safe_alphabet @@ rand "" bytes
 
 let lifecycle =
-  Core.Container.Lifecycle.make "log"
+  Core.Container.Lifecycle.make "random"
     (fun ctx ->
       Random.self_init ();
       Lwt.return ctx)

@@ -38,7 +38,8 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
     ctx_add_pool pool ctx
 
   let lifecycle =
-    Core.Container.Lifecycle.make "db" ~dependencies:[ Config.lifecycle ]
+    Core.Container.Lifecycle.make "db"
+      ~dependencies:[ Config.lifecycle; Log.lifecycle ]
       (fun ctx -> ctx |> add_pool |> Lwt.return)
       (fun _ -> Lwt.return ())
 

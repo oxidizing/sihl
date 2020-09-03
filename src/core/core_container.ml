@@ -51,7 +51,6 @@ let top_sort_lifecycles services =
   | Tsort.Sorted sorted ->
       sorted
       |> List.map (fun name -> Base.Map.find lifecycles name |> Option.get)
-      |> List.rev
   | Tsort.ErrorCycle remaining_names ->
       let msg = String.concat ", " remaining_names in
       raise

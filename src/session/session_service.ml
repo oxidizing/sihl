@@ -6,7 +6,7 @@ let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
   Session_sig.SERVICE = struct
   let lifecycle =
-    Core.Container.Lifecycle.make "session"
+    Core.Container.Lifecycle.make "session" ~dependencies:[ Log.lifecycle ]
       (fun ctx ->
         Repo.register_migration ();
         Repo.register_cleaner ();

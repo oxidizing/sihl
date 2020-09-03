@@ -4,7 +4,7 @@ open Lwt.Syntax
 
 module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
   let lifecycle =
-    Core.Container.Lifecycle.make "storage"
+    Core.Container.Lifecycle.make "storage" ~dependencies:[ Log.lifecycle ]
       (fun ctx ->
         Repo.register_migration ();
         Repo.register_cleaner ();

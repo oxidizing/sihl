@@ -7,11 +7,14 @@ module TokenData = struct
   type t = { user_id : string } [@@deriving yojson, make, fields]
 end
 
-module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) :
-  User_password_reset_sig.SERVICE = struct
+module Make
+    (Log : Log.Sig.SERVICE)
+    (TokenService : Token.Sig.SERVICE)
+    (UserService : User_sig.SERVICE) : User_password_reset_sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "password-reset"
-      ~dependencies:[ TokenService.lifecycle; UserService.lifecycle ]
+      ~dependencies:
+        [ Log.lifecycle; TokenService.lifecycle; UserService.lifecycle ]
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 
@@ -29,7 +32,7 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User_sig.SERVICE) 
         in
         Lwt.return @@ Some token
     | None ->
-        Logs.warn (fun m ->
+        Log.warn (fun m ->
             m "PASSWORD_RESET: No user found with email %s" email);
         Lwt.return None
 

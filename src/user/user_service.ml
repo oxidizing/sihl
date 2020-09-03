@@ -159,7 +159,7 @@ module Make
 
   let lifecycle =
     Core.Container.Lifecycle.make "user"
-      ~dependencies:[ CmdService.lifecycle; DbService.lifecycle ]
+      ~dependencies:[ Log.lifecycle; CmdService.lifecycle; DbService.lifecycle ]
       (fun ctx ->
         Repo.register_migration ();
         Repo.register_cleaner ();

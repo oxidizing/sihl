@@ -3,6 +3,7 @@ open Lwt.Syntax
 exception Exception of string
 
 module Make
+    (Log : Log.Sig.SERVICE)
     (SessionService : Session.Sig.SERVICE)
     (UserService : User.Sig.SERVICE) : Authn_sig.SERVICE = struct
   let lifecycle =

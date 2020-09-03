@@ -2,7 +2,7 @@ open Base
 
 module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
   let lifecycle =
-    Core.Container.Lifecycle.make "config"
+    Core.Container.Lifecycle.make "config" ~dependencies:[ Log.lifecycle ]
       (fun ctx -> Lwt.return ctx)
       (fun _ -> Lwt.return ())
 

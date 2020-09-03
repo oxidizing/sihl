@@ -26,7 +26,7 @@ module Template = struct
   module Make (Log : Log.Sig.SERVICE) (Repo : Email_sig.Template.REPO) :
     Email_sig.Template.SERVICE = struct
     let lifecycle =
-      Core.Container.Lifecycle.make "template"
+      Core.Container.Lifecycle.make "template" ~dependencies:[ Log.lifecycle ]
         (fun ctx ->
           Repo.register_migration ();
           Repo.register_cleaner ();
@@ -410,6 +410,7 @@ Html:
   end
 
   module Smtp
+      (Log : Log.Sig.SERVICE)
       (TemplateService : Email_sig.Template.SERVICE)
       (ConfigProvider : Email_sig.ConfigProvider.SMTP) : Email_sig.SERVICE =
   struct
@@ -609,7 +610,12 @@ module MakeDelayed
   let lifecycle =
     Core.Container.Lifecycle.make "email"
       ~dependencies:
-        [ EmailService.lifecycle; DbService.lifecycle; QueueService.lifecycle ]
+        [
+          Log.lifecycle;
+          EmailService.lifecycle;
+          DbService.lifecycle;
+          QueueService.lifecycle;
+        ]
       (fun ctx ->
         QueueService.register_jobs ctx ~jobs:[ Job.job ]
         |> Lwt.map (fun () -> ctx))
