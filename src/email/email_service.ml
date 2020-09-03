@@ -472,7 +472,7 @@ Html:
     module Template = TemplateService
 
     let lifecycle =
-      Core.Container.Lifecycle.make "delayed-email"
+      Core.Container.Lifecycle.make "email"
         ~dependencies:[ TemplateService.lifecycle ]
         (fun ctx -> Lwt.return ctx)
         (fun _ -> Lwt.return ())
@@ -608,7 +608,7 @@ module MakeDelayed
   end
 
   let lifecycle =
-    Core.Container.Lifecycle.make "email"
+    Core.Container.Lifecycle.make "delayed-email"
       ~dependencies:
         [
           Log.lifecycle;

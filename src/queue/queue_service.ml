@@ -127,20 +127,26 @@ module MakePolling
     (* This function run every second, the request context gets created here with each tick *)
     let scheduled_function () =
       let jobs = !registered_jobs in
-      let job_strings =
-        jobs |> List.map ~f:WorkableJob.name |> String.concat ~sep:", "
-      in
-      Logs.debug (fun m ->
-          m "QUEUE: Run job queue with registered jobs %s" job_strings);
-      (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
-      let combined_context_fn =
-        jobs
-        |> List.map ~f:WorkableJob.with_context
-        |> List.fold ~init:Fn.id ~f:Fn.compose
-      in
-      let ctx = combined_context_fn Core.Ctx.empty in
-      work_queue ctx ~jobs
+      if List.length jobs > 0 then (
+        let job_strings =
+          jobs |> List.map ~f:WorkableJob.name |> String.concat ~sep:", "
+        in
+        Logs.debug (fun m ->
+            m "QUEUE: Run job queue with registered jobs: %s" job_strings);
+        (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
+        let combined_context_fn =
+          jobs
+          |> List.map ~f:WorkableJob.with_context
+          |> List.fold ~init:Fn.id ~f:Fn.compose
+        in
+        let ctx = combined_context_fn Core.Ctx.empty in
+        work_queue ctx ~jobs )
+      else (
+        Logs.debug (fun m ->
+            m "QUEUE: No jobs found to run, trying again later");
+        Lwt.return () )
     in
+
     let schedule =
       Schedule.create Schedule.every_second ~f:scheduled_function
         ~label:"job_queue"
