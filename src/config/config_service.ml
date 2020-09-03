@@ -27,11 +27,12 @@ module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
     in
     Option.value value ~default
 
+  let read_string_opt key =
+    Option.first_some (Sys.getenv key)
+      (Map.find (Config_core.Internal.get ()) key)
+
   let read_string ?default key =
-    let value =
-      Option.first_some (Sys.getenv key)
-        (Map.find (Config_core.Internal.get ()) key)
-    in
+    let value = read_string_opt key in
     match (default, value) with
     | _, Some value -> value
     | Some default, None -> default
@@ -40,38 +41,36 @@ module Make (Log : Log_sig.SERVICE) : Config_sig.SERVICE = struct
           (Config_core.Exception
              (Printf.sprintf "CONFIG: Configuration %s not found" key))
 
-  let read_int ?default key =
+  let read_int_opt key =
     let value =
       Option.first_some (Sys.getenv key)
         (Map.find (Config_core.Internal.get ()) key)
     in
+    Option.bind value ~f:(fun value ->
+        Option.try_with (fun () -> Base.Int.of_string value))
+
+  let read_int ?default key =
+    let value = read_int_opt key in
     match (default, value) with
-    | _, Some value -> (
-        match Option.try_with (fun () -> Base.Int.of_string value) with
-        | Some value -> value
-        | None ->
-            raise
-              (Config_core.Exception
-                 (Printf.sprintf "CONFIG: Configuration %s is not a int" key)) )
+    | _, Some value -> value
     | Some default, None -> default
     | None, None ->
         raise
           (Config_core.Exception
              (Printf.sprintf "CONFIG: Configuration %s not found" key))
 
-  let read_bool ?default key =
+  let read_bool_opt key =
     let value =
       Option.first_some (Sys.getenv key)
         (Map.find (Config_core.Internal.get ()) key)
     in
+    Option.bind value ~f:(fun value ->
+        Option.try_with (fun () -> Base.Bool.of_string value))
+
+  let read_bool ?default key =
+    let value = read_bool_opt key in
     match (default, value) with
-    | _, Some value -> (
-        match Caml.bool_of_string_opt value with
-        | Some value -> value
-        | None ->
-            raise
-              (Config_core.Exception
-                 (Printf.sprintf "CONFIG: Configuration %s is not a int" key)) )
+    | _, Some value -> value
     | Some default, None -> default
     | None, None ->
         raise

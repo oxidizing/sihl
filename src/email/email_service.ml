@@ -11,15 +11,13 @@ module EnvConfigProvider (Config : Config_sig.SERVICE) :
 
   let password _ = Lwt.return @@ Config.read_string "SMTP_PASSWORD"
 
-  let port _ = Config.read_int "SMTP_PORT" |> Option.return |> Lwt.return
+  let port _ = Config.read_int_opt "SMTP_PORT" |> Lwt.return
 
   let start_tls _ = Lwt.return @@ Config.read_bool "SMTP_START_TLS"
 
-  let ca_path _ =
-    Config.read_string "SMTP_CA_PATH" |> Option.return |> Lwt.return
+  let ca_path _ = Config.read_string_opt "SMTP_CA_PATH" |> Lwt.return
 
-  let ca_cert _ =
-    Config.read_string "SMTP_CA_CERT" |> Option.return |> Lwt.return
+  let ca_cert _ = Config.read_string_opt "SMTP_CA_CERT" |> Lwt.return
 end
 
 module Template = struct
