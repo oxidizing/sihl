@@ -127,6 +127,11 @@ module MakePolling
     (* This function run every second, the request context gets created here with each tick *)
     let scheduled_function () =
       let jobs = !registered_jobs in
+      let job_strings =
+        jobs |> List.map ~f:WorkableJob.name |> String.concat ~sep:", "
+      in
+      Logs.debug (fun m ->
+          m "QUEUE: Run job queue with registered jobs %s" job_strings);
       (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
       let combined_context_fn =
         jobs
