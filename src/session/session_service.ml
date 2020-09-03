@@ -187,10 +187,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 
     let register_cleaner () =
       let cleaner ctx =
-        DbService.with_connection ctx (fun ctx ->
-            let* () = DbService.set_fk_check ctx ~check:false in
-            let* () = Sql.clean ctx in
-            DbService.set_fk_check ctx ~check:true)
+        DbService.with_disabled_fk_check ctx (fun ctx -> Sql.clean ctx)
       in
       RepoService.register_cleaner cleaner
 

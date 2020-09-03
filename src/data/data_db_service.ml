@@ -175,4 +175,9 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
   let set_fk_check ctx ~check =
     query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec set_fk_check_request check)
+
+  let with_disabled_fk_check ctx f =
+    with_connection ctx (fun ctx ->
+        let* () = set_fk_check ctx ~check:false in
+        Lwt.finalize (fun () -> f ctx) (fun () -> set_fk_check ctx ~check:true))
 end

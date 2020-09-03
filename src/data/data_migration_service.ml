@@ -70,16 +70,18 @@ struct
           let* _ = increment ctx ~namespace in
           run steps
       | { label; statement; check_fk = false } :: steps ->
-          let* () = Db.set_fk_check ctx ~check:false in
-          Log.debug (fun m -> m "MIGRATION: Running %s without fk checks" label);
-          let query (module Connection : Caqti_lwt.CONNECTION) =
-            let req =
-              Caqti_request.exec ~oneshot:true Caqti_type.unit statement
-            in
-            Connection.exec req ()
+          let* () =
+            Db.with_disabled_fk_check ctx (fun ctx ->
+                Log.debug (fun m ->
+                    m "MIGRATION: Running %s without fk checks" label);
+                let query (module Connection : Caqti_lwt.CONNECTION) =
+                  let req =
+                    Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+                  in
+                  Connection.exec req ()
+                in
+                Db.query ctx query)
           in
-          let* () = Db.query ctx query in
-          let* () = Db.set_fk_check ctx ~check:true in
           Log.debug (fun m -> m "MIGRATION: Ran %s" label);
           let* _ = increment ctx ~namespace in
           run steps
@@ -145,7 +147,7 @@ struct
 
   let run_all ctx =
     let* migrations = get_migrations ctx in
-    Db.with_connection ctx (fun ctx -> execute ctx migrations)
+    execute ctx migrations
 
   let migrate_cmd =
     Cmd.make ~name:"migrate" ~description:"Run all migrations"
