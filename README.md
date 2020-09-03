@@ -68,9 +68,46 @@
 
 ## About 
 
-Note that even though Sihl is being used in production, the API is still under active development.
+*Note that even though Sihl is being used in production, the API is still under active development.*
 
-[I don't care, show me some code!](#getting-started)
+Let's have a look at a tiny Sihl app in a file `sihl.ml`:
+
+```ocaml
+module Service = struct
+  module Random = Sihl.Utils.Random.Service
+  module Log = Sihl.Log.Service
+  module Config = Sihl.Config.Service
+  module Db = Sihl.Data.Db.Service
+  module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
+  module Cmd = Sihl.Cmd.Service
+  module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
+  module WebServer = Sihl.Web.Server.Service.Make (Cmd)
+  module Schedule = Sihl.Schedule.Service.Make (Log)
+end
+
+let services : (module Sihl.Core.Container.SERVICE) list =
+  [ (module Service.WebServer) ]
+
+let hello_page =
+  Sihl.Web.Route.get "/hello/" (fun _ ->
+      Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
+
+let routes = [ ("/page", [ hello_page ], []) ]
+
+module App = Sihl.App.Make (Service)
+
+let _ = App.(empty |> with_services services |> with_routes routes |> run)
+```
+
+This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces a binary that is 33 MB in size. Executing `sihl.exe start` starts a web server that is instantaneously serving one route.
+
+Even though you see no type definition, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
+
+It runs fast, maybe. We didn't spend any effort into measuring or tweaking performance yet. First we want to make sure the API somewhat stabilizes. Sihl will never be Rust-fast, but it might be become about Go-fast.
+
+If you need stuff like job queues, emailing or password reset flows, just add one of the provided service implementations or create one yourself by implementing a service interface.
+
+[Enough text, show me more code!](#getting-started)
 
 ### What Sihl is not
 
@@ -96,9 +133,9 @@ Things like database migrations, HTTP routing, user management, sessions, loggin
 
 ### Do we need another web framework?
 
-Yes, because all other frameworks were not grown here!
+Yes, because all other frameworks have not been invented here!
 
-On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our tools and product. 
+On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our own tools and product. 
 An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl with OCaml. We believe OCaml is a phenomenal host, even though its house of web development is small at the moment.
 
 Sihl is built on OCaml because OCaml ...
@@ -109,7 +146,7 @@ Sihl is built on OCaml because OCaml ...
 * ... is strict but not pure
 * ... is fun to use
 
-But the final and most important reason is the module system, which gives Sihl its modularity and strong compile-time guarantees in the service configuration.
+But the final and most important reason is the module system, which gives Sihl its modularity and strong compile-time guarantees in the service setup.
 Sihl uses OCaml modules for statically typed dependency injection. If your app compiles, the dependencies are wired up correctly. You can not use what's not there.
 
 Learn more about it in the [concepts](#concepts).
@@ -118,15 +155,15 @@ Learn more about it in the [concepts](#concepts).
 
 #### Modularity
 
-[property inherited from OCaml]
+[TODO property inherited from OCaml]
 
-#### Pragmatism over purity
+#### Ergonomics over purity
 
-[use what works, just enough abstraction, not too alien for new devs]
+[TODO use what works, just enough abstraction, not too alien for new devs]
 
 #### Fun
 
-[longterm maintanability, minimize frustration with framework]
+[TODO longterm maintanability, minimize frustration with framework]
 
 ## Getting Started
 
