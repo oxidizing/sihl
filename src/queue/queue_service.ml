@@ -123,32 +123,25 @@ module MakePolling
     Lwt.return ()
 
   let start_queue ctx =
-    let jobs = !registered_jobs in
-    let n_jobs = List.length jobs in
-    if n_jobs > 0 then (
-      Log.debug (fun m ->
-          m "QUEUE: Start queue with %d jobs" (List.length jobs));
+    Log.debug (fun m -> m "QUEUE: Start job queue");
+    (* This function run every second, the request context gets created here with each tick *)
+    let scheduled_function () =
+      let jobs = !registered_jobs in
       (* Combine all context middleware functions of registered jobs to get the context the jobs run with*)
       let combined_context_fn =
         jobs
         |> List.map ~f:WorkableJob.with_context
         |> List.fold ~init:Fn.id ~f:Fn.compose
       in
-      (* This function run every second, the request context gets created here with each tick *)
-      let scheduled_function () =
-        let ctx = combined_context_fn Core.Ctx.empty in
-        work_queue ctx ~jobs
-      in
-      let schedule =
-        Schedule.create Schedule.every_second ~f:scheduled_function
-          ~label:"job_queue"
-      in
-      stop_schedule := Some (ScheduleService.schedule ctx schedule);
-      Lwt.return () )
-    else (
-      Log.debug (fun m ->
-          m "QUEUE: No workable jobs found, don't start job queue");
-      Lwt.return () )
+      let ctx = combined_context_fn Core.Ctx.empty in
+      work_queue ctx ~jobs
+    in
+    let schedule =
+      Schedule.create Schedule.every_second ~f:scheduled_function
+        ~label:"job_queue"
+    in
+    stop_schedule := Some (ScheduleService.schedule ctx schedule);
+    Lwt.return ()
 
   let lifecycle =
     Core.Container.Lifecycle.make "queue"
