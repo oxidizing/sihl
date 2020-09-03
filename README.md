@@ -15,7 +15,7 @@
   <h3 align="center">Sihl</h3>
 
   <p align="center">
-    The modular functional web framework.
+    A modular functional web framework.
     <br />
     <a href="https://oxidizing.github.io/sihl/"><strong>Explore the docs »</strong></a>
     <br />
