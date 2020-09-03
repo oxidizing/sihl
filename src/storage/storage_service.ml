@@ -273,10 +273,11 @@ CREATE TABLE IF NOT EXISTS storage_handles (
 
     let register_cleaner () =
       let cleaner ctx =
-        let* () = DbService.set_fk_check ctx ~check:false in
-        let* () = clean_handles ctx in
-        let* () = clean_blobs ctx in
-        DbService.set_fk_check ctx ~check:true
+        DbService.with_connection ctx (fun ctx ->
+            let* () = DbService.set_fk_check ctx ~check:false in
+            let* () = clean_handles ctx in
+            let* () = clean_blobs ctx in
+            DbService.set_fk_check ctx ~check:true)
       in
       RepoService.register_cleaner cleaner
   end

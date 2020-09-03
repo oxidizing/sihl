@@ -145,7 +145,7 @@ struct
 
   let run_all ctx =
     let* migrations = get_migrations ctx in
-    execute ctx migrations
+    Db.with_connection ctx (fun ctx -> execute ctx migrations)
 
   let migrate_cmd =
     Cmd.make ~name:"migrate" ~description:"Run all migrations"

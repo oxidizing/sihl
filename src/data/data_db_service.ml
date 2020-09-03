@@ -76,6 +76,37 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         Log.info (fun m -> m "DB: Have you applied the DB middleware?");
         Lwt.fail (Exception "No connection pool found")
 
+  let with_connection ctx f =
+    match Core_ctx.find ctx_key_pool ctx with
+    | Some pool -> (
+        print_pool_usage pool;
+        let* pool_result =
+          Caqti_lwt.Pool.use
+            (fun connection ->
+              Log.debug (fun m -> m "DB TX: Fetched connection from pool");
+              let (module Connection : Caqti_lwt.CONNECTION) = connection in
+              let ctx_with_connection =
+                ctx |> remove_pool |> add_connection (module Connection)
+              in
+              Lwt.catch
+                (fun () ->
+                  let* result = f ctx_with_connection in
+                  Lwt.return @@ Ok result)
+                (fun e -> Lwt.fail e))
+            pool
+        in
+        match pool_result with
+        | Ok result ->
+            (* All good, return result of f ctx *)
+            Lwt.return result
+        | Error pool_err ->
+            (* Failed to start, commit or rollback transaction *)
+            Lwt.fail (Exception (pool_err |> Caqti_error.show)) )
+    | None ->
+        Log.err (fun m -> m "No connection pool found");
+        Log.info (fun m -> m "Have you applied the DB middleware?");
+        Lwt.fail (Exception "No connection pool found")
+
   let atomic ctx f =
     match Core_ctx.find ctx_key_pool ctx with
     | Some pool -> (

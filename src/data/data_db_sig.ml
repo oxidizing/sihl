@@ -21,6 +21,9 @@ module type SERVICE = sig
 
       The context has to contain a database connection or a database connection pool.*)
 
+  val with_connection : Core_ctx.t -> (Core_ctx.t -> 'a Lwt.t) -> 'a Lwt.t
+  (** Run a database query on a single connection. Can be used to set session variables that are bound to the same connection. *)
+
   val atomic : Core_ctx.t -> (Core_ctx.t -> 'a Lwt.t) -> 'a Lwt.t
   (** Run a database query atomically on a connection.
 

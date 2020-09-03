@@ -12,14 +12,14 @@ module Registry = struct
     registry := List.concat [ !registry; cleaners ]
 end
 
+let register_cleaner cleaner = Registry.register cleaner |> ignore
+
+let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
+
 let lifecycle =
   Core.Container.Lifecycle.make "repo"
     (fun ctx -> Lwt.return ctx)
     (fun _ -> Lwt.return ())
-
-let register_cleaner cleaner = Registry.register cleaner |> ignore
-
-let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
 
 let clean_all ctx =
   let cleaners = Registry.get_all () in
