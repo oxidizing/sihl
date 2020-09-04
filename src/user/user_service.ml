@@ -141,9 +141,12 @@ module Make
         | Some _ -> Lwt_result.fail "Invalid email address provided" )
 
   let login ctx ~email ~password =
-    let* user = find_by_email ctx ~email in
-    if User.matches_password password user then Lwt_result.return user
-    else Lwt_result.fail "Invalid email or password provided"
+    let* user = find_by_email_opt ctx ~email in
+    match user with
+    | None -> Lwt_result.fail "Invalid email or password provided"
+    | Some user ->
+        if User.matches_password password user then Lwt_result.return user
+        else Lwt_result.fail "Invalid email or password provided"
 
   let create_admin_cmd =
     Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
