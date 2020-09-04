@@ -14,6 +14,10 @@ module type REPO = sig
   val update_file : Core.Ctx.t -> file:StoredFile.t -> unit Lwt.t
 
   val update_blob : Core.Ctx.t -> id:string -> blob:string -> unit Lwt.t
+
+  val delete_file : Core.Ctx.t -> id:string -> unit Lwt.t
+
+  val delete_blob : Core.Ctx.t -> id:string -> unit Lwt.t
 end
 
 module type SERVICE = sig
@@ -26,6 +30,8 @@ module type SERVICE = sig
 *)
 
   val find : Core.Ctx.t -> id:string -> StoredFile.t Lwt.t
+
+  val delete : Core.Ctx.t -> id:string -> unit Lwt.t
 
   val upload_base64 :
     Core.Ctx.t -> file:File.t -> base64:string -> StoredFile.t Lwt.t

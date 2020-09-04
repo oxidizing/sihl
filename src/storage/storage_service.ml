@@ -2,7 +2,10 @@ open Storage_sig
 open Storage_core
 open Lwt.Syntax
 
-module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
+module Make
+    (Log : Log.Sig.SERVICE)
+    (Repo : REPO)
+    (DbService : Data.Db.Sig.SERVICE) : SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "storage" ~dependencies:[ Log.lifecycle ]
       (fun ctx ->
@@ -18,6 +21,13 @@ module Make (Log : Log.Sig.SERVICE) (Repo : REPO) : SERVICE = struct
     match file with
     | None -> raise (Exception ("File not found with id " ^ id))
     | Some file -> Lwt.return file
+
+  let delete ctx ~id =
+    let* file = find ctx ~id in
+    let blob_id = StoredFile.blob file in
+    DbService.atomic ctx (fun ctx ->
+        let* () = Repo.delete_file ctx ~id:file.file.id in
+        Repo.delete_blob ctx ~id:blob_id)
 
   let upload_base64 ctx ~file ~base64 =
     let blob_id = Data.Id.random () |> Data.Id.to_string in
@@ -159,6 +169,18 @@ module Repo = struct
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.find_opt get_file_request id)
 
+    let delete_file_request =
+      Caqti_request.exec Caqti_type.string
+        {sql|
+         DELETE FROM storage_handles
+         WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
+         |sql}
+
+    let delete_file ctx ~id =
+      DbService.query ctx (fun connection ->
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec delete_file_request id)
+
     let get_blob_request =
       Caqti_request.find_opt Caqti_type.string Caqti_type.string
         {sql|
@@ -205,6 +227,19 @@ module Repo = struct
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec update_blob_request (id, blob))
+
+    let delete_blob_request =
+      Caqti_request.exec Caqti_type.string
+        {sql|
+         DELETE FROM storage_blobs
+         WHERE
+         storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
+         |sql}
+
+    let delete_blob ctx ~id =
+      DbService.query ctx (fun connection ->
+          let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+          Connection.exec delete_blob_request id)
 
     let clean_handles_request =
       Caqti_request.exec Caqti_type.unit
