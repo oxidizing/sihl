@@ -1,13 +1,13 @@
 open Base
 open Lwt.Syntax
+module Sig = Data_migration_service_sig
 module Model = Data_migration_core
 
 module Make
-    (Log : Log.Sig.SERVICE)
-    (CmdService : Cmd.Sig.SERVICE)
-    (Db : Data_db_sig.SERVICE)
-    (MigrationRepo : Data_migration_sig.REPO) : Data_migration_sig.SERVICE =
-struct
+    (Log : Log.Service.Sig.SERVICE)
+    (CmdService : Cmd.Service.Sig.SERVICE)
+    (Db : Data_db_service_sig.SERVICE)
+    (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   let setup ctx =
     Log.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     MigrationRepo.create_table_if_not_exists ctx
@@ -166,8 +166,7 @@ struct
 end
 
 module Repo = struct
-  module MakeMariaDb (Db : Data_db_sig.SERVICE) : Data_migration_sig.REPO =
-  struct
+  module MakeMariaDb (Db : Data_db_service_sig.SERVICE) : Sig.REPO = struct
     let create_request =
       Caqti_request.exec Caqti_type.unit
         {sql|
@@ -222,8 +221,7 @@ dirty = VALUES(dirty)
           Connection.exec upsert_request (Model.to_tuple state))
   end
 
-  module MakePostgreSql (Db : Data_db_sig.SERVICE) : Data_migration_sig.REPO =
-  struct
+  module MakePostgreSql (Db : Data_db_service_sig.SERVICE) : Sig.REPO = struct
     let create_request =
       Caqti_request.exec Caqti_type.unit
         {sql|

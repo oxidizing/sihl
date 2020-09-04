@@ -3,9 +3,9 @@ open Base
 open Lwt.Syntax
 
 module Make
-    (DbService : Sihl.Data.Db.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Sig.SERVICE)
-    (EmailTemplateService : Sihl.Email.Sig.Template.SERVICE) =
+    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
+    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (EmailTemplateService : Sihl.Email.Service.Sig.TEMPLATE_SERVICE) =
 struct
   let create_template _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in

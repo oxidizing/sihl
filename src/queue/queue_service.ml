@@ -3,15 +3,16 @@ open Lwt.Syntax
 module Job = Queue_core.Job
 module WorkableJob = Queue_core.WorkableJob
 module JobInstance = Queue_core.JobInstance
+module Sig = Queue_service_sig
 
 let registered_jobs : WorkableJob.t list ref = ref []
 
 let stop_schedule : (unit -> unit) option ref = ref None
 
 module MakePolling
-    (Log : Log_sig.SERVICE)
-    (ScheduleService : Schedule.Sig.SERVICE)
-    (Repo : Queue_sig.REPO) : Queue_sig.SERVICE = struct
+    (Log : Log.Service.Sig.SERVICE)
+    (ScheduleService : Schedule.Service.Sig.SERVICE)
+    (Repo : Sig.REPO) : Sig.SERVICE = struct
   let dispatch ctx ~job ?delay input =
     let name = Job.name job in
     Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);

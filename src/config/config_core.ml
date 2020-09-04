@@ -2,35 +2,23 @@ open Base
 
 exception Exception of string
 
-module Config = struct
-  type key_value = string * string
+type key_value = string * string
 
-  type t = {
-    development : key_value list;
-    test : key_value list;
-    production : key_value list;
-  }
+type t = {
+  development : key_value list;
+  test : key_value list;
+  production : key_value list;
+}
 
-  let production setting = setting.production
+let production setting = setting.production
 
-  let development setting = setting.development
+let development setting = setting.development
 
-  let test setting = setting.test
+let test setting = setting.test
 
-  let create ~development ~test ~production = { development; test; production }
-end
+let create ~development ~test ~production = { development; test; production }
 
-module Internal : sig
-  type t = (string, string, String.comparator_witness) Map.t
-
-  val of_list : Config.key_value list -> t
-
-  val read_by_env : Config.t -> Config.key_value list
-
-  val register : Config.t -> unit
-
-  val get : unit -> t
-end = struct
+module Internal = struct
   type t = (string, string, String.comparator_witness) Map.t
 
   let state : t option ref = ref None
@@ -46,9 +34,9 @@ end = struct
 
   let read_by_env setting =
     match Sys.getenv "SIHL_ENV" |> Option.value ~default:"development" with
-    | "production" -> Config.production setting
-    | "test" -> Config.test setting
-    | _ -> Config.development setting
+    | "production" -> production setting
+    | "test" -> test setting
+    | _ -> development setting
 
   let register config =
     let config = config |> read_by_env |> of_list in

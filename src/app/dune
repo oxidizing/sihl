@@ -1,0 +1,19 @@
+(library
+ (name app)
+ (public_name sihl.app)
+ (libraries
+  base
+  core
+  configuration
+  schedule
+  web
+  cmd
+  data)
+ (modules_without_implementation
+  app_sig)
+ (preprocess
+  (pps
+   ppx_fields_conv
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving.make)))

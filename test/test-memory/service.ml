@@ -1,6 +1,8 @@
-module Repo = Sihl.Data.Repo.Service
-module Log = Sihl.Log.Service
-module Config = Sihl.Config.Service
+module Repo = Sihl.Data.Repo.Service.Make ()
+
+module Log = Sihl.Log.Service.Make ()
+
+module Config = Sihl.Config.Service.Make (Log)
 module Schedule = Sihl.Schedule.Service.Make (Log)
 module Queue =
   Sihl.Queue.Service.MakePolling (Log) (Schedule)

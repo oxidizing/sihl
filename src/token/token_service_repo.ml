@@ -1,7 +1,9 @@
+module Sig = Token_service_sig
+
 module MakeMariaDb
-    (DbService : Data_db_sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE) : Token_sig.REPOSITORY =
+    (DbService : Data.Db.Service.Sig.SERVICE)
+    (RepoService : Data.Repo.Service.Sig.SERVICE)
+    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY =
 struct
   module Sql = struct
     module Model = Token_core

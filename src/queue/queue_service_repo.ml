@@ -2,8 +2,8 @@ open Base
 module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 
-module MakeMemory (RepoService : Data.Repo.Sig.SERVICE) : Queue_sig.REPO =
-struct
+module MakeMemory (RepoService : Data.Repo.Service.Sig.SERVICE) :
+  Queue_service_sig.REPO = struct
   let state = ref (Map.empty (module String))
 
   let ordered_ids = ref []
@@ -73,9 +73,10 @@ module Model = struct
 end
 
 module MakeMariaDb
-    (DbService : Data.Db.Sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE) : Queue_sig.REPO = struct
+    (DbService : Data.Db.Service.Sig.SERVICE)
+    (RepoService : Data.Repo.Service.Sig.SERVICE)
+    (MigrationService : Data.Migration.Service.Sig.SERVICE) :
+  Queue_service_sig.REPO = struct
   let enqueue_request =
     Caqti_request.exec Model.t
       {sql|

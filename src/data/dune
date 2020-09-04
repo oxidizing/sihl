@@ -1,0 +1,25 @@
+(library
+ (name data)
+ (public_name sihl.data)
+ (libraries
+  base
+  uuidm
+  caqti-lwt
+  yojson
+  ppx_deriving_yojson.runtime
+  sexplib
+  core
+  configuration
+  cmd)
+ (modules_without_implementation
+  data_db_service_sig
+  data_migration_service_sig
+  data_repo_service_sig)
+ (preprocess
+  (pps
+   ppx_deriving_yojson
+   ppx_sexp_conv
+   ppx_fields_conv
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving.make)))

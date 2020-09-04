@@ -1,12 +1,19 @@
 (* Essential services *)
-module Log = Sihl.Log.Service
+module Log = Sihl.Log.Service.Make ()
+
 module Config = Sihl.Config.Service.Make (Log)
 module Db = Sihl.Data.Db.Service.Make (Config) (Log)
-module Repo = Sihl.Data.Repo.Service
+
+module Repo = Sihl.Data.Repo.Service.Make ()
+
 module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
-module Cmd = Sihl.Cmd.Service
+
+module Cmd = Sihl.Cmd.Service.Make ()
+
 module Migration =
   Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
+
+module Random = Sihl.Utils.Random.Service.Make ()
 
 (* Repositories *)
 module TokenRepo = Sihl.Token.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
@@ -20,8 +27,8 @@ module EmailTemplateRepo =
 module QueueRepo = Sihl.Queue.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
 
 (* Services *)
-module Token = Sihl.Token.Service.Make (Log) (TokenRepo)
-module Session = Sihl.Session.Service.Make (Log) (SessionRepo)
+module Token = Sihl.Token.Service.Make (Log) (Random) (TokenRepo)
+module Session = Sihl.Session.Service.Make (Log) (Random) (SessionRepo)
 module User = Sihl.User.Service.Make (Log) (Cmd) (Db) (UserRepo)
 module Storage = Sihl.Storage.Service.Make (Log) (StorageRepo) (Db)
 module EmailTemplate =

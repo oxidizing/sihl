@@ -1,5 +1,8 @@
-module Sig = Session_sig
+(** Use this module to create user sessions and to read and write session data. *)
+
 module Service = Session_service
+(** The session service exposes a key-value store that is scoped by user session *)
+
 module Schedule = Session_schedule
 
 type data_map = Session_core.data_map
@@ -7,8 +10,6 @@ type data_map = Session_core.data_map
 type data = Session_core.data
 
 type t = Session_core.t
-
-val make : ?expire_date:Ptime.t -> Ptime.t -> t option
 
 val key : t -> string
 

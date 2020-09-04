@@ -1,0 +1,14 @@
+(library
+ (name core)
+ (public_name sihl.core)
+ (libraries
+  base
+  lwt
+  hmap
+  tsort)
+ (preprocess
+  (pps
+   ppx_fields_conv
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving.make)))

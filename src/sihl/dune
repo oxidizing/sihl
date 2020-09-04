@@ -1,0 +1,22 @@
+(library
+ (name sihl)
+ (public_name sihl)
+ (libraries
+  app
+  authn
+  authz
+  cmd
+  configuration
+  core
+  data
+  email
+  log
+  message
+  queue
+  schedule
+  session
+  storage
+  token
+  user
+  utils
+  web))

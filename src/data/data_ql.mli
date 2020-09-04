@@ -1,3 +1,5 @@
+(** A simple query language that can be used for HTTP queries that get passed into repositories. It currently supports filtering, sorting and pagination. *)
+
 module Filter : sig
   type op = Eq | Like
 

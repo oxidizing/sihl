@@ -1,5 +1,7 @@
-open Base
-module Sig = User_sig
+(** This module provides the abstraction of a user that interacts with the Sihl ap. Use it to register new users, changes password, reset passwords and update user details.
+
+*)
+
 module Authz = User_authz
 module Service = User_service
 module Seed = User_seed
@@ -32,18 +34,6 @@ val pp : Caml.Format.formatter -> t -> unit
 val show : t -> string
 
 val equal : t -> t -> bool
-
-val make :
-  id:string ->
-  email:string ->
-  ?username:string ->
-  password:string ->
-  status:string ->
-  admin:bool ->
-  confirmed:bool ->
-  created_at:Ptime.t ->
-  unit ->
-  t
 
 val alcotest : t Alcotest.testable
 

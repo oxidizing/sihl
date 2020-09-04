@@ -1,5 +1,6 @@
 open Data_repo_core
 open Lwt.Syntax
+module Sig = Data_repo_service_sig
 
 module Registry = struct
   let registry : cleaner list ref = ref []
@@ -12,22 +13,24 @@ module Registry = struct
     registry := List.concat [ !registry; cleaners ]
 end
 
-let register_cleaner cleaner = Registry.register cleaner |> ignore
+module Make () : Sig.SERVICE = struct
+  let register_cleaner cleaner = Registry.register cleaner |> ignore
 
-let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
+  let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
 
-let lifecycle =
-  Core.Container.Lifecycle.make "repo"
-    (fun ctx -> Lwt.return ctx)
-    (fun _ -> Lwt.return ())
+  let lifecycle =
+    Core.Container.Lifecycle.make "repo"
+      (fun ctx -> Lwt.return ctx)
+      (fun _ -> Lwt.return ())
 
-let clean_all ctx =
-  let cleaners = Registry.get_all () in
-  let rec clean_repos cleaners =
-    match cleaners with
-    | [] -> Lwt.return ()
-    | cleaner :: cleaners ->
-        let* () = cleaner ctx in
-        clean_repos cleaners
-  in
-  clean_repos cleaners
+  let clean_all ctx =
+    let cleaners = Registry.get_all () in
+    let rec clean_repos cleaners =
+      match cleaners with
+      | [] -> Lwt.return ()
+      | cleaner :: cleaners ->
+          let* () = cleaner ctx in
+          clean_repos cleaners
+    in
+    clean_repos cleaners
+end

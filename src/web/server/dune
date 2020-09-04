@@ -1,0 +1,24 @@
+(library
+ (name server)
+ (public_name sihl.server)
+ (libraries
+  base
+  tyxml
+  opium
+  yojson
+  ppx_deriving_yojson.runtime
+  core
+  configuration
+  http
+  middleware)
+ (modules_without_implementation
+  server_service_sig)
+ (preprocess
+  (pps
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_sexp_conv
+   ppx_deriving.make
+   )))

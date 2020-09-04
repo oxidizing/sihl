@@ -1,21 +1,25 @@
 open Base
-include Logs
+module Sig = Log_service_sig
 
-let get_level () =
-  let level = Sys.getenv "LOG_LEVEL" |> Option.map ~f:String.lowercase in
-  match level with
-  | Some "info" -> Info
-  | Some "debug" -> Debug
-  | Some "warning" -> Warning
-  | Some "error" -> Error
-  | _ -> Warning
+module Make () : Sig.SERVICE = struct
+  include Logs
 
-let lifecycle =
-  Core.Container.Lifecycle.make "log"
-    (fun ctx ->
-      let log_level = Some (get_level ()) in
-      Logs_fmt.reporter () |> set_reporter;
-      set_level log_level;
-      debug (fun m -> m "LOGGER: Logger set up");
-      Lwt.return ctx)
-    (fun _ -> Lwt.return ())
+  let get_level () =
+    let level = Sys.getenv "LOG_LEVEL" |> Option.map ~f:String.lowercase in
+    match level with
+    | Some "info" -> Info
+    | Some "debug" -> Debug
+    | Some "warning" -> Warning
+    | Some "error" -> Error
+    | _ -> Warning
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "log"
+      (fun ctx ->
+        let log_level = Some (get_level ()) in
+        Logs_fmt.reporter () |> set_reporter;
+        set_level log_level;
+        debug (fun m -> m "LOGGER: Logger set up");
+        Lwt.return ctx)
+      (fun _ -> Lwt.return ())
+end

@@ -1,11 +1,12 @@
 open Lwt.Syntax
+module Sig = Authn_service_sig
 
 exception Exception of string
 
 module Make
-    (Log : Log.Sig.SERVICE)
-    (SessionService : Session.Sig.SERVICE)
-    (UserService : User.Sig.SERVICE) : Authn_sig.SERVICE = struct
+    (Log : Log.Service.Sig.SERVICE)
+    (SessionService : Session.Service.Sig.SERVICE)
+    (UserService : User.Service.Sig.SERVICE) : Sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "authn"
       ~dependencies:[ SessionService.lifecycle; UserService.lifecycle ]

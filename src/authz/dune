@@ -1,0 +1,5 @@
+(library
+ (name authz)
+ (public_name sihl.authz)
+ (libraries
+  base))

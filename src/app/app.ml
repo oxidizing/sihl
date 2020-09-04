@@ -3,7 +3,7 @@ module Sig = App_sig
 
 module Make (Kernel : Sig.KERNEL) = struct
   type t = {
-    config : Config.t;
+    config : Configuration.t;
     endpoints : Web.Server.endpoint list;
     services : (module Core.Container.SERVICE) list;
     schedules : Schedule.t list;
@@ -14,7 +14,7 @@ module Make (Kernel : Sig.KERNEL) = struct
 
   let empty =
     {
-      config = Config.create ~development:[] ~test:[] ~production:[];
+      config = Configuration.create ~development:[] ~test:[] ~production:[];
       endpoints = [];
       services = [];
       schedules = [];

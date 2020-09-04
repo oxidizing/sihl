@@ -1,6 +1,6 @@
 module Service = Queue_service
-module Sig = Queue_sig
-module Core = Queue_core
+module JobInstance = Queue_core.JobInstance
+module WorkableJob = Queue_core.WorkableJob
 
 let create_job = Queue_core.Job.create
 

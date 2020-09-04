@@ -3,9 +3,9 @@ open Base
 open Alcotest_lwt
 
 module Make
-    (DbService : Sihl.Data.Db.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Sig.SERVICE)
-    (UserService : Sihl.User.Sig.SERVICE) =
+    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
+    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (UserService : Sihl.User.Service.Sig.SERVICE) =
 struct
   module Seed = Sihl.User.Seed.Make (UserService)
 
