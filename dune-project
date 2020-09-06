@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.1.0)
+(version 0.1.1)
 
 (authors "Josef Erben")
 (source (github oxidizing/sihl))
@@ -67,22 +67,14 @@
   (letters (>= 0.2.0))
 
   ;; Helpers & Generation
-  (sexplib (>= 0.13.0))
-  (ppx_fields_conv (>= 0.13.0))
-  (ppx_sexp_conv (>= 0.13.0))
+  (sexplib (>= v0.13.0))
+  (ppx_fields_conv (>= v0.13.0))
+  (ppx_sexp_conv (>= v0.13.0))
 
   ;; Test
   (alcotest (>= 1.2.0))
 
-  ;; Dev dependencies
-  (utop :dev)
-  (merlin :dev)
-  (ocamlformat :dev)
-  (ocp-indent :dev)
-  (tuareg :dev)
-
   ;; Test dependencies
-  (alcotest (and (>= 1.2.0) :with-test))
   (alcotest-lwt (and (>= 1.2.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
 ))
