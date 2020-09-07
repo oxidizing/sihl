@@ -370,14 +370,14 @@ Project Link: [https://github.com/oxidizing/sihl](https://github.com/oxidizing/s
 
 ## Acknowledgements
 
-Sihl would not be possible without amazing projects like following:
+Sihl would not be possible without amazing projects:
 
 * [OCaml](https://ocaml.org/)
 * [Reason](https://reasonml.github.io/)
 * [Opium](https://github.com/rgrinberg/opium)
 * [Caqti](https://github.com/paurkedal/ocaml-caqti)
 * [Tree vector created by brgfx - www.freepik.com](https://www.freepik.com/vectors/tree)
-
+* And [many more!](https://github.com/oxidizing/sihl/blob/master/dune-project)
 
 [contributors-shield]: https://img.shields.io/github/contributors/oxidizing/sihl.svg?style=flat-square
 [contributors-url]: https://github.com/oxidizing/sihl/graphs/contributors
