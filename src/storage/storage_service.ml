@@ -1,11 +1,11 @@
-open Storage_sig
 open Storage_core
 open Lwt.Syntax
+module Sig = Storage_service_sig
 
 module Make
-    (Log : Log.Sig.SERVICE)
-    (Repo : REPO)
-    (DbService : Data.Db.Sig.SERVICE) : SERVICE = struct
+    (Log : Log.Service.Sig.SERVICE)
+    (Repo : Sig.REPO)
+    (DbService : Data.Db.Service.Sig.SERVICE) : Sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "storage" ~dependencies:[ Log.lifecycle ]
       (fun ctx ->
@@ -91,9 +91,10 @@ end
 
 module Repo = struct
   module MakeMariaDb
-      (DbService : Data.Db.Sig.SERVICE)
-      (RepoService : Data.Repo.Sig.SERVICE)
-      (MigrationService : Data.Migration.Sig.SERVICE) : REPO = struct
+      (DbService : Data.Db.Service.Sig.SERVICE)
+      (RepoService : Data.Repo.Service.Sig.SERVICE)
+      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO =
+  struct
     let stored_file =
       let encode m =
         let StoredFile.{ file; blob } = m in

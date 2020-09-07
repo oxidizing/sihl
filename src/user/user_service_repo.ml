@@ -1,9 +1,10 @@
 open Lwt.Syntax
+module Sig = User_service_sig
 
 module MakeMariaDb
-    (DbService : Data.Db.Sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE) : User_sig.REPOSITORY =
+    (DbService : Data.Db.Service.Sig.SERVICE)
+    (RepoService : Data.Repo.Service.Sig.SERVICE)
+    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY =
 struct
   module Migration = struct
     let fix_collation =
@@ -214,9 +215,9 @@ CREATE TABLE IF NOT EXISTS user_users (
 end
 
 module MakePostgreSql
-    (DbService : Data.Db.Sig.SERVICE)
-    (RepoService : Data.Repo.Sig.SERVICE)
-    (MigrationService : Data.Migration.Sig.SERVICE) : User_sig.REPOSITORY =
+    (DbService : Data.Db.Service.Sig.SERVICE)
+    (RepoService : Data.Repo.Service.Sig.SERVICE)
+    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY =
 struct
   module Migration = struct
     let create_users_table =

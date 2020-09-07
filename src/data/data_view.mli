@@ -1,3 +1,5 @@
+(** Modules and helpers to handle paginated collections, which is a partial view on a list of things. *)
+
 module PartialCollection : sig
   type controls
 

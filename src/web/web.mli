@@ -1,8 +1,10 @@
-module Core = Web_core
-module Req = Web_req
-module Res = Web_res
-module Route = Web_route
-module Template = Web_template
-module Middleware = Web_middleware
-module Server = Web_server
-module Utils = Web_utils
+(** This module provides the HTTP stack including API for requests, responses, middlewares, templating and a web server service. *)
+
+module Core = Http.Http_core
+module Req = Http.Req
+module Res = Http.Res
+module Route = Http.Route
+module Template = Http.Template
+module Utils = Http.Http_utils
+module Middleware = Middleware
+module Server = Server

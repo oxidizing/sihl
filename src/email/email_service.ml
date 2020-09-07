@@ -1,8 +1,8 @@
-open Base
 open Lwt.Syntax
+module Sig = Email_service_sig
 
-module EnvConfigProvider (Config : Config_sig.SERVICE) :
-  Email_sig.ConfigProvider.SMTP = struct
+module EnvConfigProvider (Config : Configuration.Service.Sig.SERVICE) :
+  Sig.CONFIG_PROVIDER_SMTP = struct
   let sender _ = Lwt.return @@ Config.read_string "SMTP_SENDER"
 
   let host _ = Lwt.return @@ Config.read_string "SMTP_HOST"
@@ -21,8 +21,8 @@ module EnvConfigProvider (Config : Config_sig.SERVICE) :
 end
 
 module Template = struct
-  module Make (Log : Log.Sig.SERVICE) (Repo : Email_sig.Template.REPO) :
-    Email_sig.Template.SERVICE = struct
+  module Make (Log : Log.Service.Sig.SERVICE) (Repo : Sig.TEMPLATE_REPO) :
+    Sig.TEMPLATE_SERVICE = struct
     let lifecycle =
       Core.Container.Lifecycle.make "template" ~dependencies:[ Log.lifecycle ]
         (fun ctx ->
@@ -89,10 +89,10 @@ module Template = struct
 
   module Repo = struct
     module MakeMariaDb
-        (DbService : Data.Db.Sig.SERVICE)
-        (RepoService : Data.Repo.Sig.SERVICE)
-        (MigrationService : Data.Migration.Sig.SERVICE) :
-      Email_sig.Template.REPO = struct
+        (DbService : Data.Db.Service.Sig.SERVICE)
+        (RepoService : Data.Repo.Service.Sig.SERVICE)
+        (MigrationService : Data.Migration.Service.Sig.SERVICE) :
+      Sig.TEMPLATE_REPO = struct
       module Sql = struct
         module Model = Email_core.Template
 
@@ -233,10 +233,10 @@ CREATE TABLE IF NOT EXISTS email_templates (
     end
 
     module MakePostgreSql
-        (DbService : Data.Db.Sig.SERVICE)
-        (RepoService : Data.Repo.Sig.SERVICE)
-        (MigrationService : Data.Migration.Sig.SERVICE) :
-      Email_sig.Template.REPO = struct
+        (DbService : Data.Db.Service.Sig.SERVICE)
+        (RepoService : Data.Repo.Service.Sig.SERVICE)
+        (MigrationService : Data.Migration.Service.Sig.SERVICE) :
+      Sig.TEMPLATE_REPO = struct
       module Sql = struct
         module Model = Email_core.Template
 
@@ -359,8 +359,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 end
 
 module Make = struct
-  module Console (TemplateService : Email_sig.Template.SERVICE) :
-    Email_sig.SERVICE = struct
+  module Console (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
     module Template = TemplateService
 
     let lifecycle =
@@ -408,10 +407,9 @@ Html:
   end
 
   module Smtp
-      (Log : Log.Sig.SERVICE)
-      (TemplateService : Email_sig.Template.SERVICE)
-      (ConfigProvider : Email_sig.ConfigProvider.SMTP) : Email_sig.SERVICE =
-  struct
+      (Log : Log.Service.Sig.SERVICE)
+      (TemplateService : Sig.TEMPLATE_SERVICE)
+      (ConfigProvider : Sig.CONFIG_PROVIDER_SMTP) : Sig.SERVICE = struct
     module Template = TemplateService
 
     let lifecycle =
@@ -427,8 +425,8 @@ Html:
         List.concat
           [
             [ Letters.To rendered.recipient ];
-            List.map rendered.cc ~f:(fun address -> Letters.Cc address);
-            List.map rendered.bcc ~f:(fun address -> Letters.Bcc address);
+            List.map (fun address -> Letters.Cc address) rendered.cc;
+            List.map (fun address -> Letters.Bcc address) rendered.bcc;
           ]
       in
       let body =
@@ -463,10 +461,9 @@ Html:
   end
 
   module SendGrid
-      (Log : Log_sig.SERVICE)
-      (TemplateService : Email_sig.Template.SERVICE)
-      (ConfigProvider : Email_sig.ConfigProvider.SENDGRID) : Email_sig.SERVICE =
-  struct
+      (Log : Log.Service.Sig.SERVICE)
+      (TemplateService : Sig.TEMPLATE_SERVICE)
+      (ConfigProvider : Sig.CONFIG_PROVIDER_SENDGRID) : Sig.SERVICE = struct
     module Template = TemplateService
 
     let lifecycle =
@@ -544,8 +541,7 @@ Html:
     let bulk_send _ _ = Lwt.return ()
   end
 
-  module Memory (TemplateService : Email_sig.Template.SERVICE) :
-    Email_sig.SERVICE = struct
+  module Memory (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
     module Template = TemplateService
 
     let lifecycle =
@@ -571,15 +567,15 @@ end
 
 (** Use this functor to create an email service that sends emails using the job queue. This is useful if you need to answer a request quickly while sending the email in the background *)
 module MakeDelayed
-    (Log : Log.Sig.SERVICE)
-    (EmailService : Email_sig.SERVICE)
-    (DbService : Data.Db.Sig.SERVICE)
-    (QueueService : Queue_sig.SERVICE) : Email_sig.SERVICE = struct
+    (Log : Log.Service.Sig.SERVICE)
+    (EmailService : Sig.SERVICE)
+    (DbService : Data.Db.Service.Sig.SERVICE)
+    (QueueService : Queue.Service.Sig.SERVICE) : Sig.SERVICE = struct
   module Template = EmailService.Template
 
   module Job = struct
     let input_to_string email =
-      email |> Email_core.to_yojson |> Yojson.Safe.to_string |> Option.return
+      email |> Email_core.to_yojson |> Yojson.Safe.to_string |> Option.some
 
     let string_to_input email =
       match email with
@@ -591,18 +587,18 @@ module MakeDelayed
                  the job instance.");
           Error "Invalid serialized email string received"
       | Some email ->
-          email |> Utils.Json.parse |> Result.bind ~f:Email_core.of_yojson
+          Result.bind (email |> Utils.Json.parse) Email_core.of_yojson
 
-    let handle ctx ~input = EmailService.send ctx input |> Lwt.map Result.return
+    let handle ctx ~input = EmailService.send ctx input |> Lwt.map Result.ok
 
     (** Nothing to clean up, sending emails is a side effect *)
     let failed _ = Lwt_result.return ()
 
     let job =
-      Queue_core.Job.create ~name:"send_email" ~with_context:DbService.add_pool
+      Queue.create_job ~name:"send_email" ~with_context:DbService.add_pool
         ~input_to_string ~string_to_input ~handle ~failed ()
-      |> Queue_core.Job.set_max_tries 10
-      |> Queue_core.Job.set_retry_delay Utils.Time.OneHour
+      |> Queue.set_max_tries 10
+      |> Queue.set_retry_delay Utils.Time.OneHour
   end
 
   let lifecycle =

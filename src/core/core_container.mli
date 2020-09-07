@@ -1,3 +1,6 @@
+(** The service container manages service lifecycles. It knows how to start services in the right order by respecting the defined dependencies. Use it to implement you own services.
+ *)
+
 module Lifecycle : sig
   type t
 

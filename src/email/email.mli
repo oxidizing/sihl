@@ -1,5 +1,7 @@
+(** Use this module to send single emails either immediately or later sending a lot of emails at once. Email template support is also provided.
+*)
+
 module Service = Email_service
-module Sig = Email_sig
 
 module Template : sig
   module Data : sig

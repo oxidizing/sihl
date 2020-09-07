@@ -1,11 +1,13 @@
 open Base
 open Lwt.Syntax
 module Entry = Message_core.Entry
+module Sig = Message_service_sig
 
 let session_key = "message"
 
-module Make (Log : Log.Sig.SERVICE) (SessionService : Session.Sig.SERVICE) =
-struct
+module Make
+    (Log : Log.Service.Sig.SERVICE)
+    (SessionService : Session.Service.Sig.SERVICE) : Sig.SERVICE = struct
   let fetch_entry ctx =
     let* entry = SessionService.get ~key:session_key ctx in
     match entry with

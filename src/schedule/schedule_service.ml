@@ -1,7 +1,8 @@
 open Base
 open Lwt.Syntax
+module Sig = Schedule_service_sig
 
-module Make (Log : Log_sig.SERVICE) : Schedule_sig.SERVICE = struct
+module Make (Log : Log.Service.Sig.SERVICE) : Sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "schedule" ~dependencies:[ Log.lifecycle ]
       (fun ctx -> Lwt.return ctx)

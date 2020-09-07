@@ -15,12 +15,12 @@
   <h3 align="center">Sihl</h3>
 
   <p align="center">
-    A modular functional web framework.
+    A modular functional web framework 🌊
     <br />
     <a href="https://oxidizing.github.io/sihl/"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/oxidizing/sihl-example-issues">View Example Project</a>
+    <a href="https://github.com/oxidizing/sihl-minimal-starter">View Starter Project</a>
     ·
     <a href="https://github.com/oxidizing/sihl/issues">Report Bug</a>
     ·
@@ -100,7 +100,6 @@ let _ = App.(empty |> with_services services |> with_routes routes |> run)
 ```
 
 This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` sets up a webserver (which is a service) that handles one route `/page/hello/` and returns HTML containing "Hello!" in the body.
-
 
 Even though you see no type definitions, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
 
@@ -486,7 +485,7 @@ module Make (Db : Data_db_sig.SERVICE) = struct
       let ctx = Db.add_pool ctx in
       handler ctx
     in
-    Web_middleware_core.create ~name:"database" filter
+    Middleware_core.create ~name:"database" filter
 end
 ```
 
@@ -507,7 +506,7 @@ module Make (MessageService : Message.Sig.Service) = struct
           Logs.err (fun m -> m "MIDDLEWARE: Can not rotate messages %s" msg);
           handler ctx
     in
-    Web_middleware_core.create ~name:"message" filter
+    Middleware_core.create ~name:"message" filter
 end
 ```
 #### Template
@@ -577,7 +576,7 @@ The database service should be used mostly in repositories and not in services t
 
 ```ocaml
 module MakePostgreSql 
-    (DbService: Sihl.Data.Db.Sig.SERVICE) : Pizza_order_sig.REPO =
+    (DbService: Sihl.Data.Db.Service.Sig.SERVICE) : Pizza_order_sig.REPO =
 struct
 
   let find_request =

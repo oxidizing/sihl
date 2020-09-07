@@ -2,12 +2,13 @@ open Base
 open Lwt.Syntax
 module Repo = User_service_repo
 module User = User_core.User
+module Sig = User_service_sig
 
 module Make
-    (Log : Log.Sig.SERVICE)
-    (CmdService : Cmd.Sig.SERVICE)
-    (DbService : Data.Db.Sig.SERVICE)
-    (Repo : User_sig.REPOSITORY) : User_sig.SERVICE = struct
+    (Log : Log.Service.Sig.SERVICE)
+    (CmdService : Cmd.Service.Sig.SERVICE)
+    (DbService : Data.Db.Service.Sig.SERVICE)
+    (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   let add_user user ctx = Core.Ctx.add User.ctx_key user ctx
 
   let require_user_opt ctx = Core.Ctx.find User.ctx_key ctx
@@ -166,7 +167,7 @@ module Make
       (fun ctx ->
         Repo.register_migration ();
         Repo.register_cleaner ();
-        Cmd_service.register_command create_admin_cmd;
+        CmdService.register_command create_admin_cmd;
         Lwt.return ctx)
       (fun _ -> Lwt.return ())
 end

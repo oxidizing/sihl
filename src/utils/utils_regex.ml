@@ -10,4 +10,4 @@ let extract_last regexp text =
   Pcre.extract_opt ~rex:regexp text
   |> Array.to_list |> List.tl |> Option.bind ~f:List.hd |> Option.join
 
-module Internal_ = Pcre
+module Pcre = Pcre

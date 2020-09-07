@@ -1,0 +1,14 @@
+(library
+ (name cmd)
+ (public_name sihl.cmd)
+ (libraries
+  base
+  core)
+ (modules_without_implementation
+  cmd_service_sig)
+ (preprocess
+  (pps
+   ppx_fields_conv
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving.make)))

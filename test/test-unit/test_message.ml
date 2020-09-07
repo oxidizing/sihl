@@ -1,5 +1,5 @@
 open Base
-module Entry = Sihl.Message.Core.Entry
+module Entry = Sihl.Message.Entry
 
 let entry_t = Alcotest.testable Entry.pp Entry.equal
 

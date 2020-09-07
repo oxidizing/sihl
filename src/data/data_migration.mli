@@ -1,5 +1,6 @@
+(** Use the migration service to implement, register and run migrations. *)
+
 module Model = Data_migration_core
-module Sig = Data_migration_sig
 module Service = Data_migration_service
 
 type step = Model.Migration.step

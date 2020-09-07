@@ -1,3 +1,5 @@
+(** This module implements JSON Web tokens. They are typically used decouple authentication from the other parts of a system. *)
+
 type algorithm = Jwto.algorithm = HS256 | HS512 | Unknown
 
 type t = Jwto.t

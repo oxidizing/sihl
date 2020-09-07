@@ -1,6 +1,5 @@
 include Data_migration_core.Migration
 module Model = Data_migration_core
-module Sig = Data_migration_sig
 module Service = Data_migration_service
 
 let empty label = (label, [])

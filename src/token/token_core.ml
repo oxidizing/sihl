@@ -25,13 +25,8 @@ type t = {
 }
 [@@deriving fields, show, eq]
 
-let make ~id ~data ~kind ?(expires_in = Utils.Time.OneDay) ?now () =
-  let value = Utils.Random.base64 ~bytes:80 in
-  let expires_in = Utils.Time.duration_to_span expires_in in
-  let now = Option.value ~default:(Ptime_clock.now ()) now in
-  let expires_at = Option.value_exn (Ptime.add_span now expires_in) in
-  let status = Status.Active in
-  { id; value; data; kind; status; expires_at; created_at = Ptime_clock.now () }
+let make ~id ~value ~data ~kind ~status ~expires_at ~created_at =
+  { id; value; data; kind; status; expires_at; created_at }
 
 let alco = Alcotest.testable pp equal
 

@@ -1,6 +1,9 @@
+(** Use this module to display flash messages to the user across the request-response lifecycle. This is typically used to provide feedback to the user after submitting HTML forms.
+
+*)
+
 module Service = Message_service
-module Sig = Message_sig
-module Core = Message_core
+module Entry = Message_core.Entry
 
 type t = Message_core.Message.t
 
@@ -32,6 +35,6 @@ val get_success : t -> string list
 
 val get_info : t -> string list
 
-val get : Core_ctx.t -> t option
+val get : Core.Ctx.t -> t option
 
-val ctx_add : t -> Core_ctx.t -> Core_ctx.t
+val ctx_add : t -> Core.Ctx.t -> Core.Ctx.t

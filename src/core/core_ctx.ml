@@ -2,7 +2,8 @@ type t = { map : Hmap.t; id : string }
 
 type 'a key = 'a Hmap.key
 
-let empty = { map = Hmap.empty; id = Data_id.random () |> Data_id.to_string }
+(* TODO [jerben] generate random id for ctx *)
+let empty = { map = Hmap.empty; id = "randomid" }
 
 let add key item ctx = { ctx with map = Hmap.add key item ctx.map }
 

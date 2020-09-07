@@ -1,10 +1,13 @@
 open Base
 open Lwt.Syntax
+module Sig = Session_service_sig
 
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
-module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
-  Session_sig.SERVICE = struct
+module Make
+    (Log : Log.Service.Sig.SERVICE)
+    (RandomService : Utils.Random.Service.Sig.SERVICE)
+    (Repo : Sig.REPO) : Sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "session" ~dependencies:[ Log.lifecycle ]
       (fun ctx ->
@@ -24,9 +27,21 @@ module Make (Log : Log_sig.SERVICE) (Repo : Session_sig.REPO) :
         raise (Session_core.Exception "No session found in context")
     | Some session -> session
 
+  let make ?expire_date now =
+    let open Session_core in
+    match Option.first_some expire_date (default_expiration_date now) with
+    | Some expire_date ->
+        Some
+          {
+            key = RandomService.base64 ~bytes:10;
+            data = Map.empty (module String);
+            expire_date;
+          }
+    | None -> None
+
   let create ctx data =
     let empty_session =
-      match Session_core.make (Ptime_clock.now ()) with
+      match make (Ptime_clock.now ()) with
       | Some session -> session
       | None ->
           Log.err (fun m ->
@@ -75,9 +90,9 @@ end
 
 module Repo = struct
   module MakeMariaDb
-      (DbService : Data.Db.Sig.SERVICE)
-      (RepoService : Data.Repo.Sig.SERVICE)
-      (MigrationService : Data.Migration.Sig.SERVICE) : Session_sig.REPO =
+      (DbService : Data.Db.Service.Sig.SERVICE)
+      (RepoService : Data.Repo.Service.Sig.SERVICE)
+      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO =
   struct
     module Sql = struct
       module Model = Session_core
@@ -203,9 +218,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
   end
 
   module MakePostgreSql
-      (DbService : Data.Db.Sig.SERVICE)
-      (RepoService : Data.Repo.Sig.SERVICE)
-      (MigrationService : Data.Migration.Sig.SERVICE) : Session_sig.REPO =
+      (DbService : Data.Db.Service.Sig.SERVICE)
+      (RepoService : Data.Repo.Service.Sig.SERVICE)
+      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO =
   struct
     module Sql = struct
       module Model = Session_core

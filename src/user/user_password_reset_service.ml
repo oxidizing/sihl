@@ -1,5 +1,6 @@
 open Base
 open Lwt.Syntax
+module Sig = User_password_reset_service_sig
 
 let kind = "password_reset"
 
@@ -8,9 +9,9 @@ module TokenData = struct
 end
 
 module Make
-    (Log : Log.Sig.SERVICE)
-    (TokenService : Token.Sig.SERVICE)
-    (UserService : User_sig.SERVICE) : User_password_reset_sig.SERVICE = struct
+    (Log : Log.Service.Sig.SERVICE)
+    (TokenService : Token.Service.Sig.SERVICE)
+    (UserService : User_service_sig.SERVICE) : Sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.make "password-reset"
       ~dependencies:

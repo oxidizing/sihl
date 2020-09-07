@@ -1,9 +1,11 @@
 open Base
 open Lwt.Syntax
 open Data_db_core
+module Sig = Data_db_service_sig
 
-module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
-  Data_db_sig.SERVICE = struct
+module Make
+    (Config : Configuration.Service.Sig.SERVICE)
+    (Log : Log.Service.Sig.SERVICE) : Sig.SERVICE = struct
   let print_pool_usage pool =
     let n_connections = Caqti_lwt.Pool.size pool in
     let max_connections = Config.read_int ~default:10 "DATABASE_POOL_SIZE" in
@@ -31,7 +33,7 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
 
   let ctx_with_pool () =
     let pool = create_pool () in
-    Core_ctx.(empty |> ctx_add_pool pool)
+    Core.Ctx.(empty |> ctx_add_pool pool)
 
   let add_pool ctx =
     let pool = create_pool () in
@@ -45,7 +47,7 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
 
   let query ctx f =
     match
-      (Core_ctx.find ctx_key_connection ctx, Core_ctx.find ctx_key_pool ctx)
+      (Core.Ctx.find ctx_key_connection ctx, Core.Ctx.find ctx_key_pool ctx)
     with
     | Some connection, None -> (
         let* result = f connection in
@@ -77,7 +79,7 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         Lwt.fail (Exception "No connection pool found")
 
   let with_connection ctx f =
-    match Core_ctx.find ctx_key_pool ctx with
+    match Core.Ctx.find ctx_key_pool ctx with
     | Some pool -> (
         print_pool_usage pool;
         let* pool_result =
@@ -108,7 +110,7 @@ module Make (Config : Config_sig.SERVICE) (Log : Log_sig.SERVICE) :
         Lwt.fail (Exception "No connection pool found")
 
   let atomic ctx f =
-    match Core_ctx.find ctx_key_pool ctx with
+    match Core.Ctx.find ctx_key_pool ctx with
     | Some pool -> (
         print_pool_usage pool;
         let* pool_result =

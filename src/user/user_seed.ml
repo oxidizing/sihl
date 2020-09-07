@@ -1,4 +1,6 @@
-module Make (UserService : User_sig.SERVICE) = struct
+module Sig = User_service_sig
+
+module Make (UserService : Sig.SERVICE) = struct
   let admin ~email ~password request =
     UserService.create_admin request ~email ~password ~username:None
 

@@ -1,3 +1,5 @@
+(** Encode and decode entity identifiers as UUIDs. *)
+
 type t = Uuidm.t
 
 val random : unit -> t
