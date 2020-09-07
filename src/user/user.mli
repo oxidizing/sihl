@@ -1,9 +1,23 @@
 (** This module provides the abstraction of a user that interacts with the Sihl ap. Use it to register new users, changes password, reset passwords and update user details.
 
+User handling is a common task in web development, so Sihl comes with a minimal user model [Sihl.User.t]. Typically you need some kind of domain user, like a customer that has pizza orders assigned or a applicant that submits applications. This is something that you implement while referencing to {!Sihl.User.t}.
+
+*)
+
+(** {1 Installation}
+
+[{
+module Repo = Sihl.Data.Repo.Service.Make ()
+module Cmd = Sihl.Cmd.Service.Make ()
+module Log = Sihl.Log.Service.Make ()
+module Db = Sihl.Data.Db.Service (Config) (Log)
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
+module Migration = Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
+}]
+
 *)
 
 module Authz = User_authz
-module Service = User_service
 module Seed = User_seed
 module PasswordReset = User_password_reset
 
@@ -66,3 +80,7 @@ val validate_change_password :
   (unit, string) Result.t
 
 val t : t Caqti_type.t
+
+(** {1 Usage} *)
+
+module Service = User_service

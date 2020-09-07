@@ -25,7 +25,6 @@ In order to clean all repositories that have registered cleaners you can call [c
 
 [{
 open Lwt.Syntax
-
 let* () = Repo.clean_all ctx in
 ..
 }]
