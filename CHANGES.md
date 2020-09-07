@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1] - 2020-09-07
+### Fixed
+- Don't raise exception when user login fails if it is a user error
+- Remove dev tools as dev dependencies
+
+### Added
+- Storage service can remove files
+- Move README.md documentation to ocamldoc based documentation
+
 ## [0.1.0] - 2020-09-03
 ### Fixed
 - DB connection leaks caused deadlocks
