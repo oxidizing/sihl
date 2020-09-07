@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>App (sihl.App)</title><link rel="stylesheet" href="../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 1.5.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body><div class="content"><header><nav><a href="../index.html">Up</a> – <a href="../index.html">sihl</a> &#x00BB; App</nav><h1>Module <code>App</code></h1><p>A Sihl app is something that can be started and stopped and that users can interact with through HTTP or CLI commands. It contains configuration, HTTP endpoints, a list of services, schedules and CLI commands.</p><nav class="toc"><ul><li><a href="#kernel-services">Kernel services</a></li><li><a href="#app-creation">App creation</a></li><li><a href="#usage">Usage</a></li></ul></nav></header><section><header><h2 id="kernel-services"><a href="#kernel-services" class="anchor"></a>Kernel services</h2><p>An app requires a minimal set of services. That set is called <a href="../App__/App_sig/module-type-KERNEL/index.html"><span>kernel services</span></a>. Kernel service implementations are provided by Sihl, so you don't need any external dependencies to get started with Sihl apps.</p></header></section><section><header><h2 id="app-creation"><a href="#app-creation" class="anchor"></a>App creation</h2><p>After implementing domain services which makes an app that solves a particular problem, you want to expose it to users by creating a Sihl app.</p><p>Once you have set up the kernel services, use the functor <a href="Make/index.html"><code>Sihl.App.Make</code></a> to instantiate an app like follows:</p><pre><code class="ml">module KernelServices = struct
+  module Random = Sihl.Utils.Random.Service.Make ()
+  module Log = Sihl.Log.Service.Make ()
+  module Config = Sihl.Config.Service.Make ()
+  module Db = Sihl.Data.Db.Service.Make ()
+  module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
+  module Cmd = Sihl.Cmd.Service.Make ()
+  module Migration = Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
+  module WebServer = Sihl.Web.Server.Service.Make (Log) (Cmd)
+  module Schedule = Sihl.Schedule.Service.Make (Log)
+end
+
+module App = Sihl.App.Make (KernelServices)</code></pre></header><div class="spec module" id="module-Make"><a href="#module-Make" class="anchor"></a><code><span class="keyword">module</span> <a href="Make/index.html">Make</a> : <span class="keyword">functor</span> (<a href="Make/argument-1-Kernel/index.html">Kernel</a> : <a href="../App__/App_sig/index.html#module-type-KERNEL">App__.App_sig.KERNEL</a>) <span>&#45;&gt;</span> <a href="../App__/App_sig/index.html#module-type-APP">App__.App_sig.APP</a></code></div></section><section><header><h2 id="usage"><a href="#usage" class="anchor"></a>Usage</h2><p>An <a href="../App__/App_sig/module-type-APP/index.html"><span>app</span></a> can be set up using a clean builder pattern. Make sure to call <code>run</code> in the end:</p><pre><code class="ml">let services = ...
+let endpoints = ...
+let config = ...
+let schedules = ...
+let commands = ...
+
+let () =
+  App.(
+    empty
+    |&gt; with_services services
+    |&gt; with_endpoints endpoints
+    |&gt; with_config config
+    |&gt; with_schedules schedules
+    |&gt; with_commands commands
+    |&gt; run)</code></pre></header><div class="spec module" id="module-Sig"><a href="#module-Sig" class="anchor"></a><code><span class="keyword">module</span> Sig = <a href="../App__/index.html#module-App_sig">App__.App_sig</a></code></div></section></div></body></html>
