@@ -1,4 +1,5 @@
-(** Tokens are key that are valid for a limited amount of time.
+(** The token service provides an API to generate tokens that carry some data and expire after a certain amount of time. It takes care of secure random byte generation and the persistence and validation of tokens.
+
 *)
 
 module Service = Token_service

@@ -18,7 +18,7 @@ let res_to_opium res =
       let headers = res |> Http.Res.headers |> Cohttp.Header.of_list in
       let headers =
         Cohttp.Header.add headers "Content-Type"
-          (Http.Http_core.show_content_type (Http.Res.content_type res))
+          (Http.show_content_type (Http.Res.content_type res))
       in
       let code = res |> Http.Res.status |> Cohttp.Code.status_of_code in
       let headers =
