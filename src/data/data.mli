@@ -10,22 +10,19 @@ Caqti supports following databases (caqti drivers):
 - MariaDB (caqti-driver-mariadb)
 - SQLite (caqti-driver-sqlite)
 
-[{
+{[
 module Log = Sihl.Log.Service.Make ()
 module Config = Sihl.Config.Service.Make (Log)
 module Db = Sihl.Data.Db.Service.Make (Config) (Log)
-}]
+]}
 
 Install one of the drivers listed above.
 
-[{
-opam install caqti-driver-postgresql
-}]
+[opam install caqti-driver-postgresql]
 
 Add the driver to your [done] file:
-[{
-caqti-driver-postgresql
-}]
+
+[caqti-driver-postgresql]
 *)
 
 module Db = Data_db
@@ -34,19 +31,19 @@ module Db = Data_db
 
 Register the database middleware, so other services can query the database with the context that contains the database pool.
 
-[{
+{[
 module DbMiddleware = Sihl.Web.Middleware.Db.Make (Service.Db)
 let middlewares = [
   DbMiddleware.m();
 ]
-}]
+]}
 
 
 The database service should be used mostly in repositories and not in services themselves.
 
 pizza_order_repo.ml:
 
-[{
+{[
 module MakePostgreSql
     (DbService: Sihl.Data.Db.Service.Sig.SERVICE) : Pizza_order_sig.REPO =
 struct
@@ -75,35 +72,33 @@ struct
 
 end
 
-}]
+]}
 
 pizza_order_service.ml:
 
-[{
+{[
 module Make
     (Repo: Pizza_order_sig.REPO) : Pizza_order_sig.SERVICE = struct
 
     let find ctx ~id = Repo.find ctx ~id
 end
-}]
+]}
 
 Then you can use the service:
 
-[{
+{[
 module PizzaOrderRepo = Pizza_order_repo.MakePostgreSql (Service.Db)
 module PizzaOrderService = Pizza_order_service.Make (PizzaOrderRepo)
-
 let get_pizza_order =
   Sihl.Web.Route.get "/pizza-orders/:id" (fun ctx ->
       Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
-
 let get_pizza_order =
   Sihl.Web.Route.get "/pizza-orders/:id" (fun ctx ->
       let id = Sihl.Web.Req.param ctx "id" in
       let pizza = PizzaOrderService.find ctx ~id in
       ...
       )
-}]
+]}
 
 *)
 

@@ -44,9 +44,7 @@ val show : t -> string
 module Service = Cmd_service
 (** {1 Installation}
 
-[{
-module Cmd = Sihl.Cmd.Service.Make ()
-}]
+[module Cmd = Sihl.Cmd.Service.Make ()]
 
 *)
 
@@ -54,7 +52,7 @@ module Cmd = Sihl.Cmd.Service.Make ()
 
 This is how the command [createadmin] is implemented:
 
-[{
+{[
   let create_admin_cmd =
     Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
       ~description:"Create an admin user"
@@ -72,5 +70,5 @@ This is how the command [createadmin] is implemented:
     |> with_services services
     |> with_commands [ create_admin_cmd ]
     |> run)
-}]
+]}
 *)

@@ -2,7 +2,7 @@
 
 (** {1 Installation}
 
-[{
+{[
 module Repo = Sihl.Data.Repo.Service.Make ()
 module Random = Sihl.Utils.Random.Make ()
 module Cmd = Sihl.Cmd.Service.Make ()
@@ -19,7 +19,7 @@ module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
 (* Service *)
 module Session = Sihl.Session.Service.Make (Log) (Random) (SessionRepo)
 module User = Sihl.User.Service.Make (Log) (Cmd) (Db) (UserRepo)
-}]
+]}
 *)
 
 (** {1 Usage}

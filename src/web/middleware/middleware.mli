@@ -1,4 +1,4 @@
-(** A middleware is a function that takes a {!{Http.Route.handler}handler} and returns a {!{Http.Route.handler}handler}. It is typically used to add content to  the request context that is valid only during a request. *)
+(** A middleware is a function that takes a {!Http.Route.handler} and returns a {!Http.Route.handler}. It is typically used to add content to  the request context that is valid only during a request. *)
 
 type t = Middleware_core.t
 
