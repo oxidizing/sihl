@@ -13,6 +13,8 @@ module type APP = sig
 
   val with_commands : Cmd.t list -> t -> t
 
+  val with_seeds : Seed.t list -> t -> t
+
   val on_start : (Core.Ctx.t -> unit Lwt.t) -> t -> t
 
   val on_stop : (Core.Ctx.t -> unit Lwt.t) -> t -> t
@@ -36,4 +38,6 @@ module type KERNEL = sig
   module Cmd : Cmd.Service.Sig.SERVICE
 
   module Schedule : Schedule.Service.Sig.SERVICE
+
+  module Seed : Seed.Service.Sig.SERVICE
 end

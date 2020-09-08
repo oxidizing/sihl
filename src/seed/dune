@@ -1,17 +1,13 @@
 (library
- (name app)
- (public_name sihl.app)
+ (name seed)
+ (public_name sihl.seed)
  (libraries
   base
   core
-  configuration
-  schedule
-  web
+  log
   cmd
-  data
-  seed)
- (modules_without_implementation
-  app_sig)
+  data)
+ (modules_without_implementation sig)
  (preprocess
   (pps
    ppx_fields_conv
