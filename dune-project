@@ -71,6 +71,9 @@
   (ppx_fields_conv (>= v0.13.0))
   (ppx_sexp_conv (>= v0.13.0))
 
+  ;; Test
+  (alcotest (>= 1.2.0))
+
   ;; Test dependencies
   (alcotest-lwt (and (>= 1.2.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
