@@ -83,11 +83,31 @@ This code including all its dependencies compiles in 1.5 seconds on the laptop o
 
 Even though you see no type definitions, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
 
-It runs fast, maybe. We didn't spend any efforts on measuring or tweaking performance yet. We want to make sure the API somewhat stabilizes first. Sihl will never be Rust-fast, but it might be become about Go-fast.
+It runs fast, maybe. We didn't spend any efforts on measuring or tweaking performance yet. We want to make sure the API somewhat stabilizes first. Sihl will never be Rust-fast, but it might become about Go-fast.
 
 If you need stuff like job queues, emailing or password reset flows, just add one of the provided service implementations or create one yourself by implementing a service interface.
 
 [Enough text, show me more code!](#getting-started)
+
+### Features
+
+Following are the things that Sihl takes care of:
+
+- Database handling (pooling, transactions, migrations)
+- Configuration (from env variables to configuration services)
+- Logging
+- User management
+- Token management 
+- Session management 
+- HTTP routes & middlewares
+- Flash Messages 
+- Authentication
+- Authorization
+- Emailing
+- CLI Commands
+- Job Queue
+- Schedules
+- Block Storage
 
 ### What Sihl is not
 
