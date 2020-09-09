@@ -1,3 +1,4 @@
+include Http.Core
 module Req = Http.Req
 module Res = Http.Res
 module Route = Http.Route

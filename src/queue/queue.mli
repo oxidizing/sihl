@@ -3,6 +3,7 @@
 *)
 
 module Service = Queue_service
+module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
 module WorkableJob = Queue_core.WorkableJob
 

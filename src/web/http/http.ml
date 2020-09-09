@@ -1,4 +1,4 @@
-include Http_core
+module Core = Http_core
 module Route = Route
 module Res = Res
 module Req = Req
