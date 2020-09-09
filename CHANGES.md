@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.2] - 2020-09-09
+### Fixed
+- Re-export `Sihl.Queue.Job.t`
+- Export content types under `Sihl.Web`
+
 ## [0.1.1] - 2020-09-07
 ### Fixed
 - Don't raise exception when user login fails if it is a user error
