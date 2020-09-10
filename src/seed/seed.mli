@@ -16,7 +16,6 @@ type t = Seed_core.t
 {[
 module Log = Sihl.Log.Service.Make ()
 module Cmd = Sihl.Cmd.Service.Make ()
-module Config = Sihl.Cmd.Service.Make (Config)
 module Seed = Sihl.Seed.Service.Make (Log) (Cmd)
 ]}
 
