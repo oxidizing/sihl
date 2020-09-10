@@ -1,6 +1,10 @@
 (** The service container manages service lifecycles. It knows how to start services in the right order by respecting the defined dependencies. Use it to implement you own services.
  *)
 
+type start = Core_ctx.t -> Core_ctx.t Lwt.t
+
+type stop = Core_ctx.t -> unit Lwt.t
+
 module Lifecycle : sig
   type t
 
@@ -12,16 +16,15 @@ module Lifecycle : sig
 
   val module_name : t -> string
 
-  val make :
-    string ->
-    ?dependencies:t list ->
-    (Core_ctx.t -> Core_ctx.t Lwt.t) ->
-    (Core_ctx.t -> unit Lwt.t) ->
-    t
+  val make : start:start -> stop:stop -> ?dependencies:t list -> string -> t
 end
 
 module type SERVICE = sig
   val lifecycle : Lifecycle.t
+
+  val start : start
+
+  val stop : stop
 end
 
 val collect_all_lifecycles :

@@ -4,6 +4,9 @@
 ### Added
 - Seed Service with commands `seedlist` and `seedrun <name>`
 
+### Fixed
+- Lifecycle API: A service now has two additional functions `start` and `stop`, which are used in the lifecycle definition
+
 ## [0.1.2] - 2020-09-09
 ### Fixed
 - Re-export `Sihl.Queue.Job.t`

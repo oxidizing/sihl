@@ -6,14 +6,6 @@ module Make
     (Log : Log.Service.Sig.SERVICE)
     (Repo : Sig.REPO)
     (DbService : Data.Db.Service.Sig.SERVICE) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "storage" ~dependencies:[ Log.lifecycle ]
-      (fun ctx ->
-        Repo.register_migration ();
-        Repo.register_cleaner ();
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let find_opt ctx ~id = Repo.get_file ctx ~id
 
   let find ctx ~id =
@@ -87,6 +79,17 @@ module Make
           (Exception
              (Format.asprintf "File data not found for file %a" StoredFile.pp
                 file))
+
+  let start ctx =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "storage" ~dependencies:[ Log.lifecycle ]
+      ~start ~stop
 end
 
 module Repo = struct

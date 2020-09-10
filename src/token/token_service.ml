@@ -7,14 +7,6 @@ module Make
     (Log : Log.Service.Sig.SERVICE)
     (RandomService : Utils.Random.Service.Sig.SERVICE)
     (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "token"
-      (fun ctx ->
-        let () = Repo.register_migration () in
-        let () = Repo.register_cleaner () in
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let find_opt ctx value = Repo.find_opt ctx ~value
 
   let find ctx value =
@@ -40,4 +32,13 @@ module Make
     let* () = Repo.insert ctx ~token in
     let value = Token_core.value token in
     find ctx value
+
+  let start ctx =
+    let () = Repo.register_migration () in
+    let () = Repo.register_cleaner () in
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle = Core.Container.Lifecycle.make "token" ~start ~stop
 end

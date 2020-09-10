@@ -8,14 +8,6 @@ module Make
     (Log : Log.Service.Sig.SERVICE)
     (RandomService : Utils.Random.Service.Sig.SERVICE)
     (Repo : Sig.REPO) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "session" ~dependencies:[ Log.lifecycle ]
-      (fun ctx ->
-        Repo.register_migration ();
-        Repo.register_cleaner ();
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let add_to_ctx session ctx =
     Core.Ctx.add ctx_key (Session_core.key session) ctx
 
@@ -86,6 +78,17 @@ module Make
     let session_key = require_session_key ctx in
     let* session = find ctx ~key:session_key in
     Session_core.get key session |> Lwt.return
+
+  let start ctx =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "session" ~dependencies:[ Log.lifecycle ]
+      ~start ~stop
 end
 
 module Repo = struct

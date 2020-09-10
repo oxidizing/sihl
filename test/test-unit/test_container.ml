@@ -1,38 +1,47 @@
 module ServiceA : Sihl.Core.Container.SERVICE = struct
-  let lifecycle =
-    Sihl.Core.Container.Lifecycle.make "a"
-      (fun ctx ->
-        print_endline "Starting module A";
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
+  let start ctx =
+    print_endline "Starting module A";
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle = Sihl.Core.Container.Lifecycle.make ~start ~stop "a"
 end
 
 module ServiceB : Sihl.Core.Container.SERVICE = struct
+  let start ctx =
+    print_endline "Starting module B";
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
   let lifecycle =
-    Sihl.Core.Container.Lifecycle.make "b" ~dependencies:[ ServiceA.lifecycle ]
-      (fun ctx ->
-        print_endline "Starting module B";
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
+    Sihl.Core.Container.Lifecycle.make "b" ~start ~stop
+      ~dependencies:[ ServiceA.lifecycle ]
 end
 
 module ServiceC : Sihl.Core.Container.SERVICE = struct
+  let start ctx =
+    print_endline "Starting module C";
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
   let lifecycle =
-    Sihl.Core.Container.Lifecycle.make "c" ~dependencies:[ ServiceB.lifecycle ]
-      (fun ctx ->
-        print_endline "Starting module C";
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
+    Sihl.Core.Container.Lifecycle.make "c" ~start ~stop
+      ~dependencies:[ ServiceB.lifecycle ]
 end
 
 module ServiceD : Sihl.Core.Container.SERVICE = struct
+  let start ctx =
+    print_endline "Starting module D";
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
   let lifecycle =
-    Sihl.Core.Container.Lifecycle.make "d"
+    Sihl.Core.Container.Lifecycle.make "d" ~start ~stop
       ~dependencies:[ ServiceB.lifecycle; ServiceC.lifecycle ]
-      (fun ctx ->
-        print_endline "Starting module D";
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
 end
 
 let order_all_dependencies _ () =

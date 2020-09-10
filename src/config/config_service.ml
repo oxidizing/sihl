@@ -2,11 +2,6 @@ open Base
 module Sig = Config_service_sig
 
 module Make (Log : Log.Service.Sig.SERVICE) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "config" ~dependencies:[ Log.lifecycle ]
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let register_config config =
     Log.debug (fun m -> m "CONFIG: Register config");
     Config_core.Internal.register config
@@ -77,4 +72,12 @@ module Make (Log : Log.Service.Sig.SERVICE) : Sig.SERVICE = struct
         raise
           (Config_core.Exception
              (Printf.sprintf "CONFIG: Configuration %s not found" key))
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "config" ~dependencies:[ Log.lifecycle ]
+      ~start ~stop
 end

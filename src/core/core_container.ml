@@ -2,21 +2,29 @@ open Lwt.Syntax
 
 exception Exception of string
 
+type start = Core_ctx.t -> Core_ctx.t Lwt.t
+
+type stop = Core_ctx.t -> unit Lwt.t
+
 module Lifecycle = struct
   type t = {
     module_name : string;
     dependencies : t list;
-    start : Core_ctx.t -> Core_ctx.t Lwt.t;
-    stop : Core_ctx.t -> unit Lwt.t;
+    start : start;
+    stop : stop;
   }
   [@@deriving fields]
 
-  let make module_name ?(dependencies = []) start stop =
+  let make ~start ~stop ?(dependencies = []) module_name =
     { module_name; dependencies; start; stop }
 end
 
 module type SERVICE = sig
   val lifecycle : Lifecycle.t
+
+  val start : start
+
+  val stop : stop
 end
 
 let collect_all_lifecycles services =

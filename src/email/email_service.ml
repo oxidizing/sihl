@@ -23,14 +23,6 @@ end
 module Template = struct
   module Make (Log : Log.Service.Sig.SERVICE) (Repo : Sig.TEMPLATE_REPO) :
     Sig.TEMPLATE_SERVICE = struct
-    let lifecycle =
-      Core.Container.Lifecycle.make "template" ~dependencies:[ Log.lifecycle ]
-        (fun ctx ->
-          Repo.register_migration ();
-          Repo.register_cleaner ();
-          Lwt.return ctx)
-        (fun _ -> Lwt.return ())
-
     let get ctx ~id = Repo.get ctx ~id
 
     let get_by_name ctx ~name = Repo.get_by_name ctx ~name
@@ -85,6 +77,17 @@ module Template = struct
       |> Email_core.set_text_content text_content
       |> Email_core.set_html_content html_content
       |> Lwt.return
+
+    let start ctx =
+      Repo.register_migration ();
+      Repo.register_cleaner ();
+      Lwt.return ctx
+
+    let stop _ = Lwt.return ()
+
+    let lifecycle =
+      Core.Container.Lifecycle.make "template" ~dependencies:[ Log.lifecycle ]
+        ~start ~stop
   end
 
   module Repo = struct
@@ -362,12 +365,6 @@ module Make = struct
   module Console (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
     module Template = TemplateService
 
-    let lifecycle =
-      Core.Container.Lifecycle.make "email"
-        ~dependencies:[ TemplateService.lifecycle ]
-        (fun ctx -> Lwt.return ctx)
-        (fun _ -> Lwt.return ())
-
     let show email =
       let sender = Email_core.sender email in
       let recipient = Email_core.recipient email in
@@ -404,6 +401,15 @@ Html:
         | [] -> Lwt.return ()
       in
       loop emails
+
+    let start ctx = Lwt.return ctx
+
+    let stop _ = Lwt.return ()
+
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        ~start ~stop
   end
 
   module Smtp
@@ -411,12 +417,6 @@ Html:
       (TemplateService : Sig.TEMPLATE_SERVICE)
       (ConfigProvider : Sig.CONFIG_PROVIDER_SMTP) : Sig.SERVICE = struct
     module Template = TemplateService
-
-    let lifecycle =
-      Core.Container.Lifecycle.make "email"
-        ~dependencies:[ TemplateService.lifecycle ]
-        (fun ctx -> Lwt.return ctx)
-        (fun _ -> Lwt.return ())
 
     let send ctx email =
       (* TODO: how to get config for sending emails? *)
@@ -458,6 +458,15 @@ Html:
       | Error msg -> raise (Email_core.Exception msg)
 
     let bulk_send _ _ = Lwt.return ()
+
+    let start ctx = Lwt.return ctx
+
+    let stop _ = Lwt.return ()
+
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        ~start ~stop
   end
 
   module SendGrid
@@ -465,12 +474,6 @@ Html:
       (TemplateService : Sig.TEMPLATE_SERVICE)
       (ConfigProvider : Sig.CONFIG_PROVIDER_SENDGRID) : Sig.SERVICE = struct
     module Template = TemplateService
-
-    let lifecycle =
-      Core.Container.Lifecycle.make "email"
-        ~dependencies:[ TemplateService.lifecycle ]
-        (fun ctx -> Lwt.return ctx)
-        (fun _ -> Lwt.return ())
 
     let body ~recipient ~subject ~sender ~content =
       Printf.sprintf
@@ -539,16 +542,19 @@ Html:
           raise (Email_core.Exception "EMAIL: Failed to send email")
 
     let bulk_send _ _ = Lwt.return ()
-  end
 
-  module Memory (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
-    module Template = TemplateService
+    let start ctx = Lwt.return ctx
+
+    let stop _ = Lwt.return ()
 
     let lifecycle =
       Core.Container.Lifecycle.make "email"
         ~dependencies:[ TemplateService.lifecycle ]
-        (fun ctx -> Lwt.return ctx)
-        (fun _ -> Lwt.return ())
+        ~start ~stop
+  end
+
+  module Memory (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
+    module Template = TemplateService
 
     let send ctx email =
       let* email = TemplateService.render ctx email in
@@ -562,6 +568,15 @@ Html:
         | [] -> Lwt.return ()
       in
       loop emails
+
+    let start ctx = Lwt.return ctx
+
+    let stop _ = Lwt.return ()
+
+    let lifecycle =
+      Core.Container.Lifecycle.make "email"
+        ~dependencies:[ TemplateService.lifecycle ]
+        ~start ~stop
   end
 end
 
@@ -601,20 +616,6 @@ module MakeDelayed
       |> Queue.set_retry_delay Utils.Time.OneHour
   end
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "delayed-email"
-      ~dependencies:
-        [
-          Log.lifecycle;
-          EmailService.lifecycle;
-          DbService.lifecycle;
-          QueueService.lifecycle;
-        ]
-      (fun ctx ->
-        QueueService.register_jobs ctx ~jobs:[ Job.job ]
-        |> Lwt.map (fun () -> ctx))
-      (fun _ -> Lwt.return ())
-
   let send ctx email = QueueService.dispatch ctx ~job:Job.job email
 
   let bulk_send ctx emails =
@@ -625,4 +626,19 @@ module MakeDelayed
           | [] -> Lwt.return ()
         in
         loop emails)
+
+  let start ctx =
+    QueueService.register_jobs ctx ~jobs:[ Job.job ] |> Lwt.map (fun () -> ctx)
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "delayed-email" ~start ~stop
+      ~dependencies:
+        [
+          Log.lifecycle;
+          EmailService.lifecycle;
+          DbService.lifecycle;
+          QueueService.lifecycle;
+        ]
 end

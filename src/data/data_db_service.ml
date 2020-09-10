@@ -39,12 +39,6 @@ module Make
     let pool = create_pool () in
     ctx_add_pool pool ctx
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "db"
-      ~dependencies:[ Config.lifecycle; Log.lifecycle ]
-      (fun ctx -> ctx |> add_pool |> Lwt.return)
-      (fun _ -> Lwt.return ())
-
   let query ctx f =
     match
       (Core.Ctx.find ctx_key_connection ctx, Core.Ctx.find ctx_key_pool ctx)
@@ -182,4 +176,13 @@ module Make
     with_connection ctx (fun ctx ->
         let* () = set_fk_check ctx ~check:false in
         Lwt.finalize (fun () -> f ctx) (fun () -> set_fk_check ctx ~check:true))
+
+  let start ctx = ctx |> add_pool |> Lwt.return
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "db"
+      ~dependencies:[ Config.lifecycle; Log.lifecycle ]
+      ~start ~stop
 end

@@ -12,13 +12,6 @@ module Make
     (Log : Log.Service.Sig.SERVICE)
     (TokenService : Token.Service.Sig.SERVICE)
     (UserService : User_service_sig.SERVICE) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "password-reset"
-      ~dependencies:
-        [ Log.lifecycle; TokenService.lifecycle; UserService.lifecycle ]
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let create_reset_token ctx ~email =
     let* user = UserService.find_by_email_opt ctx ~email in
     match user with
@@ -57,4 +50,13 @@ module Make
           UserService.set_password ctx ~user ~password ~password_confirmation ()
         in
         Lwt.return @@ Result.map ~f:(fun _ -> ()) result
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "password-reset" ~start ~stop
+      ~dependencies:
+        [ Log.lifecycle; TokenService.lifecycle; UserService.lifecycle ]
 end
