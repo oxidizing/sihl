@@ -34,74 +34,78 @@ let _ = App.(empty |> with_services services |> with_routes routes |> run)
 
 *)
 
-(** {1 Core} *)
-
-module Core = Core
-
 (** {1 Sihl App}*)
 
 module App = App
-
-(** {1 Utils & Helpers} *)
-
-module Utils = Utils
-
-(** {1 Configuration} *)
-
-module Config = Configuration
-
-(** {1 Logging} *)
-
-module Log = Log
-
-(** {1 Data} *)
-
-module Data = Data
-
-(** {1 Web} *)
-
-module Web = Web
-
-(** {1 CLI Command} *)
-
-module Cmd = Cmd
-
-(** {1 Scheduler} *)
-
-module Schedule = Schedule
-
-(** {1 Authorization} *)
-
-module Authz = Authz
-
-(** {1 Token }*)
-
-module Token = Token
 
 (** {1 Authentication}*)
 
 module Authn = Authn
 
+(** {1 Authorization} *)
+
+module Authz = Authz
+
+(** {1 CLI Command} *)
+
+module Cmd = Cmd
+
+(** {1 Configuration} *)
+
+module Config = Configuration
+
+(** {1 Core} *)
+
+module Core = Core
+
+(** {1 Data} *)
+
+module Data = Data
+
 (** {1 Emailing}*)
 
 module Email = Email
 
-(** {1 Session}*)
+(** {1 Logging} *)
 
-module Session = Session
+module Log = Log
 
 (** {1 Message}*)
 
 module Message = Message
 
+(** {1 Job Queue}*)
+
+module Queue = Queue
+
+(** {1 Scheduler} *)
+
+module Schedule = Schedule
+
+(** {1 Seed}*)
+
+module Seed = Seed
+
+(** {1 Session}*)
+
+module Session = Session
+
 (** {1 Storage}*)
 
 module Storage = Storage
+
+(** {1 Token }*)
+
+module Token = Token
 
 (** {1 User Management}*)
 
 module User = User
 
-(** {1 Job Queue}*)
+(** {1 Utils & Helpers} *)
 
-module Queue = Queue
+module Utils = Utils
+
+(** {1 Web} *)
+
+module Web = Web

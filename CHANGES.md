@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.3] - TBD
+### Added
+- Seed Service with commands `seedlist` and `seedrun <name>`
+
 ## [0.1.2] - 2020-09-09
 ### Fixed
 - Re-export `Sihl.Queue.Job.t`

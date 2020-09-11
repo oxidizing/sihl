@@ -8,6 +8,7 @@ module Make (Kernel : Sig.KERNEL) = struct
     services : (module Core.Container.SERVICE) list;
     schedules : Schedule.t list;
     commands : Cmd.t list;
+    seeds : Seed.t list;
     on_start : Core.Ctx.t -> unit Lwt.t;
     on_stop : Core.Ctx.t -> unit Lwt.t;
   }
@@ -19,6 +20,7 @@ module Make (Kernel : Sig.KERNEL) = struct
       services = [];
       schedules = [];
       commands = [];
+      seeds = [];
       on_start = (fun _ -> Lwt.return ());
       on_stop = (fun _ -> Lwt.return ());
     }
@@ -32,6 +34,8 @@ module Make (Kernel : Sig.KERNEL) = struct
   let with_schedules schedules app = { app with schedules }
 
   let with_commands commands app = { app with commands }
+
+  let with_seeds seeds app = { app with seeds }
 
   let on_start on_start app = { app with on_start }
 
@@ -64,6 +68,8 @@ module Make (Kernel : Sig.KERNEL) = struct
        Kernel.Log.debug (fun m -> m "APP: Register commands");
        let commands = List.cons start_cmd app.commands in
        Kernel.Cmd.register_commands commands;
+       Kernel.Log.debug (fun m -> m "APP: Register seeds");
+       Kernel.Seed.register_seeds app.seeds;
        Kernel.Log.debug (fun m -> m "APP: Register schedules");
        let _ = app.schedules |> List.map (Kernel.Schedule.schedule ctx) in
        Kernel.Log.debug (fun m -> m "APP: Start services");
