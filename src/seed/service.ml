@@ -54,13 +54,12 @@ module Make
         | _ -> raise (Cmd.Invalid_usage "Usage: <seed name>"))
       ()
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "seed"
-      (fun ctx ->
-        CmdService.register_command seed_list;
-        CmdService.register_command seed_run;
-        Lwt.return ctx)
-      (fun _ ->
-        registered_seeds := Map.empty (module String);
-        Lwt.return ())
+  let start ctx =
+    CmdService.register_command seed_list;
+    CmdService.register_command seed_run;
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle = Core.Container.Lifecycle.make "seed" ~start ~stop
 end
