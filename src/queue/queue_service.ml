@@ -155,22 +155,25 @@ module MakePolling
     stop_schedule := Some (ScheduleService.schedule ctx schedule);
     Lwt.return ()
 
+  let start ctx =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    start_queue ctx |> Lwt.map (fun () -> ctx)
+
+  let stop _ =
+    registered_jobs := [];
+    match !stop_schedule with
+    | Some stop_schedule ->
+        stop_schedule ();
+        Lwt.return ()
+    | None ->
+        Log.warn (fun m -> m "QUEUE: Can not stop schedule");
+        Lwt.return ()
+
   let lifecycle =
     Core.Container.Lifecycle.make "queue"
       ~dependencies:[ ScheduleService.lifecycle; Log.lifecycle ]
-      (fun ctx ->
-        Repo.register_migration ();
-        Repo.register_cleaner ();
-        start_queue ctx |> Lwt.map (fun () -> ctx))
-      (fun _ ->
-        registered_jobs := [];
-        match !stop_schedule with
-        | Some stop_schedule ->
-            stop_schedule ();
-            Lwt.return ()
-        | None ->
-            Log.warn (fun m -> m "QUEUE: Can not stop schedule");
-            Lwt.return ())
+      ~start ~stop
 end
 
 module Repo = Queue_service_repo

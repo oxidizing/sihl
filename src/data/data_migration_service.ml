@@ -156,13 +156,16 @@ module Make
         run_all ctx)
       ()
 
+  let start ctx =
+    CmdService.register_command migrate_cmd;
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
   let lifecycle =
     Core.Container.Lifecycle.make "migration"
       ~dependencies:[ CmdService.lifecycle; Db.lifecycle; Log.lifecycle ]
-      (fun ctx ->
-        CmdService.register_command migrate_cmd;
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
+      ~start ~stop
 end
 
 module Repo = struct

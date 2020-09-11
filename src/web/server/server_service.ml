@@ -86,11 +86,13 @@ module MakeOpium
     let _ = Opium.Std.App.start app in
     run_forever ()
 
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
   let lifecycle =
-    Core.Container.Lifecycle.make "web-server"
+    Core.Container.Lifecycle.make "web-server" ~start ~stop
       ~dependencies:[ Log.lifecycle; CmdService.lifecycle ]
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
 
   let register_endpoints routes = registered_endpoints := routes
 end

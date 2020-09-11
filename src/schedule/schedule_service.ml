@@ -3,11 +3,6 @@ open Lwt.Syntax
 module Sig = Schedule_service_sig
 
 module Make (Log : Log.Service.Sig.SERVICE) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "schedule" ~dependencies:[ Log.lifecycle ]
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let schedule _ schedule =
     let should_stop = ref false in
     let stop_schedule () = should_stop := true in
@@ -43,4 +38,12 @@ module Make (Log : Log.Service.Sig.SERVICE) : Sig.SERVICE = struct
     in
     loop () |> ignore;
     stop_schedule
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "schedule" ~dependencies:[ Log.lifecycle ]
+      ~start ~stop
 end

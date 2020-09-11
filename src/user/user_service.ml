@@ -161,13 +161,16 @@ module Make
         | _ -> raise (Cmd.Invalid_usage "Usage: <username> <email> <password>"))
       ()
 
+  let start ctx =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    CmdService.register_command create_admin_cmd;
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
   let lifecycle =
     Core.Container.Lifecycle.make "user"
       ~dependencies:[ Log.lifecycle; CmdService.lifecycle; DbService.lifecycle ]
-      (fun ctx ->
-        Repo.register_migration ();
-        Repo.register_cleaner ();
-        CmdService.register_command create_admin_cmd;
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
+      ~start ~stop
 end

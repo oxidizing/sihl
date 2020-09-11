@@ -4,11 +4,6 @@ module Sig = Cmd_service_sig
 let registered_commands : Cmd_core.t list ref = ref []
 
 module Make () : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "cmd"
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let register_commands commands =
     registered_commands := List.concat [ !registered_commands; commands ]
 
@@ -57,4 +52,10 @@ module Make () : Sig.SERVICE = struct
     | None ->
         print_all commands;
         Lwt.return ()
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle = Core.Container.Lifecycle.make ~start ~stop "cmd"
 end

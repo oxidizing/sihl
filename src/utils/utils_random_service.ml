@@ -8,10 +8,11 @@ module Make () : Sig.SERVICE = struct
   let base64 ~bytes =
     Base64.encode_string ~alphabet:Base64.uri_safe_alphabet @@ rand "" bytes
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "random"
-      (fun ctx ->
-        Random.self_init ();
-        Lwt.return ctx)
-      (fun _ -> Lwt.return ())
+  let start ctx =
+    Random.self_init ();
+    Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle = Core.Container.Lifecycle.make "random" ~start ~stop
 end

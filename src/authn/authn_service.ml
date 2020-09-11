@@ -7,12 +7,6 @@ module Make
     (Log : Log.Service.Sig.SERVICE)
     (SessionService : Session.Service.Sig.SERVICE)
     (UserService : User.Service.Sig.SERVICE) : Sig.SERVICE = struct
-  let lifecycle =
-    Core.Container.Lifecycle.make "authn"
-      ~dependencies:[ SessionService.lifecycle; UserService.lifecycle ]
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let find_user_in_session_opt ctx =
     let* user_id = SessionService.get ctx ~key:"authn" in
     match user_id with
@@ -29,4 +23,12 @@ module Make
     SessionService.set ctx ~key:"authn" ~value:(User.id user)
 
   let unauthenticate_session ctx = SessionService.unset ctx ~key:"authn"
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.make "authn" ~start ~stop
+      ~dependencies:[ SessionService.lifecycle; UserService.lifecycle ]
 end

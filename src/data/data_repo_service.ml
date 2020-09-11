@@ -18,11 +18,6 @@ module Make () : Sig.SERVICE = struct
 
   let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "repo"
-      (fun ctx -> Lwt.return ctx)
-      (fun _ -> Lwt.return ())
-
   let clean_all ctx =
     let cleaners = Registry.get_all () in
     let rec clean_repos cleaners =
@@ -33,4 +28,10 @@ module Make () : Sig.SERVICE = struct
           clean_repos cleaners
     in
     clean_repos cleaners
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle = Core.Container.Lifecycle.make "repo" ~start ~stop
 end
