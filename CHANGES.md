@@ -6,6 +6,7 @@
 
 ### Fixed
 - Lifecycle API: A service now has two additional functions `start` and `stop`, which are used in the lifecycle definition
+- Database service query functions `query`, `atomic` and `with_connection` can now be nested
 
 ## [0.1.2] - 2020-09-09
 ### Fixed
