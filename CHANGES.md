@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.4] - TBD
+### Fixed
+- Remove `reason` and `tyxml-jsx` as dependency as they are not used anymore
+
 ## [0.1.3] - 2020-09-14
 ### Added
 - Seed Service with commands `seedlist` and `seedrun <name>`
