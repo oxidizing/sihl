@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.3] - TBD
+## [0.1.3] - 2020-09-14
 ### Added
 - Seed Service with commands `seedlist` and `seedrun <name>`
 

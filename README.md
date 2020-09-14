@@ -54,15 +54,17 @@ Let's have a look at a tiny Sihl app in a file `sihl.ml`:
 
 ```ocaml
 module Service = struct
-  module Random = Sihl.Utils.Random.Service
-  module Log = Sihl.Log.Service
-  module Config = Sihl.Config.Service
-  module Db = Sihl.Data.Db.Service
-  module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
-  module Cmd = Sihl.Cmd.Service
-  module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
-  module WebServer = Sihl.Web.Server.Service.Make (Cmd)
-  module Schedule = Sihl.Schedule.Service.Make (Log)
+module Random = Sihl.Utils.Random.Service.Make ()
+module Log = Sihl.Log.Service.Make ()
+module Config = Sihl.Config.Service.Make (Log)
+module Db = Sihl.Data.Db.Service.Make (Config) (Log)
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
+module Cmd = Sihl.Cmd.Service.Make ()
+module Migration =
+  Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
+module WebServer = Sihl.Web.Server.Service.MakeOpium (Log) (Cmd)
+module Schedule = Sihl.Schedule.Service.Make (Log)
+module Seed = Sihl.Seed.Service.Make (Log) (Cmd)
 end
 
 let services : (module Sihl.Core.Container.SERVICE) list =
@@ -72,11 +74,11 @@ let hello_page =
   Sihl.Web.Route.get "/hello/" (fun _ ->
       Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
 
-let routes = [ ("/page", [ hello_page ], []) ]
+let endpoints = [ ("/page", [ hello_page ], [])]
 
 module App = Sihl.App.Make (Service)
 
-let _ = App.(empty |> with_services services |> with_routes routes |> run)
+let _ = App.(empty |> with_services services |> with_endpoints endpoints |> run)
 ```
 
 This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` sets up a webserver (which is a service) that handles one route `/page/hello/` and returns HTML containing "Hello!" in the body.
