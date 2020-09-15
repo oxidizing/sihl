@@ -1,0 +1,72 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    services:
+      postgres:
+        image: postgres:12.2
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: dev
+        ports:
+          - 5432:5432
+      mariadb:
+        image: mariadb:10.1.41-bionic
+        env:
+          MYSQL_USER: admin
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: dev
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+        ports:
+          - 3306:3306
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        ocaml-version:
+          - 4.11.1
+          - 4.10.1
+          - 4.09.1
+          - 4.08.1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Retrieve opam cache
+        uses: actions/cache@v2
+        if: runner.os != 'Windows'
+        id: cache-opam
+        with:
+          path: ~/.opam
+          key: v1-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam.locked') }}
+          restore-keys: |
+            v2-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+      - name: Install dependencies
+        if: steps.cache-opam.outputs.cache-hit != 'true'
+        run: |
+          opam pin add -yn sihl .
+          sudo apt-get update -y
+          sudo apt-get install -y libmariadbclient-dev libpq-dev
+          opam depext -y sihl
+          opam install --deps-only -y sihl --with-test
+          opam install -y caqti-driver-postgresql caqti-driver-mariadb odoc
+      - name: Recover from an Opam broken state
+        if: steps.cache-opam.outputs.cache-hit == 'true'
+        run: opam upgrade --fixup
+      - name: Build
+        run: make build
+      - name: Build docs
+        run: make doc 
+      - name: Run unit tests
+        run: make test
+      - name: Run slow tests
+        run: make test-slow
+
