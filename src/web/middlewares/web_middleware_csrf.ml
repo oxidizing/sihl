@@ -42,37 +42,32 @@ struct
         | Error _ -> Web_res.(html |> set_status 403) |> Lwt.return
         | Ok value -> (
             let* id = SessionService.get_value ctx ~key:"csrf" in
-            let token_id =
-              match id with
-              | None ->
-                  (* TODO [aerben] SHOULD THIS BE 403? *)
-                  Log.err (fun m ->
-                      m "MIDDLEWARE: No CSRF token found in session %s."
-                        (SessionService.require_session_key ctx));
-                  raise @@ No_csrf_token "No CSRF token found in session"
-              | Some token_id -> token_id
-            in
-            let* session_token =
-              TokenService.find_by_id_opt ctx ~id:token_id ()
-            in
-            let* provided_token = TokenService.find_opt ctx ~value () in
-            match (session_token, provided_token) with
-            | Some tks, Some tkp ->
-                if Bool.not @@ Token.equal tks tkp then
-                  (* Give 403 if provided token doesn't match session token *)
-                  Web_res.(html |> set_status 403) |> Lwt.return
-                else
-                  (* Provided token matches and is valid => Invalidate it so it can't be reused *)
-                  let* () = TokenService.invalidate ctx ~token:tkp () in
-                  handler ctx
-            | _, None ->
-                (* Give 403 if provided token is not an existing token  *)
-                Web_res.(html |> set_status 403) |> Lwt.return
-            | None, _ ->
-                (* Token is in session but does not exist, something has gone wrong *)
-                Log.err (fun m ->
-                    m "MIDDLEWARE: CSRF token from session does not exist");
-                raise @@ No_csrf_token "CSRF token from session does not exist"
+            match id with
+            (* Give 403 if no token in session *)
+            | None -> Web_res.(html |> set_status 403) |> Lwt.return
+            | Some token_id -> (
+                let* session_token =
+                  TokenService.find_by_id_opt ctx ~id:token_id ()
+                in
+                let* provided_token = TokenService.find_opt ctx ~value () in
+                match (session_token, provided_token) with
+                | Some tks, Some tkp ->
+                    if Bool.not @@ Token.equal tks tkp then
+                      (* Give 403 if provided token doesn't match session token *)
+                      Web_res.(html |> set_status 403) |> Lwt.return
+                    else
+                      (* Provided token matches and is valid => Invalidate it so it can't be reused *)
+                      let* () = TokenService.invalidate ctx ~token:tkp () in
+                      handler ctx
+                | _, None ->
+                    (* Give 403 if provided token is not an existing token *)
+                    Web_res.(html |> set_status 403) |> Lwt.return
+                | None, _ ->
+                    (* Token is in session but does not exist, something has gone wrong *)
+                    Log.err (fun m ->
+                        m "MIDDLEWARE: CSRF token from session does not exist");
+                    raise
+                    @@ No_csrf_token "CSRF token from session does not exist" )
             )
     in
 
