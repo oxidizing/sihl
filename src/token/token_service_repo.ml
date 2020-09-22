@@ -23,13 +23,28 @@ struct
         WHERE token_tokens.token_value = ?
         |sql}
 
-    let find ctx ~value =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find find_request value)
-
     let find_opt ctx ~value =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_request value)
+
+    let find_by_id_request =
+      Caqti_request.find Data.Id.t_string Model.t
+        {sql|
+        SELECT
+          uuid,
+          token_value,
+          token_data,
+          token_kind,
+          status,
+          expires_at,
+          created_at
+        FROM token_tokens
+        WHERE token_tokens.token_uuid = ?
+        |sql}
+
+    let find_by_id_opt ctx ~id =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.find_opt find_by_id_request id)
 
     let insert_request =
       Caqti_request.exec Model.t
@@ -51,11 +66,28 @@ struct
           $6,
           $7
         )
-|sql}
+        |sql}
 
     let insert ctx ~token =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request token)
+
+    let update_request =
+      Caqti_request.exec Model.t
+        {sql|
+        UPDATE token_tokens
+        SET
+          token_data = $3,
+          token_kind = $4,
+          status = $5,
+          expires_at = $6,
+          created_at = $7
+        WHERE token_tokens.token_value = $2
+        |sql}
+
+    let update ctx ~token =
+      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec update_request token)
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
@@ -73,20 +105,20 @@ struct
     let create_tokens_table =
       Data.Migration.create_step ~label:"create tokens table"
         {sql|
-CREATE TABLE IF NOT EXISTS token_tokens (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
-  token_value VARCHAR(128) NOT NULL,
-  token_data VARCHAR(1024),
-  token_kind VARCHAR(128) NOT NULL,
-  status VARCHAR(128) NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  CONSTRAINT unqiue_uuid UNIQUE KEY (uuid),
-  CONSTRAINT unique_value UNIQUE KEY (token_value)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-|sql}
+        CREATE TABLE IF NOT EXISTS token_tokens (
+         id BIGINT UNSIGNED AUTO_INCREMENT,
+         uuid BINARY(16) NOT NULL,
+         token_value VARCHAR(128) NOT NULL,
+         token_data VARCHAR(1024),
+         token_kind VARCHAR(128) NOT NULL,
+         status VARCHAR(128) NOT NULL,
+         expires_at TIMESTAMP NOT NULL,
+         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+         PRIMARY KEY (id),
+         CONSTRAINT unqiue_uuid UNIQUE KEY (uuid),
+         CONSTRAINT unique_value UNIQUE KEY (token_value)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        |sql}
 
     let migration () =
       Data.Migration.(
@@ -97,9 +129,11 @@ CREATE TABLE IF NOT EXISTS token_tokens (
 
   let register_cleaner () = RepoService.register_cleaner Sql.clean
 
-  let find = Sql.find
-
   let find_opt = Sql.find_opt
 
+  let find_by_id_opt = Sql.find_by_id_opt
+
   let insert = Sql.insert
+
+  let update = Sql.update
 end

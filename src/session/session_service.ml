@@ -9,8 +9,10 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
   let add_to_ctx session ctx =
     Core.Ctx.add ctx_key (Session_core.key session) ctx
 
+  let require_session_key_opt ctx = Core.Ctx.find ctx_key ctx
+
   let require_session_key ctx =
-    match Core.Ctx.find ctx_key ctx with
+    match require_session_key_opt ctx with
     | None ->
         Logs.err (fun m -> m "SESSION: No session found in context");
         Logs.info (fun m -> m "HINT: Have you applied the session middleware?");

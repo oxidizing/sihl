@@ -31,3 +31,7 @@ module Time = Utils_time
 (** {1 String} *)
 
 module String = Utils_string
+
+(** {1 Encryption} *)
+
+module Encryption = Utils_encryption

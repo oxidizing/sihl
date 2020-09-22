@@ -24,6 +24,4 @@ let static = Middleware_static.m
 
 let cookie = Middleware_cookie.m
 
-let csrf = Middleware_csrf.m
-
 let create = Middleware_core.create
