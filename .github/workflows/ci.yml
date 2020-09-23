@@ -49,12 +49,14 @@ jobs:
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
+      - name: Install system dependencies
+        run: |
+          sudo apt-get install -y libmariadbclient-dev libpq-dev
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |
           opam pin add -yn sihl .
           sudo apt-get update -y
-          sudo apt-get install -y libmariadbclient-dev libpq-dev
           opam depext -y sihl
           opam install --deps-only -y sihl --with-test
           opam install -y caqti-driver-postgresql caqti-driver-mariadb odoc
