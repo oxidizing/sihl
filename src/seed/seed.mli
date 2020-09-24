@@ -38,4 +38,18 @@ module Service = Service
 
 {!Sihl.Seed.Service.Sig.SERVICE}
 
+{[
+
+...
+let dev_seed ctx = ... in
+let seed =
+  Sihl.Seed.make ~name:"development"
+    ~description:
+      "Seed minimal data so project can be tested locally"
+    ~fn:dev_seed in
+let () = Service.Seed.register_seed seed in
+let* () = Service.Seed.run_seed ctx "development" in
+...
+
+]}
 *)
