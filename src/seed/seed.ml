@@ -1,3 +1,2 @@
-type t = Seed_core.t
-
+include Seed_core
 module Service = Service

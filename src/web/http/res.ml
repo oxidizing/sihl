@@ -1,7 +1,7 @@
 open Base
 open Http_core
 
-(* TODO remove all opium references *)
+(* TODO [jerben] remove all opium references *)
 module OpiumResponse = struct
   (* We want to be able to derive show and eq from our own response type t *)
   type t = Opium_kernel.Response.t
@@ -18,6 +18,7 @@ type t = {
   redirect : string option;
   body : body option;
   headers : headers;
+  (* TODO [jerben] Remove all Opium references *)
   opium_res : OpiumResponse.t option;
   cookies : (string * string) list;
   status : int;
@@ -82,14 +83,15 @@ let content_type res = res.content_type
 
 let set_content_type content_type res = { res with content_type }
 
-(* TODO this is a hack and has to be removed *)
+(* TODO [jerben] this is a hack and has to be removed *)
 let opium_res res = res.opium_res
 
-(* TODO this is a hack and has to be removed *)
+(* TODO [jerben] this is a hack and has to be removed *)
 let set_opium_res opium_res res = { res with opium_res = Some opium_res }
 
 let cookies res = res.cookies
 
+(* TODO [jerben] Rename to add_cookie *)
 let set_cookie ~key ~data res =
   { res with cookies = List.cons (key, data) res.cookies }
 

@@ -1,8 +1,11 @@
 # Changelog
 
-## [0.1.4] - TBD
+## [0.1.4] - 2020-09-24
 ### Fixed
 - Remove `reason` and `tyxml-jsx` as dependency as they are not used anymore
+
+### Added
+- Various combinators for `Sihl.Seed.t` including constructor and field accessors
 
 ## [0.1.3] - 2020-09-14
 ### Added

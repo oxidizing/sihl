@@ -6,6 +6,7 @@ module Make (SessionService : Session.Service.Sig.SERVICE) = struct
     let filter handler ctx =
       match Http.Req.cookie_data ctx ~key:cookie_key with
       | Some session_key -> (
+          (* A session cookie was found *)
           let* session = SessionService.find_opt ctx ~key:session_key in
           match session with
           | Some session ->
@@ -27,6 +28,7 @@ module Make (SessionService : Session.Service.Sig.SERVICE) = struct
               |> Http.Res.set_cookie ~key:cookie_key ~data:session.key
               |> Lwt.return )
       | None ->
+          (* No session cookie found *)
           let* session = SessionService.create ctx [] in
           let ctx = SessionService.add_to_ctx session ctx in
           let* res = handler ctx in

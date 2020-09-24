@@ -11,6 +11,17 @@ A disadvantage of this approach is, that seed data generation requires a Sihl ap
 
 type t = Seed_core.t
 
+val fn : t -> Core.Ctx.t -> unit Lwt.t
+
+val description : t -> string
+
+val name : t -> string
+
+val make :
+  name:string -> description:string -> fn:(Core.Ctx.t -> unit Lwt.t) -> t
+
+val show : t -> string
+
 (** {1 Installation}
 
 {[
