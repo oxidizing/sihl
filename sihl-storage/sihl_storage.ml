@@ -1,22 +1,23 @@
-open Storage_core
 open Lwt.Syntax
-module Sig = Storage_service_sig
 
-module Make
-    (Log : Log.Service.Sig.SERVICE)
-    (Repo : Sig.REPO)
-    (DbService : Data.Db.Service.Sig.SERVICE) : Sig.SERVICE = struct
+(* TODO [jerben] make API Lwt_stream based and provide helpers to convert fromand to base64 in Sihl.Storage. The service takes only care with implementation detail complexity.  *)
+
+module MakeDatabase
+    (Log : Sihl.Log.Service.Sig.SERVICE)
+    (Repo : Sihl.Storage.Sig.REPO)
+    (DbService : Data.Db.Service.Sig.SERVICE) : Sihl.Storage.Sig.SERVICE =
+struct
   let find_opt ctx ~id = Repo.get_file ctx ~id
 
   let find ctx ~id =
     let* file = Repo.get_file ctx ~id in
     match file with
-    | None -> raise (Exception ("File not found with id " ^ id))
+    | None -> raise (Sihl.Storage.Exception ("File not found with id " ^ id))
     | Some file -> Lwt.return file
 
   let delete ctx ~id =
     let* file = find ctx ~id in
-    let blob_id = StoredFile.blob file in
+    let blob_id = Sihl.Storage.StoredFile.blob file in
     DbService.atomic ctx (fun ctx ->
         let* () = Repo.delete_file ctx ~id:file.file.id in
         Repo.delete_blob ctx ~id:blob_id)
@@ -27,25 +28,25 @@ module Make
       match Base64.decode base64 with
       | Error (`Msg msg) ->
           Log.err (fun m ->
-              m "STORAGE: Could not upload base64 content of file %a" File.pp
-                file);
-          raise (Exception msg)
+              m "STORAGE: Could not upload base64 content of file %a"
+                Sihl.Storage.File.pp file);
+          raise (Sihl.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.insert_blob ctx ~id:blob_id ~blob in
-    let stored_file = StoredFile.make ~file ~blob:blob_id in
+    let stored_file = Sihl.Storage.StoredFile.make ~file ~blob:blob_id in
     let* () = Repo.insert_file ctx ~file:stored_file in
     Lwt.return stored_file
 
   let update_base64 ctx ~file ~base64 =
-    let blob_id = StoredFile.blob file in
+    let blob_id = Sihl.Storage.StoredFile.blob file in
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
           Log.err (fun m ->
               m "STORAGE: Could not upload base64 content of file %a"
-                StoredFile.pp file);
-          raise (Exception msg)
+                Sihl.Storage.StoredFile.pp file);
+          raise (Sihl.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.update_blob ctx ~id:blob_id ~blob in
@@ -53,32 +54,32 @@ module Make
     Lwt.return file
 
   let download_data_base64_opt ctx ~file =
-    let blob_id = StoredFile.blob file in
+    let blob_id = Sihl.Storage.StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
         Log.err (fun m ->
-            m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
-              file);
-        raise (Exception msg)
+            m "STORAGE: Could not get base64 content of file %a"
+              Sihl.Storage.StoredFile.pp file);
+        raise (Sihl.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
 
   let download_data_base64 ctx ~file =
-    let blob_id = StoredFile.blob file in
+    let blob_id = Sihl.Storage.StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
         Log.err (fun m ->
-            m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
-              file);
-        raise (Exception msg)
+            m "STORAGE: Could not get base64 content of file %a"
+              Sihl.Storage.StoredFile.pp file);
+        raise (Sihl.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return blob
     | None ->
         raise
-          (Exception
-             (Format.asprintf "File data not found for file %a" StoredFile.pp
-                file))
+          (Sihl.Storage.Exception
+             (Format.asprintf "File data not found for file %a"
+                Sihl.Storage.StoredFile.pp file))
 
   let start ctx =
     Repo.register_migration ();
@@ -96,20 +97,24 @@ module Repo = struct
   module MakeMariaDb
       (DbService : Data.Db.Service.Sig.SERVICE)
       (RepoService : Data.Repo.Service.Sig.SERVICE)
-      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO =
-  struct
+      (MigrationService : Data.Migration.Service.Sig.SERVICE) :
+    Sihl.Storage.Sig.REPO = struct
     let stored_file =
       let encode m =
-        let StoredFile.{ file; blob } = m in
-        let File.{ id; filename; filesize; mime } = file in
+        let file = Sihl.Storage.StoredFile.file m in
+        let blob = Sihl.Storage.StoredFile.blob m in
+        let id = Sihl.Storage.File.id file in
+        let filename = Sihl.Storage.File.filename file in
+        let filesize = Sihl.Storage.File.filesize file in
+        let mime = Sihl.Storage.File.mime file in
         Ok (id, (filename, (filesize, (mime, blob))))
       in
       let decode (id, (filename, (filesize, (mime, blob)))) =
         let ( let* ) = Result.bind in
         let* id = id |> Data.Id.of_bytes |> Result.map Data.Id.to_string in
         let* blob = blob |> Data.Id.of_bytes |> Result.map Data.Id.to_string in
-        let file = File.make ~id ~filename ~filesize ~mime in
-        Ok (StoredFile.make ~file ~blob)
+        let file = Sihl.Storage.File.make ~id ~filename ~filesize ~mime in
+        Ok (Sihl.Storage.StoredFile.make ~file ~blob)
       in
       Caqti_type.(
         custom ~encode ~decode

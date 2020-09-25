@@ -2,6 +2,8 @@
 
 *)
 
-module Service = Storage_service
+exception Exception of string
+
 module File = Storage_core.File
 module StoredFile = Storage_core.StoredFile
+module Sig = Sig

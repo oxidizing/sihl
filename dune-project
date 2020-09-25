@@ -74,5 +74,14 @@
 
   ;; Test dependencies
   (alcotest-lwt (and (>= 1.2.0) :with-test))
-  (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
-))
+  (cohttp-lwt-unix (and (>= 2.5.1) :with-test))))
+
+(package
+ (name sihl-storage)
+ (synopsis "TODO")
+ (description "TODO")
+ (depends
+  ;; General system dependencies
+  (dune (>= 2.4))
+  (ocaml (>= 4.08.0))
+  (sihl (>= :version))))

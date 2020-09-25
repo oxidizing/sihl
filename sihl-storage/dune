@@ -1,0 +1,4 @@
+(library
+ (name sihl_storage)
+ (public_name sihl-storage)
+ (libraries sihl))

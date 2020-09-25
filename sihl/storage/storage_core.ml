@@ -1,8 +1,6 @@
-exception Exception of string
-
 module File = struct
   type t = { id : string; filename : string; filesize : int; mime : string }
-  [@@deriving fields, yojson, show, eq, make]
+  [@@deriving fields, show, eq, make]
 
   let set_mime mime file = { file with mime }
 
@@ -12,8 +10,7 @@ module File = struct
 end
 
 module StoredFile = struct
-  type t = { file : File.t; blob : string }
-  [@@deriving fields, yojson, show, eq, make]
+  type t = { file : File.t; blob : string } [@@deriving fields, show, eq, make]
 
   let mime stored_file = File.mime stored_file.file
 

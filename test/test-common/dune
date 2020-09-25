@@ -2,6 +2,7 @@
  (name test_common)
  (libraries
   sihl
+  sihl-storage
   alcotest
   alcotest-lwt
 ))
