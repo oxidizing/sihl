@@ -8,6 +8,5 @@
   schedule
   web
   cmd
-  data
-  seed)
+  data)
  (modules_without_implementation sig))

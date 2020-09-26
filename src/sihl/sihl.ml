@@ -10,7 +10,6 @@ module Log = Log
 module Message = Message
 module Queue = Queue
 module Schedule = Schedule
-module Seed = Seed
 module Session = Session
 module Storage = Storage
 module Token = Token

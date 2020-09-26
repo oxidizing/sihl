@@ -82,10 +82,6 @@ module Queue = Queue
 
 module Schedule = Schedule
 
-(** {1 Seed}*)
-
-module Seed = Seed
-
 (** {1 Session}*)
 
 module Session = Session

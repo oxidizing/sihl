@@ -14,7 +14,6 @@
   message
   queue
   schedule
-  seed
   session
   storage
   token
