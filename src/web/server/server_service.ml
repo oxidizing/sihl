@@ -86,7 +86,16 @@ module MakeOpium
     let _ = Opium.Std.App.start app in
     run_forever ()
 
-  let start ctx = Lwt.return ctx
+  let start_cmd =
+    Cmd.make ~name:"start" ~help:"" ~description:"Start the web server"
+      ~fn:(fun _ ->
+        let ctx = Core.Ctx.empty in
+        start_server ctx)
+      ()
+
+  let start ctx =
+    CmdService.register_command start_cmd;
+    Lwt.return ctx
 
   let stop _ = Lwt.return ()
 

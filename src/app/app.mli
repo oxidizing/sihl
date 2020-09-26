@@ -29,7 +29,10 @@ module App = Sihl.App.Make (KernelServices)
 ]}
 *)
 
-module Make : functor (Kernel : App_sig.KERNEL) -> App_sig.APP
+module Make : functor
+  (Command : Cmd.Service.Sig.SERVICE)
+  (Log : Log.Service.Sig.SERVICE)
+  -> Sig.APP
 
 (** {1 Usage}
 
@@ -54,4 +57,4 @@ let () =
 ]}
  *)
 
-module Sig = App_sig
+module Sig = Sig
