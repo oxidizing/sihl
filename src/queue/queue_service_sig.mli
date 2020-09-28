@@ -12,7 +12,11 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
+
+  (* TODO [jerben] hide 'a, so jobs of different type can be configured *)
+  val configure :
+    Core.Configuration.data -> 'a Job.t list -> Core.Container.Service.t
 
   val dispatch :
     Core.Ctx.t -> job:'a Job.t -> ?delay:Utils.Time.duration -> 'a -> unit Lwt.t

@@ -3,6 +3,8 @@ open Storage_core
 module type REPO = sig
   include Data.Repo.Service.Sig.REPO
 
+  module Database : Data.Db.Service.Sig.SERVICE
+
   val insert_file : Core.Ctx.t -> file:StoredFile.t -> unit Lwt.t
 
   val insert_blob : Core.Ctx.t -> id:string -> blob:string -> unit Lwt.t
@@ -21,7 +23,7 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val find_opt : Core.Ctx.t -> id:string -> StoredFile.t option Lwt.t
   (** Get the meta data of a complete file.
@@ -46,4 +48,6 @@ module type SERVICE = sig
   (** Download actual file content for [file]. *)
 
   val download_data_base64 : Core.Ctx.t -> file:StoredFile.t -> string Lwt.t
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

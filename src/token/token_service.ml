@@ -4,7 +4,6 @@ module Sig = Token_service_sig
 module Repo = Token_service_repo
 
 module Make
-    (Log : Log.Service.Sig.SERVICE)
     (RandomService : Utils.Random.Service.Sig.SERVICE)
     (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   let find_opt ctx value = Repo.find_opt ctx ~value
@@ -40,5 +39,9 @@ module Make
 
   let stop _ = Lwt.return ()
 
-  let lifecycle = Core.Container.Lifecycle.make "token" ~start ~stop
+  let lifecycle = Core.Container.Lifecycle.create "token" ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end

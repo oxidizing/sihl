@@ -2,13 +2,13 @@
  (name core)
  (public_name sihl.core)
  (libraries
-  base
+  sexplib
+  fmt
+  fmt.tty
+  logs
+  logs.fmt
   lwt
+  lwt.unix
   hmap
-  tsort)
- (preprocess
-  (pps
-   ppx_fields_conv
-   ppx_deriving.eq
-   ppx_deriving.show
-   ppx_deriving.make)))
+  tsort
+  conformist))

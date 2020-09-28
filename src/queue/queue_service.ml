@@ -10,12 +10,11 @@ let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
 
 module MakePolling
-    (Log : Log.Service.Sig.SERVICE)
     (ScheduleService : Schedule.Service.Sig.SERVICE)
     (Repo : Sig.REPO) : Sig.SERVICE = struct
   let dispatch ctx ~job ?delay input =
     let name = Job.name job in
-    Log.debug (fun m -> m "QUEUE: Dispatching job %s" name);
+    Logs.debug (fun m -> m "QUEUE: Dispatching job %s" name);
     let now = Ptime_clock.now () in
     let job_instance = JobInstance.create ~input ~delay ~now job in
     Repo.enqueue ctx ~job_instance
@@ -35,7 +34,7 @@ module MakePolling
     in
     match result with
     | Error msg -> (
-        Log.err (fun m ->
+        Logs.err (fun m ->
             m "QUEUE: Failure while running job instance %a %s" JobInstance.pp
               job_instance msg);
         let* result =
@@ -51,18 +50,18 @@ module MakePolling
         in
         match result with
         | Error msg ->
-            Log.err (fun m ->
+            Logs.err (fun m ->
                 m
                   "QUEUE: Failure while run failure handler for job instance \
                    %a %s"
                   JobInstance.pp job_instance msg);
             Lwt.return None
         | Ok () ->
-            Log.err (fun m ->
+            Logs.err (fun m ->
                 m "QUEUE: Clean up job %a" Uuidm.pp job_instance_id);
             Lwt.return None )
     | Ok () ->
-        Log.debug (fun m ->
+        Logs.debug (fun m ->
             m "QUEUE: Successfully ran job instance %a" Uuidm.pp job_instance_id);
         Lwt.return @@ Some ()
 
@@ -87,7 +86,7 @@ module MakePolling
       in
       update ctx ~job_instance
     else (
-      Log.debug (fun m ->
+      Logs.debug (fun m ->
           m "QUEUE: Not going to run job instance %a" JobInstance.pp
             job_instance);
       Lwt.return () )
@@ -96,7 +95,7 @@ module MakePolling
     let* pending_job_instances = Repo.find_workable ctx in
     let n_job_instances = List.length pending_job_instances in
     if n_job_instances > 0 then (
-      Log.debug (fun m ->
+      Logs.debug (fun m ->
           m "QUEUE: Start working queue of length %d"
             (List.length pending_job_instances));
 
@@ -114,7 +113,7 @@ module MakePolling
             | Some job -> work_job ctx ~job ~job_instance )
       in
       let* () = loop pending_job_instances jobs in
-      Log.debug (fun m -> m "QUEUE: Finish working queue");
+      Logs.debug (fun m -> m "QUEUE: Finish working queue");
       Lwt.return () )
     else Lwt.return ()
 
@@ -124,7 +123,7 @@ module MakePolling
     Lwt.return ()
 
   let start_queue ctx =
-    Log.debug (fun m -> m "QUEUE: Start job queue");
+    Logs.debug (fun m -> m "QUEUE: Start job queue");
     (* This function run every second, the request context gets created here with each tick *)
     let scheduled_function () =
       let jobs = !registered_jobs in
@@ -167,13 +166,18 @@ module MakePolling
         stop_schedule ();
         Lwt.return ()
     | None ->
-        Log.warn (fun m -> m "QUEUE: Can not stop schedule");
+        Logs.warn (fun m -> m "QUEUE: Can not stop schedule");
         Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "queue"
-      ~dependencies:[ ScheduleService.lifecycle; Log.lifecycle ]
+    Core.Container.Lifecycle.create "queue"
+      ~dependencies:[ ScheduleService.lifecycle ]
       ~start ~stop
+
+  let configure _ jobs =
+    let jobs_to_register = jobs |> List.map ~f:WorkableJob.of_job in
+    registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
+    Core.Container.Service.create lifecycle
 end
 
 module Repo = Queue_service_repo

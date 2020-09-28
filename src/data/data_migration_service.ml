@@ -3,13 +3,11 @@ open Lwt.Syntax
 module Sig = Data_migration_service_sig
 module Model = Data_migration_core
 
-module Make
-    (Log : Log.Service.Sig.SERVICE)
-    (CmdService : Cmd.Service.Sig.SERVICE)
-    (Db : Data_db_service_sig.SERVICE)
-    (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
+module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
+  module Database = MigrationRepo.Database
+
   let setup ctx =
-    Log.debug (fun m -> m "MIGRATION: Setting up table if not exists");
+    Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
     MigrationRepo.create_table_if_not_exists ctx
 
   let has ctx ~namespace =
@@ -58,21 +56,21 @@ module Make
       match steps with
       | [] -> Lwt.return ()
       | Model.Migration.{ label; statement; check_fk = true } :: steps ->
-          Log.debug (fun m -> m "MIGRATION: Running %s" label);
+          Logs.debug (fun m -> m "MIGRATION: Running %s" label);
           let query (module Connection : Caqti_lwt.CONNECTION) =
             let req =
               Caqti_request.exec ~oneshot:true Caqti_type.unit statement
             in
             Connection.exec req ()
           in
-          let* () = Db.query ctx query in
-          Log.debug (fun m -> m "MIGRATION: Ran %s" label);
+          let* () = Database.query ctx query in
+          Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
           let* _ = increment ctx ~namespace in
           run steps
       | { label; statement; check_fk = false } :: steps ->
           let* () =
-            Db.with_disabled_fk_check ctx (fun ctx ->
-                Log.debug (fun m ->
+            Database.with_disabled_fk_check ctx (fun ctx ->
+                Logs.debug (fun m ->
                     m "MIGRATION: Running %s without fk checks" label);
                 let query (module Connection : Caqti_lwt.CONNECTION) =
                   let req =
@@ -80,26 +78,26 @@ module Make
                   in
                   Connection.exec req ()
                 in
-                Db.query ctx query)
+                Database.query ctx query)
           in
-          Log.debug (fun m -> m "MIGRATION: Ran %s" label);
+          Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
           let* _ = increment ctx ~namespace in
           run steps
     in
     let () =
       match List.length steps with
       | 0 ->
-          Log.debug (fun m ->
+          Logs.debug (fun m ->
               m "MIGRATION: No migrations to apply for %s" namespace)
       | n ->
-          Log.debug (fun m ->
+          Logs.debug (fun m ->
               m "MIGRATION: Applying %i migrations for %s" n namespace)
     in
     run steps
 
   let execute_migration ctx migration =
     let namespace, _ = migration in
-    Log.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
+    Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
     let* () = setup ctx in
     let* has_state = has ctx ~namespace in
     let* state =
@@ -110,11 +108,11 @@ module Make
             Printf.sprintf
               "Dirty migration found for %s, has to be fixed manually" namespace
           in
-          Log.err (fun m -> m "MIGRATION: %s" msg);
+          Logs.err (fun m -> m "MIGRATION: %s" msg);
           raise (Data_migration_core.Exception msg) )
         else mark_dirty ctx ~namespace
       else (
-        Log.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
+        Logs.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
         let state = Model.create ~namespace in
         let* () = upsert ctx state in
         Lwt.return state )
@@ -127,9 +125,9 @@ module Make
   let execute ctx migrations =
     let n = List.length migrations in
     if n > 0 then
-      Log.debug (fun m ->
+      Logs.debug (fun m ->
           m "MIGRATION: Executing %i migrations" (List.length migrations))
-    else Log.debug (fun m -> m "MIGRATION: No migrations to execute");
+    else Logs.debug (fun m -> m "MIGRATION: No migrations to execute");
     let open Lwt in
     let rec run migrations ctx =
       match migrations with
@@ -138,7 +136,7 @@ module Make
           execute_migration ctx migration >>= function
           | Ok () -> run migrations ctx
           | Error err ->
-              Log.err (fun m ->
+              Logs.err (fun m ->
                   m "MIGRATION: Error while running migration %a: %s"
                     Model.Migration.pp migration err);
               raise (Model.Exception err) )
@@ -150,26 +148,30 @@ module Make
     execute ctx migrations
 
   let migrate_cmd =
-    Cmd.make ~name:"migrate" ~description:"Run all migrations"
-      ~fn:(fun _ ->
-        let ctx = Core.Ctx.empty |> Db.add_pool in
+    Core.Command.make ~name:"migrate" ~description:"Run all migrations"
+      (fun _ ->
+        let ctx = Core.Ctx.empty |> Database.add_pool in
         run_all ctx)
-      ()
 
-  let start ctx =
-    CmdService.register_command migrate_cmd;
-    Lwt.return ctx
+  let start ctx = Lwt.return ctx
 
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "migration"
-      ~dependencies:[ CmdService.lifecycle; Db.lifecycle; Log.lifecycle ]
-      ~start ~stop
+    Core.Container.Lifecycle.create "migration"
+      ~dependencies:[ Database.lifecycle ] ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration ~commands:[ migrate_cmd ]
+      lifecycle
 end
 
 module Repo = struct
-  module MakeMariaDb (Db : Data_db_service_sig.SERVICE) : Sig.REPO = struct
+  module MakeMariaDb (Database : Data_db_service_sig.SERVICE) : Sig.REPO =
+  struct
+    module Database = Database
+
     let create_request =
       Caqti_request.exec Caqti_type.unit
         {sql|
@@ -182,7 +184,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
  |sql}
 
     let create_table_if_not_exists ctx =
-      Db.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec create_request ())
 
     let get_request =
@@ -198,7 +200,7 @@ WHERE namespace = ?;
 |sql}
 
     let get ctx ~namespace =
-      Db.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request namespace)
       |> Lwt.map (Option.map ~f:Model.of_tuple)
 
@@ -220,11 +222,14 @@ dirty = VALUES(dirty)
 |sql}
 
     let upsert ctx ~state =
-      Db.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec upsert_request (Model.to_tuple state))
   end
 
-  module MakePostgreSql (Db : Data_db_service_sig.SERVICE) : Sig.REPO = struct
+  module MakePostgreSql (Database : Data_db_service_sig.SERVICE) : Sig.REPO =
+  struct
+    module Database = Database
+
     let create_request =
       Caqti_request.exec Caqti_type.unit
         {sql|
@@ -236,7 +241,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
  |sql}
 
     let create_table_if_not_exists ctx =
-      Db.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec create_request ())
 
     let get_request =
@@ -252,7 +257,7 @@ WHERE namespace = ?;
 |sql}
 
     let get ctx ~namespace =
-      Db.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request namespace)
       |> Lwt.map (Option.map ~f:Model.of_tuple)
 
@@ -274,7 +279,7 @@ dirty = EXCLUDED.dirty
 |sql}
 
     let upsert ctx ~state =
-      Db.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec upsert_request (Model.to_tuple state))
   end
 end

@@ -12,13 +12,12 @@ module Service = struct
   module Config = Sihl.Config.Service
   module Db = Sihl.Data.Db.Service
   module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
-  module Cmd = Sihl.Cmd.Service
-  module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
-  module WebServer = Sihl.Web.Server.Service.Make (Cmd)
+  module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
+  module WebServer = Sihl.Web.Server.Service.Make ()
   module Schedule = Sihl.Schedule.Service.Make (Log)
 end
 
-let services : (module Sihl.Core.Container.SERVICE) list =
+let services : (module Sihl.Core.Container.Service.Sig) list =
   [ (module Service.WebServer) ]
 
 let hello_page =
@@ -34,10 +33,6 @@ let _ = App.(empty |> with_services services |> with_routes routes |> run)
 
 *)
 
-(** {1 Sihl App}*)
-
-module App = App
-
 (** {1 Authentication}*)
 
 module Authn = Authn
@@ -45,14 +40,6 @@ module Authn = Authn
 (** {1 Authorization} *)
 
 module Authz = Authz
-
-(** {1 CLI Command} *)
-
-module Cmd = Cmd
-
-(** {1 Configuration} *)
-
-module Config = Configuration
 
 (** {1 Core} *)
 
@@ -65,10 +52,6 @@ module Data = Data
 (** {1 Emailing}*)
 
 module Email = Email
-
-(** {1 Logging} *)
-
-module Log = Log
 
 (** {1 Message}*)
 

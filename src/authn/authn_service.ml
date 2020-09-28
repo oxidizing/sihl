@@ -4,7 +4,6 @@ module Sig = Authn_service_sig
 exception Exception of string
 
 module Make
-    (Log : Log.Service.Sig.SERVICE)
     (SessionService : Session.Service.Sig.SERVICE)
     (UserService : User.Service.Sig.SERVICE) : Sig.SERVICE = struct
   let find_user_in_session_opt ctx =
@@ -29,6 +28,10 @@ module Make
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "authn" ~start ~stop
+    Core.Container.Lifecycle.create "authn" ~start ~stop
       ~dependencies:[ SessionService.lifecycle; UserService.lifecycle ]
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end

@@ -59,7 +59,7 @@ jobs:
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |
           opam pin add -yn sihl .
-          opam install --deps-only -y sihl --with-test
+          opam install -y sihl --deps-only --with-doc --with-test --locked --unlock-base
           opam install -y caqti-driver-postgresql caqti-driver-mariadb odoc
       - name: Recover from an Opam broken state
         if: steps.cache-opam.outputs.cache-hit == 'true'

@@ -72,12 +72,21 @@ let endpoints_to_opium_builders endpoints =
          |> List.map ~f:to_opium_builder)
   |> List.concat
 
-module MakeOpium
-    (Log : Log.Service.Sig.SERVICE)
-    (CmdService : Cmd.Service.Sig.SERVICE) : Sig.SERVICE = struct
+module Opium : Sig.SERVICE = struct
+  type config = { port : int option }
+
+  let config port = { port }
+
+  let schema =
+    let open Conformist in
+    make [ optional (int "PORT") ] config
+
   let start_server _ =
-    Log.debug (fun m -> m "WEB: Starting HTTP server");
-    let app = Opium.Std.App.(empty |> port 3000 |> cmd_name "Sihl App") in
+    Logs.debug (fun m -> m "WEB: Starting HTTP server");
+    let port_nr =
+      Option.value (Core.Configuration.read schema).port ~default:33000
+    in
+    let app = Opium.Std.App.(empty |> port port_nr |> cmd_name "Sihl App") in
     let builders = endpoints_to_opium_builders !registered_endpoints in
     let app =
       List.fold ~f:(fun app builder -> builder app) ~init:app builders
@@ -87,21 +96,22 @@ module MakeOpium
     run_forever ()
 
   let start_cmd =
-    Cmd.make ~name:"start" ~help:"" ~description:"Start the web server"
-      ~fn:(fun _ ->
+    Core.Command.make ~name:"start" ~help:"" ~description:"Start the web server"
+      (fun _ ->
         let ctx = Core.Ctx.empty in
         start_server ctx)
-      ()
 
-  let start ctx =
-    CmdService.register_command start_cmd;
-    Lwt.return ctx
+  let start ctx = Lwt.return ctx
 
   let stop _ = Lwt.return ()
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "web-server" ~start ~stop
-      ~dependencies:[ Log.lifecycle; CmdService.lifecycle ]
+  let lifecycle = Core.Container.Lifecycle.create "web-server" ~start ~stop
 
   let register_endpoints routes = registered_endpoints := routes
+
+  let configure endpoints configuration =
+    registered_endpoints := endpoints;
+    let configuration = Core.Configuration.make ~schema configuration in
+    Core.Container.Service.create ~configuration ~commands:[ start_cmd ]
+      lifecycle
 end

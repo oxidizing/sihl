@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val create_reset_token : Core.Ctx.t -> email:string -> Token.t option Lwt.t
   (** Create and store a reset token.
@@ -14,4 +14,6 @@ module type SERVICE = sig
     password_confirmation:string ->
     (unit, string) Result.t Lwt.t
   (** Set the password of a user associated with the reset [token]. *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

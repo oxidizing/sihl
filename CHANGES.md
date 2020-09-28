@@ -5,6 +5,10 @@
 - Remove seed service since the same functionality
 - Simplify app abstraction, instead of `with_` use service APIs directly
 
+### Fixed
+- Move log service, config service and cmd service into core (they don't have to be provided to other services through functors)
+- Simplify Sihl app creation and service configuration
+
 ## [0.1.4] - 2020-09-24
 ### Fixed
 - Remove `reason` and `tyxml-jsx` as dependency as they are not used anymore

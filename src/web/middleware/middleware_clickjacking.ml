@@ -8,7 +8,7 @@
     your project's Django settings to 'DENY'.
  *)
 
-module Make (Log : Log.Service.Sig.SERVICE) = struct
+module Make () = struct
   let m () =
     let filter handler req =
       Logs.warn (fun m -> m "clickjacking middleware is not implemented");

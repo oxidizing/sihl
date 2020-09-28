@@ -8,8 +8,7 @@
   yojson
   ppx_deriving_yojson.runtime
   core
-  utils
-  configuration)
+  utils)
  (preprocess
   (pps
    ppx_fields_conv

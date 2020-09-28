@@ -1,4 +1,10 @@
-(** Contains everything regarding services, their lifecycles and request contexts. You want to touch this only if you develop Sihl services yourself. *)
+(** This is the core of Sihl, every other component builds on top of it.
 
-module Container = Core_container
-module Ctx = Core_ctx
+A module to manage CLI commands, configurations, service lifecycles, the request context, and Sihl apps. *)
+
+module Container = Container
+module Ctx = Ctx
+module App = App
+module Configuration = Configuration
+module Command = Command
+module Log = Log

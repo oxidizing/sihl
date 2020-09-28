@@ -3,16 +3,15 @@
  (public_name sihl.middleware)
  (libraries
   base
+  logs
   tyxml
   opium
   yojson
   ppx_deriving_yojson.runtime
   core
-  configuration
   http
   message
-  authn
-  log)
+  authn)
  (preprocess
   (pps
    ppx_fields_conv

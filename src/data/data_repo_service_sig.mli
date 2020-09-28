@@ -5,7 +5,7 @@ module type REPO = sig
 end
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val register_cleaner : Data_repo_core.cleaner -> unit
   (** Register repository cleaner function.
@@ -19,4 +19,6 @@ module type SERVICE = sig
   (** Run all registered repository cleaners.
 
       Use this carefully, running [clean_all] leads to data loss! *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end
