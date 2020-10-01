@@ -1,12 +1,3 @@
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![Release date][release-date]][release-date]
-
-
-<br />
 <p align="center">
   <a href="https://github.com/oxidizing/sihl">
     <img src="images/logo.jpg" alt="Logo" width="400" height="240">
@@ -392,7 +383,7 @@ Project Link: [https://github.com/oxidizing/sihl](https://github.com/oxidizing/s
 
 ## Acknowledgements
 
-Sihl would not be possible without amazing projects:
+Sihl would not be possible without some amazing projects like:
 
 * [OCaml](https://ocaml.org/)
 * [Reason](https://reasonml.github.io/)
@@ -400,16 +391,4 @@ Sihl would not be possible without amazing projects:
 * [Caqti](https://github.com/paurkedal/ocaml-caqti)
 * [Tree vector created by brgfx - www.freepik.com](https://www.freepik.com/vectors/tree)
 * And [many more!](https://github.com/oxidizing/sihl/blob/master/dune-project)
-
-[contributors-shield]: https://img.shields.io/github/contributors/oxidizing/sihl.svg?style=flat-square
-[contributors-url]: https://github.com/oxidizing/sihl/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/oxidizing/sihl.svg?style=flat-square
-[forks-url]: https://github.com/oxidizing/sihl/network/members
-[stars-shield]: https://img.shields.io/github/stars/oxidizing/sihl.svg?style=flat-square
-[stars-url]: https://github.com/oxidizing/sihl/stargazers
-[issues-shield]: https://img.shields.io/github/issues/oxidizing/sihl.svg?style=flat-square
-[issues-url]: https://github.com/oxidizing/sihl/issues
-[license-shield]: https://img.shields.io/github/license/oxidizing/sihl.svg?style=flat-square
-[license-url]: https://github.com/oxidizing/sihl/blob/master/LICENSE.txt
-[release-date]: https://img.shields.io/github/release-date/oxidizing/sihl
 
