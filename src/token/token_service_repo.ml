@@ -3,13 +3,14 @@ module Sig = Token_service_sig
 module MakeMariaDb
     (DbService : Data.Db.Service.Sig.SERVICE)
     (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY =
-struct
+    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY = struct
   module Sql = struct
     module Model = Token_core
 
     let find_request =
-      Caqti_request.find Caqti_type.string Model.t
+      Caqti_request.find
+        Caqti_type.string
+        Model.t
         {sql|
         SELECT
           uuid,
@@ -22,17 +23,21 @@ struct
         FROM token_tokens
         WHERE token_tokens.token_value = ?
         |sql}
+    ;;
 
     let find ctx ~value =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find find_request value)
+    ;;
 
     let find_opt ctx ~value =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_request value)
+    ;;
 
     let insert_request =
-      Caqti_request.exec Model.t
+      Caqti_request.exec
+        Model.t
         {sql|
         INSERT INTO token_tokens (
           uuid,
@@ -52,26 +57,31 @@ struct
           $7
         )
 |sql}
+    ;;
 
     let insert ctx ~token =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request token)
+    ;;
 
-    let clean_request =
-      Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
+    let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
 
     let clean ctx =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec clean_request ())
+    ;;
   end
 
   module Migration = struct
     let fix_collation =
-      Data.Migration.create_step ~label:"fix collation"
+      Data.Migration.create_step
+        ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci'"
+    ;;
 
     let create_tokens_table =
-      Data.Migration.create_step ~label:"create tokens table"
+      Data.Migration.create_step
+        ~label:"create tokens table"
         {sql|
 CREATE TABLE IF NOT EXISTS token_tokens (
   id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -87,19 +97,17 @@ CREATE TABLE IF NOT EXISTS token_tokens (
   CONSTRAINT unique_value UNIQUE KEY (token_value)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 |sql}
+    ;;
 
     let migration () =
       Data.Migration.(
         empty "tokens" |> add_step fix_collation |> add_step create_tokens_table)
+    ;;
   end
 
   let register_migration () = MigrationService.register (Migration.migration ())
-
   let register_cleaner () = RepoService.register_cleaner Sql.clean
-
   let find = Sql.find
-
   let find_opt = Sql.find_opt
-
   let insert = Sql.insert
 end

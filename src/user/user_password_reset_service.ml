@@ -15,27 +15,23 @@ module Make
     let* user = UserService.find_by_email_opt ctx ~email in
     match user with
     | Some user ->
-        let user_id = User_core.User.id user in
-        let data =
-          TokenData.make ~user_id |> TokenData.to_yojson
-          |> Yojson.Safe.to_string
-        in
-        let* token =
-          TokenService.create ctx ~kind ~data ~expires_in:Utils.Time.OneDay ()
-        in
-        Lwt.return @@ Some token
+      let user_id = User_core.User.id user in
+      let data =
+        TokenData.make ~user_id |> TokenData.to_yojson |> Yojson.Safe.to_string
+      in
+      let* token = TokenService.create ctx ~kind ~data ~expires_in:Utils.Time.OneDay () in
+      Lwt.return @@ Some token
     | None ->
-        Logs.warn (fun m ->
-            m "PASSWORD_RESET: No user found with email %s" email);
-        Lwt.return None
+      Logs.warn (fun m -> m "PASSWORD_RESET: No user found with email %s" email);
+      Lwt.return None
+  ;;
 
   let reset_password ctx ~token ~password ~password_confirmation =
     let* token = TokenService.find_opt ctx token in
-    let token =
-      Result.of_option ~error:"Invalid or expired token provided" token
-    in
+    let token = Result.of_option ~error:"Invalid or expired token provided" token in
     let user_id =
-      token |> Result.map ~f:Token.data
+      token
+      |> Result.map ~f:Token.data
       |> Result.bind ~f:(Result.of_option ~error:"Token has not user assigned")
       |> Result.bind ~f:Utils.Json.parse
       |> Result.bind ~f:TokenData.of_yojson
@@ -44,21 +40,26 @@ module Make
     match user_id with
     | Error msg -> Lwt.return @@ Error msg
     | Ok user_id ->
-        let* user = UserService.find ctx ~user_id in
-        let* result =
-          UserService.set_password ctx ~user ~password ~password_confirmation ()
-        in
-        Lwt.return @@ Result.map ~f:(fun _ -> ()) result
+      let* user = UserService.find ctx ~user_id in
+      let* result =
+        UserService.set_password ctx ~user ~password ~password_confirmation ()
+      in
+      Lwt.return @@ Result.map ~f:(fun _ -> ()) result
+  ;;
 
   let start ctx = Lwt.return ctx
-
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create "password-reset" ~start ~stop
+    Core.Container.Lifecycle.create
+      "password-reset"
+      ~start
+      ~stop
       ~dependencies:[ TokenService.lifecycle; UserService.lifecycle ]
+  ;;
 
   let configure configuration =
     let configuration = Core.Configuration.make configuration in
     Core.Container.Service.create ~configuration lifecycle
+  ;;
 end

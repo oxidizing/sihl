@@ -1,6 +1,5 @@
 (* TODO
-https://docs.djangoproject.com/en/3.0/ref/middleware/#module-django.middleware.gzip
- *)
+   https://docs.djangoproject.com/en/3.0/ref/middleware/#module-django.middleware.gzip *)
 
 let m =
   let filter handler req =
@@ -8,3 +7,4 @@ let m =
     handler req
   in
   Opium.Std.Rock.Middleware.create ~name:"gzip" ~filter
+;;

@@ -1,10 +1,9 @@
-(** A collection of services and libraries that deal with JWT, Json, Regex, Randonmness, Hashing, Time and Strings. *)
+(** A collection of services and libraries that deal with JWT, Json, Regex, Randonmness,
+    Hashing, Time and Strings. *)
 
 (** {1 JSON Web Token}
 
-{!Sihl.Utils.Jwt}
-
-*)
+    {!Sihl.Utils.Jwt} *)
 
 module Jwt = Utils_jwt
 

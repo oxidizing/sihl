@@ -12,6 +12,7 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
     match file with
     | None -> raise (Exception ("File not found with id " ^ id))
     | Some file -> Lwt.return file
+  ;;
 
   let delete ctx ~id =
     let* file = find ctx ~id in
@@ -19,86 +20,85 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
     Database.atomic ctx (fun ctx ->
         let* () = Repo.delete_file ctx ~id:file.file.id in
         Repo.delete_blob ctx ~id:blob_id)
+  ;;
 
   let upload_base64 ctx ~file ~base64 =
     let blob_id = Data.Id.random () |> Data.Id.to_string in
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
-          Logs.err (fun m ->
-              m "STORAGE: Could not upload base64 content of file %a" File.pp
-                file);
-          raise (Exception msg)
+        Logs.err (fun m ->
+            m "STORAGE: Could not upload base64 content of file %a" File.pp file);
+        raise (Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.insert_blob ctx ~id:blob_id ~blob in
     let stored_file = StoredFile.make ~file ~blob:blob_id in
     let* () = Repo.insert_file ctx ~file:stored_file in
     Lwt.return stored_file
+  ;;
 
   let update_base64 ctx ~file ~base64 =
     let blob_id = StoredFile.blob file in
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
-          Logs.err (fun m ->
-              m "STORAGE: Could not upload base64 content of file %a"
-                StoredFile.pp file);
-          raise (Exception msg)
+        Logs.err (fun m ->
+            m "STORAGE: Could not upload base64 content of file %a" StoredFile.pp file);
+        raise (Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.update_blob ctx ~id:blob_id ~blob in
     let* () = Repo.update_file ctx ~file in
     Lwt.return file
+  ;;
 
   let download_data_base64_opt ctx ~file =
     let blob_id = StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
-        Logs.err (fun m ->
-            m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
-              file);
-        raise (Exception msg)
+      Logs.err (fun m ->
+          m "STORAGE: Could not get base64 content of file %a" StoredFile.pp file);
+      raise (Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
+  ;;
 
   let download_data_base64 ctx ~file =
     let blob_id = StoredFile.blob file in
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
-        Logs.err (fun m ->
-            m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
-              file);
-        raise (Exception msg)
+      Logs.err (fun m ->
+          m "STORAGE: Could not get base64 content of file %a" StoredFile.pp file);
+      raise (Exception msg)
     | Some (Ok blob) -> Lwt.return blob
     | None ->
-        raise
-          (Exception
-             (Format.asprintf "File data not found for file %a" StoredFile.pp
-                file))
+      raise
+        (Exception (Format.asprintf "File data not found for file %a" StoredFile.pp file))
+  ;;
 
   let start ctx =
     Repo.register_migration ();
     Repo.register_cleaner ();
     Lwt.return ctx
+  ;;
 
   let stop _ = Lwt.return ()
-
   let lifecycle = Core.Container.Lifecycle.create "storage" ~start ~stop
 
   let configure configuration =
     let configuration = Core.Configuration.make configuration in
     Core.Container.Service.create ~configuration lifecycle
+  ;;
 end
 
 module Repo = struct
   module MakeMariaDb
       (DbService : Data.Db.Service.Sig.SERVICE)
       (RepoService : Data.Repo.Service.Sig.SERVICE)
-      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO =
-  struct
+      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO = struct
     module Database = DbService
 
     let stored_file =
@@ -115,11 +115,15 @@ module Repo = struct
         Ok (StoredFile.make ~file ~blob)
       in
       Caqti_type.(
-        custom ~encode ~decode
+        custom
+          ~encode
+          ~decode
           Caqti_type.(tup2 string (tup2 string (tup2 int (tup2 string string)))))
+    ;;
 
     let insert_request =
-      Caqti_request.exec stored_file
+      Caqti_request.exec
+        stored_file
         {sql|
          INSERT INTO storage_handles (
          uuid,
@@ -135,14 +139,17 @@ module Repo = struct
          UNHEX(REPLACE(?, '-', ''))
          )
          |sql}
+    ;;
 
     let insert_file ctx ~file =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec insert_request file)
+    ;;
 
     let update_file_request =
-      Caqti_request.exec stored_file
+      Caqti_request.exec
+        stored_file
         {sql|
          UPDATE storage_handles SET
          filename = $2,
@@ -152,14 +159,18 @@ module Repo = struct
          WHERE
          storage_handles.uuid = UNHEX(REPLACE($1, '-', ''))
          |sql}
+    ;;
 
     let update_file ctx ~file =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec update_file_request file)
+    ;;
 
     let get_file_request =
-      Caqti_request.find_opt Caqti_type.string stored_file
+      Caqti_request.find_opt
+        Caqti_type.string
+        stored_file
         {sql|
          SELECT
          uuid,
@@ -170,37 +181,46 @@ module Repo = struct
          FROM storage_handles
          WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
          |sql}
+    ;;
 
     let get_file ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.find_opt get_file_request id)
+    ;;
 
     let delete_file_request =
-      Caqti_request.exec Caqti_type.string
+      Caqti_request.exec
+        Caqti_type.string
         {sql|
          DELETE FROM storage_handles
          WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
          |sql}
+    ;;
 
     let delete_file ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec delete_file_request id)
+    ;;
 
     let get_blob_request =
-      Caqti_request.find_opt Caqti_type.string Caqti_type.string
+      Caqti_request.find_opt
+        Caqti_type.string
+        Caqti_type.string
         {sql|
          SELECT
          asset_data
          FROM storage_blobs
          WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
          |sql}
+    ;;
 
     let get_blob ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.find_opt get_blob_request id)
+    ;;
 
     let insert_blob_request =
       Caqti_request.exec
@@ -214,11 +234,13 @@ module Repo = struct
          ?
          )
          |sql}
+    ;;
 
     let insert_blob ctx ~id ~blob =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec insert_blob_request (id, blob))
+    ;;
 
     let update_blob_request =
       Caqti_request.exec
@@ -229,53 +251,67 @@ module Repo = struct
          WHERE
          storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
          |sql}
+    ;;
 
     let update_blob ctx ~id ~blob =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec update_blob_request (id, blob))
+    ;;
 
     let delete_blob_request =
-      Caqti_request.exec Caqti_type.string
+      Caqti_request.exec
+        Caqti_type.string
         {sql|
          DELETE FROM storage_blobs
          WHERE
          storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
          |sql}
+    ;;
 
     let delete_blob ctx ~id =
       DbService.query ctx (fun connection ->
           let module Connection = (val connection : Caqti_lwt.CONNECTION) in
           Connection.exec delete_blob_request id)
+    ;;
 
     let clean_handles_request =
-      Caqti_request.exec Caqti_type.unit
+      Caqti_request.exec
+        Caqti_type.unit
         {sql|
            TRUNCATE storage_handles;
           |sql}
+    ;;
 
     let clean_handles ctx =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec clean_handles_request ())
+    ;;
 
     let clean_blobs_request =
-      Caqti_request.exec Caqti_type.unit
+      Caqti_request.exec
+        Caqti_type.unit
         {sql|
            TRUNCATE storage_blobs;
           |sql}
+    ;;
 
     let clean_blobs ctx =
       DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec clean_blobs_request ())
+    ;;
 
     let fix_collation =
-      Data.Migration.create_step ~label:"fix collation"
+      Data.Migration.create_step
+        ~label:"fix collation"
         {sql|
          SET collation_server = 'utf8mb4_unicode_ci';
          |sql}
+    ;;
 
     let create_blobs_table =
-      Data.Migration.create_step ~label:"create blobs table"
+      Data.Migration.create_step
+        ~label:"create blobs table"
         {sql|
          CREATE TABLE IF NOT EXISTS storage_blobs (
          id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -287,9 +323,11 @@ module Repo = struct
          CONSTRAINT unique_uuid UNIQUE KEY (uuid)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
          |sql}
+    ;;
 
     let create_handles_table =
-      Data.Migration.create_step ~label:"create handles table"
+      Data.Migration.create_step
+        ~label:"create handles table"
         {sql|
          CREATE TABLE IF NOT EXISTS storage_handles (
          id BIGINT UNSIGNED AUTO_INCREMENT,
@@ -304,12 +342,15 @@ module Repo = struct
          CONSTRAINT unique_uuid UNIQUE KEY (uuid)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
          |sql}
+    ;;
 
     let migration () =
       Data.Migration.(
-        empty "storage" |> add_step fix_collation
+        empty "storage"
+        |> add_step fix_collation
         |> add_step create_blobs_table
         |> add_step create_handles_table)
+    ;;
 
     let register_migration () = MigrationService.register (migration ())
 
@@ -320,6 +361,7 @@ module Repo = struct
             clean_blobs ctx)
       in
       RepoService.register_cleaner cleaner
+    ;;
   end
 
   (** TODO Implement postgres repo **)

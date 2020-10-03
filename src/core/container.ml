@@ -4,6 +4,7 @@ let log_src =
   Logs.Src.create
     ~doc:"Service container that knows how to start and stop services"
     "sihl.container"
+;;
 
 module Log = (val Logs.src_log log_src : Logs.LOG)
 
@@ -11,15 +12,17 @@ exception Exception of string
 
 module Lifecycle = struct
   type start = Ctx.t -> Ctx.t Lwt.t
-
   type stop = Ctx.t -> unit Lwt.t
 
-  type t = { name : string; dependencies : t list; start : start; stop : stop }
+  type t =
+    { name : string
+    ; dependencies : t list
+    ; start : start
+    ; stop : stop
+    }
 
   let name lifecycle = lifecycle.name
-
-  let create ?(dependencies = []) name ~start ~stop =
-    { name; dependencies; start; stop }
+  let create ?(dependencies = []) name ~start ~stop = { name; dependencies; start; stop }
 end
 
 module Service = struct
@@ -27,18 +30,18 @@ module Service = struct
     val lifecycle : Lifecycle.t
   end
 
-  type t = {
-    lifecycle : Lifecycle.t;
-    configuration : Configuration.t;
-    commands : Command.t list;
-  }
+  type t =
+    { lifecycle : Lifecycle.t
+    ; configuration : Configuration.t
+    ; commands : Command.t list
+    }
 
   let commands service = service.commands
-
   let configuration service = service.configuration
 
   let create ?(commands = []) ?(configuration = Configuration.empty) lifecycle =
     { lifecycle; configuration; commands }
+  ;;
 end
 
 module Map = Map.Make (String)
@@ -48,74 +51,77 @@ let collect_all_lifecycles lifecycles =
     match lifecycle.Lifecycle.dependencies with
     | [] -> [ lifecycle ]
     | lifecycles ->
-        List.cons lifecycle
-          ( lifecycles
-          |> List.map (fun lifecycle -> collect_lifecycles lifecycle)
-          |> List.concat )
+      List.cons
+        lifecycle
+        (lifecycles
+        |> List.map (fun lifecycle -> collect_lifecycles lifecycle)
+        |> List.concat)
   in
   lifecycles
   |> List.map collect_lifecycles
   |> List.concat
-  |> List.map (fun lifecycle -> (lifecycle.Lifecycle.name, lifecycle))
-  |> List.to_seq |> Map.of_seq
+  |> List.map (fun lifecycle -> lifecycle.Lifecycle.name, lifecycle)
+  |> List.to_seq
+  |> Map.of_seq
+;;
 
 let top_sort_lifecycles lifecycles =
   let lifecycles = collect_all_lifecycles lifecycles in
   let lifecycle_graph =
-    lifecycles |> Map.to_seq |> List.of_seq
+    lifecycles
+    |> Map.to_seq
+    |> List.of_seq
     |> List.map (fun (name, lifecycle) ->
            let dependencies =
-             lifecycle.Lifecycle.dependencies
-             |> List.map (fun dep -> dep.Lifecycle.name)
+             lifecycle.Lifecycle.dependencies |> List.map (fun dep -> dep.Lifecycle.name)
            in
-           (name, dependencies))
+           name, dependencies)
   in
   match Tsort.sort lifecycle_graph with
   | Tsort.Sorted sorted ->
-      sorted
-      |> List.map (fun name -> Map.find_opt name lifecycles |> Option.get)
+    sorted |> List.map (fun name -> Map.find_opt name lifecycles |> Option.get)
   | Tsort.ErrorCycle remaining_names ->
-      let msg = String.concat ", " remaining_names in
-      raise
-        (Exception
-           ( "CONTAINER: Cycle detected while starting services. These are the \
-              services after the cycle: " ^ msg ))
+    let msg = String.concat ", " remaining_names in
+    raise
+      (Exception
+         ("CONTAINER: Cycle detected while starting services. These are the services \
+           after the cycle: "
+         ^ msg))
+;;
 
 let start_services services =
   Log.debug (fun m -> m "Starting Sihl");
-  let lifecycles =
-    List.map (fun service -> service.Service.lifecycle) services
-  in
+  let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
   let ctx = Ctx.empty in
   let rec loop ctx lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-        Log.debug (fun m -> m "Starting service: %s" lifecycle.Lifecycle.name);
-        let f = lifecycle.start in
-        let* ctx = f ctx in
-        loop ctx lifecycles
+      Log.debug (fun m -> m "Starting service: %s" lifecycle.Lifecycle.name);
+      let f = lifecycle.start in
+      let* ctx = f ctx in
+      loop ctx lifecycles
     | [] -> Lwt.return ctx
   in
   let* ctx = loop ctx lifecycles in
   Log.debug (fun m -> m "All services online. Ready for Takeoff!");
   Lwt.return (lifecycles, ctx)
+;;
 
 let stop_services ctx services =
   Log.debug (fun m -> m "Stopping Sihl");
-  let lifecycles =
-    List.map (fun service -> service.Service.lifecycle) services
-  in
+  let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-        Log.debug (fun m -> m "Stopping service: %s" lifecycle.Lifecycle.name);
-        let f = lifecycle.stop in
-        let* () = f ctx in
-        loop lifecycles
+      Log.debug (fun m -> m "Stopping service: %s" lifecycle.Lifecycle.name);
+      let f = lifecycle.stop in
+      let* () = f ctx in
+      loop lifecycles
     | [] -> Lwt.return ()
   in
   let* () = loop lifecycles in
   Log.debug (fun m -> m "Stopped Sihl, Good Bye!");
   Lwt.return ()
+;;

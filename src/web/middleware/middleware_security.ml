@@ -1,7 +1,5 @@
-(* TODO
-Set a couple of headers:
-https://github.com/django/django/blob/master/django/middleware/security.py
- *)
+(* TODO Set a couple of headers:
+   https://github.com/django/django/blob/master/django/middleware/security.py *)
 
 let m =
   let filter handler req =
@@ -9,3 +7,4 @@ let m =
     handler req
   in
   Opium.Std.Rock.Middleware.create ~name:"security" ~filter
+;;

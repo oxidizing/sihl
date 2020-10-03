@@ -1,5 +1,4 @@
-(* TODO reenable once we have a in-memory implementation of the
-   session repo *)
+(* TODO reenable once we have a in-memory implementation of the session repo *)
 
 (* open Base
  *

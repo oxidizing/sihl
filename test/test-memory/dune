@@ -1,10 +1,8 @@
 (executable
  (name test)
- (libraries
-  test_common
-  alcotest-lwt
-))
+ (libraries test_common alcotest-lwt))
 
 (rule
  (alias runtest-all)
- (action (run ./test.exe)))
+ (action
+  (run ./test.exe)))

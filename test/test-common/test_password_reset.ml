@@ -21,7 +21,10 @@ struct
     in
     let token = Sihl.Token.value token in
     let* () =
-      PasswordResetService.reset_password ctx ~token ~password:"newpassword"
+      PasswordResetService.reset_password
+        ctx
+        ~token
+        ~password:"newpassword"
         ~password_confirmation:"newpassword"
       |> Lwt.map Result.ok_or_failwith
     in
@@ -30,8 +33,9 @@ struct
       |> Lwt.map Result.ok_or_failwith
     in
     Lwt.return ()
+  ;;
 
   let test_suite =
-    ( "password reset",
-      [ test_case "password reset" `Quick reset_password_suceeds ] )
+    "password reset", [ test_case "password reset" `Quick reset_password_suceeds ]
+  ;;
 end

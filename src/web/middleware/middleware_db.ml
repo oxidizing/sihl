@@ -5,4 +5,5 @@ module Make (Db : Data.Db.Service.Sig.SERVICE) = struct
       handler ctx
     in
     Middleware_core.create ~name:"database" filter
+  ;;
 end
