@@ -10,8 +10,7 @@
   base64
   ptime
   jwto
-  core
-  configuration)
+  core)
  (modules_without_implementation
   utils_random_service_sig)
  (preprocess

@@ -1,3 +1,5 @@
+(** The service request context is a dynamic store that can be used to add, find and remove values. *)
+
 type t
 
 type 'a key

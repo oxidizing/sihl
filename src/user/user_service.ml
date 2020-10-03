@@ -4,11 +4,9 @@ module Repo = User_service_repo
 module User = User_core.User
 module Sig = User_service_sig
 
-module Make
-    (Log : Log.Service.Sig.SERVICE)
-    (CmdService : Cmd.Service.Sig.SERVICE)
-    (DbService : Data.Db.Service.Sig.SERVICE)
-    (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
+module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
+  module Database = Repo.Database
+
   let add_user user ctx = Core.Ctx.add User.ctx_key user ctx
 
   let require_user_opt ctx = Core.Ctx.find User.ctx_key ctx
@@ -25,7 +23,7 @@ module Make
     match m_user with
     | Some user -> Lwt.return user
     | None ->
-        Log.err (fun m -> m "USER: User not found with id %s" user_id);
+        Logs.err (fun m -> m "USER: User not found with id %s" user_id);
         raise (User_core.Exception "User not found")
 
   let find_by_email_opt ctx ~email =
@@ -41,7 +39,7 @@ module Make
     match user with
     | Some user -> Lwt.return user
     | None ->
-        Log.err (fun m -> m "USER: User not found with email %s" email);
+        Logs.err (fun m -> m "USER: User not found with email %s" email);
         raise (User_core.Exception "User not found")
 
   let find_all ctx ~query = Repo.get_all ctx ~query
@@ -57,7 +55,7 @@ module Make
           match User.set_user_password user new_password with
           | Ok user -> user
           | Error msg ->
-              Log.err (fun m ->
+              Logs.err (fun m ->
                   m "USER: Can not update password of user %s: %s"
                     (User.email user) msg);
               raise (User_core.Exception msg)
@@ -85,7 +83,7 @@ module Make
           match User.set_user_password user password with
           | Ok user -> user
           | Error msg ->
-              Log.err (fun m ->
+              Logs.err (fun m ->
                   m "USER: Can not set password of user %s: %s"
                     (User.email user) msg);
               raise (User_core.Exception msg)
@@ -109,7 +107,7 @@ module Make
     let* () =
       match user with
       | Some _ ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m "USER: Can not create admin %s since the email is already taken"
                 email);
           raise (User_core.Exception "Email already taken")
@@ -121,7 +119,7 @@ module Make
       with
       | Ok user -> user
       | Error msg ->
-          Log.err (fun m -> m "USER: Can not create admin %s %s" email msg);
+          Logs.err (fun m -> m "USER: Can not create admin %s %s" email msg);
           raise (User_core.Exception msg)
     in
     let* () = Repo.insert ctx ~user in
@@ -150,27 +148,30 @@ module Make
         else Lwt_result.fail "Invalid email or password provided"
 
   let create_admin_cmd =
-    Cmd.make ~name:"createadmin" ~help:"<username> <email> <password>"
-      ~description:"Create an admin user"
-      ~fn:(fun args ->
+    Core.Command.make ~name:"createadmin" ~help:"<username> <email> <password>"
+      ~description:"Create an admin user" (fun args ->
         match args with
         | [ username; email; password ] ->
-            let ctx = Core.Ctx.empty |> DbService.add_pool in
+            let ctx = Core.Ctx.empty |> Database.add_pool in
             create_admin ctx ~email ~password ~username:(Some username)
             |> Lwt.map ignore
-        | _ -> raise (Cmd.Invalid_usage "Usage: <username> <email> <password>"))
-      ()
+        | _ ->
+            raise
+              (Core.Command.Exception "Usage: <username> <email> <password>"))
 
   let start ctx =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    CmdService.register_command create_admin_cmd;
     Lwt.return ctx
 
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "user"
-      ~dependencies:[ Log.lifecycle; CmdService.lifecycle; DbService.lifecycle ]
+    Core.Container.Lifecycle.create "user" ~dependencies:[ Database.lifecycle ]
       ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration ~commands:[ create_admin_cmd ]
+      lifecycle
 end

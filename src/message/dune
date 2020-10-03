@@ -6,7 +6,7 @@
   yojson
   ppx_deriving_yojson.runtime
   core
-  log
+  logs
   session)
  (modules_without_implementation
   message_service_sig)

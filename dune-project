@@ -4,7 +4,11 @@
 (name sihl)
 (version 0.1.5)
 
-(authors "Josef Erben")
+(authors
+  "Josef Erben"
+  "Aron Erben"
+  "Miko Nieminen")
+
 (source (github oxidizing/sihl))
 (license MIT)
 (maintainers "josef@oxidizing.io")
@@ -17,6 +21,9 @@
  (synopsis "The modular functional web framework")
  (description "Build web apps fast with long-term maintainability in mind.")
  (depends
+  ;; Temporary fix
+  (mrmime (= 0.3.0))
+
   ;; General system dependencies
   (dune (>= 2.4))
   (ocaml (>= 4.08.0))
@@ -29,6 +36,9 @@
   (opium (>= 0.17.1))
   (yojson (>= 1.7.0))
   (ppx_deriving_yojson (>= 3.5.2))
+
+  ;; Schema validation
+  (conformist (>= 0.1.0))
 
   ;; Algorithms
   (tsort (>= 2.0.0))

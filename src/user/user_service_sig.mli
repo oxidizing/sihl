@@ -1,6 +1,8 @@
 module type REPOSITORY = sig
   include Data.Repo.Service.Sig.REPO
 
+  module Database : Data.Db.Service.Sig.SERVICE
+
   val get_all :
     Core.Ctx.t ->
     query:Data.Ql.t ->
@@ -16,7 +18,7 @@ module type REPOSITORY = sig
 end
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val add_user : User_core.User.t -> Core.Ctx.t -> Core.Ctx.t
 
@@ -103,4 +105,6 @@ module type SERVICE = sig
     password:string ->
     (User_core.User.t, string) Result.t Lwt.t
   (** Find user by email if password matches. *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

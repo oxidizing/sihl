@@ -16,7 +16,7 @@ end
 
 (* TODO document API after reading up on best practices *)
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val add_to_ctx : Session_core.t -> Core.Ctx.t -> Core.Ctx.t
 
@@ -33,4 +33,6 @@ module type SERVICE = sig
   val find : Core.Ctx.t -> key:string -> Session_core.t Lwt.t
 
   val find_all : Core.Ctx.t -> Session_core.t list Lwt.t
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

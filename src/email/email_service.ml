@@ -1,28 +1,8 @@
 open Lwt.Syntax
 module Sig = Email_service_sig
 
-module EnvConfigProvider (Config : Configuration.Service.Sig.SERVICE) :
-  Sig.CONFIG_PROVIDER_SMTP = struct
-  let sender _ = Lwt.return @@ Config.read_string "SMTP_SENDER"
-
-  let host _ = Lwt.return @@ Config.read_string "SMTP_HOST"
-
-  let username _ = Lwt.return @@ Config.read_string "SMTP_USERNAME"
-
-  let password _ = Lwt.return @@ Config.read_string "SMTP_PASSWORD"
-
-  let port _ = Config.read_int_opt "SMTP_PORT" |> Lwt.return
-
-  let start_tls _ = Lwt.return @@ Config.read_bool "SMTP_START_TLS"
-
-  let ca_path _ = Config.read_string_opt "SMTP_CA_PATH" |> Lwt.return
-
-  let ca_cert _ = Config.read_string_opt "SMTP_CA_CERT" |> Lwt.return
-end
-
 module Template = struct
-  module Make (Log : Log.Service.Sig.SERVICE) (Repo : Sig.TEMPLATE_REPO) :
-    Sig.TEMPLATE_SERVICE = struct
+  module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
     let get ctx ~id = Repo.get ctx ~id
 
     let get_by_name ctx ~name = Repo.get_by_name ctx ~name
@@ -34,7 +14,7 @@ module Template = struct
       let* created = Repo.get ctx ~id in
       match created with
       | None ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m "EMAIL: Could not create template %a" Email_core.Template.pp
                 template);
           raise (Email_core.Exception "Could not create email template")
@@ -46,7 +26,7 @@ module Template = struct
       let* created = Repo.get ctx ~id in
       match created with
       | None ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m "EMAIL: Could not update template %a" Email_core.Template.pp
                 template);
           raise (Email_core.Exception "Could not create email template")
@@ -85,9 +65,11 @@ module Template = struct
 
     let stop _ = Lwt.return ()
 
-    let lifecycle =
-      Core.Container.Lifecycle.make "template" ~dependencies:[ Log.lifecycle ]
-        ~start ~stop
+    let lifecycle = Core.Container.Lifecycle.create "template" ~start ~stop
+
+    let configure configuration =
+      let configuration = Core.Configuration.make configuration in
+      Core.Container.Service.create ~configuration lifecycle
   end
 
   module Repo = struct
@@ -407,19 +389,56 @@ Html:
     let stop _ = Lwt.return ()
 
     let lifecycle =
-      Core.Container.Lifecycle.make "email"
+      Core.Container.Lifecycle.create "email"
         ~dependencies:[ TemplateService.lifecycle ]
         ~start ~stop
+
+    let configure _ = Core.Container.Service.create lifecycle
   end
 
-  module Smtp
-      (Log : Log.Service.Sig.SERVICE)
-      (TemplateService : Sig.TEMPLATE_SERVICE)
-      (ConfigProvider : Sig.CONFIG_PROVIDER_SMTP) : Sig.SERVICE = struct
+  module Smtp (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
     module Template = TemplateService
 
+    type config = {
+      sender : string;
+      username : string;
+      password : string;
+      hostname : string;
+      port : int option;
+      start_tls : bool;
+      ca_path : string option;
+      ca_cert : string option;
+    }
+
+    let config sender username password hostname port start_tls ca_path ca_cert
+        =
+      {
+        sender;
+        username;
+        password;
+        hostname;
+        port;
+        start_tls;
+        ca_path;
+        ca_cert;
+      }
+
+    let schema =
+      let open Conformist in
+      make
+        [
+          string "SMTP_SENDER";
+          string "SMTP_USERNAME";
+          string "SMTP_PASSWORD";
+          string "SMTP_HOST";
+          optional (int ~default:587 "SMTP_PORT");
+          bool "SMTP_START_TLS";
+          optional (string "SMTP_CA_PATH");
+          optional (string "SMTP_CA_CERT");
+        ]
+        config
+
     let send ctx email =
-      (* TODO: how to get config for sending emails? *)
       let* rendered = TemplateService.render ctx email in
       let recipients =
         List.concat
@@ -434,14 +453,14 @@ Html:
         | true -> Letters.Html rendered.html_content
         | false -> Letters.Plain rendered.text_content
       in
-      let* sender = ConfigProvider.sender ctx in
-      let* username = ConfigProvider.username ctx in
-      let* password = ConfigProvider.password ctx in
-      let* hostname = ConfigProvider.host ctx in
-      let* port = ConfigProvider.port ctx in
-      let* with_starttls = ConfigProvider.start_tls ctx in
-      let* ca_path = ConfigProvider.ca_path ctx in
-      let* ca_cert = ConfigProvider.ca_cert ctx in
+      let sender = (Core.Configuration.read schema).sender in
+      let username = (Core.Configuration.read schema).username in
+      let password = (Core.Configuration.read schema).password in
+      let hostname = (Core.Configuration.read schema).hostname in
+      let port = (Core.Configuration.read schema).port in
+      let with_starttls = (Core.Configuration.read schema).start_tls in
+      let ca_path = (Core.Configuration.read schema).ca_path in
+      let ca_cert = (Core.Configuration.read schema).ca_cert in
       let config =
         Letters.Config.make ~username ~password ~hostname ~with_starttls
         |> Letters.Config.set_port port
@@ -459,18 +478,23 @@ Html:
 
     let bulk_send _ _ = Lwt.return ()
 
+    let name = "email"
+
     let start ctx = Lwt.return ctx
 
     let stop _ = Lwt.return ()
 
     let lifecycle =
-      Core.Container.Lifecycle.make "email"
+      Core.Container.Lifecycle.create name
         ~dependencies:[ TemplateService.lifecycle ]
         ~start ~stop
+
+    let configure configuration =
+      let configuration = Core.Configuration.make ~schema configuration in
+      Core.Container.Service.create ~configuration lifecycle
   end
 
   module SendGrid
-      (Log : Log.Service.Sig.SERVICE)
       (TemplateService : Sig.TEMPLATE_SERVICE)
       (ConfigProvider : Sig.CONFIG_PROVIDER_SENDGRID) : Sig.SERVICE = struct
     module Template = TemplateService
@@ -530,11 +554,11 @@ Html:
       let status = Cohttp.Response.status resp |> Cohttp.Code.code_of_status in
       match status with
       | 200 | 202 ->
-          Log.info (fun m -> m "EMAIL: Successfully sent email using sendgrid");
+          Logs.info (fun m -> m "EMAIL: Successfully sent email using sendgrid");
           Lwt.return ()
       | _ ->
           let* body = Cohttp_lwt.Body.to_string resp_body in
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m
                 "EMAIL: Sending email using sendgrid failed with http status \
                  %i and body %s"
@@ -548,9 +572,11 @@ Html:
     let stop _ = Lwt.return ()
 
     let lifecycle =
-      Core.Container.Lifecycle.make "email"
+      Core.Container.Lifecycle.create "email"
         ~dependencies:[ TemplateService.lifecycle ]
         ~start ~stop
+
+    let configure _ = Core.Container.Service.create lifecycle
   end
 
   module Memory (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
@@ -574,15 +600,16 @@ Html:
     let stop _ = Lwt.return ()
 
     let lifecycle =
-      Core.Container.Lifecycle.make "email"
+      Core.Container.Lifecycle.create "email"
         ~dependencies:[ TemplateService.lifecycle ]
         ~start ~stop
+
+    let configure _ = Core.Container.Service.create lifecycle
   end
 end
 
 (** Use this functor to create an email service that sends emails using the job queue. This is useful if you need to answer a request quickly while sending the email in the background *)
 module MakeDelayed
-    (Log : Log.Service.Sig.SERVICE)
     (EmailService : Sig.SERVICE)
     (DbService : Data.Db.Service.Sig.SERVICE)
     (QueueService : Queue.Service.Sig.SERVICE) : Sig.SERVICE = struct
@@ -595,7 +622,7 @@ module MakeDelayed
     let string_to_input email =
       match email with
       | None ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m
                 "DELAYED_EMAIL: Serialized email string was NULL, can not \
                  deserialize email. Please fix the string manually and reset \
@@ -633,12 +660,9 @@ module MakeDelayed
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "delayed-email" ~start ~stop
+    Core.Container.Lifecycle.create "delayed-email" ~start ~stop
       ~dependencies:
-        [
-          Log.lifecycle;
-          EmailService.lifecycle;
-          DbService.lifecycle;
-          QueueService.lifecycle;
-        ]
+        [ EmailService.lifecycle; DbService.lifecycle; QueueService.lifecycle ]
+
+  let configure _ = Core.Container.Service.create lifecycle
 end

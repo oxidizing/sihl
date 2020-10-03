@@ -8,9 +8,7 @@
   yojson
   ppx_deriving_yojson.runtime
   sexplib
-  core
-  configuration
-  cmd)
+  core)
  (modules_without_implementation
   data_db_service_sig
   data_migration_service_sig

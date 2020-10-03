@@ -9,7 +9,7 @@ module type REPOSITORY = sig
 end
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val create :
     Core.Ctx.t ->
@@ -29,4 +29,6 @@ module type SERVICE = sig
 
   val find_opt : Core.Ctx.t -> string -> Token_core.t option Lwt.t
   (** Returns an active and non-expired token. *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

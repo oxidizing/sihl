@@ -6,6 +6,8 @@ module MakeMariaDb
     (RepoService : Data.Repo.Service.Sig.SERVICE)
     (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY =
 struct
+  module Database = DbService
+
   module Migration = struct
     let fix_collation =
       Data.Migration.create_step ~label:"fix collation"
@@ -219,6 +221,8 @@ module MakePostgreSql
     (RepoService : Data.Repo.Service.Sig.SERVICE)
     (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY =
 struct
+  module Database = DbService
+
   module Migration = struct
     let create_users_table =
       Data.Migration.create_step ~label:"create users table"

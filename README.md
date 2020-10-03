@@ -8,7 +8,7 @@
   <p align="center">
     A modular functional web framework 🌊
     <br />
-    <a href="https://oxidizing.github.io/sihl/sihl/Sihl/index.html"><strong>Explore the docs »</strong></a>
+    <a href="https://sihl.oxidizing.io"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/oxidizing/sihl-minimal-starter">View Starter Project</a>
@@ -27,9 +27,6 @@
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
   * [A simple Sihl app](#a-simple-sihl-app)
-* [Concepts](#concepts)
-  * [Services](#services)
-  * [App](#app)
 * [Documentation](#documentation)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
@@ -41,50 +38,63 @@
 
 *Note that even though Sihl is being used in production, the API is still under active development.*
 
+Sihl is a high-level web application framework providing a set of composable building blocks and recipes that allow you to develop web apps quickly and sustainably. Batteries are included by they can be swapped easily.
+Statically typed functional programming with OCaml makes web development fun and safe.
+
 Let's have a look at a tiny Sihl app in a file `sihl.ml`:
 
 ```ocaml
+(* Static service setup, the only service we use is the web server in this example. *)
 module Service = struct
-module Random = Sihl.Utils.Random.Service.Make ()
-module Log = Sihl.Log.Service.Make ()
-module Config = Sihl.Config.Service.Make (Log)
-module Db = Sihl.Data.Db.Service.Make (Config) (Log)
-module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
-module Cmd = Sihl.Cmd.Service.Make ()
-module Migration =
-  Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
-module WebServer = Sihl.Web.Server.Service.MakeOpium (Log) (Cmd)
-module Schedule = Sihl.Schedule.Service.Make (Log)
-module Seed = Sihl.Seed.Service.Make (Log) (Cmd)
+  module WebServer = Sihl.Web.Server.Service.Opium
 end
-
-let services : (module Sihl.Core.Container.SERVICE) list =
-  [ (module Service.WebServer) ]
 
 let hello_page =
   Sihl.Web.Route.get "/hello/" (fun _ ->
       Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
 
-let endpoints = [ ("/page", [ hello_page ], [])]
+let endpoints = [ ("/page", [ hello_page ], []) ]
 
-module App = Sihl.App.Make (Service)
+let services = [ Service.WebServer.configure endpoints [ ("PORT", "8080") ] ]
 
-let _ = App.(empty |> with_services services |> with_endpoints endpoints |> run)
+(* Creation of the actual app. *)
+
+let () = Sihl.Core.App.(empty |> with_services services |> run)
 ```
 
-This code including all its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` sets up a webserver (which is a service) that handles one route `/page/hello/` and returns HTML containing "Hello!" in the body.
+This little web server including its dependencies compiles in 1.5 seconds on the laptop of the author. An incremental build takes about half a second. It produces an executable binary that is 33 MB in size. Executing `sihl.exe start` sets up a web server that serves one route `/page/hello/` on port 8080.
 
 Even though you see no type definitions, the code is fully type checked by a type checker that makes you tear up as much as it brings you joy.
 
-It runs fast, maybe. We didn't spend any efforts on measuring or tweaking performance yet. We want to make sure the API somewhat stabilizes first. Sihl will never be Rust-fast, but it might become about Go-fast.
+It runs fast. We didn't spend any efforts performance and want to make sure the API becomes somewhat stable first. Sihl will never be Rust-fast, but it might become Go-fast.
 
-If you need stuff like job queues, emailing or password reset flows, just add one of the provided service implementations or create one yourself by implementing a service interface.
+If you need stuff like job queues, emailing or password reset flows, just install one of many provided Sihl service. This is how Sihl takes cares of infrastructure and allows you to focus on the domain.
 
-[Enough text, show me more code!](#getting-started)
+[Show me more code!](#getting-started)
+
+### Design goals
+
+These are the main design goals of Sihl.
+
+#### Fun
+
+The overarching goal is to make web development fun. *Fun* is hard to quantify, so let's just say *fun* is maximized when frustration is minimized. This is what the other design goals are trying to do.
+
+#### Swappable batteries included
+
+Sihl should provide high-level features that are common in web applications out-of-the-box. It should provide sane and ergonomic defaults for typical use cases with powerful but not necessarily ergonomic customization options.
+
+#### Modular
+
+Sihl should use an architecture with modules that bundle things that belong together. This allows us to use just what is needed and to play well with others. Hiding implementations behind interfaces together with statically typed dependency injection allows us to change any part.
+
+#### Functional & safe 
+
+Sihl should be built on a language that is immutable by default, has good support for functional programming, is statically typed with as much inference as possible and compiles fast.
 
 ### Features
 
-Following are the things that Sihl takes care of:
+These are some of things that Sihl can take care of. By default Sihl won't do any of it, you can enable feature by feature.
 
 - Database handling (pooling, transactions, migrations)
 - Configuration (from env variables to configuration services)
@@ -104,32 +114,19 @@ Following are the things that Sihl takes care of:
 
 ### What Sihl is not
 
-Let's start by clarifying what Sihl is not:
+Sihl is **not an MVC framework**.  Sihl does not help you generate models, controllers and views quickly. It doesn't make development of CRUD apps as quick as possible.
+It doesn't use convention over configuration and instead tries to be as explicit as necessary. We think that long-term maintainability should not be sacrificed for initial speed up.
 
-#### MVC framework
+Sihl is **not only a web server**. HTTP, middlewares and routing are a small part of Sihl. They live in the web server service. 
 
-Sihl does not help you generate models, controllers and views quickly. It doesn't make development of CRUD apps as quick as possible.
-It doesn't use convention over configuration and instead tries to be as explicit as necessary. We think the speedup of initial development pales in comparison to the long-term maintanability concerns in most cases.
-
-#### Microservice framework
-
-Sihl encourages you to build things in a service-oriented way, but it's not a microservice framework that deals with problems of distributed systems. Use your favorite FaaS/PaaS/container orchestrator/micro-service toolkit to deal with that.
-
-### What Sihl is
-
-Let's have a look what Sihl *is*.
-
-Sihl is a high-level web application framework providing a set of composable building blocks and recipes that allow you to develop web apps quickly and sustainably. 
-Statically typed functional programming with OCaml makes web development fun and safe.
-
-Things like database migrations, HTTP routing, user management, sessions, logging, emailing, job queues and schedules are just a few of the topics Sihl takes care of.
+Sihl is **not a micro service framework**. Sihl encourages you to build things in a service-oriented way, but it's not a microservice framework that deals with distributed systems. Use your favorite FaaS/PaaS/container orchestrator/micro-service toolkit together with Sihl if you like.
 
 ### Do we need another web framework?
 
 Yes, because all other frameworks have not been invented here!
 
-On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our own tools and product. 
-An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl with OCaml. We believe OCaml is a phenomenal host, even though its house of web development is small at the moment.
+On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our own tools and products. 
+An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl with OCaml. We believe OCaml is a phenomenal host, even though its house of web development is still small.
 
 Sihl is built on OCaml because OCaml ...
 
@@ -141,22 +138,6 @@ Sihl is built on OCaml because OCaml ...
 
 But the final and most important reason is the module system, which gives Sihl its modularity and strong compile-time guarantees in the service setup.
 Sihl uses OCaml modules for statically typed dependency injection. If your app compiles, the dependencies are wired up correctly. You can not use what's not there.
-
-Learn more about it in the [concepts](#concepts).
-
-### Design goals
-
-#### Modularity
-
-[TODO property inherited from OCaml]
-
-#### Ergonomics over purity
-
-[TODO use what works, just enough abstraction, not too alien for new devs]
-
-#### Fun
-
-[TODO longterm maintanability, minimize frustration with framework]
 
 ## Getting Started
 
@@ -222,37 +203,25 @@ dune:
 (executable
   (name app)
   (libraries
-   sihl
-  )
-)
+   sihl))
 ```
 
-A Sihl app requires at least two things: A minimal set of services (also called kernel services) for the app to run and the actual app definition.
+A Sihl app requires at least two things: Setting up Sihl services and creating the app definition.
 
-Create the services file to statically set up the services and their dependencies that you are going to use in your project.
+Create the services file to statically set up the services and their dependencies that you are going to use in your project. Here we specify that we want to use Opium as web server.
 
 service.ml:
 
 ```ocaml
-module Random = Sihl.Utils.Random.Service
-module Log = Sihl.Log.Service
-module Config = Sihl.Config.Service
-module Db = Sihl.Data.Db.Service
-module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
-module Cmd = Sihl.Cmd.Service
-module Migration = Sihl.Data.Migration.Service.Make (Cmd) (Db) (MigrationRepo)
-module WebServer = Sihl.Web.Server.Service.Make (Cmd)
-module Schedule = Sihl.Schedule.Service.Make(Log)
+module WebServer = Sihl.Web.Server.Service.Opium
 ```
 
-The app configuration file glues all the components together. In this example there is not much to glue except for the services we are going to use and two routes. 
-
-We want a simple web service without any database (and thus no migrations), so let's just include `Service.WebServer`.
+The app configuration file glues services provided by Sihl and your code together. In this example, there is not much to glue except for the web server and two routes. 
 
 app.ml:
 
 ```ocaml
-let services : (module Sihl.Core.Container.SERVICE) list =
+let services : (module Sihl.Core.Container.Service.Sig) list =
   [ (module Service.WebServer) ]
 
 let hello_page =
@@ -265,9 +234,9 @@ let hello_api =
 
 let endpoints = [ ("/page", [ hello_page ], []); ("/api", [ hello_api ], []) ]
 
-module App = Sihl.App.Make (Service)
+let services = [ Service.WebServer.configure endpoints [ ("PORT", "8080") ] ]
 
-let _ = App.(empty |> with_services services |> with_endpoints endpoints |> run)
+let () = Sihl.Core.App.(empty |> with_services services |> run)
 ```
 
 You can build (and watch) this project with
@@ -292,68 +261,9 @@ and visit `http://localhost:3000/page/hello/` or `http://localhost:3000/api/hell
 
 Find a simple starter project [here](https://github.com/oxidizing/sihl-minimal-starter) similar to our small example.
 
-## Concepts
-
-In essence, Sihl is just a tiny core (about 100 lines) that deals with loading services and their dependencies. Every feature is built using services. 
-
-### Services
-
-A service is a unit that provides some functionality. Most of the time, a service is just a namespace so functions that belong together are together. This would be the equivalent of a class with just static methods in object-oriented programming. However, some services can be started and stopped. These services have a lifecycles which is taken care of by Sihl.
-
-Sihl provides service interfaces and some implementations. As an example, Sihl provides a default implementation of the user service for user management with support for MariaDB and PostgreSQL. 
-
-When you create a Sihl app, you usually start out with your service setup in a file `service.ml`. There, you list all services that you are going to use in the project. We can compose large services out of simple and small services using parameterized modules. This service composition is statically checked and it can be used throughout your own project.
-
-Sihl has to be made aware of the services you are going to use. That is why the second step of setting of services is done in the app description file.
-
-[TODO explain lifecycles]
-
-### App
-
-A Sihl app is described in a `app.ml`. Here you glue services from `service.ml`, your own code and various other components together. It is the main entry point to your application.
-
-#### Folder structure
-
-Let's have a look at the folder structure of an example project called `pizza-shop`.
-
-```
-.
-├── service
-│   ├── dune 
-│   ├── service.ml 
-├── app
-│   ├── dune 
-│   ├── app.ml
-├── components
-│   ├── pizza-delivery
-│   │   ├── model.ml
-│   │   ├── service.ml
-│   │   ├── repo.ml
-│   ├── pizza-order-taking
-│   │   ├── model.ml
-│   │   ├── service.ml
-│   │   ├── repo.ml
-│   │   ├── cmd.ml
-├── web
-│   ├── routes.ml
-│   ├── middlewares.ml
-├── cli
-│   ├── cmd.ml
-```
-
-There is a strong emphasis on the separation of business logic from everything else. In this example, the domain layer is split up into two parts `pizza-delivery` and `pizza-order-taking`. Note that all the business rules live in that layer. 
-
-A set of services, models and repos on its own is not that useful. In order to make it useful, we need to expose it to users. A typical web app does that through HTTP and a few CLI commands, which are primary used for development.
-
-Everything regarding HTTP, routing, GraphQL, REST, JSON, middlewares lives in `web`. `web` is allowed to use any service.
-
-The folder `app` contains `app.ml` which describes a Sihl app. 
-
-In the folder `service` contains the service configuration `service.ml`. This is the static setup of all services that are usable throughout the project.
-
 ## Documentation
 
-The documentation for the latest released version can be found here: https://oxidizing.github.io/sihl/sihl/Sihl/index.html
+The documentation for the latest version can be found here: https://oxidizing.github.io/sihl/sihl/Sihl/index.html
 
 ## Roadmap
 
@@ -391,4 +301,3 @@ Sihl would not be possible without some amazing projects like:
 * [Caqti](https://github.com/paurkedal/ocaml-caqti)
 * [Tree vector created by brgfx - www.freepik.com](https://www.freepik.com/vectors/tree)
 * And [many more!](https://github.com/oxidizing/sihl/blob/master/dune-project)
-

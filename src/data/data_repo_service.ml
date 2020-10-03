@@ -13,7 +13,7 @@ module Registry = struct
     registry := List.concat [ !registry; cleaners ]
 end
 
-module Make () : Sig.SERVICE = struct
+module Default : Sig.SERVICE = struct
   let register_cleaner cleaner = Registry.register cleaner |> ignore
 
   let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
@@ -33,5 +33,9 @@ module Make () : Sig.SERVICE = struct
 
   let stop _ = Lwt.return ()
 
-  let lifecycle = Core.Container.Lifecycle.make "repo" ~start ~stop
+  let lifecycle = Core.Container.Lifecycle.create "repo" ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end

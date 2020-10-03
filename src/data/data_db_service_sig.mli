@@ -1,7 +1,7 @@
 open Data_db_core
 
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val create_pool : unit -> pool
   (** Create a database connection pool.
@@ -34,4 +34,6 @@ The context has to contain a database connection or a database connection pool. 
   (** Disables foreign key checks if supported by the database.
 
       Use very carefully, data might become inconsistent! *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

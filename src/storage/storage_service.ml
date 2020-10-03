@@ -2,10 +2,9 @@ open Storage_core
 open Lwt.Syntax
 module Sig = Storage_service_sig
 
-module Make
-    (Log : Log.Service.Sig.SERVICE)
-    (Repo : Sig.REPO)
-    (DbService : Data.Db.Service.Sig.SERVICE) : Sig.SERVICE = struct
+module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
+  module Database = Repo.Database
+
   let find_opt ctx ~id = Repo.get_file ctx ~id
 
   let find ctx ~id =
@@ -17,7 +16,7 @@ module Make
   let delete ctx ~id =
     let* file = find ctx ~id in
     let blob_id = StoredFile.blob file in
-    DbService.atomic ctx (fun ctx ->
+    Database.atomic ctx (fun ctx ->
         let* () = Repo.delete_file ctx ~id:file.file.id in
         Repo.delete_blob ctx ~id:blob_id)
 
@@ -26,7 +25,7 @@ module Make
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m "STORAGE: Could not upload base64 content of file %a" File.pp
                 file);
           raise (Exception msg)
@@ -42,7 +41,7 @@ module Make
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m "STORAGE: Could not upload base64 content of file %a"
                 StoredFile.pp file);
           raise (Exception msg)
@@ -57,7 +56,7 @@ module Make
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
-        Log.err (fun m ->
+        Logs.err (fun m ->
             m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
               file);
         raise (Exception msg)
@@ -69,7 +68,7 @@ module Make
     let* blob = Repo.get_blob ctx ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
-        Log.err (fun m ->
+        Logs.err (fun m ->
             m "STORAGE: Could not get base64 content of file %a" StoredFile.pp
               file);
         raise (Exception msg)
@@ -87,9 +86,11 @@ module Make
 
   let stop _ = Lwt.return ()
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "storage" ~dependencies:[ Log.lifecycle ]
-      ~start ~stop
+  let lifecycle = Core.Container.Lifecycle.create "storage" ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end
 
 module Repo = struct
@@ -98,6 +99,8 @@ module Repo = struct
       (RepoService : Data.Repo.Service.Sig.SERVICE)
       (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO =
   struct
+    module Database = DbService
+
     let stored_file =
       let encode m =
         let StoredFile.{ file; blob } = m in

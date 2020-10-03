@@ -4,18 +4,16 @@ module Sig = Session_service_sig
 
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
-module Make
-    (Log : Log.Service.Sig.SERVICE)
-    (RandomService : Utils.Random.Service.Sig.SERVICE)
-    (Repo : Sig.REPO) : Sig.SERVICE = struct
+module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO) :
+  Sig.SERVICE = struct
   let add_to_ctx session ctx =
     Core.Ctx.add ctx_key (Session_core.key session) ctx
 
   let require_session_key ctx =
     match Core.Ctx.find ctx_key ctx with
     | None ->
-        Log.err (fun m -> m "SESSION: No session found in context");
-        Log.info (fun m -> m "HINT: Have you applied the session middleware?");
+        Logs.err (fun m -> m "SESSION: No session found in context");
+        Logs.info (fun m -> m "HINT: Have you applied the session middleware?");
         raise (Session_core.Exception "No session found in context")
     | Some session -> session
 
@@ -36,7 +34,7 @@ module Make
       match make (Ptime_clock.now ()) with
       | Some session -> session
       | None ->
-          Log.err (fun m ->
+          Logs.err (fun m ->
               m
                 "SESSION: Can not create session, failed to create validity \
                  time");
@@ -56,7 +54,7 @@ module Make
     match session with
     | Some session -> Lwt.return session
     | None ->
-        Log.err (fun m ->
+        Logs.err (fun m ->
             m "SESSION: Session with key %s not found in database" key);
         raise (Session_core.Exception "Session not found")
 
@@ -86,9 +84,11 @@ module Make
 
   let stop _ = Lwt.return ()
 
-  let lifecycle =
-    Core.Container.Lifecycle.make "session" ~dependencies:[ Log.lifecycle ]
-      ~start ~stop
+  let lifecycle = Core.Container.Lifecycle.create "session" ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end
 
 module Repo = struct

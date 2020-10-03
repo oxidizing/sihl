@@ -23,4 +23,6 @@ module type SERVICE = sig
 
       Requires middlewares: Session & Message
 *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end

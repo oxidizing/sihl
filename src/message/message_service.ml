@@ -5,9 +5,8 @@ module Sig = Message_service_sig
 
 let session_key = "message"
 
-module Make
-    (Log : Log.Service.Sig.SERVICE)
-    (SessionService : Session.Service.Sig.SERVICE) : Sig.SERVICE = struct
+module Make (SessionService : Session.Service.Sig.SERVICE) : Sig.SERVICE =
+struct
   let fetch_entry ctx =
     let* entry = SessionService.get ~key:session_key ctx in
     match entry with
@@ -16,7 +15,7 @@ module Make
         match entry |> Entry.of_string with
         | Ok entry -> Lwt.return (Some entry)
         | Error msg ->
-            Log.warn (fun m ->
+            Logs.warn (fun m ->
                 m "MESSAGE: Invalid flash message in session %s" msg);
             Lwt.return None )
 
@@ -62,4 +61,17 @@ module Make
         |> set_info info)
     in
     set_next ctx message
+
+  let start ctx = Lwt.return ctx
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Core.Container.Lifecycle.create "message"
+      ~dependencies:[ SessionService.lifecycle ]
+      ~start ~stop
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end

@@ -9,7 +9,6 @@ module TokenData = struct
 end
 
 module Make
-    (Log : Log.Service.Sig.SERVICE)
     (TokenService : Token.Service.Sig.SERVICE)
     (UserService : User_service_sig.SERVICE) : Sig.SERVICE = struct
   let create_reset_token ctx ~email =
@@ -26,7 +25,7 @@ module Make
         in
         Lwt.return @@ Some token
     | None ->
-        Log.warn (fun m ->
+        Logs.warn (fun m ->
             m "PASSWORD_RESET: No user found with email %s" email);
         Lwt.return None
 
@@ -56,7 +55,10 @@ module Make
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.make "password-reset" ~start ~stop
-      ~dependencies:
-        [ Log.lifecycle; TokenService.lifecycle; UserService.lifecycle ]
+    Core.Container.Lifecycle.create "password-reset" ~start ~stop
+      ~dependencies:[ TokenService.lifecycle; UserService.lifecycle ]
+
+  let configure configuration =
+    let configuration = Core.Configuration.make configuration in
+    Core.Container.Service.create ~configuration lifecycle
 end

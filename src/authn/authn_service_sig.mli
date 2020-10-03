@@ -1,5 +1,5 @@
 module type SERVICE = sig
-  include Core.Container.SERVICE
+  include Core.Container.Service.Sig
 
   val find_user_in_session_opt : Core.Ctx.t -> User.t option Lwt.t
   (** Find currently logged in user in the current context.
@@ -20,4 +20,6 @@ module type SERVICE = sig
   (** Log user out.
 
       Remove user from current session so that session is anonymous again. *)
+
+  val configure : Core.Configuration.data -> Core.Container.Service.t
 end
