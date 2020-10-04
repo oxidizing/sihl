@@ -1,5 +1,4 @@
 open Lwt.Syntax
-open Base
 open Alcotest_lwt
 
 let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal

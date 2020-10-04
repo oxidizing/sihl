@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Sig = Session_service_sig
 
@@ -20,14 +19,12 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
 
   let make ?expire_date now =
     let open Session_core in
-    match Option.first_some expire_date (default_expiration_date now) with
-    | Some expire_date ->
-      Some
-        { key = RandomService.base64 ~bytes:10
-        ; data = Map.empty (module String)
-        ; expire_date
-        }
-    | None -> None
+    match expire_date, default_expiration_date now with
+    | Some expire_date, _ ->
+      Some { key = RandomService.base64 ~bytes:10; data = Map.empty; expire_date }
+    | None, Some expire_date ->
+      Some { key = RandomService.base64 ~bytes:10; data = Map.empty; expire_date }
+    | None, None -> None
   ;;
 
   let create ctx data =
@@ -40,8 +37,10 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
         raise (Session_core.Exception "Can not set session validity time")
     in
     let session =
-      List.fold data ~init:empty_session ~f:(fun session (key, value) ->
-          Session_core.set ~key ~value session)
+      List.fold_left
+        (fun session (key, value) -> Session_core.set ~key ~value session)
+        empty_session
+        data
     in
     let* () = Repo.insert ctx session in
     Lwt.return session

@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Sig = Server_service_sig
 
@@ -31,13 +30,15 @@ let res_to_opium res =
     let cookie_headers =
       res
       |> Http.Res.cookies
-      |> List.map ~f:(fun cookie ->
+      |> List.map (fun cookie ->
              Cohttp.Cookie.Set_cookie_hdr.make ~secure:false ~path:"/" cookie)
-      |> List.map ~f:Cohttp.Cookie.Set_cookie_hdr.serialize
+      |> List.map Cohttp.Cookie.Set_cookie_hdr.serialize
     in
     let headers =
-      List.fold_left cookie_headers ~init:headers ~f:(fun headers (k, v) ->
-          Cohttp.Header.add headers k v)
+      List.fold_left
+        (fun headers (k, v) -> Cohttp.Header.add headers k v)
+        headers
+        cookie_headers
     in
     (match Http.Res.body res with
     | None -> Opium.Std.respond ~headers ~code (`String "") |> Lwt.return
@@ -68,11 +69,11 @@ let to_opium_builder route =
 
 let endpoints_to_opium_builders endpoints =
   endpoints
-  |> List.map ~f:(fun (prefix, routes, middleware_stack) ->
+  |> List.map (fun (prefix, routes, middleware_stack) ->
          routes
-         |> List.map ~f:(Http.Route.prefix prefix)
-         |> List.map ~f:(Middleware.apply_stack middleware_stack)
-         |> List.map ~f:to_opium_builder)
+         |> List.map (Http.Route.prefix prefix)
+         |> List.map (Middleware.apply_stack middleware_stack)
+         |> List.map to_opium_builder)
   |> List.concat
 ;;
 
@@ -91,7 +92,7 @@ module Opium : Sig.SERVICE = struct
     let port_nr = Option.value (Core.Configuration.read schema).port ~default:33000 in
     let app = Opium.Std.App.(empty |> port port_nr |> cmd_name "Sihl App") in
     let builders = endpoints_to_opium_builders !registered_endpoints in
-    let app = List.fold ~f:(fun app builder -> builder app) ~init:app builders in
+    let app = List.fold_left (fun app builder -> builder app) app builders in
     (* We don't want to block here, the returned Lwt.t will never resolve *)
     let _ = Opium.Std.App.start app in
     run_forever ()

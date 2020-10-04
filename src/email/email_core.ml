@@ -79,7 +79,7 @@ module DevInbox = struct
 
   let get () =
     if Option.is_some !inbox then Logs.err (fun m -> m "no email found in dev inbox");
-    Base.Option.value_exn ~message:"no email found in dev inbox" !inbox
+    Option.get !inbox
   ;;
 
   let set email = inbox := Some email

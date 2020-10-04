@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Entry = Message_core.Entry
 module Sig = Message_service_sig

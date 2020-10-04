@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Base
 open Lwt.Syntax
 
 let middleware_stack ctx ?handler stack =
@@ -39,7 +38,7 @@ struct
       Lwt.return @@ Sihl.Web.Res.html
     in
     let* _ = middleware_stack ctx ~handler stack in
-    let* session = SessionService.find_all ctx |> Lwt.map List.hd_exn in
+    let* session = SessionService.find_all ctx |> Lwt.map List.hd in
     let () =
       Alcotest.(
         check

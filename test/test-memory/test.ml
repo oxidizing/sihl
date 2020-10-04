@@ -1,9 +1,8 @@
-open Base
 open Alcotest_lwt
 open Lwt.Syntax
 module Queue = Test_common.Test.Queue.Make (Service.Repo) (Service.Queue)
 
-let test_suite ctx = [ Queue.test_suite ctx Fn.id ]
+let test_suite ctx = [ Queue.test_suite ctx Fun.id ]
 let services = [ Service.Queue.configure [] [] ]
 
 let () =

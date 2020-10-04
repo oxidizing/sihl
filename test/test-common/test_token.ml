@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 open Alcotest_lwt
 

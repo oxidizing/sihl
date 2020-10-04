@@ -1,5 +1,3 @@
-open Base
-
 module Context = struct
   type t = { csrf : string }
 

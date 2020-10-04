@@ -1,8 +1,8 @@
-open Base
-
 exception Exception of string
 
-type data = (string, string, String.comparator_witness) Map.t
+module Map = Map.Make (String)
+
+type data = string Map.t
 
 type t =
   { key : string
@@ -20,25 +20,22 @@ let is_expired now session = Ptime.is_later now ~than:session.expire_date
 type data_map = (string * string) list [@@deriving yojson]
 
 let string_of_data data =
-  data |> Map.to_alist |> data_map_to_yojson |> Yojson.Safe.to_string
+  data |> Map.to_seq |> List.of_seq |> data_map_to_yojson |> Yojson.Safe.to_string
 ;;
 
 let data_of_string str =
   str
   |> Yojson.Safe.from_string
   |> data_map_of_yojson
-  |> Result.map ~f:(Map.of_alist_exn (module String))
+  |> Result.map List.to_seq
+  |> Result.map Map.of_seq
 ;;
 
 type map = (string * string) list [@@deriving yojson]
 
-let get key session = Map.find session.data key
-
-let set ~key ~value session =
-  { session with data = Map.set ~key ~data:value session.data }
-;;
-
-let remove ~key session = { session with data = Map.remove session.data key }
+let get key session = Map.find_opt key session.data
+let set ~key ~value session = { session with data = Map.add key value session.data }
+let remove ~key session = { session with data = Map.remove key session.data }
 
 let pp ppf { key; data; _ } =
   Caml.Format.fprintf ppf "key: %s data: %s " key (string_of_data data)

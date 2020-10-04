@@ -1,4 +1,3 @@
-open Base
 open Http_core
 
 (* TODO [jerben] remove all opium references *)

@@ -1,4 +1,3 @@
-open Base
 module Entry = Sihl.Message.Entry
 
 let entry_t = Alcotest.testable Entry.pp Entry.equal
@@ -6,7 +5,7 @@ let entry_t = Alcotest.testable Entry.pp Entry.equal
 let entry_to_and_from_string _ () =
   let msg = Sihl.Message.empty |> Sihl.Message.set_error [ "foo" ] in
   let actual = Entry.create msg in
-  let expected = actual |> Entry.to_string |> Entry.of_string |> Result.ok_or_failwith in
+  let expected = actual |> Entry.to_string |> Entry.of_string |> Result.get_ok in
   Lwt.return @@ Alcotest.(check entry_t "equals" expected actual)
 ;;
 
@@ -16,7 +15,7 @@ let rotate_once _ () =
   let is_current_set =
     entry
     |> Entry.current
-    |> Option.map ~f:(Sihl.Message.equal msg)
+    |> Option.map (Sihl.Message.equal msg)
     |> Option.value ~default:false
   in
   let is_next_none = Option.is_none (entry |> Entry.next) in

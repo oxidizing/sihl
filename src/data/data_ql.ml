@@ -1,4 +1,4 @@
-open Base
+open Sexplib.Std
 
 module Filter = struct
   type op =
@@ -74,7 +74,7 @@ let get_offset query = query.page.offset
 
 module Sql = struct
   let is_field_whitelisted whitelist field =
-    whitelist |> List.find ~f:(String.equal field) |> Option.is_some
+    whitelist |> List.find_opt (String.equal field) |> Option.is_some
   ;;
 
   let limit limit = "LIMIT ?", [ Int.to_string limit ]
@@ -83,14 +83,14 @@ module Sql = struct
   let sort whitelist sort =
     let sorts =
       sort
-      |> List.filter ~f:(fun criterion ->
+      |> List.filter (fun criterion ->
              criterion |> Sort.criterion_value |> is_field_whitelisted whitelist)
-      |> List.map ~f:(function
+      |> List.map (function
              | Sort.Asc value -> Printf.sprintf "%s ASC" value
              | Sort.Desc value -> Printf.sprintf "%s DESC" value)
-      |> String.concat ~sep:", "
+      |> String.concat ", "
     in
-    if String.is_empty sorts then "" else Printf.sprintf "ORDER BY %s" sorts
+    if String.equal "" sorts then "" else Printf.sprintf "ORDER BY %s" sorts
   ;;
 
   let filter_criterion_to_string criterion =
@@ -121,20 +121,20 @@ module Sql = struct
         | Or [] -> ""
         | And filters ->
           let whitelisted_filters =
-            filters |> List.filter ~f:(is_filter_whitelisted whitelist)
+            filters |> List.filter (is_filter_whitelisted whitelist)
           in
           let criterions_string =
-            whitelisted_filters |> List.map ~f:to_string |> String.concat ~sep:" AND "
+            whitelisted_filters |> List.map to_string |> String.concat " AND "
           in
           if List.length whitelisted_filters > 1
           then Printf.sprintf "(%s)" criterions_string
           else Printf.sprintf "%s" criterions_string
         | Or filters ->
           let whitelisted_filters =
-            filters |> List.filter ~f:(is_filter_whitelisted whitelist)
+            filters |> List.filter (is_filter_whitelisted whitelist)
           in
           let criterions_string =
-            whitelisted_filters |> List.map ~f:to_string |> String.concat ~sep:" OR "
+            whitelisted_filters |> List.map to_string |> String.concat " OR "
           in
           if List.length whitelisted_filters > 1
           then Printf.sprintf "(%s)" criterions_string
@@ -142,28 +142,25 @@ module Sql = struct
     in
     let result = to_string filter in
     let result =
-      if String.is_empty result then "" else Printf.sprintf "WHERE %s" result
+      if String.equal "" result then "" else Printf.sprintf "WHERE %s" result
     in
     result, !values
   ;;
 
   let to_fragments field_whitelist query =
     let filter_qs, filter_values =
-      query.filter
-      |> Option.map ~f:(filter field_whitelist)
-      |> Option.value ~default:("", [])
+      query.filter |> Option.map (filter field_whitelist) |> Option.value ~default:("", [])
     in
     let sort_qs =
-      query.sort |> Option.map ~f:(sort field_whitelist) |> Option.value ~default:""
+      query.sort |> Option.map (sort field_whitelist) |> Option.value ~default:""
     in
-    let limit_fragment = get_limit query |> Option.map ~f:limit in
-    let offset_fragment = get_offset query |> Option.map ~f:offset in
+    let limit_fragment = get_limit query |> Option.map limit in
+    let offset_fragment = get_offset query |> Option.map offset in
     let pagination_qs, pagination_values =
-      Option.merge
-        limit_fragment
-        offset_fragment
-        ~f:(fun (limit_query, limit_value) (offset_query, offset_value) ->
-          limit_query ^ " " ^ offset_query, List.concat [ limit_value; offset_value ])
+      (match limit_fragment, offset_fragment with
+      | Some (limit_query, limit_value), Some (offset_query, offset_value) ->
+        Some (limit_query ^ " " ^ offset_query, List.concat [ limit_value; offset_value ])
+      | _ -> None)
       |> Option.value ~default:("", [])
     in
     filter_qs, sort_qs, pagination_qs, List.concat [ filter_values; pagination_values ]
@@ -175,9 +172,9 @@ module Sql = struct
     in
     let qs =
       List.filter
-        ~f:(fun str -> not (String.is_empty str))
+        (fun str -> not (String.equal "" str))
         [ filter_fragment; sort_fragment; pagination_fragment ]
-      |> String.concat ~sep:" "
+      |> String.concat " "
     in
     qs, values
   ;;

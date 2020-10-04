@@ -1,5 +1,3 @@
-open Base
-
 exception Exception of string
 
 module Status = struct

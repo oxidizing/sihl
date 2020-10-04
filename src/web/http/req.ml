@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 
 type t = Opium_kernel.Request.t
@@ -37,11 +36,20 @@ let get_uri ctx =
   Opium_kernel.Request.uri req
 ;;
 
+let contains substring string =
+  let re = Str.regexp_string string in
+  try
+    ignore (Str.search_forward re substring 0);
+    true
+  with
+  | Not_found -> false
+;;
+
 let accepts_html ctx =
   let req = get_req ctx in
   Cohttp.Header.get (Opium.Std.Request.headers req) "Accept"
-  |> Option.value_map ~default:false ~f:(fun a ->
-         String.is_substring a ~substring:"text/html")
+  |> Option.map (contains "text/html")
+  |> Option.value ~default:false
 ;;
 
 let require_authorization_header ctx =
@@ -55,8 +63,8 @@ let cookie_data ctx ~key =
   let req = get_req ctx in
   let cookies = req |> Opium_kernel.Request.headers |> Cohttp.Cookie.Cookie_hdr.extract in
   cookies
-  |> List.find ~f:(fun (k, _) -> String.equal key k)
-  |> Option.map ~f:(fun (_, v) -> Uri.pct_decode v)
+  |> List.find_opt (fun (k, _) -> String.equal key k)
+  |> Option.map (fun (_, v) -> Uri.pct_decode v)
 ;;
 
 let get_header ctx key =
@@ -65,18 +73,23 @@ let get_header ctx key =
 ;;
 
 let parse_token ctx =
+  let ( let* ) = Option.bind in
   (* TODO make this more robust *)
-  get_header ctx "authorization"
-  |> Option.map ~f:(String.split ~on:' ')
-  |> Option.bind ~f:List.tl
-  |> Option.bind ~f:List.hd
+  let* header = get_header ctx "authorization" in
+  match String.split_on_char ' ' header with
+  | [ _; token ] -> Some token
+  | _ -> None
 ;;
 
 let find_in_query key query =
-  query
-  |> List.find ~f:(fun (k, _) -> String.equal k key)
-  |> Option.map ~f:(fun (_, r) -> r)
-  |> Option.bind ~f:List.hd
+  let ( let* ) = Option.bind in
+  let* values =
+    query
+    |> List.find_opt (fun (k, _) -> String.equal k key)
+    |> Option.map (fun (_, r) -> r)
+  in
+  try Some (List.hd values) with
+  | _ -> None
 ;;
 
 let get_query_string ctx =
@@ -129,7 +142,12 @@ let urlencoded2 ctx key1 key2 =
   let* body = ctx |> get_req |> Opium.Std.Request.body |> Opium.Std.Body.to_string in
   let* value1 = urlencoded ~body ctx key1 in
   let* value2 = urlencoded ~body ctx key2 in
-  Lwt.return @@ Option.both value1 value2
+  let both =
+    match value1, value2 with
+    | Some value1, Some value2 -> Some (value1, value2)
+    | _ -> None
+  in
+  Lwt.return both
 ;;
 
 let urlencoded3 ctx key1 key2 key3 =
@@ -169,10 +187,15 @@ let urlencoded5 ctx key1 key2 key3 key4 key5 =
 
 let param ctx key =
   let req = get_req ctx in
-  Option.try_with (fun () -> Opium.Std.param req key)
+  try Some (Opium.Std.param req key) with
+  | _ -> None
 ;;
 
-let param2 ctx key1 key2 = Option.both (param ctx key1) (param ctx key2)
+let param2 ctx key1 key2 =
+  match param ctx key1, param ctx key2 with
+  | Some a, Some b -> Some (a, b)
+  | _ -> None
+;;
 
 let param3 ctx key1 key2 key3 =
   match param ctx key1, param ctx key2, param ctx key3 with
@@ -196,5 +219,7 @@ let param5 ctx key1 key2 key3 key4 key5 =
 
 let require_body ctx decode =
   let* body = ctx |> get_req |> Opium.Std.Request.body |> Cohttp_lwt.Body.to_string in
-  body |> Utils.Json.parse |> Result.bind ~f:decode |> Lwt.return
+  match body |> Utils.Json.parse with
+  | Ok value -> Lwt.return @@ decode value
+  | Error msg -> Lwt.return @@ Error msg
 ;;

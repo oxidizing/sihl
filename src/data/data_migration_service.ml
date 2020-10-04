@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Sig = Data_migration_service_sig
 module Model = Data_migration_core
@@ -214,7 +213,7 @@ WHERE namespace = ?;
     let get ctx ~namespace =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request namespace)
-      |> Lwt.map (Option.map ~f:Model.of_tuple)
+      |> Lwt.map (Option.map Model.of_tuple)
     ;;
 
     let upsert_request =
@@ -278,7 +277,7 @@ WHERE namespace = ?;
     let get ctx ~namespace =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request namespace)
-      |> Lwt.map (Option.map ~f:Model.of_tuple)
+      |> Lwt.map (Option.map Model.of_tuple)
     ;;
 
     let upsert_request =

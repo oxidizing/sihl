@@ -1,7 +1,7 @@
 (library
  (name schedule)
  (public_name sihl.schedule)
- (libraries base logs ptime ptime.clock.os lwt.unix core utils)
+ (libraries logs ptime ptime.clock.os lwt.unix core utils)
  (modules_without_implementation schedule_service_sig)
  (preprocess
   (pps ppx_fields_conv ppx_deriving.eq ppx_deriving.show ppx_deriving.make)))

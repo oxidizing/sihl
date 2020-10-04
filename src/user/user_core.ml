@@ -1,5 +1,3 @@
-open Base
-
 exception Exception of string
 
 module User = struct
@@ -26,7 +24,7 @@ module User = struct
 
   let set_user_password user new_password =
     let hash = new_password |> Utils.Hashing.hash in
-    Result.map hash ~f:(fun hash -> { user with password = hash })
+    Result.map (fun hash -> { user with password = hash }) hash
   ;;
 
   let set_user_details user ~email ~username =
@@ -35,7 +33,7 @@ module User = struct
      * email addresses can contain other letters
      * (https://tools.ietf.org/html/rfc6531) like umlauts.
      *)
-    { user with email = String.lowercase email; username }
+    { user with email = String.lowercase_ascii email; username }
   ;;
 
   let is_admin user = user.admin
@@ -59,7 +57,10 @@ module User = struct
       else Error "Password confirmation doesn't match provided password"
     in
     let complies_with_policy = password_policy password in
-    Result.all_unit [ is_same; complies_with_policy ]
+    match is_same, complies_with_policy with
+    | Ok (), Ok () -> Ok ()
+    | Error msg, _ -> Error msg
+    | _, Error msg -> Error msg
   ;;
 
   let validate_change_password
@@ -80,19 +81,23 @@ module User = struct
         ~password_confirmation:new_password_confirmation
         ~password_policy
     in
-    Result.all_unit [ matches_old_password; new_password_valid ]
+    match matches_old_password, new_password_valid with
+    | Ok (), Ok () -> Ok ()
+    | Error msg, _ -> Error msg
+    | _, Error msg -> Error msg
   ;;
 
   let create ~email ~password ~username ~admin ~confirmed =
     let hash = password |> Utils.Hashing.hash in
-    Result.map hash ~f:(fun hash ->
+    Result.map
+      (fun hash ->
         { id = Data.Id.random () |> Data.Id.to_string
         ; (* TODO add support for lowercase UTF-8
            * String.lowercase only supports US-ASCII, but
            * email addresses can contain other letters
            * (https://tools.ietf.org/html/rfc6531) like umlauts.
            *)
-          email = String.lowercase email
+          email = String.lowercase_ascii email
         ; password = hash
         ; username
         ; admin
@@ -100,6 +105,7 @@ module User = struct
         ; status = "active"
         ; created_at = Ptime_clock.now ()
         })
+      hash
   ;;
 
   let t =

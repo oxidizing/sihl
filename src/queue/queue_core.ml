@@ -1,5 +1,3 @@
-open Base
-
 (** This is the description of a job. A job dispatch is a job description and some
     arguments/input. *)
 module Job = struct
@@ -111,10 +109,9 @@ module JobInstance = struct
     let input = Job.input_to_string job input in
     let name = Job.name job in
     let next_run_at =
-      delay
-      |> Option.map ~f:Utils.Time.duration_to_span
-      |> Option.bind ~f:(Ptime.add_span now)
-      |> Option.value ~default:now
+      match Option.map Utils.Time.duration_to_span delay with
+      | Some at -> Option.value (Ptime.add_span now at) ~default:now
+      | None -> now
     in
     let max_tries = Job.max_tries job in
     { id = Data.Id.random ()
@@ -132,7 +129,7 @@ module JobInstance = struct
 
   let update_next_run_at job job_instance =
     let delay = job |> WorkableJob.retry_delay |> Utils.Time.duration_to_span in
-    let next_run_at = Option.value_exn (Ptime.add_span job_instance.next_run_at delay) in
+    let next_run_at = Option.get (Ptime.add_span job_instance.next_run_at delay) in
     { job_instance with next_run_at }
   ;;
 

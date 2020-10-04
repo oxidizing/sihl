@@ -4,13 +4,13 @@
  *
  * let session_not_expired _ () =
  *   let expire_date =
- *     Option.value_exn
+ *     Option.get
  *       ( 60 * 60 * 24
  *       |> Ptime.Span.of_int_s
  *       |> Ptime.add_span (Ptime_clock.now ()) )
  *   in
  *   let session =
- *     Option.value_exn (Sihl.Session.make ~expire_date (Ptime_clock.now ()))
+ *     Option.get (Sihl.Session.make ~expire_date (Ptime_clock.now ()))
  *   in
  *   Lwt.return
  *   @@ Alcotest.(
@@ -19,7 +19,7 @@
  *
  * let test_set_session_variable _ () =
  *   let open Sihl.Session in
- *   let session = Option.value_exn (make (Ptime_clock.now ())) in
+ *   let session = Option.get (make (Ptime_clock.now ())) in
  *   Alcotest.(check (option string))
  *     "Has no session variable" None (get "foo" session);
  *   let session = set ~key:"foo" ~value:"bar" session in

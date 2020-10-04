@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 
 module Make (SessionService : Session.Service.Sig.SERVICE) = struct

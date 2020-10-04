@@ -1,7 +1,7 @@
 (library
  (name token)
  (public_name sihl.token)
- (libraries base ptime ptime.clock.os yojson ppx_deriving_yojson.runtime
+ (libraries ptime ptime.clock.os yojson ppx_deriving_yojson.runtime
    alcotest caqti core data utils)
  (modules_without_implementation token_service_sig)
  (preprocess

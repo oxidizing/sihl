@@ -1,7 +1,7 @@
 (library
  (name session)
  (public_name sihl.session)
- (libraries base yojson ppx_deriving_yojson.runtime ptime ptime.clock.os
+ (libraries yojson ppx_deriving_yojson.runtime ptime ptime.clock.os
    caqti core data utils)
  (modules_without_implementation session_service_sig)
  (preprocess

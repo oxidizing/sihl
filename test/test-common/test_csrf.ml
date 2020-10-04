@@ -1,5 +1,3 @@
-(* open Alcotest_lwt *)
-open Base
 open Lwt.Syntax
 
 (* TODO [aerben] FIX TESTS*)
@@ -30,8 +28,8 @@ struct
     let middleware = Middleware.m () in
     let handler ctx =
       let token = Sihl.Web.Middleware.Csrf.get_token ctx in
-      let token_value = Option.value_exn token in
-      Alcotest.(check bool "Has CSRF token" true (not @@ String.is_empty token_value));
+      let token_value = Option.get token in
+      Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
       Lwt.return @@ Sihl.Web.Res.html
     in
     let wrapped_handler = Sihl.Web.Middleware.apply middleware handler in
@@ -66,8 +64,8 @@ struct
     let middleware = Middleware.m () in
     let handler ctx =
       let token = Sihl.Web.Middleware.Csrf.get_token ctx in
-      let token_value = Option.value_exn token in
-      Alcotest.(check bool "Has CSRF token" true (not @@ String.is_empty token_value));
+      let token_value = Option.get token in
+      Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
       Lwt.return @@ Sihl.Web.Res.html
     in
     let wrapped_handler = Sihl.Web.Middleware.apply middleware handler in
@@ -125,7 +123,7 @@ struct
     let token_ref = ref "" in
     let handler ctx =
       let token = Sihl.Web.Middleware.Csrf.get_token ctx in
-      let token_value = Option.value_exn token in
+      let token_value = Option.get token in
       token_ref := token_value;
       Lwt.return Sihl.Web.Res.html
     in

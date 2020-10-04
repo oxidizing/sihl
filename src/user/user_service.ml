@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Repo = User_service_repo
 module User = User_core.User
@@ -33,7 +32,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
      * email addresses can contain other letters
      * (https://tools.ietf.org/html/rfc6531) like umlauts.
      *)
-    Repo.get_by_email ctx ~email:(String.lowercase email)
+    Repo.get_by_email ctx ~email:(String.lowercase_ascii email)
   ;;
 
   let find_by_email ctx ~email =
@@ -158,7 +157,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     | Ok () ->
       let* user = find_by_email_opt ctx ~email in
       (match user with
-      | None -> create_user ctx ~username ~email ~password |> Lwt.map Result.return
+      | None -> create_user ctx ~username ~email ~password |> Lwt.map Result.ok
       | Some _ -> Lwt_result.fail "Invalid email address provided")
   ;;
 

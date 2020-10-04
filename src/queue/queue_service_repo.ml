@@ -1,15 +1,15 @@
-open Base
 module Job = Queue_core.Job
 module JobInstance = Queue_core.JobInstance
+module Map = Map.Make (String)
 
 module MakeMemory (RepoService : Data.Repo.Service.Sig.SERVICE) : Queue_service_sig.REPO =
 struct
-  let state = ref (Map.empty (module String))
+  let state = ref Map.empty
   let ordered_ids = ref []
 
   let register_cleaner _ =
     let cleaner _ =
-      state := Map.empty (module String);
+      state := Map.empty;
       ordered_ids := [];
       Lwt.return ()
     in
@@ -21,18 +21,18 @@ struct
   let enqueue _ ~job_instance =
     let id = JobInstance.id job_instance |> Data.Id.to_string in
     ordered_ids := List.cons id !ordered_ids;
-    state := Map.add_exn !state ~key:id ~data:job_instance;
+    state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let update _ ~job_instance =
     let id = JobInstance.id job_instance |> Data.Id.to_string in
-    state := Map.set !state ~key:id ~data:job_instance;
+    state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let find_workable _ =
-    let all_job_instances = List.map !ordered_ids ~f:(fun id -> Map.find !state id) in
+    let all_job_instances = List.map (fun id -> Map.find_opt id !state) !ordered_ids in
     let now = Ptime_clock.now () in
     let rec filter_pending all_job_instances result =
       match all_job_instances with
