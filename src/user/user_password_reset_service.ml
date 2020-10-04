@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Sig = User_password_reset_service_sig
 
@@ -28,14 +27,14 @@ module Make
 
   let reset_password ctx ~token ~password ~password_confirmation =
     let* token = TokenService.find_opt ctx token in
-    let token = Result.of_option ~error:"Invalid or expired token provided" token in
+    let token = Option.to_result ~none:"Invalid or expired token provided" token in
     let user_id =
-      token
-      |> Result.map ~f:Token.data
-      |> Result.bind ~f:(Result.of_option ~error:"Token has not user assigned")
-      |> Result.bind ~f:Utils.Json.parse
-      |> Result.bind ~f:TokenData.of_yojson
-      |> Result.map ~f:TokenData.user_id
+      let ( let* ) = Result.bind in
+      let* data = Result.map Token.data token in
+      let* token = Option.to_result ~none:"Token has not user assigned" data in
+      let* parsed = Utils.Json.parse token in
+      let* yojson = TokenData.of_yojson parsed in
+      Result.ok (TokenData.user_id yojson)
     in
     match user_id with
     | Error msg -> Lwt.return @@ Error msg
@@ -44,7 +43,7 @@ module Make
       let* result =
         UserService.set_password ctx ~user ~password ~password_confirmation ()
       in
-      Lwt.return @@ Result.map ~f:(fun _ -> ()) result
+      Lwt.return @@ Result.map (fun _ -> ()) result
   ;;
 
   let start ctx = Lwt.return ctx

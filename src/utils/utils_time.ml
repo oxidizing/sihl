@@ -1,5 +1,3 @@
-open Base
-
 type duration =
   | OneSecond
   | OneMinute
@@ -23,7 +21,7 @@ let duration_to_span duration =
     | OneMonth -> 60. *. 60. *. 24. *. 30.
     | OneYear -> 60. *. 60. *. 24. *. 365.
   in
-  Option.value_exn (Ptime.of_float_s duration_s) |> Ptime.to_span
+  Option.get (Ptime.of_float_s duration_s) |> Ptime.to_span
 ;;
 
 let ptime_to_yojson ptime = `String (Ptime.to_rfc3339 ptime)
@@ -39,20 +37,23 @@ let ptime_of_yojson yojson =
 let ptime_of_date_string date =
   let date =
     date
-    |> String.split ~on:'-'
-    |> List.map ~f:(fun str -> Option.try_with (fun () -> Int.of_string str))
+    |> String.split_on_char '-'
+    |> List.map int_of_string_opt
     |> List.map
-         ~f:
-           (Result.of_option
-              ~error:
-                "Invalid date string provided, make sure that year, month and date are \
-                 ints")
-    |> Result.all
+         (Option.to_result
+            ~none:
+              "Invalid date string provided, make sure that year, month and date are ints")
+    |> List.fold_left
+         (fun result item ->
+           match item with
+           | Ok item -> Result.map (List.cons item) result
+           | Error msg -> Error msg)
+         (Ok [])
   in
   match date with
   | Ok [ year; month; day ] ->
     Ptime.of_date (year, month, day)
-    |> Result.of_option ~error:"Invalid date provided, only format 1990-12-01 is accepted"
+    |> Option.to_result ~none:"Invalid date provided, only format 1990-12-01 is accepted"
   | Ok _ -> Error "Invalid date provided, only format 1990-12-01 is accepted"
   | Error msg -> Error msg
 ;;

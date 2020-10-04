@@ -1,7 +1,7 @@
 (library
  (name server)
  (public_name sihl.server)
- (libraries base tyxml opium yojson ppx_deriving_yojson.runtime core http
+ (libraries tyxml opium yojson ppx_deriving_yojson.runtime core http
    middleware)
  (modules_without_implementation server_service_sig)
  (preprocess

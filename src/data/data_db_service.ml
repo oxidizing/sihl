@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 open Data_db_core
 module Sig = Data_db_service_sig
@@ -22,7 +21,7 @@ module Default : Sig.SERVICE = struct
         Option.value (Core.Configuration.read_int "DATABASE_POOL_SIZE") ~default:10
       in
       Logs.debug (fun m -> m "DB: Create pool with size %i" pool_size);
-      Option.value_exn ("DATABASE_URL" |> Core.Configuration.read_string)
+      Option.get ("DATABASE_URL" |> Core.Configuration.read_string)
       |> Uri.of_string
       |> Caqti_lwt.connect_pool ~max_size:pool_size
       |> (function

@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Base
 open Lwt.Syntax
 
 module Make
@@ -16,8 +15,8 @@ struct
     let id = Sihl.Email.Template.id created in
     let* template =
       EmailTemplateService.get ctx ~id
-      |> Lwt.map (Result.of_option ~error:"Template not found")
-      |> Lwt.map Result.ok_or_failwith
+      |> Lwt.map (Option.to_result ~none:"Template not found")
+      |> Lwt.map Result.get_ok
     in
     Alcotest.(check string "name" "foo" (Sihl.Email.Template.name template));
     Alcotest.(check string "txt" "some text" (Sihl.Email.Template.content_text template));

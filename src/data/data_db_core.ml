@@ -1,5 +1,3 @@
-open Base
-
 exception Exception of string
 
 type pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t

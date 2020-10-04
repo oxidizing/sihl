@@ -1,7 +1,7 @@
 (library
  (name data)
  (public_name sihl.data)
- (libraries base uuidm caqti-lwt yojson ppx_deriving_yojson.runtime sexplib
+ (libraries uuidm caqti-lwt yojson ppx_deriving_yojson.runtime sexplib
    core)
  (modules_without_implementation data_db_service_sig
    data_migration_service_sig data_repo_service_sig)

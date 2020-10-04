@@ -1,7 +1,7 @@
 (library
  (name user)
  (public_name sihl.user)
- (libraries base ptime ptime.clock.os yojson ppx_deriving_yojson.runtime
+ (libraries ptime ptime.clock.os yojson ppx_deriving_yojson.runtime
    alcotest core utils data token)
  (modules_without_implementation user_password_reset_service_sig
    user_service_sig)

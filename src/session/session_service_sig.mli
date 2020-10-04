@@ -1,5 +1,3 @@
-open Base
-
 module type REPO = sig
   include Data.Repo.Service.Sig.REPO
 

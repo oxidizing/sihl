@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Sig = Schedule_service_sig
 
@@ -24,7 +23,7 @@ module Default : Sig.SERVICE = struct
                 m
                   "Exception caught while running schedule, this is a bug in your \
                    scheduled function. %s"
-                  (Exn.to_string exn));
+                  (Printexc.to_string exn));
             Lwt.return ())
       in
       let* () = Lwt_unix.sleep duration in

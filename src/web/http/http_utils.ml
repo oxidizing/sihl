@@ -1,14 +1,13 @@
-open Base
-
 let externalize ?prefix path =
   let prefix =
-    Option.value
-      (Option.first_some prefix (Core.Configuration.read_string "PREFIX_PATH"))
-      ~default:""
+    match prefix, Core.Configuration.read_string "PREFIX_PATH" with
+    | Some prefix, _ -> prefix
+    | _, Some prefix -> prefix
+    | _ -> ""
   in
   path
-  |> String.split ~on:'/'
+  |> String.split_on_char '/'
   |> List.cons prefix
-  |> String.concat ~sep:"/"
-  |> String.substr_replace_all ~pattern:"//" ~with_:"/"
+  |> String.concat "/"
+  |> Stringext.replace_all ~pattern:"//" ~with_:"/"
 ;;

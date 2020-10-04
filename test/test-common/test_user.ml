@@ -1,5 +1,4 @@
 open Lwt.Syntax
-open Base
 open Alcotest_lwt
 
 module Make
@@ -35,11 +34,11 @@ struct
         ~new_password:"12345678"
         ~new_password_confirmation:"12345678"
         ()
-      |> Lwt.map Result.ok_or_failwith
+      |> Lwt.map Result.get_ok
     in
     let* user =
       UserService.login ctx ~email:"foobar@example.com" ~password:"12345678"
-      |> Lwt.map Result.ok_or_failwith
+      |> Lwt.map Result.get_ok
     in
     let actual_email = Sihl.User.email user in
     Alcotest.(

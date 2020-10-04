@@ -1,7 +1,7 @@
 (library
  (name utils)
  (public_name sihl.utils)
- (libraries base pcre yojson ppx_deriving_yojson.runtime safepass base64
+ (libraries pcre yojson ppx_deriving_yojson.runtime safepass base64
    ptime jwto core)
  (modules_without_implementation utils_random_service_sig)
  (preprocess

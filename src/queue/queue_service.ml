@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Job = Queue_core.Job
 module WorkableJob = Queue_core.WorkableJob
@@ -24,7 +23,7 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
       Lwt.catch
         (fun () -> WorkableJob.work job ctx ~input)
         (fun exn ->
-          let exn_string = Exn.to_string exn in
+          let exn_string = Printexc.to_string exn in
           Lwt.return
           @@ Error
                ("Exception caught while running job, this is a bug in your job handler, \
@@ -43,7 +42,7 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
         Lwt.catch
           (fun () -> WorkableJob.failed job ctx)
           (fun exn ->
-            let exn_string = Exn.to_string exn in
+            let exn_string = Printexc.to_string exn in
             Lwt.return
             @@ Error
                  ("Exception caught while cleaning up job, this is a bug in your job \
@@ -106,8 +105,10 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
         | [] -> Lwt.return ()
         | job_instance :: job_instances ->
           let job =
-            List.find jobs ~f:(fun job ->
+            List.find_opt
+              (fun job ->
                 job |> WorkableJob.name |> String.equal (JobInstance.name job_instance))
+              jobs
           in
           (match job with
           | None -> loop job_instances jobs
@@ -120,7 +121,7 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
   ;;
 
   let register_jobs _ ~jobs =
-    let jobs_to_register = jobs |> List.map ~f:WorkableJob.of_job in
+    let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
     Lwt.return ()
   ;;
@@ -133,17 +134,15 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
       let jobs = !registered_jobs in
       if List.length jobs > 0
       then (
-        let job_strings =
-          jobs |> List.map ~f:WorkableJob.name |> String.concat ~sep:", "
-        in
+        let job_strings = jobs |> List.map WorkableJob.name |> String.concat ", " in
         Logs.debug (fun m ->
             m "QUEUE: Run job queue with registered jobs: %s" job_strings);
         (* Combine all context middleware functions of registered jobs to get the context
            the jobs run with*)
         let combined_context_fn =
           jobs
-          |> List.map ~f:WorkableJob.with_context
-          |> List.fold ~init:Fn.id ~f:Fn.compose
+          |> List.map WorkableJob.with_context
+          |> List.fold_left (fun a b c -> c |> b |> a) Fun.id
         in
         let ctx = combined_context_fn Core.Ctx.empty in
         work_queue ctx ~jobs)
@@ -184,7 +183,7 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
   ;;
 
   let configure _ jobs =
-    let jobs_to_register = jobs |> List.map ~f:WorkableJob.of_job in
+    let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
     Core.Container.Service.create lifecycle
   ;;

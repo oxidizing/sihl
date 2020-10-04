@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Base
 open Lwt.Syntax
 
 module Make
@@ -129,9 +128,10 @@ struct
     let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
     let* () = RepoService.clean_all ctx in
     let has_custom_ctx_string = ref false in
-    let custom_with_context =
-      Fn.compose with_context (fun ctx ->
-          Sihl.Core.Ctx.add custom_ctx_key "my custom context string" ctx)
+    let custom_with_context ctx =
+      ctx
+      |> with_context
+      |> fun ctx -> Sihl.Core.Ctx.add custom_ctx_key "my custom context string" ctx
     in
     let job =
       Sihl.Queue.create_job

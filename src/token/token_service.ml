@@ -1,4 +1,3 @@
-open Base
 open Lwt.Syntax
 module Sig = Token_service_sig
 module Repo = Token_service_repo
@@ -8,7 +7,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
   let find_opt ctx value =
     let* token = Repo.find_opt ctx ~value in
     Lwt.return
-    @@ Option.bind token ~f:(fun tk -> if Token_core.is_valid tk then token else None)
+    @@ Option.bind token (fun tk -> if Token_core.is_valid tk then token else None)
   ;;
 
   let find ctx value =
@@ -23,7 +22,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
   let find_by_id_opt ctx id =
     let* token = Repo.find_by_id_opt ctx ~id in
     Lwt.return
-    @@ Option.bind token ~f:(fun tk -> if Token_core.is_valid tk then token else None)
+    @@ Option.bind token (fun tk -> if Token_core.is_valid tk then token else None)
   ;;
 
   let find_by_id ctx id =
@@ -40,7 +39,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
     let value = RandomService.base64 ~bytes:length in
     let expires_in = Utils.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
-    let expires_at = Option.value_exn (Ptime.add_span now expires_in) in
+    let expires_at = Option.get (Ptime.add_span now expires_in) in
     let status = Token_core.Status.Active in
     let created_at = Ptime_clock.now () in
     Token_core.make ~id ~value ~data ~kind ~status ~expires_at ~created_at

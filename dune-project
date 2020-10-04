@@ -21,16 +21,10 @@
  (synopsis "The modular functional web framework")
  (description "Build web apps fast with long-term maintainability in mind.")
  (depends
-  ;; Temporary fix
-  (mrmime (= 0.3.0))
-
   ;; General system dependencies
   (dune (>= 2.4))
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
-
-  ;; Standard library replacement
-  (base (>= v0.13.1))
 
   ;; Web toolkit
   (opium (>= 0.17.1))

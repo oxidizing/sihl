@@ -1,5 +1,3 @@
-open Base
-
 module PartialCollection = struct
   type controls =
     { first : Data_ql.Page.t option
