@@ -14,7 +14,7 @@ let increment state = { state with version = state.version + 1 }
 let rec drop_steps steps n =
   match steps, n with
   | [], _ -> []
-  | _, 0 -> steps
+  | _, n when n <= 0 -> steps
   | _ :: steps, n -> drop_steps steps (n - 1)
 ;;
 
