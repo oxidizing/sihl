@@ -1,4 +1,4 @@
-open Storage_core
+open Model
 
 module type REPO = sig
   include Data.Repo.Service.Sig.REPO

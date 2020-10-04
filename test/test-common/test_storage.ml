@@ -6,7 +6,7 @@ let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 module Make
     (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
     (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
-    (StorageService : Sihl.Storage.Service.Sig.SERVICE) =
+    (StorageService : Sihl.Storage.Sig.SERVICE) =
 struct
   let fetch_uploaded_file _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in

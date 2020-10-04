@@ -78,5 +78,14 @@
 
   ;; Test dependencies
   (alcotest-lwt (and (>= 1.2.0) :with-test))
-  (cohttp-lwt-unix (and (>= 2.5.1) :with-test))
-))
+  (cohttp-lwt-unix (and (>= 2.5.1) :with-test))))
+
+(package
+ (name sihl-storage)
+ (synopsis "A Sihl service for storing and retrieving large files")
+ (description "
+This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
+ (depends
+  (dune (>= 2.4))
+  (ocaml (>= 4.08.0))
+  (sihl (= :version))))
