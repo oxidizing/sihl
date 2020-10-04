@@ -5,3 +5,4 @@ module Session = Test_session
 module Storage = Test_storage
 module Token = Test_token
 module User = Test_user
+module Csrf = Test_csrf

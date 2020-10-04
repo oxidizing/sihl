@@ -18,6 +18,10 @@ module PasswordReset =
     (Service.User)
     (Service.PasswordReset)
 module Queue = Test_common.Test.Queue.Make (Service.Repo) (Service.Queue)
+module Csrf =
+  Test_common.Test.Csrf.Make (Service.Database) (Service.Repo) (Service.Token)
+    (Service.Session)
+    (Service.Random)
 
 let test_suite ctx =
   [
@@ -28,6 +32,8 @@ let test_suite ctx =
     Email.test_suite;
     PasswordReset.test_suite;
     (* We need to add the DB Pool to the scheduler context *)
+    Csrf.test_suite;
+    (* Put queue tests last because of slowness *)
     Queue.test_suite ctx Service.Database.add_pool;
   ]
 

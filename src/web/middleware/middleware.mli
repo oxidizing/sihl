@@ -34,7 +34,5 @@ val static :
 
 val cookie : unit -> t
 
-val csrf : unit -> t
-
 val create : name:string -> (Http.Route.handler -> Http.Route.handler) -> t
 (** [create ~name (h -> h)] create a middleware with [name]. *)
