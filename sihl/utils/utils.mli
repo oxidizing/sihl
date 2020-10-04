@@ -114,9 +114,16 @@ end
 module String : sig
   (** Helper for dealing with strings. *)
 
-  (** strip_chars [str] [chars] removes all occurrences of every char in [chars] from
-      [str] returns the result. *)
+  (** [strip_chars str chars] removes all occurrences of every char in [chars] from [str]
+      returns the result. *)
   val strip_chars : string -> string -> string
+
+  (** [char_list_to_string chrs] turns the [char list] [chrs] into a [string]. *)
+  val char_list_to_string : char list -> string
+
+  (** [string_to_char_list str] turns the [string] [str] into a [char list]. Non-ASCII
+      symbols will be split up accordingly and might take up more than 1 byte.*)
+  val string_to_char_list : string -> char list
 end
 
 (** {1 Encryption} *)
@@ -124,12 +131,13 @@ end
 module Encryption : sig
   (** Encrypting plaintexts and ciphertext manipulation *)
 
-  (** [xor str1 str2] does bitwise XORing of [str1] and [str2]. Raises if non-ASCII
-      characters are used or the two strings differ in length. *)
-  val xor : string -> string -> string
+  (** [xor b1 b2] does bitwise XORing of [b1] and [b2]. Returns [None] if non-ASCII
+      characters are used or the two lists differ in length. *)
+  val xor : char list -> char list -> char list option
+
+  val decrypt_with_salt : salted_cipher:char list -> salt_length:int -> char list option
 
   (** [decrypt_with_salt ~salted_cipher ~salt_length] splits the prepended salt off of
       [salted_cipher] and uses it to XOR the rest of [salted_cipher]. Since [xor] is used,
-      raises if the cipher and [salt_length] differ in length. *)
-  val decrypt_with_salt : salted_cipher:string -> salt_length:int -> string
+      returns [None] if the cipher and [salt_length] differ in length. *)
 end

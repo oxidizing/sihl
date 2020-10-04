@@ -18,6 +18,7 @@ end
 val is_get : Core.Ctx.t -> bool
 val get_uri : Core.Ctx.t -> Uri.t
 val get_header : Core.Ctx.t -> string -> string option
+val get_body_string : Core.Ctx.t -> string Lwt.t
 val get_query_string : Core.Ctx.t -> Query.t
 val query_opt : Core.Ctx.t -> string -> string option
 val query : Core.Ctx.t -> string -> (string, string) result

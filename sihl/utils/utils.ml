@@ -184,22 +184,48 @@ module String = struct
     in
     aux 0 0
   ;;
+
+  let char_list_to_string chrs = chrs |> List.to_seq |> String.of_seq
+  let string_to_char_list str = str |> String.to_seq |> List.of_seq
 end
 
 module Encryption = struct
-  open Base
-
-  let xor str1 str2 =
-    String.of_char_list
-      (List.map2_exn
-         ~f:(fun chr1 chr2 -> Char.of_int_exn (Char.to_int chr1 lxor Char.to_int chr2))
-         (String.to_list str1)
-         (String.to_list str2))
+  let xor c1 c2 =
+    try
+      Some
+        (List.map2 (fun chr1 chr2 -> Char.chr (Char.code chr1 lxor Char.code chr2)) c1 c2)
+    with
+    | exn ->
+      Logs.err (fun m ->
+          m
+            "XOR: Failed to XOR %s and %s. %s"
+            (String.char_list_to_string c1)
+            (String.char_list_to_string c2)
+            (Printexc.to_string exn));
+      None
   ;;
 
   let decrypt_with_salt ~salted_cipher ~salt_length =
-    let salt = String.subo ~len:salt_length salted_cipher in
-    let encrypted_value = String.sub ~pos:salt_length ~len:salt_length salted_cipher in
-    xor salt encrypted_value
+    if List.length salted_cipher - salt_length != salt_length
+    then (
+      Logs.err (fun m ->
+          m
+            "ENCRYPT: Failed to decrypt cipher %s. Salt length does not match cipher \
+             length."
+            (String.char_list_to_string salted_cipher));
+      None)
+    else (
+      try
+        let salt = CCList.take salt_length salted_cipher in
+        let encrypted_value = CCList.drop salt_length salted_cipher in
+        xor salt encrypted_value
+      with
+      | exn ->
+        Logs.err (fun m ->
+            m
+              "ENCRYPT: Failed to decrypt cipher %s. %s"
+              (String.char_list_to_string salted_cipher)
+              (Printexc.to_string exn));
+        None)
   ;;
 end

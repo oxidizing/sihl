@@ -2,24 +2,24 @@ open Lwt.Syntax
 
 (* Can be used to fetch token in view for forms *)
 let ctx_token_key : string Core.Ctx.key = Core.Ctx.create_key ()
-
-(*TODO [aerben] optional*)
 let get_token ctx = Core.Ctx.find ctx_token_key ctx
 
-exception No_csrf_token of string
+exception Crypto_failed of string
 
 (* TODO (https://docs.djangoproject.com/en/3.0/ref/csrf/#how-it-works) Check other Django
-   specifics namely: - Testing views with custom HTTP client - Allow Sihl user to make
-   views exempt - Enable subdomain - HTML caching token handling *)
+   specifics namely:
+ * Testing views with custom HTTP client
+ * Allow Sihl user to make views exempt
+ * Enable subdomain
+ * HTML caching token handling
+ *)
 module Make
     (TokenService : Token.Sig.SERVICE)
     (SessionService : Session.Sig.SERVICE)
     (RandomService : Random.Sig.SERVICE) =
 struct
-  let csrf_token_length = 20
-
   let create_secret ctx =
-    let* token = TokenService.create ctx ~kind:"csrf" ~length:csrf_token_length () in
+    let* token = TokenService.create ctx ~kind:"csrf" ~length:20 () in
     (* Store the ID in the session *)
     (* Storing the token directly could mean it ends up on the client if the cookie
        backend is used for session storage *)
@@ -45,8 +45,23 @@ struct
       in
       (* Randomize and scramble secret (XOR with salt) to make a token *)
       (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
-      let salt = RandomService.base64 ~bytes:csrf_token_length in
-      let token = salt ^ Utils.Encryption.xor salt secret.value in
+      let secret_length = String.length secret.value in
+      let salt = RandomService.random_bytes ~bytes:secret_length in
+      let secret_value = Utils.String.string_to_char_list secret.value in
+      let encrypted =
+        match Utils.Encryption.xor salt secret_value with
+        | None ->
+          Logs.err (fun m -> m "MIDDLEWARE: Failed to encrypt CSRF secret");
+          raise @@ Crypto_failed "Failed to encrypt CSRF secret"
+        | Some enc -> enc
+      in
+      let token =
+        encrypted
+        |> List.append salt
+        |> Utils.String.char_list_to_string
+        (* Make the token transmittable without encoding problems *)
+        |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet
+      in
       let ctx = Core.Ctx.add ctx_token_key token ctx in
       (* Don't check for CSRF token in GET requests *)
       (* TODO don't check for HEAD, OPTIONS and TRACE either *)
@@ -58,25 +73,42 @@ struct
         (* Give 403 if no token provided *)
         | None -> Http.Res.(html |> set_status 403) |> Lwt.return
         | Some value ->
-          let token =
-            Utils.Encryption.decrypt_with_salt
-              ~salted_cipher:value
-              ~salt_length:csrf_token_length
+          let decoded = Base64.decode ~alphabet:Base64.uri_safe_alphabet value in
+          let decoded =
+            match decoded with
+            | Ok decoded -> decoded
+            | Error (`Msg msg) ->
+              Logs.err (fun m -> m "MIDDLEWARE: Failed to decode CSRF token. %s" msg);
+              raise @@ Crypto_failed ("Failed to decode CSRF token. " ^ msg)
           in
-          let* provided_token = TokenService.find_opt ctx token in
-          (match provided_token with
-          | Some tkp ->
-            if not @@ Token.equal secret tkp
+          let salted_cipher = Utils.String.string_to_char_list decoded in
+          let decrypted_secret =
+            match
+              Utils.Encryption.decrypt_with_salt
+                ~salted_cipher
+                ~salt_length:(List.length salted_cipher / 2)
+            with
+            | None ->
+              Logs.err (fun m -> m "MIDDLEWARE: Failed to decrypt CSRF token");
+              raise @@ Crypto_failed "Failed to decrypt CSRF token"
+            | Some dec -> dec
+          in
+          let* provided_secret =
+            TokenService.find_opt ctx (Utils.String.char_list_to_string decrypted_secret)
+          in
+          (match provided_secret with
+          | Some ps ->
+            if not @@ Token.equal secret ps
             then
-              (* Give 403 if provided token doesn't match session token *)
+              (* Give 403 if provided secret doesn't match session secret *)
               Http.Res.(html |> set_status 403) |> Lwt.return
             else
-              (* Provided token matches and is valid => Invalidate it so it can't be
+              (* Provided secret matches and is valid => Invalidate it so it can't be
                  reused *)
-              let* () = TokenService.invalidate ctx tkp in
+              let* () = TokenService.invalidate ctx ps in
               handler ctx
           | None ->
-            (* Give 403 if provided token does not exist *)
+            (* Give 403 if provided secret does not exist *)
             Http.Res.(html |> set_status 403) |> Lwt.return)
     in
     Middleware_core.create ~name:"csrf" filter

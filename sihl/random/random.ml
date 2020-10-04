@@ -1,14 +1,18 @@
 module Sig = Sig
 
 module Service : Sig.SERVICE = struct
-  let rec rand result n =
+  let rec random_char' result n =
     if n > 0
-    then rand Base.(result ^ Char.to_string (Random.ascii ())) (n - 1)
+    then random_char' (List.cons (Char.chr (Random.int 255)) result) (n - 1)
     else result
   ;;
 
+  let random_bytes ~bytes = random_char' [] bytes
+
   let base64 ~bytes =
-    Base64.encode_string ~alphabet:Base64.uri_safe_alphabet @@ rand "" bytes
+    Base64.encode_string
+      ~alphabet:Base64.uri_safe_alphabet
+      (random_bytes ~bytes |> List.to_seq |> String.of_seq)
   ;;
 
   let start ctx =
