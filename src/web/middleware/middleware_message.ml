@@ -6,9 +6,10 @@ module Make (MessageService : Message.Service.Sig.SERVICE) = struct
       let* result = MessageService.rotate ctx in
       match result with
       | Some message ->
-          let ctx = Message.ctx_add message ctx in
-          handler ctx
+        let ctx = Message.ctx_add message ctx in
+        handler ctx
       | None -> handler ctx
     in
     Middleware_core.create ~name:"message" filter
+  ;;
 end

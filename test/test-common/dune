@@ -1,7 +1,3 @@
 (library
  (name test_common)
- (libraries
-  sihl
-  alcotest
-  alcotest-lwt
-))
+ (libraries sihl alcotest alcotest-lwt))

@@ -1,37 +1,39 @@
-(** Sihl is a high-level web application framework providing a set of composable building blocks and recipes that allow you to develop web apps quickly and sustainably.
-Statically typed functional programming with OCaml makes web development fun and safe.
+(** Sihl is a high-level web application framework providing a set of composable building
+    blocks and recipes that allow you to develop web apps quickly and sustainably.
+    Statically typed functional programming with OCaml makes web development fun and safe.
 
-Things like database migrations, HTTP routing, user management, sessions, logging, emailing, job queues and schedules are just a few of the topics Sihl takes care of.
+    Things like database migrations, HTTP routing, user management, sessions, logging,
+    emailing, job queues and schedules are just a few of the topics Sihl takes care of.
 
-Let's have a look at a tiny Sihl app in a file called [sihl.ml]:
+    Let's have a look at a tiny Sihl app in a file called [sihl.ml]:
 
-{[
-module Service = struct
-  module Random = Sihl.Utils.Random.Service
-  module Log = Sihl.Log.Service
-  module Config = Sihl.Config.Service
-  module Db = Sihl.Data.Db.Service
-  module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
-  module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
-  module WebServer = Sihl.Web.Server.Service.Make ()
-  module Schedule = Sihl.Schedule.Service.Make (Log)
-end
+    {[
+      module Service = struct
+        module Random = Sihl.Utils.Random.Service
+        module Log = Sihl.Log.Service
+        module Config = Sihl.Config.Service
+        module Db = Sihl.Data.Db.Service
+        module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
+        module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
+        module WebServer = Sihl.Web.Server.Service.Make ()
+        module Schedule = Sihl.Schedule.Service.Make (Log)
+      end
 
-let services : (module Sihl.Core.Container.Service.Sig) list =
-  [ (module Service.WebServer) ]
+      let services : (module Sihl.Core.Container.Service.Sig) list =
+        [ (module Service.WebServer) ]
+      ;;
 
-let hello_page =
-  Sihl.Web.Route.get "/hello/" (fun _ ->
-      Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
+      let hello_page =
+        Sihl.Web.Route.get "/hello/" (fun _ ->
+            Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
+      ;;
 
-let routes = [ ("/page", [ hello_page ], []) ]
+      let routes = [ "/page", [ hello_page ], [] ]
 
-module App = Sihl.App.Make (Service)
+      module App = Sihl.App.Make (Service)
 
-let _ = App.(empty |> with_services services |> with_routes routes |> run)
-]}
-
-*)
+      let _ = App.(empty |> with_services services |> with_routes routes |> run)
+    ]} *)
 
 (** {1 Authentication}*)
 
@@ -73,7 +75,7 @@ module Session = Session
 
 module Storage = Storage
 
-(** {1 Token }*)
+(** {1 Token}*)
 
 module Token = Token
 

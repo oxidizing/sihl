@@ -5,3 +5,4 @@ let m () =
   in
   (* TODO implement *)
   Middleware_core.create ~name:"cookie" filter
+;;

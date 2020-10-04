@@ -8,8 +8,9 @@ module Migration = Sihl.Data.Migration.Service.Make (MigrationRepo)
 (* Repositories *)
 module SessionRepo =
   Sihl.Session.Service.Repo.MakePostgreSql (Database) (Repo) (Migration)
-module UserRepo =
-  Sihl.User.Service.Repo.MakePostgreSql (Database) (Repo) (Migration)
+
+module UserRepo = Sihl.User.Service.Repo.MakePostgreSql (Database) (Repo) (Migration)
+
 module EmailTemplateRepo =
   Sihl.Email.Service.Template.Repo.MakePostgreSql (Database) (Repo) (Migration)
 

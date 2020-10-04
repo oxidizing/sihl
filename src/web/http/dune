@@ -1,19 +1,7 @@
 (library
  (name http)
  (public_name sihl.http)
- (libraries
-  base
-  tyxml
-  opium
-  yojson
-  ppx_deriving_yojson.runtime
-  core
-  utils)
+ (libraries base tyxml opium yojson ppx_deriving_yojson.runtime core utils)
  (preprocess
-  (pps
-   ppx_fields_conv
-   ppx_deriving_yojson
-   ppx_deriving.eq
-   ppx_deriving.show
-   ppx_sexp_conv
-   ppx_deriving.make)))
+  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
+    ppx_sexp_conv ppx_deriving.make)))

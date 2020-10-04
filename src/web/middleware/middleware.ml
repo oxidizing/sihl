@@ -1,9 +1,7 @@
 type t = Middleware_core.t
-
 type stack = Middleware_core.stack
 
 let apply = Middleware_core.apply
-
 let apply_stack = Middleware_core.apply_stack
 
 module Clickjacking = Middleware_clickjacking
@@ -19,9 +17,6 @@ module Session = Middleware_session
 module Authn = Middleware_authn
 
 let error = Middleware_error.m
-
 let static = Middleware_static.m
-
 let cookie = Middleware_cookie.m
-
 let create = Middleware_core.create
