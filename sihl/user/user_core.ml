@@ -91,7 +91,7 @@ module User = struct
     let hash = password |> Utils.Hashing.hash in
     Result.map
       (fun hash ->
-        { id = Data.Id.random () |> Data.Id.to_string
+        { id = Database.Id.random () |> Database.Id.to_string
         ; (* TODO add support for lowercase UTF-8
            * String.lowercase only supports US-ASCII, but
            * email addresses can contain other letters

@@ -2,14 +2,14 @@ open Lwt.Syntax
 module Sig = User_service_sig
 
 module MakeMariaDb
-    (DbService : Data.Db.Service.Sig.SERVICE)
-    (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY = struct
-  module Database = DbService
+    (DbService : Database.Sig.SERVICE)
+    (RepoService : Repository.Sig.SERVICE)
+    (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
+  module DatabaseService = DbService
 
   module Migration = struct
     let fix_collation =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"fix collation"
         {sql|
 SET collation_server = 'utf8mb4_unicode_ci';
@@ -17,7 +17,7 @@ SET collation_server = 'utf8mb4_unicode_ci';
     ;;
 
     let create_users_table =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"create users table"
         {sql|
 CREATE TABLE IF NOT EXISTS user_users (
@@ -38,8 +38,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
 
     let migration () =
-      Data.Migration.(
-        empty "user" |> add_step fix_collation |> add_step create_users_table)
+      Migration.(empty "user" |> add_step fix_collation |> add_step create_users_table)
     ;;
   end
 
@@ -50,16 +49,16 @@ CREATE TABLE IF NOT EXISTS user_users (
       [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
     in
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      Data.Ql.to_sql_fragments fields query
+      Database.Ql.to_sql_fragments fields query
     in
     let rec create_param values param =
       match values with
       | [] -> param
       | value :: values ->
-        create_param values (Data.Repo.Dynparam.add Caqti_type.string value param)
+        create_param values (Repository.Dynparam.add Caqti_type.string value param)
     in
-    let param = create_param values Data.Repo.Dynparam.empty in
-    let (Data.Repo.Dynparam.Pack (pt, pv)) = param in
+    let param = create_param values Repository.Dynparam.empty in
+    let (Repository.Dynparam.Pack (pt, pv)) = param in
     let query =
       Printf.sprintf
         {sql|
@@ -100,7 +99,7 @@ CREATE TABLE IF NOT EXISTS user_users (
         in
         let* meta =
           Connection.find request ()
-          |> Lwt_result.map (fun total -> Data.Repo.Meta.make ~total)
+          |> Lwt_result.map (fun total -> Repository.Meta.make ~total)
         in
         match users, meta with
         | Ok users, Ok meta -> Lwt.return @@ Ok (users, meta)
@@ -236,14 +235,14 @@ CREATE TABLE IF NOT EXISTS user_users (
 end
 
 module MakePostgreSql
-    (DbService : Data.Db.Service.Sig.SERVICE)
-    (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY = struct
-  module Database = DbService
+    (DbService : Database.Sig.SERVICE)
+    (RepoService : Repository.Sig.SERVICE)
+    (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
+  module DatabaseService = DbService
 
   module Migration = struct
     let create_users_table =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"create users table"
         {sql|
 CREATE TABLE IF NOT EXISTS user_users (
@@ -263,7 +262,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 |sql}
     ;;
 
-    let migration () = Data.Migration.(empty "user" |> add_step create_users_table)
+    let migration () = Migration.(empty "user" |> add_step create_users_table)
   end
 
   module Model = User_core.User
@@ -273,16 +272,16 @@ CREATE TABLE IF NOT EXISTS user_users (
       [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
     in
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      Data.Ql.to_sql_fragments fields query
+      Database.Ql.to_sql_fragments fields query
     in
     let rec create_param values param =
       match values with
       | [] -> param
       | value :: values ->
-        create_param values (Data.Repo.Dynparam.add Caqti_type.string value param)
+        create_param values (Repository.Dynparam.add Caqti_type.string value param)
     in
-    let param = create_param values Data.Repo.Dynparam.empty in
-    let (Data.Repo.Dynparam.Pack (pt, pv)) = param in
+    let param = create_param values Repository.Dynparam.empty in
+    let (Repository.Dynparam.Pack (pt, pv)) = param in
     let query =
       Printf.sprintf
         {sql|
@@ -311,7 +310,7 @@ CREATE TABLE IF NOT EXISTS user_users (
         (* TODO Find out best way to get total rows for that query without limit *)
         match users with
         | Ok users ->
-          let meta = Data.Repo.Meta.make ~total:(List.length users) in
+          let meta = Repository.Meta.make ~total:(List.length users) in
           Lwt.return @@ Ok (users, meta)
         | Error error -> Lwt.return @@ Error error)
   ;;

@@ -17,7 +17,7 @@ module type TEMPLATE_SERVICE = sig
 end
 
 module type TEMPLATE_REPO = sig
-  include Data.Repo.Service.Sig.REPO
+  include Repository.Sig.REPO
 
   val get : Core.Ctx.t -> id:string -> Model.Template.t option Lwt.t
   val get_by_name : Core.Ctx.t -> name:string -> Model.Template.t option Lwt.t

@@ -1,6 +1,5 @@
 open Lwt.Syntax
-open Data_db_core
-module Sig = Data_db_service_sig
+open Model
 
 module Default : Sig.SERVICE = struct
   let print_pool_usage pool =

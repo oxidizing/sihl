@@ -2,8 +2,7 @@ module Job = Sihl.Queue.Job
 module JobInstance = Sihl.Queue.JobInstance
 module Map = Map.Make (String)
 
-module MakeMemory (RepoService : Data.Repo.Service.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
-struct
+module MakeMemory (RepoService : Repository.Sig.SERVICE) : Sihl.Queue.Sig.REPO = struct
   let state = ref Map.empty
   let ordered_ids = ref []
 
@@ -19,14 +18,14 @@ struct
   let register_migration () = ()
 
   let enqueue _ ~job_instance =
-    let id = JobInstance.id job_instance |> Data.Id.to_string in
+    let id = JobInstance.id job_instance |> Database.Id.to_string in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let update _ ~job_instance =
-    let id = JobInstance.id job_instance |> Data.Id.to_string in
+    let id = JobInstance.id job_instance |> Database.Id.to_string in
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
@@ -68,15 +67,15 @@ module Model = struct
         ~encode
         ~decode
         (tup2
-           Data.Id.t
+           Database.Id.t
            (tup2 string (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
   ;;
 end
 
 module MakeMariaDb
-    (DbService : Data.Db.Service.Sig.SERVICE)
-    (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sihl.Queue.Sig.REPO = struct
+    (DbService : Database.Sig.SERVICE)
+    (RepoService : Repository.Sig.SERVICE)
+    (MigrationService : Migration.Sig.SERVICE) : Sihl.Queue.Sig.REPO = struct
   let enqueue_request =
     Caqti_request.exec
       Model.t
@@ -174,13 +173,13 @@ module MakeMariaDb
 
   module Migration = struct
     let fix_collation =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci';"
     ;;
 
     let create_jobs_table =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -199,8 +198,7 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
 
     let migration =
-      Data.Migration.(
-        empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
+      Migration.(empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
     ;;
   end
 

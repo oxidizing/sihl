@@ -1,11 +1,11 @@
 module type REPOSITORY = sig
-  include Data.Repo.Service.Sig.REPO
-  module Database : Data.Db.Service.Sig.SERVICE
+  include Repository.Sig.REPO
+  module DatabaseService : Database.Sig.SERVICE
 
   val get_all
     :  Core.Ctx.t
-    -> query:Data.Ql.t
-    -> (User_core.User.t list * Data.Repo.Meta.t) Lwt.t
+    -> query:Database.Ql.t
+    -> (User_core.User.t list * Repository.Meta.t) Lwt.t
 
   val get : Core.Ctx.t -> id:string -> User_core.User.t option Lwt.t
   val get_by_email : Core.Ctx.t -> email:string -> User_core.User.t option Lwt.t
@@ -22,8 +22,8 @@ module type SERVICE = sig
 
   val find_all
     :  Core.Ctx.t
-    -> query:Data.Ql.t
-    -> (User_core.User.t list * Data.Repo.Meta.t) Lwt.t
+    -> query:Database.Ql.t
+    -> (User_core.User.t list * Repository.Meta.t) Lwt.t
 
   val find_opt : Core.Ctx.t -> user_id:string -> User_core.User.t option Lwt.t
   val find : Core.Ctx.t -> user_id:string -> User_core.User.t Lwt.t

@@ -96,9 +96,9 @@ end
 
 module Repo = struct
   module MakeMariaDb
-      (DbService : Data.Db.Service.Sig.SERVICE)
-      (RepoService : Data.Repo.Service.Sig.SERVICE)
-      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO = struct
+      (DbService : Database.Sig.SERVICE)
+      (RepoService : Repository.Sig.SERVICE)
+      (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
     module Sql = struct
       module Model = Session_core
 
@@ -206,7 +206,7 @@ module Repo = struct
 
     module Migration = struct
       let create_sessions_table =
-        Data.Migration.create_step
+        Migration.create_step
           ~label:"create sessions table"
           {sql|
 CREATE TABLE IF NOT EXISTS session_sessions (
@@ -220,9 +220,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 |sql}
       ;;
 
-      let migration () =
-        Data.Migration.(empty "session" |> add_step create_sessions_table)
-      ;;
+      let migration () = Migration.(empty "session" |> add_step create_sessions_table)
     end
 
     let register_migration () = MigrationService.register (Migration.migration ())
@@ -240,9 +238,9 @@ CREATE TABLE IF NOT EXISTS session_sessions (
   end
 
   module MakePostgreSql
-      (DbService : Data.Db.Service.Sig.SERVICE)
-      (RepoService : Data.Repo.Service.Sig.SERVICE)
-      (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPO = struct
+      (DbService : Database.Sig.SERVICE)
+      (RepoService : Repository.Sig.SERVICE)
+      (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
     module Sql = struct
       module Model = Session_core
 
@@ -350,7 +348,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 
     module Migration = struct
       let create_sessions_table =
-        Data.Migration.create_step
+        Migration.create_step
           ~label:"create sessions table"
           {sql|
 CREATE TABLE IF NOT EXISTS session_sessions (
@@ -364,9 +362,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 |sql}
       ;;
 
-      let migration () =
-        Data.Migration.(empty "session" |> add_step create_sessions_table)
-      ;;
+      let migration () = Migration.(empty "session" |> add_step create_sessions_table)
     end
 
     let register_migration () = MigrationService.register (Migration.migration ())

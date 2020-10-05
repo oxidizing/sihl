@@ -1,7 +1,7 @@
 open Lwt.Syntax
 
 module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
-  module Database = Repo.Database
+  module Database = Repo.DatabaseService
 
   let find_opt ctx ~id = Repo.get_file ctx ~id
 
@@ -21,7 +21,7 @@ module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
   ;;
 
   let upload_base64 ctx ~file ~base64 =
-    let blob_id = Data.Id.random () |> Data.Id.to_string in
+    let blob_id = Sihl.Database.Id.random () |> Sihl.Database.Id.to_string in
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->

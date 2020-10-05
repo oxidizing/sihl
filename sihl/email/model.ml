@@ -27,7 +27,7 @@ module Template = struct
   ;;
 
   let make ?text ?html name =
-    { id = Data.Id.random () |> Data.Id.to_string
+    { id = Database.Id.random () |> Database.Id.to_string
     ; name
     ; content_text = text |> Option.value ~default:""
     ; content_html = html |> Option.value ~default:""

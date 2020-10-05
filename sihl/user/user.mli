@@ -9,7 +9,7 @@
 (** {1 Installation}
 
     [{ module Repo = Sihl.Data.Repo.Service.Make () module Cmd = Sihl.Cmd.Service.Make ()
-    module Log = Sihl.Log.Service.Make () module Db = Sihl.Data.Db.Service (Config) (Log)
+    module Log = Sihl.Log.Service.Make () module Db = Sihl.Database.Service (Config) (Log)
     module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db) module
     Migration = Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo) }] *)
 

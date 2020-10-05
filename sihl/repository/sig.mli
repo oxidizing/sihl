@@ -10,10 +10,10 @@ module type SERVICE = sig
 
       A cleaner function is used during integration testing to efficiently clean
       repositories. *)
-  val register_cleaner : Data_repo_core.cleaner -> unit
+  val register_cleaner : Model.cleaner -> unit
 
   (** Register repository cleaner functions. *)
-  val register_cleaners : Data_repo_core.cleaner list -> unit
+  val register_cleaners : Model.cleaner list -> unit
 
   (** Run all registered repository cleaners.
 

@@ -1,11 +1,10 @@
 open Lwt.Syntax
 
 module MakeMariaDb
-    (DbService : Data.Db.Service.Sig.SERVICE)
-    (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sihl.Storage.Sig.REPO =
-struct
-  module Database = DbService
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
+    (MigrationService : Sihl.Migration.Sig.SERVICE) : Sihl.Storage.Sig.REPO = struct
+  module DatabaseService = DbService
 
   let stored_file =
     let encode m =
@@ -15,8 +14,8 @@ struct
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
       let ( let* ) = Result.bind in
-      let* id = id |> Data.Id.of_bytes |> Result.map Data.Id.to_string in
-      let* blob = blob |> Data.Id.of_bytes |> Result.map Data.Id.to_string in
+      let* id = id |> Database.Id.of_bytes |> Result.map Database.Id.to_string in
+      let* blob = blob |> Database.Id.of_bytes |> Result.map Database.Id.to_string in
       let file = Sihl.Storage.File.make ~id ~filename ~filesize ~mime in
       Ok (Sihl.Storage.StoredFile.make ~file ~blob)
     in
@@ -208,7 +207,7 @@ struct
   ;;
 
   let fix_collation =
-    Data.Migration.create_step
+    Migration.create_step
       ~label:"fix collation"
       {sql|
          SET collation_server = 'utf8mb4_unicode_ci';
@@ -216,7 +215,7 @@ struct
   ;;
 
   let create_blobs_table =
-    Data.Migration.create_step
+    Migration.create_step
       ~label:"create blobs table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_blobs (
@@ -232,7 +231,7 @@ struct
   ;;
 
   let create_handles_table =
-    Data.Migration.create_step
+    Migration.create_step
       ~label:"create handles table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_handles (
@@ -251,7 +250,7 @@ struct
   ;;
 
   let migration () =
-    Data.Migration.(
+    Migration.(
       empty "storage"
       |> add_step fix_collation
       |> add_step create_blobs_table

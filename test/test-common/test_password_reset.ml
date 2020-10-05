@@ -2,8 +2,8 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 module Make
-    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (UserService : Sihl.User.Service.Sig.SERVICE)
     (PasswordResetService : Sihl.User.PasswordReset.Service.Sig.SERVICE) =
 struct

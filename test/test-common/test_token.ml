@@ -2,8 +2,8 @@ open Lwt.Syntax
 open Alcotest_lwt
 
 module Make
-    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (TokenService : Sihl.Token.Service.Sig.SERVICE) =
 struct
   let create_and_find_token _ () =

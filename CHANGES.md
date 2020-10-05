@@ -9,6 +9,7 @@
 - Extract queue service as `sihl-queue` opam package
 - Move configuration and logging into core, neither of the are implemented as services
 - Replace `pcre` with `re` as regex library to get rid of a system dependency on pcre
+- Split up `Sihl.Data` into `Sihl.Migration`, `Sihl.Repository` and `Sihl.Database`
 
 ### Fixed
 - Move log service, config service and cmd service into core (they don't have to be provided to other services through functors)

@@ -2,7 +2,7 @@ module Job = Model.Job
 module JobInstance = Model.JobInstance
 
 module type REPO = sig
-  include Data.Repo.Service.Sig.REPO
+  include Repository.Sig.REPO
 
   val enqueue : Core.Ctx.t -> job_instance:JobInstance.t -> unit Lwt.t
   val find_workable : Core.Ctx.t -> JobInstance.t list Lwt.t

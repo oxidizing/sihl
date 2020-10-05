@@ -60,7 +60,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         Data.Id.t_string
+         Database.Id.t_string
          (tup2
             string
             (tup2 (option string) (tup2 string (tup2 string (tup2 ptime ptime)))))))

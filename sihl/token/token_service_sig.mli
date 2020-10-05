@@ -1,5 +1,5 @@
 module type REPOSITORY = sig
-  include Data.Repo.Service.Sig.REPO
+  include Repository.Sig.REPO
 
   val find_opt : Core.Ctx.t -> value:string -> Token_core.t option Lwt.t
   val find_by_id_opt : Core.Ctx.t -> id:string -> Token_core.t option Lwt.t

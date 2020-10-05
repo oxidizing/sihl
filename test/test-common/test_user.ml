@@ -2,8 +2,8 @@ open Lwt.Syntax
 open Alcotest_lwt
 
 module Make
-    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (UserService : Sihl.User.Service.Sig.SERVICE) =
 struct
   module Seed = Sihl.User.Seed.Make (UserService)
@@ -75,11 +75,11 @@ struct
     let* _ = Seed.user ctx ~email:"user2@example.com" ~password:"123123123" in
     let* _ = Seed.user ctx ~email:"user3@example.com" ~password:"123123123" in
     let filter =
-      Sihl.Data.Ql.Filter.(C { key = "email"; value = "%user1%"; op = Like })
+      Sihl.Database.Ql.Filter.(C { key = "email"; value = "%user1%"; op = Like })
     in
-    let query = Sihl.Data.Ql.(empty |> set_limit 10 |> set_filter filter) in
+    let query = Sihl.Database.Ql.(empty |> set_limit 10 |> set_filter filter) in
     let* actual_users, meta = UserService.find_all ctx ~query in
-    Alcotest.(check int "has correct meta" 1 (Sihl.Data.Repo.Meta.total meta));
+    Alcotest.(check int "has correct meta" 1 (Sihl.Repository.Meta.total meta));
     Alcotest.(check (list Sihl.User.alcotest) "has one user" actual_users [ user1 ]);
     Lwt.return ()
   ;;
