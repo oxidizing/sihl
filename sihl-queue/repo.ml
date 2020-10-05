@@ -1,8 +1,8 @@
-module Job = Queue_core.Job
-module JobInstance = Queue_core.JobInstance
+module Job = Sihl.Queue.Job
+module JobInstance = Sihl.Queue.JobInstance
 module Map = Map.Make (String)
 
-module MakeMemory (RepoService : Data.Repo.Service.Sig.SERVICE) : Queue_service_sig.REPO =
+module MakeMemory (RepoService : Data.Repo.Service.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
 struct
   let state = ref Map.empty
   let ordered_ids = ref []
@@ -48,7 +48,7 @@ struct
 end
 
 module Model = struct
-  open Queue_core.JobInstance
+  open Sihl.Queue.JobInstance
 
   let status =
     let encode m = Ok (Status.to_string m) in
@@ -76,8 +76,7 @@ end
 module MakeMariaDb
     (DbService : Data.Db.Service.Sig.SERVICE)
     (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Queue_service_sig.REPO =
-struct
+    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sihl.Queue.Sig.REPO = struct
   let enqueue_request =
     Caqti_request.exec
       Model.t

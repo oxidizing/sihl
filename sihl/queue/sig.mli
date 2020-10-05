@@ -1,5 +1,5 @@
-module Job = Queue_core.Job
-module JobInstance = Queue_core.JobInstance
+module Job = Model.Job
+module JobInstance = Model.JobInstance
 
 module type REPO = sig
   include Data.Repo.Service.Sig.REPO

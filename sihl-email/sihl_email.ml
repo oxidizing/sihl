@@ -648,7 +648,7 @@ end
 module MakeDelayed
     (EmailService : Sig.SERVICE)
     (DbService : Data.Db.Service.Sig.SERVICE)
-    (QueueService : Queue.Service.Sig.SERVICE) : Sig.SERVICE = struct
+    (QueueService : Sihl.Queue.Sig.SERVICE) : Sig.SERVICE = struct
   module Template = EmailService.Template
 
   module Job = struct

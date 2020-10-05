@@ -97,3 +97,13 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
   (ocaml (>= 4.08.0))
   (sihl (= :version))
   (letters (>= 0.2.0))))
+
+(package
+ (name sihl-queue)
+ (synopsis "A Sihl service for queue jobs")
+ (description "
+A Sihl service for putting and working jobs on queues. Various queue backends are provided.")
+ (depends
+  (dune (>= 2.4))
+  (ocaml (>= 4.08.0))
+  (sihl (= :version))))
