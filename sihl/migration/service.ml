@@ -1,6 +1,4 @@
 open Lwt.Syntax
-module Sig = Data_migration_service_sig
-module Model = Data_migration_core
 
 module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   module Database = MigrationRepo.Database
@@ -20,7 +18,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
     | Some state -> state
     | None ->
       raise
-        (Data_migration_core.Exception
+        (Model.Exception
            (Printf.sprintf "MIGRATION: Could not get migration state for %s" namespace))
   ;;
 
@@ -47,8 +45,8 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
     Lwt.return updated_state
   ;;
 
-  let register migration = Data_migration_core.Registry.register migration |> ignore
-  let get_migrations _ = Lwt.return (Data_migration_core.Registry.get_all ())
+  let register migration = Model.Registry.register migration |> ignore
+  let get_migrations _ = Lwt.return (Model.Registry.get_all ())
 
   let execute_steps ctx migration =
     let namespace, steps = migration in
@@ -105,7 +103,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
               namespace
           in
           Logs.err (fun m -> m "MIGRATION: %s" msg);
-          raise (Data_migration_core.Exception msg))
+          raise (Model.Exception msg))
         else mark_dirty ctx ~namespace
       else (
         Logs.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
@@ -175,7 +173,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
 end
 
 module Repo = struct
-  module MakeMariaDb (Database : Data_db_service_sig.SERVICE) : Sig.REPO = struct
+  module MakeMariaDb (Database : Database.Sig.SERVICE) : Sig.REPO = struct
     module Database = Database
 
     let create_request =
@@ -240,7 +238,7 @@ dirty = VALUES(dirty)
     ;;
   end
 
-  module MakePostgreSql (Database : Data_db_service_sig.SERVICE) : Sig.REPO = struct
+  module MakePostgreSql (Database : Database.Sig.SERVICE) : Sig.REPO = struct
     module Database = Database
 
     let create_request =

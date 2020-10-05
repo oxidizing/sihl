@@ -4,7 +4,7 @@ module User = User_core.User
 module Sig = User_service_sig
 
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
-  module Database = Repo.Database
+  module Database = Repo.DatabaseService
 
   let add_user user ctx = Core.Ctx.add User.ctx_key user ctx
   let require_user_opt ctx = Core.Ctx.find User.ctx_key ctx

@@ -2,8 +2,8 @@ open Lwt.Syntax
 
 (* TODO [aerben] FIX TESTS*)
 module Make
-    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (TokenService : Sihl.Token.Service.Sig.SERVICE)
     (SessionService : Sihl.Session.Service.Sig.SERVICE)
     (RandomService : Sihl.Utils.Random.Service.Sig.SERVICE) =

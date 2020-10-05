@@ -12,7 +12,7 @@
         module Random = Sihl.Utils.Random.Service
         module Log = Sihl.Log.Service
         module Config = Sihl.Config.Service
-        module Db = Sihl.Data.Db.Service
+        module Db = Sihl.Database.Service
         module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
         module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
         module WebServer = Sihl.Web.Server.Service.Make ()
@@ -47,9 +47,17 @@ module Authz = Authz
 
 module Core = Core
 
-(** {1 Data} *)
+(** {1 Database} *)
 
-module Data = Data
+module Database = Database
+
+(** {1 Repository} *)
+
+module Repository = Repository
+
+(** {1 Migration} *)
+
+module Migration = Migration
 
 (** {1 Emailing}*)
 

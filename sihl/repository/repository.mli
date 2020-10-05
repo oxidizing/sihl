@@ -3,11 +3,11 @@
 
 (** {1 Installation}
 
-    Use the provided {!Sihl.Data.Repo.Service.Make} to instantiate a repo service.
+    Use the provided {!Sihl.Repository.Service.Make} to instantiate a repo service.
 
-    {[ module Repo = Sihl.Data.Repo.Service.Make () ]} *)
+    {[ module Repo = Sihl.Repository.Service.Make () ]} *)
 
-module Service = Data_repo_service
+module Service = Service
 
 (** {1 Usage}
 
@@ -24,10 +24,12 @@ module Service = Data_repo_service
 
 (** Repositories can return meta data containing information like total rows affected.
     This can be useful for pagination. *)
-module Meta = Data_repo_core.Meta
+module Meta = Model.Meta
 
 (** This module can be used to assemble dynamic repository queries. This is typically used
     if you don't know the number of parameters at compile time because they are provided
     by the user, for instance as a filter or sort.
     {:http://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/index.html#how-to-dynamically-assemble-queries-and-parameters} *)
-module Dynparam = Data_repo_core.Dynparam
+module Dynparam = Model.Dynparam
+
+module Sig = Sig

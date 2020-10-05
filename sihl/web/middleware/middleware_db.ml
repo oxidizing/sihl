@@ -1,4 +1,4 @@
-module Make (Db : Data.Db.Service.Sig.SERVICE) = struct
+module Make (Db : Database.Sig.SERVICE) = struct
   let m () =
     let filter handler ctx =
       let ctx = Db.add_pool ctx in

@@ -48,7 +48,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
   let create ctx ~kind ?data ?expires_in ?length () =
     let expires_in = Option.value ~default:Utils.Time.OneDay expires_in in
     let length = Option.value ~default:80 length in
-    let id = Data.Id.random () |> Data.Id.to_string in
+    let id = Database.Id.random () |> Database.Id.to_string in
     let token = make ~id ~kind ~data ~expires_in ~length () in
     let* () = Repo.insert ctx ~token in
     let value = Token_core.value token in

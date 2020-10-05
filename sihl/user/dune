@@ -2,7 +2,7 @@
  (name user)
  (public_name sihl.user)
  (libraries ptime ptime.clock.os yojson ppx_deriving_yojson.runtime alcotest
-   core utils data token)
+   core utils database token repository migration)
  (modules_without_implementation user_password_reset_service_sig
    user_service_sig)
  (preprocess

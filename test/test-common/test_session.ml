@@ -12,8 +12,8 @@ let middleware_stack ctx ?handler stack =
 ;;
 
 module Make
-    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (SessionService : Sihl.Session.Service.Sig.SERVICE) =
 struct
   module Middleware = Sihl.Web.Middleware.Session.Make (SessionService)

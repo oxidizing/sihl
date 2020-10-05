@@ -2,7 +2,7 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 module Make
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (QueueService : Sihl.Queue.Sig.SERVICE) =
 struct
   let dispatched_job_gets_processed ctx with_context _ () =

@@ -1,6 +1,6 @@
-open Data_repo_core
+open Model
 open Lwt.Syntax
-module Sig = Data_repo_service_sig
+module Sig = Sig
 
 module Registry = struct
   let registry : cleaner list ref = ref []

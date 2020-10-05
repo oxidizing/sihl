@@ -1,9 +1,9 @@
 module Sig = Token_service_sig
 
 module MakeMariaDb
-    (DbService : Data.Db.Service.Sig.SERVICE)
-    (RepoService : Data.Repo.Service.Sig.SERVICE)
-    (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.REPOSITORY = struct
+    (DbService : Database.Sig.SERVICE)
+    (RepoService : Repository.Sig.SERVICE)
+    (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
   module Sql = struct
     module Model = Token_core
 
@@ -32,7 +32,7 @@ module MakeMariaDb
 
     let find_by_id_request =
       Caqti_request.find
-        Data.Id.t_string
+        Database.Id.t_string
         Model.t
         {sql|
         SELECT
@@ -112,13 +112,13 @@ module MakeMariaDb
 
   module Migration = struct
     let fix_collation =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci'"
     ;;
 
     let create_tokens_table =
-      Data.Migration.create_step
+      Migration.create_step
         ~label:"create tokens table"
         {sql|
         CREATE TABLE IF NOT EXISTS token_tokens (
@@ -138,8 +138,7 @@ module MakeMariaDb
     ;;
 
     let migration () =
-      Data.Migration.(
-        empty "tokens" |> add_step fix_collation |> add_step create_tokens_table)
+      Migration.(empty "tokens" |> add_step fix_collation |> add_step create_tokens_table)
     ;;
   end
 

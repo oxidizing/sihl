@@ -2,8 +2,8 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 module Make
-    (DbService : Sihl.Data.Db.Service.Sig.SERVICE)
-    (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
+    (RepoService : Sihl.Repository.Sig.SERVICE)
     (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) =
 struct
   let create_template _ () =

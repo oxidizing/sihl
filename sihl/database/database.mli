@@ -17,7 +17,7 @@
     {[
       module Log = Sihl.Log.Service.Make ()
       module Config = Sihl.Config.Service.Make (Log)
-      module Db = Sihl.Data.Db.Service.Make (Config) (Log)
+      module Db = Sihl.Database.Service.Make (Config) (Log)
     ]}
 
     Install one of the drivers listed above.
@@ -27,8 +27,6 @@
     Add the driver to your [done] file:
 
     [caqti-driver-postgresql] *)
-
-module Db = Data_db
 
 (** {1 Usage}
 
@@ -47,7 +45,7 @@ module Db = Data_db
     pizza_order_repo.ml:
 
     {[
-      module MakePostgreSql (DbService : Sihl.Data.Db.Service.Sig.SERVICE) :
+      module MakePostgreSql (DbService : Sihl.Database.Service.Sig.SERVICE) :
         Pizza_order_sig.REPO = struct
         let find_request =
           Caqti_request.find_opt
@@ -89,8 +87,8 @@ module Db = Data_db
             )
     ]} *)
 
-module Repo = Data_repo
-module Migration = Data_migration
-module Ql = Data_ql
-module View = Data_view
-module Id = Data_id
+module Service = Service
+module Ql = Ql
+module View = View
+module Id = Id
+module Sig = Sig

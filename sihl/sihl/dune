@@ -1,5 +1,4 @@
 (library
  (name sihl)
  (public_name sihl)
- (libraries authn authz core data email message queue schedule session
-   storage token user utils web))
+ (libraries authn authz core database repository migration email message queue schedule session storage token user utils web))

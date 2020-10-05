@@ -74,10 +74,9 @@ module Template = struct
 
   module Repo = struct
     module MakeMariaDb
-        (DbService : Data.Db.Service.Sig.SERVICE)
-        (RepoService : Data.Repo.Service.Sig.SERVICE)
-        (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.TEMPLATE_REPO =
-    struct
+        (DbService : Sihl.Database.Sig.SERVICE)
+        (RepoService : Sihl.Repository.Sig.SERVICE)
+        (MigrationService : Sihl.Migration.Sig.SERVICE) : Sig.TEMPLATE_REPO = struct
       module Sql = struct
         module Model = Sihl.Email.Template
 
@@ -195,13 +194,13 @@ module Template = struct
 
       module Migration = struct
         let fix_collation =
-          Data.Migration.create_step
+          Migration.create_step
             ~label:"fix collation"
             "SET collation_server = 'utf8mb4_unicode_ci'"
         ;;
 
         let create_templates_table =
-          Data.Migration.create_step
+          Migration.create_step
             ~label:"create templates table"
             {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -219,7 +218,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
 
         let migration () =
-          Data.Migration.(
+          Migration.(
             empty "email" |> add_step fix_collation |> add_step create_templates_table)
         ;;
       end
@@ -233,10 +232,9 @@ CREATE TABLE IF NOT EXISTS email_templates (
     end
 
     module MakePostgreSql
-        (DbService : Data.Db.Service.Sig.SERVICE)
-        (RepoService : Data.Repo.Service.Sig.SERVICE)
-        (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.TEMPLATE_REPO =
-    struct
+        (DbService : Sihl.Database.Sig.SERVICE)
+        (RepoService : Sihl.Repository.Sig.SERVICE)
+        (MigrationService : Sihl.Migration.Sig.SERVICE) : Sig.TEMPLATE_REPO = struct
       module Sql = struct
         module Model = Sihl.Email.Template
 
@@ -338,7 +336,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
       module Migration = struct
         let create_templates_table =
-          Data.Migration.create_step
+          Migration.create_step
             ~label:"create templates table"
             {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -355,9 +353,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 |sql}
         ;;
 
-        let migration () =
-          Data.Migration.(empty "email" |> add_step create_templates_table)
-        ;;
+        let migration () = Migration.(empty "email" |> add_step create_templates_table)
       end
 
       let register_migration () = MigrationService.register (Migration.migration ())
@@ -647,7 +643,7 @@ end
     background *)
 module MakeDelayed
     (EmailService : Sig.SERVICE)
-    (DbService : Data.Db.Service.Sig.SERVICE)
+    (DbService : Sihl.Database.Sig.SERVICE)
     (QueueService : Sihl.Queue.Sig.SERVICE) : Sig.SERVICE = struct
   module Template = EmailService.Template
 

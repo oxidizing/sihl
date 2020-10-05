@@ -1,4 +1,4 @@
-open Data_db_core
+open Model
 
 module type SERVICE = sig
   include Core.Container.Service.Sig

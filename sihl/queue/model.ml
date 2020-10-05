@@ -95,7 +95,7 @@ module JobInstance = struct
   end
 
   type t =
-    { id : Data.Id.t
+    { id : Database.Id.t
     ; name : string
     ; input : string option
     ; tries : int
@@ -114,7 +114,7 @@ module JobInstance = struct
       | None -> now
     in
     let max_tries = Job.max_tries job in
-    { id = Data.Id.random ()
+    { id = Database.Id.random ()
     ; name
     ; input
     ; tries = 0
