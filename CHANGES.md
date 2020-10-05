@@ -4,6 +4,8 @@
 ### Fixed
 - Remove seed service since the same functionality
 - Simplify app abstraction, instead of `with_` use service APIs directly
+- Extract storage service as `sihl-storage` opam package
+- Move configuration and logging into core, neither of the are implemented as services
 
 ### Fixed
 - Move log service, config service and cmd service into core (they don't have to be provided to other services through functors)
