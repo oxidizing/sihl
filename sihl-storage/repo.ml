@@ -1,3 +1,5 @@
+open Lwt.Syntax
+
 module MakeMariaDb
     (DbService : Data.Db.Service.Sig.SERVICE)
     (RepoService : Data.Repo.Service.Sig.SERVICE)

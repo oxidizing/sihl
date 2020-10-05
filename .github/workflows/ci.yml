@@ -51,15 +51,14 @@ jobs:
           ocaml-version: ${{ matrix.ocaml-version }}
       - name: Install system dependencies
         run: |
-          opam pin add -yn sihl .
           sudo apt-get update -y
           sudo apt-get install -y libmariadbclient-dev libpq-dev
-          opam depext -y sihl
+          opam pin add -y .
+          opam depext -y sihl sihl-storage
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |
-          opam pin add -yn sihl .
-          opam install -y sihl --deps-only --with-doc --with-test --locked --unlock-base
+          opam install -y . --deps-only --with-doc --with-test --locked --unlock-base
           opam install -y caqti-driver-postgresql caqti-driver-mariadb odoc
       - name: Recover from an Opam broken state
         if: steps.cache-opam.outputs.cache-hit == 'true'
