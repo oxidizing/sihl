@@ -1,9 +1,9 @@
 opam-version: "2.0"
 version: "0.1.5"
-synopsis: "A Sihl service for storing and retrieving large files"
+synopsis: "A Sihl service for sending emails using Lwt"
 description: """
 
-This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided."""
+A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing."""
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"
@@ -164,4 +164,4 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/oxidizing/sihl.git"
-name: "sihl-storage"
+name: "sihl-email"

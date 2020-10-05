@@ -12,10 +12,10 @@ module SessionRepo =
 module UserRepo = Sihl.User.Service.Repo.MakePostgreSql (Database) (Repo) (Migration)
 
 module EmailTemplateRepo =
-  Sihl.Email.Service.Template.Repo.MakePostgreSql (Database) (Repo) (Migration)
+  Sihl_email.Template.Repo.MakePostgreSql (Database) (Repo) (Migration)
 
 (* Services *)
 module Session = Sihl.Session.Service.Make (Random) (SessionRepo)
 module User = Sihl.User.Service.Make (UserRepo)
-module EmailTemplate = Sihl.Email.Service.Template.Make (EmailTemplateRepo)
+module EmailTemplate = Sihl_email.Template.Make (EmailTemplateRepo)
 module Schedule = Sihl.Schedule.Service.Default

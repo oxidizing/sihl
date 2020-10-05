@@ -30,7 +30,6 @@ depends: [
   "safepass" {>= "3.0"}
   "jwto" {>= "0.3.0"}
   "uuidm" {>= "0.9.7"}
-  "letters" {>= "0.2.0"}
   "sexplib" {>= "v0.13.0"}
   "ppx_fields_conv" {>= "v0.13.0"}
   "ppx_sexp_conv" {>= "v0.13.0"}

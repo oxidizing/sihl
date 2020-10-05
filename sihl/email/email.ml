@@ -1,2 +1,2 @@
-include Email_core
-module Service = Email_service
+include Model
+module Sig = Sig
