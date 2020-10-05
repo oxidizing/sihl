@@ -1,6 +1,6 @@
 (executable
  (name test)
- (libraries test_common alcotest-lwt caqti-driver-mariadb))
+ (libraries sihl_storage test_common alcotest-lwt caqti-driver-mariadb))
 
 (rule
  (alias runtest-all)
