@@ -65,9 +65,6 @@
   ;; UUID
   (uuidm (>= 0.9.7))
 
-  ;; SMTP
-  (letters (>= 0.2.0))
-
   ;; Helpers & Generation
   (sexplib (>= v0.13.0))
   (ppx_fields_conv (>= v0.13.0))
@@ -89,3 +86,14 @@ This service can be used to handle large binary blobs that are typically not sto
   (dune (>= 2.4))
   (ocaml (>= 4.08.0))
   (sihl (= :version))))
+
+(package
+ (name sihl-email)
+ (synopsis "A Sihl service for sending emails using Lwt")
+ (description "
+A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
+ (depends
+  (dune (>= 2.4))
+  (ocaml (>= 4.08.0))
+  (sihl (= :version))
+  (letters (>= 0.2.0))))

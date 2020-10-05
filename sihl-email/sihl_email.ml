@@ -1,5 +1,5 @@
 open Lwt.Syntax
-module Sig = Email_service_sig
+module Sig = Sihl.Email.Sig
 
 module Template = struct
   module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
@@ -7,35 +7,35 @@ module Template = struct
     let get_by_name ctx ~name = Repo.get_by_name ctx ~name
 
     let create ctx ~name ~html ~text =
-      let template = Email_core.Template.make ~text ~html name in
+      let template = Sihl.Email.Template.make ~text ~html name in
       let* () = Repo.insert ctx ~template in
-      let id = Email_core.Template.id template in
+      let id = Sihl.Email.Template.id template in
       let* created = Repo.get ctx ~id in
       match created with
       | None ->
         Logs.err (fun m ->
-            m "EMAIL: Could not create template %a" Email_core.Template.pp template);
-        raise (Email_core.Exception "Could not create email template")
+            m "EMAIL: Could not create template %a" Sihl.Email.Template.pp template);
+        raise (Sihl.Email.Exception "Could not create email template")
       | Some created -> Lwt.return created
     ;;
 
     let update ctx ~template =
       let* () = Repo.update ctx ~template in
-      let id = Email_core.Template.id template in
+      let id = Sihl.Email.Template.id template in
       let* created = Repo.get ctx ~id in
       match created with
       | None ->
         Logs.err (fun m ->
-            m "EMAIL: Could not update template %a" Email_core.Template.pp template);
-        raise (Email_core.Exception "Could not create email template")
+            m "EMAIL: Could not update template %a" Sihl.Email.Template.pp template);
+        raise (Sihl.Email.Exception "Could not create email template")
       | Some created -> Lwt.return created
     ;;
 
     let render ctx email =
-      let template_id = Email_core.template_id email in
-      let template_data = Email_core.template_data email in
-      let text_content = Email_core.text_content email in
-      let html_content = Email_core.html_content email in
+      let template_id = Sihl.Email.template_id email in
+      let template_data = Sihl.Email.template_data email in
+      let text_content = Sihl.Email.text_content email in
+      let html_content = Sihl.Email.html_content email in
       let* text_content, html_content =
         match template_id with
         | Some template_id ->
@@ -44,16 +44,16 @@ module Template = struct
             match template with
             | None ->
               raise
-                (Email_core.Exception
+                (Sihl.Email.Exception
                    (Printf.sprintf "Template with id %s not found" template_id))
             | Some template -> Lwt.return template
           in
-          Email_core.Template.render template_data template |> Lwt.return
+          Sihl.Email.Template.render template_data template |> Lwt.return
         | None -> Lwt.return (text_content, html_content)
       in
       email
-      |> Email_core.set_text_content text_content
-      |> Email_core.set_html_content html_content
+      |> Sihl.Email.set_text_content text_content
+      |> Sihl.Email.set_html_content html_content
       |> Lwt.return
     ;;
 
@@ -79,7 +79,7 @@ module Template = struct
         (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.TEMPLATE_REPO =
     struct
       module Sql = struct
-        module Model = Email_core.Template
+        module Model = Sihl.Email.Template
 
         let get_request =
           Caqti_request.find_opt
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         (MigrationService : Data.Migration.Service.Sig.SERVICE) : Sig.TEMPLATE_REPO =
     struct
       module Sql = struct
-        module Model = Email_core.Template
+        module Model = Sihl.Email.Template
 
         let get_request =
           Caqti_request.find_opt
@@ -375,11 +375,11 @@ module Make = struct
     module Template = TemplateService
 
     let show email =
-      let sender = Email_core.sender email in
-      let recipient = Email_core.recipient email in
-      let subject = Email_core.subject email in
-      let text_content = Email_core.text_content email in
-      let html_content = Email_core.html_content email in
+      let sender = Sihl.Email.sender email in
+      let recipient = Sihl.Email.recipient email in
+      let subject = Sihl.Email.subject email in
+      let text_content = Sihl.Email.text_content email in
+      let html_content = Sihl.Email.html_content email in
       Printf.sprintf
         {|
 -----------------------
@@ -499,7 +499,7 @@ Html:
       Letters.build_email ~from:email.sender ~recipients ~subject:email.subject ~body
       |> function
       | Ok message -> Letters.send ~config ~sender ~recipients ~message
-      | Error msg -> raise (Email_core.Exception msg)
+      | Error msg -> raise (Sihl.Email.Exception msg)
     ;;
 
     let bulk_send _ _ = Lwt.return ()
@@ -566,12 +566,12 @@ Html:
           [ "authorization", "Bearer " ^ token; "content-type", "application/json" ]
       in
       let* email = TemplateService.render ctx email in
-      let sender = Email_core.sender email in
-      let recipient = Email_core.recipient email in
-      let subject = Email_core.subject email in
-      let text_content = Email_core.text_content email in
+      let sender = Sihl.Email.sender email in
+      let recipient = Sihl.Email.recipient email in
+      let subject = Sihl.Email.subject email in
+      let text_content = Sihl.Email.text_content email in
       (* TODO support html content *)
-      (* let html_content = Email_core.text_content email in *)
+      (* let html_content = Sihl.Email.text_content email in *)
       let req_body = body ~recipient ~subject ~sender ~content:text_content in
       let* resp, resp_body =
         Cohttp_lwt_unix.Client.post
@@ -591,7 +591,7 @@ Html:
               "EMAIL: Sending email using sendgrid failed with http status %i and body %s"
               status
               body);
-        raise (Email_core.Exception "EMAIL: Failed to send email")
+        raise (Sihl.Email.Exception "EMAIL: Failed to send email")
     ;;
 
     let bulk_send _ _ = Lwt.return ()
@@ -614,7 +614,7 @@ Html:
 
     let send ctx email =
       let* email = TemplateService.render ctx email in
-      Email_core.DevInbox.set email;
+      Sihl.Email.DevInbox.set email;
       Lwt.return ()
     ;;
 
@@ -653,7 +653,7 @@ module MakeDelayed
 
   module Job = struct
     let input_to_string email =
-      email |> Email_core.to_yojson |> Yojson.Safe.to_string |> Option.some
+      email |> Sihl.Email.to_yojson |> Yojson.Safe.to_string |> Option.some
     ;;
 
     let string_to_input email =
@@ -664,7 +664,7 @@ module MakeDelayed
               "DELAYED_EMAIL: Serialized email string was NULL, can not deserialize \
                email. Please fix the string manually and reset the job instance.");
         Error "Invalid serialized email string received"
-      | Some email -> Result.bind (email |> Utils.Json.parse) Email_core.of_yojson
+      | Some email -> Result.bind (email |> Utils.Json.parse) Sihl.Email.of_yojson
     ;;
 
     let handle ctx ~input = EmailService.send ctx input |> Lwt.map Result.ok

@@ -10,7 +10,6 @@ doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "alcotest" {= "1.2.2"}
-  "angstrom" {= "0.14.1"}
   "asn1-combinators" {= "0.2.2"}
   "astring" {= "0.8.5"}
   "base" {= "v0.14.0"}
@@ -20,8 +19,6 @@ depends: [
   "base-unix" {= "base"}
   "base64" {= "3.4.0"}
   "bigarray-compat" {= "1.0.0"}
-  "bigarray-overlap" {= "0.2.0"}
-  "bigstringaf" {= "0.6.1"}
   "biniou" {= "1.2.1"}
   "caqti" {= "1.2.3"}
   "caqti-lwt" {= "1.2.0"}
@@ -29,8 +26,6 @@ depends: [
   "cohttp" {= "2.5.4"}
   "cohttp-lwt" {= "2.5.4"}
   "cohttp-lwt-unix" {= "2.5.4"}
-  "coin" {= "0.1.3"}
-  "colombe" {= "0.3.0"}
   "conduit" {= "2.1.0"}
   "conduit-lwt" {= "2.1.0"}
   "conduit-lwt-unix" {= "2.2.2"}
@@ -54,13 +49,11 @@ depends: [
   "dune-configurator" {= "2.7.1"}
   "duration" {= "0.1.3"}
   "easy-format" {= "1.3.2"}
-  "emile" {= "0.9"}
   "eqaf" {= "0.7"}
   "ezjsonm" {= "1.2.0"}
   "fiat-p256" {= "0.2.1"}
   "fieldslib" {= "v0.14.0"}
   "fmt" {= "0.8.8"}
-  "fpath" {= "0.7.3"}
   "gmap" {= "0.3.0"}
   "hacl_x25519" {= "0.2.0"}
   "hex" {= "1.4.0"}
@@ -73,8 +66,6 @@ depends: [
   "js_of_ocaml-compiler" {= "3.7.0"}
   "jsonm" {= "1.0.1"}
   "jwto" {= "0.3.0"}
-  "ke" {= "0.4"}
-  "letters" {= "0.2.0"}
   "logs" {= "0.7.0"}
   "lwt" {= "5.3.0"}
   "lwt_ssl" {= "1.1.3"}
@@ -89,7 +80,6 @@ depends: [
   "mirage-no-solo5" {= "1"}
   "mirage-no-xen" {= "1"}
   "mmap" {= "1.1.0"}
-  "mrmime" {= "0.3.0"}
   "mtime" {= "1.2.0"}
   "num" {= "1.3"}
   "ocaml" {= "4.11.1"}
@@ -105,7 +95,6 @@ depends: [
   "opium_kernel" {= "0.18.0"}
   "parsexp" {= "v0.14.0"}
   "pcre" {= "7.4.6"}
-  "pecu" {= "0.4"}
   "ppx_cstruct" {= "5.2.0"}
   "ppx_derivers" {= "1.2.1"}
   "ppx_deriving" {= "4.5"}
@@ -119,11 +108,8 @@ depends: [
   "ptime" {= "0.8.5"}
   "re" {= "1.9.0"}
   "result" {= "1.5"}
-  "rosetta" {= "0.3.0"}
   "rresult" {= "0.6.0"}
   "safepass" {= "3.0"}
-  "sendmail" {= "0.3.0"}
-  "sendmail-lwt" {= "0.3.0"}
   "seq" {= "base"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
@@ -136,15 +122,12 @@ depends: [
   "tsort" {= "2.0.0"}
   "tyxml" {= "4.4.0"}
   "uchar" {= "0.0.2"}
-  "unstrctrd" {= "0.1"}
   "uri" {= "3.1.0"}
   "uri-sexp" {= "3.1.0"}
   "uuidm" {= "0.9.7"}
   "uutf" {= "1.0.2"}
-  "uuuu" {= "0.2.0"}
   "x509" {= "0.11.2"}
   "yojson" {= "1.7.0"}
-  "yuscii" {= "0.3.0"}
   "zarith" {= "1.9.1"}
 ]
 build: [
@@ -163,7 +146,3 @@ build: [
 ]
 dev-repo: "git+https://github.com/oxidizing/sihl.git"
 name: "sihl"
-pin-depends: [
-  "conformist.0.1.0"
-  "git+ssh://git@github.com/oxidizing/conformist.git#master"
-]

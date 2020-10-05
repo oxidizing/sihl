@@ -1,11 +1,11 @@
 (** Use this module to send single emails either immediately or later sending a lot of
     emails at once. Email template support is also provided. *)
 
-module Service = Email_service
+exception Exception of string
 
 module Template : sig
   module Data : sig
-    type t = Email_core.Template.Data.t
+    type t = Model.Template.Data.t
 
     val pp : Format.formatter -> t -> unit
     val show : t -> string
@@ -15,7 +15,7 @@ module Template : sig
     val make : (string * string) list -> t
   end
 
-  type t = Email_core.Template.t
+  type t = Model.Template.t
 
   val make : ?text:string -> ?html:string -> string -> t
   val created_at : t -> Ptime.t
@@ -33,9 +33,9 @@ module Template : sig
   val render : Data.t -> t -> string * string
 end
 
-module DevInbox = Email_core.DevInbox
+module DevInbox = Model.DevInbox
 
-type t = Email_core.t
+type t = Model.t
 
 val make
   :  sender:string
@@ -66,3 +66,7 @@ val set_html_content : string -> t -> t
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val equal : t -> t -> bool
+val to_yojson : t -> Yojson.Safe.t
+val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or
+
+module Sig = Sig

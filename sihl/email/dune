@@ -1,9 +1,8 @@
 (library
  (name email)
  (public_name sihl.email)
- (libraries logs letters yojson ppx_deriving_yojson.runtime caqti cohttp
-   cohttp-lwt-unix str core utils data queue)
- (modules_without_implementation email_service_sig)
+ (libraries logs yojson ppx_deriving_yojson.runtime str core utils data queue)
+ (modules_without_implementation sig)
  (preprocess
   (pps ppx_deriving_yojson ppx_fields_conv ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make)))
