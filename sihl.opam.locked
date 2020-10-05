@@ -31,7 +31,6 @@ depends: [
   "conduit-lwt-unix" {= "2.2.2"}
   "conf-gmp" {= "2"}
   "conf-gmp-powm-sec" {= "1"}
-  "conf-libpcre" {= "1"}
   "conf-libssl" {= "2"}
   "conf-m4" {= "1"}
   "conf-perl" {= "1"}
@@ -94,7 +93,6 @@ depends: [
   "opium" {= "0.18.0"}
   "opium_kernel" {= "0.18.0"}
   "parsexp" {= "v0.14.0"}
-  "pcre" {= "7.4.6"}
   "ppx_cstruct" {= "5.2.0"}
   "ppx_derivers" {= "1.2.1"}
   "ppx_deriving" {= "4.5"}

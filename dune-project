@@ -53,9 +53,6 @@
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
 
-  ;; Regex
-  (pcre (>= 7.4.3))
-
   ;; Hashing
   (safepass (>= 3.0))
 
