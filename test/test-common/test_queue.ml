@@ -3,7 +3,7 @@ open Lwt.Syntax
 
 module Make
     (RepoService : Sihl.Data.Repo.Service.Sig.SERVICE)
-    (QueueService : Sihl.Queue.Service.Sig.SERVICE) =
+    (QueueService : Sihl.Queue.Sig.SERVICE) =
 struct
   let dispatched_job_gets_processed ctx with_context _ () =
     let has_ran_job = ref false in

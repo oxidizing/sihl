@@ -1,8 +1,8 @@
 open Lwt.Syntax
-module Job = Queue_core.Job
-module WorkableJob = Queue_core.WorkableJob
-module JobInstance = Queue_core.JobInstance
-module Sig = Queue_service_sig
+module Job = Sihl.Queue.Job
+module WorkableJob = Sihl.Queue.WorkableJob
+module JobInstance = Sihl.Queue.JobInstance
+module Sig = Sihl.Queue.Sig
 
 let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
@@ -189,4 +189,4 @@ module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.
   ;;
 end
 
-module Repo = Queue_service_repo
+module Repo = Repo

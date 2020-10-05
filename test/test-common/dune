@@ -1,3 +1,3 @@
 (library
  (name test_common)
- (libraries sihl sihl-storage alcotest alcotest-lwt))
+ (libraries sihl sihl-storage sihl-queue alcotest alcotest-lwt))

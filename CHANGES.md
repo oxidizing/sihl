@@ -6,6 +6,7 @@
 - Simplify app abstraction, instead of `with_` use service APIs directly
 - Extract storage service as `sihl-storage` opam package
 - Extract email service as `sihl-email` opam package
+- Extract queue service as `sihl-queue` opam package
 - Move configuration and logging into core, neither of the are implemented as services
 
 ### Fixed
