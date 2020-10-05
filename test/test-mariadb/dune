@@ -1,6 +1,7 @@
 (executable
  (name test)
- (libraries sihl sihl_storage sihl_email test_common alcotest-lwt caqti-driver-mariadb))
+ (libraries sihl sihl_storage sihl_email test_common alcotest-lwt
+   caqti-driver-mariadb))
 
 (rule
  (alias runtest-all)
