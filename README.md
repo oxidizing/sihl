@@ -1,10 +1,7 @@
 <p align="center">
   <a href="https://github.com/oxidizing/sihl">
-    <img src="images/logo.jpg" alt="Logo" width="400" height="240">
+    <img src="images/logo.png" alt="Logo">
   </a>
-
-  <h3 align="center">Sihl</h3>
-
   <p align="center">
     A modular functional web framework 🌊
     <br />
