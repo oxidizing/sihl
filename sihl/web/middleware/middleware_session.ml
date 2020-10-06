@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-module Make (SessionService : Session.Service.Sig.SERVICE) = struct
+module Make (SessionService : Session.Sig.SERVICE) = struct
   let m ?(cookie_key = "session_key") () =
     let filter handler ctx =
       match Http.Req.cookie_data ctx ~key:cookie_key with

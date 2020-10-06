@@ -1,3 +1,3 @@
-include Session_core
-module Service = Session_service
-module Schedule = Session_schedule
+include Model
+module Service = Service
+module Sig = Sig

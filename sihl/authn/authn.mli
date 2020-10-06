@@ -24,4 +24,5 @@
 
     (* TODO *) *)
 
-module Service = Authn_service
+module Service = Service
+module Sig = Sig

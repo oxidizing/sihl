@@ -1,9 +1,6 @@
 open Lwt.Syntax
 
-module Make
-    (AuthnService : Authn.Service.Sig.SERVICE)
-    (UserService : User.Service.Sig.SERVICE) =
-struct
+module Make (AuthnService : Authn.Sig.SERVICE) (UserService : User.Sig.SERVICE) = struct
   let session () =
     let filter handler ctx =
       let* user = AuthnService.find_user_in_session_opt ctx in

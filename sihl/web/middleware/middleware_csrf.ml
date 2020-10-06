@@ -12,8 +12,8 @@ exception No_csrf_token of string
    specifics namely: - Testing views with custom HTTP client - Allow Sihl user to make
    views exempt - Enable subdomain - HTML caching token handling *)
 module Make
-    (TokenService : Token.Service.Sig.SERVICE)
-    (SessionService : Session.Service.Sig.SERVICE)
+    (TokenService : Token.Sig.SERVICE)
+    (SessionService : Session.Sig.SERVICE)
     (RandomService : Utils.Random.Service.Sig.SERVICE) =
 struct
   let csrf_token_length = 20

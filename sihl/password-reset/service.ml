@@ -1,5 +1,4 @@
 open Lwt.Syntax
-module Sig = User_password_reset_service_sig
 
 let kind = "password_reset"
 
@@ -7,14 +6,13 @@ module TokenData = struct
   type t = { user_id : string } [@@deriving yojson, make, fields]
 end
 
-module Make
-    (TokenService : Token.Service.Sig.SERVICE)
-    (UserService : User_service_sig.SERVICE) : Sig.SERVICE = struct
+module Make (TokenService : Token.Sig.SERVICE) (UserService : User.Sig.SERVICE) :
+  Sig.SERVICE = struct
   let create_reset_token ctx ~email =
     let* user = UserService.find_by_email_opt ctx ~email in
     match user with
     | Some user ->
-      let user_id = User_core.User.id user in
+      let user_id = User.id user in
       let data =
         TokenData.make ~user_id |> TokenData.to_yojson |> Yojson.Safe.to_string
       in

@@ -2,7 +2,7 @@
  (name message)
  (public_name sihl.message)
  (libraries yojson ppx_deriving_yojson.runtime core logs session)
- (modules_without_implementation message_service_sig)
+ (modules_without_implementation sig)
  (preprocess
   (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make)))

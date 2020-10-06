@@ -1,10 +1,9 @@
 open Lwt.Syntax
-module Entry = Message_core.Entry
-module Sig = Message_service_sig
+module Entry = Model.Entry
 
 let session_key = "message"
 
-module Make (SessionService : Session.Service.Sig.SERVICE) : Sig.SERVICE = struct
+module Make (SessionService : Session.Sig.SERVICE) : Sig.SERVICE = struct
   let fetch_entry ctx =
     let* entry = SessionService.get ~key:session_key ctx in
     match entry with
@@ -44,7 +43,7 @@ module Make (SessionService : Session.Service.Sig.SERVICE) : Sig.SERVICE = struc
     | Some entry ->
       let serialized_entry = entry |> Entry.rotate |> Entry.to_string in
       let* () = SessionService.set ctx ~key:session_key ~value:serialized_entry in
-      Lwt.return @@ Message_core.Entry.next entry
+      Lwt.return @@ Model.Entry.next entry
   ;;
 
   let current ctx =
@@ -56,7 +55,7 @@ module Make (SessionService : Session.Service.Sig.SERVICE) : Sig.SERVICE = struc
 
   let set ctx ?(error = []) ?(warning = []) ?(success = []) ?(info = []) () =
     let message =
-      Message_core.Message.(
+      Model.Message.(
         empty
         |> set_error error
         |> set_warning warning

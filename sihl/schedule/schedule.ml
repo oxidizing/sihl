@@ -1,7 +1,8 @@
-module Service = Schedule_service
+module Service = Service
+module Sig = Sig
 
-type t = Schedule_core.t
+type t = Model.t
 
-let create = Schedule_core.create
-let every_second = Schedule_core.every_second
-let every_hour = Schedule_core.every_hour
+let create = Model.create
+let every_second = Model.every_second
+let every_hour = Model.every_hour

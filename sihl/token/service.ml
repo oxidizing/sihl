@@ -1,13 +1,10 @@
 open Lwt.Syntax
-module Sig = Token_service_sig
-module Repo = Token_service_repo
 
 module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOSITORY) :
   Sig.SERVICE = struct
   let find_opt ctx value =
     let* token = Repo.find_opt ctx ~value in
-    Lwt.return
-    @@ Option.bind token (fun tk -> if Token_core.is_valid tk then token else None)
+    Lwt.return @@ Option.bind token (fun tk -> if Model.is_valid tk then token else None)
   ;;
 
   let find ctx value =
@@ -15,14 +12,12 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
     match token with
     | Some token -> Lwt.return token
     | None ->
-      raise
-        (Token_core.Exception (Printf.sprintf "Token %s not found or not valid" value))
+      raise (Model.Exception (Printf.sprintf "Token %s not found or not valid" value))
   ;;
 
   let find_by_id_opt ctx id =
     let* token = Repo.find_by_id_opt ctx ~id in
-    Lwt.return
-    @@ Option.bind token (fun tk -> if Token_core.is_valid tk then token else None)
+    Lwt.return @@ Option.bind token (fun tk -> if Model.is_valid tk then token else None)
   ;;
 
   let find_by_id ctx id =
@@ -31,8 +26,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
     | Some token -> Lwt.return token
     | None ->
       raise
-        (Token_core.Exception
-           (Printf.sprintf "Token with id %s not found or not valid" id))
+        (Model.Exception (Printf.sprintf "Token with id %s not found or not valid" id))
   ;;
 
   let make ~id ~data ~kind ?(expires_in = Utils.Time.OneDay) ?now ?(length = 80) () =
@@ -40,9 +34,9 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
     let expires_in = Utils.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
     let expires_at = Option.get (Ptime.add_span now expires_in) in
-    let status = Token_core.Status.Active in
+    let status = Model.Status.Active in
     let created_at = Ptime_clock.now () in
-    Token_core.make ~id ~value ~data ~kind ~status ~expires_at ~created_at
+    Model.make ~id ~value ~data ~kind ~status ~expires_at ~created_at
   ;;
 
   let create ctx ~kind ?data ?expires_in ?length () =
@@ -51,11 +45,11 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOS
     let id = Database.Id.random () |> Database.Id.to_string in
     let token = make ~id ~kind ~data ~expires_in ~length () in
     let* () = Repo.insert ctx ~token in
-    let value = Token_core.value token in
+    let value = Model.value token in
     find ctx value
   ;;
 
-  let invalidate ctx token = Repo.update ctx ~token:(Token_core.invalidate token)
+  let invalidate ctx token = Repo.update ctx ~token:(Model.invalidate token)
 
   let start ctx =
     let () = Repo.register_migration () in

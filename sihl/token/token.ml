@@ -1,2 +1,4 @@
-module Service = Token_service
-include Token_core
+include Model
+module Service = Service
+module Repo = Repo
+module Sig = Sig

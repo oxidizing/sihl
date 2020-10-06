@@ -7,7 +7,7 @@ module Sig = Sihl.Queue.Sig
 let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
 
-module MakePolling (ScheduleService : Schedule.Service.Sig.SERVICE) (Repo : Sig.REPO) :
+module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
   Sig.SERVICE = struct
   let dispatch ctx ~job ?delay input =
     let name = Job.name job in

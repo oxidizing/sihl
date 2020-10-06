@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-module Make (MessageService : Message.Service.Sig.SERVICE) = struct
+module Make (MessageService : Message.Sig.SERVICE) = struct
   let m () =
     let filter handler ctx =
       let* result = MessageService.rotate ctx in

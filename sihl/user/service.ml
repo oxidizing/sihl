@@ -1,7 +1,5 @@
 open Lwt.Syntax
-module Repo = User_service_repo
-module User = User_core.User
-module Sig = User_service_sig
+module User = Model.User
 
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   module Database = Repo.DatabaseService
@@ -11,7 +9,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
 
   let require_user ctx =
     match Core.Ctx.find User.ctx_key ctx with
-    | None -> raise (User_core.Exception "User not found in context")
+    | None -> raise (Model.Exception "User not found in context")
     | Some user -> user
   ;;
 
@@ -23,7 +21,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     | Some user -> Lwt.return user
     | None ->
       Logs.err (fun m -> m "USER: User not found with id %s" user_id);
-      raise (User_core.Exception "User not found")
+      raise (Model.Exception "User not found")
   ;;
 
   let find_by_email_opt ctx ~email =
@@ -41,7 +39,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     | Some user -> Lwt.return user
     | None ->
       Logs.err (fun m -> m "USER: User not found with email %s" email);
-      raise (User_core.Exception "User not found")
+      raise (Model.Exception "User not found")
   ;;
 
   let find_all ctx ~query = Repo.get_all ctx ~query
@@ -70,7 +68,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
         | Error msg ->
           Logs.err (fun m ->
               m "USER: Can not update password of user %s: %s" (User.email user) msg);
-          raise (User_core.Exception msg)
+          raise (Model.Exception msg)
       in
       let* () = Repo.update ~user:updated_user ctx in
       Lwt.return @@ Ok updated_user
@@ -104,7 +102,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
         | Error msg ->
           Logs.err (fun m ->
               m "USER: Can not set password of user %s: %s" (User.email user) msg);
-          raise (User_core.Exception msg)
+          raise (Model.Exception msg)
       in
       let* () = Repo.update ctx ~user:updated_user in
       Lwt_result.return updated_user
@@ -114,7 +112,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     let user =
       match User.create ~email ~password ~username ~admin:false ~confirmed:false with
       | Ok user -> user
-      | Error msg -> raise (User_core.Exception msg)
+      | Error msg -> raise (Model.Exception msg)
     in
     let* () = Repo.insert ctx ~user in
     Lwt.return user
@@ -127,7 +125,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       | Some _ ->
         Logs.err (fun m ->
             m "USER: Can not create admin %s since the email is already taken" email);
-        raise (User_core.Exception "Email already taken")
+        raise (Model.Exception "Email already taken")
       | None -> Lwt.return ()
     in
     let user =
@@ -135,7 +133,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       | Ok user -> user
       | Error msg ->
         Logs.err (fun m -> m "USER: Can not create admin %s %s" email msg);
-        raise (User_core.Exception msg)
+        raise (Model.Exception msg)
     in
     let* () = Repo.insert ctx ~user in
     Lwt.return user

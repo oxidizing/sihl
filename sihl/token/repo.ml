@@ -1,12 +1,8 @@
-module Sig = Token_service_sig
-
 module MakeMariaDb
     (DbService : Database.Sig.SERVICE)
     (RepoService : Repository.Sig.SERVICE)
     (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
   module Sql = struct
-    module Model = Token_core
-
     let find_request =
       Caqti_request.find
         Caqti_type.string

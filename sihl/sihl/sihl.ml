@@ -12,5 +12,6 @@ module Session = Session
 module Storage = Storage
 module Token = Token
 module User = User
+module Password_reset = Password_reset
 module Utils = Utils
 module Web = Web

@@ -4,8 +4,8 @@ open Lwt.Syntax
 module Make
     (DbService : Sihl.Database.Sig.SERVICE)
     (RepoService : Sihl.Repository.Sig.SERVICE)
-    (TokenService : Sihl.Token.Service.Sig.SERVICE)
-    (SessionService : Sihl.Session.Service.Sig.SERVICE)
+    (TokenService : Sihl.Token.Sig.SERVICE)
+    (SessionService : Sihl.Session.Sig.SERVICE)
     (RandomService : Sihl.Utils.Random.Service.Sig.SERVICE) =
 struct
   module Middleware =

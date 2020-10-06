@@ -3,8 +3,7 @@
  (public_name sihl.user)
  (libraries ptime ptime.clock.os yojson ppx_deriving_yojson.runtime alcotest
    core utils database token repository migration)
- (modules_without_implementation user_password_reset_service_sig
-   user_service_sig)
+ (modules_without_implementation sig)
  (preprocess
   (pps ppx_deriving_yojson ppx_fields_conv ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make)))

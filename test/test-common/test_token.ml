@@ -4,7 +4,7 @@ open Alcotest_lwt
 module Make
     (DbService : Sihl.Database.Sig.SERVICE)
     (RepoService : Sihl.Repository.Sig.SERVICE)
-    (TokenService : Sihl.Token.Service.Sig.SERVICE) =
+    (TokenService : Sihl.Token.Sig.SERVICE) =
 struct
   let create_and_find_token _ () =
     let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in

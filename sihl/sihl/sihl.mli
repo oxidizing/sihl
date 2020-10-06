@@ -90,6 +90,7 @@ module Token = Token
 (** {1 User Management}*)
 
 module User = User
+module Password_reset = Password_reset
 
 (** {1 Utils & Helpers} *)
 

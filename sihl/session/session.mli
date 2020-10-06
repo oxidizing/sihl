@@ -1,13 +1,13 @@
 (** Use this module to create user sessions and to read and write session data. *)
 
 (** The session service exposes a key-value store that is scoped by user session *)
-module Service = Session_service
+module Service = Service
 
-module Schedule = Session_schedule
+module Sig = Sig
 
-type data_map = Session_core.data_map
-type data = Session_core.data
-type t = Session_core.t
+type data_map = Model.data_map
+type data = Model.data
+type t = Model.t
 
 module Map : sig
   type 'a t

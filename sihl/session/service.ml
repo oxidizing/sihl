@@ -1,11 +1,10 @@
 open Lwt.Syntax
-module Sig = Session_service_sig
 
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
 module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO) :
   Sig.SERVICE = struct
-  let add_to_ctx session ctx = Core.Ctx.add ctx_key (Session_core.key session) ctx
+  let add_to_ctx session ctx = Core.Ctx.add ctx_key (Model.key session) ctx
   let require_session_key_opt ctx = Core.Ctx.find ctx_key ctx
 
   let require_session_key ctx =
@@ -13,12 +12,12 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
     | None ->
       Logs.err (fun m -> m "SESSION: No session found in context");
       Logs.info (fun m -> m "HINT: Have you applied the session middleware?");
-      raise (Session_core.Exception "No session found in context")
+      raise (Model.Exception "No session found in context")
     | Some session -> session
   ;;
 
   let make ?expire_date now =
-    let open Session_core in
+    let open Model in
     match expire_date, default_expiration_date now with
     | Some expire_date, _ ->
       Some { key = RandomService.base64 ~bytes:10; data = Map.empty; expire_date }
@@ -34,11 +33,11 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
       | None ->
         Logs.err (fun m ->
             m "SESSION: Can not create session, failed to create validity time");
-        raise (Session_core.Exception "Can not set session validity time")
+        raise (Model.Exception "Can not set session validity time")
     in
     let session =
       List.fold_left
-        (fun session (key, value) -> Session_core.set ~key ~value session)
+        (fun session (key, value) -> Model.set ~key ~value session)
         empty_session
         data
     in
@@ -54,7 +53,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
     | Some session -> Lwt.return session
     | None ->
       Logs.err (fun m -> m "SESSION: Session with key %s not found in database" key);
-      raise (Session_core.Exception "Session not found")
+      raise (Model.Exception "Session not found")
   ;;
 
   let find_all = Repo.find_all
@@ -62,21 +61,21 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
   let set ctx ~key ~value =
     let session_key = require_session_key ctx in
     let* session = find ctx ~key:session_key in
-    let session = Session_core.set ~key ~value session in
+    let session = Model.set ~key ~value session in
     Repo.update ctx session
   ;;
 
   let unset ctx ~key =
     let session_key = require_session_key ctx in
     let* session = find ctx ~key:session_key in
-    let session = Session_core.remove ~key session in
+    let session = Model.remove ~key session in
     Repo.update ctx session
   ;;
 
   let get ctx ~key =
     let session_key = require_session_key ctx in
     let* session = find ctx ~key:session_key in
-    Session_core.get key session |> Lwt.return
+    Model.get key session |> Lwt.return
   ;;
 
   let start ctx =
@@ -100,7 +99,7 @@ module Repo = struct
       (RepoService : Repository.Sig.SERVICE)
       (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
     module Sql = struct
-      module Model = Session_core
+      module Model = Model
 
       let find_all_request =
         Caqti_request.find
@@ -242,7 +241,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       (RepoService : Repository.Sig.SERVICE)
       (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
     module Sql = struct
-      module Model = Session_core
+      module Model = Model
 
       let find_all_request =
         Caqti_request.find

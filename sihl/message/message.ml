@@ -1,5 +1,6 @@
-module Service = Message_service
-module Entry = Message_core.Entry
-include Message_core.Message
+module Service = Service
+module Sig = Sig
+module Entry = Model.Entry
+include Model.Message
 
-type t = Message_core.Message.t
+type t = Model.Message.t

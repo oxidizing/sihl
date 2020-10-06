@@ -1,5 +1,4 @@
 open Lwt.Syntax
-module Sig = User_service_sig
 
 module MakeMariaDb
     (DbService : Database.Sig.SERVICE)
@@ -42,7 +41,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
   end
 
-  module Model = User_core.User
+  module Model = Model.User
 
   let get_all ctx ~query =
     let fields =
@@ -265,7 +264,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     let migration () = Migration.(empty "user" |> add_step create_users_table)
   end
 
-  module Model = User_core.User
+  module Model = Model.User
 
   let get_all ctx ~query =
     let fields =

@@ -1,20 +1,16 @@
 open Lwt.Syntax
-module Sig = Schedule_service_sig
 
 module Default : Sig.SERVICE = struct
   let schedule _ schedule =
     let should_stop = ref false in
     let stop_schedule () = should_stop := true in
-    Logs.debug (fun m -> m "SCHEDULE: Scheduling %s" (Schedule_core.label schedule));
-    let scheduled_function = Schedule_core.scheduled_function schedule in
+    Logs.debug (fun m -> m "SCHEDULE: Scheduling %s" (Model.label schedule));
+    let scheduled_function = Model.scheduled_function schedule in
     let rec loop () =
       let now = Ptime_clock.now () in
-      let duration = Schedule_core.run_in schedule ~now in
+      let duration = Model.run_in schedule ~now in
       Logs.debug (fun m ->
-          m
-            "SCHEDULE: Running schedule %s in %f seconds"
-            (Schedule_core.label schedule)
-            duration);
+          m "SCHEDULE: Running schedule %s in %f seconds" (Model.label schedule) duration);
       let* () =
         Lwt.catch
           (fun () -> scheduled_function ())
@@ -30,8 +26,7 @@ module Default : Sig.SERVICE = struct
       if !should_stop
       then (
         let () =
-          Logs.debug (fun m ->
-              m "SCHEDULE: Stop schedule %s" (Schedule_core.label schedule))
+          Logs.debug (fun m -> m "SCHEDULE: Stop schedule %s" (Model.label schedule))
         in
         Lwt.return ())
       else loop ()

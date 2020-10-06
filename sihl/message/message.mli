@@ -2,10 +2,11 @@
     lifecycle. This is typically used to provide feedback to the user after submitting
     HTML forms. *)
 
-module Service = Message_service
-module Entry = Message_core.Entry
+module Service = Service
+module Sig = Sig
+module Entry = Model.Entry
 
-type t = Message_core.Message.t
+type t = Model.Message.t
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit

@@ -4,8 +4,8 @@ open Lwt.Syntax
 module Make
     (DbService : Sihl.Database.Sig.SERVICE)
     (RepoService : Sihl.Repository.Sig.SERVICE)
-    (UserService : Sihl.User.Service.Sig.SERVICE)
-    (PasswordResetService : Sihl.User.PasswordReset.Service.Sig.SERVICE) =
+    (UserService : Sihl.User.Sig.SERVICE)
+    (PasswordResetService : Sihl.Password_reset.Sig.SERVICE) =
 struct
   module UserSeed = Sihl.User.Seed.Make (UserService)
 

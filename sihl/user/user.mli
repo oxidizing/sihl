@@ -13,11 +13,10 @@
     module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db) module
     Migration = Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo) }] *)
 
-module Authz = User_authz
-module Seed = User_seed
-module PasswordReset = User_password_reset
+module Authz = Authz
+module Seed = Seed
 
-type t = User_core.User.t
+type t = Model.User.t
 
 val confirmed : t -> bool
 val admin : t -> bool
@@ -59,4 +58,6 @@ val t : t Caqti_type.t
 
 (** {1 Usage} *)
 
-module Service = User_service
+module Service = Service
+module Repo = Repo
+module Sig = Sig

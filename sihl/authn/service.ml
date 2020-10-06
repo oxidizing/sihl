@@ -1,11 +1,9 @@
 open Lwt.Syntax
-module Sig = Authn_service_sig
 
 exception Exception of string
 
-module Make
-    (SessionService : Session.Service.Sig.SERVICE)
-    (UserService : User.Service.Sig.SERVICE) : Sig.SERVICE = struct
+module Make (SessionService : Session.Sig.SERVICE) (UserService : User.Sig.SERVICE) :
+  Sig.SERVICE = struct
   let find_user_in_session_opt ctx =
     let* user_id = SessionService.get ctx ~key:"authn" in
     match user_id with

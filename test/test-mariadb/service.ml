@@ -6,12 +6,12 @@ module Migration = Sihl.Migration.Service.Make (MigrationRepo)
 module Random = Sihl.Utils.Random.Service.Default
 
 (* Repositories *)
-module TokenRepo = Sihl.Token.Service.Repo.MakeMariaDb (Database) (Repository) (Migration)
+module TokenRepo = Sihl.Token.Repo.MakeMariaDb (Database) (Repository) (Migration)
 
 module SessionRepo =
   Sihl.Session.Service.Repo.MakeMariaDb (Database) (Repository) (Migration)
 
-module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Database) (Repository) (Migration)
+module UserRepo = Sihl.User.Repo.MakeMariaDb (Database) (Repository) (Migration)
 module StorageRepo = Sihl_storage.Repo.MakeMariaDb (Database) (Repository) (Migration)
 
 module EmailTemplateRepo =
@@ -25,6 +25,6 @@ module Session = Sihl.Session.Service.Make (Random) (SessionRepo)
 module User = Sihl.User.Service.Make (UserRepo)
 module Storage = Sihl_storage.Make (StorageRepo)
 module EmailTemplate = Sihl_email.Template.Make (EmailTemplateRepo)
-module PasswordReset = Sihl.User.PasswordReset.Service.Make (Token) (User)
+module PasswordReset = Sihl.Password_reset.Service.Make (Token) (User)
 module Schedule = Sihl.Schedule.Service.Default
 module Queue = Sihl_queue.MakePolling (Schedule) (QueueRepo)

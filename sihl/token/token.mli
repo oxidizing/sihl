@@ -2,7 +2,9 @@
     after a certain amount of time. It takes care of secure random byte generation and the
     persistence and validation of tokens. *)
 
-module Service = Token_service
+module Service = Service
+module Repo = Repo
+module Sig = Sig
 
 exception Exception of Base.string
 
@@ -21,7 +23,7 @@ module Status : sig
   val alco : t Alcotest.testable
 end
 
-type t = Token_core.t
+type t = Model.t
 
 val pp : Format.formatter -> t -> unit
 val show : t -> string

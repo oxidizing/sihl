@@ -1,5 +1,6 @@
-include User_core.User
-module Authz = User_authz
-module Service = User_service
-module Seed = User_seed
-module PasswordReset = User_password_reset
+include Model.User
+module Authz = Authz
+module Service = Service
+module Repo = Repo
+module Sig = Sig
+module Seed = Seed
