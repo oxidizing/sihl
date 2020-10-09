@@ -5,7 +5,8 @@
   <p align="center">
     A modular functional web framework 🌊
     <br />
-    <a href="https://sihl.oxidizing.io"><strong>Explore the docs »</strong></a>
+    <a href="https://oxidizing.github.io/sihl/sihl/Sihl/index.html">
+    <strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/oxidizing/sihl-minimal-starter">View Starter Project</a>
