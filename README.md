@@ -3,7 +3,7 @@
     <img src="images/logo.png" alt="Logo">
   </a>
   <p align="center">
-    A modular functional web framework 🌊
+    A modular and functional web framework
     <br />
     <a href="https://oxidizing.github.io/sihl/sihl/Sihl/index.html">
     <strong>Explore the docs »</strong></a>
