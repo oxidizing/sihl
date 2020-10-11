@@ -39,5 +39,6 @@ val run
   :  ?commands:Command.t list
   -> ?configuration:Configuration.data
   -> ?log_reporter:(unit -> Logs.reporter)
+  -> ?args:string list
   -> t
   -> unit

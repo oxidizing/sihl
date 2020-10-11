@@ -58,10 +58,13 @@ let print_all commands =
        command_list
 ;;
 
-let run commands =
+let run commands args =
   let args =
-    try Sys.argv |> Array.to_list |> List.tl with
-    | _ -> []
+    match args with
+    | Some args -> args
+    | None ->
+      (try Sys.argv |> Array.to_list |> List.tl with
+      | _ -> [])
   in
   let command = find_command_by_args commands args in
   match command with

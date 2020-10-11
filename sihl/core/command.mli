@@ -22,9 +22,11 @@ val make : name:string -> ?help:string -> description:string -> fn -> t
 
 (** {1 Running commands} *)
 
-(** Call [run commands] in the main Sihl app executable to pass command line arguments to
-    all registered [commands]. This is the main entry point to a Sihl app. *)
-val run : t list -> unit Lwt.t
+(** Call [run commands args] in the main Sihl app executable to pass command line
+    arguments to all registered [commands]. This is the main entry point to a Sihl app. An
+    optional list of arguments [args] can be passed, if [None] is passed, it reads the
+    arguments from [Sys.argv]. *)
+val run : t list -> string list option -> unit Lwt.t
 
 (** {1 Utilities} *)
 

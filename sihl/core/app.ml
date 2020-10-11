@@ -46,7 +46,13 @@ let starting_commands service =
     (Container.Service.commands service)
 ;;
 
-let run ?(commands = []) ?(configuration = []) ?(log_reporter = Log.default_reporter) app =
+let run
+    ?(commands = [])
+    ?(configuration = [])
+    ?(log_reporter = Log.default_reporter)
+    ?args
+    app
+  =
   (* Set the logger up as first thing so we can log *)
   Logs.set_reporter (log_reporter ());
   Logger.debug (fun m -> m "Setup service configurations");
@@ -61,5 +67,5 @@ let run ?(commands = []) ?(configuration = []) ?(log_reporter = Log.default_repo
   Logger.debug (fun m -> m "Setup service commands");
   let service_commands = app.services |> List.map starting_commands |> List.concat in
   let commands = List.concat [ configuration_commands; service_commands; commands ] in
-  Lwt_main.run (Command.run commands)
+  Lwt_main.run (Command.run commands args)
 ;;
