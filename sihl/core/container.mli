@@ -47,8 +47,6 @@ val start_services : Service.t list -> (Lifecycle.t list * Ctx.t) Lwt.t
     dependencies. (No service is stopped after its dependency) *)
 val stop_services : Ctx.t -> Service.t list -> unit Lwt.t
 
-(** {1 Internal} Exposes for testing purposes *)
-
 module Map : sig
   type 'a t
 end

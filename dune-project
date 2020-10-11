@@ -1,4 +1,4 @@
-(lang dune 2.4)
+(lang dune 2.7)
 (generate_opam_files true)
 
 (name sihl)
@@ -22,7 +22,7 @@
  (description "Build web apps fast with long-term maintainability in mind.")
  (depends
   ;; General system dependencies
-  (dune (>= 2.4))
+  (dune (>= 2.7))
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
 
@@ -80,7 +80,7 @@
  (description "
 This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
  (depends
-  (dune (>= 2.4))
+  (dune (>= 2.7))
   (ocaml (>= 4.08.0))
   (sihl (= :version))))
 
@@ -90,7 +90,7 @@ This service can be used to handle large binary blobs that are typically not sto
  (description "
 A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
  (depends
-  (dune (>= 2.4))
+  (dune (>= 2.7))
   (ocaml (>= 4.08.0))
   (sihl (= :version))
   (letters (>= 0.2.0))))
@@ -101,6 +101,6 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
  (description "
 A Sihl service for putting and working jobs on queues. Various queue backends are provided.")
  (depends
-  (dune (>= 2.4))
+  (dune (>= 2.7))
   (ocaml (>= 4.08.0))
   (sihl (= :version))))

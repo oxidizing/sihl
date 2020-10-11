@@ -1,11 +1,8 @@
 (** A module to create Sihl apps. *)
 
+(** An app is a thin convenience layer on top of the service container. It provides hooks
+    that are executed at different stages in the app lifecycle. *)
 type t
-
-(** {1 App}
-
-    In essence, an app is a thin convenience layer on top of the service container. It
-    provides hooks that are executed at different stages in the app lifecycle. *)
 
 (** [empty] returns an app without any services. *)
 val empty : t
@@ -42,5 +39,6 @@ val run
   :  ?commands:Command.t list
   -> ?configuration:Configuration.data
   -> ?log_reporter:(unit -> Logs.reporter)
+  -> ?args:string list
   -> t
   -> unit
