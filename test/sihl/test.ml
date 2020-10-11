@@ -12,6 +12,13 @@ let suite =
           `Quick
           Core_container.order_simple_dependency_list
       ] )
+  ; ( "service configuration"
+    , [ test_case "read empty" `Quick Core_configuration.read_empty_value
+      ; test_case "read non-existing" `Quick Core_configuration.read_non_existing
+      ; test_case "read existing" `Quick Core_configuration.read_existing
+      ; test_case "read schema invalid" `Quick Core_configuration.read_schema_invalid
+      ; test_case "read schema" `Quick Core_configuration.read_schema
+      ] )
   ; ( "http"
     , [ test_case "require url encoded body" `Quick Http.test_require_url_encoded_body
       ; test_case
