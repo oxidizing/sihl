@@ -9,30 +9,17 @@
 
     {[
       module Service = struct
-        module Random = Sihl.Utils.Random.Service
-        module Log = Sihl.Log.Service
-        module Config = Sihl.Config.Service
-        module Db = Sihl.Database.Service
-        module MigrationRepo = Sihl.Data.Migration.Service.Repo.MariaDb
-        module Migration = Sihl.Data.Migration.Service.Make (Db) (MigrationRepo)
-        module WebServer = Sihl.Web.Server.Service.Make ()
-        module Schedule = Sihl.Schedule.Service.Make (Log)
+        module WebServer = Sihl.Web.Server.Service.Opium
       end
-
-      let services : (module Sihl.Core.Container.Service.Sig) list =
-        [ (module Service.WebServer) ]
-      ;;
 
       let hello_page =
         Sihl.Web.Route.get "/hello/" (fun _ ->
             Sihl.Web.Res.(html |> set_body "Hello!") |> Lwt.return)
       ;;
 
-      let routes = [ "/page", [ hello_page ], [] ]
-
-      module App = Sihl.App.Make (Service)
-
-      let _ = App.(empty |> with_services services |> with_routes routes |> run)
+      let endpoints = [ "/page", [ hello_page ], [] ]
+      let services = [ Service.WebServer.configure endpoints [ "PORT", "8080" ] ]
+      let () = Sihl.Core.App.(empty |> with_services services |> run)
     ]} *)
 
 (** {1 Authentication}*)

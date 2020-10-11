@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.5] - ?
+## [0.1.5] - 2020-10-11
 ### Fixed
 - Remove seed service since the same functionality
 - Simplify app abstraction, instead of `with_` use service APIs directly
@@ -12,8 +12,6 @@
 - Split up `Sihl.Data` into `Sihl.Migration`, `Sihl.Repository` and `Sihl.Database`
 - Move module signatures from `Foo.Service.Sig` to `Foo.Sig`, the services might live in a third party opam package, but the signatures are staying in `sihl`
 - Move `Sihl.App` to `Sihl.Core.App` and simplify app API
-
-### Fixed
 - Move log service, config service and cmd service into core (they don't have to be provided to other services through functors)
 - Simplify Sihl app creation and service configuration
 
