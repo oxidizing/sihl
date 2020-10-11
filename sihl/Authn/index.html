@@ -3,15 +3,14 @@
 module Random = Sihl.Utils.Random.Make ()
 module Cmd = Sihl.Cmd.Service.Make ()
 module Log = Sihl.Log.Service.Make ()
-module Db = Sihl.Data.Db.Service (Config) (Log)
+module Db = Sihl.Database.Service (Config) (Log)
 module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
 module Migration = Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
 
 (* Repo *)
-module SessionRepo =
-  Sihl.Session.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module SessionRepo = Sihl.Session.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
 module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
 
 (* Service *)
 module Session = Sihl.Session.Service.Make (Log) (Random) (SessionRepo)
-module User = Sihl.User.Service.Make (Log) (Cmd) (Db) (UserRepo)</code></pre></header></section><section><header><h2 id="usage"><a href="#usage" class="anchor"></a>Usage</h2><p>(* TODO *)</p></header><div class="spec module" id="module-Service"><a href="#module-Service" class="anchor"></a><code><span class="keyword">module</span> Service = <a href="../Authn__/index.html#module-Authn_service">Authn__.Authn_service</a></code></div></section></div></body></html>
+module User = Sihl.User.Service.Make (Log) (Cmd) (Db) (UserRepo)</code></pre></header></section><section><header><h2 id="usage"><a href="#usage" class="anchor"></a>Usage</h2><p>(* TODO *)</p></header><div class="spec module" id="module-Service"><a href="#module-Service" class="anchor"></a><code><span class="keyword">module</span> <a href="Service/index.html">Service</a> : <span class="keyword">sig</span> ... <span class="keyword">end</span></code></div><div class="spec module" id="module-Sig"><a href="#module-Sig" class="anchor"></a><code><span class="keyword">module</span> <a href="Sig/index.html">Sig</a> : <span class="keyword">sig</span> ... <span class="keyword">end</span></code></div></section></div></body></html>
