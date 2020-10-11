@@ -22,16 +22,12 @@ type data = (string * string) list
 (** The configuration contains configuration data and a configuration schema. *)
 type t
 
-(** {3 Constructors} *)
-
 (** [make ?schema data] returns a configuration containing the configuration [schema] and
     the configuration [data]. *)
 val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> data -> t
 
 (** [empty] is an empty configuration without any schema or data. *)
 val empty : t
-
-(** {3 Utilities} *)
 
 (** [data configuration] returns the configuration data of the configuration. *)
 val data : t -> data
