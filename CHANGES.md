@@ -11,6 +11,7 @@
 - Replace `pcre` with `re` as regex library to get rid of a system dependency on pcre
 - Split up `Sihl.Data` into `Sihl.Migration`, `Sihl.Repository` and `Sihl.Database`
 - Move module signatures from `Foo.Service.Sig` to `Foo.Sig`, the services might live in a third party opam package, but the signatures are staying in `sihl`
+- Move `Sihl.App` to `Sihl.Core.App` and simplify app API
 
 ### Fixed
 - Move log service, config service and cmd service into core (they don't have to be provided to other services through functors)
