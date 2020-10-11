@@ -11,25 +11,42 @@
 
     (Source: {{:https://12factor.net/config} https://12factor.net/config}) *)
 
+(** {1 Configuration} *)
+
+exception Exception of string
+
+(** A list of key-value pairs of strings representing the configuration key like SMTP_HOST
+    and a value. *)
+type data = (string * string) list
+
+(** The configuration contains configuration data and a configuration schema. *)
+type t
+
+(** {3 Constructors} *)
+
+(** [make ?schema data] returns a configuration containing the configuration [schema] and
+    the configuration [data]. *)
+val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> data -> t
+
+(** [empty] is an empty configuration without any schema or data. *)
+val empty : t
+
+(** {3 Utilities} *)
+
+(** [data configuration] returns the configuration data of the configuration. *)
+val data : t -> data
+
+(** [commands configurations] returns the list of CLI commands given a list of
+    configurations. *)
+val commands : t list -> Command.t list
+
 (** {1 Storing configuration}
 
     Configuration might come from various sources like .env files, environment variables
     or as data provided directly to services or the app. *)
 
-exception Exception of string
-
-(** A list of key-value pairs of strings representing the configuration key like SMTP_HOSt
-    and a value. *)
-type data = (string * string) list
-
-(** The configuration contains configuration data and a configuration schema *)
-type t
-
+(** [store data] stores the configuration [data]. *)
 val store : data -> unit
-val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> data -> t
-val empty : t
-val data : t -> data
-val commands : t list -> Command.t list
 
 (** A configuration is a list of key-value string pairs. *)
 
@@ -43,15 +60,14 @@ val commands : t list -> Command.t list
     they occur early in the app lifecycle. This minimizes the feedback loop and makes
     sure, that services start only with valid configuration. *)
 
-val read : (unit, 'ctor, 'ty) Conformist.t -> 'ty
-
-(** [fetch schema t] returns the decoded, statically typed version of configuration [t] of
+(** [read schema] returns the decoded, statically typed version of configuration [t] of
     the [schema]. This is used in services to declaratively define a valid configuration.
 
     The configuration data [t] is merged with the environment variable and, if present, an
     .env file.
 
     It fails with [Exception] and prints descriptive message of invalid configuration. *)
+val read : (unit, 'ctor, 'ty) Conformist.t -> 'ty
 
 (** [read_string key] returns the configuration value with [key] if present. The function
     is memoized, the first call caches the returned value and subsequent calls are fast. *)
@@ -65,5 +81,5 @@ val read_int : string -> int option
     caches the returned value and subsequent calls are fast. *)
 val read_bool : string -> bool option
 
-(** [is_testing ()] returns true if SIHL_ENV is set to [testing] *)
+(** [is_testing ()] returns true if SIHL_ENV is set to [testing]. *)
 val is_testing : unit -> bool

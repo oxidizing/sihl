@@ -10,7 +10,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "dune" {>= "2.4"}
+  "dune" {>= "2.7" & >= "2.7"}
   "ocaml" {>= "4.08.0"}
   "lwt" {>= "5.3.0"}
   "opium" {>= "0.17.1"}
@@ -35,9 +35,10 @@ depends: [
   "alcotest" {>= "1.2.0"}
   "alcotest-lwt" {>= "1.2.0" & with-test}
   "cohttp-lwt-unix" {>= "2.5.1" & with-test}
+  "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"

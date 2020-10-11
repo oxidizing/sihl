@@ -129,7 +129,7 @@ depends: [
   "zarith" {= "1.9.1"}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
