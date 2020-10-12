@@ -1,6 +1,6 @@
 (executable
  (name test)
- (libraries sihl sihl_storage sihl_email test_common alcotest-lwt
+ (libraries sihl sihl-storage sihl-email sihl-queue test_case alcotest-lwt
    caqti-driver-mariadb))
 
 (rule

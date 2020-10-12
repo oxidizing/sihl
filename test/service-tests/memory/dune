@@ -1,6 +1,6 @@
 (executable
  (name test)
- (libraries test_common alcotest-lwt))
+ (libraries test_case sihl-queue alcotest-lwt))
 
 (rule
  (alias runtest-all)

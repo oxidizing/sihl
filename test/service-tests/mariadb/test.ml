@@ -2,30 +2,27 @@ open Lwt.Syntax
 open Alcotest_lwt
 
 module Token =
-  Test_common.Test.Token.Make (Service.Database) (Service.Repository) (Service.Token)
+  Test_case.Token.Make (Service.Database) (Service.Repository) (Service.Token)
 
 module Session =
-  Test_common.Test.Session.Make (Service.Database) (Service.Repository) (Service.Session)
+  Test_case.Session.Make (Service.Database) (Service.Repository) (Service.Session)
 
 module Storage =
-  Test_common.Test.Storage.Make (Service.Database) (Service.Repository) (Service.Storage)
+  Test_case.Storage.Make (Service.Database) (Service.Repository) (Service.Storage)
 
-module User =
-  Test_common.Test.User.Make (Service.Database) (Service.Repository) (Service.User)
+module User = Test_case.User.Make (Service.Database) (Service.Repository) (Service.User)
 
 module Email =
-  Test_common.Test.Email.Make (Service.Database) (Service.Repository)
-    (Service.EmailTemplate)
+  Test_case.Email.Make (Service.Database) (Service.Repository) (Service.EmailTemplate)
 
 module PasswordReset =
-  Test_common.Test.PasswordReset.Make (Service.Database) (Service.Repository)
-    (Service.User)
+  Test_case.Password_reset.Make (Service.Database) (Service.Repository) (Service.User)
     (Service.PasswordReset)
 
-module Queue = Test_common.Test.Queue.Make (Service.Repository) (Service.Queue)
+module Queue = Test_case.Queue.Make (Service.Repository) (Service.Queue)
 
 module Csrf =
-  Test_common.Test.Csrf.Make (Service.Database) (Service.Repository) (Service.Token)
+  Test_case.Csrf.Make (Service.Database) (Service.Repository) (Service.Token)
     (Service.Session)
     (Service.Random)
 

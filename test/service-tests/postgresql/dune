@@ -1,6 +1,6 @@
 (executable
  (name test)
- (libraries sihl sihl-email test_common alcotest-lwt caqti-driver-postgresql))
+ (libraries sihl sihl-email test_case alcotest-lwt caqti-driver-postgresql))
 
 (rule
  (alias runtest-all)

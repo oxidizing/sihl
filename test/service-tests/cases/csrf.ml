@@ -1,6 +1,7 @@
 open Lwt.Syntax
 
 (* TODO [aerben] FIX TESTS*)
+
 module Make
     (DbService : Sihl.Database.Sig.SERVICE)
     (RepoService : Sihl.Repository.Sig.SERVICE)
@@ -149,7 +150,7 @@ struct
     (* Check if token was invalidated*)
     let* token = TokenService.find ctx !token_ref in
     Alcotest.(
-      check Sihl.Token.Status.alco "Is token invalid" Inactive (Token.status token));
+      check Sihl.Token.Status.alco "Is token invalid" Inactive (Sihl.Token.status token));
     Lwt.return ()
   ;;
 

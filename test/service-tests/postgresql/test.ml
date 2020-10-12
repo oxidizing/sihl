@@ -1,14 +1,12 @@
 open Lwt.Syntax
 
 module Session =
-  Test_common.Test.Session.Make (Service.Database) (Service.Repository) (Service.Session)
+  Test_case.Session.Make (Service.Database) (Service.Repository) (Service.Session)
 
-module User =
-  Test_common.Test.User.Make (Service.Database) (Service.Repository) (Service.User)
+module User = Test_case.User.Make (Service.Database) (Service.Repository) (Service.User)
 
 module Email =
-  Test_common.Test.Email.Make (Service.Database) (Service.Repository)
-    (Service.EmailTemplate)
+  Test_case.Email.Make (Service.Database) (Service.Repository) (Service.EmailTemplate)
 
 let test_suite _ = [ Session.test_suite; User.test_suite; Email.test_suite ]
 
