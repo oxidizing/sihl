@@ -1,3 +1,3 @@
-module Repository = Sihl.Repository.Service.Default
-module Schedule = Sihl.Schedule.Service.Default
-module Queue = Sihl_queue.MakePolling (Schedule) (Sihl_queue.Repo.MakeMemory (Repository))
+module Repository = Sihl.Repository.Service
+module Schedule = Sihl.Schedule.Service
+module Queue = Sihl_queue.MakePolling (Schedule) (Sihl_queue.Repo.Memory)

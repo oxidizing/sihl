@@ -1,10 +1,12 @@
 open Lwt.Syntax
 
-module MakeMariaDb
-    (DbService : Database.Sig.SERVICE)
-    (RepoService : Repository.Sig.SERVICE)
-    (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
-  module DatabaseService = DbService
+module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
+  let lifecycles =
+    [ Database.Service.lifecycle
+    ; Repository.Service.lifecycle
+    ; MigrationService.lifecycle
+    ]
+  ;;
 
   module Migration = struct
     let fix_collation =
@@ -85,7 +87,7 @@ CREATE TABLE IF NOT EXISTS user_users (
         sort_fragment
         pagination_fragment
     in
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request = Caqti_request.collect ~oneshot:true pt Model.t query in
         let* users = Connection.collect_list request pv in
@@ -132,7 +134,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let get ctx ~id =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_request id)
   ;;
@@ -163,7 +165,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let get_by_email ctx ~email =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_by_email_request email)
   ;;
@@ -195,7 +197,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let insert ctx ~user =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec insert_request user)
   ;;
@@ -217,7 +219,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let update ctx ~user =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_request user)
   ;;
@@ -225,19 +227,21 @@ CREATE TABLE IF NOT EXISTS user_users (
   let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE user_users;"
 
   let clean ctx =
-    DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_request ())
   ;;
 
   let register_migration () = MigrationService.register (Migration.migration ())
-  let register_cleaner () = RepoService.register_cleaner clean
+  let register_cleaner () = Repository.Service.register_cleaner clean
 end
 
-module MakePostgreSql
-    (DbService : Database.Sig.SERVICE)
-    (RepoService : Repository.Sig.SERVICE)
-    (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
-  module DatabaseService = DbService
+module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
+  let lifecycles =
+    [ Database.Service.lifecycle
+    ; Repository.Service.lifecycle
+    ; MigrationService.lifecycle
+    ]
+  ;;
 
   module Migration = struct
     let create_users_table =
@@ -302,7 +306,7 @@ CREATE TABLE IF NOT EXISTS user_users (
         sort_fragment
         pagination_fragment
     in
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request = Caqti_request.collect ~oneshot:true pt Model.t query in
         let* users = Connection.collect_list request pv in
@@ -334,7 +338,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let get ctx ~id =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_request id)
   ;;
@@ -359,7 +363,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let get_by_email ctx ~email =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_by_email_request email)
   ;;
@@ -391,7 +395,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let insert ctx ~user =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec insert_request user)
   ;;
@@ -414,7 +418,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let update ctx ~user =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_request user)
   ;;
@@ -424,10 +428,10 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let clean ctx =
-    DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_request ())
   ;;
 
   let register_migration () = MigrationService.register (Migration.migration ())
-  let register_cleaner () = RepoService.register_cleaner clean
+  let register_cleaner () = Repository.Service.register_cleaner clean
 end

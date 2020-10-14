@@ -2,8 +2,6 @@ open Lwt.Syntax
 module User = Model.User
 
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
-  module Database = Repo.DatabaseService
-
   let add_user user ctx = Core.Ctx.add User.ctx_key user ctx
   let require_user_opt ctx = Core.Ctx.find User.ctx_key ctx
 
@@ -177,7 +175,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
-          let ctx = Core.Ctx.empty |> Database.add_pool in
+          let ctx = Core.Ctx.empty in
           create_admin ctx ~email ~password ~username:(Some username) |> Lwt.map ignore
         | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
   ;;
@@ -191,11 +189,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create
-      "user"
-      ~dependencies:[ Database.lifecycle ]
-      ~start
-      ~stop
+    Core.Container.Lifecycle.create "user" ~dependencies:Repo.lifecycles ~start ~stop
   ;;
 
   let configure configuration =

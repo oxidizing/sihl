@@ -3,14 +3,9 @@ open Model
 module type SERVICE = sig
   include Core.Container.Service.Sig
 
-  (** Create a database connection pool. Raises [Data_db_core.Exception]. *)
-  val create_pool : unit -> pool
-
-  (** Create a database connection pool and attach the pool to an empty context. *)
-  val ctx_with_pool : unit -> Core.Ctx.t
-
-  (** Create a database connection pool and attach to provided context. *)
-  val add_pool : Core.Ctx.t -> Core.Ctx.t
+  (** Creates and returns a database connection pool. Re-uses an already created pool.
+      Raises [Data_db_core.Exception]. *)
+  val fetch_pool : unit -> pool
 
   (** Run a database query.
 

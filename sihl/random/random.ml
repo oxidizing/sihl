@@ -1,6 +1,6 @@
-module Sig = Utils_random_service_sig
+module Sig = Sig
 
-module Default : Sig.SERVICE = struct
+module Service : Sig.SERVICE = struct
   let rec rand result n =
     if n > 0
     then rand Base.(result ^ Char.to_string (Random.ascii ())) (n - 1)
@@ -12,7 +12,7 @@ module Default : Sig.SERVICE = struct
   ;;
 
   let start ctx =
-    Random.self_init ();
+    Caml.Random.self_init ();
     Lwt.return ctx
   ;;
 

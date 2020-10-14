@@ -1,11 +1,7 @@
 open Lwt.Syntax
 
-module MakeMariaDb
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
-    (MigrationService : Sihl.Migration.Sig.SERVICE) : Sihl.Storage.Sig.REPO = struct
-  module DatabaseService = DbService
-
+module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
+  Sihl.Storage.Sig.REPO = struct
   let stored_file =
     let encode m =
       let Sihl.Storage.StoredFile.{ file; blob } = m in
@@ -47,7 +43,7 @@ module MakeMariaDb
   ;;
 
   let insert_file ctx ~file =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec insert_request file)
   ;;
@@ -67,7 +63,7 @@ module MakeMariaDb
   ;;
 
   let update_file ctx ~file =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_file_request file)
   ;;
@@ -89,7 +85,7 @@ module MakeMariaDb
   ;;
 
   let get_file ctx ~id =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_file_request id)
   ;;
@@ -104,7 +100,7 @@ module MakeMariaDb
   ;;
 
   let delete_file ctx ~id =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec delete_file_request id)
   ;;
@@ -122,7 +118,7 @@ module MakeMariaDb
   ;;
 
   let get_blob ctx ~id =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_blob_request id)
   ;;
@@ -142,7 +138,7 @@ module MakeMariaDb
   ;;
 
   let insert_blob ctx ~id ~blob =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec insert_blob_request (id, blob))
   ;;
@@ -159,7 +155,7 @@ module MakeMariaDb
   ;;
 
   let update_blob ctx ~id ~blob =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_blob_request (id, blob))
   ;;
@@ -175,7 +171,7 @@ module MakeMariaDb
   ;;
 
   let delete_blob ctx ~id =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec delete_blob_request id)
   ;;
@@ -189,7 +185,7 @@ module MakeMariaDb
   ;;
 
   let clean_handles ctx =
-    DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_handles_request ())
   ;;
 
@@ -202,7 +198,7 @@ module MakeMariaDb
   ;;
 
   let clean_blobs ctx =
-    DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_blobs_request ())
   ;;
 
@@ -261,11 +257,11 @@ module MakeMariaDb
 
   let register_cleaner () =
     let cleaner ctx =
-      DbService.with_disabled_fk_check ctx (fun ctx ->
+      Database.Service.with_disabled_fk_check ctx (fun ctx ->
           let* () = clean_handles ctx in
           clean_blobs ctx)
     in
-    RepoService.register_cleaner cleaner
+    Repository.Service.register_cleaner cleaner
   ;;
 end
 

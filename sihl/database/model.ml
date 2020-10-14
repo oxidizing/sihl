@@ -3,12 +3,8 @@ exception Exception of string
 type pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 type connection = (module Caqti_lwt.CONNECTION)
 
-let ctx_key_pool : pool Core.Ctx.key = Core.Ctx.create_key ()
 let ctx_key_connection : connection Core.Ctx.key = Core.Ctx.create_key ()
 let ctx_key_transaction : connection Core.Ctx.key = Core.Ctx.create_key ()
-let find_pool ctx = Core.Ctx.find ctx_key_pool ctx
-let add_pool pool ctx = Core.Ctx.add ctx_key_pool pool ctx
-let remove_pool ctx = Core.Ctx.remove ctx_key_pool ctx
 let find_connection ctx = Core.Ctx.find ctx_key_connection ctx
 let add_connection connection ctx = Core.Ctx.add ctx_key_connection connection ctx
 let remove_connection ctx = Core.Ctx.remove ctx_key_connection ctx

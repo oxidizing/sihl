@@ -58,6 +58,10 @@ module Message = Message
 
 module Queue = Queue
 
+(** {1 Random} *)
+
+module Random = Random
+
 (** {1 Scheduler} *)
 
 module Schedule = Schedule

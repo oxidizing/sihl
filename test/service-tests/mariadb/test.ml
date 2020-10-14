@@ -1,30 +1,16 @@
 open Lwt.Syntax
 open Alcotest_lwt
-
-module Token =
-  Test_case.Token.Make (Service.Database) (Service.Repository) (Service.Token)
-
-module Session =
-  Test_case.Session.Make (Service.Database) (Service.Repository) (Service.Session)
-
-module Storage =
-  Test_case.Storage.Make (Service.Database) (Service.Repository) (Service.Storage)
-
-module User = Test_case.User.Make (Service.Database) (Service.Repository) (Service.User)
-
-module Email =
-  Test_case.Email.Make (Service.Database) (Service.Repository) (Service.EmailTemplate)
+module Token = Test_case.Token.Make (Service.Token)
+module Session = Test_case.Session.Make (Service.Session)
+module Storage = Test_case.Storage.Make (Service.Storage)
+module User = Test_case.User.Make (Service.User)
+module Email = Test_case.Email.Make (Service.EmailTemplate)
 
 module PasswordReset =
-  Test_case.Password_reset.Make (Service.Database) (Service.Repository) (Service.User)
-    (Service.PasswordReset)
+  Test_case.Password_reset.Make (Service.User) (Service.PasswordReset)
 
-module Queue = Test_case.Queue.Make (Service.Repository) (Service.Queue)
-
-module Csrf =
-  Test_case.Csrf.Make (Service.Database) (Service.Repository) (Service.Token)
-    (Service.Session)
-    (Service.Random)
+module Queue = Test_case.Queue.Make (Service.Queue)
+module Csrf = Test_case.Csrf.Make (Service.Token) (Service.Session) (Service.Random)
 
 let test_suite ctx =
   [ Token.test_suite
@@ -36,7 +22,7 @@ let test_suite ctx =
   ; (* We need to add the DB Pool to the scheduler context *)
     Csrf.test_suite
   ; (* Put queue tests last because of slowness *)
-    Queue.test_suite ctx Service.Database.add_pool
+    Queue.test_suite ctx
   ]
 ;;
 
@@ -64,8 +50,7 @@ let () =
       configuration |> Sihl.Core.Configuration.data |> Sihl.Core.Configuration.store)
     configurations;
   Lwt_main.run
-    (let ctx = Service.Database.add_pool ctx in
-     let* _ = Sihl.Core.Container.start_services services in
+    (let* _ = Sihl.Core.Container.start_services services in
      let* () = Service.Migration.run_all ctx in
      run "mariadb" @@ test_suite ctx)
 ;;

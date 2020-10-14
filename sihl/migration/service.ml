@@ -151,7 +151,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
 
   let migrate_cmd =
     Core.Command.make ~name:"migrate" ~description:"Run all migrations" (fun _ ->
-        let ctx = Core.Ctx.empty |> Database.add_pool in
+        let ctx = Core.Ctx.empty in
         run_all ctx)
   ;;
 
@@ -173,8 +173,8 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
 end
 
 module Repo = struct
-  module MakeMariaDb (Database : Database.Sig.SERVICE) : Sig.REPO = struct
-    module Database = Database
+  module MariaDb : Sig.REPO = struct
+    module Database = Database.Service
 
     let create_request =
       Caqti_request.exec

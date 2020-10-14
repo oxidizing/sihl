@@ -1,14 +1,10 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
-module Make
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
-    (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) =
-struct
+module Make (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) = struct
   let create_template _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* created =
       EmailTemplateService.create ctx ~name:"foo" ~html:"some html" ~text:"some text"
     in
@@ -25,8 +21,8 @@ struct
   ;;
 
   let update_template _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* created =
       EmailTemplateService.create ctx ~name:"foo" ~html:"some html" ~text:"some text"
     in

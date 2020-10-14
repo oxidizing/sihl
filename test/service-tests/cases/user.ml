@@ -1,16 +1,12 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
-module Make
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
-    (UserService : Sihl.User.Sig.SERVICE) =
-struct
+module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   module Seed = Sihl.User.Seed.Make (UserService)
 
   let update_details _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* updated_user =
       UserService.update_details ctx ~user ~email:"new@example.com" ~username:(Some "foo")
@@ -23,8 +19,8 @@ struct
   ;;
 
   let update_password _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* _ =
       UserService.update_password
@@ -47,8 +43,8 @@ struct
   ;;
 
   let update_password_fails _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* change_result =
       UserService.update_password
@@ -69,8 +65,8 @@ struct
   ;;
 
   let filter_users_by_email _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* user1 = Seed.user ctx ~email:"user1@example.com" ~password:"123123123" in
     let* _ = Seed.user ctx ~email:"user2@example.com" ~password:"123123123" in
     let* _ = Seed.user ctx ~email:"user3@example.com" ~password:"123123123" in

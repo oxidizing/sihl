@@ -2,7 +2,6 @@ open Model
 
 module type REPO = sig
   include Repository.Sig.REPO
-  module DatabaseService : Database.Sig.SERVICE
 
   val insert_file : Core.Ctx.t -> file:StoredFile.t -> unit Lwt.t
   val insert_blob : Core.Ctx.t -> id:string -> blob:string -> unit Lwt.t

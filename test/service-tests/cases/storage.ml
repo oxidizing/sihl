@@ -3,14 +3,10 @@ open Alcotest_lwt
 
 let alco_file = Alcotest.testable Sihl.Storage.File.pp Sihl.Storage.File.equal
 
-module Make
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
-    (StorageService : Sihl.Storage.Sig.SERVICE) =
-struct
+module Make (StorageService : Sihl.Storage.Sig.SERVICE) = struct
   let fetch_uploaded_file _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let file_id = Sihl.Database.Id.(random () |> to_string) in
     let file =
       Sihl.Storage.File.make
@@ -29,8 +25,8 @@ struct
   ;;
 
   let update_uploaded_file _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let file_id = Sihl.Database.Id.(random () |> to_string) in
     let file =
       Sihl.Storage.File.make
