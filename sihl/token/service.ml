@@ -1,7 +1,7 @@
 open Lwt.Syntax
 
-module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPOSITORY) :
-  Sig.SERVICE = struct
+module Make (RandomService : Random.Sig.SERVICE) (Repo : Sig.REPOSITORY) : Sig.SERVICE =
+struct
   let find_opt ctx value =
     let* token = Repo.find_opt ctx ~value in
     Lwt.return @@ Option.bind token (fun tk -> if Model.is_valid tk then token else None)

@@ -73,10 +73,8 @@ module Template = struct
   end
 
   module Repo = struct
-    module MakeMariaDb
-        (DbService : Sihl.Database.Sig.SERVICE)
-        (RepoService : Sihl.Repository.Sig.SERVICE)
-        (MigrationService : Sihl.Migration.Sig.SERVICE) : Sig.TEMPLATE_REPO = struct
+    module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
+      Sig.TEMPLATE_REPO = struct
       module Sql = struct
         module Model = Sihl.Email.Template
 
@@ -103,7 +101,7 @@ module Template = struct
         ;;
 
         let get ctx ~id =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.find_opt get_request id)
         ;;
 
@@ -130,7 +128,7 @@ module Template = struct
         ;;
 
         let get_by_name ctx ~name =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.find_opt get_by_name_request name)
         ;;
 
@@ -155,7 +153,7 @@ module Template = struct
         ;;
 
         let insert ctx ~template =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.exec insert_request template)
         ;;
 
@@ -174,7 +172,7 @@ module Template = struct
         ;;
 
         let update ctx ~template =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.exec update_request template)
         ;;
 
@@ -187,7 +185,7 @@ module Template = struct
         ;;
 
         let clean ctx =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.exec clean_request ())
         ;;
       end
@@ -224,17 +222,15 @@ CREATE TABLE IF NOT EXISTS email_templates (
       end
 
       let register_migration () = MigrationService.register (Migration.migration ())
-      let register_cleaner () = RepoService.register_cleaner Sql.clean
+      let register_cleaner () = Repository.Service.register_cleaner Sql.clean
       let get = Sql.get
       let get_by_name = Sql.get_by_name
       let insert = Sql.insert
       let update = Sql.update
     end
 
-    module MakePostgreSql
-        (DbService : Sihl.Database.Sig.SERVICE)
-        (RepoService : Sihl.Repository.Sig.SERVICE)
-        (MigrationService : Sihl.Migration.Sig.SERVICE) : Sig.TEMPLATE_REPO = struct
+    module MakePostgreSql (MigrationService : Sihl.Migration.Sig.SERVICE) :
+      Sig.TEMPLATE_REPO = struct
       module Sql = struct
         module Model = Sihl.Email.Template
 
@@ -255,7 +251,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
 
         let get ctx ~id =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.find_opt get_request id)
         ;;
 
@@ -276,7 +272,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
 
         let get_by_name ctx ~name =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.find_opt get_by_name_request name)
         ;;
 
@@ -301,7 +297,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
 
         let insert ctx ~template =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.exec insert_request template)
         ;;
 
@@ -320,7 +316,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
 
         let update ctx ~template =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.exec update_request template)
         ;;
 
@@ -329,7 +325,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
 
         let clean ctx =
-          DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
               Connection.exec clean_request ())
         ;;
       end
@@ -357,7 +353,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
       end
 
       let register_migration () = MigrationService.register (Migration.migration ())
-      let register_cleaner () = RepoService.register_cleaner Sql.clean
+      let register_cleaner () = Repository.Service.register_cleaner Sql.clean
       let get = Sql.get
       let get_by_name = Sql.get_by_name
       let insert = Sql.insert
@@ -671,7 +667,6 @@ module MakeDelayed
     let job =
       Queue.create_job
         ~name:"send_email"
-        ~with_context:DbService.add_pool
         ~input_to_string
         ~string_to_input
         ~handle

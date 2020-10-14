@@ -7,6 +7,7 @@ module Migration = Migration
 module Email = Email
 module Message = Message
 module Queue = Queue
+module Random = Random
 module Schedule = Schedule
 module Session = Session
 module Storage = Storage

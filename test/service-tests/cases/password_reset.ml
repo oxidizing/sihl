@@ -2,16 +2,14 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 module Make
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
     (UserService : Sihl.User.Sig.SERVICE)
     (PasswordResetService : Sihl.Password_reset.Sig.SERVICE) =
 struct
   module UserSeed = Sihl.User.Seed.Make (UserService)
 
   let reset_password_suceeds _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let* _ = UserSeed.user ctx ~email:"foo@example.com" ~password:"123456789" in
     let* token =
       PasswordResetService.create_reset_token ctx ~email:"foo@example.com"

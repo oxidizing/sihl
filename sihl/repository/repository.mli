@@ -7,7 +7,7 @@
 
     {[ module Repo = Sihl.Repository.Service.Make () ]} *)
 
-module Service = Service
+module Service : Sig.SERVICE
 
 (** {1 Usage}
 

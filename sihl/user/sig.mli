@@ -1,6 +1,7 @@
 module type REPOSITORY = sig
   include Repository.Sig.REPO
-  module DatabaseService : Database.Sig.SERVICE
+
+  val lifecycles : Core.Container.Lifecycle.t list
 
   val get_all
     :  Core.Ctx.t

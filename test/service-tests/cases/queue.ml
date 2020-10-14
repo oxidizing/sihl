@@ -1,18 +1,14 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
-module Make
-    (RepoService : Sihl.Repository.Sig.SERVICE)
-    (QueueService : Sihl.Queue.Sig.SERVICE) =
-struct
-  let dispatched_job_gets_processed ctx with_context _ () =
+module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
+  let dispatched_job_gets_processed ctx _ () =
     let has_ran_job = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
-    let* () = RepoService.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let job =
       Sihl.Queue.create_job
         ~name:"foo"
-        ~with_context
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job := true))
@@ -30,15 +26,14 @@ struct
     Lwt.return ()
   ;;
 
-  let two_dispatched_jobs_get_processed ctx with_context _ () =
+  let two_dispatched_jobs_get_processed ctx _ () =
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
-    let* () = RepoService.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let job1 =
       Sihl.Queue.create_job
         ~name:"foo1"
-        ~with_context
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job1 := true))
@@ -50,7 +45,6 @@ struct
     let job2 =
       Sihl.Queue.create_job
         ~name:"foo2"
-        ~with_context
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.return (has_ran_job2 := true))
@@ -72,14 +66,13 @@ struct
     Lwt.return ()
   ;;
 
-  let cleans_up_job_after_error ctx with_context _ () =
+  let cleans_up_job_after_error ctx _ () =
     let has_cleaned_up_job = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
-    let* () = RepoService.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let job =
       Sihl.Queue.create_job
         ~name:"foo"
-        ~with_context
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> Lwt_result.fail "didn't work")
@@ -97,14 +90,13 @@ struct
     Lwt.return ()
   ;;
 
-  let cleans_up_job_after_exception ctx with_context _ () =
+  let cleans_up_job_after_exception ctx _ () =
     let has_cleaned_up_job = ref false in
     let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
-    let* () = RepoService.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let job =
       Sihl.Queue.create_job
         ~name:"foo"
-        ~with_context
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
         ~handle:(fun _ ~input:_ -> failwith "didn't work")
@@ -123,15 +115,13 @@ struct
     Lwt.return ()
   ;;
 
-  let inject_custom_context ctx with_context _ () =
+  let inject_custom_context ctx _ () =
     let custom_ctx_key : string Sihl.Core.Ctx.key = Sihl.Core.Ctx.create_key () in
     let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
-    let* () = RepoService.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let has_custom_ctx_string = ref false in
     let custom_with_context ctx =
-      ctx
-      |> with_context
-      |> fun ctx -> Sihl.Core.Ctx.add custom_ctx_key "my custom context string" ctx
+      ctx |> fun ctx -> Sihl.Core.Ctx.add custom_ctx_key "my custom context string" ctx
     in
     let job =
       Sihl.Queue.create_job
@@ -157,25 +147,22 @@ struct
     Lwt.return ()
   ;;
 
-  let test_suite ctx with_context =
+  let test_suite ctx =
     ( "queue"
     , [ test_case
           "dispatched job gets processed"
           `Quick
-          (dispatched_job_gets_processed ctx with_context)
+          (dispatched_job_gets_processed ctx)
       ; test_case
           "two dispatched jobs get processed"
           `Quick
-          (two_dispatched_jobs_get_processed ctx with_context)
-      ; test_case
-          "cleans up job after error"
-          `Quick
-          (cleans_up_job_after_error ctx with_context)
+          (two_dispatched_jobs_get_processed ctx)
+      ; test_case "cleans up job after error" `Quick (cleans_up_job_after_error ctx)
       ; test_case
           "cleans up job after exception"
           `Quick
-          (cleans_up_job_after_exception ctx with_context)
-      ; test_case "inject custom context" `Quick (inject_custom_context ctx with_context)
+          (cleans_up_job_after_exception ctx)
+      ; test_case "inject custom context" `Quick (inject_custom_context ctx)
       ] )
   ;;
 end

@@ -1,8 +1,6 @@
 open Lwt.Syntax
 
 module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
-  module Database = Repo.DatabaseService
-
   let find_opt ctx ~id = Repo.get_file ctx ~id
 
   let find ctx ~id =
@@ -15,7 +13,7 @@ module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
   let delete ctx ~id =
     let* file = find ctx ~id in
     let blob_id = Sihl.Storage.StoredFile.blob file in
-    Database.atomic ctx (fun ctx ->
+    Database.Service.atomic ctx (fun ctx ->
         let* () = Repo.delete_file ctx ~id:file.file.id in
         Repo.delete_blob ctx ~id:blob_id)
   ;;

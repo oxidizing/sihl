@@ -14,7 +14,7 @@ exception No_csrf_token of string
 module Make
     (TokenService : Token.Sig.SERVICE)
     (SessionService : Session.Sig.SERVICE)
-    (RandomService : Utils.Random.Service.Sig.SERVICE) =
+    (RandomService : Random.Sig.SERVICE) =
 struct
   let csrf_token_length = 20
 

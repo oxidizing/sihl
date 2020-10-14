@@ -1,7 +1,4 @@
-module MakeMariaDb
-    (DbService : Database.Sig.SERVICE)
-    (RepoService : Repository.Sig.SERVICE)
-    (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
+module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
   module Sql = struct
     let find_request =
       Caqti_request.find
@@ -22,7 +19,7 @@ module MakeMariaDb
     ;;
 
     let find_opt ctx ~value =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_request value)
     ;;
 
@@ -45,7 +42,7 @@ module MakeMariaDb
     ;;
 
     let find_by_id_opt ctx ~id =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_by_id_request id)
     ;;
 
@@ -74,7 +71,7 @@ module MakeMariaDb
     ;;
 
     let insert ctx ~token =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request token)
     ;;
 
@@ -94,14 +91,14 @@ module MakeMariaDb
     ;;
 
     let update ctx ~token =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request token)
     ;;
 
     let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
 
     let clean ctx =
-      DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec clean_request ())
     ;;
   end
@@ -139,7 +136,7 @@ module MakeMariaDb
   end
 
   let register_migration () = MigrationService.register (Migration.migration ())
-  let register_cleaner () = RepoService.register_cleaner Sql.clean
+  let register_cleaner () = Repository.Service.register_cleaner Sql.clean
   let find_opt = Sql.find_opt
   let find_by_id_opt = Sql.find_by_id_opt
   let insert = Sql.insert

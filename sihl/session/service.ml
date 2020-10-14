@@ -2,8 +2,7 @@ open Lwt.Syntax
 
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
-module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO) :
-  Sig.SERVICE = struct
+module Make (RandomService : Random.Sig.SERVICE) (Repo : Sig.REPO) : Sig.SERVICE = struct
   let add_to_ctx session ctx = Core.Ctx.add ctx_key (Model.key session) ctx
   let require_session_key_opt ctx = Core.Ctx.find ctx_key ctx
 
@@ -94,10 +93,7 @@ module Make (RandomService : Utils.Random.Service.Sig.SERVICE) (Repo : Sig.REPO)
 end
 
 module Repo = struct
-  module MakeMariaDb
-      (DbService : Database.Sig.SERVICE)
-      (RepoService : Repository.Sig.SERVICE)
-      (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
+  module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
     module Sql = struct
       module Model = Model
 
@@ -115,7 +111,7 @@ module Repo = struct
       ;;
 
       let find_all ctx =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.collect_list find_all_request ())
       ;;
 
@@ -134,7 +130,7 @@ module Repo = struct
       ;;
 
       let find_opt ctx ~key =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.find_opt find_opt_request key)
       ;;
 
@@ -155,7 +151,7 @@ module Repo = struct
       ;;
 
       let insert ctx session =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec insert_request session)
       ;;
 
@@ -171,7 +167,7 @@ module Repo = struct
       ;;
 
       let update ctx session =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec update_request session)
       ;;
 
@@ -185,7 +181,7 @@ module Repo = struct
       ;;
 
       let delete ctx ~key =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec delete_request key)
       ;;
 
@@ -198,7 +194,7 @@ module Repo = struct
       ;;
 
       let clean ctx =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec clean_request ())
       ;;
     end
@@ -225,8 +221,10 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     let register_migration () = MigrationService.register (Migration.migration ())
 
     let register_cleaner () =
-      let cleaner ctx = DbService.with_disabled_fk_check ctx (fun ctx -> Sql.clean ctx) in
-      RepoService.register_cleaner cleaner
+      let cleaner ctx =
+        Database.Service.with_disabled_fk_check ctx (fun ctx -> Sql.clean ctx)
+      in
+      Repository.Service.register_cleaner cleaner
     ;;
 
     let find_all = Sql.find_all
@@ -236,10 +234,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     let delete = Sql.delete
   end
 
-  module MakePostgreSql
-      (DbService : Database.Sig.SERVICE)
-      (RepoService : Repository.Sig.SERVICE)
-      (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
+  module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
     module Sql = struct
       module Model = Model
 
@@ -257,7 +252,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       ;;
 
       let find_all ctx =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.collect_list find_all_request ())
       ;;
 
@@ -276,7 +271,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       ;;
 
       let find_opt ctx ~key =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.find_opt find_opt_request key)
       ;;
 
@@ -297,7 +292,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       ;;
 
       let insert ctx session =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec insert_request session)
       ;;
 
@@ -313,7 +308,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       ;;
 
       let update ctx session =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec update_request session)
       ;;
 
@@ -327,7 +322,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       ;;
 
       let delete ctx ~key =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec delete_request key)
       ;;
 
@@ -340,7 +335,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
       ;;
 
       let clean ctx =
-        DbService.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec clean_request ())
       ;;
     end
@@ -365,7 +360,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     end
 
     let register_migration () = MigrationService.register (Migration.migration ())
-    let register_cleaner () = RepoService.register_cleaner Sql.clean
+    let register_cleaner () = Repository.Service.register_cleaner Sql.clean
     let find_all = Sql.find_all
     let find_opt = Sql.find_opt
     let insert = Sql.insert

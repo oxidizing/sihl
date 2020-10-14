@@ -3,11 +3,9 @@ open Lwt.Syntax
 (* TODO [aerben] FIX TESTS*)
 
 module Make
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
     (TokenService : Sihl.Token.Sig.SERVICE)
     (SessionService : Sihl.Session.Sig.SERVICE)
-    (RandomService : Sihl.Utils.Random.Service.Sig.SERVICE) =
+    (RandomService : Sihl.Random.Sig.SERVICE) =
 struct
   module Middleware =
     Sihl.Web.Middleware.Csrf.Make (TokenService) (SessionService) (RandomService)
@@ -22,10 +20,8 @@ struct
    *   Lwt.return () *)
 
   let get_request_yields_token _ () =
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.create_and_add_to_ctx
-    in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.create_and_add_to_ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let middleware = Middleware.m () in
     let handler ctx =
       let token = Sihl.Web.Middleware.Csrf.get_token ctx in
@@ -39,10 +35,8 @@ struct
   ;;
 
   let get_request_without_token_succeeds _ () =
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.create_and_add_to_ctx
-    in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.create_and_add_to_ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let middleware = Middleware.m () in
     let handler _ = Lwt.return @@ Sihl.Web.Res.html in
     let wrapped_handler = Sihl.Web.Middleware.apply middleware handler in
@@ -58,10 +52,8 @@ struct
         ~body:(Cohttp_lwt.Body.of_string "")
         (Cohttp_lwt.Request.make ~meth:`POST (Uri.of_string "/foo"))
     in
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.add_to_ctx post_req
-    in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.add_to_ctx post_req in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let middleware = Middleware.m () in
     let handler ctx =
       let token = Sihl.Web.Middleware.Csrf.get_token ctx in
@@ -79,10 +71,8 @@ struct
       Opium.Std.Request.create
         (Cohttp_lwt.Request.make ~meth:`POST (Uri.of_string "/foo"))
     in
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.add_to_ctx post_req
-    in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.add_to_ctx post_req in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let middleware = Middleware.m () in
     let handler _ = Lwt.return @@ Sihl.Web.Res.html in
     let wrapped_handler = Sihl.Web.Middleware.apply middleware handler in
@@ -98,10 +88,8 @@ struct
         ~body:(Cohttp_lwt.Body.of_string "?csrf=invalid_token")
         (Cohttp_lwt.Request.make ~meth:`POST (Uri.of_string "/foo"))
     in
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.add_to_ctx post_req
-    in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.add_to_ctx post_req in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let middleware = Middleware.m () in
     let handler _ = Lwt.return @@ Sihl.Web.Res.html in
     let wrapped_handler = Sihl.Web.Middleware.apply middleware handler in
@@ -116,10 +104,8 @@ struct
 
   let post_request_with_valid_token_succeeds _ () =
     (* Do GET to set a token *)
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.create_and_add_to_ctx
-    in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.create_and_add_to_ctx in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let middleware = Middleware.m () in
     let token_ref = ref "" in
     let handler ctx =
@@ -139,9 +125,7 @@ struct
         ~body:(Cohttp_lwt.Body.of_string body)
         (Cohttp_lwt.Request.make ~meth:`POST (Uri.of_string "/foo"))
     in
-    let ctx =
-      Sihl.Core.Ctx.empty |> DbService.add_pool |> Sihl.Web.Req.add_to_ctx post_req
-    in
+    let ctx = Sihl.Core.Ctx.empty |> Sihl.Web.Req.add_to_ctx post_req in
     let handler _ = Lwt.return Sihl.Web.Res.html in
     let wrapped_handler = Sihl.Web.Middleware.apply middleware handler in
     let* response = wrapped_handler ctx in

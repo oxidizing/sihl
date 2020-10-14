@@ -2,7 +2,7 @@ module Job = Sihl.Queue.Job
 module JobInstance = Sihl.Queue.JobInstance
 module Map = Map.Make (String)
 
-module MakeMemory (RepoService : Repository.Sig.SERVICE) : Sihl.Queue.Sig.REPO = struct
+module Memory : Sihl.Queue.Sig.REPO = struct
   let state = ref Map.empty
   let ordered_ids = ref []
 
@@ -12,7 +12,7 @@ module MakeMemory (RepoService : Repository.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
       ordered_ids := [];
       Lwt.return ()
     in
-    RepoService.register_cleaner cleaner
+    Repository.Service.register_cleaner cleaner
   ;;
 
   let register_migration () = ()
@@ -72,10 +72,8 @@ module Model = struct
   ;;
 end
 
-module MakeMariaDb
-    (DbService : Database.Sig.SERVICE)
-    (RepoService : Repository.Sig.SERVICE)
-    (MigrationService : Migration.Sig.SERVICE) : Sihl.Queue.Sig.REPO = struct
+module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
+struct
   let enqueue_request =
     Caqti_request.exec
       Model.t
@@ -101,7 +99,7 @@ module MakeMariaDb
   ;;
 
   let enqueue ctx ~job_instance =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec enqueue_request job_instance)
   ;;
@@ -124,7 +122,7 @@ module MakeMariaDb
   ;;
 
   let update ctx ~job_instance =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_request job_instance)
   ;;
@@ -152,7 +150,7 @@ module MakeMariaDb
   ;;
 
   let find_workable ctx =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.collect_list find_workable_request ())
   ;;
@@ -166,7 +164,7 @@ module MakeMariaDb
   ;;
 
   let clean ctx =
-    DbService.query ctx (fun connection ->
+    Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec clean_request ())
   ;;
@@ -202,6 +200,6 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
   end
 
-  let register_cleaner () = RepoService.register_cleaner clean
+  let register_cleaner () = Repository.Service.register_cleaner clean
   let register_migration () = MigrationService.register Migration.migration
 end

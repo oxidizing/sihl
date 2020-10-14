@@ -7,7 +7,6 @@ let apply_stack = Middleware_core.apply_stack
 module Clickjacking = Middleware_clickjacking
 module Cookie = Middleware_cookie
 module Csrf = Middleware_csrf
-module Db = Middleware_db
 module Error = Middleware_error
 module Message = Middleware_message
 module Gzip = Middleware_gzip

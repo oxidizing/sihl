@@ -1,21 +1,17 @@
 (* Essential services *)
-module Database = Sihl.Database.Service.Default
-module Repository = Sihl.Repository.Service.Default
+module Database = Sihl.Database.Service
+module Repository = Sihl.Repository.Service
 module MigrationRepo = Sihl.Migration.Service.Repo.MakePostgreSql (Database)
-module Random = Sihl.Utils.Random.Service.Default
+module Random = Sihl.Random.Service
 module Migration = Sihl.Migration.Service.Make (MigrationRepo)
 
 (* Repositories *)
-module SessionRepo =
-  Sihl.Session.Service.Repo.MakePostgreSql (Database) (Repository) (Migration)
-
-module UserRepo = Sihl.User.Repo.MakePostgreSql (Database) (Repository) (Migration)
-
-module EmailTemplateRepo =
-  Sihl_email.Template.Repo.MakePostgreSql (Database) (Repository) (Migration)
+module SessionRepo = Sihl.Session.Service.Repo.MakePostgreSql (Migration)
+module UserRepo = Sihl.User.Repo.MakePostgreSql (Migration)
+module EmailTemplateRepo = Sihl_email.Template.Repo.MakePostgreSql (Migration)
 
 (* Services *)
 module Session = Sihl.Session.Service.Make (Random) (SessionRepo)
 module User = Sihl.User.Service.Make (UserRepo)
 module EmailTemplate = Sihl_email.Template.Make (EmailTemplateRepo)
-module Schedule = Sihl.Schedule.Service.Default
+module Schedule = Sihl.Schedule.Service

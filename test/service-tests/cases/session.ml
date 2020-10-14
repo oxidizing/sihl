@@ -11,16 +11,12 @@ let middleware_stack ctx ?handler stack =
   handler ctx
 ;;
 
-module Make
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (RepoService : Sihl.Repository.Sig.SERVICE)
-    (SessionService : Sihl.Session.Sig.SERVICE) =
-struct
+module Make (SessionService : Sihl.Session.Sig.SERVICE) = struct
   module Middleware = Sihl.Web.Middleware.Session.Make (SessionService)
 
   let test_anonymous_request_returns_cookie _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let stack = [ Middleware.m () ] in
     let* _ = middleware_stack ctx stack in
     let* sessions = SessionService.find_all ctx in
@@ -29,8 +25,8 @@ struct
   ;;
 
   let test_requests_persist_session_variables _ () =
-    let ctx = Sihl.Core.Ctx.empty |> DbService.add_pool in
-    let* () = RepoService.clean_all ctx in
+    let ctx = Sihl.Core.Ctx.empty in
+    let* () = Sihl.Repository.Service.clean_all ctx in
     let stack = [ Middleware.m () ] in
     let handler ctx =
       Logs.debug (fun m -> m "two %s" (Sihl.Core.Ctx.id ctx));

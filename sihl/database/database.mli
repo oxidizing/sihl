@@ -87,7 +87,7 @@
             )
     ]} *)
 
-module Service = Service
+module Service : Sig.SERVICE
 module Ql = Ql
 module View = View
 module Id = Id
