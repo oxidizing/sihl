@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.5] - 2020-10-11
+## [0.1.5] - 2020-10-14
 ### Fixed
 - Remove seed service since the same functionality
 - Simplify app abstraction, instead of `with_` use service APIs directly
