@@ -121,7 +121,6 @@ let atomic ctx f =
     (* Make sure [f] can not use the pool or some other connection *)
     ctx |> remove_pool |> remove_connection |> add_transaction connection |> f
   | None, Some connection, None ->
-    (* TODO start transaction and store current connection as transaction in trx *)
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let* start_result = Connection.start () in
     (match start_result with
@@ -240,6 +239,8 @@ let with_disabled_fk_check ctx f =
       let* () = set_fk_check ctx ~check:false in
       Lwt.finalize (fun () -> f ctx) (fun () -> set_fk_check ctx ~check:true))
 ;;
+
+(* Service lifecycle *)
 
 let start ctx = ctx |> add_pool |> Lwt.return
 let stop _ = Lwt.return ()
