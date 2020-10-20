@@ -78,50 +78,12 @@ let query ctx f =
     Lwt.fail (Exception "Connection and pool found")
 ;;
 
-let with_connection ctx f =
-  match find_transaction ctx, find_connection ctx, find_pool ctx with
-  | Some _, None, None -> ctx |> remove_pool |> f
-  | None, Some _, None -> ctx |> remove_pool |> f
-  | None, None, pool ->
-    let pool = Option.value ~default:(fetch_pool ()) pool in
-    print_pool_usage pool;
-    let* pool_result =
-      Caqti_lwt.Pool.use
-        (fun connection ->
-          Logs.debug (fun m -> m "DB TX: Fetched connection from pool");
-          let (module Connection : Caqti_lwt.CONNECTION) = connection in
-          let ctx_with_connection =
-            ctx |> remove_pool |> add_connection (module Connection)
-          in
-          Lwt.catch
-            (fun () ->
-              let* result = f ctx_with_connection in
-              Lwt.return @@ Ok result)
-            (fun e -> Lwt.fail e))
-        pool
-    in
-    (match pool_result with
-    | Ok result ->
-      (* All good, return result of f ctx *)
-      Lwt.return result
-    | Error pool_err ->
-      (* Failed to start, commit or rollback transaction *)
-      Lwt.fail (Exception (pool_err |> Caqti_error.show)))
-  | _ ->
-    Logs.err (fun m ->
-        m
-          "DB: Connection, transaction or pool found in context together, this should \
-           never happen and might indicate connection leaks. Please report this issue.");
-    Lwt.fail (Exception "Connection and pool found")
-;;
-
 let atomic ctx f =
   match find_transaction ctx, find_connection ctx, find_pool ctx with
   | Some connection, None, None ->
     (* Make sure [f] can not use the pool or some other connection *)
     ctx |> remove_pool |> remove_connection |> add_transaction connection |> f
   | None, Some connection, None ->
-    (* TODO start transaction and store current connection as transaction in trx *)
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let* start_result = Connection.start () in
     (match start_result with
@@ -236,10 +198,12 @@ let set_fk_check ctx ~check =
 ;;
 
 let with_disabled_fk_check ctx f =
-  with_connection ctx (fun ctx ->
+  atomic ctx (fun ctx ->
       let* () = set_fk_check ctx ~check:false in
       Lwt.finalize (fun () -> f ctx) (fun () -> set_fk_check ctx ~check:true))
 ;;
+
+(* Service lifecycle *)
 
 let start ctx = ctx |> add_pool |> Lwt.return
 let stop _ = Lwt.return ()
