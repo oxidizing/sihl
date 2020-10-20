@@ -19,7 +19,7 @@ let services =
 
 let () =
   Logs.set_reporter (Sihl.Core.Log.default_reporter ());
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let configurations =
     List.map (fun service -> Sihl.Core.Container.Service.configuration service) services
   in

@@ -55,7 +55,7 @@ let get_usernames ctx =
 ;;
 
 let query_with_pool _ () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* () = insert_username ctx "foobar pool" in
@@ -66,7 +66,7 @@ let query_with_pool _ () =
 ;;
 
 let query_with_transaction _ () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* usernames =
@@ -80,7 +80,7 @@ let query_with_transaction _ () =
 ;;
 
 let transaction_rolls_back _ () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* () =
@@ -98,7 +98,7 @@ let transaction_rolls_back _ () =
 ;;
 
 let query_with_nested_transaction _ () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* usernames =
@@ -113,7 +113,7 @@ let query_with_nested_transaction _ () =
 ;;
 
 let nested_transaction_with_inner_fail_rolls_back _ () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* () =
@@ -132,7 +132,7 @@ let nested_transaction_with_inner_fail_rolls_back _ () =
 ;;
 
 let nested_transaction_with_outer_fail_rolls_back _ () =
-  let ctx = Sihl.Core.Ctx.empty in
+  let ctx = Sihl.Core.Ctx.empty () in
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* () =

@@ -8,7 +8,7 @@ struct
   module UserSeed = Sihl.User.Seed.Make (UserService)
 
   let reset_password_suceeds _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.empty () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* _ = UserSeed.user ctx ~email:"foo@example.com" ~password:"123456789" in
     let* token =

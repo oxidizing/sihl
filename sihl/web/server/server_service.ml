@@ -50,7 +50,7 @@ let res_to_opium res =
 ;;
 
 let handler_to_opium_handler handler opium_req =
-  let* handler = Core.Ctx.empty |> Http.Req.add_to_ctx opium_req |> handler in
+  let* handler = Core.Ctx.empty () |> Http.Req.add_to_ctx opium_req |> handler in
   handler |> res_to_opium
 ;;
 
@@ -100,7 +100,7 @@ module Opium : Sig.SERVICE = struct
 
   let start_cmd =
     Core.Command.make ~name:"start" ~help:"" ~description:"Start the web server" (fun _ ->
-        let ctx = Core.Ctx.empty in
+        let ctx = Core.Ctx.empty () in
         start_server ctx)
   ;;
 

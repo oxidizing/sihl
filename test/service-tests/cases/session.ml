@@ -15,7 +15,7 @@ module Make (SessionService : Sihl.Session.Sig.SERVICE) = struct
   module Middleware = Sihl.Web.Middleware.Session.Make (SessionService)
 
   let test_anonymous_request_returns_cookie _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.empty () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let stack = [ Middleware.m () ] in
     let* _ = middleware_stack ctx stack in
@@ -25,7 +25,7 @@ module Make (SessionService : Sihl.Session.Sig.SERVICE) = struct
   ;;
 
   let test_requests_persist_session_variables _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.empty () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let stack = [ Middleware.m () ] in
     let handler ctx =

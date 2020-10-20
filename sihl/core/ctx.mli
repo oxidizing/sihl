@@ -28,7 +28,7 @@ val create_key : unit -> 'a key
 type t
 
 (** [empty] is an empty context. *)
-val empty : t
+val empty : unit -> t
 
 (** [add key ctx] adds a value for the [key]. If there is a value stored with the key it
     will be silently replaced. *)
@@ -43,3 +43,6 @@ val remove : 'a key -> t -> t
 (** [id ctx] returns the id of the context [ctx]. The ids of the currently active and used
     contexts are unique. *)
 val id : t -> string
+
+val atomic : t -> (t -> 'a Lwt.t) -> 'a Lwt.t
+val handle_atomic : t -> (unit -> 'a Lwt.t) -> ('a -> unit Lwt.t) -> 'a option Lwt.t

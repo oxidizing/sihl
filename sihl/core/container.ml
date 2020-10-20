@@ -93,7 +93,7 @@ let start_services services =
   Log.debug (fun m -> m "Starting Sihl");
   let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
-  let ctx = Ctx.empty in
+  let ctx = Ctx.empty () in
   let rec loop ctx lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->

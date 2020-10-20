@@ -144,7 +144,7 @@ module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
           |> List.map WorkableJob.with_context
           |> List.fold_left (fun a b c -> c |> b |> a) Fun.id
         in
-        let ctx = combined_context_fn Core.Ctx.empty in
+        let ctx = combined_context_fn (Core.Ctx.empty ()) in
         work_queue ctx ~jobs)
       else (
         Logs.debug (fun m -> m "QUEUE: No jobs found to run, trying again later");
