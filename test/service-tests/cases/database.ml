@@ -65,20 +65,6 @@ let query_with_pool _ () =
   Lwt.return ()
 ;;
 
-let query_with_connection _ () =
-  let ctx = Sihl.Core.Ctx.empty in
-  let* () = drop_table_if_exists ctx in
-  let* () = create_table_if_not_exists ctx in
-  let* usernames =
-    Sihl.Database.Service.with_connection ctx (fun ctx ->
-        let* () = insert_username ctx "foobar connection" in
-        get_usernames ctx)
-  in
-  let username = List.find (String.equal "foobar connection") usernames in
-  Alcotest.(check string "has username" "foobar connection" username);
-  Lwt.return ()
-;;
-
 let query_with_transaction _ () =
   let ctx = Sihl.Core.Ctx.empty in
   let* () = drop_table_if_exists ctx in
@@ -111,12 +97,78 @@ let transaction_rolls_back _ () =
   Lwt.return ()
 ;;
 
+let query_with_nested_transaction _ () =
+  let ctx = Sihl.Core.Ctx.empty in
+  let* () = drop_table_if_exists ctx in
+  let* () = create_table_if_not_exists ctx in
+  let* usernames =
+    Sihl.Database.Service.atomic ctx (fun ctx ->
+        Sihl.Database.Service.atomic ctx (fun ctx ->
+            let* () = insert_username ctx "foobar trx" in
+            get_usernames ctx))
+  in
+  let username = List.find (String.equal "foobar trx") usernames in
+  Alcotest.(check string "has username" "foobar trx" username);
+  Lwt.return ()
+;;
+
+let nested_transaction_with_inner_fail_rolls_back _ () =
+  let ctx = Sihl.Core.Ctx.empty in
+  let* () = drop_table_if_exists ctx in
+  let* () = create_table_if_not_exists ctx in
+  let* () =
+    Lwt.catch
+      (fun () ->
+        Sihl.Database.Service.atomic ctx (fun ctx ->
+            Sihl.Database.Service.atomic ctx (fun ctx ->
+                let* () = insert_username ctx "foobar trx" in
+                failwith "Oh no, something went wrong during the transaction!")))
+      (fun _ -> Lwt.return ())
+  in
+  let* usernames = get_usernames ctx in
+  let username = List.find_opt (String.equal "foobar trx") usernames in
+  Alcotest.(check (option string) "has no username" None username);
+  Lwt.return ()
+;;
+
+let nested_transaction_with_outer_fail_rolls_back _ () =
+  let ctx = Sihl.Core.Ctx.empty in
+  let* () = drop_table_if_exists ctx in
+  let* () = create_table_if_not_exists ctx in
+  let* () =
+    Lwt.catch
+      (fun () ->
+        Sihl.Database.Service.atomic ctx (fun ctx ->
+            let* () =
+              Sihl.Database.Service.atomic ctx (fun ctx ->
+                  insert_username ctx "foobar trx")
+            in
+            Lwt.return @@ failwith "Oh no, something went wrong during the transaction!"))
+      (fun _ -> Lwt.return ())
+  in
+  let* usernames = get_usernames ctx in
+  let username = List.find_opt (String.equal "foobar trx") usernames in
+  Alcotest.(check (option string) "has no username" None username);
+  Lwt.return ()
+;;
+
 let test_suite =
   ( "database"
   , [ Alcotest_lwt.test_case "fetch pool" `Quick fetch_pool
     ; Alcotest_lwt.test_case "query with pool" `Quick query_with_pool
-    ; Alcotest_lwt.test_case "query with connection" `Quick query_with_connection
     ; Alcotest_lwt.test_case "query with transaction" `Quick query_with_transaction
     ; Alcotest_lwt.test_case "transaction rolls back" `Quick transaction_rolls_back
+    ; Alcotest_lwt.test_case
+        "query with nested transaction"
+        `Quick
+        query_with_nested_transaction
+    ; Alcotest_lwt.test_case
+        "nested transaction with inner fail rolls back"
+        `Quick
+        nested_transaction_with_inner_fail_rolls_back
+    ; Alcotest_lwt.test_case
+        "nested transaction with outer fail rolls back"
+        `Quick
+        nested_transaction_with_outer_fail_rolls_back
     ] )
 ;;

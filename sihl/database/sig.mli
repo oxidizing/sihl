@@ -15,10 +15,6 @@ module type SERVICE = sig
     -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t)
     -> 'a Lwt.t
 
-  (** Run a database query on a single connection. Can be used to set session variables
-      that are bound to the same connection. *)
-  val with_connection : Core.Ctx.t -> (Core.Ctx.t -> 'a Lwt.t) -> 'a Lwt.t
-
   (** Run a database query atomically on a connection.
 
       The context has to contain a database connection or a database connection pool.
