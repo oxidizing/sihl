@@ -2,6 +2,7 @@ exception Exception of string
 
 type pool = (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 type connection = (module Caqti_lwt.CONNECTION)
+type 'a query = Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t
 
 let ctx_key_connection : connection Core.Ctx.key = Core.Ctx.create_key ()
 let ctx_key_transaction : connection Core.Ctx.key = Core.Ctx.create_key ()

@@ -44,5 +44,14 @@ val remove : 'a key -> t -> t
     contexts are unique. *)
 val id : t -> string
 
+(** [atomic ctx f] runs the function [f] atomically in a best-effort manner. This means
+    that services may implement transactions, but there is no guarantee. Make sure to
+    review the service implementation or documentation to make sure that atomic operations
+    are supported. *)
 val atomic : t -> (t -> 'a Lwt.t) -> 'a Lwt.t
+
+(** [handle_atomic ctx acquire finalize] implements atomic operations that respect
+    transaction boundaries set with [atomic]. [acquire] is a function that returns a
+    transaction and [finalize] is a function that takes a transaction and tries to commit
+    or rollback. *)
 val handle_atomic : t -> (unit -> 'a Lwt.t) -> ('a -> unit Lwt.t) -> 'a option Lwt.t

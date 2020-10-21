@@ -42,150 +42,30 @@ let add_pool ctx =
   add_pool pool ctx
 ;;
 
-let query ctx f =
-  match find_transaction ctx, find_connection ctx, find_pool ctx with
-  | Some connection, None, None ->
-    let* result = f connection in
-    (match result with
-    | Ok result -> Lwt.return result
-    | Error error ->
-      let msg = Caqti_error.show error in
-      Logs.err (fun m -> m "DB: %s" msg);
-      Lwt.fail (Exception msg))
-  | None, Some connection, _ ->
-    let* result = f connection in
-    (match result with
-    | Ok result -> Lwt.return result
-    | Error error ->
-      let msg = Caqti_error.show error in
-      Logs.err (fun m -> m "DB: %s" msg);
-      Lwt.fail (Exception msg))
-  | None, None, pool ->
-    let pool = Option.value ~default:(fetch_pool ()) pool in
-    print_pool_usage pool;
-    let* result = Caqti_lwt.Pool.use f pool in
-    (match result with
-    | Ok result -> Lwt.return result
-    | Error error ->
-      let msg = Caqti_error.show error in
-      Logs.err (fun m -> m "DB: %s" msg);
-      Lwt.fail (Exception msg))
-  | _ ->
-    Logs.err (fun m ->
-        m
-          "DB: Connection, transaction or pool found in context, this should never \
-           happen and might indicate connection leaks. Please report this issue.");
-    Lwt.fail (Exception "Connection and pool found")
+let fetch_connection pool =
+  let* connection =
+    Caqti_lwt.Pool.use (fun connection -> Lwt_result.return connection) pool
+  in
+  match connection with
+  | Ok connection -> Lwt.return connection
+  | Error msg -> failwith (Caqti_error.show msg)
 ;;
 
-let atomic ctx f =
-  match find_transaction ctx, find_connection ctx, find_pool ctx with
-  | Some connection, None, None ->
-    (* Make sure [f] can not use the pool or some other connection *)
-    ctx |> remove_pool |> remove_connection |> add_transaction connection |> f
-  | None, Some connection, None ->
-    let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    let* start_result = Connection.start () in
-    (match start_result with
-    | Error msg ->
-      Logs.debug (fun m ->
-          m "DB TX: Failed to start transaction %s" (Caqti_error.show msg));
-      Lwt.fail @@ Exception (Caqti_error.show msg)
-    | Ok () ->
-      Logs.debug (fun m -> m "DB TX: Started transaction");
-      (* Remove the pool so that all subsequent queries are executed on the connection. A
-         transaction can only be done only at one connection, it can not span multiple
-         connections. *)
-      let ctx_with_connection =
-        ctx |> remove_pool |> remove_connection |> add_transaction (module Connection)
-      in
-      Lwt.catch
-        (fun () ->
-          let* result = f ctx_with_connection in
-          let* commit_result = Connection.commit () in
-          match commit_result with
-          | Ok () ->
-            Logs.debug (fun m -> m "DB TX: Successfully committed transaction");
-            Lwt.return @@ result
-          | Error error ->
-            Logs.err (fun m ->
-                m "DB TX: Failed to commit transaction %s" (Caqti_error.show error));
-            Lwt.fail @@ Exception "Failed to commit transaction")
-        (fun e ->
-          let* rollback_result = Connection.rollback () in
-          match rollback_result with
-          | Ok () ->
-            Logs.debug (fun m -> m "DB TX: Successfully rolled back transaction");
-            Lwt.fail e
-          | Error error ->
-            Logs.err (fun m ->
-                m "DB TX: Failed to rollback transaction %s" (Caqti_error.show error));
-            Lwt.fail @@ Exception "Failed to rollback transaction"))
-  | None, None, pool ->
-    (* There is no transaction active, create a new one *)
-    let pool = Option.value ~default:(fetch_pool ()) pool in
-    print_pool_usage pool;
-    let* pool_result =
-      Caqti_lwt.Pool.use
-        (fun connection ->
-          Logs.debug (fun m -> m "DB TX: Fetched connection from pool");
-          let (module Connection : Caqti_lwt.CONNECTION) = connection in
-          let* start_result = Connection.start () in
-          match start_result with
-          | Error msg ->
-            Logs.debug (fun m ->
-                m "DB TX: Failed to start transaction %s" (Caqti_error.show msg));
-            Lwt.return @@ Error msg
-          | Ok () ->
-            Logs.debug (fun m -> m "DB TX: Started transaction");
-            (* Remove the pool so that all subsequent queries are executed on the
-               connection. A transaction can only be done only at one connection, it can
-               not span multiple connections. *)
-            let ctx_with_connection =
-              ctx
-              |> remove_pool
-              |> remove_connection
-              |> add_transaction (module Connection)
-            in
-            Lwt.catch
-              (fun () ->
-                let* result = f ctx_with_connection in
-                let* commit_result = Connection.commit () in
-                match commit_result with
-                | Ok () ->
-                  Logs.debug (fun m -> m "DB TX: Successfully committed transaction");
-                  Lwt.return @@ Ok result
-                | Error error ->
-                  Logs.err (fun m ->
-                      m "DB TX: Failed to commit transaction %s" (Caqti_error.show error));
-                  Lwt.fail @@ Exception "Failed to commit transaction")
-              (fun e ->
-                let* rollback_result = Connection.rollback () in
-                match rollback_result with
-                | Ok () ->
-                  Logs.debug (fun m -> m "DB TX: Successfully rolled back transaction");
-                  Lwt.fail e
-                | Error error ->
-                  Logs.err (fun m ->
-                      m
-                        "DB TX: Failed to rollback transaction %s"
-                        (Caqti_error.show error));
-                  Lwt.fail @@ Exception "Failed to rollback transaction"))
-        pool
-    in
-    (match pool_result with
-    | Ok result ->
-      (* All good, return result of f ctx *)
-      Lwt.return result
-    | Error pool_err ->
-      (* Failed to start, commit or rollback transaction *)
-      Lwt.fail (Exception (pool_err |> Caqti_error.show)))
-  | _ ->
-    Logs.err (fun m ->
-        m
-          "DB: Connection, transaction or pool found in context together, this should \
-           never happen and might indicate connection leaks. Please report this issue.");
-    Lwt.fail (Exception "Connection and pool found")
+let query ctx f =
+  let pool = fetch_pool () in
+  let* connection =
+    Core.Ctx.handle_atomic
+      ctx
+      (fun () -> fetch_connection pool)
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        let* result = Connection.commit () in
+        match result with
+        | Ok () -> Lwt.return ()
+        | Error msg -> failwith (Caqti_error.show msg))
+  in
+  match connection with
+  | Some connection -> f connection |> Lwt.map Result.get_ok
+  | None -> Caqti_lwt.Pool.use f pool |> Lwt.map Result.get_ok
 ;;
 
 let set_fk_check_request =
@@ -198,7 +78,7 @@ let set_fk_check ctx ~check =
 ;;
 
 let with_disabled_fk_check ctx f =
-  atomic ctx (fun ctx ->
+  Core.Ctx.atomic ctx (fun ctx ->
       let* () = set_fk_check ctx ~check:false in
       Lwt.finalize (fun () -> f ctx) (fun () -> set_fk_check ctx ~check:true))
 ;;

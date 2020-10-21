@@ -680,7 +680,7 @@ module MakeDelayed
   let send ctx email = QueueService.dispatch ctx ~job:Job.job email
 
   let bulk_send ctx emails =
-    DbService.atomic ctx (fun ctx ->
+    Sihl.Core.Ctx.atomic ctx (fun ctx ->
         let rec loop emails =
           match emails with
           | email :: emails -> Lwt.bind (send ctx email) (fun () -> loop emails)

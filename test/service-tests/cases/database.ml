@@ -70,7 +70,7 @@ let query_with_transaction _ () =
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* usernames =
-    Sihl.Database.Service.atomic ctx (fun ctx ->
+    Sihl.Core.Ctx.atomic ctx (fun ctx ->
         let* () = insert_username ctx "foobar trx" in
         get_usernames ctx)
   in
@@ -86,7 +86,7 @@ let transaction_rolls_back _ () =
   let* () =
     Lwt.catch
       (fun () ->
-        Sihl.Database.Service.atomic ctx (fun ctx ->
+        Sihl.Core.Ctx.atomic ctx (fun ctx ->
             let* () = insert_username ctx "foobar trx" in
             failwith "Oh no, something went wrong during the transaction!"))
       (fun _ -> Lwt.return ())
@@ -102,8 +102,8 @@ let query_with_nested_transaction _ () =
   let* () = drop_table_if_exists ctx in
   let* () = create_table_if_not_exists ctx in
   let* usernames =
-    Sihl.Database.Service.atomic ctx (fun ctx ->
-        Sihl.Database.Service.atomic ctx (fun ctx ->
+    Sihl.Core.Ctx.atomic ctx (fun ctx ->
+        Sihl.Core.Ctx.atomic ctx (fun ctx ->
             let* () = insert_username ctx "foobar trx" in
             get_usernames ctx))
   in
@@ -119,8 +119,8 @@ let nested_transaction_with_inner_fail_rolls_back _ () =
   let* () =
     Lwt.catch
       (fun () ->
-        Sihl.Database.Service.atomic ctx (fun ctx ->
-            Sihl.Database.Service.atomic ctx (fun ctx ->
+        Sihl.Core.Ctx.atomic ctx (fun ctx ->
+            Sihl.Core.Ctx.atomic ctx (fun ctx ->
                 let* () = insert_username ctx "foobar trx" in
                 failwith "Oh no, something went wrong during the transaction!")))
       (fun _ -> Lwt.return ())
@@ -138,10 +138,9 @@ let nested_transaction_with_outer_fail_rolls_back _ () =
   let* () =
     Lwt.catch
       (fun () ->
-        Sihl.Database.Service.atomic ctx (fun ctx ->
+        Sihl.Core.Ctx.atomic ctx (fun ctx ->
             let* () =
-              Sihl.Database.Service.atomic ctx (fun ctx ->
-                  insert_username ctx "foobar trx")
+              Sihl.Core.Ctx.atomic ctx (fun ctx -> insert_username ctx "foobar trx")
             in
             Lwt.return @@ failwith "Oh no, something went wrong during the transaction!"))
       (fun _ -> Lwt.return ())
