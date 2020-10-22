@@ -1,8 +1,8 @@
 (library
  (name utils)
  (public_name sihl.utils)
- (libraries re yojson ppx_deriving_yojson.runtime safepass base64
-   ptime jwto core containers)
+ (libraries re yojson ppx_deriving_yojson.runtime safepass base64 ptime jwto
+   core containers)
  (preprocess
   (pps ppx_deriving_yojson ppx_fields_conv ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make)))
