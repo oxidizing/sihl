@@ -37,7 +37,7 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
           expires_at,
           created_at
         FROM token_tokens
-        WHERE token_tokens.token_uuid = ?
+        WHERE token_tokens.uuid = ?
         |sql}
     ;;
 

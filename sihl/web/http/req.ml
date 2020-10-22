@@ -72,6 +72,11 @@ let get_header ctx key =
   Cohttp.Header.get (Opium.Std.Request.headers req) key
 ;;
 
+let get_body_string ctx =
+  let req = get_req ctx in
+  req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
+;;
+
 let parse_token ctx =
   let ( let* ) = Option.bind in
   (* TODO make this more robust *)
@@ -133,7 +138,7 @@ let urlencoded ?body ctx key =
     | Some body -> Lwt.return body
     | None -> req |> Opium.Std.Request.body |> Opium.Std.Body.to_string
   in
-  match body |> Uri.pct_decode |> Uri.query_of_encoded |> find_in_query key with
+  match body |> Uri.query_of_encoded |> find_in_query key with
   | None -> Lwt.return None
   | Some value -> Lwt.return @@ Some value
 ;;
