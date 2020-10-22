@@ -19,9 +19,9 @@ module Make (RandomService : Random.Sig.SERVICE) (Repo : Sig.REPO) : Sig.SERVICE
     let open Model in
     match expire_date, default_expiration_date now with
     | Some expire_date, _ ->
-      Some { key = RandomService.base64 ~bytes:10; data = Map.empty; expire_date }
+      Some { key = RandomService.base64 ~nr:10; data = Map.empty; expire_date }
     | None, Some expire_date ->
-      Some { key = RandomService.base64 ~bytes:10; data = Map.empty; expire_date }
+      Some { key = RandomService.base64 ~nr:10; data = Map.empty; expire_date }
     | None, None -> None
   ;;
 

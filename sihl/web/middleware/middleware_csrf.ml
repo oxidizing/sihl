@@ -46,7 +46,7 @@ struct
       (* Randomize and scramble secret (XOR with salt) to make a token *)
       (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
       let secret_length = String.length secret.value in
-      let salt = RandomService.random_bytes ~bytes:secret_length in
+      let salt = RandomService.bytes ~nr:secret_length in
       let secret_value = Utils.String.string_to_char_list secret.value in
       let encrypted =
         match Utils.Encryption.xor salt secret_value with

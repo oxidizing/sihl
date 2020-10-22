@@ -29,7 +29,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   ;;
 
   let make ~id ~data ~kind ?(expires_in = Utils.Time.OneDay) ?now ?(length = 80) () =
-    let value = Random.Service.base64 ~bytes:length in
+    let value = Random.Service.base64 ~nr:length in
     let expires_in = Utils.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
     let expires_at = Option.get (Ptime.add_span now expires_in) in
