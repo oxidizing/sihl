@@ -58,6 +58,7 @@ let query ctx f =
       ctx
       (fun () -> fetch_connection pool)
       (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        (* TODO [jerben] handle rollback *)
         let* result = Connection.commit () in
         match result with
         | Ok () -> Lwt.return ()
