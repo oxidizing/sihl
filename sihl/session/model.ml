@@ -10,6 +10,15 @@ type t =
   ; expire_date : Ptime.t
   }
 
+let sexp_of_t { key; expire_date; _ } =
+  let open Sexplib0.Sexp_conv in
+  let open Sexplib0.Sexp in
+  List
+    [ List [ Atom "key"; sexp_of_string key ]
+    ; List [ Atom "expire_date"; sexp_of_string (Ptime.to_rfc3339 expire_date) ]
+    ]
+;;
+
 (* TODO [jerben] Consider moving date stuff into Utils.Time *)
 let one_week = 60 * 60 * 24 * 7
 let default_expiration_date now = one_week |> Ptime.Span.of_int_s |> Ptime.add_span now

@@ -5,6 +5,10 @@
 - `Database.Service` and `Repository.Service` are assumed to have just one implementation, so they are referenced directly in service implementations instead of passing them as functor arguments
 - Extract `Random.Service` from utils as standalone top level service
 - Merge utils into one `utils.ml` file
+#### HTTP API
+- `Sihl.Http.Response` and `Sihl.Http.Request` have consistent API
+- `Sihl.Middleware` contains all provided middlewares
+- Implement multi-part form data parsing
 
 ## [0.1.5] - 2020-10-14
 ### Fixed

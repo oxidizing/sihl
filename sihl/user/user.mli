@@ -31,7 +31,6 @@ val of_yojson : Yojson.Safe.t -> t Ppx_deriving_yojson_runtime.error_or
 val pp : Caml.Format.formatter -> t -> unit
 val show : t -> string
 val equal : t -> t -> bool
-val alcotest : t Alcotest.testable
 val confirm : t -> t
 val set_user_password : t -> string -> (t, string) Result.t
 val set_user_details : t -> email:string -> username:string option -> t
@@ -39,6 +38,7 @@ val is_admin : t -> bool
 val is_owner : t -> string -> bool
 val is_confirmed : t -> bool
 val matches_password : string -> t -> bool
+val sexp_of_t : t -> Sexplib.Sexp.t
 
 val validate_new_password
   :  password:string

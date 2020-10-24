@@ -1,5 +1,0 @@
-(library
- (name random)
- (public_name sihl.random)
- (libraries base64 base lwt core)
- (modules_without_implementation sig))

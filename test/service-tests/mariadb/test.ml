@@ -11,7 +11,7 @@ module PasswordReset =
   Test_case.Password_reset.Make (Service.User) (Service.PasswordReset)
 
 module Queue = Test_case.Queue.Make (Service.Queue)
-module Csrf = Test_case.Csrf.Make (Service.Token) (Service.Session) (Service.Random)
+module Csrf = Test_case.Csrf.Make (Service.Token) (Service.Session)
 
 let test_suite ctx =
   [ Database.test_suite

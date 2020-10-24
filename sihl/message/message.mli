@@ -8,6 +8,7 @@ module Entry = Model.Entry
 
 type t = Model.Message.t
 
+val sexp_of_t : t -> Sexplib0.Sexp.t
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string

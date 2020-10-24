@@ -1,6 +1,8 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
+let alcotest = Alcotest.testable Sihl.User.pp Sihl.User.equal
+
 module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   module Seed = Sihl.User.Seed.Make (UserService)
 
@@ -57,7 +59,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
     in
     Alcotest.(
       check
-        (result Sihl.User.alcotest string)
+        (result alcotest string)
         "Can login with updated password"
         (Error "Invalid current password provided")
         change_result);
@@ -76,7 +78,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
     let query = Sihl.Database.Ql.(empty |> set_limit 10 |> set_filter filter) in
     let* actual_users, meta = UserService.find_all ctx ~query in
     Alcotest.(check int "has correct meta" 1 (Sihl.Repository.Meta.total meta));
-    Alcotest.(check (list Sihl.User.alcotest) "has one user" actual_users [ user1 ]);
+    Alcotest.(check (list alcotest) "has one user" actual_users [ user1 ]);
     Lwt.return ()
   ;;
 

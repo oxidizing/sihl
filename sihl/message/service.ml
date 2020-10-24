@@ -8,8 +8,8 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 let session_key = "message"
 
 module Make (SessionService : Session.Sig.SERVICE) : Sig.SERVICE = struct
-  let fetch_entry ctx =
-    let* entry = SessionService.get ~key:session_key ctx in
+  let fetch_entry ctx session =
+    let* entry = SessionService.get ctx session ~key:session_key in
     match entry with
     | None -> Lwt.return None
     | Some entry ->
@@ -20,44 +20,44 @@ module Make (SessionService : Session.Sig.SERVICE) : Sig.SERVICE = struct
         Lwt.return None)
   ;;
 
-  let find_current ctx =
-    let* entry = fetch_entry ctx in
+  let find_current ctx session =
+    let* entry = fetch_entry ctx session in
     match entry with
     | None -> Lwt.return None
     | Some entry -> Lwt.return (Entry.current entry)
   ;;
 
-  let set_next ctx message =
-    let* entry = fetch_entry ctx in
+  let set_next ctx session message =
+    let* entry = fetch_entry ctx session in
     match entry with
     | None ->
       (* No entry found, creating new one *)
       let entry = Entry.create message |> Entry.to_string in
-      SessionService.set ctx ~key:session_key ~value:entry
+      SessionService.set ctx session ~key:session_key ~value:entry
     | Some entry ->
       (* Overriding next message in existing entry *)
       let entry = Entry.set_next message entry |> Entry.to_string in
-      SessionService.set ctx ~key:session_key ~value:entry
+      SessionService.set ctx session ~key:session_key ~value:entry
   ;;
 
-  let rotate ctx =
-    let* entry = fetch_entry ctx in
+  let rotate ctx session =
+    let* entry = fetch_entry ctx session in
     match entry with
     | None -> Lwt.return None
     | Some entry ->
       let serialized_entry = entry |> Entry.rotate |> Entry.to_string in
-      let* () = SessionService.set ctx ~key:session_key ~value:serialized_entry in
+      let* () = SessionService.set ctx session ~key:session_key ~value:serialized_entry in
       Lwt.return @@ Model.Entry.next entry
   ;;
 
-  let current ctx =
-    let* entry = find_current ctx in
+  let current ctx session =
+    let* entry = find_current ctx session in
     match entry with
     | None -> Lwt.return None
     | Some message -> Lwt.return (Some message)
   ;;
 
-  let set ctx ?(error = []) ?(warning = []) ?(success = []) ?(info = []) () =
+  let set ctx session ?(error = []) ?(warning = []) ?(success = []) ?(info = []) () =
     let message =
       Model.Message.(
         empty
@@ -66,7 +66,7 @@ module Make (SessionService : Session.Sig.SERVICE) : Sig.SERVICE = struct
         |> set_success success
         |> set_info info)
     in
-    set_next ctx message
+    set_next ctx session message
   ;;
 
   let start ctx = Lwt.return ctx

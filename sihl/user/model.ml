@@ -14,9 +14,14 @@ type t =
 [@@deriving fields, yojson, show, make]
 
 let equal u1 u2 = String.equal u1.id u2.id
-let alcotest = Alcotest.testable pp equal
-let ctx_key : t Core.Ctx.key = Core.Ctx.create_key ()
 let confirm user = { user with confirmed = true }
+
+let sexp_of_t { id; email; _ } =
+  let open Sexplib0.Sexp_conv in
+  let open Sexplib0.Sexp in
+  List
+    [ List [ Atom "id"; sexp_of_string id ]; List [ Atom "email"; sexp_of_string email ] ]
+;;
 
 let set_user_password user new_password =
   let hash = new_password |> Utils.Hashing.hash in
