@@ -42,3 +42,13 @@ val run
   -> ?args:string list
   -> t
   -> unit
+
+(** [run' ?commands ?configuration ?log_reporter app] is analogous to [run]. It is a
+    helper to be used in tests that need [Lwt.t]. *)
+val run'
+  :  ?commands:Command.t list
+  -> ?configuration:Configuration.data
+  -> ?log_reporter:(unit -> Logs.reporter)
+  -> ?args:string list
+  -> t
+  -> unit Lwt.t

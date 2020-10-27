@@ -18,6 +18,11 @@ let suite =
       ; test_case "read existing" `Quick Core_configuration.read_existing
       ; test_case "read schema invalid" `Quick Core_configuration.read_schema_invalid
       ; test_case "read schema" `Quick Core_configuration.read_schema
+      ; test_case
+          "read env file non-existing"
+          `Quick
+          Core_configuration.read_env_file_non_existing
+      ; test_case "read env file" `Quick Core_configuration.read_env_file
       ] )
   ; ( "http"
     , [ test_case "require url encoded body" `Quick Http.test_require_url_encoded_body
@@ -57,6 +62,17 @@ let suite =
       ; test_case "test 1" `Quick Regex.test1
       ; test_case "test 2" `Quick Regex.test2
       ; test_case "test 3" `Quick Regex.test3
+      ] )
+  ; ( "encryption"
+    , [ test_case "xor empty" `Quick Encryption.xor_empty
+      ; test_case "xor valid" `Quick Encryption.xor_valid
+      ; test_case "xor length differs" `Quick Encryption.xor_length_differs
+      ; test_case "decrypt with salt empty" `Quick Encryption.decrypt_with_salt_empty
+      ; test_case "decrypt with salt valid" `Quick Encryption.decrypt_with_salt_valid
+      ; test_case
+          "decrypt with salt length differs"
+          `Quick
+          Encryption.decrypt_with_salt_length_differs
       ] )
   ; ( "message"
     , [ test_case "entry to and from string" `Quick Message.entry_to_and_from_string

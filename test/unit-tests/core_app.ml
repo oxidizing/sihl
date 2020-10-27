@@ -1,3 +1,5 @@
+open Lwt.Syntax
+
 let database_running = ref false
 
 module Database = struct
@@ -89,9 +91,11 @@ let run_user_command _ () =
   database_running := false;
   user_service_running := false;
   order_service_running := false;
-  Sihl.Core.App.empty
-  |> Sihl.Core.App.with_services [ UserService.configure [ "CREATE_ADMIN", "admin" ] ]
-  |> Sihl.Core.App.run ~args:[ "ban" ];
+  let* () =
+    Sihl.Core.App.empty
+    |> Sihl.Core.App.with_services [ UserService.configure [ "CREATE_ADMIN", "admin" ] ]
+    |> Sihl.Core.App.run' ~args:[ "ban" ]
+  in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is not running" !order_service_running false);
   Alcotest.(check bool "user service is running" !user_service_running true);
@@ -102,10 +106,12 @@ let run_order_command _ () =
   database_running := false;
   user_service_running := false;
   order_service_running := false;
-  Sihl.Core.App.empty
-  |> Sihl.Core.App.with_services
-       [ OrderService.configure [ "ORDER_NOTIFICATION_URL", "https://" ] ]
-  |> Sihl.Core.App.run ~args:[ "order" ];
+  let* () =
+    Sihl.Core.App.empty
+    |> Sihl.Core.App.with_services
+         [ OrderService.configure [ "ORDER_NOTIFICATION_URL", "https://" ] ]
+    |> Sihl.Core.App.run' ~args:[ "order" ]
+  in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is running" !order_service_running true);
   Alcotest.(check bool "user service is not running" !user_service_running false);
