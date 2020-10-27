@@ -58,6 +58,17 @@ let suite =
       ; test_case "test 2" `Quick Regex.test2
       ; test_case "test 3" `Quick Regex.test3
       ] )
+  ; ( "encryption"
+    , [ test_case "xor empty" `Quick Encryption.xor_empty
+      ; test_case "xor valid" `Quick Encryption.xor_valid
+      ; test_case "xor length differs" `Quick Encryption.xor_length_differs
+      ; test_case "decrypt with salt empty" `Quick Encryption.decrypt_with_salt_empty
+      ; test_case "decrypt with salt valid" `Quick Encryption.decrypt_with_salt_valid
+      ; test_case
+          "decrypt with salt length differs"
+          `Quick
+          Encryption.decrypt_with_salt_length_differs
+      ] )
   ; ( "message"
     , [ test_case "entry to and from string" `Quick Message.entry_to_and_from_string
       ; test_case "rotate once" `Quick Message.rotate_once
