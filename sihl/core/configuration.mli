@@ -56,6 +56,19 @@ val store : data -> unit
     they occur early in the app lifecycle. This minimizes the feedback loop and makes
     sure, that services start only with valid configuration. *)
 
+(** [project_root_path] contains the path to the root of the project/app. Its value is
+    known at app start, thus not requiring it to be a function. It reads the value of
+    [PROJECT_ROOT_PATH]. If that env variable is not set, it reads the current working
+    directory of the process. *)
+
+val project_root_path : string
+
+(** [read_env_file ()] reads an [.env] file from the project root directory and returns
+    the key-value pairs as [data]. If [SIHL_ENV] is set to [testing], [.env.testing] is
+    read. Otherwise [.env] is read. If the file doesn't exist, empty data is returned. *)
+
+val read_env_file : unit -> data Lwt.t
+
 (** [read schema] returns the decoded, statically typed version of configuration [t] of
     the [schema]. This is used in services to declaratively define a valid configuration.
 
@@ -77,5 +90,5 @@ val read_int : string -> int option
     caches the returned value and subsequent calls are fast. *)
 val read_bool : string -> bool option
 
-(** [is_testing ()] returns true if SIHL_ENV is set to [testing]. *)
+(** [is_testing ()] returns true if [SIHL_ENV] is set to [testing]. *)
 val is_testing : unit -> bool

@@ -1,3 +1,5 @@
+open Lwt.Syntax
+
 let log_src = Logs.Src.create ~doc:"Service configuration" "sihl.configuration"
 
 module Log = (val Logs.src_log log_src : Logs.LOG)
@@ -45,9 +47,8 @@ let store data =
     data
 ;;
 
-let environment_variables () =
-  Unix.environment ()
-  |> Array.to_list
+let envs_to_kv envs =
+  envs
   |> List.map (String.split_on_char '=')
   |> List.map (function
          | [] -> "", ""
@@ -55,6 +56,8 @@ let environment_variables () =
          | [ key; value ] -> key, value
          | key :: values -> key, String.concat "" values)
 ;;
+
+let environment_variables () = Unix.environment () |> Array.to_list |> envs_to_kv
 
 let read schema =
   let data = environment_variables () in
@@ -95,6 +98,31 @@ let is_testing () =
   match read_string "SIHL_ENV" with
   | Some "test" -> true
   | _ -> false
+;;
+
+let project_root_path =
+  match read_string "PROJECT_ROOT_DIR" with
+  | Some pjr -> pjr
+  | _ -> Unix.getcwd ()
+;;
+
+let read_env_file () =
+  let filename =
+    project_root_path ^ "/" ^ if is_testing () then ".env.testing" else ".env"
+  in
+  let* exists = Lwt_unix.file_exists filename in
+  if exists
+  then
+    let* file = Lwt_io.open_file ~mode:Lwt_io.Input filename in
+    let rec read_to_end file ls =
+      let* line = Lwt_io.read_line_opt file in
+      match line with
+      | Some line -> read_to_end file (line :: ls)
+      | None -> Lwt.return ls
+    in
+    let* envs = read_to_end file [] in
+    envs |> envs_to_kv |> Lwt.return
+  else Lwt.return []
 ;;
 
 (* TODO [jerben] Implement "print configuration documentation" commands *)

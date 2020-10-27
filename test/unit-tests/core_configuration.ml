@@ -1,3 +1,5 @@
+open Lwt.Syntax
+
 let read_empty_value _ () =
   Sihl.Core.Configuration.store [];
   Alcotest.(
@@ -92,5 +94,28 @@ let read_schema _ () =
       ; start_tls = true
       ; ca_path = Some "/ca/file"
       });
+  Lwt.return ()
+;;
+
+let read_env_file_non_existing _ () =
+  let* data = Sihl.Core.Configuration.read_env_file () in
+  Alcotest.(check (list string) "Returns empty keys" (List.map fst data) []);
+  Alcotest.(check (list string) "Returns empty values" (List.map snd data) []);
+  Lwt.return ()
+;;
+
+let read_env_file switch () =
+  let filename = Sihl.Core.Configuration.project_root_path ^ "/.env.testing" in
+  Lwt_switch.add_hook (Some switch) (fun () -> Lwt_unix.unlink filename);
+  let keys = [ "NAME"; "OCCUPATION"; "AGE" ] in
+  let values = [ "church"; "mathematician"; "92" ] in
+  let* () =
+    Lwt_io.with_file ~mode:Lwt_io.Output filename (fun ch ->
+        let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
+        Lwt_list.iter_s (Lwt_io.write_line ch) envs)
+  in
+  let* data = Sihl.Core.Configuration.read_env_file () in
+  Alcotest.(check (list string) "Returns keys" (List.map fst data) (List.rev keys));
+  Alcotest.(check (list string) "Returns values" (List.map snd data) (List.rev values));
   Lwt.return ()
 ;;

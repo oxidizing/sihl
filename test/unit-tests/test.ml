@@ -18,6 +18,11 @@ let suite =
       ; test_case "read existing" `Quick Core_configuration.read_existing
       ; test_case "read schema invalid" `Quick Core_configuration.read_schema_invalid
       ; test_case "read schema" `Quick Core_configuration.read_schema
+      ; test_case
+          "read env file non-existing"
+          `Quick
+          Core_configuration.read_env_file_non_existing
+      ; test_case "read env file" `Quick Core_configuration.read_env_file
       ] )
   ; ( "http"
     , [ test_case "require url encoded body" `Quick Http.test_require_url_encoded_body
