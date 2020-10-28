@@ -26,28 +26,22 @@ val before_stop : (Ctx.t -> unit Lwt.t) -> t -> t
     after services are stopped. This means you must not use any services here! *)
 val after_stop : (Ctx.t -> unit Lwt.t) -> t -> t
 
-(** [run ?commands ?configuration ?log_reporter app] is the main entry point to a Sihl app
-    and starts the command line interface with [commands] merged with the commands
-    provided by services.
-
-    [configuration] can be provided globally, overriding the configurations provided to
-    the services.
+(** [run ?commands ?log_reporter app] is the main entry point to a Sihl app and starts the
+    command line interface with [commands] merged with the commands provided by services.
 
     An optional [log_reporter] can be provided to change the logging behavior. The default
     log reporter logs to stdout. *)
 val run
   :  ?commands:Command.t list
-  -> ?configuration:Configuration.data
   -> ?log_reporter:(unit -> Logs.reporter)
   -> ?args:string list
   -> t
   -> unit
 
-(** [run' ?commands ?configuration ?log_reporter app] is analogous to [run]. It is a
-    helper to be used in tests that need [Lwt.t]. *)
+(** [run' ?commands ?log_reporter app] is analogous to [run]. It is a helper to be used in
+    tests that need [Lwt.t]. *)
 val run'
   :  ?commands:Command.t list
-  -> ?configuration:Configuration.data
   -> ?log_reporter:(unit -> Logs.reporter)
   -> ?args:string list
   -> t
