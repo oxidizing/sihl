@@ -1,4 +1,4 @@
-include Model.User
+include Model
 module Authz = Authz
 module Service = Service
 module Repo = Repo

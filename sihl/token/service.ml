@@ -1,5 +1,9 @@
 open Lwt.Syntax
 
+let log_src = Logs.Src.create "sihl.service.token"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   let find_opt ctx value =
     let* token = Repo.find_opt ctx ~value in

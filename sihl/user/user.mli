@@ -16,7 +16,7 @@
 module Authz = Authz
 module Seed = Seed
 
-type t = Model.User.t
+type t = Model.t
 
 val confirmed : t -> bool
 val admin : t -> bool

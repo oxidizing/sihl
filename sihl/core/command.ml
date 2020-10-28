@@ -1,6 +1,6 @@
 let log_src = Logs.Src.create ~doc:"CLI command handling" "sihl.command"
 
-module Log = (val Logs.src_log log_src : Logs.LOG)
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 type fn = string list -> unit Lwt.t
 

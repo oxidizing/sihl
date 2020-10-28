@@ -43,8 +43,6 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
   end
 
-  module Model = Model.User
-
   let get_all ctx ~query =
     let fields =
       [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
@@ -267,8 +265,6 @@ CREATE TABLE IF NOT EXISTS user_users (
 
     let migration () = Migration.(empty "user" |> add_step create_users_table)
   end
-
-  module Model = Model.User
 
   let get_all ctx ~query =
     let fields =

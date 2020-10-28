@@ -1,6 +1,10 @@
 open Lwt.Syntax
 module Entry = Model.Entry
 
+let log_src = Logs.Src.create ~doc:"message" "sihl.service.message"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 let session_key = "message"
 
 module Make (SessionService : Session.Sig.SERVICE) : Sig.SERVICE = struct

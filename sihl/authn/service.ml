@@ -2,6 +2,10 @@ open Lwt.Syntax
 
 exception Exception of string
 
+let log_src = Logs.Src.create ~doc:"authn" "sihl.service.authn"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 module Make (SessionService : Session.Sig.SERVICE) (UserService : User.Sig.SERVICE) :
   Sig.SERVICE = struct
   let find_user_in_session_opt ctx =

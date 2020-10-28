@@ -1,6 +1,10 @@
 open Lwt.Syntax
 open Model
 
+let log_src = Logs.Src.create ~doc:"database" "sihl.service.database"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 let ctx_key_pool : pool Core.Ctx.key = Core.Ctx.create_key ()
 let find_pool ctx = Core.Ctx.find ctx_key_pool ctx
 let add_pool pool ctx = Core.Ctx.add ctx_key_pool pool ctx

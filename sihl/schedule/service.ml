@@ -1,5 +1,9 @@
 open Lwt.Syntax
 
+let log_src = Logs.Src.create ~doc:"schedule" "sihl.service.schedule"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 let schedule _ schedule =
   let should_stop = ref false in
   let stop_schedule () = should_stop := true in

@@ -1,5 +1,9 @@
 open Lwt.Syntax
 
+let log_src = Logs.Src.create ~doc:"session" "sihl.service.session"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
 module Make (RandomService : Random.Sig.SERVICE) (Repo : Sig.REPO) : Sig.SERVICE = struct

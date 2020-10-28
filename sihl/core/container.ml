@@ -6,7 +6,7 @@ let log_src =
     "sihl.container"
 ;;
 
-module Log = (val Logs.src_log log_src : Logs.LOG)
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Exception of string
 
@@ -90,38 +90,38 @@ let top_sort_lifecycles lifecycles =
 ;;
 
 let start_services services =
-  Log.debug (fun m -> m "Starting Sihl");
+  Logs.debug (fun m -> m "Starting Sihl");
   let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
   let ctx = Ctx.empty in
   let rec loop ctx lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Log.debug (fun m -> m "Starting service: %s" lifecycle.Lifecycle.name);
+      Logs.debug (fun m -> m "Starting service: %s" lifecycle.Lifecycle.name);
       let f = lifecycle.start in
       let* ctx = f ctx in
       loop ctx lifecycles
     | [] -> Lwt.return ctx
   in
   let* ctx = loop ctx lifecycles in
-  Log.debug (fun m -> m "All services online. Ready for Takeoff!");
+  Logs.debug (fun m -> m "All services online. Ready for Takeoff!");
   Lwt.return (lifecycles, ctx)
 ;;
 
 let stop_services ctx services =
-  Log.debug (fun m -> m "Stopping Sihl");
+  Logs.debug (fun m -> m "Stopping Sihl");
   let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Log.debug (fun m -> m "Stopping service: %s" lifecycle.Lifecycle.name);
+      Logs.debug (fun m -> m "Stopping service: %s" lifecycle.Lifecycle.name);
       let f = lifecycle.stop in
       let* () = f ctx in
       loop lifecycles
     | [] -> Lwt.return ()
   in
   let* () = loop lifecycles in
-  Log.debug (fun m -> m "Stopped Sihl, Good Bye!");
+  Logs.debug (fun m -> m "Stopped Sihl, Good Bye!");
   Lwt.return ()
 ;;

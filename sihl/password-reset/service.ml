@@ -1,5 +1,9 @@
 open Lwt.Syntax
 
+let log_src = Logs.Src.create ~doc:"password reset" "sihl.service.password-reset"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 let kind = "password_reset"
 
 module TokenData = struct

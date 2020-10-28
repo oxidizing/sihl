@@ -1,1 +1,1 @@
-let is_admin user = Model.User.admin user, "User is not admin"
+let is_admin user = Model.admin user, "User is not admin"

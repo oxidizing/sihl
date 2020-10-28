@@ -2,7 +2,7 @@ open Lwt.Syntax
 
 let log_src = Logs.Src.create ~doc:"Service configuration" "sihl.configuration"
 
-module Log = (val Logs.src_log log_src : Logs.LOG)
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Exception of string
 
@@ -67,7 +67,7 @@ let read schema =
     (match Conformist.decode schema data with
     | Ok value -> value
     | Error msg ->
-      Log.err (fun m -> m "%s" msg);
+      Logs.err (fun m -> m "%s" msg);
       raise (Exception "CONFIG: Invalid configuration provided"))
   | errors ->
     let errors =
@@ -75,7 +75,7 @@ let read schema =
     in
     print_endline "CONFIG: Invalid configuration provided";
     List.iter print_endline errors;
-    List.iter (fun error -> Log.err (fun m -> m "%s" error)) errors;
+    List.iter (fun error -> Logs.err (fun m -> m "%s" error)) errors;
     raise (Exception "CONFIG: Invalid configuration provided")
 ;;
 
