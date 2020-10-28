@@ -25,6 +25,7 @@ let sexp_of_t { name; help; description; _ } =
     ]
 ;;
 
+let show { name; description; _ } = Format.sprintf "%s - %s" name description
 let pp fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_t t)
 
 let find_command_by_args commands args =
@@ -36,11 +37,7 @@ let find_command_by_args commands args =
 ;;
 
 let print_all commands =
-  let command_list =
-    commands
-    |> List.map (fun command -> Format.asprintf "%a" pp command)
-    |> String.concat "\n"
-  in
+  let command_list = commands |> List.map show |> String.concat "\n" in
   Caml.print_endline
   @@ Printf.sprintf
        {|
