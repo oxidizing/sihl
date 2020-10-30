@@ -31,7 +31,17 @@ let suite =
           `Quick
           Http.test_require_tuple_url_encoded_body
       ] )
-  ; "web", [ test_case "prefix path" `Quick Web.externalize_link ]
+  ; ( "web"
+    , [ test_case "prefix path" `Quick Web.externalize_link
+      ; test_case "prefix route" `Quick Web.prefix_route
+      ; test_case
+          "prefix route trailing slash prefix"
+          `Quick
+          Web.prefix_route_trailing_slash_prefix
+      ; test_case "prefix route trailing slash" `Quick Web.prefix_route_trailing_slash
+      ; test_case "router prefix" `Quick Web.router_prefix
+      ; test_case "router middleware" `Quick Web.router_middleware
+      ] )
   ; ( "query language"
     , [ test_case "to string limit offset" `Quick Ql.to_string_limit_offset
       ; test_case "to string sort" `Quick Ql.to_string_sort

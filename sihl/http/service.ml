@@ -1,29 +1,5 @@
-type meth =
-  | Get
-  | Post
-  | Put
-  | Delete
-  | Any
-
-type route = meth * string * (Opium_kernel.Request.t -> Opium_kernel.Response.t Lwt.t)
-
-type router =
-  { scope : string
-  ; routes : route list
-  ; middlewares : Opium_kernel.Rock.Middleware.t list
-  }
-
-let run_forever () =
-  let p, _ = Lwt.wait () in
-  p
-;;
-
-let prefix_route prefix (meth, path, handler) =
-  (* TODO [jerben] Make this more robust, maybe regex based *)
-  meth, Printf.sprintf "%s%s" prefix path, handler
-;;
-
-let route_to_opium_builder (meth, path, handler) =
+let to_opium_builder (meth, path, handler) =
+  let open Route in
   match meth with
   | Get -> Opium.Std.get path handler
   | Post -> Opium.Std.post path handler
@@ -32,27 +8,17 @@ let route_to_opium_builder (meth, path, handler) =
   | Any -> Opium.Std.all path handler
 ;;
 
-let apply_middleware_stack middleware_stack (meth, path, handler) =
-  (* The request goes through the middleware stack from top to bottom, so we have to
-     reverse the middleware stack *)
-  let middleware_stack = List.rev middleware_stack in
-  let wrapped_handler =
-    List.fold_left
-      (fun handler middleware -> Opium_kernel.Rock.Middleware.apply middleware handler)
-      handler
-      middleware_stack
-  in
-  meth, path, wrapped_handler
-;;
-
 let routers_to_opium_builders routers =
   routers
-  |> List.map (fun { scope; routes; middlewares } ->
-         routes
-         |> List.map (prefix_route scope)
-         |> List.map (apply_middleware_stack middlewares)
-         |> List.map route_to_opium_builder)
+  |> List.map (fun router ->
+         let routes = Route.router_to_routes router in
+         List.map to_opium_builder routes)
   |> List.concat
+;;
+
+let run_forever () =
+  let p, _ = Lwt.wait () in
+  p
 ;;
 
 type config = { port : int option }
