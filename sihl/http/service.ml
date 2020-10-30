@@ -45,7 +45,7 @@ let start_server _ =
 
 let start_cmd =
   Core.Command.make ~name:"start" ~help:"" ~description:"Start the web server" (fun _ ->
-      let ctx = Core.Ctx.empty in
+      let ctx = Core.Ctx.create () in
       start_server ctx)
 ;;
 

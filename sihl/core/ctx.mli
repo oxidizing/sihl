@@ -27,9 +27,6 @@ val create_key : unit -> 'a key
     service implementations of the same interface can take different values. *)
 type t
 
-(** [empty] is an empty context. *)
-val empty : t
-
 (** [add key ctx] adds a value for the [key]. If there is a value stored with the key it
     will be silently replaced. *)
 val add : 'a key -> 'a -> t -> t

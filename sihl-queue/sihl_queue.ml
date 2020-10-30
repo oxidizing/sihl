@@ -139,12 +139,14 @@ module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
             m "QUEUE: Run job queue with registered jobs: %s" job_strings);
         (* Combine all context middleware functions of registered jobs to get the context
            the jobs run with*)
+        (* TODO [jerben] this is not needed anymore since there is no hmap in the context
+           anymore *)
         let combined_context_fn =
           jobs
           |> List.map WorkableJob.with_context
           |> List.fold_left (fun a b c -> c |> b |> a) Fun.id
         in
-        let ctx = combined_context_fn Core.Ctx.empty in
+        let ctx = combined_context_fn (Core.Ctx.create ()) in
         work_queue ctx ~jobs)
       else (
         Logs.debug (fun m -> m "QUEUE: No jobs found to run, trying again later");

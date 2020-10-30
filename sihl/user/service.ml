@@ -172,7 +172,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
-          let ctx = Core.Ctx.empty in
+          let ctx = Core.Ctx.create () in
           create_admin ctx ~email ~password ~username:(Some username) |> Lwt.map ignore
         | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
   ;;

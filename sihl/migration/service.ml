@@ -151,7 +151,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
 
   let migrate_cmd =
     Core.Command.make ~name:"migrate" ~description:"Run all migrations" (fun _ ->
-        let ctx = Core.Ctx.empty in
+        let ctx = Core.Ctx.create () in
         run_all ctx)
   ;;
 

@@ -7,7 +7,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   module Seed = Sihl.User.Seed.Make (UserService)
 
   let update_details _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* updated_user =
@@ -21,7 +21,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let update_password _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* _ =
@@ -45,7 +45,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let update_password_fails _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* change_result =
@@ -67,7 +67,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let filter_users_by_email _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user1 = Seed.user ctx ~email:"user1@example.com" ~password:"123123123" in
     let* _ = Seed.user ctx ~email:"user2@example.com" ~password:"123123123" in

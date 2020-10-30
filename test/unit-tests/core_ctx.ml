@@ -2,7 +2,7 @@ let unique_keys _ () =
   let key1 : string Sihl.Core.Ctx.key = Sihl.Core.Ctx.create_key () in
   let key2 : string Sihl.Core.Ctx.key = Sihl.Core.Ctx.create_key () in
   let ctx =
-    Sihl.Core.Ctx.empty
+    Sihl.Core.Ctx.create ()
     |> Sihl.Core.Ctx.add key1 "value1"
     |> Sihl.Core.Ctx.add key2 "value2"
   in
@@ -16,7 +16,7 @@ let unique_keys _ () =
 let replace_value _ () =
   let key : string Sihl.Core.Ctx.key = Sihl.Core.Ctx.create_key () in
   let ctx =
-    Sihl.Core.Ctx.empty
+    Sihl.Core.Ctx.create ()
     |> Sihl.Core.Ctx.add key "value1"
     |> Sihl.Core.Ctx.add key "value2"
   in
