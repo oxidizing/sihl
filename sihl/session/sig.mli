@@ -12,11 +12,10 @@ end
 module type SERVICE = sig
   include Core.Container.Service.Sig
 
-  val add_to_ctx : Model.t -> Core.Ctx.t -> Core.Ctx.t
   val create : Core.Ctx.t -> (string * string) list -> Model.t Lwt.t
-  val set : Core.Ctx.t -> key:string -> value:string -> unit Lwt.t
-  val unset : Core.Ctx.t -> key:string -> unit Lwt.t
-  val get : Core.Ctx.t -> key:string -> string option Lwt.t
+  val set : Core.Ctx.t -> Model.t -> key:string -> value:string -> unit Lwt.t
+  val unset : Core.Ctx.t -> Model.t -> key:string -> unit Lwt.t
+  val get : Core.Ctx.t -> Model.t -> key:string -> string option Lwt.t
   val find_opt : Core.Ctx.t -> key:string -> Model.t option Lwt.t
   val find : Core.Ctx.t -> key:string -> Model.t Lwt.t
   val find_all : Core.Ctx.t -> Model.t list Lwt.t

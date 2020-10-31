@@ -6,26 +6,14 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
 
-module Make (RandomService : Random.Sig.SERVICE) (Repo : Sig.REPO) : Sig.SERVICE = struct
-  let add_to_ctx session ctx = Core.Ctx.add ctx_key (Model.key session) ctx
-  let require_session_key_opt ctx = Core.Ctx.find ctx_key ctx
-
-  let require_session_key ctx =
-    match require_session_key_opt ctx with
-    | None ->
-      Logs.err (fun m -> m "SESSION: No session found in context");
-      Logs.info (fun m -> m "HINT: Have you applied the session middleware?");
-      raise (Model.Exception "No session found in context")
-    | Some session -> session
-  ;;
-
+module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
   let make ?expire_date now =
     let open Model in
     match expire_date, default_expiration_date now with
     | Some expire_date, _ ->
-      Some { key = RandomService.base64 ~nr:10; data = Map.empty; expire_date }
+      Some { key = Core.Random.base64 ~nr:10; data = Map.empty; expire_date }
     | None, Some expire_date ->
-      Some { key = RandomService.base64 ~nr:10; data = Map.empty; expire_date }
+      Some { key = Core.Random.base64 ~nr:10; data = Map.empty; expire_date }
     | None, None -> None
   ;;
 
@@ -61,22 +49,22 @@ module Make (RandomService : Random.Sig.SERVICE) (Repo : Sig.REPO) : Sig.SERVICE
 
   let find_all = Repo.find_all
 
-  let set ctx ~key ~value =
-    let session_key = require_session_key ctx in
+  let set ctx session ~key ~value =
+    let session_key = Model.key session in
     let* session = find ctx ~key:session_key in
     let session = Model.set ~key ~value session in
     Repo.update ctx session
   ;;
 
-  let unset ctx ~key =
-    let session_key = require_session_key ctx in
+  let unset ctx session ~key =
+    let session_key = Model.key session in
     let* session = find ctx ~key:session_key in
     let session = Model.remove ~key session in
     Repo.update ctx session
   ;;
 
-  let get ctx ~key =
-    let session_key = require_session_key ctx in
+  let get ctx session ~key =
+    let session_key = Model.key session in
     let* session = find ctx ~key:session_key in
     Model.get key session |> Lwt.return
   ;;

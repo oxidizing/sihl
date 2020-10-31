@@ -13,6 +13,7 @@ module Map : sig
   type 'a t
 end
 
+val sexp_of_t : t -> Sexplib0.Sexp.t
 val key : t -> string
 val data : t -> string Map.t
 val is_expired : Ptime.t -> t -> bool

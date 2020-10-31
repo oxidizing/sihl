@@ -28,6 +28,7 @@
 
   ;; Web toolkit
   (opium (>= 0.17.1))
+  (multipart-form-data (>= 0.3.0))
   (yojson (>= 1.7.0))
   (ppx_deriving_yojson (>= 3.5.2))
 

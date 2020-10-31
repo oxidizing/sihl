@@ -1,39 +1,36 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
-let middleware_stack ctx ?handler stack =
-  let handler =
-    Option.value ~default:(fun _ -> Lwt.return @@ Sihl.Web.Res.html) handler
-  in
-  let route = Sihl.Web.Route.get "" handler in
-  let handler = Sihl.Web.Middleware.apply_stack stack route |> Sihl.Web.Route.handler in
-  let ctx = Sihl.Web.Req.create_and_add_to_ctx ctx in
-  handler ctx
-;;
-
 module Make (SessionService : Sihl.Session.Sig.SERVICE) = struct
-  module Middleware = Sihl.Web.Middleware.Session.Make (SessionService)
+  module Middleware = Sihl.Middleware.Session.Make (SessionService)
 
   let test_anonymous_request_returns_cookie _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let req = Sihl.Http.Request.get "" in
+    let ctx = Sihl.Http.Request.to_ctx req in
     let* () = Sihl.Repository.Service.clean_all ctx in
-    let stack = [ Middleware.m () ] in
-    let* _ = middleware_stack ctx stack in
+    let middleware = Middleware.m () in
+    let* _ =
+      Opium_kernel.Rock.Middleware.apply
+        middleware
+        (fun _ -> Lwt.return @@ Sihl.Http.Response.of_plain_text "")
+        req
+    in
     let* sessions = SessionService.find_all ctx in
     let () = Alcotest.(check int "Has created session" 1 (List.length sessions)) in
     Lwt.return ()
   ;;
 
   let test_requests_persist_session_variables _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let req = Sihl.Http.Request.get "" in
+    let ctx = Sihl.Http.Request.to_ctx req in
     let* () = Sihl.Repository.Service.clean_all ctx in
-    let stack = [ Middleware.m () ] in
-    let handler ctx =
-      Logs.debug (fun m -> m "two %s" (Sihl.Core.Ctx.id ctx));
-      let* () = SessionService.set ctx ~key:"foo" ~value:"bar" in
-      Lwt.return @@ Sihl.Web.Res.html
+    let middleware = Middleware.m () in
+    let handler req =
+      let session = Sihl.Middleware.Session.find req in
+      let* () = SessionService.set ctx session ~key:"foo" ~value:"bar" in
+      Lwt.return @@ Sihl.Http.Response.create ()
     in
-    let* _ = middleware_stack ctx ~handler stack in
+    let* _ = Opium_kernel.Rock.Middleware.apply middleware handler req in
     let* session = SessionService.find_all ctx |> Lwt.map List.hd in
     let () =
       Alcotest.(

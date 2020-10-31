@@ -8,15 +8,6 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 exception Exception of string
 
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
-  let add_user user ctx = Core.Ctx.add User.ctx_key user ctx
-  let require_user_opt ctx = Core.Ctx.find User.ctx_key ctx
-
-  let require_user ctx =
-    match Core.Ctx.find User.ctx_key ctx with
-    | None -> raise (Exception "User not found in context")
-    | Some user -> user
-  ;;
-
   let find_opt ctx ~user_id = Repo.get ctx ~id:user_id
 
   let find ctx ~user_id =
@@ -181,7 +172,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
-          let ctx = Core.Ctx.empty in
+          let ctx = Core.Ctx.create () in
           create_admin ctx ~email ~password ~username:(Some username) |> Lwt.map ignore
         | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
   ;;

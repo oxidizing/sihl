@@ -87,6 +87,7 @@ module Password_reset = Password_reset
 
 module Utils = Utils
 
-(** {1 Web} *)
+(** {1 Http} *)
 
-module Web = Web
+module Http = Http
+module Middleware = Middleware

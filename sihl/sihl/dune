@@ -2,4 +2,4 @@
  (name sihl)
  (public_name sihl)
  (libraries authn authz core database repository migration email message
-   queue schedule session storage token user utils web password_reset random))
+   queue schedule session storage token user utils http middleware password_reset))

@@ -3,7 +3,7 @@ open Lwt.Syntax
 
 module Make (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) = struct
   let create_template _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* created =
       EmailTemplateService.create ctx ~name:"foo" ~html:"some html" ~text:"some text"
@@ -21,7 +21,7 @@ module Make (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) = struct
   ;;
 
   let update_template _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* created =
       EmailTemplateService.create ctx ~name:"foo" ~html:"some html" ~text:"some text"

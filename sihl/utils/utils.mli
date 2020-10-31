@@ -117,13 +117,6 @@ module String : sig
   (** [strip_chars str chars] removes all occurrences of every char in [chars] from [str]
       returns the result. *)
   val strip_chars : string -> string -> string
-
-  (** [char_list_to_string chrs] turns the [char list] [chrs] into a [string]. *)
-  val char_list_to_string : char list -> string
-
-  (** [string_to_char_list str] turns the [string] [str] into a [char list]. Non-ASCII
-      symbols will be split up accordingly and might take up more than 1 byte.*)
-  val string_to_char_list : string -> char list
 end
 
 (** {1 Encryption} *)

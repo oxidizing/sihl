@@ -17,10 +17,6 @@ end
 module type SERVICE = sig
   include Core.Container.Service.Sig
 
-  val add_user : Model.t -> Core.Ctx.t -> Core.Ctx.t
-  val require_user_opt : Core.Ctx.t -> Model.t option
-  val require_user : Core.Ctx.t -> Model.t
-
   val find_all
     :  Core.Ctx.t
     -> query:Database.Ql.t

@@ -1,11 +1,13 @@
 module Message = struct
+  open Sexplib.Std
+
   type t =
     { error : string list
     ; warning : string list
     ; success : string list
     ; info : string list
     }
-  [@@deriving eq, show, yojson]
+  [@@deriving eq, show, yojson, sexp]
 
   let empty = { error = []; warning = []; success = []; info = [] }
   let set_success txts message = { message with success = txts }

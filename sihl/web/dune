@@ -1,8 +1,0 @@
-(library
- (name web)
- (public_name sihl.web)
- (libraries tyxml opium yojson ppx_deriving_yojson.runtime http middleware
-   server)
- (preprocess
-  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
-    ppx_sexp_conv ppx_deriving.make)))

@@ -1,11 +1,13 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
+let alcotest = Alcotest.testable Sihl.User.pp Sihl.User.equal
+
 module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   module Seed = Sihl.User.Seed.Make (UserService)
 
   let update_details _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* updated_user =
@@ -19,7 +21,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let update_password _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* _ =
@@ -43,7 +45,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let update_password_fails _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
     let* change_result =
@@ -57,7 +59,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
     in
     Alcotest.(
       check
-        (result Sihl.User.alcotest string)
+        (result alcotest string)
         "Can login with updated password"
         (Error "Invalid current password provided")
         change_result);
@@ -65,7 +67,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let filter_users_by_email _ () =
-    let ctx = Sihl.Core.Ctx.empty in
+    let ctx = Sihl.Core.Ctx.create () in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let* user1 = Seed.user ctx ~email:"user1@example.com" ~password:"123123123" in
     let* _ = Seed.user ctx ~email:"user2@example.com" ~password:"123123123" in
@@ -76,7 +78,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
     let query = Sihl.Database.Ql.(empty |> set_limit 10 |> set_filter filter) in
     let* actual_users, meta = UserService.find_all ctx ~query in
     Alcotest.(check int "has correct meta" 1 (Sihl.Repository.Meta.total meta));
-    Alcotest.(check (list Sihl.User.alcotest) "has one user" actual_users [ user1 ]);
+    Alcotest.(check (list alcotest) "has one user" actual_users [ user1 ]);
     Lwt.return ()
   ;;
 

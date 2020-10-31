@@ -184,9 +184,6 @@ module String = struct
     in
     aux 0 0
   ;;
-
-  let char_list_to_string chrs = chrs |> List.to_seq |> String.of_seq
-  let string_to_char_list str = str |> String.to_seq |> List.of_seq
 end
 
 module Encryption = struct
@@ -199,8 +196,8 @@ module Encryption = struct
       Logs.err (fun m ->
           m
             "XOR: Failed to XOR %s and %s. %s"
-            (String.char_list_to_string c1)
-            (String.char_list_to_string c2)
+            (c1 |> List.to_seq |> Caml.String.of_seq)
+            (c2 |> List.to_seq |> Caml.String.of_seq)
             (Printexc.to_string exn));
       None
   ;;
@@ -212,7 +209,7 @@ module Encryption = struct
           m
             "ENCRYPT: Failed to decrypt cipher %s. Salt length does not match cipher \
              length."
-            (String.char_list_to_string salted_cipher));
+            (salted_cipher |> List.to_seq |> Caml.String.of_seq));
       None)
     else (
       try
@@ -224,7 +221,7 @@ module Encryption = struct
         Logs.err (fun m ->
             m
               "ENCRYPT: Failed to decrypt cipher %s. %s"
-              (String.char_list_to_string salted_cipher)
+              (salted_cipher |> List.to_seq |> Caml.String.of_seq)
               (Printexc.to_string exn));
         None)
   ;;
