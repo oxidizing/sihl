@@ -12,7 +12,7 @@ module Memory : Sihl.Queue.Sig.REPO = struct
       ordered_ids := [];
       Lwt.return ()
     in
-    Repository.Service.register_cleaner cleaner
+    Sihl.Repository.Service.register_cleaner cleaner
   ;;
 
   let register_migration () = ()

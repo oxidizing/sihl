@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.6] - ?
+## [0.1.6] - 2020-10-31
 ### Fixed
 - `Database.Service` and `Repository.Service` are assumed to have just one implementation, so they are referenced directly in service implementations instead of passing them as functor arguments
 - Extract `Random.Service` from utils as standalone top level service
