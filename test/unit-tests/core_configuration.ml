@@ -99,8 +99,8 @@ let read_schema _ () =
 
 let read_env_file_non_existing _ () =
   let* data = Sihl.Core.Configuration.read_env_file () in
-  Alcotest.(check (list string) "Returns empty keys" (List.map fst data) []);
-  Alcotest.(check (list string) "Returns empty values" (List.map snd data) []);
+  Alcotest.(check (list string) "Returns empty keys" [] (List.map fst data));
+  Alcotest.(check (list string) "Returns empty values" [] (List.map snd data));
   Lwt.return ()
 ;;
 
@@ -115,7 +115,7 @@ let read_env_file switch () =
         Lwt_list.iter_s (Lwt_io.write_line ch) envs)
   in
   let* data = Sihl.Core.Configuration.read_env_file () in
-  Alcotest.(check (list string) "Returns keys" (List.map fst data) (List.rev keys));
-  Alcotest.(check (list string) "Returns values" (List.map snd data) (List.rev values));
+  Alcotest.(check (list string) "Returns keys" (List.rev keys) (List.map fst data));
+  Alcotest.(check (list string) "Returns values" (List.rev values) (List.map snd data));
   Lwt.return ()
 ;;
