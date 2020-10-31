@@ -70,7 +70,7 @@ struct
       (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
       let secret_length = String.length secret.value in
       let salt = Core.Random.bytes ~nr:secret_length in
-      let secret_value = Utils.String.string_to_char_list secret.value in
+      let secret_value = secret.value |> String.to_seq |> List.of_seq in
       let encrypted =
         match Utils.Encryption.xor salt secret_value with
         | None ->
@@ -81,7 +81,8 @@ struct
       let token =
         encrypted
         |> List.append salt
-        |> Utils.String.char_list_to_string
+        |> List.to_seq
+        |> String.of_seq
         (* Make the token transmittable without encoding problems *)
         |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet
       in
@@ -104,7 +105,7 @@ struct
               Logs.err (fun m -> m "MIDDLEWARE: Failed to decode CSRF token. %s" msg);
               raise @@ Crypto_failed ("Failed to decode CSRF token. " ^ msg)
           in
-          let salted_cipher = Utils.String.string_to_char_list decoded in
+          let salted_cipher = decoded |> String.to_seq |> List.of_seq in
           let decrypted_secret =
             match
               Utils.Encryption.decrypt_with_salt
@@ -117,7 +118,7 @@ struct
             | Some dec -> dec
           in
           let* provided_secret =
-            TokenService.find_opt ctx (Utils.String.char_list_to_string decrypted_secret)
+            TokenService.find_opt ctx (decrypted_secret |> List.to_seq |> String.of_seq)
           in
           (match provided_secret with
           | Some ps ->

@@ -18,10 +18,10 @@ let xor_valid _ () =
         check
           (option (list char))
           "XORs ASCII"
-          (Some (Utils.String.string_to_char_list r))
+          (Some (r |> String.to_seq |> List.of_seq))
           (Sihl.Utils.Encryption.xor
-             (Utils.String.string_to_char_list v1)
-             (Utils.String.string_to_char_list v2))))
+             (v1 |> String.to_seq |> List.of_seq)
+             (v2 |> String.to_seq |> List.of_seq))))
     io;
   Lwt.return ()
 ;;
@@ -36,8 +36,8 @@ let xor_length_differs _ () =
           "XORs different length"
           None
           (Sihl.Utils.Encryption.xor
-             (Utils.String.string_to_char_list v)
-             (Utils.String.string_to_char_list r))))
+             (v |> String.to_seq |> List.of_seq)
+             (r |> String.to_seq |> List.of_seq))))
     io;
   Lwt.return ()
 ;;
@@ -62,10 +62,10 @@ let decrypt_with_salt_valid _ () =
         check
           (option (list char))
           "Decrypts valid"
-          (Some (Utils.String.string_to_char_list v2))
+          (Some (v2 |> String.to_seq |> List.of_seq))
           (Sihl.Utils.Encryption.decrypt_with_salt
-             ~salted_cipher:(Utils.String.string_to_char_list (v1 ^ r))
-             ~salt_length:(List.length (Utils.String.string_to_char_list r)))))
+             ~salted_cipher:(v1 ^ r |> String.to_seq |> List.of_seq)
+             ~salt_length:(List.length (r |> String.to_seq |> List.of_seq)))))
     io;
   Lwt.return ()
 ;;
@@ -80,8 +80,8 @@ let decrypt_with_salt_length_differs _ () =
           "Decrypts different length"
           None
           (Sihl.Utils.Encryption.decrypt_with_salt
-             ~salted_cipher:(Utils.String.string_to_char_list r)
-             ~salt_length:(List.length (Utils.String.string_to_char_list v)))))
+             ~salted_cipher:(r |> String.to_seq |> List.of_seq)
+             ~salt_length:(List.length (v |> String.to_seq |> List.of_seq)))))
     io;
   Lwt.return ()
 ;;

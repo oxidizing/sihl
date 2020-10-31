@@ -22,9 +22,24 @@ type router =
 
 let router ?(scope = "/") ?(middlewares = []) routes = { scope; routes; middlewares }
 
+let trailing_char s =
+  let length = String.length s in
+  try Some (String.sub s (length - 1) 1) with
+  | _ -> None
+;;
+
+let tail s =
+  try String.sub s 1 (String.length s - 1) with
+  | _ -> ""
+;;
+
 let prefix prefix (meth, path, handler) =
-  (* TODO [jerben] Make this more robust, maybe regex based *)
-  meth, Printf.sprintf "%s%s" prefix path, handler
+  let path =
+    match trailing_char prefix, Astring.String.head path with
+    | Some "/", Some '/' -> Printf.sprintf "%s%s" prefix (tail path)
+    | _, _ -> Printf.sprintf "%s%s" prefix path
+  in
+  meth, path, handler
 ;;
 
 let apply_middleware_stack middleware_stack (meth, path, handler) =

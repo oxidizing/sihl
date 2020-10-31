@@ -71,13 +71,15 @@ struct
       tk
       |> Base64.decode ~alphabet:Base64.uri_safe_alphabet
       |> Result.get_ok
-      |> Utils.String.string_to_char_list
+      |> String.to_seq
+      |> List.of_seq
       |> fun tk ->
       Utils.Encryption.decrypt_with_salt
         ~salted_cipher:tk
         ~salt_length:(List.length tk / 2)
       |> Option.get
-      |> Utils.String.char_list_to_string
+      |> List.to_seq
+      |> String.of_seq
     in
     Alcotest.(
       check string "Same CSRF secret" (get_secret !token_ref1) (get_secret !token_ref2));
