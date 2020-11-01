@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.7] - ?
+### Fixed
+- Simplify `Database.Service` API: Only provide `transaction`, `query` and `fetch_pool`
+
 ## [0.1.6] - 2020-10-31
 ### Fixed
 - `Database.Service` and `Repository.Service` are assumed to have just one implementation, so they are referenced directly in service implementations instead of passing them as functor arguments

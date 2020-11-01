@@ -13,9 +13,8 @@ module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
   let delete ctx ~id =
     let* file = find ctx ~id in
     let blob_id = Sihl.Storage.StoredFile.blob file in
-    Database.Service.atomic ctx (fun ctx ->
-        let* () = Repo.delete_file ctx ~id:file.file.id in
-        Repo.delete_blob ctx ~id:blob_id)
+    let* () = Repo.delete_file ctx ~id:file.file.id in
+    Repo.delete_blob ctx ~id:blob_id
   ;;
 
   let upload_base64 ctx ~file ~base64 =

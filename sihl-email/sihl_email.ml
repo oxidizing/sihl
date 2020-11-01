@@ -102,7 +102,7 @@ module Template = struct
 
         let get ctx ~id =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.find_opt get_request id)
+              Connection.find_opt get_request id |> Lwt.map Result.get_ok)
         ;;
 
         let get_by_name_request =
@@ -129,7 +129,7 @@ module Template = struct
 
         let get_by_name ctx ~name =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.find_opt get_by_name_request name)
+              Connection.find_opt get_by_name_request name |> Lwt.map Result.get_ok)
         ;;
 
         let insert_request =
@@ -154,7 +154,7 @@ module Template = struct
 
         let insert ctx ~template =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.exec insert_request template)
+              Connection.exec insert_request template |> Lwt.map Result.get_ok)
         ;;
 
         let update_request =
@@ -173,7 +173,7 @@ module Template = struct
 
         let update ctx ~template =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.exec update_request template)
+              Connection.exec update_request template |> Lwt.map Result.get_ok)
         ;;
 
         let clean_request =
@@ -186,7 +186,7 @@ module Template = struct
 
         let clean ctx =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.exec clean_request ())
+              Connection.exec clean_request () |> Lwt.map Result.get_ok)
         ;;
       end
 
@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
         let get ctx ~id =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.find_opt get_request id)
+              Connection.find_opt get_request id |> Lwt.map Result.get_ok)
         ;;
 
         let get_by_name_request =
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
         let get_by_name ctx ~name =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.find_opt get_by_name_request name)
+              Connection.find_opt get_by_name_request name |> Lwt.map Result.get_ok)
         ;;
 
         let insert_request =
@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
         let insert ctx ~template =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.exec insert_request template)
+              Connection.exec insert_request template |> Lwt.map Result.get_ok)
         ;;
 
         let update_request =
@@ -317,7 +317,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
         let update ctx ~template =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.exec update_request template)
+              Connection.exec update_request template |> Lwt.map Result.get_ok)
         ;;
 
         let clean_request =
@@ -326,7 +326,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
         let clean ctx =
           Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-              Connection.exec clean_request ())
+              Connection.exec clean_request () |> Lwt.map Result.get_ok)
         ;;
       end
 
@@ -680,13 +680,14 @@ module MakeDelayed
   let send ctx email = QueueService.dispatch ctx ~job:Job.job email
 
   let bulk_send ctx emails =
-    DbService.atomic ctx (fun ctx ->
-        let rec loop emails =
-          match emails with
-          | email :: emails -> Lwt.bind (send ctx email) (fun () -> loop emails)
-          | [] -> Lwt.return ()
-        in
-        loop emails)
+    (* TODO [jerben] Implement queue API for multiple jobs so we don't have to use
+       transactions here *)
+    let rec loop emails =
+      match emails with
+      | email :: emails -> Lwt.bind (send ctx email) (fun () -> loop emails)
+      | [] -> Lwt.return ()
+    in
+    loop emails
   ;;
 
   let start ctx =

@@ -48,6 +48,18 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   let register migration = Model.Registry.register migration |> ignore
   let get_migrations _ = Lwt.return (Model.Registry.get_all ())
 
+  let set_fk_check_request =
+    Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
+  ;;
+
+  let with_disabled_fk_check ctx f =
+    Database.transaction ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        let* () = Connection.exec set_fk_check_request false |> Lwt.map Result.get_ok in
+        Lwt.finalize
+          (fun () -> f ())
+          (fun () -> Connection.exec set_fk_check_request true |> Lwt.map Result.get_ok))
+  ;;
+
   let execute_steps ctx migration =
     let namespace, steps = migration in
     let rec run steps =
@@ -57,7 +69,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
         Logs.debug (fun m -> m "MIGRATION: Running %s" label);
         let query (module Connection : Caqti_lwt.CONNECTION) =
           let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
-          Connection.exec req ()
+          Connection.exec req () |> Lwt.map Result.get_ok
         in
         let* () = Database.query ctx query in
         Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
@@ -65,11 +77,11 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
         run steps
       | { label; statement; check_fk = false } :: steps ->
         let* () =
-          Database.with_disabled_fk_check ctx (fun ctx ->
+          with_disabled_fk_check ctx (fun () ->
               Logs.debug (fun m -> m "MIGRATION: Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
                 let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
-                Connection.exec req ()
+                Connection.exec req () |> Lwt.map Result.get_ok
               in
               Database.query ctx query)
         in
@@ -191,7 +203,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
 
     let create_table_if_not_exists ctx =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec create_request ())
+          Connection.exec create_request () |> Lwt.map Result.get_ok)
     ;;
 
     let get_request =
@@ -210,7 +222,7 @@ WHERE namespace = ?;
 
     let get ctx ~namespace =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_request namespace)
+          Connection.find_opt get_request namespace |> Lwt.map Result.get_ok)
       |> Lwt.map (Option.map Model.of_tuple)
     ;;
 
@@ -234,7 +246,7 @@ dirty = VALUES(dirty)
 
     let upsert ctx ~state =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec upsert_request (Model.to_tuple state))
+          Connection.exec upsert_request (Model.to_tuple state) |> Lwt.map Result.get_ok)
     ;;
   end
 
@@ -255,7 +267,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
 
     let create_table_if_not_exists ctx =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec create_request ())
+          Connection.exec create_request () |> Lwt.map Result.get_ok)
     ;;
 
     let get_request =
@@ -274,7 +286,7 @@ WHERE namespace = ?;
 
     let get ctx ~namespace =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_request namespace)
+          Connection.find_opt get_request namespace |> Lwt.map Result.get_ok)
       |> Lwt.map (Option.map Model.of_tuple)
     ;;
 
@@ -298,7 +310,7 @@ dirty = EXCLUDED.dirty
 
     let upsert ctx ~state =
       Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec upsert_request (Model.to_tuple state))
+          Connection.exec upsert_request (Model.to_tuple state) |> Lwt.map Result.get_ok)
     ;;
   end
 end

@@ -19,3 +19,5 @@ let create ?id () =
     let id = Random.bytes ~nr:32 |> List.to_seq |> String.of_seq in
     { map = Hmap.empty; id }
 ;;
+
+(* TODO [jerben] add functions that support context logging *)

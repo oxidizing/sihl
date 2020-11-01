@@ -20,7 +20,7 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
 
     let find_opt ctx ~value =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_request value)
+          Connection.find_opt find_request value |> Lwt.map Result.get_ok)
     ;;
 
     let find_by_id_request =
@@ -43,7 +43,7 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
 
     let find_by_id_opt ctx ~id =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_by_id_request id)
+          Connection.find_opt find_by_id_request id |> Lwt.map Result.get_ok)
     ;;
 
     let insert_request =
@@ -72,7 +72,7 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
 
     let insert ctx ~token =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request token)
+          Connection.exec insert_request token |> Lwt.map Result.get_ok)
     ;;
 
     let update_request =
@@ -92,14 +92,14 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
 
     let update ctx ~token =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request token)
+          Connection.exec update_request token |> Lwt.map Result.get_ok)
     ;;
 
     let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
 
     let clean ctx =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request ())
+          Connection.exec clean_request () |> Lwt.map Result.get_ok)
     ;;
   end
 

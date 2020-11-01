@@ -12,7 +12,7 @@ module Memory : Sihl.Queue.Sig.REPO = struct
       ordered_ids := [];
       Lwt.return ()
     in
-    Sihl.Repository.Service.register_cleaner cleaner
+    Repository.Service.register_cleaner cleaner
   ;;
 
   let register_migration () = ()
@@ -101,7 +101,7 @@ struct
   let enqueue ctx ~job_instance =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec enqueue_request job_instance)
+        Connection.exec enqueue_request job_instance |> Lwt.map Result.get_ok)
   ;;
 
   let update_request =
@@ -124,7 +124,7 @@ struct
   let update ctx ~job_instance =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request job_instance)
+        Connection.exec update_request job_instance |> Lwt.map Result.get_ok)
   ;;
 
   let find_workable_request =
@@ -152,7 +152,7 @@ struct
   let find_workable ctx =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list find_workable_request ())
+        Connection.collect_list find_workable_request () |> Lwt.map Result.get_ok)
   ;;
 
   let clean_request =
@@ -166,7 +166,7 @@ struct
   let clean ctx =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request ())
+        Connection.exec clean_request () |> Lwt.map Result.get_ok)
   ;;
 
   module Migration = struct
