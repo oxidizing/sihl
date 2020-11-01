@@ -9,6 +9,18 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let pool_ref : pool option ref = ref None
 
+type config =
+  { url : string
+  ; pool_size : int option
+  }
+
+let config url pool_size = { url; pool_size }
+
+let schema =
+  let open Conformist in
+  make [ string "DATABASE_URL"; optional (int "DATABASE_POOL_SIZE") ] config
+;;
+
 let print_pool_usage pool =
   let n_connections = Caqti_lwt.Pool.size pool in
   let max_connections =
@@ -113,6 +125,6 @@ let stop _ = Lwt.return ()
 let lifecycle = Core.Container.Lifecycle.create "database" ~start ~stop
 
 let configure configuration =
-  let configuration = Core.Configuration.make configuration in
+  let configuration = Core.Configuration.make ~schema configuration in
   Core.Container.Service.create ~configuration lifecycle
 ;;
