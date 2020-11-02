@@ -644,10 +644,8 @@ end
 (** Use this functor to create an email service that sends emails using the job queue.
     This is useful if you need to answer a request quickly while sending the email in the
     background *)
-module MakeDelayed
-    (EmailService : Sig.SERVICE)
-    (DbService : Sihl.Database.Sig.SERVICE)
-    (QueueService : Sihl.Queue.Sig.SERVICE) : Sig.SERVICE = struct
+module MakeDelayed (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SERVICE) :
+  Sig.SERVICE = struct
   module Template = EmailService.Template
 
   module Job = struct
@@ -709,7 +707,10 @@ module MakeDelayed
       ~start
       ~stop
       ~dependencies:
-        [ EmailService.lifecycle; DbService.lifecycle; QueueService.lifecycle ]
+        [ EmailService.lifecycle
+        ; Sihl.Database.Service.lifecycle
+        ; QueueService.lifecycle
+        ]
   ;;
 
   let configure _ = Core.Container.Service.create lifecycle
