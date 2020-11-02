@@ -39,6 +39,7 @@ val is_owner : t -> string -> bool
 val is_confirmed : t -> bool
 val matches_password : string -> t -> bool
 val sexp_of_t : t -> Sexplib.Sexp.t
+val default_password_policy : string -> (unit, string) Result.t
 
 val validate_new_password
   :  password:string

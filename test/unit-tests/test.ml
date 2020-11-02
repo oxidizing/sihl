@@ -94,6 +94,10 @@ let suite =
         (* test_case "session not expired" `Quick Test_session.session_not_expired;
          * test_case "test set session variable" `Quick
          *   Test_session.test_set_session_variable; *) ] )
+  ; ( "user"
+    , [ test_case "validate valid password" `Quick User.validate_valid_password
+      ; test_case "validate invalid password" `Quick User.validate_invalid_password
+      ] )
   ; ( "jwt"
     , [ test_case "is not expired" `Quick Jwt.is_not_expired
       ; test_case "is expired" `Quick Jwt.is_expired
