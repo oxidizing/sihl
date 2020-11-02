@@ -25,10 +25,6 @@ module type TEMPLATE_REPO = sig
   val update : Core.Ctx.t -> template:Model.Template.t -> unit Lwt.t
 end
 
-module type CONFIG_PROVIDER_SENDGRID = sig
-  val api_key : Core.Ctx.t -> string Lwt.t
-end
-
 module type SERVICE = sig
   include Core.Container.Service.Sig
 
