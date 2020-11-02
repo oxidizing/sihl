@@ -513,9 +513,7 @@ Html:
     ;;
   end
 
-  module SendGrid
-      (TemplateService : Sig.TEMPLATE_SERVICE)
-      (ConfigProvider : Sig.CONFIG_PROVIDER_SENDGRID) : Sig.SERVICE = struct
+  module SendGrid (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
     module Template = TemplateService
 
     let body ~recipient ~subject ~sender ~content =
@@ -551,8 +549,17 @@ Html:
 
     let sendgrid_send_url = "https://api.sendgrid.com/v3/mail/send" |> Uri.of_string
 
+    type config = { api_key : string }
+
+    let config api_key = { api_key }
+
+    let schema =
+      let open Conformist in
+      make [ string "SENDGRID_API_KEY" ] config
+    ;;
+
     let send ctx email =
-      let* token = ConfigProvider.api_key ctx in
+      let token = (Sihl.Core.Configuration.read schema).api_key in
       let headers =
         Cohttp.Header.of_list
           [ "authorization", "Bearer " ^ token; "content-type", "application/json" ]
