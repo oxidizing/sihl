@@ -1,8 +1,9 @@
 # Changelog
 
-## [0.1.7] - ?
+## [0.1.7] - 2020-11-03
 ### Fixed
 - Simplify `Database.Service` API: Only provide `transaction`, `query` and `fetch_pool`
+- Fixe dune package names, private dune packages don't have generic names like `http` or `database` causing conflicts in a Sihl app
 
 ## [0.1.6] - 2020-10-31
 ### Fixed
