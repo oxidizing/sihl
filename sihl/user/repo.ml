@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS user_users (
         Connection.exec clean_request () |> Lwt.map Result.get_ok)
   ;;
 
-  let register_migration () = MigrationService.register (Migration.migration ())
+  let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Repository.Service.register_cleaner clean
 end
 
@@ -423,6 +423,6 @@ CREATE TABLE IF NOT EXISTS user_users (
         Connection.exec clean_request () |> Lwt.map Result.get_ok)
   ;;
 
-  let register_migration () = MigrationService.register (Migration.migration ())
+  let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Repository.Service.register_cleaner clean
 end

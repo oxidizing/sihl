@@ -45,7 +45,12 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
     Lwt.return updated_state
   ;;
 
-  let register migration = Model.Registry.register migration |> ignore
+  let register_migration migration = Model.Registry.register migration |> ignore
+
+  let register_migrations migrations =
+    Model.Registry.register_migrations migrations |> ignore
+  ;;
+
   let get_migrations _ = Lwt.return (Model.Registry.get_all ())
 
   let set_fk_check_request =
@@ -178,7 +183,8 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
       ~stop
   ;;
 
-  let configure configuration =
+  let configure migrations configuration =
+    register_migrations migrations;
     let configuration = Core.Configuration.make configuration in
     Core.Container.Service.create ~configuration ~commands:[ migrate_cmd ] lifecycle
   ;;
