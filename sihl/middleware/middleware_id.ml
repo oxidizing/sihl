@@ -1,3 +1,5 @@
+module Http = Sihl_http
+
 let set id req =
   let env = Opium_kernel.Request.env req in
   let env = Opium_kernel.Hmap.add Http.Request.key id env in

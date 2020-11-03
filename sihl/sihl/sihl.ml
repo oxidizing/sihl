@@ -15,5 +15,5 @@ module Token = Token
 module User = User
 module Password_reset = Password_reset
 module Utils = Utils
-module Http = Http
+module Http = Sihl_http
 module Middleware = Middleware

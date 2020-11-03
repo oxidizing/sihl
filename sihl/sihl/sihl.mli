@@ -89,5 +89,5 @@ module Utils = Utils
 
 (** {1 Http} *)
 
-module Http = Http
+module Http = Sihl_http
 module Middleware = Middleware

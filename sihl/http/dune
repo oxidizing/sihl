@@ -1,5 +1,5 @@
 (library
- (name http)
+ (name sihl_http)
  (public_name sihl.http)
  (libraries tyxml opium multipart-form-data yojson
    ppx_deriving_yojson.runtime core utils)

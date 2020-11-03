@@ -1,3 +1,5 @@
+module Http = Sihl_http
+
 let key : User.t Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("user", User.sexp_of_t)
 ;;
