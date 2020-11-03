@@ -1,3 +1,5 @@
+module Core = Sihl_core
+module Session = Sihl_session
 open Lwt.Syntax
 module Entry = Model.Entry
 

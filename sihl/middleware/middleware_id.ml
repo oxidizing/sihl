@@ -1,3 +1,4 @@
+module Core = Sihl_core
 module Http = Sihl_http
 
 let set id req =

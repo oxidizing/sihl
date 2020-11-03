@@ -1,4 +1,7 @@
 open Lwt.Syntax
+module Migration = Sihl_migration
+module Repository = Sihl_repository
+module Database = Sihl_database
 
 module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
   let lifecycles =

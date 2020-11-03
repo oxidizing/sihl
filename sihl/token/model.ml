@@ -1,3 +1,5 @@
+module Database = Sihl_database
+
 exception Exception of string
 
 module Status = struct

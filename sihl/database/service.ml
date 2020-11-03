@@ -1,5 +1,6 @@
 open Lwt.Syntax
 open Model
+module Core = Sihl_core
 
 exception Exception of string
 

@@ -1,4 +1,7 @@
 open Lwt.Syntax
+module Core = Sihl_core
+module Session = Sihl_session
+module User = Sihl_user
 
 exception Exception of string
 

@@ -1,3 +1,6 @@
+module Utils = Sihl_utils
+module Database = Sihl_database
+
 exception Exception of string
 
 module Template = struct

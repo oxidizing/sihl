@@ -1,6 +1,8 @@
 (** This module provides a job queue. This is typically used for long-running or resource
     intensive tasks. *)
 
+module Core = Sihl_core
+module Utils = Sihl_utils
 module Job = Model.Job
 module JobInstance = Model.JobInstance
 module WorkableJob = Model.WorkableJob

@@ -74,7 +74,7 @@ struct
       |> String.to_seq
       |> List.of_seq
       |> fun tk ->
-      Utils.Encryption.decrypt_with_salt
+      Sihl.Utils.Encryption.decrypt_with_salt
         ~salted_cipher:tk
         ~salt_length:(List.length tk / 2)
       |> Option.get

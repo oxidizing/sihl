@@ -1,3 +1,6 @@
+module Core = Sihl_core
+module Session = Sihl_session
+
 module type SERVICE = sig
   val fetch_entry : Core.Ctx.t -> Session.t -> Model.Entry.t option Lwt.t
   val find_current : Core.Ctx.t -> Session.t -> Model.Message.t option Lwt.t

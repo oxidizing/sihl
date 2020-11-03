@@ -1,5 +1,5 @@
 (library
- (name utils)
+ (name sihl_utils)
  (public_name sihl.utils)
  (libraries re yojson ppx_deriving_yojson.runtime safepass base64 ptime jwto
    sihl_core containers)

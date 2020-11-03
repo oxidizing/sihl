@@ -1,3 +1,4 @@
+module User = Sihl_user
 module Http = Sihl_http
 
 let key : User.t Opium_kernel.Hmap.key =

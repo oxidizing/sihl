@@ -1,3 +1,6 @@
+module Database = Sihl_database
+module Core = Sihl_core
+
 module type REPO = sig
   module Database : Database.Sig.SERVICE
 

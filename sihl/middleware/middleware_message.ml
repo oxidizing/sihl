@@ -1,5 +1,6 @@
-open Lwt.Syntax
 module Http = Sihl_http
+module Message = Sihl_message
+open Lwt.Syntax
 
 let log_src = Logs.Src.create ~doc:"Message Middleware" "sihl.middleware.message"
 

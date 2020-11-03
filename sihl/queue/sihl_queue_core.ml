@@ -1,3 +1,5 @@
+module Core = Sihl_core
+module Utils = Sihl_utils
 module Job = Model.Job
 module JobInstance = Model.JobInstance
 module WorkableJob = Model.WorkableJob

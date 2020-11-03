@@ -1,3 +1,5 @@
+module Core = Sihl_core
+
 module type REPO = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit

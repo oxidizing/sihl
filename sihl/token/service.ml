@@ -1,3 +1,6 @@
+module Utils = Sihl_utils
+module Core = Sihl_core
+module Database = Sihl_database
 open Lwt.Syntax
 
 let log_src = Logs.Src.create "sihl.service.token"

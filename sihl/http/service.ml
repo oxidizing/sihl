@@ -1,3 +1,5 @@
+module Core = Sihl_core
+
 let to_opium_builder (meth, path, handler) =
   let open Route in
   match meth with

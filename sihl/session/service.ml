@@ -1,3 +1,4 @@
+module Core = Sihl_core
 open Lwt.Syntax
 
 let log_src = Logs.Src.create ~doc:"session" "sihl.service.session"

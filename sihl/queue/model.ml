@@ -1,5 +1,9 @@
-(** This is the description of a job. A job dispatch is a job description and some
-    arguments/input. *)
+module Core = Sihl_core
+module Utils = Sihl_utils
+module Database = Sihl_database
+
+(* This is the description of a job. A job dispatch is a job description and some
+   arguments/input. *)
 module Job = struct
   let default_tries = 5
   let default_retry_delay = Utils.Time.OneMinute

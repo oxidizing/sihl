@@ -1,5 +1,8 @@
 (* TODO add Status.Active and Status.Inactive *)
 
+module Database = Sihl_database
+module Utils = Sihl_utils
+
 type t =
   { id : string
   ; email : string

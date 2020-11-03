@@ -1,3 +1,7 @@
+module Core = Sihl_core
+module Session = Sihl_session
+module User = Sihl_user
+
 module type SERVICE = sig
   include Core.Container.Service.Sig
 

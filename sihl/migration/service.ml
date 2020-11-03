@@ -1,4 +1,6 @@
 open Lwt.Syntax
+module Core = Sihl_core
+module Database = Sihl_database
 
 module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   module Database = MigrationRepo.Database

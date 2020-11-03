@@ -1,5 +1,7 @@
-open Lwt.Syntax
+module Authn = Sihl_authn
+module User = Sihl_user
 module Http = Sihl_http
+open Lwt.Syntax
 
 module Make (AuthnService : Authn.Sig.SERVICE) (UserService : User.Sig.SERVICE) = struct
   let session () =

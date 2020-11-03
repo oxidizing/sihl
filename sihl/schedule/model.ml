@@ -1,3 +1,5 @@
+module Utils = Sihl_utils
+
 type scheduled_time = Every of Utils.Time.duration [@@deriving eq, show]
 
 type t =

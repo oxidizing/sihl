@@ -1,3 +1,5 @@
+module Core = Sihl_core
+module Repository = Sihl_repository
 open Model
 
 module type REPO = sig

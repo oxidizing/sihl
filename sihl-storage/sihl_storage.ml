@@ -97,11 +97,11 @@ module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
   ;;
 
   let stop _ = Lwt.return ()
-  let lifecycle = Core.Container.Lifecycle.create "storage" ~start ~stop
+  let lifecycle = Sihl.Core.Container.Lifecycle.create "storage" ~start ~stop
 
   let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl.Core.Configuration.make configuration in
+    Sihl.Core.Container.Service.create ~configuration lifecycle
   ;;
 end
 

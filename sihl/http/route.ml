@@ -1,3 +1,5 @@
+module Core = Sihl_core
+
 type meth =
   | Get
   | Post

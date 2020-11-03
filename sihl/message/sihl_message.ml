@@ -1,3 +1,4 @@
+module Core = Sihl_core
 module Service = Service
 module Sig = Sig
 module Entry = Model.Entry

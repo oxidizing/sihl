@@ -7,7 +7,7 @@ module Sig = Sihl.Queue.Sig
 let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
 
-module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
+module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
   Sig.SERVICE = struct
   let dispatch ctx ~job ?delay input =
     let name = Job.name job in
@@ -146,14 +146,17 @@ module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
           |> List.map WorkableJob.with_context
           |> List.fold_left (fun a b c -> c |> b |> a) Fun.id
         in
-        let ctx = combined_context_fn (Core.Ctx.create ()) in
+        let ctx = combined_context_fn (Sihl.Core.Ctx.create ()) in
         work_queue ctx ~jobs)
       else (
         Logs.debug (fun m -> m "QUEUE: No jobs found to run, trying again later");
         Lwt.return ())
     in
     let schedule =
-      Schedule.create Schedule.every_second ~f:scheduled_function ~label:"job_queue"
+      Sihl.Schedule.create
+        Sihl.Schedule.every_second
+        ~f:scheduled_function
+        ~label:"job_queue"
     in
     stop_schedule := Some (ScheduleService.schedule ctx schedule);
     Lwt.return ()
@@ -177,7 +180,7 @@ module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
   ;;
 
   let lifecycle =
-    Core.Container.Lifecycle.create
+    Sihl.Core.Container.Lifecycle.create
       "queue"
       ~dependencies:[ ScheduleService.lifecycle ]
       ~start
@@ -187,7 +190,7 @@ module MakePolling (ScheduleService : Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
   let configure _ jobs =
     let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
-    Core.Container.Service.create lifecycle
+    Sihl.Core.Container.Service.create lifecycle
   ;;
 end
 

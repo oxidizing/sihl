@@ -21,6 +21,7 @@
    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
    THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
+module Core = Sihl_core
 open Lwt.Syntax
 include Opium_kernel.Rock.Request
 

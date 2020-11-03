@@ -1,3 +1,7 @@
+module Core = Sihl_core
+module Token = Sihl_token
+module User = Sihl_user
+module Utils = Sihl_utils
 open Lwt.Syntax
 
 let log_src = Logs.Src.create ~doc:"password reset" "sihl.service.password-reset"

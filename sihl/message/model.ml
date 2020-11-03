@@ -1,3 +1,5 @@
+module Core = Sihl_core
+
 module Message = struct
   open Sexplib.Std
 

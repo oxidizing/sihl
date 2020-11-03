@@ -1,3 +1,7 @@
+module Database = Sihl_database
+module Migration = Sihl_migration
+module Repository = Sihl_repository
+
 module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struct
   module Sql = struct
     module Model = Model

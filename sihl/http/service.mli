@@ -1,3 +1,4 @@
+module Core = Sihl_core
 include Core.Container.Service.Sig
 
 (** Start a HTTP server.

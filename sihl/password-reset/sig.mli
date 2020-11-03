@@ -1,3 +1,6 @@
+module Core = Sihl_core
+module Token = Sihl_token
+
 module type SERVICE = sig
   include Core.Container.Service.Sig
 

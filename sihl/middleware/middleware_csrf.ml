@@ -1,5 +1,9 @@
-open Lwt.Syntax
+module Core = Sihl_core
+module Utils = Sihl_utils
 module Http = Sihl_http
+module Token = Sihl_token
+module Session = Sihl_session
+open Lwt.Syntax
 
 let log_src = Logs.Src.create ~doc:"CSRF Middleware" "sihl.middleware.csrf"
 

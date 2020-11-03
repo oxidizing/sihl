@@ -1,4 +1,5 @@
 open Lwt.Syntax
+module Session = Sihl_session
 module Http = Sihl_http
 
 let log_src = Logs.Src.create ~doc:"Session Middleware" "sihl.middleware.session"

@@ -1,3 +1,6 @@
+module Repository = Sihl_repository
+module Core = Sihl_core
+
 module type TEMPLATE_SERVICE = sig
   include Core.Container.Service.Sig
 

@@ -1,4 +1,5 @@
 open Model
+module Core = Sihl_core
 
 module type SERVICE = sig
   include Core.Container.Service.Sig

@@ -1,3 +1,5 @@
+module Repository = Sihl_repository
+
 module PartialCollection = struct
   type controls =
     { first : Ql.Page.t option

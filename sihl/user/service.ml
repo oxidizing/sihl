@@ -1,4 +1,5 @@
 open Lwt.Syntax
+module Core = Sihl_core
 module User = Model
 
 let log_src = Logs.Src.create "sihl.service.user"

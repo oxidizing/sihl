@@ -1,3 +1,9 @@
+module Core = Sihl_core
+module Database = Sihl_database
+module Migration = Sihl_migration
+module Repository = Sihl_repository
+module Utils = Sihl_utils
+module Queue = Sihl_queue_core
 open Lwt.Syntax
 module Sig = Sihl.Email.Sig
 

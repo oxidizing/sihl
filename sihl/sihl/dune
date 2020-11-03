@@ -8,15 +8,15 @@
      sihl_database
      sihl_repository
      sihl_migration
-     sihl_email
+     sihl_email_core
      sihl_message
-     sihl_queue
+     sihl_queue_core
      sihl_schedule
      sihl_session
-     sihl_storage
+     sihl_storage_core
      sihl_token
      sihl_user
      sihl_utils
      sihl_http
      sihl_middleware
-     sihl_password-reset))
+     sihl_password_reset))

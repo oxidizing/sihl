@@ -1,3 +1,5 @@
+module Core = Sihl_core
+
 module Time = struct
   type duration =
     | OneSecond

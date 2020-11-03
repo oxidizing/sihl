@@ -1,3 +1,7 @@
+module Core = Sihl_core
+module Database = Sihl_database
+module Repository = Sihl_repository
+
 module type REPOSITORY = sig
   include Repository.Sig.REPO
 

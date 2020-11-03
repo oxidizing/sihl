@@ -1,3 +1,7 @@
+module Repository = Sihl_repository
+module Database = Sihl_database
+module Migration = Sihl_migration
+
 module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = struct
   module Sql = struct
     let find_request =

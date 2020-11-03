@@ -2,6 +2,7 @@
     lifecycle. This is typically used to provide feedback to the user after submitting
     HTML forms. *)
 
+module Core = Sihl_core
 module Service = Service
 module Sig = Sig
 module Entry = Model.Entry

@@ -17,8 +17,8 @@ module Database = struct
   let lifecycle = Sihl.Core.Container.Lifecycle.create ~start ~stop "database"
 
   let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl.Core.Configuration.make configuration in
+    Sihl.Core.Container.Service.create ~configuration lifecycle
   ;;
 end
 
@@ -45,12 +45,13 @@ module UserService = struct
   ;;
 
   let ban =
-    Core.Command.make ~name:"ban" ~description:"Ban a user" (fun _ -> Lwt.return_unit)
+    Sihl.Core.Command.make ~name:"ban" ~description:"Ban a user" (fun _ ->
+        Lwt.return_unit)
   ;;
 
   let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration ~commands:[ ban ] lifecycle
+    let configuration = Sihl.Core.Configuration.make configuration in
+    Sihl.Core.Container.Service.create ~configuration ~commands:[ ban ] lifecycle
   ;;
 end
 
@@ -77,13 +78,13 @@ module OrderService = struct
   ;;
 
   let order =
-    Core.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
+    Sihl.Core.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
         Lwt.return_unit)
   ;;
 
   let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration ~commands:[ order ] lifecycle
+    let configuration = Sihl.Core.Configuration.make configuration in
+    Sihl.Core.Container.Service.create ~configuration ~commands:[ order ] lifecycle
   ;;
 end
 

@@ -12,20 +12,20 @@ module Memory : Sihl.Queue.Sig.REPO = struct
       ordered_ids := [];
       Lwt.return ()
     in
-    Repository.Service.register_cleaner cleaner
+    Sihl.Repository.Service.register_cleaner cleaner
   ;;
 
   let register_migration () = ()
 
   let enqueue _ ~job_instance =
-    let id = JobInstance.id job_instance |> Database.Id.to_string in
+    let id = JobInstance.id job_instance |> Sihl.Database.Id.to_string in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let update _ ~job_instance =
-    let id = JobInstance.id job_instance |> Database.Id.to_string in
+    let id = JobInstance.id job_instance |> Sihl.Database.Id.to_string in
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
@@ -67,12 +67,12 @@ module Model = struct
         ~encode
         ~decode
         (tup2
-           Database.Id.t
+           Sihl.Database.Id.t
            (tup2 string (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
   ;;
 end
 
-module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
+module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
 struct
   let enqueue_request =
     Caqti_request.exec
@@ -99,7 +99,7 @@ struct
   ;;
 
   let enqueue ctx ~job_instance =
-    Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec enqueue_request job_instance |> Lwt.map Result.get_ok)
   ;;
@@ -122,7 +122,7 @@ struct
   ;;
 
   let update ctx ~job_instance =
-    Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_request job_instance |> Lwt.map Result.get_ok)
   ;;
@@ -150,7 +150,7 @@ struct
   ;;
 
   let find_workable ctx =
-    Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.collect_list find_workable_request () |> Lwt.map Result.get_ok)
   ;;
@@ -164,20 +164,20 @@ struct
   ;;
 
   let clean ctx =
-    Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec clean_request () |> Lwt.map Result.get_ok)
   ;;
 
   module Migration = struct
     let fix_collation =
-      Migration.create_step
+      Sihl.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci';"
     ;;
 
     let create_jobs_table =
-      Migration.create_step
+      Sihl.Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -196,10 +196,11 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
 
     let migration =
-      Migration.(empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
+      Sihl.Migration.(
+        empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
     ;;
   end
 
-  let register_cleaner () = Repository.Service.register_cleaner clean
+  let register_cleaner () = Sihl.Repository.Service.register_cleaner clean
   let register_migration () = MigrationService.register_migration Migration.migration
 end

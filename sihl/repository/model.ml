@@ -1,3 +1,5 @@
+module Core = Sihl_core
+
 type cleaner = Core.Ctx.t -> unit Lwt.t
 
 module Meta = struct
