@@ -1,7 +1,22 @@
 (library
- (name sihl)
- (public_name sihl)
- (libraries sihl.authn sihl.authz sihl.core sihl.database sihl.repository
-   sihl.migration sihl.email sihl.message sihl.queue sihl.schedule
-   sihl.session sihl.storage sihl.token sihl.user sihl.utils sihl.http
-   sihl.middleware sihl.password-reset))
+  (name sihl)
+  (public_name sihl)
+  (libraries
+     sihl_authn
+     sihl_authz
+     sihl_core
+     sihl_database
+     sihl_repository
+     sihl_migration
+     sihl_email
+     sihl_message
+     sihl_queue
+     sihl_schedule
+     sihl_session
+     sihl_storage
+     sihl_token
+     sihl_user
+     sihl_utils
+     sihl_http
+     sihl_middleware
+     sihl_password-reset))

@@ -1,7 +1,7 @@
 (library
- (name repository)
+ (name sihl_repository)
  (public_name sihl.repository)
- (libraries core caqti)
+ (libraries sihl_core caqti)
  (modules_without_implementation sig)
  (preprocess
   (pps ppx_deriving_yojson ppx_sexp_conv ppx_fields_conv ppx_deriving.eq
