@@ -253,7 +253,7 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
       |> add_step create_handles_table)
   ;;
 
-  let register_migration () = MigrationService.register (migration ())
+  let register_migration () = MigrationService.register_migration (migration ())
 
   let register_cleaner () =
     let cleaner ctx =

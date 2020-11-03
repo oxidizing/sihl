@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     let migration () = Migration.(empty "session" |> add_step create_sessions_table)
   end
 
-  let register_migration () = MigrationService.register (Migration.migration ())
+  let register_migration () = MigrationService.register_migration (Migration.migration ())
 
   let register_cleaner () =
     let cleaner ctx = Sql.clean ctx in
@@ -262,7 +262,7 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     let migration () = Migration.(empty "session" |> add_step create_sessions_table)
   end
 
-  let register_migration () = MigrationService.register (Migration.migration ())
+  let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Repository.Service.register_cleaner Sql.clean
   let find_all = Sql.find_all
   let find_opt = Sql.find_opt

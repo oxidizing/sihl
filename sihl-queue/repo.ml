@@ -201,5 +201,5 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
   end
 
   let register_cleaner () = Repository.Service.register_cleaner clean
-  let register_migration () = MigrationService.register Migration.migration
+  let register_migration () = MigrationService.register_migration Migration.migration
 end

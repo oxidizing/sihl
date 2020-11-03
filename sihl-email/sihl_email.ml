@@ -221,7 +221,10 @@ CREATE TABLE IF NOT EXISTS email_templates (
         ;;
       end
 
-      let register_migration () = MigrationService.register (Migration.migration ())
+      let register_migration () =
+        MigrationService.register_migration (Migration.migration ())
+      ;;
+
       let register_cleaner () = Repository.Service.register_cleaner Sql.clean
       let get = Sql.get
       let get_by_name = Sql.get_by_name
@@ -352,7 +355,10 @@ CREATE TABLE IF NOT EXISTS email_templates (
         let migration () = Migration.(empty "email" |> add_step create_templates_table)
       end
 
-      let register_migration () = MigrationService.register (Migration.migration ())
+      let register_migration () =
+        MigrationService.register_migration (Migration.migration ())
+      ;;
+
       let register_cleaner () = Repository.Service.register_cleaner Sql.clean
       let get = Sql.get
       let get_by_name = Sql.get_by_name

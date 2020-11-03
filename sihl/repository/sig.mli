@@ -20,5 +20,8 @@ module type SERVICE = sig
       Use this carefully, running [clean_all] leads to data loss! *)
   val clean_all : Core.Ctx.t -> unit Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val configure
+    :  Model.cleaner list
+    -> Core.Configuration.data
+    -> Core.Container.Service.t
 end

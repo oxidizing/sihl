@@ -135,7 +135,7 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
     ;;
   end
 
-  let register_migration () = MigrationService.register (Migration.migration ())
+  let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Repository.Service.register_cleaner Sql.clean
   let find_opt = Sql.find_opt
   let find_by_id_opt = Sql.find_by_id_opt
