@@ -29,10 +29,3 @@ module Migration = struct
 
   type t = string * step list [@@deriving show, eq]
 end
-
-module Registry = struct
-  let registry : Migration.t list ref = ref []
-  let get_all () = !registry
-  let register migration = registry := List.concat [ !registry; [ migration ] ]
-  let register_migrations migrations = registry := List.concat [ !registry; migrations ]
-end

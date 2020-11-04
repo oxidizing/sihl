@@ -2,8 +2,6 @@ module Database = Sihl_database
 module Core = Sihl_core
 
 module type REPO = sig
-  module Database : Database.Sig.SERVICE
-
   val create_table_if_not_exists : Core.Ctx.t -> unit Lwt.t
   val get : Core.Ctx.t -> namespace:string -> Model.t option Lwt.t
   val upsert : Core.Ctx.t -> state:Model.t -> unit Lwt.t

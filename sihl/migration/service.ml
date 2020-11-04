@@ -2,11 +2,23 @@ open Lwt.Syntax
 module Core = Sihl_core
 module Database = Sihl_database
 
-module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
-  module Database = MigrationRepo.Database
+let log_src = Logs.Src.create "sihl.service.migration"
 
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
+let registred_migrations : Model.Migration.t list ref = ref []
+
+let register_migration migration =
+  registred_migrations := List.concat [ !registred_migrations; [ migration ] ]
+;;
+
+let register_migrations migrations =
+  registred_migrations := List.concat [ !registred_migrations; migrations ]
+;;
+
+module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   let setup ctx =
-    Logs.debug (fun m -> m "MIGRATION: Setting up table if not exists");
+    Logs.debug (fun m -> m "Setting up table if not exists");
     MigrationRepo.create_table_if_not_exists ctx
   ;;
 
@@ -20,8 +32,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
     | Some state -> state
     | None ->
       raise
-        (Model.Exception
-           (Printf.sprintf "MIGRATION: Could not get migration state for %s" namespace))
+        (Model.Exception (Printf.sprintf "Could not get migration state for %s" namespace))
   ;;
 
   let upsert ctx state = MigrationRepo.upsert ctx ~state
@@ -47,20 +58,16 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
     Lwt.return updated_state
   ;;
 
-  let register_migration migration = Model.Registry.register migration |> ignore
-
-  let register_migrations migrations =
-    Model.Registry.register_migrations migrations |> ignore
-  ;;
-
-  let get_migrations _ = Lwt.return (Model.Registry.get_all ())
+  let register_migration migration = register_migration migration |> ignore
+  let register_migrations migrations = register_migrations migrations |> ignore
+  let get_migrations _ = Lwt.return !registred_migrations
 
   let set_fk_check_request =
     Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
   ;;
 
   let with_disabled_fk_check ctx f =
-    Database.transaction ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Database.Service.transaction ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
         let* () = Connection.exec set_fk_check_request false |> Lwt.map Result.get_ok in
         Lwt.finalize
           (fun () -> f ())
@@ -73,41 +80,40 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
       match steps with
       | [] -> Lwt.return ()
       | Model.Migration.{ label; statement; check_fk = true } :: steps ->
-        Logs.debug (fun m -> m "MIGRATION: Running %s" label);
+        Logs.debug (fun m -> m "Running %s" label);
         let query (module Connection : Caqti_lwt.CONNECTION) =
           let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
           Connection.exec req () |> Lwt.map Result.get_ok
         in
-        let* () = Database.query ctx query in
-        Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
+        let* () = Database.Service.query ctx query in
+        Logs.debug (fun m -> m "Ran %s" label);
         let* _ = increment ctx ~namespace in
         run steps
       | { label; statement; check_fk = false } :: steps ->
         let* () =
           with_disabled_fk_check ctx (fun () ->
-              Logs.debug (fun m -> m "MIGRATION: Running %s without fk checks" label);
+              Logs.debug (fun m -> m "Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
                 let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
                 Connection.exec req () |> Lwt.map Result.get_ok
               in
-              Database.query ctx query)
+              Database.Service.query ctx query)
         in
-        Logs.debug (fun m -> m "MIGRATION: Ran %s" label);
+        Logs.debug (fun m -> m "Ran %s" label);
         let* _ = increment ctx ~namespace in
         run steps
     in
     let () =
       match List.length steps with
-      | 0 -> Logs.debug (fun m -> m "MIGRATION: No migrations to apply for %s" namespace)
-      | n ->
-        Logs.debug (fun m -> m "MIGRATION: Applying %i migrations for %s" n namespace)
+      | 0 -> Logs.debug (fun m -> m "No migrations to apply for %s" namespace)
+      | n -> Logs.debug (fun m -> m "Applying %i migrations for %s" n namespace)
     in
     run steps
   ;;
 
   let execute_migration ctx migration =
     let namespace, _ = migration in
-    Logs.debug (fun m -> m "MIGRATION: Execute migrations for %s" namespace);
+    Logs.debug (fun m -> m "Execute migrations for %s" namespace);
     let* () = setup ctx in
     let* has_state = has ctx ~namespace in
     let* state =
@@ -121,11 +127,11 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
               "Dirty migration found for %s, has to be fixed manually"
               namespace
           in
-          Logs.err (fun m -> m "MIGRATION: %s" msg);
+          Logs.err (fun m -> m "%s" msg);
           raise (Model.Exception msg))
         else mark_dirty ctx ~namespace
       else (
-        Logs.debug (fun m -> m "MIGRATION: Setting up table for %s" namespace);
+        Logs.debug (fun m -> m "Setting up table for %s" namespace);
         let state = Model.create ~namespace in
         let* () = upsert ctx state in
         Lwt.return state)
@@ -139,10 +145,8 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   let execute ctx migrations =
     let n = List.length migrations in
     if n > 0
-    then
-      Logs.debug (fun m ->
-          m "MIGRATION: Executing %i migrations" (List.length migrations))
-    else Logs.debug (fun m -> m "MIGRATION: No migrations to execute");
+    then Logs.debug (fun m -> m "Executing %i migrations" (List.length migrations))
+    else Logs.debug (fun m -> m "No migrations to execute");
     let open Lwt in
     let rec run migrations ctx =
       match migrations with
@@ -153,11 +157,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
         | Ok () -> run migrations ctx
         | Error err ->
           Logs.err (fun m ->
-              m
-                "MIGRATION: Error while running migration %a: %s"
-                Model.Migration.pp
-                migration
-                err);
+              m "Error while running migration %a: %s" Model.Migration.pp migration err);
           raise (Model.Exception err))
     in
     run migrations ctx
@@ -180,7 +180,7 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   let lifecycle =
     Core.Container.Lifecycle.create
       "migration"
-      ~dependencies:[ Database.lifecycle ]
+      ~dependencies:[ Database.Service.lifecycle ]
       ~start
       ~stop
   ;;
@@ -192,133 +192,4 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   ;;
 end
 
-module Repo = struct
-  module MariaDb : Sig.REPO = struct
-    module Database = Database.Service
-
-    let create_request =
-      Caqti_request.exec
-        Caqti_type.unit
-        {sql|
-CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL,
-  version INTEGER,
-  dirty BOOL NOT NULL,
-  PRIMARY KEY (namespace)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
- |sql}
-    ;;
-
-    let create_table_if_not_exists ctx =
-      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec create_request () |> Lwt.map Result.get_ok)
-    ;;
-
-    let get_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        Caqti_type.(tup3 string int bool)
-        {sql|
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_state
-WHERE namespace = ?;
-|sql}
-    ;;
-
-    let get ctx ~namespace =
-      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_request namespace |> Lwt.map Result.get_ok)
-      |> Lwt.map (Option.map Model.of_tuple)
-    ;;
-
-    let upsert_request =
-      Caqti_request.exec
-        Caqti_type.(tup3 string int bool)
-        {sql|
-INSERT INTO core_migration_state (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  ?,
-  ?,
-  ?
-) ON DUPLICATE KEY UPDATE
-version = VALUES(version),
-dirty = VALUES(dirty)
-|sql}
-    ;;
-
-    let upsert ctx ~state =
-      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec upsert_request (Model.to_tuple state) |> Lwt.map Result.get_ok)
-    ;;
-  end
-
-  module MakePostgreSql (Database : Database.Sig.SERVICE) : Sig.REPO = struct
-    module Database = Database
-
-    let create_request =
-      Caqti_request.exec
-        Caqti_type.unit
-        {sql|
-CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL PRIMARY KEY,
-  version INTEGER,
-  dirty BOOL NOT NULL
-);
- |sql}
-    ;;
-
-    let create_table_if_not_exists ctx =
-      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec create_request () |> Lwt.map Result.get_ok)
-    ;;
-
-    let get_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        Caqti_type.(tup3 string int bool)
-        {sql|
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_state
-WHERE namespace = ?;
-|sql}
-    ;;
-
-    let get ctx ~namespace =
-      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_request namespace |> Lwt.map Result.get_ok)
-      |> Lwt.map (Option.map Model.of_tuple)
-    ;;
-
-    let upsert_request =
-      Caqti_request.exec
-        Caqti_type.(tup3 string int bool)
-        {sql|
-INSERT INTO core_migration_state (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  ?,
-  ?,
-  ?
-) ON CONFLICT (namespace)
-DO UPDATE SET version = EXCLUDED.version,
-dirty = EXCLUDED.dirty
-|sql}
-    ;;
-
-    let upsert ctx ~state =
-      Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec upsert_request (Model.to_tuple state) |> Lwt.map Result.get_ok)
-    ;;
-  end
-end
+module Repo = Repo
