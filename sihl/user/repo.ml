@@ -46,6 +46,50 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
   end
 
+  let filter_fragment =
+    {sql|
+        WHERE user_users.email = $1
+          OR user_users.username = $1
+          OR user_users.status = $1
+          OR user_users.admin = $1
+          OR user_users.confirmed = $1
+          OR user_users.created_at = $1 |sql}
+  ;;
+
+  let search_query =
+    {sql|
+        SELECT SQL_CALC_FOUND_ROWS
+          LOWER(CONCAT(
+           SUBSTR(HEX(uuid), 1, 8), '-',
+           SUBSTR(HEX(uuid), 9, 4), '-',
+           SUBSTR(HEX(uuid), 13, 4), '-',
+           SUBSTR(HEX(uuid), 17, 4), '-',
+           SUBSTR(HEX(uuid), 21)
+           )),
+          email,
+          username,
+          password,
+          status,
+          admin,
+          confirmed,
+          created_at
+        FROM user_users |sql}
+  ;;
+
+  let requests = Database.prepare_requests search_query filter_fragment "id" Model.t
+
+  let found_rows_request =
+    Caqti_request.find ~oneshot:true Caqti_type.unit Caqti_type.int "SELECT FOUND_ROWS()"
+  ;;
+
+  let search ctx sort filter limit =
+    Database.Service.query ctx (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        let* result = Database.run_request connection requests sort filter limit in
+        let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
+        Lwt.return (result, amount))
+  ;;
+
   let get_all ctx ~query =
     let fields =
       [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
@@ -269,6 +313,8 @@ CREATE TABLE IF NOT EXISTS user_users (
 
     let migration () = Migration.(empty "user" |> add_step create_users_table)
   end
+
+  let search _ _ _ = failwith "TODO"
 
   let get_all ctx ~query =
     let fields =

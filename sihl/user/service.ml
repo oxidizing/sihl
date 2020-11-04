@@ -38,7 +38,15 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       raise (Exception "User not found")
   ;;
 
-  let find_all ctx ~query = Repo.get_all ctx ~query
+  let search ctx ?(sort = `Desc) ?filter limit = Repo.search ctx sort filter limit
+
+  let find_all ctx ~query =
+    Repo.get_all ctx ~query
+    [@@ocaml.alert
+      deprecated
+        "[find_all] is not supported anymore due to performance reasons. Please use \
+         [search] instead."]
+  ;;
 
   let update_password
       ctx

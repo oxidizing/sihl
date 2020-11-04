@@ -7,6 +7,13 @@ module type REPOSITORY = sig
 
   val lifecycles : Core.Container.Lifecycle.t list
 
+  val search
+    :  Core.Ctx.t
+    -> [< `Desc | `Asc ]
+    -> string option
+    -> int
+    -> (Model.t list * int) Lwt.t
+
   val get_all
     :  Core.Ctx.t
     -> query:Database.Ql.t
@@ -20,6 +27,13 @@ end
 
 module type SERVICE = sig
   include Core.Container.Service.Sig
+
+  val search
+    :  Core.Ctx.t
+    -> ?sort:[ `Desc | `Asc ]
+    -> ?filter:string
+    -> int
+    -> (Model.t list * int) Lwt.t
 
   val find_all
     :  Core.Ctx.t

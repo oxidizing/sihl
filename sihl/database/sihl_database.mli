@@ -87,6 +87,27 @@
             )
     ]} *)
 
+val prepare_requests
+  :  string
+  -> string
+  -> string
+  -> 'a Caqti_type.t
+  -> (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+     * (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+     * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+     * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+
+val run_request
+  :  (module Caqti_lwt.CONNECTION)
+  -> ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
+     * ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
+     * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
+     * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
+  -> [< `Asc | `Desc ]
+  -> 'c option
+  -> 'a
+  -> 'b list Lwt.t
+
 module Service : Sig.SERVICE
 module Ql = Ql
 module View = View
