@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Sihl_authn (sihl.Sihl_authn)</title><link rel="stylesheet" href="../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 1.5.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body><div class="content"><header><nav><a href="../index.html">Up</a> – <a href="../index.html">sihl</a> &#x00BB; Sihl_authn</nav><h1>Module <code>Sihl_authn</code></h1><p>Use this module to verify whether a user is who the user claims to be.</p><nav class="toc"><ul><li><a href="#installation">Installation</a></li><li><a href="#usage">Usage</a></li></ul></nav></header><section><header><h2 id="installation"><a href="#installation" class="anchor"></a>Installation</h2><pre><code class="ml">module Repo = Sihl.Data.Repo.Service.Make ()
+module Random = Sihl.Utils.Random.Make ()
+module Cmd = Sihl.Cmd.Service.Make ()
+module Log = Sihl.Log.Service.Make ()
+module Db = Sihl.Database.Service (Config) (Log)
+module MigrationRepo = Sihl.Data.Migration.Service.Repo.MakeMariaDb (Db)
+module Migration = Sihl.Data.Migration.Service.Make (Log) (Cmd) (Db) (MigrationRepo)
+
+(* Repo *)
+module SessionRepo = Sihl.Session.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+module UserRepo = Sihl.User.Service.Repo.MakeMariaDb (Db) (Repo) (Migration)
+
+(* Service *)
+module Session = Sihl.Session.Service.Make (Log) (Random) (SessionRepo)
+module User = Sihl.User.Service.Make (Log) (Cmd) (Db) (UserRepo)</code></pre></header></section><section><header><h2 id="usage"><a href="#usage" class="anchor"></a>Usage</h2><p>(* TODO *)</p></header><div class="spec module" id="module-Service"><a href="#module-Service" class="anchor"></a><code><span class="keyword">module</span> <a href="Service/index.html">Service</a> : <span class="keyword">sig</span> ... <span class="keyword">end</span></code></div><div class="spec module" id="module-Sig"><a href="#module-Sig" class="anchor"></a><code><span class="keyword">module</span> <a href="Sig/index.html">Sig</a> : <span class="keyword">sig</span> ... <span class="keyword">end</span></code></div></section></div></body></html>
