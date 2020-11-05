@@ -100,6 +100,12 @@ let is_testing () =
   | _ -> false
 ;;
 
+let is_production () =
+  match read_string "SIHL_ENV" with
+  | Some "production" -> true
+  | _ -> false
+;;
+
 let project_root_path =
   match read_string "PROJECT_ROOT_DIR" with
   | Some pjr -> pjr
