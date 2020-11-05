@@ -67,10 +67,11 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   ;;
 
   let with_disabled_fk_check ctx f =
-    Database.Service.transaction ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Database.Service.query ctx (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* () = Connection.exec set_fk_check_request false |> Lwt.map Result.get_ok in
         Lwt.finalize
-          (fun () -> f ())
+          (fun () -> f connection)
           (fun () -> Connection.exec set_fk_check_request true |> Lwt.map Result.get_ok))
   ;;
 
@@ -91,13 +92,13 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
         run steps
       | { label; statement; check_fk = false } :: steps ->
         let* () =
-          with_disabled_fk_check ctx (fun () ->
+          with_disabled_fk_check ctx (fun connection ->
               Logs.debug (fun m -> m "Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
                 let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
                 Connection.exec req () |> Lwt.map Result.get_ok
               in
-              Database.Service.query ctx query)
+              query connection)
         in
         Logs.debug (fun m -> m "Ran %s" label);
         let* _ = increment ctx ~namespace in
