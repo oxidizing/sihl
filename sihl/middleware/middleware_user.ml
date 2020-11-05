@@ -5,6 +5,7 @@ let key : User.t Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("user", User.sexp_of_t)
 ;;
 
+let find req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
 let find_opt req = Opium_kernel.Hmap.find key (Opium_kernel.Request.env req)
 
 let set user req =

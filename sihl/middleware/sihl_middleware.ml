@@ -8,6 +8,7 @@ module Security = Middleware_security
 module Static = Middleware_static
 module Session = Middleware_session
 module Authn = Middleware_authn
+module User = Middleware_user
 
 let error = Middleware_error.m
 let static = Middleware_static.m
