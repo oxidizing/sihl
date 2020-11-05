@@ -251,33 +251,31 @@ let authorization_token t =
   | _ -> None
 ;;
 
-let param req key =
-  try Some (Opium.Std.param req key) with
+let param key t =
+  try Some (Opium.Std.param t key) with
   | _ -> None
 ;;
 
-let params req key1 key2 =
-  match param req key1, param req key2 with
+let params key1 key2 t =
+  match param key1 t, param key2 t with
   | Some a, Some b -> Some (a, b)
   | _ -> None
 ;;
 
-let params3 req key1 key2 key3 =
-  match param req key1, param req key2, param req key3 with
+let params3 key1 key2 key3 t =
+  match param key1 t, param key2 t, param key3 t with
   | Some p1, Some p2, Some p3 -> Some (p1, p2, p3)
   | _ -> None
 ;;
 
-let params4 req key1 key2 key3 key4 =
-  match param req key1, param req key2, param req key3, param req key4 with
+let params4 key1 key2 key3 key4 t =
+  match param key1 t, param key2 t, param key3 t, param key4 t with
   | Some p1, Some p2, Some p3, Some p4 -> Some (p1, p2, p3, p4)
   | _ -> None
 ;;
 
-let params5 req key1 key2 key3 key4 key5 =
-  match
-    param req key1, param req key2, param req key3, param req key4, param req key5
-  with
+let params5 key1 key2 key3 key4 key5 t =
+  match param key1 t, param key2 t, param key3 t, param key4 t, param key5 t with
   | Some p1, Some p2, Some p3, Some p4, Some p5 -> Some (p1, p2, p3, p4, p5)
   | _ -> None
 ;;

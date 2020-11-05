@@ -513,32 +513,32 @@ val authorization_token : t -> string option
 (** [is_get t] returns true if the request is a GET request . *)
 val is_get : t -> bool
 
-(** [param t k] returns the parameter in the path with the key [k] of the request [t]. The
+(** [param k t] returns the parameter in the path with the key [k] of the request [t]. The
     parameter path is extracted by the router, like [/admin/users/:id] would have a
     parameter [id]. *)
-val param : t -> string -> string option
+val param : string -> t -> string option
 
-(** [params t k1 k2] returns the parameters of the request [t]. *)
-val params : t -> string -> string -> (string * string) option
+(** [params k1 k2 t] returns the parameters of the request [t]. *)
+val params : string -> string -> t -> (string * string) option
 
-(** [params3 t k1 k2 k3] returns the parameters of the request [t]. *)
-val params3 : t -> string -> string -> string -> (string * string * string) option
+(** [params3 k1 k2 k3 t] returns the parameters of the request [t]. *)
+val params3 : string -> string -> string -> t -> (string * string * string) option
 
-(** [params4 t k1 k2 k3] returns the parameters of the request [t]. *)
+(** [params4 k1 k2 k3 k4 t] returns the parameters of the request [t]. *)
 val params4
-  :  t
+  :  string
   -> string
   -> string
   -> string
-  -> string
+  -> t
   -> (string * string * string * string) option
 
-(** [params5 t k1 k2 k3] returns the parameters of the request [t]. *)
+(** [params5 k1 k2 k3 k4 k5 t] returns the parameters of the request [t]. *)
 val params5
-  :  t
+  :  string
   -> string
   -> string
   -> string
   -> string
-  -> string
+  -> t
   -> (string * string * string * string * string) option
