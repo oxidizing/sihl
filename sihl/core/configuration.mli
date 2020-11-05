@@ -64,8 +64,8 @@ val store : data -> unit
 val project_root_path : string
 
 (** [read_env_file ()] reads an [.env] file from the project root directory and returns
-    the key-value pairs as [data]. If [SIHL_ENV] is set to [testing], [.env.testing] is
-    read. Otherwise [.env] is read. If the file doesn't exist, empty data is returned. *)
+    the key-value pairs as [data]. If [SIHL_ENV] is set to [test], [.env.testing] is read.
+    Otherwise [.env] is read. If the file doesn't exist, empty data is returned. *)
 
 val read_env_file : unit -> data Lwt.t
 
@@ -90,5 +90,9 @@ val read_int : string -> int option
     caches the returned value and subsequent calls are fast. *)
 val read_bool : string -> bool option
 
-(** [is_testing ()] returns true if [SIHL_ENV] is set to [testing]. *)
+(** [is_testing ()] returns true if Sihl is running in a test environment, meaning if
+    tests are executing parts of Sihl. *)
 val is_testing : unit -> bool
+
+(** [is_production ()] returns true if Sihl is running in a production environment. *)
+val is_production : unit -> bool
