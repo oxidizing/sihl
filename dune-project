@@ -22,7 +22,7 @@
  (description "Build web apps fast with long-term maintainability in mind.")
  (depends
   ;; General system dependencies
-  (dune (>= 2.7))
+  dune
   (ocaml (>= 4.08.0))
   (lwt (>= 5.3.0))
 
@@ -72,8 +72,8 @@
   (alcotest (>= 1.2.0))
 
   ;; Test dependencies
-  (alcotest-lwt (and (>= 1.2.0) :with-test))
-  (cohttp-lwt-unix (and (>= 2.5.1) :with-test))))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))
+  (cohttp-lwt-unix (and (>= 2.5.1) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-storage)
@@ -81,7 +81,7 @@
  (description "
 This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
  (depends
-  (dune (>= 2.7))
+  dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))))
 
@@ -91,7 +91,7 @@ This service can be used to handle large binary blobs that are typically not sto
  (description "
 A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
  (depends
-  (dune (>= 2.7))
+  dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
   (letters (>= 0.2.0))))
@@ -102,6 +102,6 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
  (description "
 A Sihl service for putting and working jobs on queues. Various queue backends are provided.")
  (depends
-  (dune (>= 2.7))
+  dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))))
