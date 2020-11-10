@@ -22,7 +22,7 @@ type data = (string * string) list
 (** The configuration contains configuration data and a configuration schema. *)
 type t
 
-(** [make ?schema data] returns a configuration containing the configuration [schema] and
+(** [make schema data] returns a configuration containing the configuration [schema] and
     the configuration [data]. *)
 val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> data -> t
 
@@ -96,3 +96,7 @@ val is_testing : unit -> bool
 
 (** [is_production ()] returns true if Sihl is running in a production environment. *)
 val is_production : unit -> bool
+
+(** [require t] raises an exception if the stored configuration doesn't contain the
+    configurations provided by the list of configurations [t]. *)
+val require : t list -> unit

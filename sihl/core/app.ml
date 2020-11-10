@@ -58,6 +58,8 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
     configurations;
   let* file_configuration = Configuration.read_env_file () in
   Configuration.store file_configuration;
+  Configuration.require configurations;
+  (* iter all schema and check if env vars here *)
   let configuration_commands = Configuration.commands configurations in
   Logger.debug (fun m -> m "Setup service commands");
   let service_commands = app.services |> List.map starting_commands |> List.concat in

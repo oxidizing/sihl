@@ -25,7 +25,7 @@ let schema =
 let print_pool_usage pool =
   let n_connections = Caqti_lwt.Pool.size pool in
   let max_connections =
-    Option.value (Core.Configuration.read_int "DATABASE_POOL_SIZE") ~default:10
+    Option.value (Core.Configuration.read schema).pool_size ~default:10
   in
   Logs.debug (fun m -> m "Pool usage: %i/%i" n_connections max_connections)
 ;;
@@ -36,11 +36,9 @@ let fetch_pool () =
     Logs.debug (fun m -> m "Skipping pool creation, re-using existing pool");
     pool
   | None ->
-    let pool_size =
-      Option.value (Core.Configuration.read_int "DATABASE_POOL_SIZE") ~default:10
-    in
+    let pool_size = Option.value (Core.Configuration.read schema).pool_size ~default:10 in
     Logs.debug (fun m -> m "Create pool with size %i" pool_size);
-    Option.get ("DATABASE_URL" |> Core.Configuration.read_string)
+    (Core.Configuration.read schema).url
     |> Uri.of_string
     |> Caqti_lwt.connect_pool ~max_size:pool_size
     |> (function

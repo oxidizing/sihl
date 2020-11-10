@@ -119,3 +119,47 @@ let read_env_file switch () =
   Alcotest.(check (list string) "Returns values" (List.rev values) (List.map snd data));
   Lwt.return ()
 ;;
+
+module Test1 = struct
+  type t = { hey : int }
+
+  let t hey = { hey }
+
+  let schema =
+    let open Conformist in
+    make [ int "hey" ] t
+  ;;
+
+  let test _ () =
+    let data = [ "hey", "123" ] in
+    Sihl.Core.Configuration.store data;
+    let configuration = Sihl.Core.Configuration.make ~schema data in
+    Sihl.Core.Configuration.require [ configuration ];
+    Lwt.return ()
+  ;;
+end
+
+module Test2 = struct
+  type t = { ho : int }
+
+  let t ho = { ho }
+
+  let schema =
+    let open Conformist in
+    make [ int "ho" ] t
+  ;;
+
+  let test _ () =
+    let data = [ "ho", "value" ] in
+    Sihl.Core.Configuration.store data;
+    let configuration = Sihl.Core.Configuration.make ~schema data in
+    let exc =
+      Sihl.Core.Configuration.Exception
+        "For configuration key ho there is an issue: Invalid number provided"
+    in
+    Alcotest.(
+      check_raises "raises" exc (fun () ->
+          Sihl.Core.Configuration.require [ configuration ]));
+    Lwt.return ()
+  ;;
+end

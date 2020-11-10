@@ -1,32 +1,36 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create ~doc:"Service configuration" "sihl.configuration"
+let log_src = Logs.Src.create "sihl.configuration"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Exception of string
 
 type data = (string * string) list
-type schema = unit Conformist.Field.any_field list
+type validator = data -> (string * string) list
 
 type t =
   { data : data
-  ; schema : schema
+  ; validator : validator
   }
 
 let data t = t.data
 
 let make ?schema data =
-  let schema =
+  let validator =
     match schema with
     | Some schema ->
-      Conformist.fold_left ~f:(fun schema field -> List.cons field schema) ~init:[] schema
-    | None -> []
+      let validator data =
+        let data = List.map (fun (k, v) -> k, [ v ]) data in
+        Conformist.validate schema data
+      in
+      validator
+    | None -> fun _ -> []
   in
-  { data; schema }
+  { data; validator }
 ;;
 
-let empty = { data = []; schema = [] }
+let empty = { data = []; validator = (fun _ -> []) }
 
 let memoize f =
   (* We assume a total number of initial configurations of 100 *)
@@ -43,7 +47,10 @@ let memoize f =
 let store data =
   List.iter
     (fun (key, value) ->
-      if Option.is_some (Sys.getenv_opt key) then () else Unix.putenv key value)
+      let stored = Sys.getenv_opt key in
+      if Option.is_some stored || Option.equal String.equal (Some "") stored
+      then ()
+      else Unix.putenv key value)
     data
 ;;
 
@@ -57,6 +64,7 @@ let envs_to_kv envs =
          | key :: values -> key, String.concat "" values)
 ;;
 
+(* TODO [jerben] Consider memoizing this or any consumer functions *)
 let environment_variables () = Unix.environment () |> Array.to_list |> envs_to_kv
 
 let read schema =
@@ -129,6 +137,19 @@ let read_env_file () =
     let* envs = read_to_end file [] in
     envs |> envs_to_kv |> Lwt.return
   else Lwt.return []
+;;
+
+let require configurations =
+  let validators =
+    List.map (fun configuration -> configuration.validator) configurations
+  in
+  let vars = environment_variables () in
+  let errors = validators |> List.map (fun validator -> validator vars) |> List.concat in
+  match errors with
+  | (k, v) :: _ ->
+    raise
+    @@ Exception (Format.sprintf "For configuration key %s there is an issue: %s" k v)
+  | _ -> ()
 ;;
 
 (* TODO [jerben] Implement "print configuration documentation" commands *)

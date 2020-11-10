@@ -23,6 +23,8 @@ let suite =
           `Quick
           Core_configuration.read_env_file_non_existing
       ; test_case "read env file" `Quick Core_configuration.read_env_file
+      ; test_case "require succeeds" `Quick Core_configuration.Test1.test
+      ; test_case "require fails" `Quick Core_configuration.Test2.test
       ] )
   ; ( "http"
     , [ test_case "require url encoded body" `Quick Http.test_require_url_encoded_body
