@@ -40,7 +40,7 @@ module Time = struct
   let ptime_of_date_string date =
     let date =
       date
-      |> Caml.String.split_on_char '-'
+      |> String.split_on_char '-'
       |> List.map int_of_string_opt
       |> List.map
            (Option.to_result
@@ -53,6 +53,7 @@ module Time = struct
              | Ok item -> Result.map (List.cons item) result
              | Error msg -> Error msg)
            (Ok [])
+      |> Result.map List.rev
     in
     match date with
     | Ok [ year; month; day ] ->

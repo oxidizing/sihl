@@ -105,6 +105,7 @@ let suite =
       ; test_case "is expired" `Quick Jwt.is_expired
       ] )
   ; "queue", [ test_case "should job run" `Quick Queue.should_run_job ]
+  ; "utils", [ test_case "parse ptime" `Quick Utils.parse_ptime ]
   ; ( "app"
     , [ test_case "run user command" `Quick Core_app.run_user_command
       ; test_case "run order command" `Quick Core_app.run_order_command
