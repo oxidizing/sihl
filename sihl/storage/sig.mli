@@ -40,5 +40,5 @@ module type SERVICE = sig
   val download_data_base64_opt : Core.Ctx.t -> file:StoredFile.t -> string option Lwt.t
 
   val download_data_base64 : Core.Ctx.t -> file:StoredFile.t -> string Lwt.t
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

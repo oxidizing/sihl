@@ -28,8 +28,7 @@ let start ctx = Lwt.return ctx
 let stop _ = Lwt.return ()
 let lifecycle = Core.Container.Lifecycle.create "repo" ~start ~stop
 
-let configure cleaners configuration =
+let register ?(cleaners = []) () =
   register_cleaners cleaners;
-  let configuration = Core.Configuration.make configuration in
-  Core.Container.Service.create ~configuration lifecycle
+  Core.Container.Service.create lifecycle
 ;;

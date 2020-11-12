@@ -33,9 +33,11 @@ module Template : sig
   val render : Data.t -> t -> string * string
 end
 
-module DevInbox = Model.DevInbox
-
 type t = Model.t
+
+val get_inbox : unit -> t list
+val add_to_inbox : t -> unit
+val clear_inbox : unit -> unit
 
 val make
   :  sender:string

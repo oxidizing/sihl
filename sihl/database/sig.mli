@@ -17,5 +17,5 @@ module type SERVICE = sig
       gracefully becomes [query]. *)
   val transaction : Core.Ctx.t -> (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

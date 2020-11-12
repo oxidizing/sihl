@@ -9,24 +9,17 @@ let test_suite =
 ;;
 
 let services =
-  [ Service.Database.configure
-      [ "DATABASE_URL", "postgres://admin:password@127.0.0.1:5432/dev" ]
-  ; Service.Session.configure []
-  ; Service.User.configure []
-  ; Service.EmailTemplate.configure []
+  [ Service.Database.register ()
+  ; Service.Session.register ()
+  ; Service.User.register ()
+  ; Service.EmailTemplate.register ()
   ]
 ;;
 
 let () =
+  Unix.putenv "DATABASE_URL" "postgres://admin:password@127.0.0.1:5432/dev";
   Logs.set_reporter (Sihl.Core.Log.default_reporter ());
   let ctx = Sihl.Core.Ctx.create () in
-  let configurations =
-    List.map (fun service -> Sihl.Core.Container.Service.configuration service) services
-  in
-  List.iter
-    (fun configuration ->
-      configuration |> Sihl.Core.Configuration.data |> Sihl.Core.Configuration.store)
-    configurations;
   Lwt_main.run
     (let* _ = Sihl.Core.Container.start_services services in
      let* () = Service.Migration.run_all ctx in

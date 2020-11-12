@@ -7,6 +7,5 @@ include Core.Container.Service.Sig
     server serves the registered routes. *)
 val start_server : Core.Ctx.t -> unit Lwt.t
 
-(** [configure endpoints configuration service] creates an HTTP server with [endpoints]
-    and [configuration]. *)
-val configure : Route.router list -> Core.Configuration.data -> Core.Container.Service.t
+(** [register routers] creates an HTTP server with [endpoints] and [configuration]. *)
+val register : ?routers:Route.router list -> unit -> Core.Container.Service.t

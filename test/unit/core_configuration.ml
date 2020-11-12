@@ -121,19 +121,22 @@ let read_env_file switch () =
 ;;
 
 module Test1 = struct
-  type t = { hey : int }
+  type t =
+    { hey : int
+    ; is : bool option
+    }
 
-  let t hey = { hey }
+  let t hey is = { hey; is }
 
   let schema =
     let open Conformist in
-    make [ int "hey" ] t
+    make [ int "hey"; optional (bool ~default:true "is") ] t
   ;;
 
   let test _ () =
     let data = [ "hey", "123" ] in
     Sihl.Core.Configuration.store data;
-    let configuration = Sihl.Core.Configuration.make ~schema data in
+    let configuration = Sihl.Core.Configuration.make ~schema () in
     Sihl.Core.Configuration.require [ configuration ];
     Lwt.return ()
   ;;
@@ -152,7 +155,7 @@ module Test2 = struct
   let test _ () =
     let data = [ "ho", "value" ] in
     Sihl.Core.Configuration.store data;
-    let configuration = Sihl.Core.Configuration.make ~schema data in
+    let configuration = Sihl.Core.Configuration.make ~schema () in
     let exc =
       Sihl.Core.Configuration.Exception
         "For configuration key ho there is an issue: Invalid number provided"

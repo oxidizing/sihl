@@ -34,8 +34,6 @@ module type SERVICE = sig
   (** Returns an active and non-expired token. *)
   val find_opt : Core.Ctx.t -> string -> Model.t option Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
-
   (** Returns an active and non-expired token by id. Raises [Failure] if no token is
       found. *)
   val find_by_id : Core.Ctx.t -> string -> Model.t Lwt.t
@@ -46,4 +44,6 @@ module type SERVICE = sig
   (** Invalidate a token by marking it as such in the database and therefore marking it
       "to be deleted" *)
   val invalidate : Core.Ctx.t -> Model.t -> unit Lwt.t
+
+  val register : unit -> Core.Container.Service.t
 end

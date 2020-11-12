@@ -24,5 +24,5 @@ module type SERVICE = sig
     -> unit
     -> unit Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

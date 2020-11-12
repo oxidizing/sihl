@@ -77,16 +77,9 @@ type t =
   }
 [@@deriving yojson, show, eq, make, fields]
 
-module DevInbox = struct
-  let inbox : t option ref = ref None
-
-  let get () =
-    if Option.is_some !inbox then Logs.err (fun m -> m "no email found in dev inbox");
-    Option.get !inbox
-  ;;
-
-  let set email = inbox := Some email
-end
-
+let inbox : t list ref = ref []
+let get_inbox () = !inbox
+let add_to_inbox email = inbox := List.cons email !inbox
+let clear_inbox () = inbox := []
 let set_text_content text_content email = { email with text_content }
 let set_html_content html_content email = { email with html_content }

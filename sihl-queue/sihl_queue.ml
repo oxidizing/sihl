@@ -126,7 +126,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
     Lwt.return ()
   ;;
 
-  let start_queue ctx =
+  let start_queue _ =
     Logs.debug (fun m -> m "QUEUE: Start job queue");
     (* This function run every second, the request context gets created here with each
        tick *)
@@ -158,7 +158,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
         ~f:scheduled_function
         ~label:"job_queue"
     in
-    stop_schedule := Some (ScheduleService.schedule ctx schedule);
+    stop_schedule := Some (ScheduleService.schedule schedule);
     Lwt.return ()
   ;;
 
@@ -187,7 +187,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
       ~stop
   ;;
 
-  let configure _ jobs =
+  let register ?(jobs = []) () =
     let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
     Sihl.Core.Container.Service.create lifecycle

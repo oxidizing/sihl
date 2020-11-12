@@ -18,5 +18,5 @@ module type SERVICE = sig
     -> password_confirmation:string
     -> (unit, string) Result.t Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

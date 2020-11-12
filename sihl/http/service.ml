@@ -1,5 +1,9 @@
 module Core = Sihl_core
 
+let log_src = Logs.Src.create "sihl.service.http"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 let to_opium_builder (meth, path, handler) =
   let open Route in
   match meth with
@@ -29,16 +33,16 @@ let config port = { port }
 
 let schema =
   let open Conformist in
-  make [ optional (int "PORT") ] config
+  make [ optional (int ~default:3000 "PORT") ] config
 ;;
 
-let routers = ref []
+let registered_routers = ref []
 
 let start_server _ =
-  Logs.debug (fun m -> m "WEB: Starting HTTP server");
+  Logs.debug (fun m -> m "Starting HTTP server");
   let port_nr = Option.value (Core.Configuration.read schema).port ~default:33000 in
   let app = Opium.Std.App.(empty |> port port_nr |> cmd_name "Sihl App") in
-  let builders = routers_to_opium_builders !routers in
+  let builders = routers_to_opium_builders !registered_routers in
   let app = List.fold_left (fun app builder -> builder app) app builders in
   (* We don't want to block here, the returned Lwt.t will never resolve *)
   let _ = Opium.Std.App.start app in
@@ -55,10 +59,10 @@ let start_cmd =
 
 let start ctx = Lwt.return ctx
 let stop _ = Lwt.return ()
-let lifecycle = Core.Container.Lifecycle.create "web-server" ~start ~stop
+let lifecycle = Core.Container.Lifecycle.create "http" ~start ~stop
 
-let configure rs configuration =
-  routers := rs;
-  let configuration = Core.Configuration.make ~schema configuration in
+let register ?(routers = []) () =
+  registered_routers := routers;
+  let configuration = Core.Configuration.make ~schema () in
   Core.Container.Service.create ~configuration ~commands:[ start_cmd ] lifecycle
 ;;

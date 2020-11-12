@@ -7,30 +7,20 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 exception Exception of string
 
 type data = (string * string) list
-type validator = data -> (string * string) list
+type t = data -> (string * string) list
 
-type t =
-  { data : data
-  ; validator : validator
-  }
-
-let data t = t.data
-
-let make ?schema data =
-  let validator =
-    match schema with
-    | Some schema ->
-      let validator data =
-        let data = List.map (fun (k, v) -> k, [ v ]) data in
-        Conformist.validate schema data
-      in
-      validator
-    | None -> fun _ -> []
-  in
-  { data; validator }
+let make ?schema () =
+  match schema with
+  | Some schema ->
+    let validator data =
+      let data = List.map (fun (k, v) -> k, [ v ]) data in
+      Conformist.validate schema data
+    in
+    validator
+  | None -> fun _ -> []
 ;;
 
-let empty = { data = []; validator = (fun _ -> []) }
+let empty _ = []
 
 let memoize f =
   (* We assume a total number of initial configurations of 100 *)
@@ -139,10 +129,7 @@ let read_env_file () =
   else Lwt.return []
 ;;
 
-let require configurations =
-  let validators =
-    List.map (fun configuration -> configuration.validator) configurations
-  in
+let require validators =
   let vars = environment_variables () in
   let errors = validators |> List.map (fun validator -> validator vars) |> List.concat in
   match errors with

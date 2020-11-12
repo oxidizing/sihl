@@ -5,7 +5,9 @@ let log_src = Logs.Src.create ~doc:"schedule" "sihl.service.schedule"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let schedule _ schedule =
+let registered_schedules : Model.t list ref = ref []
+
+let schedule schedule =
   let should_stop = ref false in
   let stop_schedule () = should_stop := true in
   Logs.debug (fun m -> m "SCHEDULE: Scheduling %s" (Model.label schedule));
@@ -39,11 +41,15 @@ let schedule _ schedule =
   stop_schedule
 ;;
 
-let start ctx = Lwt.return ctx
+let start ctx =
+  List.iter (fun s -> schedule s ()) !registered_schedules;
+  Lwt.return ctx
+;;
+
 let stop _ = Lwt.return ()
 let lifecycle = Core.Container.Lifecycle.create "schedule" ~start ~stop
 
-let configure configuration =
-  let configuration = Core.Configuration.make configuration in
-  Core.Container.Service.create ~configuration lifecycle
+let register ?(schedules = []) () =
+  registered_schedules := schedules;
+  Core.Container.Service.create lifecycle
 ;;

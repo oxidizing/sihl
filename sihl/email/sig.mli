@@ -16,7 +16,7 @@ module type TEMPLATE_SERVICE = sig
 
   val update : Core.Ctx.t -> template:Model.Template.t -> Model.Template.t Lwt.t
   val render : Core.Ctx.t -> Model.t -> Model.t Lwt.t
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end
 
 module type TEMPLATE_REPO = sig
@@ -40,5 +40,5 @@ module type SERVICE = sig
   (** Send multiple emails. If sending of one of them fails, the function fails.*)
   val bulk_send : Core.Ctx.t -> Model.t list -> unit Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

@@ -15,9 +15,6 @@ end
 module type SERVICE = sig
   include Core.Container.Service.Sig
 
-  (* TODO [jerben] hide 'a, so jobs of different type can be configured *)
-  val configure : Core.Configuration.data -> 'a Job.t list -> Core.Container.Service.t
-
   (** Queue a [job] for processing. Use [delay] to run the initially job after a certain
       amount of time. *)
   val dispatch
@@ -32,4 +29,7 @@ module type SERVICE = sig
       Only registered jobs can be dispatched. Dispatching a job that was not registered
       does nothing. *)
   val register_jobs : Core.Ctx.t -> jobs:'a Job.t list -> unit Lwt.t
+
+  (* TODO [jerben] hide 'a, so jobs of different type can be configured *)
+  val register : ?jobs:'a Job.t list -> unit -> Core.Container.Service.t
 end

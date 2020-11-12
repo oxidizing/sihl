@@ -3,7 +3,7 @@ open Lwt.Syntax
 module Queue = Test_case.Queue.Make (Service.Queue)
 
 let test_suite ctx = [ Queue.test_suite ctx ]
-let services = [ Service.Queue.configure [] [] ]
+let services = [ Service.Queue.register () ]
 
 let () =
   Logs.set_reporter (Sihl.Core.Log.default_reporter ());

@@ -24,13 +24,10 @@ type t
 
 (** [make schema data] returns a configuration containing the configuration [schema] and
     the configuration [data]. *)
-val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> data -> t
+val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> unit -> t
 
 (** [empty] is an empty configuration without any schema or data. *)
 val empty : t
-
-(** [data configuration] returns the configuration data of the configuration. *)
-val data : t -> data
 
 (** [commands configurations] returns the list of CLI commands given a list of
     configurations. *)

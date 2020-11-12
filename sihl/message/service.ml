@@ -82,8 +82,5 @@ module Make (SessionService : Session.Sig.SERVICE) : Sig.SERVICE = struct
       ~stop
   ;;
 
-  let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration lifecycle
-  ;;
+  let register () = Core.Container.Service.create lifecycle
 end

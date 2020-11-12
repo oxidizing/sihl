@@ -6,7 +6,7 @@ module type SERVICE = sig
   (** Run a schedule.
 
       Call the returned function to cancel a schedule. *)
-  val schedule : Core.Ctx.t -> Model.t -> Model.stop_schedule
+  val schedule : Model.t -> Model.stop_schedule
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : ?schedules:Model.t list -> unit -> Core.Container.Service.t
 end

@@ -4,7 +4,7 @@ open Lwt.Syntax
 module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
   let dispatched_job_gets_processed ctx _ () =
     let has_ran_job = ref false in
-    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
+    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let job =
       Sihl.Queue.create_job
@@ -17,7 +17,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
       |> Sihl.Queue.set_max_tries 3
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
-    let service = QueueService.configure [] [ job ] in
+    let service = QueueService.register ~jobs:[ job ] () in
     let* _ = Sihl.Core.Container.start_services [ service ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
@@ -29,7 +29,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
   let two_dispatched_jobs_get_processed ctx _ () =
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
-    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
+    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let job1 =
       Sihl.Queue.create_job
@@ -55,7 +55,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job1; job2 ] in
     let jobs = [ job1; job2 ] in
-    let service = QueueService.configure [] jobs in
+    let service = QueueService.register ~jobs () in
     let* _ = Sihl.Core.Container.start_services [ service ] in
     let* () = QueueService.dispatch ctx ~job:job1 () in
     let* () = QueueService.dispatch ctx ~job:job2 () in
@@ -68,7 +68,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
 
   let cleans_up_job_after_error ctx _ () =
     let has_cleaned_up_job = ref false in
-    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
+    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let job =
       Sihl.Queue.create_job
@@ -81,7 +81,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
       |> Sihl.Queue.set_max_tries 3
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
-    let service = QueueService.configure [] [ job ] in
+    let service = QueueService.register ~jobs:[ job ] () in
     let* _ = Sihl.Core.Container.start_services [ service ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
@@ -92,7 +92,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
 
   let cleans_up_job_after_exception ctx _ () =
     let has_cleaned_up_job = ref false in
-    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
+    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let job =
       Sihl.Queue.create_job
@@ -106,7 +106,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
-    let service = QueueService.configure [] [ job ] in
+    let service = QueueService.register ~jobs:[ job ] () in
     let* _ = Sihl.Core.Container.start_services [ service ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in
@@ -117,7 +117,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
 
   let inject_custom_context ctx _ () =
     let custom_ctx_key : string Sihl.Core.Ctx.key = Sihl.Core.Ctx.create_key () in
-    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.configure [] [] ] in
+    let* () = Sihl.Core.Container.stop_services ctx [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all ctx in
     let has_custom_ctx_string = ref false in
     let custom_with_context ctx =
@@ -138,7 +138,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let* () = QueueService.register_jobs ctx ~jobs:[ job ] in
-    let service = QueueService.configure [] [ job ] in
+    let service = QueueService.register ~jobs:[ job ] () in
     let* _ = Sihl.Core.Container.start_services [ service ] in
     let* () = QueueService.dispatch ctx ~job () in
     let* () = Lwt_unix.sleep 2.0 in

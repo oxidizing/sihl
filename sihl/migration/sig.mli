@@ -25,8 +25,5 @@ module type SERVICE = sig
   (** Run all registered migrations. *)
   val run_all : Core.Ctx.t -> unit Lwt.t
 
-  val configure
-    :  Model.Migration.t list
-    -> Core.Configuration.data
-    -> Core.Container.Service.t
+  val register : ?migrations:Model.Migration.t list -> unit -> Core.Container.Service.t
 end

@@ -28,5 +28,5 @@ module type SERVICE = sig
       Remove user from current session so that session is anonymous again. *)
   val unauthenticate_session : Core.Ctx.t -> Session.t -> unit Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

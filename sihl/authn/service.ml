@@ -41,8 +41,5 @@ module Make (SessionService : Session.Sig.SERVICE) (UserService : User.Sig.SERVI
       ~dependencies:[ SessionService.lifecycle; UserService.lifecycle ]
   ;;
 
-  let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration lifecycle
-  ;;
+  let register () = Core.Container.Service.create lifecycle
 end

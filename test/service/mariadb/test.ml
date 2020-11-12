@@ -28,28 +28,21 @@ let test_suite ctx =
 ;;
 
 let services =
-  [ Service.Database.configure
-      [ "DATABASE_URL", "mariadb://admin:password@127.0.0.1:3306/dev" ]
-  ; Service.Session.configure []
-  ; Service.Token.configure []
-  ; Service.User.configure []
-  ; Service.Storage.configure []
-  ; Service.EmailTemplate.configure []
-  ; Service.PasswordReset.configure []
-  ; Service.Queue.configure [] []
+  [ Service.Database.register ()
+  ; Service.Session.register ()
+  ; Service.Token.register ()
+  ; Service.User.register ()
+  ; Service.Storage.register ()
+  ; Service.EmailTemplate.register ()
+  ; Service.PasswordReset.register ()
+  ; Service.Queue.register ()
   ]
 ;;
 
 let () =
+  Unix.putenv "DATABASE_URL" "mariadb://admin:password@127.0.0.1:3306/dev";
   Logs.set_reporter (Sihl.Core.Log.default_reporter ());
   let ctx = Sihl.Core.Ctx.create () in
-  let configurations =
-    List.map (fun service -> Sihl.Core.Container.Service.configuration service) services
-  in
-  List.iter
-    (fun configuration ->
-      configuration |> Sihl.Core.Configuration.data |> Sihl.Core.Configuration.store)
-    configurations;
   Lwt_main.run
     (let* _ = Sihl.Core.Container.start_services services in
      let* () = Service.Migration.run_all ctx in

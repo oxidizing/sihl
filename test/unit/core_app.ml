@@ -15,11 +15,7 @@ module Database = struct
   ;;
 
   let lifecycle = Sihl.Core.Container.Lifecycle.create ~start ~stop "database"
-
-  let configure configuration =
-    let configuration = Sihl.Core.Configuration.make configuration in
-    Sihl.Core.Container.Service.create ~configuration lifecycle
-  ;;
+  let register () = Sihl.Core.Container.Service.create lifecycle
 end
 
 let user_service_running = ref false
@@ -49,10 +45,7 @@ module UserService = struct
         Lwt.return_unit)
   ;;
 
-  let configure configuration =
-    let configuration = Sihl.Core.Configuration.make configuration in
-    Sihl.Core.Container.Service.create ~configuration ~commands:[ ban ] lifecycle
-  ;;
+  let register () = Sihl.Core.Container.Service.create ~commands:[ ban ] lifecycle
 end
 
 let order_service_running = ref false
@@ -82,19 +75,18 @@ module OrderService = struct
         Lwt.return_unit)
   ;;
 
-  let configure configuration =
-    let configuration = Sihl.Core.Configuration.make configuration in
-    Sihl.Core.Container.Service.create ~configuration ~commands:[ order ] lifecycle
-  ;;
+  let register () = Sihl.Core.Container.Service.create ~commands:[ order ] lifecycle
 end
 
 let run_user_command _ () =
   database_running := false;
   user_service_running := false;
   order_service_running := false;
+  let set_config _ = Lwt.return @@ Unix.putenv "CREATE_ADMIN" "admin" in
   let* () =
     Sihl.Core.App.empty
-    |> Sihl.Core.App.with_services [ UserService.configure [ "CREATE_ADMIN", "admin" ] ]
+    |> Sihl.Core.App.with_services [ UserService.register () ]
+    |> Sihl.Core.App.before_start set_config
     |> Sihl.Core.App.run' ~args:[ "ban" ]
   in
   Alcotest.(check bool "database is running" !database_running true);
@@ -107,10 +99,11 @@ let run_order_command _ () =
   database_running := false;
   user_service_running := false;
   order_service_running := false;
+  let set_config _ = Lwt.return @@ Unix.putenv "ORDER_NOTIFICATION_URL" "https://" in
   let* () =
     Sihl.Core.App.empty
-    |> Sihl.Core.App.with_services
-         [ OrderService.configure [ "ORDER_NOTIFICATION_URL", "https://" ] ]
+    |> Sihl.Core.App.with_services [ OrderService.register () ]
+    |> Sihl.Core.App.before_start set_config
     |> Sihl.Core.App.run' ~args:[ "order" ]
   in
   Alcotest.(check bool "database is running" !database_running true);

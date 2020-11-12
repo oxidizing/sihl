@@ -186,10 +186,9 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
       ~stop
   ;;
 
-  let configure migrations configuration =
+  let register ?(migrations = []) () =
     register_migrations migrations;
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration ~commands:[ migrate_cmd ] lifecycle
+    Core.Container.Service.create ~commands:[ migrate_cmd ] lifecycle
   ;;
 end
 

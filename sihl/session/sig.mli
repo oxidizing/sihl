@@ -22,5 +22,5 @@ module type SERVICE = sig
   val find_opt : Core.Ctx.t -> key:string -> Model.t option Lwt.t
   val find : Core.Ctx.t -> key:string -> Model.t Lwt.t
   val find_all : Core.Ctx.t -> Model.t list Lwt.t
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

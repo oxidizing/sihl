@@ -53,9 +53,6 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   let configurations =
     List.map (fun service -> Container.Service.configuration service) app.services
   in
-  List.iter
-    (fun configuration -> configuration |> Configuration.data |> Configuration.store)
-    configurations;
   let* file_configuration = Configuration.read_env_file () in
   Configuration.store file_configuration;
   Configuration.require configurations;

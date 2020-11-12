@@ -65,9 +65,5 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
 
   let stop _ = Lwt.return ()
   let lifecycle = Core.Container.Lifecycle.create ~dependencies:[] "token" ~start ~stop
-
-  let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration lifecycle
-  ;;
+  let register () = Core.Container.Service.create lifecycle
 end

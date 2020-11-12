@@ -79,7 +79,7 @@ module type SERVICE = sig
   (** Create and store new user.
 
       Provide [password_policy] to check whether the password fulfills certain criteria. *)
-  val register
+  val register_user
     :  Core.Ctx.t
     -> ?password_policy:(string -> (unit, string) result)
     -> ?username:string
@@ -96,5 +96,5 @@ module type SERVICE = sig
     -> password:string
     -> (Model.t, string) Result.t Lwt.t
 
-  val configure : Core.Configuration.data -> Core.Container.Service.t
+  val register : unit -> Core.Container.Service.t
 end

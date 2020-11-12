@@ -135,7 +135,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     Lwt.return user
   ;;
 
-  let register
+  let register_user
       ctx
       ?(password_policy = User.default_password_policy)
       ?username
@@ -190,8 +190,5 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     Core.Container.Lifecycle.create "user" ~dependencies:Repo.lifecycles ~start ~stop
   ;;
 
-  let configure configuration =
-    let configuration = Core.Configuration.make configuration in
-    Core.Container.Service.create ~configuration ~commands:[ create_admin_cmd ] lifecycle
-  ;;
+  let register () = Core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
 end
