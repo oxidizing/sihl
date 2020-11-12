@@ -49,7 +49,7 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let insert_file ctx ~file =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request file |> Lwt.map Result.get_ok)
+        Connection.exec insert_request file |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let update_file_request =
@@ -69,7 +69,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let update_file ctx ~file =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_file_request file |> Lwt.map Result.get_ok)
+        Connection.exec update_file_request file
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let get_file_request =
@@ -91,7 +92,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let get_file ctx ~id =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_file_request id |> Lwt.map Result.get_ok)
+        Connection.find_opt get_file_request id
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let delete_file_request =
@@ -106,7 +108,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let delete_file ctx ~id =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_file_request id |> Lwt.map Result.get_ok)
+        Connection.exec delete_file_request id
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let get_blob_request =
@@ -124,7 +127,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let get_blob ctx ~id =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_blob_request id |> Lwt.map Result.get_ok)
+        Connection.find_opt get_blob_request id
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let insert_blob_request =
@@ -144,7 +148,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let insert_blob ctx ~id ~blob =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_blob_request (id, blob) |> Lwt.map Result.get_ok)
+        Connection.exec insert_blob_request (id, blob)
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let update_blob_request =
@@ -161,7 +166,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let update_blob ctx ~id ~blob =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_blob_request (id, blob) |> Lwt.map Result.get_ok)
+        Connection.exec update_blob_request (id, blob)
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let delete_blob_request =
@@ -177,7 +183,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
   let delete_blob ctx ~id =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_blob_request id |> Lwt.map Result.get_ok)
+        Connection.exec delete_blob_request id
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let clean_handles_request =
@@ -190,7 +197,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
 
   let clean_handles ctx =
     Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_handles_request () |> Lwt.map Result.get_ok)
+        Connection.exec clean_handles_request ()
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let clean_blobs_request =
@@ -203,7 +211,8 @@ module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) :
 
   let clean_blobs ctx =
     Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_blobs_request () |> Lwt.map Result.get_ok)
+        Connection.exec clean_blobs_request ()
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let fix_collation =

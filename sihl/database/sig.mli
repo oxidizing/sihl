@@ -4,6 +4,9 @@ module Core = Sihl_core
 module type SERVICE = sig
   include Core.Container.Service.Sig
 
+  (** [raise_error err] raises a printable caqti error [err] .*)
+  val raise_error : ('a, Caqti_error.t) Result.t -> 'a
+
   (** [fetch_pool ()] returns the connection pool. *)
   val fetch_pool : unit -> pool
 

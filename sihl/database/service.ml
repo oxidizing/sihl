@@ -22,6 +22,12 @@ let schema =
   make [ string "DATABASE_URL"; optional (int ~default:5 "DATABASE_POOL_SIZE") ] config
 ;;
 
+let raise_error err =
+  match err with
+  | Error err -> raise (Exception (Caqti_error.show err))
+  | Ok result -> result
+;;
+
 let print_pool_usage pool =
   let n_connections = Caqti_lwt.Pool.size pool in
   let max_connections =

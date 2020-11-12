@@ -21,7 +21,8 @@ module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struc
 
     let find_all ctx =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.collect_list find_all_request () |> Lwt.map Result.get_ok)
+          Connection.collect_list find_all_request ()
+          |> Lwt.map Database.Service.raise_error)
     ;;
 
     let find_opt_request =
@@ -40,7 +41,7 @@ module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struc
 
     let find_opt ctx ~key =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_opt_request key |> Lwt.map Result.get_ok)
+          Connection.find_opt find_opt_request key |> Lwt.map Database.Service.raise_error)
     ;;
 
     let insert_request =
@@ -61,7 +62,7 @@ module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struc
 
     let insert ctx session =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request session |> Lwt.map Result.get_ok)
+          Connection.exec insert_request session |> Lwt.map Database.Service.raise_error)
     ;;
 
     let update_request =
@@ -77,7 +78,7 @@ module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struc
 
     let update ctx session =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request session |> Lwt.map Result.get_ok)
+          Connection.exec update_request session |> Lwt.map Database.Service.raise_error)
     ;;
 
     let delete_request =
@@ -91,7 +92,7 @@ module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struc
 
     let delete ctx ~key =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec delete_request key |> Lwt.map Result.get_ok)
+          Connection.exec delete_request key |> Lwt.map Database.Service.raise_error)
     ;;
 
     let clean_request =
@@ -104,7 +105,7 @@ module MakeMariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = struc
 
     let clean ctx =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Result.get_ok)
+          Connection.exec clean_request () |> Lwt.map Database.Service.raise_error)
     ;;
   end
 
@@ -160,7 +161,8 @@ module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = st
 
     let find_all ctx =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.collect_list find_all_request () |> Lwt.map Result.get_ok)
+          Connection.collect_list find_all_request ()
+          |> Lwt.map Database.Service.raise_error)
     ;;
 
     let find_opt_request =
@@ -179,7 +181,7 @@ module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = st
 
     let find_opt ctx ~key =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_opt_request key |> Lwt.map Result.get_ok)
+          Connection.find_opt find_opt_request key |> Lwt.map Database.Service.raise_error)
     ;;
 
     let insert_request =
@@ -200,7 +202,7 @@ module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = st
 
     let insert ctx session =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request session |> Lwt.map Result.get_ok)
+          Connection.exec insert_request session |> Lwt.map Database.Service.raise_error)
     ;;
 
     let update_request =
@@ -216,7 +218,7 @@ module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = st
 
     let update ctx session =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request session |> Lwt.map Result.get_ok)
+          Connection.exec update_request session |> Lwt.map Database.Service.raise_error)
     ;;
 
     let delete_request =
@@ -230,7 +232,7 @@ module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = st
 
     let delete ctx ~key =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec delete_request key |> Lwt.map Result.get_ok)
+          Connection.exec delete_request key |> Lwt.map Database.Service.raise_error)
     ;;
 
     let clean_request =
@@ -243,7 +245,7 @@ module MakePostgreSql (MigrationService : Migration.Sig.SERVICE) : Sig.REPO = st
 
     let clean ctx =
       Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Result.get_ok)
+          Connection.exec clean_request () |> Lwt.map Database.Service.raise_error)
     ;;
   end
 

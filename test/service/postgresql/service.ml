@@ -1,7 +1,7 @@
 (* Essential services *)
 module Database = Sihl.Database.Service
 module Repository = Sihl.Repository.Service
-module MigrationRepo = Sihl.Migration.Service.Repo.MakePostgreSql (Database)
+module MigrationRepo = Sihl.Migration.Service.Repo.PostgreSql
 module Migration = Sihl.Migration.Service.Make (MigrationRepo)
 
 (* Repositories *)

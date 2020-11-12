@@ -91,7 +91,9 @@ CREATE TABLE IF NOT EXISTS user_users (
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request = Caqti_request.collect ~oneshot:true pt Model.t query in
-        let* users = Connection.collect_list request pv |> Lwt.map Result.get_ok in
+        let* users =
+          Connection.collect_list request pv |> Lwt.map Database.Service.raise_error
+        in
         let request =
           Caqti_request.find
             ~oneshot:true
@@ -101,7 +103,7 @@ CREATE TABLE IF NOT EXISTS user_users (
         in
         let* meta =
           Connection.find request ()
-          |> Lwt.map Result.get_ok
+          |> Lwt.map Database.Service.raise_error
           |> Lwt.map (fun total -> Repository.Meta.make ~total)
         in
         Lwt.return (users, meta))
@@ -135,7 +137,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get ctx ~id =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id |> Lwt.map Result.get_ok)
+        Connection.find_opt get_request id |> Lwt.map Database.Service.raise_error)
   ;;
 
   let get_by_email_request =
@@ -166,7 +168,8 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get_by_email ctx ~email =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email |> Lwt.map Result.get_ok)
+        Connection.find_opt get_by_email_request email
+        |> Lwt.map Database.Service.raise_error)
   ;;
 
   let insert_request =
@@ -198,7 +201,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let insert ctx ~user =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request user |> Lwt.map Result.get_ok)
+        Connection.exec insert_request user |> Lwt.map Database.Service.raise_error)
   ;;
 
   let update_request =
@@ -220,14 +223,14 @@ CREATE TABLE IF NOT EXISTS user_users (
   let update ctx ~user =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request user |> Lwt.map Result.get_ok)
+        Connection.exec update_request user |> Lwt.map Database.Service.raise_error)
   ;;
 
   let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE user_users;"
 
   let clean ctx =
     Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Result.get_ok)
+        Connection.exec clean_request () |> Lwt.map Database.Service.raise_error)
   ;;
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
@@ -306,7 +309,9 @@ CREATE TABLE IF NOT EXISTS user_users (
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let request = Caqti_request.collect ~oneshot:true pt Model.t query in
-        let* users = Connection.collect_list request pv |> Lwt.map Result.get_ok in
+        let* users =
+          Connection.collect_list request pv |> Lwt.map Database.Service.raise_error
+        in
         (* TODO Find out best way to get total rows for that query without limit *)
         let meta = Repository.Meta.make ~total:(List.length users) in
         Lwt.return @@ (users, meta))
@@ -334,7 +339,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get ctx ~id =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id |> Lwt.map Result.get_ok)
+        Connection.find_opt get_request id |> Lwt.map Database.Service.raise_error)
   ;;
 
   let get_by_email_request =
@@ -359,7 +364,8 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get_by_email ctx ~email =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email |> Lwt.map Result.get_ok)
+        Connection.find_opt get_by_email_request email
+        |> Lwt.map Database.Service.raise_error)
   ;;
 
   let insert_request =
@@ -391,7 +397,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let insert ctx ~user =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request user |> Lwt.map Result.get_ok)
+        Connection.exec insert_request user |> Lwt.map Database.Service.raise_error)
   ;;
 
   let update_request =
@@ -414,7 +420,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let update ctx ~user =
     Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request user |> Lwt.map Result.get_ok)
+        Connection.exec update_request user |> Lwt.map Database.Service.raise_error)
   ;;
 
   let clean_request =
@@ -423,7 +429,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 
   let clean ctx =
     Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Result.get_ok)
+        Connection.exec clean_request () |> Lwt.map Database.Service.raise_error)
   ;;
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())

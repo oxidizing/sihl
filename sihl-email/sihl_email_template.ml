@@ -97,7 +97,8 @@ module Repo = struct
 
       let get ctx ~id =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.find_opt get_request id |> Lwt.map Result.get_ok)
+            Connection.find_opt get_request id
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let get_by_name_request =
@@ -124,7 +125,8 @@ module Repo = struct
 
       let get_by_name ctx ~name =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.find_opt get_by_name_request name |> Lwt.map Result.get_ok)
+            Connection.find_opt get_by_name_request name
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let insert_request =
@@ -149,7 +151,8 @@ module Repo = struct
 
       let insert ctx ~template =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.exec insert_request template |> Lwt.map Result.get_ok)
+            Connection.exec insert_request template
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let update_request =
@@ -168,7 +171,8 @@ module Repo = struct
 
       let update ctx ~template =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.exec update_request template |> Lwt.map Result.get_ok)
+            Connection.exec update_request template
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let clean_request =
@@ -181,7 +185,7 @@ module Repo = struct
 
       let clean ctx =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.exec clean_request () |> Lwt.map Result.get_ok)
+            Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
     end
 
@@ -250,7 +254,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
       let get ctx ~id =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.find_opt get_request id |> Lwt.map Result.get_ok)
+            Connection.find_opt get_request id
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let get_by_name_request =
@@ -271,7 +276,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
       let get_by_name ctx ~name =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.find_opt get_by_name_request name |> Lwt.map Result.get_ok)
+            Connection.find_opt get_by_name_request name
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let insert_request =
@@ -296,7 +302,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
       let insert ctx ~template =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.exec insert_request template |> Lwt.map Result.get_ok)
+            Connection.exec insert_request template
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let update_request =
@@ -315,7 +322,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
       let update ctx ~template =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.exec update_request template |> Lwt.map Result.get_ok)
+            Connection.exec update_request template
+            |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
 
       let clean_request =
@@ -324,7 +332,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
       let clean ctx =
         Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-            Connection.exec clean_request () |> Lwt.map Result.get_ok)
+            Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
     end
 

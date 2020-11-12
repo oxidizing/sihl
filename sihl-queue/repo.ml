@@ -101,7 +101,8 @@ struct
   let enqueue ctx ~job_instance =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec enqueue_request job_instance |> Lwt.map Result.get_ok)
+        Connection.exec enqueue_request job_instance
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let update_request =
@@ -124,7 +125,8 @@ struct
   let update ctx ~job_instance =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request job_instance |> Lwt.map Result.get_ok)
+        Connection.exec update_request job_instance
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let find_workable_request =
@@ -152,7 +154,8 @@ struct
   let find_workable ctx =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list find_workable_request () |> Lwt.map Result.get_ok)
+        Connection.collect_list find_workable_request ()
+        |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   let clean_request =
@@ -166,7 +169,7 @@ struct
   let clean ctx =
     Sihl.Database.Service.query ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt.map Result.get_ok)
+        Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
   ;;
 
   module Migration = struct

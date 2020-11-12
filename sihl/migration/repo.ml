@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
 
   let create_table_if_not_exists ctx =
     Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec create_request () |> Lwt.map Result.get_ok)
+        Connection.exec create_request () |> Lwt.map Database.Service.raise_error)
   ;;
 
   let get_request =
@@ -35,7 +35,7 @@ WHERE namespace = ?;
 
   let get ctx ~namespace =
     Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt get_request namespace |> Lwt.map Result.get_ok)
+        Connection.find_opt get_request namespace |> Lwt.map Database.Service.raise_error)
     |> Lwt.map (Option.map Model.of_tuple)
   ;;
 
@@ -59,13 +59,12 @@ dirty = VALUES(dirty)
 
   let upsert ctx ~state =
     Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec upsert_request (Model.to_tuple state) |> Lwt.map Result.get_ok)
+        Connection.exec upsert_request (Model.to_tuple state)
+        |> Lwt.map Database.Service.raise_error)
   ;;
 end
 
-module MakePostgreSql (Database : Database.Sig.SERVICE) : Sig.REPO = struct
-  module Database = Database
-
+module PostgreSql : Sig.REPO = struct
   let create_request =
     Caqti_request.exec
       Caqti_type.unit
@@ -79,8 +78,8 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
   ;;
 
   let create_table_if_not_exists ctx =
-    Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec create_request () |> Lwt.map Result.get_ok)
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec create_request () |> Lwt.map Database.Service.raise_error)
   ;;
 
   let get_request =
@@ -98,8 +97,8 @@ WHERE namespace = ?;
   ;;
 
   let get ctx ~namespace =
-    Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt get_request namespace |> Lwt.map Result.get_ok)
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.find_opt get_request namespace |> Lwt.map Database.Service.raise_error)
     |> Lwt.map (Option.map Model.of_tuple)
   ;;
 
@@ -122,7 +121,8 @@ dirty = EXCLUDED.dirty
   ;;
 
   let upsert ctx ~state =
-    Database.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec upsert_request (Model.to_tuple state) |> Lwt.map Result.get_ok)
+    Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec upsert_request (Model.to_tuple state)
+        |> Lwt.map Database.Service.raise_error)
   ;;
 end

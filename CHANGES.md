@@ -1,11 +1,8 @@
 # Changelog
 
-## [0.1.8] - ?
+## [0.1.8] - 2020-11-12
 ### Fixed
-- Replace memory and console email backends with smart interception based on `SIHL_ENV`, `EMAIL_BYPASS_INTERCEPT`, and `EMAIL_CONSOLE`
-
-### Added
-- Make it possible to directly access `Sihl.Core.*` going through `Sihl.*`
+- Get rid of `Result.get_ok` because it swallows errors
 
 ## [0.1.7] - 2020-11-03
 ### Fixed
