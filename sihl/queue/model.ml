@@ -133,7 +133,11 @@ module JobInstance = struct
 
   let update_next_run_at job job_instance =
     let delay = job |> WorkableJob.retry_delay |> Utils.Time.duration_to_span in
-    let next_run_at = Option.get (Ptime.add_span job_instance.next_run_at delay) in
+    let next_run_at =
+      match Ptime.add_span job_instance.next_run_at delay with
+      | Some date -> date
+      | None -> failwith "Can not determine next run date of job"
+    in
     { job_instance with next_run_at }
   ;;
 

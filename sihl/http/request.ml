@@ -35,7 +35,10 @@ let to_json t =
 
 let to_json_exn t =
   let* json = to_json t in
-  Lwt.return (Option.get json)
+  Lwt.return
+    (match json with
+    | Some json -> json
+    | None -> failwith "Failed to create request from json")
 ;;
 
 let to_urlencoded t =
@@ -197,12 +200,19 @@ let urlencoded key t =
 let urlencoded_exn key t =
   let open Lwt.Syntax in
   let+ o = urlencoded key t in
-  Option.get o
+  match o with
+  | Some o -> o
+  | None -> failwith ("Could not get urlencoded with key: " ^ key)
 ;;
 
 let query_list t = t.request |> Cohttp.Request.uri |> Uri.query
 let query key t = query_list t |> find_in_query key
-let query_exn key t = query key t |> Option.get
+
+let query_exn key t =
+  match query key t with
+  | Some o -> o
+  | None -> failwith ("Can not get query string with key: " ^ key)
+;;
 
 let key : string Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("id", Sexplib.Std.sexp_of_string)

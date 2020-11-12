@@ -1,10 +1,6 @@
 open Lwt.Syntax
 
-let log_src =
-  Logs.Src.create
-    ~doc:"Service container that knows how to start and stop services"
-    "sihl.container"
-;;
+let log_src = Logs.Src.create "sihl.container"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -79,13 +75,19 @@ let top_sort_lifecycles lifecycles =
   in
   match Tsort.sort lifecycle_graph with
   | Tsort.Sorted sorted ->
-    sorted |> List.map (fun name -> Map.find_opt name lifecycles |> Option.get)
+    sorted
+    |> List.map (fun name ->
+           match Map.find_opt name lifecycles with
+           | Some l -> l
+           | None ->
+             Logs.err (fun m -> m "Failed to sort lifecycle of: %s" name);
+             raise (Exception "Dependency graph not sortable"))
   | Tsort.ErrorCycle remaining_names ->
     let msg = String.concat ", " remaining_names in
     raise
       (Exception
-         ("CONTAINER: Cycle detected while starting services. These are the services \
-           after the cycle: "
+         ("Cycle detected while starting services. These are the services after the \
+           cycle: "
          ^ msg))
 ;;
 

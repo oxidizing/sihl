@@ -39,7 +39,11 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     let value = Core.Random.base64 ~nr:length in
     let expires_in = Utils.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
-    let expires_at = Option.get (Ptime.add_span now expires_in) in
+    let expires_at =
+      match Ptime.add_span now expires_in with
+      | Some expires_at -> expires_at
+      | None -> failwith ("Could not parse expiry date for token with id " ^ id)
+    in
     let status = Model.Status.Active in
     let created_at = Ptime_clock.now () in
     Model.make ~id ~value ~data ~kind ~status ~expires_at ~created_at
