@@ -24,5 +24,3 @@ val get_error : t -> string list
 val get_warning : t -> string list
 val get_success : t -> string list
 val get_info : t -> string list
-val get : Core.Ctx.t -> t option
-val ctx_add : t -> Core.Ctx.t -> Core.Ctx.t

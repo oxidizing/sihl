@@ -20,9 +20,6 @@ module Message = struct
   let get_warning message = message.warning
   let get_success message = message.success
   let get_info message = message.info
-  let ctx_key : t Core.Ctx.key = Core.Ctx.create_key ()
-  let ctx_add message ctx = Core.Ctx.add ctx_key message ctx
-  let get ctx = Core.Ctx.find ctx_key ctx
 end
 
 module Entry = struct

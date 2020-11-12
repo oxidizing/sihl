@@ -2,7 +2,7 @@ module Http = Sihl_http
 module Message = Sihl_message
 open Lwt.Syntax
 
-let log_src = Logs.Src.create ~doc:"Message Middleware" "sihl.middleware.message"
+let log_src = Logs.Src.create "sihl.middleware.message"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -10,6 +10,7 @@ let key : Message.t Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("message", Message.sexp_of_t)
 ;;
 
+let find req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
 let find_opt req = Opium_kernel.Hmap.find key (Opium_kernel.Request.env req)
 
 let set message req =
