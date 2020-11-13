@@ -20,7 +20,7 @@ module type SERVICE = sig
   (** Run all registered repository cleaners.
 
       Use this carefully, running [clean_all] leads to data loss! *)
-  val clean_all : Core.Ctx.t -> unit Lwt.t
+  val clean_all : unit -> unit Lwt.t
 
   val register : ?cleaners:Model.cleaner list -> unit -> Core.Container.Service.t
 end

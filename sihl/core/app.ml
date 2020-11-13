@@ -6,10 +6,10 @@ module Logger = (val Logs.src_log log_src : Logs.LOG)
 
 type t =
   { services : Container.Service.t list
-  ; before_start : Ctx.t -> unit Lwt.t
-  ; after_start : Ctx.t -> unit Lwt.t
-  ; before_stop : Ctx.t -> unit Lwt.t
-  ; after_stop : Ctx.t -> unit Lwt.t
+  ; before_start : unit -> unit Lwt.t
+  ; after_start : unit -> unit Lwt.t
+  ; before_stop : unit -> unit Lwt.t
+  ; after_stop : unit -> unit Lwt.t
   }
 
 let empty =

@@ -18,8 +18,7 @@ struct
 
   let get_request_yields_token _ () =
     let req = Sihl.Http.Request.get "" in
-    let ctx = Sihl.Http.Request.to_ctx req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler req =
       let token_value = Sihl.Middleware.Csrf.find req in
       Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
@@ -32,8 +31,7 @@ struct
 
   let get_request_without_token_succeeds _ () =
     let req = Sihl.Http.Request.get "" in
-    let ctx = Sihl.Http.Request.to_ctx req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler _ = Lwt.return @@ Sihl.Http.Response.create () in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler req in
@@ -44,8 +42,7 @@ struct
 
   let two_get_requests_yield_same_token _ () =
     let req = Sihl.Http.Request.get "" in
-    let ctx = Sihl.Http.Request.to_ctx req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let token_ref1 = ref "" in
     let token_ref2 = ref "" in
     let handler tkn req =
@@ -88,8 +85,7 @@ struct
 
   let post_request_yields_token _ () =
     let post_req = Sihl.Http.Request.post "/foo" in
-    let ctx = Sihl.Http.Request.to_ctx post_req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler req =
       let token_value = Sihl.Middleware.Csrf.find req in
       Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
@@ -102,8 +98,7 @@ struct
 
   let post_request_without_token_fails _ () =
     let post_req = Sihl.Http.Request.post "/foo" in
-    let ctx = Sihl.Http.Request.to_ctx post_req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler _ = Lwt.return @@ Sihl.Http.Response.create () in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
@@ -116,8 +111,7 @@ struct
     let post_req =
       Sihl.Http.Request.of_urlencoded ~body:[ "csrf", [ "invalid_token" ] ] "/foo" `POST
     in
-    let ctx = Sihl.Http.Request.to_ctx post_req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler _ = Lwt.return @@ Sihl.Http.Response.create () in
     let wrapped_handler = apply_middlewares handler in
     Lwt.catch
@@ -134,8 +128,7 @@ struct
     let post_req =
       Sihl.Http.Request.of_urlencoded ~body:[ "csrf", [ "aGVsbG8=" ] ] "/foo" `POST
     in
-    let ctx = Sihl.Http.Request.to_ctx post_req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler _ = Lwt.return @@ Sihl.Http.Response.create () in
     let wrapped_handler = apply_middlewares handler in
     Lwt.catch
@@ -149,8 +142,7 @@ struct
 
   let post_request_with_nonmatching_token_fails _ () =
     let req = Sihl.Http.Request.get "" in
-    let ctx = Sihl.Http.Request.to_ctx req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let token_ref = ref "" in
     let handler req =
       token_ref := Sihl.Middleware.Csrf.find req;
@@ -182,8 +174,7 @@ struct
         "/foo"
         `POST
     in
-    let ctx = Sihl.Http.Request.to_ctx post_req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let handler _ = Lwt.return @@ Sihl.Http.Response.create () in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
@@ -195,8 +186,7 @@ struct
   let post_request_with_valid_token_succeeds _ () =
     (* Do GET to set a token *)
     let req = Sihl.Http.Request.get "" in
-    let ctx = Sihl.Http.Request.to_ctx req in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let token_ref = ref "" in
     let session_req = ref None in
     let handler req =
@@ -227,7 +217,7 @@ struct
     let session = Sihl.Middleware.Session.find req in
     let token_id = Sihl.Session.get "csrf" session in
     let token_id = Option.get token_id in
-    let* token = TokenService.find_by_id_opt ctx token_id in
+    let* token = TokenService.find_by_id_opt token_id in
     Alcotest.(check (option Sihl.Token.alco) "Token is invalidated" None token);
     Lwt.return ()
   ;;

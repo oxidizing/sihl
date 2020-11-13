@@ -10,11 +10,10 @@ module Sig = Sig
 
 val create_job
   :  name:string
-  -> ?with_context:(Core.Ctx.t -> Core.Ctx.t)
   -> input_to_string:('a -> string option)
   -> string_to_input:(string option -> ('a, string) Result.t)
-  -> handle:(Core.Ctx.t -> input:'a -> (unit, string) Result.t Lwt.t)
-  -> ?failed:(Core.Ctx.t -> (unit, string) Result.t Lwt.t)
+  -> handle:(input:'a -> (unit, string) Result.t Lwt.t)
+  -> ?failed:(unit -> (unit, string) Result.t Lwt.t)
   -> unit
   -> 'a Model.Job.t
 

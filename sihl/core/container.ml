@@ -7,8 +7,8 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 exception Exception of string
 
 module Lifecycle = struct
-  type start = Ctx.t -> Ctx.t Lwt.t
-  type stop = Ctx.t -> unit Lwt.t
+  type start = unit -> unit Lwt.t
+  type stop = unit -> unit Lwt.t
 
   type t =
     { name : string
@@ -95,22 +95,21 @@ let start_services services =
   Logs.debug (fun m -> m "Starting Sihl");
   let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
-  let ctx = Ctx.create () in
-  let rec loop ctx lifecycles =
+  let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
       Logs.debug (fun m -> m "Starting service: %s" lifecycle.Lifecycle.name);
       let f = lifecycle.start in
-      let* ctx = f ctx in
-      loop ctx lifecycles
-    | [] -> Lwt.return ctx
+      let* () = f () in
+      loop lifecycles
+    | [] -> Lwt.return ()
   in
-  let* ctx = loop ctx lifecycles in
+  let* () = loop lifecycles in
   Logs.debug (fun m -> m "All services online. Ready for Takeoff!");
-  Lwt.return (lifecycles, ctx)
+  Lwt.return lifecycles
 ;;
 
-let stop_services ctx services =
+let stop_services services =
   Logs.debug (fun m -> m "Stopping Sihl");
   let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
   let lifecycles = lifecycles |> top_sort_lifecycles in
@@ -119,7 +118,7 @@ let stop_services ctx services =
     | lifecycle :: lifecycles ->
       Logs.debug (fun m -> m "Stopping service: %s" lifecycle.Lifecycle.name);
       let f = lifecycle.stop in
-      let* () = f ctx in
+      let* () = f () in
       loop lifecycles
     | [] -> Lwt.return ()
   in

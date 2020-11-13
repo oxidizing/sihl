@@ -12,23 +12,23 @@ end
 let register_cleaner cleaner = Registry.register cleaner |> ignore
 let register_cleaners cleaners = Registry.register_cleaners cleaners |> ignore
 
-let clean_all ctx =
+let clean_all () =
   let cleaners = Registry.get_all () in
   let rec clean_repos cleaners =
     match cleaners with
     | [] -> Lwt.return ()
     | cleaner :: cleaners ->
-      let* () = cleaner ctx in
+      let* () = cleaner () in
       clean_repos cleaners
   in
   clean_repos cleaners
 ;;
 
-let start ctx = Lwt.return ctx
+let start () = Lwt.return ()
 let stop _ = Lwt.return ()
-let lifecycle = Core.Container.Lifecycle.create "repo" ~start ~stop
+let lifecycle = Sihl_core.Container.Lifecycle.create "repo" ~start ~stop
 
 let register ?(cleaners = []) () =
   register_cleaners cleaners;
-  Core.Container.Service.create lifecycle
+  Sihl_core.Container.Service.create lifecycle
 ;;

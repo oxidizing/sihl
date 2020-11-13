@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.9] - ?
+### Fixed
+- Get rid of `Core.Ctx.t`
+
 ## [0.1.8] - 2020-11-12
 ### Fixed
 - Get rid of `Result.get_ok` because it swallows errors

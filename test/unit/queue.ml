@@ -5,7 +5,7 @@ let should_run_job _ () =
       ~name:"foo"
       ~input_to_string:(fun _ -> None)
       ~string_to_input:(fun _ -> Ok None)
-      ~handle:(fun _ ~input:_ -> Lwt_result.return ())
+      ~handle:(fun ~input:_ -> Lwt_result.return ())
       ~failed:(fun _ -> Lwt_result.return ())
       ()
     |> Sihl.Queue.set_max_tries 3

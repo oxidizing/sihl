@@ -12,13 +12,13 @@ module type SERVICE = sig
 
   (** [query ctx f] runs the query [f] on the connection pool and returns the result. If
       the query fails the Lwt.t fails as well. *)
-  val query : Core.Ctx.t -> (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
+  val query : (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
 
   (** [transaction ctx f] runs the query [f] on the connection pool in a transaction and
       returns the result. If the query fails the Lwt.t fails as well and the transaction
       gets rolled back. If the database driver doesn't support transactions, [transaction]
       gracefully becomes [query]. *)
-  val transaction : Core.Ctx.t -> (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
+  val transaction : (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
 
   val register : unit -> Core.Container.Service.t
 end

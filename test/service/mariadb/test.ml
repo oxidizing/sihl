@@ -13,7 +13,7 @@ module PasswordReset =
 module Queue = Test_case.Queue.Make (Service.Queue)
 module Csrf = Test_case.Csrf.Make (Service.Token) (Service.Session)
 
-let test_suite ctx =
+let test_suite =
   [ Database.test_suite
   ; Token.test_suite
   ; Session.test_suite
@@ -21,9 +21,8 @@ let test_suite ctx =
   ; User.test_suite
   ; Email.test_suite
   ; PasswordReset.test_suite
-  ; (* We need to add the DB Pool to the scheduler context *)
-    Csrf.test_suite (* Put queue tests last because of slowness *)
-  ; Queue.test_suite ctx
+  ; Csrf.test_suite (* Put queue tests last because of slowness *)
+  ; Queue.test_suite
   ]
 ;;
 
@@ -42,9 +41,8 @@ let services =
 let () =
   Unix.putenv "DATABASE_URL" "mariadb://admin:password@127.0.0.1:3306/dev";
   Logs.set_reporter (Sihl.Core.Log.default_reporter ());
-  let ctx = Sihl.Core.Ctx.create () in
   Lwt_main.run
     (let* _ = Sihl.Core.Container.start_services services in
-     let* () = Service.Migration.run_all ctx in
-     run "mariadb" @@ test_suite ctx)
+     let* () = Service.Migration.run_all () in
+     run "mariadb" @@ test_suite)
 ;;

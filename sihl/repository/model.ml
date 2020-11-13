@@ -1,6 +1,4 @@
-module Core = Sihl_core
-
-type cleaner = Core.Ctx.t -> unit Lwt.t
+type cleaner = unit -> unit Lwt.t
 
 module Meta = struct
   type t = { total : int } [@@deriving show, eq, fields, make]

@@ -21,7 +21,6 @@
    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
    THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Core = Sihl_core
 open Lwt.Syntax
 include Opium_kernel.Rock.Request
 
@@ -212,23 +211,6 @@ let query_exn key t =
   match query key t with
   | Some o -> o
   | None -> failwith ("Can not get query string with key: " ^ key)
-;;
-
-let key : string Opium_kernel.Hmap.key =
-  Opium_kernel.Hmap.Key.create ("id", Sexplib.Std.sexp_of_string)
-;;
-
-let find req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
-
-let find_opt req =
-  try Some (find req) with
-  | _ -> None
-;;
-
-let to_ctx req =
-  match find_opt req with
-  | Some id -> Core.Ctx.create ~id ()
-  | None -> Core.Ctx.create ()
 ;;
 
 let is_get req =

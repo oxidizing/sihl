@@ -9,10 +9,10 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 exception Exception of string
 
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
-  let find_opt ctx ~user_id = Repo.get ctx ~id:user_id
+  let find_opt ~user_id = Repo.get ~id:user_id
 
-  let find ctx ~user_id =
-    let* m_user = find_opt ctx ~user_id in
+  let find ~user_id =
+    let* m_user = find_opt ~user_id in
     match m_user with
     | Some user -> Lwt.return user
     | None ->
@@ -20,17 +20,17 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       raise (Exception "User not found")
   ;;
 
-  let find_by_email_opt ctx ~email =
+  let find_by_email_opt ~email =
     (* TODO add support for lowercase UTF-8
      * String.lowercase only supports US-ASCII, but
      * email addresses can contain other letters
      * (https://tools.ietf.org/html/rfc6531) like umlauts.
      *)
-    Repo.get_by_email ctx ~email:(String.lowercase_ascii email)
+    Repo.get_by_email ~email:(String.lowercase_ascii email)
   ;;
 
-  let find_by_email ctx ~email =
-    let* user = find_by_email_opt ctx ~email in
+  let find_by_email ~email =
+    let* user = find_by_email_opt ~email in
     match user with
     | Some user -> Lwt.return user
     | None ->
@@ -38,10 +38,9 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       raise (Exception "User not found")
   ;;
 
-  let find_all ctx ~query = Repo.get_all ctx ~query
+  let find_all ~query = Repo.get_all ~query
 
   let update_password
-      ctx
       ?(password_policy = User.default_password_policy)
       ~user
       ~old_password
@@ -66,19 +65,18 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
               m "USER: Can not update password of user %s: %s" (User.email user) msg);
           raise (Exception msg)
       in
-      let* () = Repo.update ~user:updated_user ctx in
+      let* () = Repo.update ~user:updated_user in
       Lwt.return @@ Ok updated_user
     | Error msg -> Lwt.return @@ Error msg
   ;;
 
-  let update_details ctx ~user ~email ~username =
+  let update_details ~user ~email ~username =
     let updated_user = User.set_user_details user ~email ~username in
-    let* () = Repo.update ctx ~user:updated_user in
-    find ctx ~user_id:(User.id user)
+    let* () = Repo.update ~user:updated_user in
+    find ~user_id:(User.id user)
   ;;
 
   let set_password
-      ctx
       ?(password_policy = User.default_password_policy)
       ~user
       ~password
@@ -100,22 +98,22 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
               m "USER: Can not set password of user %s: %s" (User.email user) msg);
           raise (Exception msg)
       in
-      let* () = Repo.update ctx ~user:updated_user in
+      let* () = Repo.update ~user:updated_user in
       Lwt_result.return updated_user
   ;;
 
-  let create_user ctx ~email ~password ~username =
+  let create_user ~email ~password ~username =
     let user =
       match User.create ~email ~password ~username ~admin:false ~confirmed:false with
       | Ok user -> user
       | Error msg -> raise (Exception msg)
     in
-    let* () = Repo.insert ctx ~user in
+    let* () = Repo.insert ~user in
     Lwt.return user
   ;;
 
-  let create_admin ctx ~email ~password ~username =
-    let* user = Repo.get_by_email ctx ~email in
+  let create_admin ~email ~password ~username =
+    let* user = Repo.get_by_email ~email in
     let* () =
       match user with
       | Some _ ->
@@ -131,12 +129,11 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
         Logs.err (fun m -> m "USER: Can not create admin %s %s" email msg);
         raise (Exception msg)
     in
-    let* () = Repo.insert ctx ~user in
+    let* () = Repo.insert ~user in
     Lwt.return user
   ;;
 
   let register_user
-      ctx
       ?(password_policy = User.default_password_policy)
       ?username
       ~email
@@ -149,14 +146,14 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     with
     | Error msg -> Lwt_result.fail msg
     | Ok () ->
-      let* user = find_by_email_opt ctx ~email in
+      let* user = find_by_email_opt ~email in
       (match user with
-      | None -> create_user ctx ~username ~email ~password |> Lwt.map Result.ok
+      | None -> create_user ~username ~email ~password |> Lwt.map Result.ok
       | Some _ -> Lwt_result.fail "Invalid email address provided")
   ;;
 
-  let login ctx ~email ~password =
-    let* user = find_by_email_opt ctx ~email in
+  let login ~email ~password =
+    let* user = find_by_email_opt ~email in
     match user with
     | None -> Lwt_result.fail "Invalid email or password provided"
     | Some user ->
@@ -173,18 +170,17 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
-          let ctx = Core.Ctx.create () in
-          create_admin ctx ~email ~password ~username:(Some username) |> Lwt.map ignore
+          create_admin ~email ~password ~username:(Some username) |> Lwt.map ignore
         | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
   ;;
 
-  let start ctx =
+  let start () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Lwt.return ctx
+    Lwt.return ()
   ;;
 
-  let stop _ = Lwt.return ()
+  let stop () = Lwt.return ()
 
   let lifecycle =
     Core.Container.Lifecycle.create "user" ~dependencies:Repo.lifecycles ~start ~stop

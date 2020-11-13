@@ -22,8 +22,8 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
         |sql}
     ;;
 
-    let find_opt ctx ~value =
-      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    let find_opt ~value =
+      Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_request value |> Lwt.map Database.Service.raise_error)
     ;;
 
@@ -45,8 +45,8 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
         |sql}
     ;;
 
-    let find_by_id_opt ctx ~id =
-      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    let find_by_id_opt ~id =
+      Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_by_id_request id
           |> Lwt.map Database.Service.raise_error)
     ;;
@@ -75,8 +75,8 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
         |sql}
     ;;
 
-    let insert ctx ~token =
-      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    let insert ~token =
+      Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request token |> Lwt.map Database.Service.raise_error)
     ;;
 
@@ -95,15 +95,15 @@ module MariaDb (MigrationService : Migration.Sig.SERVICE) : Sig.REPOSITORY = str
         |sql}
     ;;
 
-    let update ctx ~token =
-      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    let update ~token =
+      Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request token |> Lwt.map Database.Service.raise_error)
     ;;
 
     let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
 
-    let clean ctx =
-      Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    let clean () =
+      Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec clean_request () |> Lwt.map Database.Service.raise_error)
     ;;
   end

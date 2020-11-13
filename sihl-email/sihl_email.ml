@@ -40,7 +40,7 @@ Html:
        html_content
 ;;
 
-let intercept sender ctx email =
+let intercept sender email =
   let is_testing = Sihl.Core.Configuration.is_testing () in
   let bypass =
     Option.value
@@ -52,10 +52,10 @@ let intercept sender ctx email =
   in
   let () = if console then print email else () in
   match is_testing, bypass with
-  | true, true -> sender ctx email
+  | true, true -> sender email
   | true, false -> Lwt.return (Sihl.Email.add_to_inbox email)
-  | false, true -> sender ctx email
-  | false, false -> sender ctx email
+  | false, true -> sender email
+  | false, false -> sender email
 ;;
 
 module MakeSmtp (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
@@ -93,7 +93,7 @@ module MakeSmtp (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
       config
   ;;
 
-  let send' _ (email : Sihl.Email.t) =
+  let send' (email : Sihl.Email.t) =
     let recipients =
       List.concat
         [ [ Letters.To email.recipient ]
@@ -129,14 +129,14 @@ module MakeSmtp (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
     | Error msg -> raise (Sihl.Email.Exception msg)
   ;;
 
-  let send ctx email =
-    let* email = TemplateService.render ctx email in
-    intercept send' ctx email
+  let send email =
+    let* email = TemplateService.render email in
+    intercept send' email
   ;;
 
-  let bulk_send _ _ = Lwt.return ()
+  let bulk_send _ = Lwt.return ()
   let name = "email"
-  let start ctx = Lwt.return ctx
+  let start () = Lwt.return ()
   let stop _ = Lwt.return ()
 
   let lifecycle =
@@ -198,7 +198,7 @@ module MakeSendGrid (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = str
     make [ string "SENDGRID_API_KEY"; optional (bool "EMAIL_CONSOLE") ] config
   ;;
 
-  let send' _ email =
+  let send' email =
     let token = (Sihl.Core.Configuration.read schema).api_key in
     let headers =
       Cohttp.Header.of_list
@@ -232,14 +232,14 @@ module MakeSendGrid (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = str
       raise (Sihl.Email.Exception "EMAIL: Failed to send email")
   ;;
 
-  let send ctx email =
-    let* email = TemplateService.render ctx email in
-    intercept send' ctx email
+  let send email =
+    let* email = TemplateService.render email in
+    intercept send' email
   ;;
 
-  let bulk_send _ _ = Lwt.return ()
-  let start ctx = Lwt.return ctx
-  let stop _ = Lwt.return ()
+  let bulk_send _ = Lwt.return ()
+  let start () = Lwt.return ()
+  let stop () = Lwt.return ()
 
   let lifecycle =
     Core.Container.Lifecycle.create
@@ -275,7 +275,7 @@ module MakeQueued (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SE
       | Some email -> Result.bind (email |> Utils.Json.parse) Sihl.Email.of_yojson
     ;;
 
-    let handle ctx ~input = EmailService.send ctx input |> Lwt.map Result.ok
+    let handle ~input = EmailService.send input |> Lwt.map Result.ok
 
     (** Nothing to clean up, sending emails is a side effect *)
     let failed _ = Lwt_result.return ()
@@ -293,30 +293,27 @@ module MakeQueued (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SE
     ;;
   end
 
-  let send ctx email =
+  let send email =
     (* skip queue when running tests *)
     if Sihl.Configuration.is_testing ()
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
-      EmailService.send ctx email)
-    else QueueService.dispatch ctx ~job:Job.job email
+      EmailService.send email)
+    else QueueService.dispatch ~job:Job.job email
   ;;
 
-  let bulk_send ctx emails =
+  let bulk_send emails =
     (* TODO [jerben] Implement queue API for multiple jobs so we don't have to use
        transactions here *)
     let rec loop emails =
       match emails with
-      | email :: emails -> Lwt.bind (send ctx email) (fun () -> loop emails)
+      | email :: emails -> Lwt.bind (send email) (fun () -> loop emails)
       | [] -> Lwt.return ()
     in
     loop emails
   ;;
 
-  let start ctx =
-    QueueService.register_jobs ctx ~jobs:[ Job.job ] |> Lwt.map (fun () -> ctx)
-  ;;
-
+  let start () = QueueService.register_jobs ~jobs:[ Job.job ] |> Lwt.map ignore
   let stop _ = Lwt.return ()
 
   let lifecycle =

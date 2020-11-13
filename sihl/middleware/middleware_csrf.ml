@@ -38,18 +38,17 @@ let set token req =
  *)
 module Make (TokenService : Token.Sig.SERVICE) (SessionService : Session.Sig.SERVICE) =
 struct
-  let create_secret ctx session =
-    let* token = TokenService.create ctx ~kind:"csrf" ~length:20 () in
+  let create_secret session =
+    let* token = TokenService.create ~kind:"csrf" ~length:20 () in
     (* Store the ID in the session *)
     (* Storing the token directly could mean it ends up on the client if the cookie
        backend is used for session storage *)
-    let* () = SessionService.set ctx session ~key:"csrf" ~value:token.id in
+    let* () = SessionService.set session ~key:"csrf" ~value:token.id in
     Lwt.return token
   ;;
 
   let m () =
     let filter handler req =
-      let ctx = Http.Request.to_ctx req in
       (* Check if session already has a secret (token) *)
       let session =
         match Middleware_session.find_opt req with
@@ -58,16 +57,16 @@ struct
           Logs.info (fun m -> m "Have you applied the session middleware?");
           raise (Crypto_failed "No session found")
       in
-      let* id = SessionService.get ctx session ~key:"csrf" in
+      let* id = SessionService.get session ~key:"csrf" in
       let* secret =
         match id with
         (* Create a secret if no secret found in session *)
-        | None -> create_secret ctx session
+        | None -> create_secret session
         | Some token_id ->
-          let* token = TokenService.find_by_id_opt ctx token_id in
+          let* token = TokenService.find_by_id_opt token_id in
           (match token with
           (* Create a secret if invalid token in session *)
-          | None -> create_secret ctx session
+          | None -> create_secret session
           (* Return valid secret from session *)
           | Some secret -> Lwt.return secret)
       in
@@ -123,7 +122,7 @@ struct
             | Some dec -> dec
           in
           let* provided_secret =
-            TokenService.find_opt ctx (decrypted_secret |> List.to_seq |> String.of_seq)
+            TokenService.find_opt (decrypted_secret |> List.to_seq |> String.of_seq)
           in
           (match provided_secret with
           | Some ps ->
@@ -134,7 +133,7 @@ struct
             else
               (* Provided secret matches and is valid => Invalidate it so it can't be
                  reused *)
-              let* () = TokenService.invalidate ctx ps in
+              let* () = TokenService.invalidate ps in
               handler req
           | None ->
             (* Give 403 if provided secret does not exist *)

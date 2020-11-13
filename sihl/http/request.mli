@@ -21,7 +21,6 @@
    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
    THE USE OR OTHER DEALINGS IN THE SOFTWARE. *)
 
-module Core = Sihl_core
 include module type of Opium_kernel.Rock.Request
 
 (** {1 Constructors} *)
@@ -497,11 +496,6 @@ val query_list : t -> (string * string list) list
 
 (** [sexp_of_t t] converts the request [t] to an s-expression *)
 val sexp_of_t : t -> Sexplib0.Sexp.t
-
-val key : string Opium.Hmap.key
-
-(** [to_ctx t] creates a context from a request [t]. *)
-val to_ctx : t -> Core.Ctx.t
 
 (** [accepts_html t] returns true if the request [t] has "Accept" "text/html". *)
 val accepts_html : t -> bool

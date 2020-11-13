@@ -57,7 +57,7 @@ let fetch_pool () =
       raise (Exception ("Failed to create pool " ^ msg)))
 ;;
 
-let transaction _ f =
+let transaction f =
   let pool = fetch_pool () in
   print_pool_usage pool;
   let* result =
@@ -104,7 +104,7 @@ let transaction _ f =
     Lwt.fail (Exception msg)
 ;;
 
-let query _ f =
+let query f =
   let pool = fetch_pool () in
   print_pool_usage pool;
   let* result =
@@ -120,10 +120,10 @@ let query _ f =
 
 (* Service lifecycle *)
 
-let start ctx =
+let start () =
   (* Make sure that database is online when starting service. *)
   let _ = fetch_pool () in
-  Lwt.return ctx
+  Lwt.return ()
 ;;
 
 let stop _ = Lwt.return ()

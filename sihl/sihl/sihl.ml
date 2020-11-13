@@ -2,7 +2,6 @@ module Authn = Sihl_authn
 module Authz = Sihl_authz
 module Core = Sihl_core
 module Container = Core.Container
-module Ctx = Sihl_core.Ctx
 module App = Sihl_core.App
 module Configuration = Sihl_core.Configuration
 module Command = Sihl_core.Command

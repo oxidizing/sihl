@@ -1,11 +1,7 @@
 open Alcotest_lwt
 
 let suite =
-  [ ( "service context"
-    , [ test_case "unique keys" `Quick Core_ctx.unique_keys
-      ; test_case "replace value" `Quick Core_ctx.replace_value
-      ] )
-  ; ( "service container"
+  [ ( "service container"
     , [ test_case "order all dependencies" `Quick Core_container.order_all_dependencies
       ; test_case
           "order simple dependency list"

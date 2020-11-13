@@ -9,19 +9,19 @@ let stop_schedule : (unit -> unit) option ref = ref None
 
 module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
   Sig.SERVICE = struct
-  let dispatch ctx ~job ?delay input =
+  let dispatch ~job ?delay input =
     let name = Job.name job in
     Logs.debug (fun m -> m "QUEUE: Dispatching job %s" name);
     let now = Ptime_clock.now () in
     let job_instance = JobInstance.create ~input ~delay ~now job in
-    Repo.enqueue ctx ~job_instance
+    Repo.enqueue ~job_instance
   ;;
 
-  let run_job ctx input ~job ~job_instance =
+  let run_job input ~job ~job_instance =
     let job_instance_id = JobInstance.id job_instance in
     let* result =
       Lwt.catch
-        (fun () -> WorkableJob.work job ctx ~input)
+        (fun () -> WorkableJob.work job ~input)
         (fun exn ->
           let exn_string = Printexc.to_string exn in
           Lwt.return
@@ -40,7 +40,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
             msg);
       let* result =
         Lwt.catch
-          (fun () -> WorkableJob.failed job ctx)
+          (fun () -> WorkableJob.failed job ())
           (fun exn ->
             let exn_string = Printexc.to_string exn in
             Lwt.return
@@ -67,14 +67,14 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
       Lwt.return @@ Some ()
   ;;
 
-  let update ctx ~job_instance = Repo.update ctx ~job_instance
+  let update ~job_instance = Repo.update ~job_instance
 
-  let work_job ctx ~job ~job_instance =
+  let work_job ~job ~job_instance =
     let now = Ptime_clock.now () in
     if JobInstance.should_run ~job_instance ~now
     then (
       let input_string = JobInstance.input job_instance in
-      let* job_run_status = run_job ctx input_string ~job ~job_instance in
+      let* job_run_status = run_job input_string ~job ~job_instance in
       let job_instance =
         job_instance |> JobInstance.incr_tries |> JobInstance.update_next_run_at job
       in
@@ -86,15 +86,15 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
           else job_instance
         | Some () -> JobInstance.set_succeeded job_instance
       in
-      update ctx ~job_instance)
+      update ~job_instance)
     else (
       Logs.debug (fun m ->
           m "QUEUE: Not going to run job instance %a" JobInstance.pp job_instance);
       Lwt.return ())
   ;;
 
-  let work_queue ctx ~jobs =
-    let* pending_job_instances = Repo.find_workable ctx in
+  let work_queue ~jobs =
+    let* pending_job_instances = Repo.find_workable () in
     let n_job_instances = List.length pending_job_instances in
     if n_job_instances > 0
     then (
@@ -112,7 +112,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
           in
           (match job with
           | None -> loop job_instances jobs
-          | Some job -> work_job ctx ~job ~job_instance)
+          | Some job -> work_job ~job ~job_instance)
       in
       let* () = loop pending_job_instances jobs in
       Logs.debug (fun m -> m "QUEUE: Finish working queue");
@@ -120,13 +120,13 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
     else Lwt.return ()
   ;;
 
-  let register_jobs _ ~jobs =
+  let register_jobs ~jobs =
     let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
     Lwt.return ()
   ;;
 
-  let start_queue _ =
+  let start_queue () =
     Logs.debug (fun m -> m "QUEUE: Start job queue");
     (* This function run every second, the request context gets created here with each
        tick *)
@@ -137,17 +137,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
         let job_strings = jobs |> List.map WorkableJob.name |> String.concat ", " in
         Logs.debug (fun m ->
             m "QUEUE: Run job queue with registered jobs: %s" job_strings);
-        (* Combine all context middleware functions of registered jobs to get the context
-           the jobs run with*)
-        (* TODO [jerben] this is not needed anymore since there is no hmap in the context
-           anymore *)
-        let combined_context_fn =
-          jobs
-          |> List.map WorkableJob.with_context
-          |> List.fold_left (fun a b c -> c |> b |> a) Fun.id
-        in
-        let ctx = combined_context_fn (Sihl.Core.Ctx.create ()) in
-        work_queue ctx ~jobs)
+        work_queue ~jobs)
       else (
         Logs.debug (fun m -> m "QUEUE: No jobs found to run, trying again later");
         Lwt.return ())
@@ -162,10 +152,10 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
     Lwt.return ()
   ;;
 
-  let start ctx =
+  let start () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    start_queue ctx |> Lwt.map (fun () -> ctx)
+    start_queue () |> Lwt.map ignore
   ;;
 
   let stop _ =

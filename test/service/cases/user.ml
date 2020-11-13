@@ -7,11 +7,10 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   module Seed = Sihl.User.Seed.Make (UserService)
 
   let update_details _ () =
-    let ctx = Sihl.Core.Ctx.create () in
-    let* () = Sihl.Repository.Service.clean_all ctx in
-    let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
+    let* () = Sihl.Repository.Service.clean_all () in
+    let* user = Seed.user ~email:"foobar@example.com" ~password:"123123123" () in
     let* updated_user =
-      UserService.update_details ctx ~user ~email:"new@example.com" ~username:(Some "foo")
+      UserService.update_details ~user ~email:"new@example.com" ~username:(Some "foo")
     in
     let actual_email = Sihl.User.email updated_user in
     let actual_username = Sihl.User.username updated_user in
@@ -21,12 +20,10 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let update_password _ () =
-    let ctx = Sihl.Core.Ctx.create () in
-    let* () = Sihl.Repository.Service.clean_all ctx in
-    let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
+    let* () = Sihl.Repository.Service.clean_all () in
+    let* user = Seed.user ~email:"foobar@example.com" ~password:"123123123" () in
     let* _ =
       UserService.update_password
-        ctx
         ~user
         ~old_password:"123123123"
         ~new_password:"12345678"
@@ -35,7 +32,7 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
       |> Lwt.map Result.get_ok
     in
     let* user =
-      UserService.login ctx ~email:"foobar@example.com" ~password:"12345678"
+      UserService.login ~email:"foobar@example.com" ~password:"12345678"
       |> Lwt.map Result.get_ok
     in
     let actual_email = Sihl.User.email user in
@@ -45,12 +42,10 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let update_password_fails _ () =
-    let ctx = Sihl.Core.Ctx.create () in
-    let* () = Sihl.Repository.Service.clean_all ctx in
-    let* user = Seed.user ctx ~email:"foobar@example.com" ~password:"123123123" in
+    let* () = Sihl.Repository.Service.clean_all () in
+    let* user = Seed.user ~email:"foobar@example.com" ~password:"123123123" () in
     let* change_result =
       UserService.update_password
-        ctx
         ~user
         ~old_password:"wrong_old_password"
         ~new_password:"12345678"
@@ -67,16 +62,15 @@ module Make (UserService : Sihl.User.Sig.SERVICE) = struct
   ;;
 
   let filter_users_by_email _ () =
-    let ctx = Sihl.Core.Ctx.create () in
-    let* () = Sihl.Repository.Service.clean_all ctx in
-    let* user1 = Seed.user ctx ~email:"user1@example.com" ~password:"123123123" in
-    let* _ = Seed.user ctx ~email:"user2@example.com" ~password:"123123123" in
-    let* _ = Seed.user ctx ~email:"user3@example.com" ~password:"123123123" in
+    let* () = Sihl.Repository.Service.clean_all () in
+    let* user1 = Seed.user ~email:"user1@example.com" ~password:"123123123" () in
+    let* _ = Seed.user ~email:"user2@example.com" ~password:"123123123" () in
+    let* _ = Seed.user ~email:"user3@example.com" ~password:"123123123" () in
     let filter =
       Sihl.Database.Ql.Filter.(C { key = "email"; value = "%user1%"; op = Like })
     in
     let query = Sihl.Database.Ql.(empty |> set_limit 10 |> set_filter filter) in
-    let* actual_users, meta = UserService.find_all ctx ~query in
+    let* actual_users, meta = UserService.find_all ~query in
     Alcotest.(check int "has correct meta" 1 (Sihl.Repository.Meta.total meta));
     Alcotest.(check (list alcotest) "has one user" actual_users [ user1 ]);
     Lwt.return ()

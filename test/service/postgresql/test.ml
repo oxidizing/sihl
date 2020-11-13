@@ -19,9 +19,8 @@ let services =
 let () =
   Unix.putenv "DATABASE_URL" "postgres://admin:password@127.0.0.1:5432/dev";
   Logs.set_reporter (Sihl.Core.Log.default_reporter ());
-  let ctx = Sihl.Core.Ctx.create () in
   Lwt_main.run
     (let* _ = Sihl.Core.Container.start_services services in
-     let* () = Service.Migration.run_all ctx in
+     let* () = Service.Migration.run_all () in
      Alcotest_lwt.run "postgresql" @@ test_suite)
 ;;

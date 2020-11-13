@@ -4,7 +4,6 @@
     context, and Sihl apps. *)
 
 module Container = Container
-module Ctx = Ctx
 module App = App
 module Configuration = Configuration
 module Command = Command
