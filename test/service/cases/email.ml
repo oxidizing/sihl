@@ -3,14 +3,13 @@ open Lwt.Syntax
 
 module Make (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) = struct
   let create_template _ () =
-    let ctx = Sihl.Core.Ctx.create () in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let* created =
-      EmailTemplateService.create ctx ~name:"foo" ~html:"some html" ~text:"some text"
+      EmailTemplateService.create ~name:"foo" ~html:"some html" ~text:"some text"
     in
     let id = Sihl.Email.Template.id created in
     let* template =
-      EmailTemplateService.get ctx ~id
+      EmailTemplateService.get ~id
       |> Lwt.map (Option.to_result ~none:"Template not found")
       |> Lwt.map Result.get_ok
     in
@@ -21,13 +20,12 @@ module Make (EmailTemplateService : Sihl.Email.Sig.TEMPLATE_SERVICE) = struct
   ;;
 
   let update_template _ () =
-    let ctx = Sihl.Core.Ctx.create () in
-    let* () = Sihl.Repository.Service.clean_all ctx in
+    let* () = Sihl.Repository.Service.clean_all () in
     let* created =
-      EmailTemplateService.create ctx ~name:"foo" ~html:"some html" ~text:"some text"
+      EmailTemplateService.create ~name:"foo" ~html:"some html" ~text:"some text"
     in
     let updated = Sihl.Email.Template.set_name "newname" created in
-    let* template = EmailTemplateService.update ctx ~template:updated in
+    let* template = EmailTemplateService.update ~template:updated in
     Alcotest.(check string "name" "newname" (Sihl.Email.Template.name template));
     Lwt.return ()
   ;;

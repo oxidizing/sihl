@@ -8,26 +8,26 @@ let log_src = Logs.Src.create "sihl.service.token"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
-  let find_opt ctx value =
-    let* token = Repo.find_opt ctx ~value in
+  let find_opt value =
+    let* token = Repo.find_opt ~value in
     Lwt.return @@ Option.bind token (fun tk -> if Model.is_valid tk then token else None)
   ;;
 
-  let find ctx value =
-    let* token = find_opt ctx value in
+  let find value =
+    let* token = find_opt value in
     match token with
     | Some token -> Lwt.return token
     | None ->
       raise (Model.Exception (Printf.sprintf "Token %s not found or not valid" value))
   ;;
 
-  let find_by_id_opt ctx id =
-    let* token = Repo.find_by_id_opt ctx ~id in
+  let find_by_id_opt id =
+    let* token = Repo.find_by_id_opt ~id in
     Lwt.return @@ Option.bind token (fun tk -> if Model.is_valid tk then token else None)
   ;;
 
-  let find_by_id ctx id =
-    let* token = find_by_id_opt ctx id in
+  let find_by_id id =
+    let* token = find_by_id_opt id in
     match token with
     | Some token -> Lwt.return token
     | None ->
@@ -49,22 +49,22 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     Model.make ~id ~value ~data ~kind ~status ~expires_at ~created_at
   ;;
 
-  let create ctx ~kind ?data ?expires_in ?length () =
+  let create ~kind ?data ?expires_in ?length () =
     let expires_in = Option.value ~default:Utils.Time.OneDay expires_in in
     let length = Option.value ~default:80 length in
     let id = Database.Id.random () |> Database.Id.to_string in
     let token = make ~id ~kind ~data ~expires_in ~length () in
-    let* () = Repo.insert ctx ~token in
+    let* () = Repo.insert ~token in
     let value = Model.value token in
-    find ctx value
+    find value
   ;;
 
-  let invalidate ctx token = Repo.update ctx ~token:(Model.invalidate token)
+  let invalidate token = Repo.update ~token:(Model.invalidate token)
 
-  let start ctx =
+  let start () =
     let () = Repo.register_migration () in
     let () = Repo.register_cleaner () in
-    Lwt.return ctx
+    Lwt.return ()
   ;;
 
   let stop _ = Lwt.return ()

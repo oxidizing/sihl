@@ -26,31 +26,30 @@ let set session req =
 module Make (SessionService : Session.Sig.SERVICE) = struct
   let m ?(cookie_key = "session_key") () =
     let filter handler req =
-      let ctx = Http.Request.to_ctx req in
       match Http.Request.cookie cookie_key req with
       | Some session_key ->
         (* A session cookie was found *)
-        let* session = SessionService.find_opt ctx ~key:session_key in
+        let* session = SessionService.find_opt ~key:session_key in
         (match session with
         | Some session ->
           let* session =
             if Session.is_expired (Ptime_clock.now ()) session
             then (
               Logs.debug (fun m -> m "SESSION: Session expired, creating new one");
-              let* session = SessionService.create ctx [] in
+              let* session = SessionService.create [] in
               Lwt.return session)
             else Lwt.return session
           in
           let req = set session req in
           handler req
         | None ->
-          let* session = SessionService.create ctx [] in
+          let* session = SessionService.create [] in
           let req = set session req in
           let* res = handler req in
           Http.Response.add_cookie (cookie_key, session.key) res |> Lwt.return)
       | None ->
         (* No session cookie found *)
-        let* session = SessionService.create ctx [] in
+        let* session = SessionService.create [] in
         let req = set session req in
         let* res = handler req in
         res |> Http.Response.add_cookie (cookie_key, session.key) |> Lwt.return

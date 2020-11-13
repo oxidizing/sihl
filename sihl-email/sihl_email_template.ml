@@ -2,14 +2,14 @@ open Lwt.Syntax
 module Sig = Sihl.Email.Sig
 
 module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
-  let get ctx ~id = Repo.get ctx ~id
-  let get_by_name ctx ~name = Repo.get_by_name ctx ~name
+  let get ~id = Repo.get ~id
+  let get_by_name ~name = Repo.get_by_name ~name
 
-  let create ctx ~name ~html ~text =
+  let create ~name ~html ~text =
     let template = Sihl.Email.Template.make ~text ~html name in
-    let* () = Repo.insert ctx ~template in
+    let* () = Repo.insert ~template in
     let id = Sihl.Email.Template.id template in
-    let* created = Repo.get ctx ~id in
+    let* created = Repo.get ~id in
     match created with
     | None ->
       Logs.err (fun m ->
@@ -18,10 +18,10 @@ module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
     | Some created -> Lwt.return created
   ;;
 
-  let update ctx ~template =
-    let* () = Repo.update ctx ~template in
+  let update ~template =
+    let* () = Repo.update ~template in
     let id = Sihl.Email.Template.id template in
-    let* created = Repo.get ctx ~id in
+    let* created = Repo.get ~id in
     match created with
     | None ->
       Logs.err (fun m ->
@@ -30,7 +30,7 @@ module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
     | Some created -> Lwt.return created
   ;;
 
-  let render ctx email =
+  let render email =
     let template_id = Sihl.Email.template_id email in
     let template_data = Sihl.Email.template_data email in
     let text_content = Sihl.Email.text_content email in
@@ -38,7 +38,7 @@ module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
     let* text_content, html_content =
       match template_id with
       | Some template_id ->
-        let* template = Repo.get ctx ~id:template_id in
+        let* template = Repo.get ~id:template_id in
         let* template =
           match template with
           | None ->
@@ -56,10 +56,10 @@ module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
     |> Lwt.return
   ;;
 
-  let start ctx =
+  let start () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Lwt.return ctx
+    Lwt.return ()
   ;;
 
   let stop _ = Lwt.return ()
@@ -95,8 +95,8 @@ module Repo = struct
         |sql}
       ;;
 
-      let get ctx ~id =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let get ~id =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.find_opt get_request id
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -123,8 +123,8 @@ module Repo = struct
         |sql}
       ;;
 
-      let get_by_name ctx ~name =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let get_by_name ~name =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.find_opt get_by_name_request name
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -149,8 +149,8 @@ module Repo = struct
         |sql}
       ;;
 
-      let insert ctx ~template =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let insert ~template =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec insert_request template
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -169,8 +169,8 @@ module Repo = struct
         |sql}
       ;;
 
-      let update ctx ~template =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let update ~template =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec update_request template
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -183,8 +183,8 @@ module Repo = struct
          |sql}
       ;;
 
-      let clean ctx =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let clean () =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
     end
@@ -252,8 +252,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
         |sql}
       ;;
 
-      let get ctx ~id =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let get ~id =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.find_opt get_request id
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -274,8 +274,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
         |sql}
       ;;
 
-      let get_by_name ctx ~name =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let get_by_name ~name =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.find_opt get_by_name_request name
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -300,8 +300,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
         |sql}
       ;;
 
-      let insert ctx ~template =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let insert ~template =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec insert_request template
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -320,8 +320,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
         |sql}
       ;;
 
-      let update ctx ~template =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let update ~template =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec update_request template
             |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
@@ -330,8 +330,8 @@ CREATE TABLE IF NOT EXISTS email_templates (
         Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE email_templates CASCADE;"
       ;;
 
-      let clean ctx =
-        Sihl.Database.Service.query ctx (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      let clean () =
+        Sihl.Database.Service.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
             Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
       ;;
     end

@@ -5,10 +5,10 @@ module Repository = Sihl_repository
 module type REPOSITORY = sig
   include Repository.Sig.REPO
 
-  val find_opt : Core.Ctx.t -> value:string -> Model.t option Lwt.t
-  val find_by_id_opt : Core.Ctx.t -> id:string -> Model.t option Lwt.t
-  val insert : Core.Ctx.t -> token:Model.t -> unit Lwt.t
-  val update : Core.Ctx.t -> token:Model.t -> unit Lwt.t
+  val find_opt : value:string -> Model.t option Lwt.t
+  val find_by_id_opt : id:string -> Model.t option Lwt.t
+  val insert : token:Model.t -> unit Lwt.t
+  val update : token:Model.t -> unit Lwt.t
 end
 
 module type SERVICE = sig
@@ -20,8 +20,7 @@ module type SERVICE = sig
       one day. Provide [data] to store optional data as string. Provide [length] to define
       the length of the token in bytes. *)
   val create
-    :  Core.Ctx.t
-    -> kind:string
+    :  kind:string
     -> ?data:string
     -> ?expires_in:Utils.Time.duration
     -> ?length:int
@@ -29,21 +28,21 @@ module type SERVICE = sig
     -> Model.t Lwt.t
 
   (** Returns an active and non-expired token. Raises [Failure] if no token is found. *)
-  val find : Core.Ctx.t -> string -> Model.t Lwt.t
+  val find : string -> Model.t Lwt.t
 
   (** Returns an active and non-expired token. *)
-  val find_opt : Core.Ctx.t -> string -> Model.t option Lwt.t
+  val find_opt : string -> Model.t option Lwt.t
 
   (** Returns an active and non-expired token by id. Raises [Failure] if no token is
       found. *)
-  val find_by_id : Core.Ctx.t -> string -> Model.t Lwt.t
+  val find_by_id : string -> Model.t Lwt.t
 
   (** Returns an active and non-expired token by id. *)
-  val find_by_id_opt : Core.Ctx.t -> string -> Model.t option Lwt.t
+  val find_by_id_opt : string -> Model.t option Lwt.t
 
   (** Invalidate a token by marking it as such in the database and therefore marking it
       "to be deleted" *)
-  val invalidate : Core.Ctx.t -> Model.t -> unit Lwt.t
+  val invalidate : Model.t -> unit Lwt.t
 
   val register : unit -> Core.Container.Service.t
 end

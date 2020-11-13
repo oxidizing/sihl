@@ -4,9 +4,6 @@ open Lwt.Syntax
 let log_src = Logs.Src.create ~doc:"session" "sihl.service.session"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
-
-let ctx_key : string Core.Ctx.key = Core.Ctx.create_key ()
-
 module Repo = Repo
 
 module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
@@ -20,7 +17,7 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
     | None, None -> None
   ;;
 
-  let create ctx data =
+  let create data =
     let empty_session =
       match make (Ptime_clock.now ()) with
       | Some session -> session
@@ -35,14 +32,14 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
         empty_session
         data
     in
-    let* () = Repo.insert ctx session in
+    let* () = Repo.insert session in
     Lwt.return session
   ;;
 
   let find_opt = Repo.find_opt
 
-  let find ctx ~key =
-    let* session = Repo.find_opt ctx ~key in
+  let find ~key =
+    let* session = Repo.find_opt ~key in
     match session with
     | Some session -> Lwt.return session
     | None ->
@@ -52,30 +49,30 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
 
   let find_all = Repo.find_all
 
-  let set ctx session ~key ~value =
+  let set session ~key ~value =
     let session_key = Model.key session in
-    let* session = find ctx ~key:session_key in
+    let* session = find ~key:session_key in
     let session = Model.set ~key ~value session in
-    Repo.update ctx session
+    Repo.update session
   ;;
 
-  let unset ctx session ~key =
+  let unset session ~key =
     let session_key = Model.key session in
-    let* session = find ctx ~key:session_key in
+    let* session = find ~key:session_key in
     let session = Model.remove ~key session in
-    Repo.update ctx session
+    Repo.update session
   ;;
 
-  let get ctx session ~key =
+  let get session ~key =
     let session_key = Model.key session in
-    let* session = find ctx ~key:session_key in
+    let* session = find ~key:session_key in
     Model.get key session |> Lwt.return
   ;;
 
-  let start ctx =
+  let start () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Lwt.return ctx
+    Lwt.return ()
   ;;
 
   let stop _ = Lwt.return ()

@@ -1,4 +1,3 @@
-module Core = Sihl_core
 module Utils = Sihl_utils
 module Database = Sihl_database
 
@@ -10,28 +9,18 @@ module Job = struct
 
   type 'a t =
     { name : string
-    ; with_context : Core.Ctx.t -> Core.Ctx.t
     ; input_to_string : 'a -> string option
     ; string_to_input : string option -> ('a, string) Result.t
-    ; handle : Core.Ctx.t -> input:'a -> (unit, string) Result.t Lwt.t
-    ; failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t
+    ; handle : input:'a -> (unit, string) Result.t Lwt.t
+    ; failed : unit -> (unit, string) Result.t Lwt.t
     ; max_tries : int
     ; retry_delay : Utils.Time.duration
     }
   [@@deriving show, fields]
 
-  let create
-      ~name
-      ?(with_context = fun ctx -> ctx)
-      ~input_to_string
-      ~string_to_input
-      ~handle
-      ?failed
-      ()
-    =
+  let create ~name ~input_to_string ~string_to_input ~handle ?failed () =
     let failed = failed |> Option.value ~default:(fun _ -> Lwt_result.return ()) in
     { name
-    ; with_context
     ; input_to_string
     ; string_to_input
     ; handle
@@ -50,9 +39,8 @@ end
 module WorkableJob = struct
   type t =
     { name : string
-    ; with_context : Core.Ctx.t -> Core.Ctx.t
-    ; work : Core.Ctx.t -> input:string option -> (unit, string) Result.t Lwt.t
-    ; failed : Core.Ctx.t -> (unit, string) Result.t Lwt.t
+    ; work : input:string option -> (unit, string) Result.t Lwt.t
+    ; failed : unit -> (unit, string) Result.t Lwt.t
     ; max_tries : int
     ; retry_delay : Utils.Time.duration
     }
@@ -60,16 +48,15 @@ module WorkableJob = struct
 
   let of_job job =
     let name = Job.name job in
-    let with_context = Job.with_context job in
-    let work ctx ~input =
+    let work ~input =
       match (Job.string_to_input job) input with
       | Error msg -> Lwt_result.fail msg
-      | Ok input -> (Job.handle job) ctx ~input
+      | Ok input -> (Job.handle job) ~input
     in
     let failed = Job.failed job in
     let max_tries = Job.max_tries job in
     let retry_delay = Job.retry_delay job in
-    { name; with_context; work; failed; max_tries; retry_delay }
+    { name; work; failed; max_tries; retry_delay }
   ;;
 end
 

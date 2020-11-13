@@ -51,9 +51,8 @@ let get_usernames connection =
 ;;
 
 let query _ () =
-  let ctx = Sihl.Core.Ctx.create () in
   let* usernames =
-    Sihl.Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query (fun connection ->
         let* () = drop_table_if_exists connection in
         let* () = create_table_if_not_exists connection in
         let* () = insert_username connection "foobar pool" in
@@ -65,12 +64,11 @@ let query _ () =
 ;;
 
 let query_with_transaction _ () =
-  let ctx = Sihl.Core.Ctx.create () in
   let* usernames =
-    Sihl.Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query (fun connection ->
         let* () = drop_table_if_exists connection in
         let* () = create_table_if_not_exists connection in
-        Sihl.Database.Service.transaction ctx (fun connection ->
+        Sihl.Database.Service.transaction (fun connection ->
             let* () = insert_username connection "foobar trx" in
             get_usernames connection))
   in
@@ -80,15 +78,14 @@ let query_with_transaction _ () =
 ;;
 
 let transaction_rolls_back _ () =
-  let ctx = Sihl.Core.Ctx.create () in
   let* usernames =
-    Sihl.Database.Service.query ctx (fun connection ->
+    Sihl.Database.Service.query (fun connection ->
         let* () = drop_table_if_exists connection in
         let* () = create_table_if_not_exists connection in
         let* () =
           Lwt.catch
             (fun () ->
-              Sihl.Database.Service.transaction ctx (fun connection ->
+              Sihl.Database.Service.transaction (fun connection ->
                   let* () = insert_username connection "foobar trx" in
                   failwith "Oh no, something went wrong during the transaction!"))
             (fun _ -> Lwt.return ())

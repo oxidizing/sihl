@@ -6,7 +6,7 @@ module Memory : Sihl.Queue.Sig.REPO = struct
   let state = ref Map.empty
   let ordered_ids = ref []
 
-  let register_cleaner _ =
+  let register_cleaner () =
     let cleaner _ =
       state := Map.empty;
       ordered_ids := [];
@@ -17,20 +17,20 @@ module Memory : Sihl.Queue.Sig.REPO = struct
 
   let register_migration () = ()
 
-  let enqueue _ ~job_instance =
+  let enqueue ~job_instance =
     let id = JobInstance.id job_instance |> Sihl.Database.Id.to_string in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
-  let update _ ~job_instance =
+  let update ~job_instance =
     let id = JobInstance.id job_instance |> Sihl.Database.Id.to_string in
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
-  let find_workable _ =
+  let find_workable () =
     let all_job_instances = List.map (fun id -> Map.find_opt id !state) !ordered_ids in
     let now = Ptime_clock.now () in
     let rec filter_pending all_job_instances result =
@@ -98,8 +98,8 @@ struct
         |sql}
   ;;
 
-  let enqueue ctx ~job_instance =
-    Sihl.Database.Service.query ctx (fun connection ->
+  let enqueue ~job_instance =
+    Sihl.Database.Service.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec enqueue_request job_instance
         |> Lwt.map Sihl.Database.Service.raise_error)
@@ -122,8 +122,8 @@ struct
         |sql}
   ;;
 
-  let update ctx ~job_instance =
-    Sihl.Database.Service.query ctx (fun connection ->
+  let update ~job_instance =
+    Sihl.Database.Service.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_request job_instance
         |> Lwt.map Sihl.Database.Service.raise_error)
@@ -151,8 +151,8 @@ struct
         |sql}
   ;;
 
-  let find_workable ctx =
-    Sihl.Database.Service.query ctx (fun connection ->
+  let find_workable () =
+    Sihl.Database.Service.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.collect_list find_workable_request ()
         |> Lwt.map Sihl.Database.Service.raise_error)
@@ -166,8 +166,8 @@ struct
          |sql}
   ;;
 
-  let clean ctx =
-    Sihl.Database.Service.query ctx (fun connection ->
+  let clean () =
+    Sihl.Database.Service.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
   ;;

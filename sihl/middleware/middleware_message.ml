@@ -22,7 +22,6 @@ let set message req =
 module Make (MessageService : Message.Sig.SERVICE) = struct
   let m () =
     let filter handler req =
-      let ctx = Http.Request.to_ctx req in
       let session =
         match Middleware_session.find_opt req with
         | Some session -> session
@@ -31,7 +30,7 @@ module Make (MessageService : Message.Sig.SERVICE) = struct
           Logs.err (fun m -> m "No session found");
           failwith "No session found"
       in
-      let* result = MessageService.rotate ctx session in
+      let* result = MessageService.rotate session in
       match result with
       | Some message ->
         let req = set message req in

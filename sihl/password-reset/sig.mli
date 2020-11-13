@@ -8,12 +8,11 @@ module type SERVICE = sig
 
       Returns [None] if there is no user with [email]. The reset token can be used with
       [reset_password] to set the password without knowing the old password. *)
-  val create_reset_token : Core.Ctx.t -> email:string -> Token.t option Lwt.t
+  val create_reset_token : email:string -> Token.t option Lwt.t
 
   (** Set the password of a user associated with the reset [token]. *)
   val reset_password
-    :  Core.Ctx.t
-    -> token:string
+    :  token:string
     -> password:string
     -> password_confirmation:string
     -> (unit, string) Result.t Lwt.t

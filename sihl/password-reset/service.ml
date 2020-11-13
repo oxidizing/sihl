@@ -4,7 +4,7 @@ module User = Sihl_user
 module Utils = Sihl_utils
 open Lwt.Syntax
 
-let log_src = Logs.Src.create ~doc:"password reset" "sihl.service.password-reset"
+let log_src = Logs.Src.create "sihl.service.password-reset"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -16,23 +16,23 @@ end
 
 module Make (TokenService : Token.Sig.SERVICE) (UserService : User.Sig.SERVICE) :
   Sig.SERVICE = struct
-  let create_reset_token ctx ~email =
-    let* user = UserService.find_by_email_opt ctx ~email in
+  let create_reset_token ~email =
+    let* user = UserService.find_by_email_opt ~email in
     match user with
     | Some user ->
       let user_id = User.id user in
       let data =
         TokenData.make ~user_id |> TokenData.to_yojson |> Yojson.Safe.to_string
       in
-      let* token = TokenService.create ctx ~kind ~data ~expires_in:Utils.Time.OneDay () in
+      let* token = TokenService.create ~kind ~data ~expires_in:Utils.Time.OneDay () in
       Lwt.return @@ Some token
     | None ->
       Logs.warn (fun m -> m "PASSWORD_RESET: No user found with email %s" email);
       Lwt.return None
   ;;
 
-  let reset_password ctx ~token ~password ~password_confirmation =
-    let* token = TokenService.find_opt ctx token in
+  let reset_password ~token ~password ~password_confirmation =
+    let* token = TokenService.find_opt token in
     let token = Option.to_result ~none:"Invalid or expired token provided" token in
     let user_id =
       let ( let* ) = Result.bind in
@@ -45,14 +45,12 @@ module Make (TokenService : Token.Sig.SERVICE) (UserService : User.Sig.SERVICE) 
     match user_id with
     | Error msg -> Lwt.return @@ Error msg
     | Ok user_id ->
-      let* user = UserService.find ctx ~user_id in
-      let* result =
-        UserService.set_password ctx ~user ~password ~password_confirmation ()
-      in
+      let* user = UserService.find ~user_id in
+      let* result = UserService.set_password ~user ~password ~password_confirmation () in
       Lwt.return @@ Result.map (fun _ -> ()) result
   ;;
 
-  let start ctx = Lwt.return ctx
+  let start () = Lwt.return ()
   let stop _ = Lwt.return ()
 
   let lifecycle =

@@ -9,8 +9,8 @@
 
 module Lifecycle : sig
   type t
-  type start = Ctx.t -> Ctx.t Lwt.t
-  type stop = Ctx.t -> unit Lwt.t
+  type start = unit -> unit Lwt.t
+  type stop = unit -> unit Lwt.t
 
   val name : t -> string
   val create : ?dependencies:t list -> string -> start:start -> stop:stop -> t
@@ -40,12 +40,12 @@ end
 (** [start_services lifecycles] starts a list of service [lifecycles]. The order does not
     matter as the services are started in the order of their dependencies. (No service is
     started before its dependency) *)
-val start_services : Service.t list -> (Lifecycle.t list * Ctx.t) Lwt.t
+val start_services : Service.t list -> Lifecycle.t list Lwt.t
 
 (** [stop_services ctx services] stops a list of service [lifecycles] with a context
     [ctx]. The order does not matter as the services are stopped in the order of their
     dependencies. (No service is stopped after its dependency) *)
-val stop_services : Ctx.t -> Service.t list -> unit Lwt.t
+val stop_services : Service.t list -> unit Lwt.t
 
 module Map : sig
   type 'a t
