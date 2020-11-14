@@ -1,8 +1,4 @@
 (library
  (name sihl_http)
  (public_name sihl.http)
- (libraries tyxml opium multipart-form-data yojson
-   ppx_deriving_yojson.runtime sihl_core sihl_utils)
- (preprocess
-  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
-    ppx_sexp_conv ppx_deriving.make)))
+ (libraries opium multipart-form-data sihl_utils))

@@ -1,7 +1,7 @@
 (library
  (name sihl_message)
  (public_name sihl.message)
- (libraries yojson ppx_deriving_yojson.runtime sihl_core logs sihl_session)
+ (libraries yojson ppx_deriving_yojson.runtime sihl_session)
  (modules_without_implementation sig)
  (preprocess
   (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show

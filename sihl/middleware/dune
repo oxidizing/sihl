@@ -1,8 +1,4 @@
 (library
  (name sihl_middleware)
  (public_name sihl.middleware)
- (libraries logs opium yojson ppx_deriving_yojson.runtime sihl_core sihl_http
-   sihl_message sihl_authn)
- (preprocess
-  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
-    ppx_sexp_conv ppx_deriving.make)))
+ (libraries sihl_http sihl_message sihl_authn))
