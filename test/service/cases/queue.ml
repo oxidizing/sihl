@@ -4,7 +4,7 @@ open Lwt.Syntax
 module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
   let dispatched_job_gets_processed _ () =
     let has_ran_job = ref false in
-    let* () = Sihl.Core.Container.stop_services [ QueueService.register () ] in
+    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all () in
     let job =
       Sihl.Queue.create_job
@@ -18,10 +18,10 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let service = QueueService.register ~jobs:[ job ] () in
-    let* _ = Sihl.Core.Container.start_services [ service ] in
+    let* _ = Sihl.Container.start_services [ service ] in
     let* () = QueueService.dispatch ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl.Core.Container.stop_services [ service ] in
+    let* () = Sihl.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has processed job" true !has_ran_job) in
     Lwt.return ()
   ;;
@@ -29,7 +29,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
   let two_dispatched_jobs_get_processed _ () =
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
-    let* () = Sihl.Core.Container.stop_services [ QueueService.register () ] in
+    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all () in
     let job1 =
       Sihl.Queue.create_job
@@ -56,11 +56,11 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
     let* () = QueueService.register_jobs ~jobs:[ job1; job2 ] in
     let jobs = [ job1; job2 ] in
     let service = QueueService.register ~jobs () in
-    let* _ = Sihl.Core.Container.start_services [ service ] in
+    let* _ = Sihl.Container.start_services [ service ] in
     let* () = QueueService.dispatch ~job:job1 () in
     let* () = QueueService.dispatch ~job:job2 () in
     let* () = Lwt_unix.sleep 4.0 in
-    let* () = Sihl.Core.Container.stop_services [ service ] in
+    let* () = Sihl.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has processed job1" true !has_ran_job1) in
     let () = Alcotest.(check bool "has processed job2" true !has_ran_job1) in
     Lwt.return ()
@@ -68,7 +68,7 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
 
   let cleans_up_job_after_error _ () =
     let has_cleaned_up_job = ref false in
-    let* () = Sihl.Core.Container.stop_services [ QueueService.register () ] in
+    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all () in
     let job =
       Sihl.Queue.create_job
@@ -82,17 +82,17 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
       |> Sihl.Queue.set_retry_delay Sihl.Utils.Time.OneMinute
     in
     let service = QueueService.register ~jobs:[ job ] () in
-    let* _ = Sihl.Core.Container.start_services [ service ] in
+    let* _ = Sihl.Container.start_services [ service ] in
     let* () = QueueService.dispatch ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl.Core.Container.stop_services [ service ] in
+    let* () = Sihl.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job) in
     Lwt.return ()
   ;;
 
   let cleans_up_job_after_exception _ () =
     let has_cleaned_up_job = ref false in
-    let* () = Sihl.Core.Container.stop_services [ QueueService.register () ] in
+    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
     let* () = Sihl.Repository.Service.clean_all () in
     let job =
       Sihl.Queue.create_job
@@ -107,10 +107,10 @@ module Make (QueueService : Sihl.Queue.Sig.SERVICE) = struct
     in
     let* () = QueueService.register_jobs ~jobs:[ job ] in
     let service = QueueService.register ~jobs:[ job ] () in
-    let* _ = Sihl.Core.Container.start_services [ service ] in
+    let* _ = Sihl.Container.start_services [ service ] in
     let* () = QueueService.dispatch ~job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl.Core.Container.stop_services [ service ] in
+    let* () = Sihl.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job) in
     Lwt.return ()
   ;;

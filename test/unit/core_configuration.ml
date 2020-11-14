@@ -1,35 +1,23 @@
 open Lwt.Syntax
 
 let read_empty_value _ () =
-  Sihl.Core.Configuration.store [];
+  Sihl.Configuration.store [];
   Alcotest.(
-    check
-      (option string)
-      "empty"
-      (Sihl.Core.Configuration.read_string "non-existent")
-      None);
+    check (option string) "empty" (Sihl.Configuration.read_string "non-existent") None);
   Lwt.return ()
 ;;
 
 let read_non_existing _ () =
-  Sihl.Core.Configuration.store [ "foo", "value" ];
+  Sihl.Configuration.store [ "foo", "value" ];
   Alcotest.(
-    check
-      (option string)
-      "empty"
-      (Sihl.Core.Configuration.read_string "non-existent")
-      None);
+    check (option string) "empty" (Sihl.Configuration.read_string "non-existent") None);
   Lwt.return ()
 ;;
 
 let read_existing _ () =
-  Sihl.Core.Configuration.store [ "foo", "value" ];
+  Sihl.Configuration.store [ "foo", "value" ];
   Alcotest.(
-    check
-      (option string)
-      "empty"
-      (Sihl.Core.Configuration.read_string "foo")
-      (Some "value"));
+    check (option string) "empty" (Sihl.Configuration.read_string "foo") (Some "value"));
   Lwt.return ()
 ;;
 
@@ -68,17 +56,17 @@ let schema =
 ;;
 
 let read_schema_invalid _ () =
-  Sihl.Core.Configuration.store
+  Sihl.Configuration.store
     [ "SMTP_PORT", "1234"; "SMTP_START_TLS", "true"; "SMTP_CA_PATH", "/ca/file" ];
   Alcotest.check_raises
     "raises"
-    (Sihl.Core.Configuration.Exception "Invalid configuration provided")
-    (fun () -> Sihl.Core.Configuration.read schema |> ignore);
+    (Sihl.Configuration.Exception "Invalid configuration provided")
+    (fun () -> Sihl.Configuration.read schema |> ignore);
   Lwt.return ()
 ;;
 
 let read_schema _ () =
-  Sihl.Core.Configuration.store
+  Sihl.Configuration.store
     [ "SMTP_USERNAME", "username"
     ; "SMTP_PORT", "1234"
     ; "SMTP_START_TLS", "true"
@@ -88,7 +76,7 @@ let read_schema _ () =
     check
       testable_config
       "raises"
-      (Sihl.Core.Configuration.read schema)
+      (Sihl.Configuration.read schema)
       { username = "username"
       ; port = Some 1234
       ; start_tls = true
@@ -98,7 +86,7 @@ let read_schema _ () =
 ;;
 
 let read_env_file_non_existing _ () =
-  let* data = Sihl.Core.Configuration.read_env_file () in
+  let* data = Sihl.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in
   Alcotest.(check (list string) "Returns empty keys" [] (List.map fst data));
   Alcotest.(check (list string) "Returns empty values" [] (List.map snd data));
@@ -121,7 +109,7 @@ let read_env_file switch () =
         let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
         Lwt_list.iter_s (Lwt_io.write_line ch) envs)
   in
-  let* data = Sihl.Core.Configuration.read_env_file () in
+  let* data = Sihl.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in
   Alcotest.(check (list string) "Returns keys" (List.rev keys) (List.map fst data));
   Alcotest.(check (list string) "Returns values" (List.rev values) (List.map snd data));
@@ -143,9 +131,9 @@ module Test1 = struct
 
   let test _ () =
     let data = [ "hey", "123" ] in
-    Sihl.Core.Configuration.store data;
-    let configuration = Sihl.Core.Configuration.make ~schema () in
-    Sihl.Core.Configuration.require [ configuration ];
+    Sihl.Configuration.store data;
+    let configuration = Sihl.Configuration.make ~schema () in
+    Sihl.Configuration.require [ configuration ];
     Lwt.return ()
   ;;
 end
@@ -162,15 +150,14 @@ module Test2 = struct
 
   let test _ () =
     let data = [ "ho", "value" ] in
-    Sihl.Core.Configuration.store data;
-    let configuration = Sihl.Core.Configuration.make ~schema () in
+    Sihl.Configuration.store data;
+    let configuration = Sihl.Configuration.make ~schema () in
     let exc =
-      Sihl.Core.Configuration.Exception
+      Sihl.Configuration.Exception
         "For configuration key ho there is an issue: Invalid number provided"
     in
     Alcotest.(
-      check_raises "raises" exc (fun () ->
-          Sihl.Core.Configuration.require [ configuration ]));
+      check_raises "raises" exc (fun () -> Sihl.Configuration.require [ configuration ]));
     Lwt.return ()
   ;;
 end

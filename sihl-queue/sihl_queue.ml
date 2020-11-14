@@ -166,7 +166,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
   ;;
 
   let lifecycle =
-    Sihl.Core.Container.Lifecycle.create
+    Sihl.Container.Lifecycle.create
       "queue"
       ~dependencies:[ ScheduleService.lifecycle ]
       ~start
@@ -178,7 +178,7 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
     Repo.register_cleaner ();
     let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
-    Sihl.Core.Container.Service.create lifecycle
+    Sihl.Container.Service.create lifecycle
   ;;
 end
 

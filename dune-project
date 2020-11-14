@@ -17,26 +17,33 @@
 (documentation "https://oxidizing.github.io/sihl/")
 
 (package
+ (name sihl-core)
+ (synopsis "The core of the Sihl web framework")
+ (description "Deals with configuration, service lifecycle, app, CLI commands, logging and randomness.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (conformist (>= 0.1.0))
+  (tsort (>= 2.0.0))
+  (logs (>= 0.7.0))
+  (fmt (>= 0.8.8))
+  (sexplib (>= v0.13.0))))
+
+(package
  (name sihl)
- (synopsis "The modular functional web framework")
+ (synopsis "A modular functional web framework")
  (description "Build web apps fast with long-term maintainability in mind.")
  (depends
   ;; General system dependencies
   dune
   (ocaml (>= 4.08.0))
-  (lwt (>= 5.3.0))
+  (sihl-core (= :version))
 
   ;; Web toolkit
   (opium (>= 0.17.1))
   (multipart-form-data (>= 0.3.0))
   (yojson (>= 1.7.0))
   (ppx_deriving_yojson (>= 3.5.2))
-
-  ;; Schema validation
-  (conformist (>= 0.1.0))
-
-  ;; Algorithms
-  (tsort (>= 2.0.0))
 
   ;; SSL && TLS
   (tls (>= 0.11.1))
@@ -46,13 +53,6 @@
   ;; Database interface
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
-
-  ;; HTML generation
-  (tyxml (>= 4.3.0))
-
-  ;; Logging
-  (logs (>= 0.7.0))
-  (fmt (>= 0.8.8))
 
   ;; Hashing
   (safepass (>= 3.0))
@@ -64,7 +64,6 @@
   (uuidm (>= 0.9.7))
 
   ;; Helpers & Generation
-  (sexplib (>= v0.13.0))
   (ppx_fields_conv (>= v0.13.0))
   (ppx_sexp_conv (>= v0.13.0))
 

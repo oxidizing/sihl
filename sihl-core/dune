@@ -1,0 +1,5 @@
+(library
+ (name sihl_core)
+ (public_name sihl-core)
+ (libraries sexplib fmt fmt.tty logs logs.fmt lwt lwt.unix tsort
+   conformist base64))

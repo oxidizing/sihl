@@ -92,12 +92,12 @@ module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
-  let lifecycle = Sihl.Core.Container.Lifecycle.create "storage" ~start ~stop
+  let lifecycle = Sihl.Container.Lifecycle.create "storage" ~start ~stop
 
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Sihl.Core.Container.Service.create lifecycle
+    Sihl.Container.Service.create lifecycle
   ;;
 end
 
