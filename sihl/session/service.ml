@@ -69,13 +69,8 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
     Model.get key session |> Lwt.return
   ;;
 
-  let start () =
-    Repo.register_migration ();
-    Repo.register_cleaner ();
-    Lwt.return ()
-  ;;
-
-  let stop _ = Lwt.return ()
+  let start () = Lwt.return ()
+  let stop () = Lwt.return ()
   let lifecycle = Core.Container.Lifecycle.create "session" ~start ~stop
 
   let register () =

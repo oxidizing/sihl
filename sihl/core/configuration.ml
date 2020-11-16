@@ -66,15 +66,17 @@ let read schema =
     | Ok value -> value
     | Error msg ->
       Logs.err (fun m -> m "%s" msg);
-      raise (Exception "CONFIG: Invalid configuration provided"))
+      raise (Exception "Invalid configuration provided"))
   | errors ->
     let errors =
-      List.map (fun (k, v) -> Format.sprintf "Key '%s' as invalid value: %s" k v) errors
+      List.map
+        (fun (k, v) -> Format.sprintf "Configuration '%s' has invalid value: %s" k v)
+        errors
     in
-    print_endline "CONFIG: Invalid configuration provided";
+    print_endline "Invalid configuration provided";
     List.iter print_endline errors;
     List.iter (fun error -> Logs.err (fun m -> m "%s" error)) errors;
-    raise (Exception "CONFIG: Invalid configuration provided")
+    raise (Exception "Invalid configuration provided")
 ;;
 
 let read_string' key = Sys.getenv_opt key

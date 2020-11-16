@@ -174,12 +174,7 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
         | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
   ;;
 
-  let start () =
-    Repo.register_migration ();
-    Repo.register_cleaner ();
-    Lwt.return ()
-  ;;
-
+  let start () = Lwt.return ()
   let stop () = Lwt.return ()
 
   let lifecycle =

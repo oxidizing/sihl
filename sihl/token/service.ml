@@ -60,14 +60,8 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
   ;;
 
   let invalidate token = Repo.update ~token:(Model.invalidate token)
-
-  let start () =
-    let () = Repo.register_migration () in
-    let () = Repo.register_cleaner () in
-    Lwt.return ()
-  ;;
-
-  let stop _ = Lwt.return ()
+  let start () = Lwt.return ()
+  let stop () = Lwt.return ()
   let lifecycle = Core.Container.Lifecycle.create ~dependencies:[] "token" ~start ~stop
 
   let register () =

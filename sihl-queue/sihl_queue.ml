@@ -152,13 +152,9 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
     Lwt.return ()
   ;;
 
-  let start () =
-    Repo.register_migration ();
-    Repo.register_cleaner ();
-    start_queue () |> Lwt.map ignore
-  ;;
+  let start () = start_queue () |> Lwt.map ignore
 
-  let stop _ =
+  let stop () =
     registered_jobs := [];
     match !stop_schedule with
     | Some stop_schedule ->

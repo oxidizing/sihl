@@ -72,7 +72,7 @@ let read_schema_invalid _ () =
     [ "SMTP_PORT", "1234"; "SMTP_START_TLS", "true"; "SMTP_CA_PATH", "/ca/file" ];
   Alcotest.check_raises
     "raises"
-    (Sihl.Core.Configuration.Exception "CONFIG: Invalid configuration provided")
+    (Sihl.Core.Configuration.Exception "Invalid configuration provided")
     (fun () -> Sihl.Core.Configuration.read schema |> ignore);
   Lwt.return ()
 ;;
