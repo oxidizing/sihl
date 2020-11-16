@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.9] - ?
+## [0.1.9] - 2020-11-16
 ### Fixed
 - Get rid of `Core.Ctx.t`
 - Make sure migrations and repo cleaners are registered when registering service
