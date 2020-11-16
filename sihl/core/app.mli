@@ -14,14 +14,6 @@ val with_services : Container.Service.t list -> t -> t
     before any service is started. This means you must not use any services here! *)
 val before_start : (unit -> unit Lwt.t) -> t -> t
 
-(** [after_start f app] registers a callback f with [app]. The callback is executed after
-    all services are started. You can safely use services here. *)
-val after_start : (unit -> unit Lwt.t) -> t -> t
-
-(** [before_stop f app] registers a callback f with [app]. The callback is executed before
-    all services are stopped. You can safely use services here. *)
-val before_stop : (unit -> unit Lwt.t) -> t -> t
-
 (** [after_stop f app] registers a callback f with [app]. The callback is executed before
     after services are stopped. This means you must not use any services here! *)
 val after_stop : (unit -> unit Lwt.t) -> t -> t

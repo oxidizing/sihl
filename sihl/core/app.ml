@@ -7,24 +7,18 @@ module Logger = (val Logs.src_log log_src : Logs.LOG)
 type t =
   { services : Container.Service.t list
   ; before_start : unit -> unit Lwt.t
-  ; after_start : unit -> unit Lwt.t
-  ; before_stop : unit -> unit Lwt.t
   ; after_stop : unit -> unit Lwt.t
   }
 
 let empty =
   { services = []
   ; before_start = (fun _ -> Lwt.return ())
-  ; after_start = (fun _ -> Lwt.return ())
-  ; before_stop = (fun _ -> Lwt.return ())
   ; after_stop = (fun _ -> Lwt.return ())
   }
 ;;
 
 let with_services services app = { app with services }
 let before_start before_start app = { app with before_start }
-let after_start after_start app = { app with after_start }
-let before_stop before_stop app = { app with before_stop }
 let after_stop after_stop app = { app with after_stop }
 
 (* TODO [jerben] 0. store ref to current app and start ctx 1. loop forever (in
@@ -55,6 +49,7 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   in
   let* file_configuration = Configuration.read_env_file () in
   Configuration.store file_configuration;
+  let* () = app.before_start () in
   Configuration.require configurations;
   (* iter all schema and check if env vars here *)
   let configuration_commands = Configuration.commands configurations in
