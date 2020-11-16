@@ -16,9 +16,6 @@ module type SERVICE = sig
   (** Register multiple migrations. *)
   val register_migrations : Model.Migration.t list -> unit
 
-  (** Get all registered migrations. *)
-  val get_migrations : unit -> Model.Migration.t list Lwt.t
-
   (** Run a list of migrations. *)
   val execute : Model.Migration.t list -> unit Lwt.t
 

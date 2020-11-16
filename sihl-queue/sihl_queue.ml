@@ -178,6 +178,8 @@ module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REP
   ;;
 
   let register ?(jobs = []) () =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
     let jobs_to_register = jobs |> List.map WorkableJob.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
     Sihl.Core.Container.Service.create lifecycle

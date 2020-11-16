@@ -64,7 +64,12 @@ module Make (Repo : Sig.TEMPLATE_REPO) : Sig.TEMPLATE_SERVICE = struct
 
   let stop _ = Lwt.return ()
   let lifecycle = Sihl.Core.Container.Lifecycle.create "template" ~start ~stop
-  let register () = Sihl.Core.Container.Service.create lifecycle
+
+  let register () =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    Sihl.Core.Container.Service.create lifecycle
+  ;;
 end
 
 module Repo = struct

@@ -98,7 +98,12 @@ module Make (Repo : Sihl.Storage.Sig.REPO) : Sihl.Storage.Sig.SERVICE = struct
 
   let stop _ = Lwt.return ()
   let lifecycle = Sihl.Core.Container.Lifecycle.create "storage" ~start ~stop
-  let register () = Sihl.Core.Container.Service.create lifecycle
+
+  let register () =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    Sihl.Core.Container.Service.create lifecycle
+  ;;
 end
 
 module Repo = Repo

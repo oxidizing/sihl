@@ -5,16 +5,19 @@ module Database = Sihl_database
 let log_src = Logs.Src.create "sihl.service.migration"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
+module Map = Map.Make (String)
 
-let registred_migrations : Model.Migration.t list ref = ref []
+let registered_migrations : Model.Migration.t Map.t ref = ref Map.empty
 
 let register_migration migration =
-  registred_migrations := List.concat [ !registred_migrations; [ migration ] ]
+  let label, _ = migration in
+  let found = Map.find_opt label !registered_migrations in
+  match found with
+  | Some _ -> Logs.debug (fun m -> m "Found duplicate migration '%s', ignoring it" label)
+  | None -> registered_migrations := Map.add label migration !registered_migrations
 ;;
 
-let register_migrations migrations =
-  registred_migrations := List.concat [ !registred_migrations; migrations ]
-;;
+let register_migrations migrations = List.iter register_migration migrations
 
 module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   let setup () =
@@ -60,7 +63,6 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
 
   let register_migration migration = register_migration migration |> ignore
   let register_migrations migrations = register_migrations migrations |> ignore
-  let get_migrations _ = Lwt.return !registred_migrations
 
   let set_fk_check_request =
     Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
@@ -170,8 +172,8 @@ module Make (MigrationRepo : Sig.REPO) : Sig.SERVICE = struct
   ;;
 
   let run_all () =
-    let* migrations = get_migrations () in
-    execute migrations
+    let steps = !registered_migrations |> Map.to_seq |> List.of_seq |> List.map snd in
+    execute steps
   ;;
 
   let migrate_cmd =

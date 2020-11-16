@@ -186,5 +186,9 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     Core.Container.Lifecycle.create "user" ~dependencies:Repo.lifecycles ~start ~stop
   ;;
 
-  let register () = Core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
+  let register () =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    Core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
+  ;;
 end

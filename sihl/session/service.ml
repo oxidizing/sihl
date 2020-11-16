@@ -77,5 +77,10 @@ module Make (Repo : Sig.REPO) : Sig.SERVICE = struct
 
   let stop _ = Lwt.return ()
   let lifecycle = Core.Container.Lifecycle.create "session" ~start ~stop
-  let register () = Core.Container.Service.create lifecycle
+
+  let register () =
+    Repo.register_migration ();
+    Repo.register_cleaner ();
+    Core.Container.Service.create lifecycle
+  ;;
 end
