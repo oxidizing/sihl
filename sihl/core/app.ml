@@ -48,7 +48,7 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
     List.map (fun service -> Container.Service.configuration service) app.services
   in
   let* file_configuration = Configuration.read_env_file () in
-  Configuration.store file_configuration;
+  Configuration.store @@ Option.value file_configuration ~default:[];
   let* () = app.before_start () in
   Configuration.require configurations;
   (* iter all schema and check if env vars here *)

@@ -99,22 +99,30 @@ let read_schema _ () =
 
 let read_env_file_non_existing _ () =
   let* data = Sihl.Core.Configuration.read_env_file () in
+  let data = Option.value data ~default:[] in
   Alcotest.(check (list string) "Returns empty keys" [] (List.map fst data));
   Alcotest.(check (list string) "Returns empty values" [] (List.map snd data));
+  Unix.putenv "ENV_FILES_PATH" "";
   Lwt.return ()
 ;;
 
 let read_env_file switch () =
-  let filename = Sihl.Core.Configuration.project_root_path ^ "/.env.testing" in
-  Lwt_switch.add_hook (Some switch) (fun () -> Lwt_unix.unlink filename);
+  let* cur = Lwt_unix.getcwd () in
+  let marker = cur ^ "/.git" in
+  let filename = cur ^ "/.env.test" in
+  Lwt_switch.add_hook (Some switch) (fun () ->
+      let* () = Lwt_unix.unlink filename in
+      Lwt_unix.rmdir marker);
   let keys = [ "NAME"; "OCCUPATION"; "AGE" ] in
   let values = [ "church"; "mathematician"; "92" ] in
+  let* () = Lwt_unix.mkdir marker 0o666 in
   let* () =
     Lwt_io.with_file ~mode:Lwt_io.Output filename (fun ch ->
         let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
         Lwt_list.iter_s (Lwt_io.write_line ch) envs)
   in
   let* data = Sihl.Core.Configuration.read_env_file () in
+  let data = Option.value data ~default:[] in
   Alcotest.(check (list string) "Returns keys" (List.rev keys) (List.map fst data));
   Alcotest.(check (list string) "Returns values" (List.rev values) (List.map snd data));
   Lwt.return ()
