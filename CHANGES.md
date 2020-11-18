@@ -1,3 +1,7 @@
+## [0.1.11] - ?
+### Fixed
+- extract `sihl-core` as separate opam package
+
 ## [0.1.10] - 2020-11-18
 ### Fixed
 - Properly load `.env` files based on project root, can be set using `ENV_FILES_PATH`
