@@ -72,10 +72,10 @@ module type SERVICE = sig
     -> password:string
     -> password_confirmation:string
     -> unit
-    -> (Model.t, string) Result.t Lwt.t
+    -> (Model.t, Model.Error.t) Result.t Lwt.t
 
   (** Find user by email if password matches. *)
-  val login : email:string -> password:string -> (Model.t, string) Result.t Lwt.t
+  val login : email:string -> password:string -> (Model.t, Model.Error.t) Result.t Lwt.t
 
   val register : unit -> Core.Container.Service.t
 end
