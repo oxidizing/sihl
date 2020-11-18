@@ -1,3 +1,10 @@
+## [0.1.10] - 2020-11-18
+### Fixed
+- Properly load `.env` files based on project root, can be set using `ENV_FILES_PATH`
+
+### Added
+- Determine project rood using markers such as the .git folder
+
 ## [0.1.9] - 2020-11-16
 ### Fixed
 - Get rid of `Core.Ctx.t`
