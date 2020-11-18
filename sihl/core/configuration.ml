@@ -73,8 +73,6 @@ let read schema =
         (fun (k, v) -> Format.sprintf "Configuration '%s' has invalid value: %s" k v)
         errors
     in
-    print_endline "Invalid configuration provided";
-    List.iter print_endline errors;
     List.iter (fun error -> Logs.err (fun m -> m "%s" error)) errors;
     raise (Exception "Invalid configuration provided")
 ;;
@@ -106,29 +104,52 @@ let is_production () =
   | _ -> false
 ;;
 
-let project_root_path =
-  match read_string "PROJECT_ROOT_DIR" with
-  | Some pjr -> pjr
-  | _ -> Unix.getcwd ()
+let env_files_path () =
+  match read_string "ENV_FILES_PATH" with
+  | None | Some "" ->
+    let markers = [ ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
+    let rec find_markers path_els =
+      let path = String.concat "/" path_els in
+      if List.exists (fun marker -> Sys.file_exists (path ^ "/" ^ marker)) markers
+      then (
+        (* Path found => Write it into the env var to "memoize" it *)
+        Unix.putenv "ENV_FILES_PATH" path;
+        Some path)
+      else (
+        match path_els with
+        | [] -> None
+        | _ -> find_markers @@ CCList.take (List.length path_els - 1) path_els)
+    in
+    find_markers @@ String.split_on_char '/' (Unix.getcwd ())
+  | Some path -> Some path
 ;;
 
 let read_env_file () =
-  let filename =
-    project_root_path ^ "/" ^ if is_testing () then ".env.testing" else ".env"
-  in
-  let* exists = Lwt_unix.file_exists filename in
-  if exists
-  then
-    let* file = Lwt_io.open_file ~mode:Lwt_io.Input filename in
-    let rec read_to_end file ls =
-      let* line = Lwt_io.read_line_opt file in
-      match line with
-      | Some line -> read_to_end file (line :: ls)
-      | None -> Lwt.return ls
-    in
-    let* envs = read_to_end file [] in
-    envs |> envs_to_kv |> Lwt.return
-  else Lwt.return []
+  match env_files_path () with
+  | Some path ->
+    let filename = path ^ "/" ^ if is_testing () then ".env.test" else ".env" in
+    let* exists = Lwt_unix.file_exists filename in
+    if exists
+    then (
+      Logs.info (fun m -> m "Env file found: %s" filename);
+      let* file = Lwt_io.open_file ~mode:Lwt_io.Input filename in
+      let rec read_to_end file ls =
+        let* line = Lwt_io.read_line_opt file in
+        match line with
+        | Some line -> read_to_end file (line :: ls)
+        | None -> Lwt.return ls
+      in
+      let* envs = read_to_end file [] in
+      envs |> envs_to_kv |> Option.some |> Lwt.return)
+    else (
+      Logs.debug (fun m -> m "Env file not found: %s. Continuing without it." filename);
+      Lwt.return None)
+  | None ->
+    Logs.debug (fun m ->
+        m
+          "No env files directory found, please provide your own directory path with \
+           environment variable ENV_FILES_PATH if you would like to use env files");
+    Lwt.return None
 ;;
 
 let require validators =

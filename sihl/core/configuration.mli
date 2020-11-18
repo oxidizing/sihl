@@ -53,18 +53,19 @@ val store : data -> unit
     they occur early in the app lifecycle. This minimizes the feedback loop and makes
     sure, that services start only with valid configuration. *)
 
-(** [project_root_path] contains the path to the root of the project/app. Its value is
-    known at app start, thus not requiring it to be a function. It reads the value of
-    [PROJECT_ROOT_PATH]. If that env variable is not set, it reads the current working
-    directory of the process. *)
+(** [env_files_path] contains the path where the env files are kept. It reads the value of
+    [ENV_FILES_PATH]. If that environment variable is not set, it goes up directories
+    until a [.git], [.hg], [.svn], [.bzr] or [_darcs] directory is found. If none of these
+    are found until [/] is reached, [None] is returned. *)
 
-val project_root_path : string
+val env_files_path : unit -> string option
 
-(** [read_env_file ()] reads an [.env] file from the project root directory and returns
-    the key-value pairs as [data]. If [SIHL_ENV] is set to [test], [.env.testing] is read.
-    Otherwise [.env] is read. If the file doesn't exist, empty data is returned. *)
+(** [read_env_file ()] reads an [.env] file from the directory given by [env_files_path]
+    and returns the key-value pairs as [data]. If [SIHL_ENV] is set to [test], [.env.test]
+    is read. Otherwise [.env] is read. If the file doesn't exist or the directory
+    containing the file can't be found, [None] is returned. *)
 
-val read_env_file : unit -> data Lwt.t
+val read_env_file : unit -> data option Lwt.t
 
 (** [read schema] returns the decoded, statically typed version of configuration [t] of
     the [schema]. This is used in services to declaratively define a valid configuration.
