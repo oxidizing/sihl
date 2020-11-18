@@ -1,6 +1,7 @@
 ## [0.1.10] - 2020-11-18
 ### Fixed
 - Properly load `.env` files based on project root, can be set using `ENV_FILES_PATH`
+- Add custom error types for user actions to allow overriding errors displayed to users
 
 ### Added
 - Determine project rood using markers such as the .git folder
