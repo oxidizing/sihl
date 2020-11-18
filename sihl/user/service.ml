@@ -144,22 +144,22 @@ module Make (Repo : Sig.REPOSITORY) : Sig.SERVICE = struct
     match
       User.validate_new_password ~password ~password_confirmation ~password_policy
     with
-    | Error msg -> Lwt_result.fail msg
+    | Error msg -> Lwt_result.fail @@ Model.Error.InvalidPasswordProvided msg
     | Ok () ->
       let* user = find_by_email_opt ~email in
       (match user with
       | None -> create_user ~username ~email ~password |> Lwt.map Result.ok
-      | Some _ -> Lwt_result.fail "Invalid email address provided")
+      | Some _ -> Lwt_result.fail Model.Error.AlreadyRegistered)
   ;;
 
   let login ~email ~password =
     let* user = find_by_email_opt ~email in
     match user with
-    | None -> Lwt_result.fail "Invalid email or password provided"
+    | None -> Lwt_result.fail Model.Error.DoesNotExist
     | Some user ->
       if User.matches_password password user
       then Lwt_result.return user
-      else Lwt_result.fail "Invalid email or password provided"
+      else Lwt_result.fail Model.Error.IncorrectPassword
   ;;
 
   let create_admin_cmd =

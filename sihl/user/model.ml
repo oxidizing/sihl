@@ -3,6 +3,14 @@
 module Database = Sihl_database
 module Utils = Sihl_utils
 
+module Error = struct
+  type t =
+    | AlreadyRegistered
+    | IncorrectPassword
+    | InvalidPasswordProvided of string
+    | DoesNotExist
+end
+
 type t =
   { id : string
   ; email : string
