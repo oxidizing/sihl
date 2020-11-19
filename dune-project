@@ -30,6 +30,15 @@
   (sexplib (>= v0.13.0))))
 
 (package
+ (name sihl-contract)
+ (synopsis "The Sihl interface module signatures and model types")
+ (description "Source of truth for service implementations.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-core (= :version))))
+
+(package
  (name sihl)
  (synopsis "A modular functional web framework")
  (description "Build web apps fast with long-term maintainability in mind.")
