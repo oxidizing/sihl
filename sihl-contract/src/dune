@@ -1,8 +1,12 @@
 (library
  (name sihl_contract)
  (public_name sihl-contract)
- (libraries sihl-core ptime ptime.clock.os caqti caqti-lwt uuidm opium multipart-form-data alcotest)
- (modules_without_implementation authn_sig database_sig email_sig email_template_sig http_sig message_sig migration_sig password_reset_sig queue_sig cleaner_sig schedule_sig session_sig storage_sig token_sig user_sig)
+ (libraries sihl-core ptime ptime.clock.os caqti caqti-lwt uuidm opium
+   multipart-form-data alcotest)
+ (modules_without_implementation authn_sig database_sig email_sig
+   email_template_sig http_sig message_sig migration_sig password_reset_sig
+   queue_sig cleaner_sig schedule_sig session_sig storage_sig token_sig
+   user_sig)
  (preprocess
   (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make ppx_sexp_conv)))
