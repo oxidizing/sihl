@@ -1,7 +1,7 @@
 (library
  (name sihl_queue_core)
  (public_name sihl.queue)
- (libraries ptime ptime.clock.os yojson ppx_deriving_yojson.runtime sihl_core
+ (libraries yojson ppx_deriving_yojson.runtime
    sihl_utils sihl_database sihl_schedule)
  (modules_without_implementation sig)
  (preprocess

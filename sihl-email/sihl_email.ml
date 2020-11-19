@@ -41,14 +41,12 @@ Html:
 ;;
 
 let intercept sender email =
-  let is_testing = Sihl.Core.Configuration.is_testing () in
+  let is_testing = Sihl.Configuration.is_testing () in
   let bypass =
-    Option.value
-      ~default:false
-      (Sihl.Core.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
+    Option.value ~default:false (Sihl.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
   in
   let console =
-    Option.value ~default:is_testing (Sihl.Core.Configuration.read_bool "EMAIL_CONSOLE")
+    Option.value ~default:is_testing (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
   in
   let () = if console then print email else () in
   match is_testing, bypass with
@@ -199,7 +197,7 @@ module MakeSendGrid (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = str
   ;;
 
   let send' email =
-    let token = (Sihl.Core.Configuration.read schema).api_key in
+    let token = (Sihl.Configuration.read schema).api_key in
     let headers =
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token; "content-type", "application/json" ]

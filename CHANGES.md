@@ -1,3 +1,7 @@
+## [0.1.11] - ?
+### Fixed
+- extract `sihl-core` as separate opam package
+
 ## [0.1.10] - 2020-11-18
 ### Fixed
 - Properly load `.env` files based on project root, can be set using `ENV_FILES_PATH`
@@ -10,6 +14,7 @@
 ### Fixed
 - Get rid of `Core.Ctx.t`
 - Make sure migrations and repo cleaners are registered when registering service
+- `Sihl.Core.*` modules are now accessible directly under `Sihl.*`
 
 ## [0.1.8] - 2020-11-12
 ### Fixed

@@ -1,12 +1,14 @@
-module Authn = Sihl_authn
-module Authz = Sihl_authz
-module Core = Sihl_core
+(* Core *)
 module Container = Sihl_core.Container
 module App = Sihl_core.App
 module Configuration = Sihl_core.Configuration
 module Command = Sihl_core.Command
 module Log = Sihl_core.Log
 module Random = Sihl_core.Random
+
+(* Contrib *)
+module Authn = Sihl_authn
+module Authz = Sihl_authz
 module Database = Sihl_database
 module Repository = Sihl_repository
 module Migration = Sihl_migration

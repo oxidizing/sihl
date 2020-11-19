@@ -40,9 +40,9 @@ let services =
 
 let () =
   Unix.putenv "DATABASE_URL" "mariadb://admin:password@127.0.0.1:3306/dev";
-  Logs.set_reporter (Sihl.Core.Log.default_reporter ());
+  Logs.set_reporter (Sihl.Log.default_reporter ());
   Lwt_main.run
-    (let* _ = Sihl.Core.Container.start_services services in
+    (let* _ = Sihl.Container.start_services services in
      let* () = Service.Migration.run_all () in
      run "mariadb" @@ test_suite)
 ;;

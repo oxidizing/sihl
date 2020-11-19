@@ -2,7 +2,7 @@
  (name sihl_user)
  (public_name sihl.user)
  (libraries ptime ptime.clock.os yojson ppx_deriving_yojson.runtime alcotest
-   sihl_core sihl_utils sihl_database sihl_token sihl_repository
+   sihl_utils sihl_database sihl_token sihl_repository
    sihl_migration)
  (modules_without_implementation sig)
  (preprocess

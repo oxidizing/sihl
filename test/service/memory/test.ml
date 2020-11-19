@@ -6,8 +6,8 @@ let test_suite = [ Queue.test_suite ]
 let services = [ Service.Queue.register () ]
 
 let () =
-  Logs.set_reporter (Sihl.Core.Log.default_reporter ());
+  Logs.set_reporter (Sihl.Log.default_reporter ());
   Lwt_main.run
-    (let* _ = Sihl.Core.Container.start_services services in
+    (let* _ = Sihl.Container.start_services services in
      run "memory" @@ test_suite)
 ;;

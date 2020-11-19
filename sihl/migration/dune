@@ -1,8 +1,7 @@
 (library
  (name sihl_migration)
  (public_name sihl.migration)
- (libraries uuidm yojson ppx_deriving_yojson.runtime sexplib sihl_core
-   sihl_database)
+ (libraries yojson ppx_deriving_yojson.runtime sihl_database)
  (modules_without_implementation sig)
  (preprocess
   (pps ppx_deriving_yojson ppx_sexp_conv ppx_fields_conv ppx_deriving.eq

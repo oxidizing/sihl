@@ -1,7 +1,7 @@
 (library
  (name sihl)
  (public_name sihl)
- (libraries sihl_authn sihl_authz sihl_core sihl_database sihl_repository
+ (libraries sihl-core sihl_authn sihl_authz sihl_database sihl_repository
    sihl_migration sihl_email_core sihl_message sihl_queue_core sihl_schedule
    sihl_session sihl_storage_core sihl_token sihl_user sihl_utils sihl_http
    sihl_middleware sihl_password_reset))

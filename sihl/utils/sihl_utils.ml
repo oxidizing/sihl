@@ -84,7 +84,7 @@ module Jwt = struct
   type payload = (string * string) list
 
   let empty = []
-  let add_claim ~key ~value payload = Base.List.cons (key, value) payload
+  let add_claim ~key ~value payload = List.cons (key, value) payload
 
   let set_expires_in ~now duration payload =
     let span = Time.duration_to_span duration in

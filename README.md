@@ -219,7 +219,7 @@ The app configuration file glues services provided by Sihl and your code togethe
 app.ml:
 
 ```ocaml
-let services : (module Sihl.Core.Container.Service.Sig) list =
+let services : (module Sihl.Container.Service.Sig) list =
   [ (module Service.WebServer) ]
 
 let hello_page =

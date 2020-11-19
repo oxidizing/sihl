@@ -1,7 +1,7 @@
 (library
  (name sihl_password_reset)
  (public_name sihl.password-reset)
- (libraries yojson ppx_deriving_yojson.runtime alcotest sihl_core sihl_utils
+ (libraries yojson ppx_deriving_yojson.runtime alcotest sihl_utils
    sihl_database sihl_user)
  (modules_without_implementation sig)
  (preprocess
