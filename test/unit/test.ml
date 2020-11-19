@@ -1,28 +1,7 @@
 open Alcotest_lwt
 
 let suite =
-  [ ( "service container"
-    , [ test_case "order all dependencies" `Quick Core_container.order_all_dependencies
-      ; test_case
-          "order simple dependency list"
-          `Quick
-          Core_container.order_simple_dependency_list
-      ] )
-  ; ( "service configuration"
-    , [ test_case "read empty" `Quick Core_configuration.read_empty_value
-      ; test_case "read non-existing" `Quick Core_configuration.read_non_existing
-      ; test_case "read existing" `Quick Core_configuration.read_existing
-      ; test_case "read schema invalid" `Quick Core_configuration.read_schema_invalid
-      ; test_case "read schema" `Quick Core_configuration.read_schema
-      ; test_case
-          "read env file non-existing"
-          `Quick
-          Core_configuration.read_env_file_non_existing
-      ; test_case "read env file" `Quick Core_configuration.read_env_file
-      ; test_case "require succeeds" `Quick Core_configuration.Test1.test
-      ; test_case "require fails" `Quick Core_configuration.Test2.test
-      ] )
-  ; ( "http"
+  [ ( "http"
     , [ test_case "require url encoded body" `Quick Http.test_require_url_encoded_body
       ; test_case
           "require tuple url encoded body"
@@ -102,10 +81,6 @@ let suite =
       ] )
   ; "queue", [ test_case "should job run" `Quick Queue.should_run_job ]
   ; "utils", [ test_case "parse ptime" `Quick Utils.parse_ptime ]
-  ; ( "app"
-    , [ test_case "run user command" `Quick Core_app.run_user_command
-      ; test_case "run order command" `Quick Core_app.run_order_command
-      ] )
   ]
 ;;
 

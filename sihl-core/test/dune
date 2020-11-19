@@ -1,0 +1,4 @@
+(tests
+ (names app configuration container)
+ (package sihl-core)
+ (libraries sihl-core alcotest alcotest-lwt))

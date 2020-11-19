@@ -14,8 +14,8 @@ module Database = struct
     Lwt.return ()
   ;;
 
-  let lifecycle = Sihl.Container.Lifecycle.create ~start ~stop "database"
-  let register () = Sihl.Container.Service.create lifecycle
+  let lifecycle = Sihl_core.Container.Lifecycle.create ~start ~stop "database"
+  let register () = Sihl_core.Container.Service.create lifecycle
 end
 
 let user_service_running = ref false
@@ -33,7 +33,7 @@ module UserService = struct
   ;;
 
   let lifecycle =
-    Sihl.Container.Lifecycle.create
+    Sihl_core.Container.Lifecycle.create
       "user service"
       ~start
       ~stop
@@ -41,10 +41,11 @@ module UserService = struct
   ;;
 
   let ban =
-    Sihl.Command.make ~name:"ban" ~description:"Ban a user" (fun _ -> Lwt.return_unit)
+    Sihl_core.Command.make ~name:"ban" ~description:"Ban a user" (fun _ ->
+        Lwt.return_unit)
   ;;
 
-  let register () = Sihl.Container.Service.create ~commands:[ ban ] lifecycle
+  let register () = Sihl_core.Container.Service.create ~commands:[ ban ] lifecycle
 end
 
 let order_service_running = ref false
@@ -62,7 +63,7 @@ module OrderService = struct
   ;;
 
   let lifecycle =
-    Sihl.Container.Lifecycle.create
+    Sihl_core.Container.Lifecycle.create
       "order service"
       ~start
       ~stop
@@ -70,11 +71,11 @@ module OrderService = struct
   ;;
 
   let order =
-    Sihl.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
+    Sihl_core.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
         Lwt.return_unit)
   ;;
 
-  let register () = Sihl.Container.Service.create ~commands:[ order ] lifecycle
+  let register () = Sihl_core.Container.Service.create ~commands:[ order ] lifecycle
 end
 
 let run_user_command _ () =
@@ -83,10 +84,10 @@ let run_user_command _ () =
   order_service_running := false;
   let set_config _ = Lwt.return @@ Unix.putenv "CREATE_ADMIN" "admin" in
   let* () =
-    Sihl.App.empty
-    |> Sihl.App.with_services [ UserService.register () ]
-    |> Sihl.App.before_start set_config
-    |> Sihl.App.run' ~args:[ "ban" ]
+    Sihl_core.App.empty
+    |> Sihl_core.App.with_services [ UserService.register () ]
+    |> Sihl_core.App.before_start set_config
+    |> Sihl_core.App.run' ~args:[ "ban" ]
   in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is not running" !order_service_running false);
@@ -100,13 +101,27 @@ let run_order_command _ () =
   order_service_running := false;
   let set_config _ = Lwt.return @@ Unix.putenv "ORDER_NOTIFICATION_URL" "https://" in
   let* () =
-    Sihl.App.empty
-    |> Sihl.App.with_services [ OrderService.register () ]
-    |> Sihl.App.before_start set_config
-    |> Sihl.App.run' ~args:[ "order" ]
+    Sihl_core.App.empty
+    |> Sihl_core.App.with_services [ OrderService.register () ]
+    |> Sihl_core.App.before_start set_config
+    |> Sihl_core.App.run' ~args:[ "order" ]
   in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is running" !order_service_running true);
   Alcotest.(check bool "user service is not running" !user_service_running false);
   Lwt.return ()
+;;
+
+let suite =
+  Alcotest_lwt.
+    [ ( "app"
+      , [ test_case "run user command" `Quick run_user_command
+        ; test_case "run order command" `Quick run_order_command
+        ] )
+    ]
+;;
+
+let () =
+  Unix.putenv "SIHL_ENV" "test";
+  Lwt_main.run (Alcotest_lwt.run "app" suite)
 ;;
