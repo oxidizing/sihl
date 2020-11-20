@@ -1,9 +1,0 @@
-(executable
- (name test)
- (libraries sihl sihl-storage sihl-email sihl-queue test_case alcotest-lwt
-   caqti-driver-mariadb))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./test.exe)))

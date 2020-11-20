@@ -1,9 +1,6 @@
 open Lwt.Syntax
 module Core = Sihl_core
-module Database = Sihl_database
-module Utils = Sihl_utils
-module Queue = Sihl_queue_core
-module Sig = Sihl.Email.Sig
+module Utils = Sihl_type.Utils
 module Template = Sihl_email_template
 
 let log_src = Logs.Src.create "sihl.service.http"
@@ -56,9 +53,8 @@ let intercept sender email =
   | false, false -> sender email
 ;;
 
-module MakeSmtp (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
-  module Template = TemplateService
-
+module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
+  Sihl_contract.Email.Sig = struct
   type config =
     { sender : string
     ; username : string
@@ -148,9 +144,8 @@ module MakeSmtp (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
   let register () = Core.Container.Service.create lifecycle
 end
 
-module MakeSendGrid (TemplateService : Sig.TEMPLATE_SERVICE) : Sig.SERVICE = struct
-  module Template = TemplateService
-
+module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
+  Sihl_contract.Email.Sig = struct
   let body ~recipient ~subject ~sender ~content =
     Printf.sprintf
       {|
@@ -253,10 +248,9 @@ end
 (* Use this functor to create an email service that sends emails using the job queue. This
    is useful if you need to answer a request quickly while sending the email in the
    background *)
-module MakeQueued (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SERVICE) :
-  Sig.SERVICE = struct
-  module Template = EmailService.Template
-
+module MakeQueued
+    (EmailService : Sihl_contract.Email.Sig)
+    (QueueService : Sihl_contract.Queue.Sig) : Sihl_contract.Email.Sig = struct
   module Job = struct
     let input_to_string email =
       email |> Sihl.Email.to_yojson |> Yojson.Safe.to_string |> Option.some
@@ -279,15 +273,15 @@ module MakeQueued (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SE
     let failed _ = Lwt_result.return ()
 
     let job =
-      Queue.create_job
+      Sihl_type.Queue_job.create
         ~name:"send_email"
         ~input_to_string
         ~string_to_input
         ~handle
         ~failed
         ()
-      |> Queue.set_max_tries 10
-      |> Queue.set_retry_delay Utils.Time.OneHour
+      |> Sihl_type.Queue_job.set_max_tries 10
+      |> Sihl_type.Queue_job.set_retry_delay Utils.Time.OneHour
     ;;
   end
 
@@ -312,7 +306,7 @@ module MakeQueued (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SE
   ;;
 
   let start () = QueueService.register_jobs ~jobs:[ Job.job ] |> Lwt.map ignore
-  let stop _ = Lwt.return ()
+  let stop () = Lwt.return ()
 
   let lifecycle =
     Core.Container.Lifecycle.create
@@ -321,10 +315,12 @@ module MakeQueued (EmailService : Sig.SERVICE) (QueueService : Sihl.Queue.Sig.SE
       ~stop
       ~dependencies:
         [ EmailService.lifecycle
-        ; Sihl.Database.Service.lifecycle
+        ; Sihl.Service.Database.lifecycle
         ; QueueService.lifecycle
         ]
   ;;
 
   let register () = Core.Container.Service.create lifecycle
 end
+
+module Template_repo = Sihl_email_template_repo

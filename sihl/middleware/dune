@@ -1,4 +1,0 @@
-(library
- (name sihl_middleware)
- (public_name sihl.middleware)
- (libraries sihl_http sihl_message sihl_authn))
