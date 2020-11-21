@@ -1,14 +1,13 @@
 open Lwt.Syntax
-module Job = Sihl.Queue.Job
-module WorkableJob = Sihl.Queue.WorkableJob
-module JobInstance = Sihl.Queue.JobInstance
-module Sig = Sihl.Queue.Sig
+module Job = Sihl_type.Queue_job
+module JobInstance = Sihl_type.Queue_job_instance
+module WorkableJob = Sihl_type.Queue_workable_job
 
 let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
 
-module MakePolling (ScheduleService : Sihl.Schedule.Sig.SERVICE) (Repo : Sig.REPO) :
-  Sig.SERVICE = struct
+module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.Sig) :
+  Sihl_contract.Queue.Sig = struct
   let dispatch ~job ?delay input =
     let name = Job.name job in
     Logs.debug (fun m -> m "QUEUE: Dispatching job %s" name);

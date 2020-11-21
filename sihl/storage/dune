@@ -1,9 +1,0 @@
-(library
- (name sihl_storage_core)
- (public_name sihl.storage)
- (libraries yojson ppx_deriving_yojson.runtime base64 sihl_core sihl_database
-   sihl_repository)
- (modules_without_implementation sig)
- (preprocess
-  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
-    ppx_deriving.make)))

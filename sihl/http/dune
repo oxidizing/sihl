@@ -1,4 +1,0 @@
-(library
- (name sihl_http)
- (public_name sihl.http)
- (libraries opium multipart-form-data sihl_utils))

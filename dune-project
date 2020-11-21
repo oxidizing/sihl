@@ -30,12 +30,22 @@
   (sexplib (>= v0.13.0))))
 
 (package
- (name sihl-contract)
- (synopsis "The Sihl interface module signatures and model types")
- (description "Source of truth for service implementations.")
+ (name sihl-type)
+ (synopsis "")
+ (description "")
  (depends
   dune
   (ocaml (>= 4.08.0))
+  (sihl-core (= :version))))
+
+(package
+ (name sihl-contract)
+ (synopsis "The Sihl service module signatures")
+ (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-type (= :version))
   (sihl-core (= :version))))
 
 (package
@@ -47,6 +57,8 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
+  (sihl-type (= :version))
+  (sihl-contract (= :version))
 
   ;; Web toolkit
   (opium (>= 0.17.1))

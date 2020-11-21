@@ -1,4 +1,0 @@
-(test
- (name test)
- (package sihl)
- (libraries sihl alcotest alcotest-lwt))

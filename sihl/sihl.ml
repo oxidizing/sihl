@@ -6,21 +6,64 @@ module Command = Sihl_core.Command
 module Log = Sihl_core.Log
 module Random = Sihl_core.Random
 
-(* Contrib *)
-module Authn = Sihl_authn
-module Authz = Sihl_authz
-module Database = Sihl_database
-module Repository = Sihl_repository
-module Migration = Sihl_migration
-module Email = Sihl_email_core
-module Message = Sihl_message
-module Queue = Sihl_queue_core
-module Schedule = Sihl_schedule
-module Session = Sihl_session
-module Storage = Sihl_storage_core
-module Token = Sihl_token
-module User = Sihl_user
-module Password_reset = Sihl_password_reset
-module Utils = Sihl_utils
-module Http = Sihl_http
-module Middleware = Sihl_middleware
+(* Contract *)
+module Contract = Sihl_contract
+
+(* Services *)
+module Service = struct
+  module Authn = Authn
+  module Authz = Authz
+  module Database = Database
+  module Http = Http
+  module Migration = Migration
+  module Migration_repo = Migration_repo
+  module Message = Message
+  module Repository = Repository
+  module Schedule = Schedule
+  module Session = Session
+  module Session_repo = Session_repo
+  module Token = Token
+  module Token_repo = Token_repo
+  module User = User
+  module User_repo = User_repo
+  module Password_reset = Password_reset
+end
+
+(* Types *)
+module Cleaner = Sihl_type.Cleaner
+module Database = Sihl_type.Database
+module Email = Sihl_type.Email
+module Email_template = Sihl_type.Email_template
+
+module Http = struct
+  module Cookie = Sihl_type.Http_cookie
+  module Middleware = Sihl_type.Http_middleware
+  module Request = Sihl_type.Http_request
+  module Response = Sihl_type.Http_response
+  module Route = Sihl_type.Http_route
+end
+
+module Message = Sihl_type.Message
+module Message_entry = Sihl_type.Message_entry
+module Migration = Sihl_type.Migration
+
+module Queue = struct
+  module Job = Sihl_type.Queue_job
+  module Job_instance = Sihl_type.Queue_job_instance
+  module Workable_job = Sihl_type.Queue_workable_job
+end
+
+module Schedule = Sihl_type.Schedule
+module Session = Sihl_type.Session
+
+module Storage = struct
+  module File = Sihl_type.Storage_file
+  module Stored = Sihl_type.Storage_stored
+end
+
+module Token = Sihl_type.Token
+module User = Sihl_type.User
+module Utils = Sihl_type.Utils
+
+(* Rest *)
+module Middleware = Middleware

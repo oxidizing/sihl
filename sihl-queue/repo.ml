@@ -1,8 +1,16 @@
-module Job = Sihl.Queue.Job
-module JobInstance = Sihl.Queue.JobInstance
+module Job = Sihl_type.Queue_job
+module JobInstance = Sihl_type.Queue_job_instance
 module Map = Map.Make (String)
 
-module Memory : Sihl.Queue.Sig.REPO = struct
+module type Sig = sig
+  val register_migration : unit -> unit
+  val register_cleaner : unit -> unit
+  val enqueue : job_instance:JobInstance.t -> unit Lwt.t
+  val find_workable : unit -> JobInstance.t list Lwt.t
+  val update : job_instance:JobInstance.t -> unit Lwt.t
+end
+
+module Memory : Sig = struct
   let state = ref Map.empty
   let ordered_ids = ref []
 
@@ -12,7 +20,7 @@ module Memory : Sihl.Queue.Sig.REPO = struct
       ordered_ids := [];
       Lwt.return ()
     in
-    Sihl.Repository.Service.register_cleaner cleaner
+    Sihl.Service.Repository.register_cleaner cleaner
   ;;
 
   let register_migration () = ()
@@ -47,7 +55,7 @@ module Memory : Sihl.Queue.Sig.REPO = struct
 end
 
 module Model = struct
-  open Sihl.Queue.JobInstance
+  open JobInstance
 
   let status =
     let encode m = Ok (Status.to_string m) in
@@ -72,8 +80,7 @@ module Model = struct
   ;;
 end
 
-module MakeMariaDb (MigrationService : Sihl.Migration.Sig.SERVICE) : Sihl.Queue.Sig.REPO =
-struct
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let enqueue_request =
     Caqti_request.exec
       Model.t
@@ -99,10 +106,10 @@ struct
   ;;
 
   let enqueue ~job_instance =
-    Sihl.Database.Service.query (fun connection ->
+    Sihl.Service.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec enqueue_request job_instance
-        |> Lwt.map Sihl.Database.Service.raise_error)
+        |> Lwt.map Sihl.Service.Database.raise_error)
   ;;
 
   let update_request =
@@ -123,10 +130,10 @@ struct
   ;;
 
   let update ~job_instance =
-    Sihl.Database.Service.query (fun connection ->
+    Sihl.Service.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_request job_instance
-        |> Lwt.map Sihl.Database.Service.raise_error)
+        |> Lwt.map Sihl.Service.Database.raise_error)
   ;;
 
   let find_workable_request =
@@ -152,10 +159,10 @@ struct
   ;;
 
   let find_workable () =
-    Sihl.Database.Service.query (fun connection ->
+    Sihl.Service.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.collect_list find_workable_request ()
-        |> Lwt.map Sihl.Database.Service.raise_error)
+        |> Lwt.map Sihl.Service.Database.raise_error)
   ;;
 
   let clean_request =
@@ -167,9 +174,9 @@ struct
   ;;
 
   let clean () =
-    Sihl.Database.Service.query (fun connection ->
+    Sihl.Service.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt.map Sihl.Database.Service.raise_error)
+        Connection.exec clean_request () |> Lwt.map Sihl.Service.Database.raise_error)
   ;;
 
   module Migration = struct
@@ -204,6 +211,6 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
   end
 
-  let register_cleaner () = Sihl.Repository.Service.register_cleaner clean
+  let register_cleaner () = Sihl.Service.Repository.register_cleaner clean
   let register_migration () = MigrationService.register_migration Migration.migration
 end

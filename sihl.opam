@@ -13,6 +13,8 @@ depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08.0"}
   "sihl-core" {= version}
+  "sihl-type" {= version}
+  "sihl-contract" {= version}
   "opium" {>= "0.17.1"}
   "multipart-form-data" {>= "0.3.0"}
   "yojson" {>= "1.7.0"}
