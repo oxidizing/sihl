@@ -1,4 +1,5 @@
 (tests
- (names email encryption http jwt message ql queue regex session user utils web)
+ (names email encryption http jwt message ql queue regex session user utils
+   web)
  (package sihl-type)
  (libraries sihl-type alcotest alcotest-lwt))
