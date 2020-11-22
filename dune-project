@@ -27,8 +27,8 @@
   (tsort (>= 2.0.0))
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
-  (sexplib (>= v0.13.0)))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test)))
+  (sexplib (>= v0.13.0))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-type)
