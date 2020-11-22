@@ -27,7 +27,8 @@
   (tsort (>= 2.0.0))
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
-  (sexplib (>= v0.13.0))))
+  (sexplib (>= v0.13.0)))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test)))
 
 (package
  (name sihl-type)
@@ -36,29 +37,7 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-core (= :version))))
-
-(package
- (name sihl-contract)
- (synopsis "The Sihl service module signatures")
- (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl-type (= :version))
-  (sihl-core (= :version))))
-
-(package
- (name sihl)
- (synopsis "A modular functional web framework")
- (description "Build web apps fast with long-term maintainability in mind.")
- (depends
-  ;; General system dependencies
-  dune
-  (ocaml (>= 4.08.0))
   (sihl-core (= :version))
-  (sihl-type (= :version))
-  (sihl-contract (= :version))
 
   ;; Web toolkit
   (opium (>= 0.17.1))
@@ -90,8 +69,31 @@
 
   ;; Test
   (alcotest (>= 1.2.0))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
-  ;; Test dependencies
+(package
+ (name sihl-contract)
+ (synopsis "The Sihl service module signatures")
+ (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-type (= :version))
+  (sihl-core (= :version))))
+
+(package
+ (name sihl)
+ (synopsis "A modular functional web framework")
+ (description "Build web apps fast with long-term maintainability in mind.")
+ (depends
+  ;; General system dependencies
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-core (= :version))
+  (sihl-type (= :version))
+  (sihl-contract (= :version))
+
+  ;; Test
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) (< 3.0.0) :with-test))))
 
