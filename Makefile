@@ -10,7 +10,7 @@ test:
 	SIHL_ENV=test opam exec -- dune test
 
 test-slow:
-	SIHL_ENV=test opam exec -- dune build @runtest-all --force test
+	SIHL_ENV=test opam exec -- dune build @runtest-all
 
 doc:
 	opam exec -- dune build @doc
