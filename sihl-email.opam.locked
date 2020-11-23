@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.1.8"
+version: "0.1.11"
 synopsis: "A Sihl service for sending emails using Lwt"
 description: """
 
@@ -15,6 +15,7 @@ depends: [
   "asn1-combinators" {= "0.2.3"}
   "astring" {= "0.8.5"}
   "base" {= "v0.14.0"}
+  "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
@@ -65,8 +66,10 @@ depends: [
   "mrmime" {= "0.3.0"}
   "mtime" {= "1.2.0"}
   "num" {= "1.3"}
-  "ocaml" {= "4.08.1"}
+  "ocaml" {= "4.11.1"}
+  "ocaml-base-compiler" {= "4.11.1"}
   "ocaml-compiler-libs" {= "v0.12.3"}
+  "ocaml-config" {= "1"}
   "ocaml-migrate-parsetree" {= "1.7.3"}
   "ocaml-syntax-shims" {= "1.0.0"}
   "ocamlbuild" {= "0.14.0"}

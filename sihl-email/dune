@@ -1,4 +1,0 @@
-(library
- (name sihl_email)
- (public_name sihl-email)
- (libraries sihl cohttp cohttp-lwt-unix letters))

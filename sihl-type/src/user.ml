@@ -17,7 +17,8 @@ type t =
   ; admin : bool
   ; confirmed : bool
   ; created_at : Ptime.t
-        [@to_yojson Utils.Time.ptime_to_yojson] [@of_yojson Utils.Time.ptime_of_yojson]
+        [@to_yojson Sihl_core.Utils.Time.ptime_to_yojson]
+        [@of_yojson Sihl_core.Utils.Time.ptime_of_yojson]
   }
 [@@deriving fields, yojson, show, make]
 
@@ -32,7 +33,7 @@ let sexp_of_t { id; email; _ } =
 ;;
 
 let set_user_password user new_password =
-  let hash = new_password |> Utils.Hashing.hash in
+  let hash = new_password |> Sihl_core.Utils.Hashing.hash in
   Result.map (fun hash -> { user with password = hash }) hash
 ;;
 
@@ -50,7 +51,7 @@ let is_owner user id = String.equal user.id id
 let is_confirmed user = user.confirmed
 
 let matches_password password user =
-  Utils.Hashing.matches ~hash:user.password ~plain:password
+  Sihl_core.Utils.Hashing.matches ~hash:user.password ~plain:password
 ;;
 
 let default_password_policy password =
@@ -97,7 +98,7 @@ let validate_change_password
 ;;
 
 let create ~email ~password ~username ~admin ~confirmed =
-  let hash = password |> Utils.Hashing.hash in
+  let hash = password |> Sihl_core.Utils.Hashing.hash in
   Result.map
     (fun hash ->
       { id = Database.Id.random () |> Database.Id.to_string

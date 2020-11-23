@@ -90,8 +90,32 @@
   (sihl-type (= :version))
   (sihl-contract (= :version))
   (sihl-core (= :version))
+
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))))
+
+(package
+ (name sihl-web)
+ (synopsis "")
+ (description "")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-type (= :version))
+  (sihl-core (= :version))
+
+  (opium (>= 0.17.1))
+  (multipart-form-data (>= 0.3.0))))
+
+(package
+ (name sihl-user)
+ (synopsis "")
+ (description "")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-type (= :version))
+  (sihl-core (= :version))))
 
 (package
  (name sihl)
@@ -105,8 +129,9 @@
   (sihl-type (= :version))
   (sihl-contract (= :version))
   (sihl-persistence (= :version))
+  (sihl-web (= :version))
+  (sihl-user (= :version))
 
-  ;; Test
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) (< 3.0.0) :with-test))))
 

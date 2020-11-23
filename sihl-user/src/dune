@@ -1,0 +1,4 @@
+(library
+ (name sihl_user)
+ (public_name sihl-user)
+ (libraries sihl-core sihl-type sihl-contract sihl-persistence))

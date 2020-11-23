@@ -5,7 +5,11 @@ module type Sig = sig
 
   (** Queue a [job] for processing. Use [delay] to run the initially job after a certain
       amount of time. *)
-  val dispatch : job:'a Queue_job.t -> ?delay:Utils.Time.duration -> 'a -> unit Lwt.t
+  val dispatch
+    :  job:'a Queue_job.t
+    -> ?delay:Sihl_core.Utils.Time.duration
+    -> 'a
+    -> unit Lwt.t
 
   (** Register jobs that can be dispatched.
 
