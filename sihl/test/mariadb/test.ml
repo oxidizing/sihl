@@ -5,7 +5,6 @@ module Session = Test_case.Session.Make (Service.Session)
 module Storage = Test_case.Storage.Make (Service.Storage)
 module User = Test_case.User.Make (Service.User)
 module Email = Test_case.Email.Make (Service.EmailTemplate)
-module Database = Test_case.Database
 
 module PasswordReset =
   Test_case.Password_reset.Make (Service.User) (Service.PasswordReset)
@@ -14,8 +13,7 @@ module Queue = Test_case.Queue.Make (Service.Queue)
 module Csrf = Test_case.Csrf.Make (Service.Token) (Service.Session)
 
 let test_suite =
-  [ Database.test_suite
-  ; Token.test_suite
+  [ Token.test_suite
   ; Session.test_suite
   ; Storage.test_suite
   ; User.test_suite

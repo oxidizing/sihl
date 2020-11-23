@@ -1,0 +1,14 @@
+(executables
+ (names database_mariadb database_postgresql)
+ (libraries sihl-persistence sihl-core alcotest-lwt
+   caqti-driver-mariadb caqti-driver-postgresql))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./database_mariadb.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./database_postgresql.exe)))

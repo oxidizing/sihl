@@ -1,7 +1,7 @@
 open Lwt.Syntax
 
 let check_pool _ () =
-  let _ = Sihl.Service.Database.fetch_pool () in
+  let _ = Sihl_persistence.Database.fetch_pool () in
   Lwt.return ()
 ;;
 
@@ -11,7 +11,7 @@ let drop_table_request =
 
 let drop_table_if_exists connection =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  Connection.exec drop_table_request () |> Lwt.map Sihl.Service.Database.raise_error
+  Connection.exec drop_table_request () |> Lwt.map Sihl_persistence.Database.raise_error
 ;;
 
 let create_table_request =
@@ -26,7 +26,7 @@ let create_table_request =
 
 let create_table_if_not_exists connection =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  Connection.exec create_table_request () |> Lwt.map Sihl.Service.Database.raise_error
+  Connection.exec create_table_request () |> Lwt.map Sihl_persistence.Database.raise_error
 ;;
 
 let insert_username_request =
@@ -36,7 +36,7 @@ let insert_username_request =
 let insert_username connection username =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
   Connection.exec insert_username_request username
-  |> Lwt.map Sihl.Service.Database.raise_error
+  |> Lwt.map Sihl_persistence.Database.raise_error
 ;;
 
 let get_usernames_request =
@@ -49,12 +49,12 @@ let get_usernames_request =
 let get_usernames connection =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
   Connection.collect_list get_usernames_request ()
-  |> Lwt.map Sihl.Service.Database.raise_error
+  |> Lwt.map Sihl_persistence.Database.raise_error
 ;;
 
 let query _ () =
   let* usernames =
-    Sihl.Service.Database.query (fun connection ->
+    Sihl_persistence.Database.query (fun connection ->
         let* () = drop_table_if_exists connection in
         let* () = create_table_if_not_exists connection in
         let* () = insert_username connection "foobar pool" in
@@ -67,10 +67,10 @@ let query _ () =
 
 let query_with_transaction _ () =
   let* usernames =
-    Sihl.Service.Database.query (fun connection ->
+    Sihl_persistence.Database.query (fun connection ->
         let* () = drop_table_if_exists connection in
         let* () = create_table_if_not_exists connection in
-        Sihl.Service.Database.transaction (fun connection ->
+        Sihl_persistence.Database.transaction (fun connection ->
             let* () = insert_username connection "foobar trx" in
             get_usernames connection))
   in
@@ -81,13 +81,13 @@ let query_with_transaction _ () =
 
 let transaction_rolls_back _ () =
   let* usernames =
-    Sihl.Service.Database.query (fun connection ->
+    Sihl_persistence.Database.query (fun connection ->
         let* () = drop_table_if_exists connection in
         let* () = create_table_if_not_exists connection in
         let* () =
           Lwt.catch
             (fun () ->
-              Sihl.Service.Database.transaction (fun connection ->
+              Sihl_persistence.Database.transaction (fun connection ->
                   let* () = insert_username connection "foobar trx" in
                   failwith "Oh no, something went wrong during the transaction!"))
             (fun _ -> Lwt.return ())
@@ -105,7 +105,7 @@ let failing_query connection =
   Lwt.catch
     (fun () ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec invalid_request () |> Lwt.map Sihl.Service.Database.raise_error)
+      Connection.exec invalid_request () |> Lwt.map Sihl_persistence.Database.raise_error)
     (* eat the exception silently *)
       (fun _ -> Lwt.return ())
 ;;
@@ -115,7 +115,7 @@ let query_does_not_exhaust_pool _ () =
     match n with
     | 0 -> Lwt.return ()
     | n ->
-      let* () = Sihl.Service.Database.query failing_query in
+      let* () = Sihl_persistence.Database.query failing_query in
       loop (n - 1)
   in
   let* () = loop 100 in
@@ -128,7 +128,7 @@ let transaction_does_not_exhaust_pool _ () =
     match n with
     | 0 -> Lwt.return ()
     | n ->
-      let* () = Sihl.Service.Database.transaction failing_query in
+      let* () = Sihl_persistence.Database.transaction failing_query in
       loop (n - 1)
   in
   let* () = loop 100 in
@@ -136,19 +136,23 @@ let transaction_does_not_exhaust_pool _ () =
   Lwt.return ()
 ;;
 
-let test_suite =
-  ( "database"
-  , [ Alcotest_lwt.test_case "fetch pool" `Quick check_pool
-    ; Alcotest_lwt.test_case "query with pool" `Quick query
-    ; Alcotest_lwt.test_case "query with transaction" `Quick query_with_transaction
-    ; Alcotest_lwt.test_case "transaction rolls back" `Quick transaction_rolls_back
-    ; Alcotest_lwt.test_case
-        "failing function doesn't exhaust pool in query"
-        `Quick
-        query_does_not_exhaust_pool
-    ; Alcotest_lwt.test_case
-        "failing function doesn't exhaust pool in transaction"
-        `Quick
-        transaction_does_not_exhaust_pool
-    ] )
+let suite =
+  Alcotest_lwt.
+    [ ( "database"
+      , [ test_case "fetch pool" `Quick check_pool
+        ; test_case "query with pool" `Quick query
+        ; test_case "query with transaction" `Quick query_with_transaction
+        ; test_case "transaction rolls back" `Quick transaction_rolls_back
+        ; test_case
+            "failing function doesn't exhaust pool in query"
+            `Quick
+            query_does_not_exhaust_pool
+        ; test_case
+            "failing function doesn't exhaust pool in transaction"
+            `Quick
+            transaction_does_not_exhaust_pool
+        ] )
+    ]
 ;;
+
+let service = Sihl_persistence.Database.register ()

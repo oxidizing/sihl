@@ -52,7 +52,6 @@
 
   ;; Database interface
   (caqti (>= 1.2.1))
-  (caqti-lwt (>= 1.2.0))
 
   ;; Hashing
   (safepass (>= 3.0))
@@ -82,6 +81,18 @@
   (sihl-core (= :version))))
 
 (package
+ (name sihl-persistence)
+ (synopsis "")
+ (description "")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-type (= :version))
+  (sihl-core (= :version))
+  (caqti (>= 1.2.1))
+  (caqti-lwt (>= 1.2.0))))
+
+(package
  (name sihl)
  (synopsis "A modular functional web framework")
  (description "Build web apps fast with long-term maintainability in mind.")
@@ -92,6 +103,7 @@
   (sihl-core (= :version))
   (sihl-type (= :version))
   (sihl-contract (= :version))
+  (sihl-persistence (= :version))
 
   ;; Test
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))

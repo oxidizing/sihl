@@ -1,3 +1,5 @@
+module Database = Sihl_persistence.Database
+module Repository = Sihl_persistence.Repository
 module Migration = Sihl_type.Migration
 module Migration_state = Sihl_type.Migration_state
 module Model = Sihl_type.Session
