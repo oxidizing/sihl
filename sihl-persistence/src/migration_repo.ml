@@ -3,6 +3,7 @@ module Migration = Sihl_type.Migration_state
 module type Sig = sig
   val create_table_if_not_exists : unit -> unit Lwt.t
   val get : namespace:string -> Migration.t option Lwt.t
+  val get_all : unit -> Migration.t list Lwt.t
   val upsert : state:Migration.t -> unit Lwt.t
 end
 
@@ -43,6 +44,25 @@ module MariaDb : Sig = struct
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.find_opt get_request namespace |> Lwt.map Database.raise_error)
     |> Lwt.map (Option.map Migration.of_tuple)
+  ;;
+
+  let get_all_request =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup3 string int bool)
+      {sql|
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM core_migration_state;
+       |sql}
+  ;;
+
+  let get_all () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.collect_list get_all_request () |> Lwt.map Database.raise_error)
+    |> Lwt.map (List.map Migration.of_tuple)
   ;;
 
   let upsert_request =
@@ -106,6 +126,25 @@ module PostgreSql : Sig = struct
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.find_opt get_request namespace |> Lwt.map Database.raise_error)
     |> Lwt.map (Option.map Migration.of_tuple)
+  ;;
+
+  let get_all_request =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup3 string int bool)
+      {sql|
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM core_migration_state;
+       |sql}
+  ;;
+
+  let get_all () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.collect_list get_all_request () |> Lwt.map Database.raise_error)
+    |> Lwt.map (List.map Migration.of_tuple)
   ;;
 
   let upsert_request =

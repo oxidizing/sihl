@@ -181,7 +181,42 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
         run_all ())
   ;;
 
-  let start () = Lwt.return ()
+  let check_unapplied () =
+    let* migrations = MigrationRepo.get_all () in
+    List.iter
+      (fun migration ->
+        let namespace = Migration_state.namespace migration in
+        let mig = Map.find_opt namespace !registered_migrations in
+        (* TODO [aerben] check if off by one here? *)
+        match mig with
+        | None ->
+          Logs.warn (fun m ->
+              m
+                "Could not find registered migrations for migration %s. This implies you \
+                 removed migrations, which should be append-only."
+                namespace)
+        | Some mig ->
+          if List.length mig > Migration_state.version migration
+          then
+            Logs.info (fun m ->
+                m
+                  "Unapplied migrations for %s detected, did you register them without \
+                   running them?"
+                  namespace)
+          else if List.length mig < Migration_state.version migration
+          then
+            Logs.warn (fun m ->
+                m
+                  "Fewer registered migrations found than version indicates for \
+                   migration %s. This implies you removed migrations, which should be \
+                   append-only."
+                  namespace)
+          else ())
+      migrations;
+    Lwt.return ()
+  ;;
+
+  let start () = check_unapplied ()
   let stop _ = Lwt.return ()
 
   let lifecycle =

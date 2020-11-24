@@ -3,6 +3,7 @@ type t =
   ; version : int
   ; dirty : bool
   }
+[@@deriving fields]
 
 let create ~namespace = { namespace; version = 0; dirty = true }
 let mark_dirty state = { state with dirty = true }
@@ -15,4 +16,3 @@ let steps_to_apply (namespace, steps) { version; _ } =
 
 let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
 let to_tuple state = state.namespace, state.version, state.dirty
-let dirty state = state.dirty
