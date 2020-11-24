@@ -8,14 +8,14 @@ let log_src = Logs.Src.create "sihl.service.migration"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Map = Map.Make (String)
 
-let registered_migrations : Migration.t Map.t ref = ref Map.empty
+let registered_migrations : Migration.steps Map.t ref = ref Map.empty
 
 let register_migration migration =
   let label, _ = migration in
   let found = Map.find_opt label !registered_migrations in
   match found with
   | Some _ -> Logs.debug (fun m -> m "Found duplicate migration '%s', ignoring it" label)
-  | None -> registered_migrations := Map.add label migration !registered_migrations
+  | None -> registered_migrations := Map.add label (snd migration) !registered_migrations
 ;;
 
 let register_migrations migrations = List.iter register_migration migrations
@@ -172,7 +172,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
   ;;
 
   let run_all () =
-    let steps = !registered_migrations |> Map.to_seq |> List.of_seq |> List.map snd in
+    let steps = !registered_migrations |> Map.to_seq |> List.of_seq in
     execute steps
   ;;
 

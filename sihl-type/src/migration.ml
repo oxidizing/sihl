@@ -5,7 +5,8 @@ type step =
   }
 [@@deriving show, eq]
 
-type t = string * step list [@@deriving show, eq]
+type steps = step list [@@deriving show, eq]
+type t = string * steps [@@deriving show, eq]
 
 let create_step ~label ?(check_fk = true) statement = { label; check_fk; statement }
 let empty namespace = namespace, []
