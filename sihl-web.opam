@@ -12,8 +12,7 @@ bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08.0"}
-  "sihl-type" {= version}
-  "sihl-core" {= version}
+  "sihl-contract" {= version}
   "opium" {>= "0.17.1"}
   "multipart-form-data" {>= "0.3.0"}
   "odoc" {with-doc}
