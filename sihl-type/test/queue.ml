@@ -9,14 +9,14 @@ let should_run_job _ () =
       ~failed:(fun _ -> Lwt_result.return ())
       ()
     |> Sihl_type.Queue_job.set_max_tries 3
-    |> Sihl_type.Queue_job.set_retry_delay Sihl_type.Utils.Time.OneMinute
+    |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Utils.Time.OneMinute
   in
   let job_instance =
     Sihl_type.Queue_job_instance.create ~input:None ~delay:None ~now job
   in
   let actual = Sihl_type.Queue_job_instance.should_run ~job_instance ~now in
   Alcotest.(check bool) "pending job should run" true actual;
-  let delay = Some Sihl_type.Utils.Time.OneDay in
+  let delay = Some Sihl_core.Utils.Time.OneDay in
   let job_instance = Sihl_type.Queue_job_instance.create ~input:None ~delay ~now job in
   let actual = Sihl_type.Queue_job_instance.should_run ~job_instance ~now in
   Alcotest.(check bool)

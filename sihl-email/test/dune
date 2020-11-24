@@ -1,0 +1,13 @@
+(executables
+ (names email email_mariadb email_postgresql)
+ (libraries sihl-email alcotest-lwt caqti-driver-mariadb caqti-driver-postgresql))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./email_mariadb.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./email_postgresql.exe)))

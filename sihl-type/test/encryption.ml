@@ -4,7 +4,7 @@ let xor_empty _ () =
       (option (list char))
       "XORs both empty"
       (Some [])
-      (Sihl_type.Utils.Encryption.xor [] []));
+      (Sihl_core.Utils.Encryption.xor [] []));
   Lwt.return ()
 ;;
 
@@ -19,7 +19,7 @@ let xor_valid _ () =
           (option (list char))
           "XORs ASCII"
           (Some (r |> String.to_seq |> List.of_seq))
-          (Sihl_type.Utils.Encryption.xor
+          (Sihl_core.Utils.Encryption.xor
              (v1 |> String.to_seq |> List.of_seq)
              (v2 |> String.to_seq |> List.of_seq))))
     io;
@@ -35,7 +35,7 @@ let xor_length_differs _ () =
           (option (list char))
           "XORs different length"
           None
-          (Sihl_type.Utils.Encryption.xor
+          (Sihl_core.Utils.Encryption.xor
              (v |> String.to_seq |> List.of_seq)
              (r |> String.to_seq |> List.of_seq))))
     io;
@@ -48,7 +48,7 @@ let decrypt_with_salt_empty _ () =
       (option (list char))
       "Decrypts empty"
       (Some [])
-      (Sihl_type.Utils.Encryption.decrypt_with_salt ~salted_cipher:[] ~salt_length:0));
+      (Sihl_core.Utils.Encryption.decrypt_with_salt ~salted_cipher:[] ~salt_length:0));
   Lwt.return ()
 ;;
 
@@ -63,7 +63,7 @@ let decrypt_with_salt_valid _ () =
           (option (list char))
           "Decrypts valid"
           (Some (v2 |> String.to_seq |> List.of_seq))
-          (Sihl_type.Utils.Encryption.decrypt_with_salt
+          (Sihl_core.Utils.Encryption.decrypt_with_salt
              ~salted_cipher:(v1 ^ r |> String.to_seq |> List.of_seq)
              ~salt_length:(List.length (r |> String.to_seq |> List.of_seq)))))
     io;
@@ -79,7 +79,7 @@ let decrypt_with_salt_length_differs _ () =
           (option (list char))
           "Decrypts different length"
           None
-          (Sihl_type.Utils.Encryption.decrypt_with_salt
+          (Sihl_core.Utils.Encryption.decrypt_with_salt
              ~salted_cipher:(r |> String.to_seq |> List.of_seq)
              ~salt_length:(List.length (v |> String.to_seq |> List.of_seq)))))
     io;

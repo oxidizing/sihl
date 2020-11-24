@@ -1,0 +1,8 @@
+(executables
+ (names csrf)
+ (libraries sihl-web sihl-persistence alcotest-lwt))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./csrf.exe)))

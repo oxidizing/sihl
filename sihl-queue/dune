@@ -1,4 +1,0 @@
-(library
- (name sihl_queue)
- (public_name sihl-queue)
- (libraries sihl))

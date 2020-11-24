@@ -28,6 +28,16 @@
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
   (sexplib (>= v0.13.0))
+  (yojson (>= 1.7.0))
+  (ppx_deriving_yojson (>= 3.5.2))
+  (tls (>= 0.11.1))
+  (ssl (>= 0.5.9))
+  (lwt_ssl (>= 1.1.3))
+  (caqti (>= 1.2.1))
+  (safepass (>= 3.0))
+  (jwto (>= 0.3.0))
+  (ppx_fields_conv (>= v0.13.0))
+  (ppx_sexp_conv (>= v0.13.0))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -38,35 +48,9 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
-
-  ;; Web toolkit
   (opium (>= 0.17.1))
   (multipart-form-data (>= 0.3.0))
-  (yojson (>= 1.7.0))
-  (ppx_deriving_yojson (>= 3.5.2))
-
-  ;; SSL && TLS
-  (tls (>= 0.11.1))
-  (ssl (>= 0.5.9))
-  (lwt_ssl (>= 1.1.3))
-
-  ;; Database interface
-  (caqti (>= 1.2.1))
-
-  ;; Hashing
-  (safepass (>= 3.0))
-
-  ;; JWT
-  (jwto (>= 0.3.0))
-
-  ;; UUID
   (uuidm (>= 0.9.7))
-
-  ;; Helpers & Generation
-  (ppx_fields_conv (>= v0.13.0))
-  (ppx_sexp_conv (>= v0.13.0))
-
-  ;; Test
   (alcotest (>= 1.2.0))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -87,11 +71,64 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-type (= :version))
   (sihl-contract (= :version))
-  (sihl-core (= :version))
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))))
+
+(package
+ (name sihl-web)
+ (synopsis "")
+ (description "")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-contract (= :version))
+  (opium (>= 0.17.1))
+  (multipart-form-data (>= 0.3.0))))
+
+(package
+ (name sihl-user)
+ (synopsis "")
+ (description "")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-contract (= :version))
+  (sihl-persistence (= :version))))
+
+(package
+ (name sihl-storage)
+ (synopsis "A Sihl service for storing and retrieving large files")
+ (description "
+This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-contract (= :version))
+  (sihl-persistence (= :version))))
+
+(package
+ (name sihl-email)
+ (synopsis "A Sihl service for sending emails using Lwt")
+ (description "
+A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (letters (>= 0.2.0))
+  (sihl-contract (= :version))
+  (sihl-persistence (= :version))))
+
+(package
+ (name sihl-queue)
+ (synopsis "A Sihl service for queue jobs")
+ (description "
+A Sihl service for putting and working jobs on queues. Various queue backends are provided.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-contract (= :version))
+  (sihl-persistence (= :version))))
 
 (package
  (name sihl)
@@ -105,38 +142,10 @@
   (sihl-type (= :version))
   (sihl-contract (= :version))
   (sihl-persistence (= :version))
-
-  ;; Test
+  (sihl-web (= :version))
+  (sihl-user (= :version))
+  (sihl-queue (= :version))
+  (sihl-storage (= :version))
+  (sihl-email (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.1) (< 3.0.0) :with-test))))
-
-(package
- (name sihl-storage)
- (synopsis "A Sihl service for storing and retrieving large files")
- (description "
-This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl (= :version))))
-
-(package
- (name sihl-email)
- (synopsis "A Sihl service for sending emails using Lwt")
- (description "
-A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl (= :version))
-  (letters (>= 0.2.0))))
-
-(package
- (name sihl-queue)
- (synopsis "A Sihl service for queue jobs")
- (description "
-A Sihl service for putting and working jobs on queues. Various queue backends are provided.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl (= :version))))

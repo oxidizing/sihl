@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.1.8"
+version: "0.1.11"
 synopsis: "A Sihl service for storing and retrieving large files"
 description: """
 
@@ -11,10 +11,13 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "dune" {= "2.7.1"}
-  "ocaml" {= "4.08.1"}
+  "ocaml" {= "4.11.1"}
+  "ocaml-base-compiler" {= "4.11.1"}
+  "ocaml-config" {= "1"}
 ]
 build: [
   ["dune" "subst"] {dev}

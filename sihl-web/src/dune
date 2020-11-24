@@ -1,0 +1,4 @@
+(library
+ (name sihl_web)
+ (public_name sihl-web)
+ (libraries sihl-core sihl-type sihl-contract))
