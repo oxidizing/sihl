@@ -88,6 +88,7 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-type (= :version))
+  (sihl-contract (= :version))
   (sihl-core (= :version))
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))))
