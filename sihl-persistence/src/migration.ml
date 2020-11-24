@@ -150,6 +150,27 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
     Lwt.return @@ Ok ()
   ;;
 
+  let progress_bar cur goal =
+    let scale = 0.7 in
+    let width = Terminal_size.get_columns () in
+    match width with
+    | None -> ()
+    | Some width ->
+      (* TOOD [aerben] maybe print newline after cur == goal *)
+      let progress = Float.div cur goal in
+      let bar_width = Float.mul scale (Int.to_float width) in
+      let markers = Float.to_int @@ Float.round @@ Float.mul bar_width progress in
+      let percentage = Float.to_int @@ Float.round @@ Float.mul 100.0 progress in
+      let bar =
+        String.make markers '#'
+        ^ String.make (Float.to_int bar_width - markers) '-'
+        ^ "("
+        ^ Int.to_string percentage
+        ^ "%)\r"
+      in
+      print_string bar
+  ;;
+
   let execute migrations =
     let n = List.length migrations in
     if n > 0
