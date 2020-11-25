@@ -50,14 +50,17 @@ let start_server _ =
 ;;
 
 let start_cmd =
-  Core.Command.make ~name:"start" ~help:"" ~description:"Start the web server" (fun _ ->
-      start_server ())
+  Core.Command.make
+    ~name:"start-http"
+    ~help:""
+    ~description:"Start the web server"
+    (fun _ -> start_server ())
 ;;
 
 (* Lifecycle *)
 
-let start ctx = Lwt.return ctx
-let stop _ = Lwt.return ()
+let start () = start_server ()
+let stop () = Lwt.return ()
 let lifecycle = Core.Container.Lifecycle.create "http" ~start ~stop
 
 let register ?(routers = []) () =

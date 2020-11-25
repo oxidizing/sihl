@@ -40,6 +40,14 @@ let starting_commands service =
     (Container.Service.commands service)
 ;;
 
+let start_cmd services =
+  Command.make
+    ~name:"start"
+    ~help:""
+    ~description:"Start the Sihl app by starting all registered services"
+    (fun _ -> Container.start_services services |> Lwt.map ignore)
+;;
+
 let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   (* Set the logger up as first thing so we can log *)
   Logs.set_reporter (log_reporter ());
@@ -55,7 +63,10 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   let configuration_commands = Configuration.commands configurations in
   Logger.debug (fun m -> m "Setup service commands");
   let service_commands = app.services |> List.map starting_commands |> List.concat in
-  let commands = List.concat [ configuration_commands; service_commands; commands ] in
+  let start_sihl_cmd = start_cmd app.services in
+  let commands =
+    List.concat [ [ start_sihl_cmd ]; configuration_commands; service_commands; commands ]
+  in
   Command.run commands args
 ;;
 
