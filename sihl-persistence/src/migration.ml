@@ -162,11 +162,11 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
       let markers = Float.to_int @@ Float.round @@ Float.mul bar_width progress in
       let percentage = Float.to_int @@ Float.round @@ Float.mul 100.0 progress in
       let bar =
-        String.make markers '#'
-        ^ String.make (Float.to_int bar_width - markers) '-'
-        ^ "("
-        ^ Int.to_string percentage
-        ^ "%)\r"
+        Printf.sprintf
+          "|%s%s| (%s)\r"
+          (String.make markers '#')
+          (String.make (Float.to_int bar_width - markers) '-')
+          (Int.to_string percentage)
       in
       print_string bar
   ;;
@@ -202,38 +202,56 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
         run_all ())
   ;;
 
+  let get_unapplied migrations_states all_migrations =
+    List.map
+      (fun migrations_state ->
+        let namespace = Migration_state.namespace migrations_state in
+        let migrations = Map.find_opt namespace all_migrations in
+        match migrations with
+        | None -> namespace, None
+        | Some migrations ->
+          let unapplied_migrations_count =
+            List.length migrations - Migration_state.version migrations_state
+          in
+          namespace, Some unapplied_migrations_count)
+      migrations_states
+  ;;
+
   let check_unapplied () =
     let* migrations = MigrationRepo.get_all () in
+    let unapplied = get_unapplied migrations !registered_migrations in
     List.iter
-      (fun migration ->
-        let namespace = Migration_state.namespace migration in
-        let mig = Map.find_opt namespace !registered_migrations in
-        (* TODO [aerben] check if off by one here? *)
-        match mig with
+      (fun (namespace, count) ->
+        match count with
         | None ->
           Logs.warn (fun m ->
               m
-                "Could not find registered migrations for migration %s. This implies you \
-                 removed migrations, which should be append-only."
+                "Could not find registered migrations for namespace '%s'. This implies \
+                 you removed all migrations of that namespace. Migrations should be \
+                 append-only. If you intended to remove those migrations, make sure to \
+                 remove the migration state in your database/other persistence layer."
                 namespace)
-        | Some mig ->
-          if List.length mig > Migration_state.version migration
+        | Some count ->
+          if count > 0
           then
             Logs.info (fun m ->
                 m
-                  "Unapplied migrations for %s detected, did you register them without \
-                   running them?"
-                  namespace)
-          else if List.length mig < Migration_state.version migration
+                  "Unapplied migrations for namespace '%s' detected. Found %s unapplied \
+                   migrations, run command 'migrate'."
+                  namespace
+                  (Int.to_string count))
+          else if count < 0
           then
             Logs.warn (fun m ->
                 m
-                  "Fewer registered migrations found than version indicates for \
-                   migration %s. This implies you removed migrations, which should be \
-                   append-only."
-                  namespace)
+                  "Fewer registered migrations found than migration state indicates for \
+                   namespace '%s'. Current migration state version is ahead of \
+                   registered migrations by %s. This implies you removed migrations, \
+                   which should be append-only."
+                  namespace
+                  (Int.to_string @@ Int.abs count))
           else ())
-      migrations;
+      unapplied;
     Lwt.return ()
   ;;
 
