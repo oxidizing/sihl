@@ -18,7 +18,7 @@ let routers_to_opium_builders routers =
   routers
   |> List.map (fun router ->
          let routes = Sihl_type.Http_route.router_to_routes router in
-         List.map to_opium_builder routes)
+         routes |> List.map to_opium_builder |> List.rev)
   |> List.concat
 ;;
 
