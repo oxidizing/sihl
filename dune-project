@@ -42,8 +42,8 @@
 
 (package
  (name sihl-type)
- (synopsis "")
- (description "")
+ (synopsis "Contains Sihl types that are returned by Sihl services")
+ (description "Use this package together with sihl-contract to implement your own services. Sihl types are things like Email.t, User.t, Queue_job.t or Migration.t.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -56,7 +56,7 @@
 
 (package
  (name sihl-contract)
- (synopsis "The Sihl service module signatures")
+ (synopsis "Contains Sihl service signatures")
  (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
  (depends
   dune
@@ -66,8 +66,8 @@
 
 (package
  (name sihl-persistence)
- (synopsis "")
- (description "")
+ (synopsis "Contains Sihl services regarding data persistence")
+ (description "Use this package to deal with database pools, transactions, migrations and integration tests involving the database layer.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -77,8 +77,8 @@
 
 (package
  (name sihl-web)
- (synopsis "")
- (description "")
+ (synopsis "Contains HTTP server implementations as Sihl service")
+ (description "Use this package to implement run your HTTP routers on a HTTP server.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -88,8 +88,8 @@
 
 (package
  (name sihl-user)
- (synopsis "")
- (description "")
+ (synopsis "Contains Sihl services to deal with user related topics")
+ (description "Use this package to handle tokens, sessions, users, flash messages and password reset workflows.")
  (depends
   dune
   (ocaml (>= 4.08.0))

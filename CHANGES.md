@@ -1,6 +1,6 @@
-## [0.1.11] - ?
+## [0.1.11] - 20-11-25
 ### Fixed
-- extract `sihl-core` as separate opam package
+- extract `sihl-core`, `sihl-type`, `sihl-contract`, `sihl-user`, `sihl-persistence` and `sihl-web` as separate opam packages
 
 ## [0.1.10] - 2020-11-18
 ### Fixed
