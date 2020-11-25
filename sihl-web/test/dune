@@ -1,8 +1,13 @@
 (executables
- (names csrf)
- (libraries sihl-web sihl-persistence alcotest-lwt))
+ (names csrf csrf_mariadb http)
+ (libraries sihl-user sihl-web sihl-persistence alcotest-lwt caqti-driver-mariadb))
 
 (rule
  (alias runtest-all)
  (action
-  (run ./csrf.exe)))
+  (run ./csrf_mariadb.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./http.exe)))
