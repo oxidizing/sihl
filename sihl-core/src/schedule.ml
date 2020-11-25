@@ -23,7 +23,7 @@ let scheduled_function schedule = schedule.fn
 let create scheduled_time ~f ~label = { label; scheduled_time; fn = f }
 let every_second = Every Utils.Time.OneSecond
 let every_hour = Every Utils.Time.OneHour
-let log_src = Logs.Src.create ~doc:"schedule" "sihl.service.schedule"
+let log_src = Logs.Src.create "sihl.service.schedule"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -32,7 +32,7 @@ let registered_schedules : t list ref = ref []
 let schedule schedule =
   let should_stop = ref false in
   let stop_schedule () = should_stop := true in
-  Logs.debug (fun m -> m "SCHEDULE: Scheduling %s" (label schedule));
+  Logs.debug (fun m -> m "Scheduling %s" (label schedule));
   let scheduled_function = scheduled_function schedule in
   let rec loop () =
     let now = Ptime_clock.now () in

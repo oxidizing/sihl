@@ -38,7 +38,7 @@ let schema =
 
 let registered_routers = ref []
 
-let start_server _ =
+let start_server () =
   Logs.debug (fun m -> m "Starting HTTP server");
   let port_nr = Option.value (Core.Configuration.read schema).port ~default:33000 in
   let app = Opium.Std.App.(empty |> port port_nr |> cmd_name "Sihl App") in
