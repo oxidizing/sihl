@@ -12,7 +12,6 @@ module Contract = Sihl_contract
 (* Services *)
 module Service = struct
   module Authn = Sihl_user.Authn
-  module Authz = Sihl_user.Authz
   module Database = Sihl_persistence.Database
   module Http = Sihl_web.Http
   module Migration = Sihl_persistence.Migration
@@ -53,8 +52,8 @@ module Queue = struct
   module Workable_job = Sihl_type.Queue_workable_job
 end
 
-module Schedule = Sihl_core.Schedule
 module Session = Sihl_type.Session
+module Authz = Sihl_user.Authz
 
 module Storage = struct
   module File = Sihl_type.Storage_file
