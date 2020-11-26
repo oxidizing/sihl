@@ -66,5 +66,9 @@ let lifecycle = Core.Container.Lifecycle.create "http" ~start ~stop
 let register ?(routers = []) () =
   registered_routers := routers;
   let configuration = Core.Configuration.make ~schema () in
-  Core.Container.Service.create ~configuration ~commands:[ start_cmd ] lifecycle
+  Core.Container.Service.create
+    ~configuration
+    ~commands:[ start_cmd ]
+    ~server:true
+    lifecycle
 ;;

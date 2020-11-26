@@ -33,8 +33,13 @@ module Service : sig
   val create
     :  ?commands:Command.t list
     -> ?configuration:Configuration.t
+    -> ?server:bool
     -> Lifecycle.t
     -> t
+
+  val server : t -> bool
+  val start : t -> unit Lwt.t
+  val name : t -> string
 end
 
 (** [start_services lifecycles] starts a list of service [lifecycles]. The order does not

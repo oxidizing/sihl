@@ -4,6 +4,8 @@ let log_src = Logs.Src.create ~doc:"Sihl app" "sihl.app"
 
 module Logger = (val Logs.src_log log_src : Logs.LOG)
 
+exception Exception of string
+
 type t =
   { services : Container.Service.t list
   ; before_start : unit -> unit Lwt.t
@@ -41,11 +43,33 @@ let starting_commands service =
 ;;
 
 let start_cmd services =
-  Command.make
-    ~name:"start"
-    ~help:""
-    ~description:"Start the Sihl app by starting all registered services"
-    (fun _ -> Container.start_services services |> Lwt.map ignore)
+  Command.make ~name:"start" ~help:"" ~description:"Start the Sihl app" (fun _ ->
+      let normal_services =
+        List.filter
+          (function
+            | service -> not (Container.Service.server service))
+          services
+      in
+      let server_services = List.filter Container.Service.server services in
+      match server_services with
+      | [ server ] ->
+        let* _ = Container.start_services normal_services in
+        Container.Service.start server
+      | [] ->
+        Logs.err (fun m ->
+            m
+              "No 'server' service registered. Make sure that you have one server \
+               service registered in your 'run.ml' such as a HTTP service");
+        raise (Exception "No server service registered")
+      | servers ->
+        let names = List.map Container.Service.name servers in
+        let names = String.concat ", " names in
+        Logs.err (fun m ->
+            m
+              "Multiple server services registered: %s, you can only have one service \
+               registered that is a 'server' service."
+              names);
+        raise (Exception "No server service registered"))
 ;;
 
 let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =

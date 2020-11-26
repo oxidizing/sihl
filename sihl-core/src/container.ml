@@ -30,14 +30,24 @@ module Service = struct
     { lifecycle : Lifecycle.t
     ; configuration : Configuration.t
     ; commands : Command.t list
+    ; server : bool
     }
 
   let commands service = service.commands
   let configuration service = service.configuration
 
-  let create ?(commands = []) ?(configuration = Configuration.empty) lifecycle =
-    { lifecycle; configuration; commands }
+  let create
+      ?(commands = [])
+      ?(configuration = Configuration.empty)
+      ?(server = false)
+      lifecycle
+    =
+    { lifecycle; configuration; commands; server }
   ;;
+
+  let server t = t.server
+  let start t = t.lifecycle.start ()
+  let name t = t.lifecycle.name
 end
 
 module Map = Map.Make (String)
