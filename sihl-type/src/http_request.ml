@@ -42,7 +42,7 @@ let to_json_exn t =
 
 let to_urlencoded t =
   let* body = t |> Opium.Std.Request.body |> Opium.Std.Body.to_string in
-  Lwt.return (Uri.query_of_encoded body)
+  body |> Uri.pct_decode |> Uri.query_of_encoded |> Lwt.return
 ;;
 
 let to_multipart_form_data_exn
