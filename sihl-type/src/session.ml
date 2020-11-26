@@ -21,7 +21,13 @@ let sexp_of_t { key; expire_date; _ } =
 
 (* TODO [jerben] Consider moving date stuff into Utils.Time *)
 let one_week = 60 * 60 * 24 * 7
-let default_expiration_date now = one_week |> Ptime.Span.of_int_s |> Ptime.add_span now
+
+let default_expiration_date now =
+  match one_week |> Ptime.Span.of_int_s |> Ptime.add_span now with
+  | Some expiration_date -> expiration_date
+  | None -> failwith "Could not determine session expiration date"
+;;
+
 let key session = session.key
 let data session = session.data
 let is_expired now session = Ptime.is_later now ~than:session.expire_date

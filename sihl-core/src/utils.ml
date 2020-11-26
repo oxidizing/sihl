@@ -156,7 +156,7 @@ end
 
 module Hashing = struct
   let hash ?count plain =
-    match count, Configuration.is_testing () with
+    match count, not (Configuration.is_production ()) with
     | _, true -> Ok (Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash)
     | Some count, false ->
       if count < 4 || count > 31

@@ -37,22 +37,29 @@ Html:
        html_content
 ;;
 
-let intercept sender email =
-  let is_testing = Sihl_core.Configuration.is_testing () in
+let should_intercept () =
+  let is_production = Sihl_core.Configuration.is_production () in
   let bypass =
     Option.value
       ~default:false
       (Sihl_core.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
   in
+  match is_production, bypass with
+  | false, true -> false
+  | false, false -> true
+  | true, true -> false
+  | true, false -> false
+;;
+
+let intercept sender email =
+  let is_testing = Sihl_core.Configuration.is_test () in
   let console =
     Option.value ~default:is_testing (Sihl_core.Configuration.read_bool "EMAIL_CONSOLE")
   in
   let () = if console then print email else () in
-  match is_testing, bypass with
-  | true, true -> sender email
-  | true, false -> Lwt.return (Sihl_type.Email.add_to_inbox email)
-  | false, true -> sender email
-  | false, false -> sender email
+  if should_intercept ()
+  then Lwt.return (Sihl_type.Email.add_to_inbox email)
+  else sender email
 ;;
 
 module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
@@ -130,20 +137,28 @@ module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
     intercept send' email
   ;;
 
-  let bulk_send _ = Lwt.return ()
-  let name = "email"
-  let start () = Lwt.return ()
-  let stop _ = Lwt.return ()
+  let bulk_send _ = failwith "Bulk sending not implemented yet"
+
+  let start () =
+    (* if mail is intercepted, don't punish user for not providing SMTP credentials *)
+    if should_intercept () then () else Core.Configuration.require schema;
+    Lwt.return ()
+  ;;
+
+  let stop () = Lwt.return ()
 
   let lifecycle =
     Core.Container.Lifecycle.create
-      name
+      "email"
       ~dependencies:[ TemplateService.lifecycle ]
       ~start
       ~stop
   ;;
 
-  let register () = Core.Container.Service.create lifecycle
+  let register () =
+    let configuration = Core.Configuration.make ~schema () in
+    Core.Container.Service.create ~configuration lifecycle
+  ;;
 end
 
 module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
@@ -244,7 +259,10 @@ module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
       ~stop
   ;;
 
-  let register () = Core.Container.Service.create lifecycle
+  let register () =
+    let configuration = Core.Configuration.make ~schema () in
+    Core.Container.Service.create ~configuration lifecycle
+  ;;
 end
 
 (* Use this functor to create an email service that sends emails using the job queue. This
@@ -289,7 +307,7 @@ module MakeQueued
 
   let send email =
     (* skip queue when running tests *)
-    if Sihl_core.Configuration.is_testing ()
+    if not (Sihl_core.Configuration.is_production ())
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
       EmailService.send email)

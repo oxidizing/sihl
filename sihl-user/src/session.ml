@@ -12,9 +12,8 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
     match expire_date, default_expiration_date now with
     | Some expire_date, _ ->
       Some { key = Core.Random.base64 ~nr:10; data = Map.empty; expire_date }
-    | None, Some expire_date ->
+    | None, expire_date ->
       Some { key = Core.Random.base64 ~nr:10; data = Map.empty; expire_date }
-    | None, None -> None
   ;;
 
   let create data =

@@ -5,12 +5,15 @@ module WorkableJob = Sihl_type.Queue_workable_job
 
 let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
+let log_src = Logs.Src.create "sihl.service.queue"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.Sig) :
   Sihl_contract.Queue.Sig = struct
   let dispatch ~job ?delay input =
     let name = Job.name job in
-    Logs.debug (fun m -> m "QUEUE: Dispatching job %s" name);
+    Logs.debug (fun m -> m "Dispatching job %s" name);
     let now = Ptime_clock.now () in
     let job_instance = JobInstance.create ~input ~delay ~now job in
     Repo.enqueue ~job_instance
@@ -32,11 +35,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
     match result with
     | Error msg ->
       Logs.err (fun m ->
-          m
-            "QUEUE: Failure while running job instance %a %s"
-            JobInstance.pp
-            job_instance
-            msg);
+          m "Failure while running job instance %a %s" JobInstance.pp job_instance msg);
       let* result =
         Lwt.catch
           (fun () -> WorkableJob.failed job ())
@@ -52,17 +51,16 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
       | Error msg ->
         Logs.err (fun m ->
             m
-              "QUEUE: Failure while run failure handler for job instance %a %s"
+              "Failure while run failure handler for job instance %a %s"
               JobInstance.pp
               job_instance
               msg);
         Lwt.return None
       | Ok () ->
-        Logs.err (fun m -> m "QUEUE: Clean up job %a" Uuidm.pp job_instance_id);
+        Logs.err (fun m -> m "Clean up job %a" Uuidm.pp job_instance_id);
         Lwt.return None)
     | Ok () ->
-      Logs.debug (fun m ->
-          m "QUEUE: Successfully ran job instance %a" Uuidm.pp job_instance_id);
+      Logs.debug (fun m -> m "Successfully ran job instance %a" Uuidm.pp job_instance_id);
       Lwt.return @@ Some ()
   ;;
 
@@ -88,7 +86,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
       update ~job_instance)
     else (
       Logs.debug (fun m ->
-          m "QUEUE: Not going to run job instance %a" JobInstance.pp job_instance);
+          m "Not going to run job instance %a" JobInstance.pp job_instance);
       Lwt.return ())
   ;;
 
@@ -98,7 +96,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
     if n_job_instances > 0
     then (
       Logs.debug (fun m ->
-          m "QUEUE: Start working queue of length %d" (List.length pending_job_instances));
+          m "Start working queue of length %d" (List.length pending_job_instances));
       let rec loop job_instances jobs =
         match job_instances with
         | [] -> Lwt.return ()
@@ -114,7 +112,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
           | Some job -> work_job ~job ~job_instance)
       in
       let* () = loop pending_job_instances jobs in
-      Logs.debug (fun m -> m "QUEUE: Finish working queue");
+      Logs.debug (fun m -> m "Finish working queue");
       Lwt.return ())
     else Lwt.return ()
   ;;
@@ -126,7 +124,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
   ;;
 
   let start_queue () =
-    Logs.debug (fun m -> m "QUEUE: Start job queue");
+    Logs.debug (fun m -> m "Start job queue");
     (* This function run every second, the request context gets created here with each
        tick *)
     let scheduled_function () =
@@ -134,11 +132,10 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
       if List.length jobs > 0
       then (
         let job_strings = jobs |> List.map WorkableJob.name |> String.concat ", " in
-        Logs.debug (fun m ->
-            m "QUEUE: Run job queue with registered jobs: %s" job_strings);
+        Logs.debug (fun m -> m "Run job queue with registered jobs: %s" job_strings);
         work_queue ~jobs)
       else (
-        Logs.debug (fun m -> m "QUEUE: No jobs found to run, trying again later");
+        Logs.debug (fun m -> m "No jobs found to run, trying again later");
         Lwt.return ())
     in
     let schedule =
@@ -160,7 +157,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
       stop_schedule ();
       Lwt.return ()
     | None ->
-      Logs.warn (fun m -> m "QUEUE: Can not stop schedule");
+      Logs.warn (fun m -> m "Can not stop schedule");
       Lwt.return ()
   ;;
 

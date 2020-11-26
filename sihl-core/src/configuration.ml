@@ -6,21 +6,26 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Exception of string
 
+type ('ctor, 'ty) schema = (string, 'ctor, 'ty) Conformist.t
 type data = (string * string) list
-type t = data -> (string * string) list
+type t = (string * string option * string * string option) list
 
 let make ?schema () =
   match schema with
   | Some schema ->
-    let validator data =
-      let data = List.map (fun (k, v) -> k, [ v ]) data in
-      Conformist.validate schema data
-    in
-    validator
-  | None -> fun _ -> []
+    Conformist.fold_left
+      ~f:(fun res field ->
+        let name = Conformist.Field.name field in
+        let description = Conformist.Field.meta field in
+        let type_ = Conformist.Field.type_ field in
+        let default = Conformist.Field.encode_default field in
+        List.cons (name, description, type_, default) res)
+      ~init:[]
+      schema
+  | None -> []
 ;;
 
-let empty _ = []
+let empty = []
 
 let memoize f =
   (* We assume a total number of initial configurations of 100 *)
@@ -92,9 +97,15 @@ let read_bool key =
   | None -> None
 ;;
 
-let is_testing () =
+let is_test () =
   match read_string "SIHL_ENV" with
   | Some "test" -> true
+  | _ -> false
+;;
+
+let is_development () =
+  match read_string "SIHL_ENV" with
+  | Some "development" -> true
   | _ -> false
 ;;
 
@@ -127,7 +138,7 @@ let env_files_path () =
 let read_env_file () =
   match env_files_path () with
   | Some path ->
-    let filename = path ^ "/" ^ if is_testing () then ".env.test" else ".env" in
+    let filename = path ^ "/" ^ if is_test () then ".env.test" else ".env" in
     let* exists = Lwt_unix.file_exists filename in
     if exists
     then (
@@ -152,15 +163,50 @@ let read_env_file () =
     Lwt.return None
 ;;
 
-let require validators =
+let require schema =
   let vars = environment_variables () in
-  let errors = validators |> List.map (fun validator -> validator vars) |> List.concat in
-  match errors with
-  | (k, v) :: _ ->
-    raise
-    @@ Exception (Format.sprintf "For configuration key %s there is an issue: %s" k v)
-  | _ -> ()
+  let data = List.map (fun (k, v) -> k, [ v ]) vars in
+  match Conformist.validate schema data with
+  | [] -> ()
+  | errors ->
+    let errors =
+      errors
+      |> List.map (fun (k, v) -> Format.sprintf "Key %s: %s" k v)
+      |> List.cons "There were some errors while validating the provided configuration:"
+      |> String.concat "\n"
+    in
+    Logs.err (fun m -> m "%s" errors);
+    raise (Exception "Configuration check failed")
 ;;
 
-(* TODO [jerben] Implement "print configuration documentation" commands *)
-let commands _ = []
+let show_configurations configurations =
+  configurations
+  |> List.map (fun (name, description, type_, default) ->
+         Format.sprintf
+           "%s, %s, %s, %s"
+           name
+           (Option.value ~default:"-" description)
+           type_
+           (Option.value ~default:"-" default))
+  |> String.concat "\n"
+;;
+
+let show_cmd configurations =
+  Command.make
+    ~name:"show-config"
+    ~help:""
+    ~description:"Print a list of required service configurations"
+    (fun _ ->
+      let header = "Name, Description, Type, Default" in
+      let str =
+        configurations
+        |> List.filter (fun (_, configurations) -> List.length configurations > 0)
+        |> List.map (fun (service_name, configurations) ->
+               String.concat "\n" [ ""; service_name; show_configurations configurations ])
+        |> List.cons header
+        |> String.concat "\n"
+      in
+      Lwt.return @@ print_endline str)
+;;
+
+let commands configurations = [ show_cmd configurations ]

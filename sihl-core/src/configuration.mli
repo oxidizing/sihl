@@ -15,6 +15,8 @@
 
 exception Exception of string
 
+type ('ctor, 'ty) schema = (string, 'ctor, 'ty) Conformist.t
+
 (** A list of key-value pairs of strings representing the configuration key like SMTP_HOST
     and a value. *)
 type data = (string * string) list
@@ -24,14 +26,14 @@ type t
 
 (** [make schema data] returns a configuration containing the configuration [schema] and
     the configuration [data]. *)
-val make : ?schema:(unit, 'ctor, 'ty) Conformist.t -> unit -> t
+val make : ?schema:('ctor, 'ty) schema -> unit -> t
 
 (** [empty] is an empty configuration without any schema or data. *)
 val empty : t
 
 (** [commands configurations] returns the list of CLI commands given a list of
     configurations. *)
-val commands : t list -> Command.t list
+val commands : (string * t) list -> Command.t list
 
 (** {1 Storing configuration}
 
@@ -74,7 +76,7 @@ val read_env_file : unit -> data option Lwt.t
     .env file.
 
     It fails with [Exception] and prints descriptive message of invalid configuration. *)
-val read : (unit, 'ctor, 'ty) Conformist.t -> 'ty
+val read : ('ctor, 'ty) schema -> 'ty
 
 (** [read_string key] returns the configuration value with [key] if present. The function
     is memoized, the first call caches the returned value and subsequent calls are fast. *)
@@ -88,13 +90,16 @@ val read_int : string -> int option
     caches the returned value and subsequent calls are fast. *)
 val read_bool : string -> bool option
 
-(** [is_testing ()] returns true if Sihl is running in a test environment, meaning if
-    tests are executing parts of Sihl. *)
-val is_testing : unit -> bool
+(** [is_test ()] returns true if Sihl is running in a test environment, meaning if tests
+    are executing parts of Sihl. *)
+val is_test : unit -> bool
+
+(** [is_development ()] returns true if Sihl is running in a local environment. *)
+val is_development : unit -> bool
 
 (** [is_production ()] returns true if Sihl is running in a production environment. *)
 val is_production : unit -> bool
 
 (** [require t] raises an exception if the stored configuration doesn't contain the
     configurations provided by the list of configurations [t]. *)
-val require : t list -> unit
+val require : ('ctor, 'ty) schema -> unit

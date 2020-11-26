@@ -128,7 +128,9 @@ let read_env_file switch () =
   Lwt.return ()
 ;;
 
-module Test1 = struct
+module Test1 : sig
+  val test : 'a -> unit -> unit Lwt.t
+end = struct
   type t =
     { hey : int
     ; is : bool option
@@ -144,13 +146,14 @@ module Test1 = struct
   let test _ () =
     let data = [ "hey", "123" ] in
     Sihl_core.Configuration.store data;
-    let configuration = Sihl_core.Configuration.make ~schema () in
-    Sihl_core.Configuration.require [ configuration ];
+    Sihl_core.Configuration.require schema;
     Lwt.return ()
   ;;
 end
 
-module Test2 = struct
+module Test2 : sig
+  val test : 'a -> unit -> unit Lwt.t
+end = struct
   type t = { ho : int }
 
   let t ho = { ho }
@@ -163,14 +166,9 @@ module Test2 = struct
   let test _ () =
     let data = [ "ho", "value" ] in
     Sihl_core.Configuration.store data;
-    let configuration = Sihl_core.Configuration.make ~schema () in
-    let exc =
-      Sihl_core.Configuration.Exception
-        "For configuration key ho there is an issue: Invalid number provided"
-    in
+    let exc = Sihl_core.Configuration.Exception "Configuration check failed" in
     Alcotest.(
-      check_raises "raises" exc (fun () ->
-          Sihl_core.Configuration.require [ configuration ]));
+      check_raises "raises" exc (fun () -> Sihl_core.Configuration.require schema));
     Lwt.return ()
   ;;
 end

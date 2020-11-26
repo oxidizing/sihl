@@ -19,7 +19,11 @@ let config url pool_size = { url; pool_size }
 
 let schema =
   let open Conformist in
-  make [ string "DATABASE_URL"; optional (int ~default:5 "DATABASE_POOL_SIZE") ] config
+  make
+    [ string ~meta:"The database connection url" "DATABASE_URL"
+    ; optional (int ~default:5 "DATABASE_POOL_SIZE")
+    ]
+    config
 ;;
 
 let raise_error err =
@@ -122,10 +126,15 @@ let query f =
 
 let start () =
   (* Make sure that database is online when starting service. *)
+  Core.Configuration.require schema;
   let _ = fetch_pool () in
   Lwt.return ()
 ;;
 
 let stop _ = Lwt.return ()
 let lifecycle = Core.Container.Lifecycle.create "database" ~start ~stop
-let register () = Core.Container.Service.create lifecycle
+
+let register () =
+  let configuration = Core.Configuration.make ~schema () in
+  Core.Container.Service.create ~configuration lifecycle
+;;
