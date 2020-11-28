@@ -9,6 +9,10 @@
 - Implement generic flash storage on top of session storage
 - Remove specific message service
 
+### Added
+- File log reporter to store logs in `logs/error.log` and `logs/app.log`
+- Add log source to log text
+
 ## [0.1.10] - 2020-11-18
 ### Fixed
 - Properly load `.env` files based on project root, can be set using `ENV_FILES_PATH`

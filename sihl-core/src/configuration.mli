@@ -55,10 +55,16 @@ val store : data -> unit
     they occur early in the app lifecycle. This minimizes the feedback loop and makes
     sure, that services start only with valid configuration. *)
 
+(** [root_path] contains the path to the project root. It reads the value of [ROOT_PATH].
+    If that environment variable is not set, it goes up directories until a [.git], [.hg],
+    [.svn], [.bzr] or [_darcs] directory is found. If none of these are found until [/] is
+    reached, [None] is returned. *)
+
+val root_path : unit -> string option
+
 (** [env_files_path] contains the path where the env files are kept. It reads the value of
-    [ENV_FILES_PATH]. If that environment variable is not set, it goes up directories
-    until a [.git], [.hg], [.svn], [.bzr] or [_darcs] directory is found. If none of these
-    are found until [/] is reached, [None] is returned. *)
+    [ENV_FILES_PATH]. If that environment variable is not set, [root_path] is used. If no
+    root path can be found, [None] is returned. *)
 
 val env_files_path : unit -> string option
 

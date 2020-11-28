@@ -102,7 +102,7 @@ let read_env_file_non_existing _ () =
   let data = Option.value data ~default:[] in
   Alcotest.(check (list string) "Returns empty keys" [] (List.map fst data));
   Alcotest.(check (list string) "Returns empty values" [] (List.map snd data));
-  Unix.putenv "ENV_FILES_PATH" "";
+  Unix.putenv "ROOT_PATH" "";
   Lwt.return ()
 ;;
 

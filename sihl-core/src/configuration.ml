@@ -131,8 +131,8 @@ let read_bool key =
   | None -> None
 ;;
 
-let env_files_path () =
-  match read_string "ENV_FILES_PATH" with
+let root_path () =
+  match read_string "ROOT_PATH" with
   | None | Some "" ->
     let markers = [ ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
     let rec find_markers path_els =
@@ -140,7 +140,7 @@ let env_files_path () =
       if List.exists (fun marker -> Sys.file_exists (path ^ "/" ^ marker)) markers
       then (
         (* Path found => Write it into the env var to "memoize" it *)
-        Unix.putenv "ENV_FILES_PATH" path;
+        Unix.putenv "ROOT_PATH" path;
         Some path)
       else (
         match path_els with
@@ -148,6 +148,12 @@ let env_files_path () =
         | _ -> find_markers @@ CCList.take (List.length path_els - 1) path_els)
     in
     find_markers @@ String.split_on_char '/' (Unix.getcwd ())
+  | Some path -> Some path
+;;
+
+let env_files_path () =
+  match read_string "ENV_FILES_PATH" with
+  | None | Some "" -> root_path ()
   | Some path -> Some path
 ;;
 
