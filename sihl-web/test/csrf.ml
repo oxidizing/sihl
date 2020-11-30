@@ -224,7 +224,7 @@ struct
     Alcotest.(check int "Has status 200" 200 status);
     let req = Option.get !session_req in
     let session = Sihl_web.Middleware.Session.find req in
-    let token_id = Sihl_type.Session.get "csrf" session in
+    let* token_id = SessionService.find_value session "csrf" in
     let token_id = Option.get token_id in
     let* token = TokenService.find_by_id_opt token_id in
     Alcotest.(check (option Sihl_type.Token.alco) "Token is invalidated" None token);

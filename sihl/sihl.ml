@@ -16,7 +16,6 @@ module Service = struct
   module Http = Sihl_web.Http
   module Migration = Sihl_persistence.Migration
   module Migration_repo = Sihl_persistence.Migration_repo
-  module Message = Sihl_user.Message
   module Repository = Sihl_persistence.Repository
   module Schedule = Sihl_core.Schedule
   module Session = Sihl_user.Session
@@ -42,8 +41,6 @@ module Http = struct
   module Route = Sihl_type.Http_route
 end
 
-module Message = Sihl_type.Message
-module Message_entry = Sihl_type.Message_entry
 module Migration = Sihl_type.Migration
 
 module Queue = struct

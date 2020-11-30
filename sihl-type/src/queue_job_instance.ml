@@ -38,7 +38,7 @@ let create ~input ~delay ~now job =
   let input = Queue_job.input_to_string job input in
   let name = Queue_job.name job in
   let next_run_at =
-    match Option.map Sihl_core.Utils.Time.duration_to_span delay with
+    match Option.map Sihl_core.Time.duration_to_span delay with
     | Some at -> Option.value (Ptime.add_span now at) ~default:now
     | None -> now
   in
@@ -57,9 +57,7 @@ let is_pending job_instance = Status.equal job_instance.status Status.Pending
 let incr_tries job_instance = { job_instance with tries = job_instance.tries + 1 }
 
 let update_next_run_at job job_instance =
-  let delay =
-    job |> Queue_workable_job.retry_delay |> Sihl_core.Utils.Time.duration_to_span
-  in
+  let delay = job |> Queue_workable_job.retry_delay |> Sihl_core.Time.duration_to_span in
   let next_run_at =
     match Ptime.add_span job_instance.next_run_at delay with
     | Some date -> date

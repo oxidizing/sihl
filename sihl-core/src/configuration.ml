@@ -85,18 +85,6 @@ let read schema =
 let read_string' key = Sys.getenv_opt key
 let read_string = memoize read_string'
 
-let read_int key =
-  match read_string key with
-  | Some value -> int_of_string_opt value
-  | None -> None
-;;
-
-let read_bool key =
-  match read_string key with
-  | Some value -> bool_of_string_opt value
-  | None -> None
-;;
-
 let is_test () =
   match read_string "SIHL_ENV" with
   | Some "test" -> true
@@ -113,6 +101,34 @@ let is_production () =
   match read_string "SIHL_ENV" with
   | Some "production" -> true
   | _ -> false
+;;
+
+let read_secret () =
+  match is_production (), read_string "SIHL_SECRET" with
+  | _, Some secret ->
+    (* TODO [jerben] provide proper security policy (entropy or smth) *)
+    if String.length secret > 10
+    then secret
+    else (
+      Logs.err (fun m -> m "SIHL_SECRET has to be longer than 10");
+      raise @@ Exception "Insecure secret provided")
+  | true, None ->
+    Logs.err (fun m -> m "Set SIHL_SECRET before deploying Sihl to production");
+    raise @@ Exception "No secret provided"
+  (* In testing and local dev we don't have to use real security *)
+  | false, None -> "secret"
+;;
+
+let read_int key =
+  match read_string key with
+  | Some value -> int_of_string_opt value
+  | None -> None
+;;
+
+let read_bool key =
+  match read_string key with
+  | Some value -> bool_of_string_opt value
+  | None -> None
 ;;
 
 let env_files_path () =

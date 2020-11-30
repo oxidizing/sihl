@@ -11,7 +11,7 @@ module type Sig = sig
   val create
     :  kind:string
     -> ?data:string
-    -> ?expires_in:Sihl_core.Utils.Time.duration
+    -> ?expires_in:Sihl_core.Time.duration
     -> ?length:int
     -> unit
     -> Token.t Lwt.t

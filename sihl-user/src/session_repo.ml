@@ -1,64 +1,110 @@
+open Lwt.Syntax
 module Database = Sihl_persistence.Database
 module Repository = Sihl_persistence.Repository
 module Migration = Sihl_type.Migration
 module Migration_state = Sihl_type.Migration_state
-module Model = Sihl_type.Session
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val find_all : unit -> Model.t list Lwt.t
-  val find_opt : key:string -> Model.t option Lwt.t
-  val insert : Model.t -> unit Lwt.t
-  val update : Model.t -> unit Lwt.t
-  val delete : key:string -> unit Lwt.t
+  val find_all : unit -> Sihl_type.Session.t list Lwt.t
+  val find_opt : string -> Sihl_type.Session.t option Lwt.t
+  val find_data : Sihl_type.Session.t -> string Sihl_type.Session.Map.t Lwt.t
+  val insert : Sihl_type.Session.t -> string Sihl_type.Session.Map.t -> unit Lwt.t
+  val update : Sihl_type.Session.t -> string Sihl_type.Session.Map.t -> unit Lwt.t
+  val delete : string -> unit Lwt.t
 end
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  module Sql = struct
-    module Model = Model
+type k_v = (string * string) list [@@deriving yojson]
 
-    let find_all_request =
-      Caqti_request.find
-        Caqti_type.unit
-        Model.t
-        {sql|
+(* Encoding & decoding of sessions *)
+
+let string_of_data data =
+  data
+  |> Sihl_type.Session.Map.to_seq
+  |> List.of_seq
+  |> k_v_to_yojson
+  |> Yojson.Safe.to_string
+;;
+
+let data_of_string str =
+  str
+  |> Yojson.Safe.from_string
+  |> k_v_of_yojson
+  |> Result.map List.to_seq
+  |> Result.map Sihl_type.Session.Map.of_seq
+;;
+
+let t =
+  let open Sihl_type.Session in
+  let encode m = Ok (m.key, m.expire_date) in
+  let decode (key, expire_date) = Ok { key; expire_date } in
+  Caqti_type.(custom ~encode ~decode (tup2 string ptime))
+;;
+
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  let find_all_request =
+    Caqti_request.find
+      Caqti_type.unit
+      t
+      {sql|
         SELECT
           session_key,
-          session_data,
           expire_date
         FROM session_sessions
         |sql}
-    ;;
+  ;;
 
-    let find_all () =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.collect_list find_all_request () |> Lwt.map Database.raise_error)
-    ;;
+  let find_all () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.collect_list find_all_request () |> Lwt.map Database.raise_error)
+  ;;
 
-    let find_opt_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        Model.t
-        {sql|
+  let find_opt_request =
+    Caqti_request.find_opt
+      Caqti_type.string
+      t
+      {sql|
         SELECT
           session_key,
-          session_data,
           expire_date
         FROM session_sessions
         WHERE session_sessions.session_key = ?
         |sql}
-    ;;
+  ;;
 
-    let find_opt ~key =
+  let find_opt key =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.find_opt find_opt_request key |> Lwt.map Database.raise_error)
+  ;;
+
+  let find_data_request =
+    Caqti_request.find
+      Caqti_type.string
+      Caqti_type.string
+      {sql|
+        SELECT
+          session_data
+        FROM session_sessions
+        WHERE session_sessions.session_key = ?
+        |sql}
+  ;;
+
+  let find_data session =
+    let key = Sihl_type.Session.key session in
+    let* data =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_opt_request key |> Lwt.map Database.raise_error)
-    ;;
+          Connection.find find_data_request key |> Lwt.map Database.raise_error)
+    in
+    match data_of_string data with
+    | Ok data -> Lwt.return data
+    | Error msg -> raise @@ Sihl_contract.Session.Exception msg
+  ;;
 
-    let insert_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+  let insert_request =
+    Caqti_request.exec
+      Caqti_type.(tup3 string string ptime)
+      {sql|
         INSERT INTO session_sessions (
           session_key,
           session_data,
@@ -69,56 +115,61 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
           ?
         )
         |sql}
-    ;;
+  ;;
 
-    let insert session =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request session |> Lwt.map Database.raise_error)
-    ;;
+  let insert session data_map =
+    let open Sihl_type.Session in
+    let data = string_of_data data_map in
+    let input = session.key, data, session.expire_date in
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec insert_request input |> Lwt.map Database.raise_error)
+  ;;
 
-    let update_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+  let update_request =
+    Caqti_request.exec
+      Caqti_type.(tup3 string string ptime)
+      {sql|
         UPDATE session_sessions SET
           session_data = $2,
           expire_date = $3
         WHERE session_key = $1
         |sql}
-    ;;
+  ;;
 
-    let update session =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request session |> Lwt.map Database.raise_error)
-    ;;
+  let update session data_map =
+    let open Sihl_type.Session in
+    let data = string_of_data data_map in
+    let input = session.key, data, session.expire_date in
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec update_request input |> Lwt.map Database.raise_error)
+  ;;
 
-    let delete_request =
-      Caqti_request.exec
-        Caqti_type.string
-        {sql|
+  let delete_request =
+    Caqti_request.exec
+      Caqti_type.string
+      {sql|
       DELETE FROM session_sessions
       WHERE session_sessions.session_key = ?
       |sql}
-    ;;
+  ;;
 
-    let delete ~key =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec delete_request key |> Lwt.map Database.raise_error)
-    ;;
+  let delete key =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec delete_request key |> Lwt.map Database.raise_error)
+  ;;
 
-    let clean_request =
-      Caqti_request.exec
-        Caqti_type.unit
-        {sql|
+  let clean_request =
+    Caqti_request.exec
+      Caqti_type.unit
+      {sql|
            TRUNCATE session_sessions;
           |sql}
-    ;;
+  ;;
 
-    let clean () =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Database.raise_error)
-    ;;
-  end
+  let clean () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request () |> Lwt.map Database.raise_error)
+  ;;
 
   module Migration = struct
     let create_sessions_table =
@@ -140,64 +191,72 @@ CREATE TABLE IF NOT EXISTS session_sessions (
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
-
-  let register_cleaner () =
-    let cleaner () = Sql.clean () in
-    Repository.register_cleaner cleaner
-  ;;
-
-  let find_all = Sql.find_all
-  let find_opt = Sql.find_opt
-  let insert = Sql.insert
-  let update = Sql.update
-  let delete = Sql.delete
+  let register_cleaner () = Repository.register_cleaner clean
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  module Sql = struct
-    module Model = Model
-
-    let find_all_request =
-      Caqti_request.find
-        Caqti_type.unit
-        Model.t
-        {sql|
+  let find_all_request =
+    Caqti_request.collect
+      Caqti_type.unit
+      t
+      {sql|
         SELECT
           session_key,
-          session_data,
           expire_date
         FROM session_sessions
         |sql}
-    ;;
+  ;;
 
-    let find_all () =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.collect_list find_all_request () |> Lwt.map Database.raise_error)
-    ;;
+  let find_all () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.collect_list find_all_request () |> Lwt.map Database.raise_error)
+  ;;
 
-    let find_opt_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        Model.t
-        {sql|
+  let find_opt_request =
+    Caqti_request.find_opt
+      Caqti_type.string
+      t
+      {sql|
         SELECT
           session_key,
-          session_data,
           expire_date
         FROM session_sessions
         WHERE session_sessions.session_key = ?
         |sql}
-    ;;
+  ;;
 
-    let find_opt ~key =
+  let find_opt key =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.find_opt find_opt_request key |> Lwt.map Database.raise_error)
+  ;;
+
+  let find_data_request =
+    Caqti_request.find
+      Caqti_type.string
+      Caqti_type.string
+      {sql|
+        SELECT
+          session_data
+        FROM session_sessions
+        WHERE session_sessions.session_key = ?
+        |sql}
+  ;;
+
+  let find_data session =
+    let key = Sihl_type.Session.key session in
+    let* data =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_opt_request key |> Lwt.map Database.raise_error)
-    ;;
+          Connection.find find_data_request key |> Lwt.map Database.raise_error)
+    in
+    match data_of_string data with
+    | Ok data -> Lwt.return data
+    | Error msg -> raise @@ Sihl_contract.Session.Exception msg
+  ;;
 
-    let insert_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+  let insert_request =
+    Caqti_request.exec
+      Caqti_type.(tup3 string string ptime)
+      {sql|
         INSERT INTO session_sessions (
           session_key,
           session_data,
@@ -208,56 +267,61 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
           ?
         )
         |sql}
-    ;;
+  ;;
 
-    let insert session =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request session |> Lwt.map Database.raise_error)
-    ;;
+  let insert session data_map =
+    let open Sihl_type.Session in
+    let data = string_of_data data_map in
+    let input = session.key, data, session.expire_date in
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec insert_request input |> Lwt.map Database.raise_error)
+  ;;
 
-    let update_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+  let update_request =
+    Caqti_request.exec
+      Caqti_type.(tup3 string string ptime)
+      {sql|
         UPDATE session_sessions SET
           session_data = $2,
           expire_date = $3
         WHERE session_key = $1
         |sql}
-    ;;
+  ;;
 
-    let update session =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request session |> Lwt.map Database.raise_error)
-    ;;
+  let update session data_map =
+    let open Sihl_type.Session in
+    let data = string_of_data data_map in
+    let input = session.key, data, session.expire_date in
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec update_request input |> Lwt.map Database.raise_error)
+  ;;
 
-    let delete_request =
-      Caqti_request.exec
-        Caqti_type.string
-        {sql|
+  let delete_request =
+    Caqti_request.exec
+      Caqti_type.string
+      {sql|
       DELETE FROM session_sessions
       WHERE session_sessions.session_key = ?
            |sql}
-    ;;
+  ;;
 
-    let delete ~key =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec delete_request key |> Lwt.map Database.raise_error)
-    ;;
+  let delete key =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec delete_request key |> Lwt.map Database.raise_error)
+  ;;
 
-    let clean_request =
-      Caqti_request.exec
-        Caqti_type.unit
-        {sql|
+  let clean_request =
+    Caqti_request.exec
+      Caqti_type.unit
+      {sql|
         TRUNCATE TABLE session_sessions CASCADE;
         |sql}
-    ;;
+  ;;
 
-    let clean () =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Database.raise_error)
-    ;;
-  end
+  let clean () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request () |> Lwt.map Database.raise_error)
+  ;;
 
   module Migration = struct
     let create_sessions_table =
@@ -279,10 +343,5 @@ CREATE TABLE IF NOT EXISTS session_sessions (
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
-  let register_cleaner () = Repository.register_cleaner Sql.clean
-  let find_all = Sql.find_all
-  let find_opt = Sql.find_opt
-  let insert = Sql.insert
-  let update = Sql.update
-  let delete = Sql.delete
+  let register_cleaner () = Repository.register_cleaner clean
 end
