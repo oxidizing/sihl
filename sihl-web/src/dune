@@ -1,4 +1,6 @@
 (library
  (name sihl_web)
  (public_name sihl-web)
- (libraries sihl-core sihl-type sihl-contract))
+ (libraries sihl-core sihl-type sihl-contract)
+ (preprocess
+  (pps ppx_sexp_conv)))
