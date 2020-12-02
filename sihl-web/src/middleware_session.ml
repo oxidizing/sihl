@@ -22,14 +22,26 @@ let set session req =
   { req with env }
 ;;
 
+let add_session_cookie cookie_name session_key signer res =
+  let scope = Uri.of_string "/" in
+  Sihl_type.Http_response.add_cookie_unless_exists
+    ~sign_with:signer
+    ~scope
+    ~expires:`Session
+    (cookie_name, session_key)
+    res
+;;
+
 module Make (SessionService : Sihl_contract.Session.Sig) = struct
-  let m ?(cookie_key = "session_key") () =
+  let m ?(cookie_name = "session") () =
     let filter handler req =
-      match Sihl_type.Http_request.cookie cookie_key req with
+      let secret = Sihl_core.Configuration.read_secret () in
+      let signer = Sihl_type.Http_cookie.Signer.make secret in
+      match Sihl_type.Http_request.cookie ~signed_with:signer cookie_name req with
       | Some session_key ->
         (* A session cookie was found *)
         Logs.debug (fun m -> m "Found session cookie with value %s" session_key);
-        let* session = SessionService.find_opt ~key:session_key in
+        let* session = SessionService.find_opt session_key in
         (match session with
         | Some session ->
           Logs.debug (fun m -> m "Found session for cookie %s" session_key);
@@ -48,26 +60,14 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
           let* session = SessionService.create [] in
           let req = set session req in
           let* res = handler req in
-          let scope = Uri.of_string "/" in
-          Sihl_type.Http_response.add_cookie
-            ~scope
-            ~expires:`Session
-            (cookie_key, session.key)
-            res
-          |> Lwt.return)
+          add_session_cookie cookie_name session.key signer res |> Lwt.return)
       | None ->
         Logs.debug (fun m -> m "No session cookie found, set a new one");
         (* No session cookie found *)
         let* session = SessionService.create [] in
         let req = set session req in
         let* res = handler req in
-        let scope = Uri.of_string "/" in
-        res
-        |> Sihl_type.Http_response.add_cookie
-             ~scope
-             ~expires:`Session
-             (cookie_key, session.key)
-        |> Lwt.return
+        add_session_cookie cookie_name session.key signer res |> Lwt.return
     in
     Opium_kernel.Rock.Middleware.create ~name:"session" ~filter
   ;;

@@ -3,7 +3,7 @@ module Core = Sihl_core
 module Token = Sihl_type.Token
 module Session = Sihl_type.Session
 
-let log_src = Logs.Src.create ~doc:"CSRF Middleware" "sihl.middleware.csrf"
+let log_src = Logs.Src.create "sihl.middleware.csrf"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -43,7 +43,7 @@ struct
     (* Store the ID in the session *)
     (* Storing the token directly could mean it ends up on the client if the cookie
        backend is used for session storage *)
-    let* () = SessionService.set session ~key:"csrf" ~value:token.id in
+    let* () = SessionService.set_value session ~k:"csrf" ~v:(Some token.id) in
     Lwt.return token
   ;;
 
@@ -57,7 +57,7 @@ struct
           Logs.info (fun m -> m "Have you applied the session middleware?");
           raise (Crypto_failed "No session found")
       in
-      let* id = SessionService.get session ~key:"csrf" in
+      let* id = SessionService.find_value session "csrf" in
       let* secret =
         match id with
         (* Create a secret if no secret found in session *)

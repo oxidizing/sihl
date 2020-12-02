@@ -1,5 +1,5 @@
 (executables
- (names password_reset_mariadb session_mariadb session_postgresql
+ (names password_reset_mariadb
    token_mariadb user_mariadb user_postgresql)
  (libraries sihl-contract sihl-user sihl-web alcotest-lwt
    caqti-driver-mariadb caqti-driver-postgresql))
@@ -8,16 +8,6 @@
  (alias runtest-all)
  (action
   (run ./password_reset_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./session_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./session_postgresql.exe)))
 
 (rule
  (alias runtest-all)

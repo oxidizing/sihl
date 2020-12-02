@@ -301,7 +301,7 @@ module MakeQueued
         ~failed
         ()
       |> Sihl_type.Queue_job.set_max_tries 10
-      |> Sihl_type.Queue_job.set_retry_delay Utils.Time.OneHour
+      |> Sihl_type.Queue_job.set_retry_delay Core.Time.OneHour
     ;;
   end
 

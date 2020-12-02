@@ -35,17 +35,9 @@ module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
         (Model.Exception (Printf.sprintf "Token with id %s not found or not valid" id))
   ;;
 
-  let make
-      ~id
-      ~data
-      ~kind
-      ?(expires_in = Sihl_core.Utils.Time.OneDay)
-      ?now
-      ?(length = 80)
-      ()
-    =
+  let make ~id ~data ~kind ?(expires_in = Sihl_core.Time.OneDay) ?now ?(length = 80) () =
     let value = Core.Random.base64 ~nr:length in
-    let expires_in = Sihl_core.Utils.Time.duration_to_span expires_in in
+    let expires_in = Sihl_core.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
     let expires_at =
       match Ptime.add_span now expires_in with
@@ -58,7 +50,7 @@ module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
   ;;
 
   let create ~kind ?data ?expires_in ?length () =
-    let expires_in = Option.value ~default:Sihl_core.Utils.Time.OneDay expires_in in
+    let expires_in = Option.value ~default:Sihl_core.Time.OneDay expires_in in
     let length = Option.value ~default:80 length in
     let id = Database.Id.random () |> Database.Id.to_string in
     let token = make ~id ~kind ~data ~expires_in ~length () in

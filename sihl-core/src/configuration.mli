@@ -82,6 +82,11 @@ val read : ('ctor, 'ty) schema -> 'ty
     is memoized, the first call caches the returned value and subsequent calls are fast. *)
 val read_string : string -> string option
 
+(** [read_secret unit] returns the value of SIHL_SECRET if it is set. If SIHL_SECRET was
+    not set, it fails in production and in testing or local development the value is set
+    to "secret". *)
+val read_secret : unit -> string
+
 (** [read_int key] returns the configuration value with [key] if present. the first call
     caches the returned value and subsequent calls are fast. *)
 val read_int : string -> int option

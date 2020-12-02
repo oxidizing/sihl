@@ -1,6 +1,13 @@
-## [0.1.11] - 20-11-25
+## [0.1.11] - ?
 ### Fixed
-- extract `sihl-core`, `sihl-type`, `sihl-contract`, `sihl-user`, `sihl-persistence` and `sihl-web` as separate opam packages
+- Extract `sihl-core`, `sihl-type`, `sihl-contract`, `sihl-user`, `sihl-persistence` and `sihl-web` as separate opam packages
+
+### Added
+- Increase session key size to 20 bytes
+- Sign session cookies with `SIHL_SECRET`
+- Simplify session service API
+- Implement generic flash storage on top of session storage
+- Remove specific message service
 
 ## [0.1.10] - 2020-11-18
 ### Fixed

@@ -1,5 +1,7 @@
 open Sihl_type
 
+exception Exception of string
+
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 

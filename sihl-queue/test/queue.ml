@@ -15,7 +15,7 @@ module Make (QueueService : Sihl_contract.Queue.Sig) = struct
         ~failed:(fun _ -> Lwt_result.return ())
         ()
       |> Sihl_type.Queue_job.set_max_tries 3
-      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Utils.Time.OneMinute
+      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = QueueService.register ~jobs:[ job ] () in
     let* _ = Sihl_core.Container.start_services [ service ] in
@@ -40,7 +40,7 @@ module Make (QueueService : Sihl_contract.Queue.Sig) = struct
         ~failed:(fun _ -> Lwt_result.return ())
         ()
       |> Sihl_type.Queue_job.set_max_tries 3
-      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Utils.Time.OneMinute
+      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Time.OneMinute
     in
     let job2 =
       Sihl_type.Queue_job.create
@@ -51,7 +51,7 @@ module Make (QueueService : Sihl_contract.Queue.Sig) = struct
         ~failed:(fun _ -> Lwt_result.return ())
         ()
       |> Sihl_type.Queue_job.set_max_tries 3
-      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Utils.Time.OneMinute
+      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Time.OneMinute
     in
     let* () = QueueService.register_jobs ~jobs:[ job1; job2 ] in
     let jobs = [ job1; job2 ] in
@@ -79,7 +79,7 @@ module Make (QueueService : Sihl_contract.Queue.Sig) = struct
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
       |> Sihl_type.Queue_job.set_max_tries 3
-      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Utils.Time.OneMinute
+      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = QueueService.register ~jobs:[ job ] () in
     let* _ = Sihl_core.Container.start_services [ service ] in
@@ -103,7 +103,7 @@ module Make (QueueService : Sihl_contract.Queue.Sig) = struct
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
       |> Sihl_type.Queue_job.set_max_tries 3
-      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Utils.Time.OneMinute
+      |> Sihl_type.Queue_job.set_retry_delay Sihl_core.Time.OneMinute
     in
     let* () = QueueService.register_jobs ~jobs:[ job ] in
     let service = QueueService.register ~jobs:[ job ] () in

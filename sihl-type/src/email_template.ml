@@ -4,8 +4,8 @@ type t =
   ; content_text : string
   ; content_html : string
   ; created_at : Ptime.t
-        [@to_yojson Sihl_core.Utils.Time.ptime_to_yojson]
-        [@of_yojson Sihl_core.Utils.Time.ptime_of_yojson]
+        [@to_yojson Sihl_core.Time.ptime_to_yojson]
+        [@of_yojson Sihl_core.Time.ptime_of_yojson]
   }
 [@@deriving yojson, show, eq, fields]
 

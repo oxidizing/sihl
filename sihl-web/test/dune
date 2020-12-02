@@ -1,7 +1,7 @@
 (executables
- (names csrf csrf_mariadb http)
+ (names csrf_mariadb http session_mariadb session_postgresql flash_mariadb flash_postgresql)
  (libraries sihl-user sihl-web sihl-persistence alcotest-lwt
-   caqti-driver-mariadb))
+   caqti-driver-mariadb caqti-driver-postgresql))
 
 (rule
  (alias runtest-all)
@@ -12,3 +12,23 @@
  (alias runtest-all)
  (action
   (run ./http.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./session_mariadb.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./session_postgresql.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./flash_mariadb.exe)))
+
+(rule
+ (alias runtest-all)
+ (action
+  (run ./flash_postgresql.exe)))

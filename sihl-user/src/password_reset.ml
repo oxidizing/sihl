@@ -21,9 +21,7 @@ module Make
       let data =
         TokenData.make ~user_id |> TokenData.to_yojson |> Yojson.Safe.to_string
       in
-      let* token =
-        TokenService.create ~kind ~data ~expires_in:Sihl_core.Utils.Time.OneDay ()
-      in
+      let* token = TokenService.create ~kind ~data ~expires_in:Sihl_core.Time.OneDay () in
       Lwt.return @@ Some token
     | None ->
       Logs.warn (fun m -> m "PASSWORD_RESET: No user found with email %s" email);

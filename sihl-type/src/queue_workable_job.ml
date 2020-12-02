@@ -5,7 +5,7 @@ type t =
   ; work : input:string option -> (unit, string) Result.t Lwt.t
   ; failed : unit -> (unit, string) Result.t Lwt.t
   ; max_tries : int
-  ; retry_delay : Sihl_core.Utils.Time.duration
+  ; retry_delay : Sihl_core.Time.duration
   }
 [@@deriving show, fields]
 

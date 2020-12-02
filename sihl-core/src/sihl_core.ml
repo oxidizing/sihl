@@ -6,3 +6,4 @@ module Log = Log
 module Random = Random
 module Utils = Utils
 module Schedule = Schedule
+module Time = Time

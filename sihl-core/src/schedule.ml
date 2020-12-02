@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-type scheduled_time = Every of Utils.Time.duration [@@deriving eq, show]
+type scheduled_time = Every of Time.duration [@@deriving eq, show]
 
 type t =
   { label : string
@@ -16,13 +16,13 @@ let get_function schedule = schedule.fn
 let run_in schedule ~now:_ =
   let scheduled_time = schedule.scheduled_time in
   match scheduled_time with
-  | Every duration -> duration |> Utils.Time.duration_to_span |> Ptime.Span.to_float_s
+  | Every duration -> duration |> Time.duration_to_span |> Ptime.Span.to_float_s
 ;;
 
 let scheduled_function schedule = schedule.fn
 let create scheduled_time ~f ~label = { label; scheduled_time; fn = f }
-let every_second = Every Utils.Time.OneSecond
-let every_hour = Every Utils.Time.OneHour
+let every_second = Every Time.OneSecond
+let every_hour = Every Time.OneHour
 let log_src = Logs.Src.create "sihl.service.schedule"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)

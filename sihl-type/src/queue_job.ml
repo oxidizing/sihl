@@ -1,7 +1,7 @@
 (* This is the description of a job. A job dispatch is a job description and some
    arguments/input. *)
 let default_tries = 5
-let default_retry_delay = Sihl_core.Utils.Time.OneMinute
+let default_retry_delay = Sihl_core.Time.OneMinute
 
 type 'a t =
   { name : string
@@ -10,7 +10,7 @@ type 'a t =
   ; handle : input:'a -> (unit, string) Result.t Lwt.t
   ; failed : unit -> (unit, string) Result.t Lwt.t
   ; max_tries : int
-  ; retry_delay : Sihl_core.Utils.Time.duration
+  ; retry_delay : Sihl_core.Time.duration
   }
 [@@deriving show, fields]
 
