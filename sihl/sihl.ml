@@ -60,6 +60,7 @@ end
 module Token = Sihl_type.Token
 module User = Sihl_type.User
 module Utils = Sihl_core.Utils
+module Time = Sihl_core.Time
 
 (* Rest *)
 module Middleware = Sihl_web.Middleware

@@ -92,6 +92,8 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   let commands =
     List.concat [ [ start_sihl_cmd ]; configuration_commands; service_commands; commands ]
   in
+  (* Make sure that the secret is valid *)
+  let _ = Configuration.read_secret () in
   Command.run commands args
 ;;
 

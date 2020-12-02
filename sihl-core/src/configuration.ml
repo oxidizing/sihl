@@ -105,13 +105,14 @@ let is_production () =
 
 let read_secret () =
   match is_production (), read_string "SIHL_SECRET" with
-  | _, Some secret ->
+  | true, Some secret ->
     (* TODO [jerben] provide proper security policy (entropy or smth) *)
     if String.length secret > 10
     then secret
     else (
       Logs.err (fun m -> m "SIHL_SECRET has to be longer than 10");
       raise @@ Exception "Insecure secret provided")
+  | false, Some secret -> secret
   | true, None ->
     Logs.err (fun m -> m "Set SIHL_SECRET before deploying Sihl to production");
     raise @@ Exception "No secret provided"
