@@ -25,7 +25,7 @@ val after_stop : (unit -> unit Lwt.t) -> t -> t
     log reporter logs to stdout. *)
 val run
   :  ?commands:Command.t list
-  -> ?log_reporter:(unit -> Logs.reporter)
+  -> ?log_reporter:Logs.reporter
   -> ?args:string list
   -> t
   -> unit
@@ -34,7 +34,7 @@ val run
     tests that need [Lwt.t]. *)
 val run'
   :  ?commands:Command.t list
-  -> ?log_reporter:(unit -> Logs.reporter)
+  -> ?log_reporter:Logs.reporter
   -> ?args:string list
   -> t
   -> unit Lwt.t

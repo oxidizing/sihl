@@ -30,6 +30,7 @@ let match_first_route _ () =
 let suite = [ "http", [ test_case "match first route" `Quick match_first_route ] ]
 
 let () =
-  Logs.set_reporter (Sihl_core.Log.default_reporter ());
+  Logs.set_level (Sihl_core.Log.get_log_level ());
+  Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Lwt_main.run (Alcotest_lwt.run "opium" suite)
 ;;

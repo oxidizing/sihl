@@ -87,7 +87,7 @@ let run_user_command _ () =
     Sihl_core.App.empty
     |> Sihl_core.App.with_services [ UserService.register () ]
     |> Sihl_core.App.before_start set_config
-    |> Sihl_core.App.run' ~args:[ "ban" ]
+    |> Sihl_core.App.run' ~args:[ "ban" ] ~log_reporter:Logs.nop_reporter
   in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is not running" !order_service_running false);
@@ -104,7 +104,7 @@ let run_order_command _ () =
     Sihl_core.App.empty
     |> Sihl_core.App.with_services [ OrderService.register () ]
     |> Sihl_core.App.before_start set_config
-    |> Sihl_core.App.run' ~args:[ "order" ]
+    |> Sihl_core.App.run' ~args:[ "order" ] ~log_reporter:Logs.nop_reporter
   in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is running" !order_service_running true);

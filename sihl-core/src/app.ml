@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create ~doc:"Sihl app" "sihl.app"
+let log_src = Logs.Src.create "sihl.app"
 
 module Logger = (val Logs.src_log log_src : Logs.LOG)
 
@@ -56,7 +56,7 @@ let start_cmd services =
         let* _ = Container.start_services normal_services in
         Container.Service.start server
       | [] ->
-        Logs.err (fun m ->
+        Logger.err (fun m ->
             m
               "No 'server' service registered. Make sure that you have one server \
                service registered in your 'run.ml' such as a HTTP service");
@@ -64,7 +64,7 @@ let start_cmd services =
       | servers ->
         let names = List.map Container.Service.name servers in
         let names = String.concat ", " names in
-        Logs.err (fun m ->
+        Logger.err (fun m ->
             m
               "Multiple server services registered: %s, you can only have one service \
                registered that is a 'server' service."
@@ -74,7 +74,7 @@ let start_cmd services =
 
 let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   (* Set the logger up as first thing so we can log *)
-  Logs.set_reporter (log_reporter ());
+  Logs.set_reporter log_reporter;
   Logger.debug (fun m -> m "Setup service configurations");
   let configurations =
     List.map
