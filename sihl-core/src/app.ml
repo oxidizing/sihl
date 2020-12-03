@@ -75,7 +75,7 @@ let start_cmd services =
 let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   (* Set the logger up as first thing so we can log *)
   Logs.set_reporter log_reporter;
-  Logger.debug (fun m -> m "Setup service configurations");
+  Logger.info (fun m -> m "Setup service configurations");
   let configurations =
     List.map
       (fun service ->
@@ -86,7 +86,7 @@ let run' ?(commands = []) ?(log_reporter = Log.default_reporter) ?args app =
   Configuration.store @@ Option.value file_configuration ~default:[];
   let* () = app.before_start () in
   let configuration_commands = Configuration.commands configurations in
-  Logger.debug (fun m -> m "Setup service commands");
+  Logger.info (fun m -> m "Setup service commands");
   let service_commands = app.services |> List.map starting_commands |> List.concat in
   let start_sihl_cmd = start_cmd app.services in
   let commands =

@@ -2,9 +2,10 @@ open Lwt.Syntax
 
 let get_log_level () =
   match Sys.getenv_opt "LOG_LEVEL" with
+  | Some "info" -> Some Logs.Debug
   | Some "error" -> Some Logs.Error
-  | Some "info" -> Some Logs.Info
-  | _ -> Some Logs.Debug
+  | Some "warning" -> Some Logs.Warning
+  | _ -> Some Logs.Info
 ;;
 
 let logs_dir () =
