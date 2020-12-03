@@ -13,6 +13,7 @@ module Static = Middleware_static
 module Session = Middleware_session
 module Authn = Middleware_authn
 module User = Middleware_user
+module Urlencoded = Middleware_urlencoded
 
 val error : unit -> Opium_kernel.Rock.Middleware.t
 
