@@ -176,7 +176,7 @@ let read_env_file () =
       let* envs = read_to_end file [] in
       envs |> envs_to_kv |> Option.some |> Lwt.return)
     else (
-      Logs.debug (fun m -> m "Env file not found: %s. Continuing without it." filename);
+      Logs.info (fun m -> m "Env file not found: %s. Continuing without it." filename);
       Lwt.return None)
   | None ->
     Logs.debug (fun m ->

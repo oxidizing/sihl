@@ -32,7 +32,7 @@ let registered_schedules : t list ref = ref []
 let schedule schedule =
   let should_stop = ref false in
   let stop_schedule () = should_stop := true in
-  Logs.debug (fun m -> m "Scheduling %s" (label schedule));
+  Logs.info (fun m -> m "Scheduling %s" (label schedule));
   let scheduled_function = scheduled_function schedule in
   let rec loop () =
     let now = Ptime_clock.now () in
