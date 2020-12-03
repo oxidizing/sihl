@@ -78,7 +78,7 @@ struct
       let encrypted =
         match Sihl_core.Utils.Encryption.xor salt secret_value with
         | None ->
-          Logs.err (fun m -> m "MIDDLEWARE: Failed to encrypt CSRF secret");
+          Logs.err (fun m -> m "Failed to encrypt CSRF secret");
           raise @@ Crypto_failed "Failed to encrypt CSRF secret"
         | Some enc -> enc
       in
@@ -95,8 +95,8 @@ struct
       (* TODO don't check for HEAD, OPTIONS and TRACE either *)
       if Sihl_type.Http_request.is_get req
       then handler req
-      else
-        let* value = Sihl_type.Http_request.urlencoded "csrf" req in
+      else (
+        let req, value = Middleware_urlencoded.consume req "csrf" in
         match value with
         (* Give 403 if no token provided *)
         | None -> Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
@@ -106,7 +106,7 @@ struct
             match decoded with
             | Ok decoded -> decoded
             | Error (`Msg msg) ->
-              Logs.err (fun m -> m "MIDDLEWARE: Failed to decode CSRF token. %s" msg);
+              Logs.err (fun m -> m "Failed to decode CSRF token. %s" msg);
               raise @@ Crypto_failed ("Failed to decode CSRF token. " ^ msg)
           in
           let salted_cipher = decoded |> String.to_seq |> List.of_seq in
@@ -117,7 +117,7 @@ struct
                 ~salt_length:(List.length salted_cipher / 2)
             with
             | None ->
-              Logs.err (fun m -> m "MIDDLEWARE: Failed to decrypt CSRF token");
+              Logs.err (fun m -> m "Failed to decrypt CSRF token");
               raise @@ Crypto_failed "Failed to decrypt CSRF token"
             | Some dec -> dec
           in
@@ -137,7 +137,7 @@ struct
               handler req
           | None ->
             (* Give 403 if provided secret does not exist *)
-            Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return)
+            Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return))
     in
     Opium_kernel.Rock.Middleware.create ~name:"csrf" ~filter
   ;;

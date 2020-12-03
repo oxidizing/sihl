@@ -7,12 +7,31 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 type urlencoded = (string * string list) list [@@deriving sexp]
 
+exception NotFound
+
 let key : urlencoded Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("urlencoded", sexp_of_urlencoded)
 ;;
 
-let find_all req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
-let find req key = List.find_opt (fun (k, _) -> String.equal k key) (find_all req)
+let find_all req =
+  match Opium_kernel.Hmap.find key (Opium_kernel.Request.env req) with
+  | Some all -> all
+  | None ->
+    Logs.err (fun m -> m "No parsed urlencoded body found");
+    Logs.info (fun m -> m "Have you applied the urlencoded middleware?");
+    raise NotFound
+;;
+
+let find key req =
+  let result =
+    List.find_opt (fun (k, _) -> String.equal k key) (find_all req) |> Option.map snd
+  in
+  let result =
+    try Some (Option.map List.hd result) with
+    | _ -> None
+  in
+  Option.join result
+;;
 
 (** [consume req key] returns the value of the parsed urlencoded body for the key [key]
     and a request with an update context where the parsed urlencoded is missing the key
@@ -20,7 +39,7 @@ let find req key = List.find_opt (fun (k, _) -> String.equal k key) (find_all re
     **)
 let consume req k =
   let urlencoded = find_all req in
-  let value = find req k in
+  let value = find k req in
   let updated = List.filter (fun (k_, _) -> not (String.equal k_ k)) urlencoded in
   let env = Opium_kernel.Request.env req in
   let env = Opium_kernel.Hmap.add key updated env in
