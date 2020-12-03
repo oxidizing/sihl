@@ -9,11 +9,13 @@ struct
   module SessionMiddleware = Sihl_web.Middleware.Session.Make (SessionService)
 
   let apply_middlewares handler =
-    let middleware = Middleware.m () in
+    let csrf_middleware = Middleware.m () in
     let session_middleware = SessionMiddleware.m () in
+    let urlencoded_middleware = Sihl_web.Middleware.Urlencoded.m () in
     handler
-    |> Opium_kernel.Rock.Middleware.apply middleware
+    |> Opium_kernel.Rock.Middleware.apply csrf_middleware
     |> Opium_kernel.Rock.Middleware.apply session_middleware
+    |> Opium_kernel.Rock.Middleware.apply urlencoded_middleware
   ;;
 
   let get_request_yields_token _ () =
