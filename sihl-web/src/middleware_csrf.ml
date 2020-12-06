@@ -54,7 +54,7 @@ struct
     Lwt.return token
   ;;
 
-  let m () =
+  let m ?not_allowed_handler () =
     let filter handler req =
       (* Check if session already has a secret (token) *)
       let session = Middleware_session.find req in
@@ -128,17 +128,26 @@ struct
           (match provided_secret with
           | Some ps ->
             if not @@ Token.equal secret ps
-            then
-              (* Give 403 if provided secret doesn't match session secret *)
-              Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
+            then (
+              Logs.err (fun m ->
+                  m "Associated CSRF token does not match with provided token");
+              match not_allowed_handler with
+              | None ->
+                (* Give 403 if provided secret doesn't match session secret *)
+                Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
+              | Some handler -> Lwt.return @@ handler req)
             else
               (* Provided secret matches and is valid => Invalidate it so it can't be
                  reused *)
               let* () = TokenService.invalidate ps in
               handler req
           | None ->
-            (* Give 403 if provided secret does not exist *)
-            Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return))
+            Logs.err (fun m -> m "No token associated with CSRF token");
+            (match not_allowed_handler with
+            | None ->
+              (* Give 403 if provided secret does not exist *)
+              Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
+            | Some handler -> Lwt.return @@ handler req)))
     in
     Opium_kernel.Rock.Middleware.create ~name:"csrf" ~filter
   ;;
