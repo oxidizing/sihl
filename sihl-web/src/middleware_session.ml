@@ -7,12 +7,12 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Session_not_found
 
-let key : Session.t Opium_kernel.Hmap.key =
-  Opium_kernel.Hmap.Key.create ("session", Session.sexp_of_t)
+let key : Session.t Opium.Context.key =
+  Opium.Context.Key.create ("session", Session.sexp_of_t)
 ;;
 
 let find req =
-  try Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req) with
+  try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No session found");
     Logs.info (fun m -> m "Have you applied the session middleware for this route?");
@@ -25,8 +25,8 @@ let find_opt req =
 ;;
 
 let set session req =
-  let env = Opium_kernel.Request.env req in
-  let env = Opium_kernel.Hmap.add key session env in
+  let env = req.Opium.Request.env in
+  let env = Opium.Context.add key session env in
   { req with env }
 ;;
 
@@ -77,6 +77,6 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
         let* res = handler req in
         add_session_cookie cookie_name session.key signer res |> Lwt.return
     in
-    Opium_kernel.Rock.Middleware.create ~name:"session" ~filter
+    Rock.Middleware.create ~name:"session" ~filter
   ;;
 end

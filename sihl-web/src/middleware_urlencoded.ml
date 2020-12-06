@@ -9,12 +9,12 @@ type urlencoded = (string * string list) list [@@deriving sexp]
 
 exception Urlencoded_not_found
 
-let key : urlencoded Opium_kernel.Hmap.key =
-  Opium_kernel.Hmap.Key.create ("urlencoded", sexp_of_urlencoded)
+let key : urlencoded Opium.Context.key =
+  Opium.Context.Key.create ("urlencoded", sexp_of_urlencoded)
 ;;
 
 let find_all req =
-  match Opium_kernel.Hmap.find key (Opium_kernel.Request.env req) with
+  match Opium.Context.find key req.Opium.Request.env with
   | Some all -> all
   | None ->
     Logs.err (fun m -> m "No parsed urlencoded body found");
@@ -41,8 +41,8 @@ let consume req k =
   let urlencoded = find_all req in
   let value = find k req in
   let updated = List.filter (fun (k_, _) -> not (String.equal k_ k)) urlencoded in
-  let env = Opium_kernel.Request.env req in
-  let env = Opium_kernel.Hmap.add key updated env in
+  let env = req.Opium.Request.env in
+  let env = Opium.Context.add key updated env in
   let req = { req with env } in
   req, value
 ;;
@@ -50,10 +50,10 @@ let consume req k =
 let m () =
   let filter handler req =
     let* urlencoded = Sihl_type.Http_request.to_urlencoded req in
-    let env = Opium_kernel.Request.env req in
-    let env = Opium_kernel.Hmap.add key urlencoded env in
+    let env = req.Opium.Request.env in
+    let env = Opium.Context.add key urlencoded env in
     let req = { req with env } in
     handler req
   in
-  Opium_kernel.Rock.Middleware.create ~name:"urlencoded" ~filter
+  Rock.Middleware.create ~name:"urlencoded" ~filter
 ;;

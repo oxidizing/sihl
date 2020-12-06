@@ -7,11 +7,11 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 let to_opium_builder (meth, path, handler) =
   let open Sihl_type.Http_route in
   match meth with
-  | Get -> Opium.Std.get path handler
-  | Post -> Opium.Std.post path handler
-  | Put -> Opium.Std.put path handler
-  | Delete -> Opium.Std.delete path handler
-  | Any -> Opium.Std.all path handler
+  | Get -> Opium.App.get path handler
+  | Post -> Opium.App.post path handler
+  | Put -> Opium.App.put path handler
+  | Delete -> Opium.App.delete path handler
+  | Any -> Opium.App.all path handler
 ;;
 
 let routers_to_opium_builders routers =
@@ -41,11 +41,11 @@ let registered_routers = ref []
 let start_server () =
   Logs.debug (fun m -> m "Starting HTTP server");
   let port_nr = Option.value (Core.Configuration.read schema).port ~default:33000 in
-  let app = Opium.Std.App.(empty |> port port_nr |> cmd_name "Sihl App") in
+  let app = Opium.App.(empty |> port port_nr |> cmd_name "Sihl App") in
   let builders = routers_to_opium_builders !registered_routers in
   let app = List.fold_left (fun app builder -> builder app) app builders in
   (* We don't want to block here, the returned Lwt.t will never resolve *)
-  let _ = Opium.Std.App.start app in
+  let _ = Opium.App.start app in
   run_forever ()
 ;;
 

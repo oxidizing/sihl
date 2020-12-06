@@ -5,7 +5,7 @@ type meth =
   | Delete
   | Any
 
-type handler = Opium_kernel.Request.t -> Opium_kernel.Response.t Lwt.t
+type handler = Rock.Request.t -> Rock.Response.t Lwt.t
 type t = meth * string * handler
 
 let get path handler = Get, path, handler
@@ -17,7 +17,7 @@ let any path handler = Any, path, handler
 type router =
   { scope : string
   ; routes : t list
-  ; middlewares : Opium_kernel.Rock.Middleware.t list
+  ; middlewares : Rock.Middleware.t list
   }
 
 let router ?(scope = "/") ?(middlewares = []) routes = { scope; routes; middlewares }
@@ -48,7 +48,7 @@ let apply_middleware_stack middleware_stack (meth, path, handler) =
   let middleware_stack = List.rev middleware_stack in
   let wrapped_handler =
     List.fold_left
-      (fun handler middleware -> Opium_kernel.Rock.Middleware.apply middleware handler)
+      (fun handler middleware -> Rock.Middleware.apply middleware handler)
       handler
       middleware_stack
   in

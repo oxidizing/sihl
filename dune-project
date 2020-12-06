@@ -38,6 +38,8 @@
   (jwto (>= 0.3.0))
   (ppx_fields_conv (>= v0.13.0))
   (ppx_sexp_conv (>= v0.13.0))
+
+  (cohttp-lwt-unix (and (>= 2.5.4) :with-test))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -48,7 +50,7 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
-  (opium (>= 0.17.1))
+  (opium (>= 0.19.0))
   (multipart-form-data (>= 0.3.0))
   (uuidm (>= 0.9.7))
   (alcotest (>= 1.2.0))
@@ -83,7 +85,7 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-contract (= :version))
-  (opium (>= 0.17.1))
+  (opium (>= 0.19.0))
   (multipart-form-data (>= 0.3.0))))
 
 (package
@@ -117,7 +119,8 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
   (ocaml (>= 4.08.0))
   (letters (>= 0.2.0))
   (sihl-contract (= :version))
-  (sihl-persistence (= :version))))
+  (sihl-persistence (= :version))
+  (cohttp-lwt-unix (>= 2.5.4))))
 
 (package
  (name sihl-queue)
