@@ -4,7 +4,15 @@ let key : string Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("id", Sexplib.Std.sexp_of_string)
 ;;
 
-let find req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
+exception Id_not_found
+
+let find req =
+  try Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req) with
+  | _ ->
+    Logs.err (fun m -> m "No id found");
+    Logs.info (fun m -> m "Have you applied the ID middleware for this route?");
+    raise @@ Id_not_found
+;;
 
 let find_opt req =
   try Some (find req) with
@@ -23,5 +31,5 @@ let m () =
     let req = set id req in
     handler req
   in
-  Opium_kernel.Rock.Middleware.create ~name:"authn_session" ~filter
+  Opium_kernel.Rock.Middleware.create ~name:"id" ~filter
 ;;

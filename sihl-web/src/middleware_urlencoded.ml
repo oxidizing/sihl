@@ -7,7 +7,7 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 type urlencoded = (string * string list) list [@@deriving sexp]
 
-exception NotFound
+exception Urlencoded_not_found
 
 let key : urlencoded Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("urlencoded", sexp_of_urlencoded)
@@ -19,7 +19,7 @@ let find_all req =
   | None ->
     Logs.err (fun m -> m "No parsed urlencoded body found");
     Logs.info (fun m -> m "Have you applied the urlencoded middleware?");
-    raise NotFound
+    raise Urlencoded_not_found
 ;;
 
 let find key req =

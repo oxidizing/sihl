@@ -8,10 +8,19 @@ let key : string option Opium_kernel.Hmap.key =
   Opium_kernel.Hmap.Key.create ("flash", Sexplib.Std.(sexp_of_option sexp_of_string))
 ;;
 
+exception Flash_not_found
+
 let find req =
   (* Raising an exception is ok since we assume that before find can be called the
      middleware has been passed *)
-  Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
+  try Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req) with
+  | _ ->
+    Logs.err (fun m -> m "No flash storage found");
+    Logs.info (fun m ->
+        m
+          "Have you applied the session and flash middleware for this route? The flash \
+           middleware requires the session middleware.");
+    raise Flash_not_found
 ;;
 
 let set flash res =
@@ -23,17 +32,7 @@ let set flash res =
 module Make (SessionService : Sihl_contract.Session.Sig) = struct
   let m ?(flash_store_name = "flash.store") () =
     let filter handler req =
-      let session =
-        match Middleware_session.find_opt req with
-        | Some session -> session
-        | None ->
-          Logs.err (fun m -> m "No session found in request");
-          Logs.info (fun m ->
-              m
-                "The flash store requires sessions. Did you forget to apply the session \
-                 middleware?");
-          raise @@ Sihl_contract.Session.Exception "No session found"
-      in
+      let session = Middleware_session.find req in
       let* current_flash = SessionService.find_value session flash_store_name in
       let env = Opium_kernel.Request.env req in
       let env = Opium_kernel.Hmap.add key current_flash env in
@@ -48,6 +47,6 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
       let* () = SessionService.set_value session ~k:flash_store_name ~v:next_flash in
       Lwt.return res
     in
-    Opium_kernel.Rock.Middleware.create ~name:"flash" ~filter
+    Opium_kernel.Rock.Middleware.create ~name:"session.flash" ~filter
   ;;
 end

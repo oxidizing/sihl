@@ -12,9 +12,16 @@ let key : string Opium_kernel.Hmap.key =
 ;;
 
 exception Crypto_failed of string
+exception Csrf_token_not_found
 
 (* Can be used to fetch token in view for forms *)
-let find req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
+let find req =
+  try Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req) with
+  | _ ->
+    Logs.err (fun m -> m "No CSRF token found");
+    Logs.info (fun m -> m "Have you applied the CSRF middleware for this route?");
+    raise @@ Csrf_token_not_found
+;;
 
 let find_opt req =
   try Some (find req) with
@@ -50,13 +57,7 @@ struct
   let m () =
     let filter handler req =
       (* Check if session already has a secret (token) *)
-      let session =
-        match Middleware_session.find_opt req with
-        | Some session -> session
-        | None ->
-          Logs.info (fun m -> m "Have you applied the session middleware?");
-          raise (Crypto_failed "No session found")
-      in
+      let session = Middleware_session.find req in
       let* id = SessionService.find_value session "csrf" in
       let* secret =
         match id with
@@ -117,7 +118,7 @@ struct
                 ~salt_length:(List.length salted_cipher / 2)
             with
             | None ->
-              Logs.err (fun m -> m "Failed to decrypt CSRF token");
+              Logs.err (fun m -> m "Failed to decrypt CSRF token %s " token);
               raise @@ Crypto_failed "Failed to decrypt CSRF token"
             | Some dec -> dec
           in

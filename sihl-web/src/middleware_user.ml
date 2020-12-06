@@ -23,7 +23,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
         let login_path = login_path_f () in
         Sihl_type.Http_response.redirect_to login_path |> Lwt.return
     in
-    Opium_kernel.Rock.Middleware.create ~name:"user_require_user" ~filter
+    Opium_kernel.Rock.Middleware.create ~name:"user.require.user" ~filter
   ;;
 
   let require_admin ~login_path_f =
@@ -40,6 +40,6 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
         let login_path = login_path_f () in
         Sihl_type.Http_response.redirect_to login_path |> Lwt.return
     in
-    Opium_kernel.Rock.Middleware.create ~name:"user_require_admin" ~filter
+    Opium_kernel.Rock.Middleware.create ~name:"user.require.admin" ~filter
   ;;
 end
