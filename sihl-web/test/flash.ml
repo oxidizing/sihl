@@ -31,7 +31,7 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
     in
     (* we need to simulate the browser sending back the session cookie *)
     let cookie_value =
-      Sihl_type.Http_response.cookie "session" res
+      Sihl_type.Http_response.cookie "sihl.session" res
       |> Option.get
       |> Sihl_type.Http_cookie.value
     in

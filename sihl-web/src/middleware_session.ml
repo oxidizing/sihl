@@ -41,7 +41,7 @@ let add_session_cookie cookie_name session_key signer res =
 ;;
 
 module Make (SessionService : Sihl_contract.Session.Sig) = struct
-  let m ?(cookie_name = "session") () =
+  let m ?(cookie_name = "sihl.session") () =
     let filter handler req =
       let secret = Sihl_core.Configuration.read_secret () in
       let signer = Sihl_type.Http_cookie.Signer.make secret in

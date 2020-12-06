@@ -18,7 +18,7 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
     let session_value1 = sessions |> List.hd |> Sihl_type.Session.key in
     Alcotest.(check int "Has created a session" 1 (List.length sessions));
     let cookie_value =
-      Sihl_type.Http_response.cookie "session" res
+      Sihl_type.Http_response.cookie "sihl.session" res
       |> Option.get
       |> Sihl_type.Http_cookie.value
     in

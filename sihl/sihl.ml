@@ -13,18 +13,25 @@ module Contract = Sihl_contract
 module Service = struct
   module Authn = Sihl_user.Authn
   module Database = Sihl_persistence.Database
+  module Email = Sihl_email
+  module Email_template = Sihl_email.Template
+  module Email_template_repo = Sihl_email.Template_repo
   module Http = Sihl_web.Http
   module Migration = Sihl_persistence.Migration
   module Migration_repo = Sihl_persistence.Migration_repo
+  module Password_reset = Sihl_user.Password_reset
   module Repository = Sihl_persistence.Repository
   module Schedule = Sihl_core.Schedule
   module Session = Sihl_user.Session
   module Session_repo = Sihl_user.Session_repo
+  module Storage = Sihl_storage
+  module Storage_repo = Sihl_storage.Repo
   module Token = Sihl_user.Token
   module Token_repo = Sihl_user.Token_repo
   module User = Sihl_user.User
   module User_repo = Sihl_user.User_repo
-  module Password_reset = Sihl_user.Password_reset
+  module Queue = Sihl_queue
+  module Queue_repo = Sihl_queue.Repo
 end
 
 (* Types *)

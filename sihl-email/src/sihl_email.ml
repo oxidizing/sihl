@@ -3,7 +3,7 @@ module Core = Sihl_core
 module Utils = Sihl_core.Utils
 module Template = Sihl_email_template
 
-let log_src = Logs.Src.create "sihl.service.http"
+let log_src = Logs.Src.create "sihl.service.email"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -13,9 +13,9 @@ let print email =
   let subject = Sihl_type.Email.subject email in
   let text_content = Sihl_type.Email.text_content email in
   let html_content = Sihl_type.Email.html_content email in
-  print_endline
-  @@ Printf.sprintf
-       {|
+  Logs.info (fun m ->
+      m
+        {|
 -----------------------
 Email sent by: %s
 Recpient: %s
@@ -30,11 +30,11 @@ Html:
 %s
 -----------------------
 |}
-       sender
-       recipient
-       subject
-       text_content
-       html_content
+        sender
+        recipient
+        subject
+        text_content
+        html_content)
 ;;
 
 let should_intercept () =
@@ -47,14 +47,15 @@ let should_intercept () =
   match is_production, bypass with
   | false, true -> false
   | false, false -> true
-  | true, true -> false
-  | true, false -> false
+  | true, _ -> false
 ;;
 
 let intercept sender email =
-  let is_testing = Sihl_core.Configuration.is_test () in
+  let is_development = Sihl_core.Configuration.is_development () in
   let console =
-    Option.value ~default:is_testing (Sihl_core.Configuration.read_bool "EMAIL_CONSOLE")
+    Option.value
+      ~default:is_development
+      (Sihl_core.Configuration.read_bool "EMAIL_CONSOLE")
   in
   let () = if console then print email else () in
   if should_intercept ()
