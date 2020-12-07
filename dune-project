@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.1.11)
+(version 0.2.0)
 
 (authors
   "Josef Erben"
@@ -117,7 +117,7 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (letters (>= 0.2.0))
+  (letters (>= 0.2.1))
   (sihl-contract (= :version))
   (sihl-persistence (= :version))
   (cohttp-lwt-unix (>= 2.5.4))))

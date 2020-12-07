@@ -1,13 +1,10 @@
-## [0.1.11] - ?
+## [0.2] - 2020-12-07
 ### Fixed
 - Extract `sihl-core`, `sihl-type`, `sihl-contract`, `sihl-user`, `sihl-persistence` and `sihl-web` as separate opam packages
-
-### Added
 - Increase session key size to 20 bytes
 - Sign session cookies with `SIHL_SECRET`
 - Simplify session service API
-- Implement generic flash storage on top of session storage
-- Remove specific message service
+- Implement generic flash storage on top of session storage and replace the specific message service
 - Update to httpaf-based Opium 0.19.0
 
 ### Added
