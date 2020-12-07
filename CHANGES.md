@@ -8,6 +8,7 @@
 - Simplify session service API
 - Implement generic flash storage on top of session storage
 - Remove specific message service
+- Update to httpaf-based Opium 0.19.0
 
 ### Added
 - File log reporter to store logs in `logs/error.log` and `logs/app.log`
