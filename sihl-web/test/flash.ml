@@ -11,7 +11,7 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
 
   let wrap handler =
     List.fold_left
-      (fun handler middleware -> Opium_kernel.Rock.Middleware.apply middleware handler)
+      (fun handler middleware -> Rock.Middleware.apply middleware handler)
       handler
       middleware_stack
   ;;
@@ -30,11 +30,8 @@ module Make (SessionService : Sihl_contract.Session.Sig) = struct
         req
     in
     (* we need to simulate the browser sending back the session cookie *)
-    let cookie_value =
-      Sihl_type.Http_response.cookie "sihl.session" res
-      |> Option.get
-      |> Sihl_type.Http_cookie.value
-    in
+    let cookie = Sihl_type.Http_response.cookie "sihl.session" res |> Option.get in
+    let cookie_value = cookie.Opium.Cookie.value in
     let req = Sihl_type.Http_request.get "" in
     let req = Sihl_type.Http_request.add_cookie cookie_value req in
     let* _ =

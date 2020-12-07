@@ -1,13 +1,13 @@
 module Core = Sihl_core
 
-let key : string Opium_kernel.Hmap.key =
-  Opium_kernel.Hmap.Key.create ("id", Sexplib.Std.sexp_of_string)
+let key : string Opium.Context.key =
+  Opium.Context.Key.create ("id", Sexplib.Std.sexp_of_string)
 ;;
 
 exception Id_not_found
 
 let find req =
-  try Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req) with
+  try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No id found");
     Logs.info (fun m -> m "Have you applied the ID middleware for this route?");
@@ -20,8 +20,8 @@ let find_opt req =
 ;;
 
 let set id req =
-  let env = Opium_kernel.Request.env req in
-  let env = Opium_kernel.Hmap.add key id env in
+  let env = req.Opium.Request.env in
+  let env = Opium.Context.add key id env in
   { req with env }
 ;;
 
@@ -31,5 +31,5 @@ let m () =
     let req = set id req in
     handler req
   in
-  Opium_kernel.Rock.Middleware.create ~name:"id" ~filter
+  Rock.Middleware.create ~name:"id" ~filter
 ;;

@@ -17,6 +17,6 @@ struct
         | None -> handler req)
       | None -> handler req
     in
-    Opium_kernel.Rock.Middleware.create ~name:"authn.session" ~filter
+    Rock.Middleware.create ~name:"authn.session" ~filter
   ;;
 end

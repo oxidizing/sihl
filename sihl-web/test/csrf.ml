@@ -13,9 +13,9 @@ struct
     let session_middleware = SessionMiddleware.m () in
     let urlencoded_middleware = Sihl_web.Middleware.Urlencoded.m () in
     handler
-    |> Opium_kernel.Rock.Middleware.apply csrf_middleware
-    |> Opium_kernel.Rock.Middleware.apply session_middleware
-    |> Opium_kernel.Rock.Middleware.apply urlencoded_middleware
+    |> Rock.Middleware.apply csrf_middleware
+    |> Rock.Middleware.apply session_middleware
+    |> Rock.Middleware.apply urlencoded_middleware
   ;;
 
   let get_request_yields_token _ () =
@@ -24,7 +24,7 @@ struct
     let handler req =
       let token_value = Sihl_web.Middleware.Csrf.find req in
       Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
-      Lwt.return @@ Sihl_type.Http_response.create ()
+      Lwt.return @@ Sihl_type.Http_response.of_plain_text ""
     in
     let wrapped_handler = apply_middlewares handler in
     let* _ = wrapped_handler req in
@@ -34,10 +34,10 @@ struct
   let get_request_without_token_succeeds _ () =
     let req = Sihl_type.Http_request.get "" in
     let* () = Sihl_persistence.Repository.clean_all () in
-    let handler _ = Lwt.return @@ Sihl_type.Http_response.create () in
+    let handler _ = Lwt.return @@ Sihl_type.Http_response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler req in
-    let status = Sihl_type.Http_response.status response in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     Lwt.return ()
   ;;
@@ -49,23 +49,19 @@ struct
     let token_ref2 = ref "" in
     let handler tkn req =
       tkn := Sihl_web.Middleware.Csrf.find req;
-      Lwt.return @@ Sihl_type.Http_response.create ()
+      Lwt.return @@ Sihl_type.Http_response.of_plain_text ""
     in
     let wrapped_handler1 = apply_middlewares (handler token_ref1) in
     (* Do GET to create token *)
     let* response = wrapped_handler1 req in
-    let cookie_key, cookie_value =
-      response
-      |> Sihl_type.Http_response.cookies
-      |> List.hd
-      |> Sihl_type.Http_cookie.value
-    in
-    let cookie_header = "Cookie", Format.sprintf "%s=%s" cookie_key cookie_value in
-    let status = Sihl_type.Http_response.status response in
+    let cookie = response |> Sihl_type.Http_response.cookies |> List.hd in
+    let cookie_key, cookie_value = cookie.Opium.Cookie.value in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     (* Do GET with session to get token *)
     let get_req =
-      Sihl_type.Http_request.get "/foo" |> Sihl_type.Http_request.add_header cookie_header
+      Sihl_type.Http_request.get "/foo"
+      |> Sihl_type.Http_request.add_cookie (cookie_key, cookie_value)
     in
     let wrapped_handler2 = apply_middlewares (handler token_ref2) in
     let* _ = wrapped_handler2 get_req in
@@ -94,7 +90,7 @@ struct
     let handler req =
       let token_value = Sihl_web.Middleware.Csrf.find req in
       Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
-      Lwt.return @@ Sihl_type.Http_response.create ()
+      Lwt.return @@ Sihl_type.Http_response.of_plain_text ""
     in
     let wrapped_handler = apply_middlewares handler in
     let* _ = wrapped_handler post_req in
@@ -104,10 +100,10 @@ struct
   let post_request_without_token_fails _ () =
     let post_req = Sihl_type.Http_request.post "/foo" in
     let* () = Sihl_persistence.Repository.clean_all () in
-    let handler _ = Lwt.return @@ Sihl_type.Http_response.create () in
+    let handler _ = Lwt.return @@ Sihl_type.Http_response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
-    let status = Sihl_type.Http_response.status response in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 403" 403 status);
     Lwt.return ()
   ;;
@@ -120,7 +116,7 @@ struct
         `POST
     in
     let* () = Sihl_persistence.Repository.clean_all () in
-    let handler _ = Lwt.return @@ Sihl_type.Http_response.create () in
+    let handler _ = Lwt.return @@ Sihl_type.Http_response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     Lwt.catch
       (fun () -> wrapped_handler post_req |> Lwt.map ignore)
@@ -137,7 +133,7 @@ struct
       Sihl_type.Http_request.of_urlencoded ~body:[ "csrf", [ "aGVsbG8=" ] ] "/foo" `POST
     in
     let* () = Sihl_persistence.Repository.clean_all () in
-    let handler _ = Lwt.return @@ Sihl_type.Http_response.create () in
+    let handler _ = Lwt.return @@ Sihl_type.Http_response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     Lwt.catch
       (fun () -> wrapped_handler post_req |> Lwt.map ignore)
@@ -154,7 +150,7 @@ struct
     let token_ref = ref "" in
     let handler req =
       token_ref := Sihl_web.Middleware.Csrf.find req;
-      Lwt.return @@ Sihl_type.Http_response.create ()
+      Lwt.return @@ Sihl_type.Http_response.of_plain_text ""
     in
     (* Do GET to create token *)
     let wrapped_handler = apply_middlewares handler in
@@ -163,10 +159,10 @@ struct
     let post_req =
       Sihl_type.Http_request.of_urlencoded ~body:[ "csrf", [ !token_ref ] ] "/foo" `POST
     in
-    let handler _ = Lwt.return @@ Sihl_type.Http_response.create () in
+    let handler _ = Lwt.return @@ Sihl_type.Http_response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
-    let status = Sihl_type.Http_response.status response in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 403" 403 status);
     Lwt.return ()
   ;;
@@ -183,10 +179,10 @@ struct
         `POST
     in
     let* () = Sihl_persistence.Repository.clean_all () in
-    let handler _ = Lwt.return @@ Sihl_type.Http_response.create () in
+    let handler _ = Lwt.return @@ Sihl_type.Http_response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
-    let status = Sihl_type.Http_response.status response in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 403" 403 status);
     Lwt.return ()
   ;;
@@ -200,19 +196,15 @@ struct
     let handler req =
       session_req := Some req;
       token_ref := Sihl_web.Middleware.Csrf.find req;
-      Lwt.return @@ Sihl_type.Http_response.create ()
+      Lwt.return @@ Sihl_type.Http_response.of_plain_text ""
     in
     (* Do GET to create token *)
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler req in
-    let cookie_key, cookie_value =
-      response
-      |> Sihl_type.Http_response.cookies
-      |> List.hd
-      |> Sihl_type.Http_cookie.value
-    in
+    let cookie = response |> Sihl_type.Http_response.cookies |> List.hd in
+    let cookie_key, cookie_value = cookie.Opium.Cookie.value in
     let cookie_header = "Cookie", Format.sprintf "%s=%s" cookie_key cookie_value in
-    let status = Sihl_type.Http_response.status response in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     (* Do POST to use created token *)
     let body = Uri.pct_encode @@ "csrf=" ^ !token_ref in
@@ -222,7 +214,7 @@ struct
     in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
-    let status = Sihl_type.Http_response.status response in
+    let status = Sihl_type.Http_response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     let req = Option.get !session_req in
     let session = Sihl_web.Middleware.Session.find req in

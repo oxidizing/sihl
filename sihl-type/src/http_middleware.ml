@@ -1,1 +1,1 @@
-let create = Opium_kernel.Rock.Middleware.create
+let create = Rock.Middleware.create

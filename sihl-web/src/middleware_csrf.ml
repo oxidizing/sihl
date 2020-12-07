@@ -7,8 +7,8 @@ let log_src = Logs.Src.create "sihl.middleware.csrf"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let key : string Opium_kernel.Hmap.key =
-  Opium_kernel.Hmap.Key.create ("csrf token", Sexplib.Std.sexp_of_string)
+let key : string Opium.Context.key =
+  Opium.Context.Key.create ("csrf token", Sexplib.Std.sexp_of_string)
 ;;
 
 exception Crypto_failed of string
@@ -16,7 +16,7 @@ exception Csrf_token_not_found
 
 (* Can be used to fetch token in view for forms *)
 let find req =
-  try Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req) with
+  try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No CSRF token found");
     Logs.info (fun m -> m "Have you applied the CSRF middleware for this route?");
@@ -29,8 +29,8 @@ let find_opt req =
 ;;
 
 let set token req =
-  let env = Opium_kernel.Request.env req in
-  let env = Opium_kernel.Hmap.add key token env in
+  let env = req.Opium.Request.env in
+  let env = Opium.Context.add key token env in
   { req with env }
 ;;
 
@@ -93,14 +93,22 @@ struct
       in
       let req = set token req in
       (* Don't check for CSRF token in GET requests *)
-      (* TODO don't check for HEAD, OPTIONS and TRACE either *)
-      if Sihl_type.Http_request.is_get req
+      let is_safe =
+        match req.Opium.Request.meth with
+        | `GET | `HEAD | `OPTIONS | `TRACE -> true
+        | _ -> false
+      in
+      if is_safe
       then handler req
       else (
         let req, value = Middleware_urlencoded.consume req "csrf" in
         match value with
         (* Give 403 if no token provided *)
-        | None -> Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
+        | None ->
+          (match not_allowed_handler with
+          | Some handler -> Lwt.return @@ handler req
+          | None ->
+            Sihl_type.Http_response.(of_plain_text ~status:`Forbidden "") |> Lwt.return)
         | Some value ->
           let decoded = Base64.decode ~alphabet:Base64.uri_safe_alphabet value in
           let decoded =
@@ -134,7 +142,8 @@ struct
               match not_allowed_handler with
               | None ->
                 (* Give 403 if provided secret doesn't match session secret *)
-                Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
+                Sihl_type.Http_response.(of_plain_text ~status:`Forbidden "")
+                |> Lwt.return
               | Some handler -> Lwt.return @@ handler req)
             else
               (* Provided secret matches and is valid => Invalidate it so it can't be
@@ -146,9 +155,9 @@ struct
             (match not_allowed_handler with
             | None ->
               (* Give 403 if provided secret does not exist *)
-              Sihl_type.Http_response.(create () |> set_status 403) |> Lwt.return
+              Sihl_type.Http_response.(of_plain_text ~status:`Forbidden "") |> Lwt.return
             | Some handler -> Lwt.return @@ handler req)))
     in
-    Opium_kernel.Rock.Middleware.create ~name:"csrf" ~filter
+    Rock.Middleware.create ~name:"csrf" ~filter
   ;;
 end

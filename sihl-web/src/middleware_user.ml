@@ -1,15 +1,12 @@
 module User = Sihl_type.User
 
-let key : User.t Opium_kernel.Hmap.key =
-  Opium_kernel.Hmap.Key.create ("user", User.sexp_of_t)
-;;
-
-let find req = Opium_kernel.Hmap.find_exn key (Opium_kernel.Request.env req)
-let find_opt req = Opium_kernel.Hmap.find key (Opium_kernel.Request.env req)
+let key : User.t Opium.Context.key = Opium.Context.Key.create ("user", User.sexp_of_t)
+let find req = Opium.Context.find_exn key req.Opium.Request.env
+let find_opt req = Opium.Context.find key req.Opium.Request.env
 
 let set user req =
-  let env = Opium_kernel.Request.env req in
-  let env = Opium_kernel.Hmap.add key user env in
+  let env = req.Opium.Request.env in
+  let env = Opium.Context.add key user env in
   { req with env }
 ;;
 
@@ -23,7 +20,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
         let login_path = login_path_f () in
         Sihl_type.Http_response.redirect_to login_path |> Lwt.return
     in
-    Opium_kernel.Rock.Middleware.create ~name:"user.require.user" ~filter
+    Rock.Middleware.create ~name:"user.require.user" ~filter
   ;;
 
   let require_admin ~login_path_f =
@@ -40,6 +37,6 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
         let login_path = login_path_f () in
         Sihl_type.Http_response.redirect_to login_path |> Lwt.return
     in
-    Opium_kernel.Rock.Middleware.create ~name:"user.require.admin" ~filter
+    Rock.Middleware.create ~name:"user.require.admin" ~filter
   ;;
 end
