@@ -51,6 +51,7 @@
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
   (opium (>= 0.19.0))
+  (caqti-lwt (>= 1.2.0))
   (multipart-form-data (>= 0.3.0))
   (uuidm (>= 0.9.7))
   (alcotest (>= 1.2.0))

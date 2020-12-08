@@ -62,14 +62,21 @@ struct
       let* secret =
         match id with
         (* Create a secret if no secret found in session *)
-        | None -> create_secret session
+        | None ->
+          Logs.debug (fun m -> m "CSRF token in session not found, create new token");
+          create_secret session
         | Some token_id ->
           let* token = TokenService.find_by_id_opt token_id in
           (match token with
           (* Create a secret if invalid token in session *)
-          | None -> create_secret session
+          | None ->
+            Logs.debug (fun m ->
+                m "CSRF token in session is invalid or does not exist, create new one");
+            create_secret session
           (* Return valid secret from session *)
-          | Some secret -> Lwt.return secret)
+          | Some secret ->
+            Logs.debug (fun m -> m "Fetch valid token from session");
+            Lwt.return secret)
       in
       (* Randomize and scramble secret (XOR with salt) to make a token *)
       (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
