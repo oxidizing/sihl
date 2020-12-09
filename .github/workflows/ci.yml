@@ -67,8 +67,6 @@ jobs:
         run: make build
       - name: Build docs
         run: make doc 
-      - name: Run unit tests
+      - name: Run tests
         run: make test
-      - name: Run slow tests
-        run: make test-slow
 

@@ -3,33 +3,3 @@
    flash_postgresql)
  (libraries sihl-user sihl-web sihl-persistence alcotest-lwt
    caqti-driver-mariadb caqti-driver-postgresql cohttp-lwt-unix))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./csrf_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./http.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./session_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./session_postgresql.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./flash_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./flash_postgresql.exe)))
