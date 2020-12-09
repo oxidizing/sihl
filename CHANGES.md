@@ -1,3 +1,7 @@
+## [0.2.1] - 2020-12-09
+### Fixed
+- Two subsequent `POST` request works now with the CSRF middleware
+
 ## [0.2] - 2020-12-07
 ### Fixed
 - Extract `sihl-core`, `sihl-type`, `sihl-contract`, `sihl-user`, `sihl-persistence` and `sihl-web` as separate opam packages
