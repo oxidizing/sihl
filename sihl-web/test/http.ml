@@ -18,7 +18,7 @@ let match_first_route _ () =
     Sihl_type.Http_route.router ~scope:"/scope" ~middlewares:[] [ route1; route2 ]
   in
   let _ = Sihl_web.Http.register ~routers:[ router ] () in
-  let _ = Sihl_web.Http.start () in
+  let* () = Sihl_web.Http.start () in
   let* _ =
     Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/scope/some/path")
   in
