@@ -54,6 +54,27 @@ struct
     Lwt.return token
   ;;
 
+  let secret_to_token secret =
+    (* Randomize and scramble secret (XOR with salt) to make a token *)
+    (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
+    let secret_length = String.length (Token.value secret) in
+    let salt = Core.Random.bytes ~nr:secret_length in
+    let secret_value = Token.value secret |> String.to_seq |> List.of_seq in
+    let encrypted =
+      match Sihl_core.Utils.Encryption.xor salt secret_value with
+      | None ->
+        Logs.err (fun m -> m "Failed to encrypt CSRF secret");
+        raise @@ Crypto_failed "Failed to encrypt CSRF secret"
+      | Some enc -> enc
+    in
+    encrypted
+    |> List.append salt
+    |> List.to_seq
+    |> String.of_seq
+    (* Make the token transmittable without encoding problems *)
+    |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet
+  ;;
+
   let m ?not_allowed_handler () =
     let filter handler req =
       (* Check if session already has a secret (token) *)
@@ -78,26 +99,7 @@ struct
             Logs.debug (fun m -> m "Fetch valid token from session");
             Lwt.return secret)
       in
-      (* Randomize and scramble secret (XOR with salt) to make a token *)
-      (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
-      let secret_length = String.length secret.value in
-      let salt = Core.Random.bytes ~nr:secret_length in
-      let secret_value = secret.value |> String.to_seq |> List.of_seq in
-      let encrypted =
-        match Sihl_core.Utils.Encryption.xor salt secret_value with
-        | None ->
-          Logs.err (fun m -> m "Failed to encrypt CSRF secret");
-          raise @@ Crypto_failed "Failed to encrypt CSRF secret"
-        | Some enc -> enc
-      in
-      let token =
-        encrypted
-        |> List.append salt
-        |> List.to_seq
-        |> String.of_seq
-        (* Make the token transmittable without encoding problems *)
-        |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet
-      in
+      let token = secret_to_token secret in
       let req = set token req in
       (* Don't check for CSRF token in GET requests *)
       let is_safe =
@@ -114,8 +116,7 @@ struct
         | None ->
           (match not_allowed_handler with
           | Some handler -> Lwt.return @@ handler req
-          | None ->
-            Sihl_type.Http_response.(of_plain_text ~status:`Forbidden "") |> Lwt.return)
+          | None -> Opium.Response.(of_plain_text ~status:`Forbidden "") |> Lwt.return)
         | Some value ->
           let decoded = Base64.decode ~alphabet:Base64.uri_safe_alphabet value in
           let decoded =
@@ -149,20 +150,23 @@ struct
               match not_allowed_handler with
               | None ->
                 (* Give 403 if provided secret doesn't match session secret *)
-                Sihl_type.Http_response.(of_plain_text ~status:`Forbidden "")
-                |> Lwt.return
+                Opium.Response.(of_plain_text ~status:`Forbidden "") |> Lwt.return
               | Some handler -> Lwt.return @@ handler req)
             else
               (* Provided secret matches and is valid => Invalidate it so it can't be
                  reused *)
               let* () = TokenService.invalidate ps in
+              (* To allow fetching a new valid token from the context, generate a new one *)
+              let* secret = create_secret session in
+              let token = secret_to_token secret in
+              let req = set token req in
               handler req
           | None ->
             Logs.err (fun m -> m "No token associated with CSRF token");
             (match not_allowed_handler with
             | None ->
               (* Give 403 if provided secret does not exist *)
-              Sihl_type.Http_response.(of_plain_text ~status:`Forbidden "") |> Lwt.return
+              Opium.Response.(of_plain_text ~status:`Forbidden "") |> Lwt.return
             | Some handler -> Lwt.return @@ handler req)))
     in
     Rock.Middleware.create ~name:"csrf" ~filter
