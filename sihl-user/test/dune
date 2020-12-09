@@ -3,28 +3,3 @@
    authn_mariadb authn_postgresql)
  (libraries sihl-contract sihl-user sihl-web alcotest-lwt
    caqti-driver-mariadb caqti-driver-postgresql))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./password_reset_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./token_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./user_mariadb.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./user_postgresql.exe)))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./authn_mariadb.exe)))

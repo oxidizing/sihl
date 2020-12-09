@@ -1,0 +1,3 @@
+(executables
+ (names storage_mariadb)
+ (libraries sihl-storage sihl-core alcotest-lwt caqti-driver-mariadb))
