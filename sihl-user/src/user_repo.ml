@@ -1,15 +1,15 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
 module Repository = Sihl_persistence.Repository
-module Migration = Sihl_type.Migration
-module Migration_state = Sihl_type.Migration_state
-module Model = Sihl_type.User
+module Migration = Sihl_contract.Migration
+module Migration_state = Sihl_contract.Migration.State
+module Model = Sihl_contract.User
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val lifecycles : Sihl_core.Container.Lifecycle.t list
-  val get_all : query:Sihl_type.Database.Ql.t -> (Model.t list * int) Lwt.t
+  val get_all : query:Sihl_contract.Database.Ql.t -> (Model.t list * int) Lwt.t
   val get : id:string -> Model.t option Lwt.t
   val get_by_email : email:string -> Model.t option Lwt.t
   val insert : user:Model.t -> unit Lwt.t
@@ -25,7 +25,7 @@ end
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let user =
-    let open Sihl_type.User in
+    let open Sihl_contract.User in
     let encode m =
       Ok
         ( m.id
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS user_users (
       [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
     in
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      Sihl_type.Database.Ql.to_sql_fragments fields query
+      Sihl_contract.Database.Ql.to_sql_fragments fields query
     in
     let rec create_param values param =
       match values with
@@ -275,7 +275,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open Sihl_type.User
+  open Sihl_contract.User
 
   let user =
     let encode m =
@@ -337,7 +337,7 @@ CREATE TABLE IF NOT EXISTS user_users (
       [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
     in
     let filter_fragment, sort_fragment, pagination_fragment, values =
-      Sihl_type.Database.Ql.to_sql_fragments fields query
+      Sihl_contract.Database.Ql.to_sql_fragments fields query
     in
     let rec create_param values param =
       match values with

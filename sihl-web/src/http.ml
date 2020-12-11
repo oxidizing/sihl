@@ -3,7 +3,7 @@ let log_src = Logs.Src.create "sihl.service.http"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let to_opium_builder (meth, path, handler) =
-  let open Sihl_type.Http_route in
+  let open Sihl_contract.Http in
   match meth with
   | Get -> Opium.App.get path handler
   | Post -> Opium.App.post path handler
@@ -15,7 +15,7 @@ let to_opium_builder (meth, path, handler) =
 let routers_to_opium_builders routers =
   routers
   |> List.map (fun router ->
-         let routes = Sihl_type.Http_route.router_to_routes router in
+         let routes = Sihl_contract.Http.router_to_routes router in
          routes |> List.map to_opium_builder |> List.rev)
   |> List.concat
 ;;

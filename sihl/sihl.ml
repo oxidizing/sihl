@@ -25,47 +25,40 @@ module Service = struct
   module Session = Sihl_user.Session
   module Session_repo = Sihl_user.Session_repo
   module Storage = Sihl_storage
-  module Storage_repo = Sihl_storage.Repo
   module Token = Sihl_user.Token
   module Token_repo = Sihl_user.Token_repo
   module User = Sihl_user.User
   module User_repo = Sihl_user.User_repo
   module Queue = Sihl_queue
-  module Queue_repo = Sihl_queue.Repo
 end
 
 (* Types *)
-module Cleaner = Sihl_type.Cleaner
-module Database = Sihl_type.Database
-module Email = Sihl_type.Email
-module Email_template = Sihl_type.Email_template
+module Database = Sihl_contract.Database
+module Email = Sihl_contract.Email
+module Email_template = Sihl_contract.Email_template
 
 module Http = struct
-  module Cookie = Sihl_type.Http_cookie
-  module Middleware = Sihl_type.Http_middleware
-  module Request = Sihl_type.Http_request
-  module Response = Sihl_type.Http_response
-  module Route = Sihl_type.Http_route
+  module Route = Sihl_contract.Http
 end
 
-module Migration = Sihl_type.Migration
+module Migration = Sihl_contract.Migration
 
 module Queue = struct
-  module Job = Sihl_type.Queue_job
-  module Job_instance = Sihl_type.Queue_job_instance
-  module Workable_job = Sihl_type.Queue_workable_job
+  module Job = Sihl_contract.Queue_job
+  module Job_instance = Sihl_contract.Queue_job_instance
+  module Workable_job = Sihl_contract.Queue_workable_job
 end
 
-module Session = Sihl_type.Session
+module Session = Sihl_contract.Session
 module Authz = Sihl_user.Authz
 
 module Storage = struct
-  module File = Sihl_type.Storage_file
-  module Stored = Sihl_type.Storage_stored
+  module File = Sihl_contract.Storage.File
+  module Stored = Sihl_contract.Storage.Stored
 end
 
-module Token = Sihl_type.Token
-module User = Sihl_type.User
+module Token = Sihl_contract.Token
+module User = Sihl_contract.User
 module Utils = Sihl_core.Utils
 module Time = Sihl_core.Time
 

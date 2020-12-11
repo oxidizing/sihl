@@ -1,5 +1,5 @@
 open Lwt.Syntax
-module StoredFile = Sihl_type.Storage_stored
+module StoredFile = Sihl_contract.Storage.Stored
 
 module type Sig = sig
   val register_migration : unit -> unit
@@ -18,11 +18,11 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   let stored_file =
     let encode m =
       let StoredFile.{ file; blob } = m in
-      let Sihl_type.Storage_file.{ id; filename; filesize; mime } = file in
+      let Sihl_contract.Storage.File.{ id; filename; filesize; mime } = file in
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
-      let file = Sihl_type.Storage_file.make ~id ~filename ~filesize ~mime in
+      let file = Sihl_contract.Storage.File.make ~id ~filename ~filesize ~mime in
       Ok (StoredFile.make ~file ~blob)
     in
     Caqti_type.(
@@ -225,7 +225,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let fix_collation =
-    Sihl_type.Migration.create_step
+    Sihl_contract.Migration.create_step
       ~label:"fix collation"
       {sql|
          SET collation_server = 'utf8mb4_unicode_ci';
@@ -233,7 +233,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let create_blobs_table =
-    Sihl_type.Migration.create_step
+    Sihl_contract.Migration.create_step
       ~label:"create blobs table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_blobs (
@@ -249,7 +249,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let create_handles_table =
-    Sihl_type.Migration.create_step
+    Sihl_contract.Migration.create_step
       ~label:"create handles table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_handles (
@@ -268,7 +268,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let migration () =
-    Sihl_type.Migration.(
+    Sihl_contract.Migration.(
       empty "storage"
       |> add_step fix_collation
       |> add_step create_blobs_table

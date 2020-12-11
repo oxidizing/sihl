@@ -8,11 +8,11 @@ let log_src = Logs.Src.create "sihl.service.email"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let print email =
-  let sender = Sihl_type.Email.sender email in
-  let recipient = Sihl_type.Email.recipient email in
-  let subject = Sihl_type.Email.subject email in
-  let text_content = Sihl_type.Email.text_content email in
-  let html_content = Sihl_type.Email.html_content email in
+  let sender = Sihl_contract.Email.sender email in
+  let recipient = Sihl_contract.Email.recipient email in
+  let subject = Sihl_contract.Email.subject email in
+  let text_content = Sihl_contract.Email.text_content email in
+  let html_content = Sihl_contract.Email.html_content email in
   Logs.info (fun m ->
       m
         {|
@@ -59,12 +59,11 @@ let intercept sender email =
   in
   let () = if console then print email else () in
   if should_intercept ()
-  then Lwt.return (Sihl_type.Email.add_to_inbox email)
+  then Lwt.return (Sihl_contract.Email.add_to_inbox email)
   else sender email
 ;;
 
-module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
-  Sihl_contract.Email.Sig = struct
+module Smtp : Sihl_contract.Email.Sig = struct
   type config =
     { sender : string
     ; username : string
@@ -97,7 +96,7 @@ module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
       config
   ;;
 
-  let send' (email : Sihl_type.Email.t) =
+  let send' (email : Sihl_contract.Email.t) =
     let recipients =
       List.concat
         [ [ Letters.To email.recipient ]
@@ -130,11 +129,11 @@ module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
     Letters.build_email ~from:email.sender ~recipients ~subject:email.subject ~body
     |> function
     | Ok message -> Letters.send ~config ~sender ~recipients ~message
-    | Error msg -> raise (Sihl_type.Email.Exception msg)
+    | Error msg -> raise (Sihl_contract.Email.Exception msg)
   ;;
 
   let send email =
-    let* email = TemplateService.render email in
+    let* email = Sihl_facade.Email_template.render email in
     intercept send' email
   ;;
 
@@ -151,7 +150,7 @@ module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
   let lifecycle =
     Core.Container.Lifecycle.create
       "email"
-      ~dependencies:[ TemplateService.lifecycle ]
+      ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
       ~stop
   ;;
@@ -162,8 +161,7 @@ module MakeSmtp (TemplateService : Sihl_contract.Email_template.Sig) :
   ;;
 end
 
-module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
-  Sihl_contract.Email.Sig = struct
+module SendGrid : Sihl_contract.Email.Sig = struct
   let body ~recipient ~subject ~sender ~content =
     Printf.sprintf
       {|
@@ -215,10 +213,10 @@ module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token; "content-type", "application/json" ]
     in
-    let sender = Sihl_type.Email.sender email in
-    let recipient = Sihl_type.Email.recipient email in
-    let subject = Sihl_type.Email.subject email in
-    let text_content = Sihl_type.Email.text_content email in
+    let sender = Sihl_contract.Email.sender email in
+    let recipient = Sihl_contract.Email.recipient email in
+    let subject = Sihl_contract.Email.subject email in
+    let text_content = Sihl_contract.Email.text_content email in
     (* TODO support html content *)
     (* let html_content = Sihl.Email.text_content email in *)
     let req_body = body ~recipient ~subject ~sender ~content:text_content in
@@ -240,11 +238,11 @@ module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
             "EMAIL: Sending email using sendgrid failed with http status %i and body %s"
             status
             body);
-      raise (Sihl_type.Email.Exception "EMAIL: Failed to send email")
+      raise (Sihl_contract.Email.Exception "EMAIL: Failed to send email")
   ;;
 
   let send email =
-    let* email = TemplateService.render email in
+    let* email = Sihl_facade.Email_template.render email in
     intercept send' email
   ;;
 
@@ -255,7 +253,7 @@ module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
   let lifecycle =
     Core.Container.Lifecycle.create
       "email"
-      ~dependencies:[ TemplateService.lifecycle ]
+      ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
       ~stop
   ;;
@@ -266,15 +264,12 @@ module MakeSendGrid (TemplateService : Sihl_contract.Email_template.Sig) :
   ;;
 end
 
-(* Use this functor to create an email service that sends emails using the job queue. This
-   is useful if you need to answer a request quickly while sending the email in the
+(* This is useful if you need to answer a request quickly while sending the email in the
    background *)
-module MakeQueued
-    (EmailService : Sihl_contract.Email.Sig)
-    (QueueService : Sihl_contract.Queue.Sig) : Sihl_contract.Email.Sig = struct
+module Queued : Sihl_contract.Email.Sig = struct
   module Job = struct
     let input_to_string email =
-      email |> Sihl_type.Email.to_yojson |> Yojson.Safe.to_string |> Option.some
+      email |> Sihl_contract.Email.to_yojson |> Yojson.Safe.to_string |> Option.some
     ;;
 
     let string_to_input email =
@@ -285,24 +280,25 @@ module MakeQueued
               "DELAYED_EMAIL: Serialized email string was NULL, can not deserialize \
                email. Please fix the string manually and reset the job instance.");
         Error "Invalid serialized email string received"
-      | Some email -> Result.bind (email |> Utils.Json.parse) Sihl_type.Email.of_yojson
+      | Some email ->
+        Result.bind (email |> Utils.Json.parse) Sihl_contract.Email.of_yojson
     ;;
 
-    let handle ~input = EmailService.send input |> Lwt.map Result.ok
+    let handle ~input = Sihl_facade.Email.send input |> Lwt.map Result.ok
 
     (** Nothing to clean up, sending emails is a side effect *)
     let failed _ = Lwt_result.return ()
 
     let job =
-      Sihl_type.Queue_job.create
+      Sihl_contract.Queue_job.create
         ~name:"send_email"
         ~input_to_string
         ~string_to_input
         ~handle
         ~failed
         ()
-      |> Sihl_type.Queue_job.set_max_tries 10
-      |> Sihl_type.Queue_job.set_retry_delay Core.Time.OneHour
+      |> Sihl_contract.Queue_job.set_max_tries 10
+      |> Sihl_contract.Queue_job.set_retry_delay Core.Time.OneHour
     ;;
   end
 
@@ -311,8 +307,8 @@ module MakeQueued
     if not (Sihl_core.Configuration.is_production ())
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
-      EmailService.send email)
-    else QueueService.dispatch ~job:Job.job email
+      Sihl_facade.Email.send email)
+    else Sihl_facade.Queue.dispatch ~job:Job.job email
   ;;
 
   let bulk_send emails =
@@ -326,19 +322,15 @@ module MakeQueued
     loop emails
   ;;
 
-  let start () = QueueService.register_jobs ~jobs:[ Job.job ] |> Lwt.map ignore
+  let start () = Sihl_facade.Queue.register_jobs [ Job.job ] |> Lwt.map ignore
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create
-      "delayed-email"
-      ~start
-      ~stop
-      ~dependencies:
-        [ EmailService.lifecycle
+    Core.Container.Lifecycle.create "delayed-email" ~start ~stop ~dependencies:(fun () ->
+        [ Sihl_facade.Email.lifecycle ()
         ; Sihl_persistence.Database.lifecycle
-        ; QueueService.lifecycle
-        ]
+        ; Sihl_facade.Queue.lifecycle ()
+        ])
   ;;
 
   let register () = Core.Container.Service.create lifecycle

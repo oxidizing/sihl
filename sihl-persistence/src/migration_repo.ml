@@ -1,4 +1,4 @@
-module Migration = Sihl_type.Migration_state
+module Migration = Sihl_contract.Migration.State
 
 module type Sig = sig
   val create_table_if_not_exists : unit -> unit Lwt.t

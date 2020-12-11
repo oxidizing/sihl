@@ -1,20 +1,20 @@
 module Database = Sihl_persistence.Database
 module Repository = Sihl_persistence.Repository
-module Migration = Sihl_type.Migration
-module Migration_state = Sihl_type.Migration_state
-module Model = Sihl_type.Token
+module Migration = Sihl_contract.Migration
+module Migration_state = Sihl_contract.Migration.State
+module Model = Sihl_contract.Token
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val find_opt : value:string -> Sihl_type.Token.t option Lwt.t
-  val find_by_id_opt : id:string -> Sihl_type.Token.t option Lwt.t
-  val insert : token:Sihl_type.Token.t -> unit Lwt.t
-  val update : token:Sihl_type.Token.t -> unit Lwt.t
+  val find_opt : value:string -> Sihl_contract.Token.t option Lwt.t
+  val find_by_id_opt : id:string -> Sihl_contract.Token.t option Lwt.t
+  val insert : token:Sihl_contract.Token.t -> unit Lwt.t
+  val update : token:Sihl_contract.Token.t -> unit Lwt.t
 end
 
 module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open Sihl_type.Token
+  open Sihl_contract.Token
 
   let token =
     let ( let* ) = Result.bind in

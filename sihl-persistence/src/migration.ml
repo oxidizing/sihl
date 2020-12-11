@@ -1,7 +1,7 @@
 open Lwt.Syntax
 module Core = Sihl_core
-module Migration = Sihl_type.Migration
-module Migration_state = Sihl_type.Migration_state
+module Migration = Sihl_contract.Migration
+module Migration_state = Sihl_contract.Migration.State
 
 let log_src = Logs.Src.create "sihl.service.migration"
 
@@ -182,12 +182,12 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
   ;;
 
   let start () = Lwt.return ()
-  let stop _ = Lwt.return ()
+  let stop () = Lwt.return ()
 
   let lifecycle =
     Core.Container.Lifecycle.create
       "migration"
-      ~dependencies:[ Database.lifecycle ]
+      ~dependencies:(fun () -> [ Database.lifecycle ])
       ~start
       ~stop
   ;;
@@ -197,3 +197,6 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
     Core.Container.Service.create ~commands:[ migrate_cmd ] lifecycle
   ;;
 end
+
+module PostgreSql = Make (Migration_repo.PostgreSql)
+module MariaDb = Make (Migration_repo.MariaDb)

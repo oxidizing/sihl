@@ -37,7 +37,7 @@ module UserService = struct
       "user service"
       ~start
       ~stop
-      ~dependencies:[ Database.lifecycle ]
+      ~dependencies:(fun () -> [ Database.lifecycle ])
   ;;
 
   let ban =
@@ -67,7 +67,7 @@ module OrderService = struct
       "order service"
       ~start
       ~stop
-      ~dependencies:[ Database.lifecycle ]
+      ~dependencies:(fun () -> [ Database.lifecycle ])
   ;;
 
   let order =

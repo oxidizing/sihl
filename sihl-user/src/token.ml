@@ -1,7 +1,7 @@
 open Lwt.Syntax
 module Core = Sihl_core
-module Database = Sihl_type.Database
-module Model = Sihl_type.Token
+module Database = Sihl_contract.Database
+module Model = Sihl_contract.Token
 
 let log_src = Logs.Src.create "sihl.service.token"
 
@@ -62,7 +62,7 @@ module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
   let invalidate token = Repo.update ~token:(Model.invalidate token)
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
-  let lifecycle = Core.Container.Lifecycle.create ~dependencies:[] "token" ~start ~stop
+  let lifecycle = Core.Container.Lifecycle.create "token" ~start ~stop
 
   let register () =
     Repo.register_migration ();
@@ -70,3 +70,5 @@ module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
     Core.Container.Service.create lifecycle
   ;;
 end
+
+module MariaDb = Make (Token_repo.MariaDb (Sihl_persistence.Migration.MariaDb))

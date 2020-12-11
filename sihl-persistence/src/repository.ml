@@ -1,7 +1,6 @@
 open Lwt.Syntax
-open Sihl_type.Cleaner
 
-let registered_cleaners : t list ref = ref []
+let registered_cleaners : (unit -> unit Lwt.t) list ref = ref []
 
 let register_cleaner cleaner =
   registered_cleaners := List.cons cleaner !registered_cleaners

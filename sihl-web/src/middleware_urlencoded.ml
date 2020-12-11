@@ -1,4 +1,3 @@
-open Lwt.Syntax
 open Sexplib.Std
 
 let log_src = Logs.Src.create "sihl.middleware.urlencoded"
@@ -48,8 +47,9 @@ let consume req k =
 ;;
 
 let m () =
+  let open Lwt.Syntax in
   let filter handler req =
-    let* urlencoded = Sihl_type.Http_request.to_urlencoded req in
+    let* urlencoded = Opium.Request.to_urlencoded req in
     let env = req.Opium.Request.env in
     let env = Opium.Context.add key urlencoded env in
     let req = { req with env } in

@@ -1,6 +1,6 @@
 open Lwt.Syntax
 module Core = Sihl_core
-module User = Sihl_type.User
+module User = Sihl_contract.User
 
 let log_src = Logs.Src.create "sihl.service.user"
 
@@ -16,7 +16,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     match m_user with
     | Some user -> Lwt.return user
     | None ->
-      Logs.err (fun m -> m "USER: User not found with id %s" user_id);
+      Logs.err (fun m -> m "User not found with id %s" user_id);
       raise (Exception "User not found")
   ;;
 
@@ -34,7 +34,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     match user with
     | Some user -> Lwt.return user
     | None ->
-      Logs.err (fun m -> m "USER: User not found with email %s" email);
+      Logs.err (fun m -> m "User not found with email %s" email);
       raise (Exception "User not found")
   ;;
 
@@ -62,7 +62,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         | Ok user -> user
         | Error msg ->
           Logs.err (fun m ->
-              m "USER: Can not update password of user %s: %s" (User.email user) msg);
+              m "Can not update password of user %s: %s" (User.email user) msg);
           raise (Exception msg)
       in
       let* () = Repo.update ~user:updated_user in
@@ -118,7 +118,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       match user with
       | Some _ ->
         Logs.err (fun m ->
-            m "USER: Can not create admin %s since the email is already taken" email);
+            m "Can not create admin %s since the email is already taken" email);
         raise (Exception "Email already taken")
       | None -> Lwt.return ()
     in
@@ -126,7 +126,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       match User.create ~email ~password ~username ~admin:true ~confirmed:true with
       | Ok user -> user
       | Error msg ->
-        Logs.err (fun m -> m "USER: Can not create admin %s %s" email msg);
+        Logs.err (fun m -> m "Can not create admin %s %s" email msg);
         raise (Exception msg)
     in
     let* () = Repo.insert ~user in
@@ -174,16 +174,15 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
   ;;
 
-  module Seed = struct
-    let admin ~email ~password = create_admin ~email ~password ~username:None
-    let user ~email ~password ?username () = create_user ~email ~password ~username
-  end
-
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create "user" ~dependencies:Repo.lifecycles ~start ~stop
+    Core.Container.Lifecycle.create
+      "user"
+      ~dependencies:(fun () -> Repo.lifecycles)
+      ~start
+      ~stop
   ;;
 
   let register () =
@@ -192,3 +191,6 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     Core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
   ;;
 end
+
+module PostgreSql = Make (User_repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+module MariaDb = Make (User_repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))

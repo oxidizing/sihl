@@ -43,12 +43,13 @@
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
- (name sihl-type)
- (synopsis "Contains Sihl types that are returned by Sihl services")
- (description "Use this package together with sihl-contract to implement your own services. Sihl types are things like Email.t, User.t, Queue_job.t or Migration.t.")
+ (name sihl-contract)
+ (synopsis "Contains Sihl service signatures")
+ (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
  (depends
   dune
   (ocaml (>= 4.08.0))
+  (sihl-type (= :version))
   (sihl-core (= :version))
   (opium (>= 0.20.0))
   (caqti-lwt (>= 1.2.0))
@@ -58,13 +59,13 @@
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
- (name sihl-contract)
- (synopsis "Contains Sihl service signatures")
- (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
+ (name sihl-facade)
+ (synopsis "")
+ (description "")
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-type (= :version))
+  (sihl-contract (= :version))
   (sihl-core (= :version))))
 
 (package

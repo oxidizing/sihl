@@ -1,18 +1,14 @@
 open Lwt.Syntax
 
-module Migration =
-  Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.MariaDb)
-
-module QueueRepo = Sihl_queue.Repo.MakeMariaDb (Migration)
-module QueueService = Sihl_queue.MakePolling (Sihl_core.Schedule) (QueueRepo)
-module Queue = Queue.Make (QueueService)
-
 let services =
-  [ Sihl_persistence.Database.register ()
-  ; Migration.register ()
-  ; QueueService.register ()
+  [ Sihl_facade.Schedule.register (module Sihl_core.Schedule)
+  ; Sihl_persistence.Database.register ()
+  ; Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
+  ; Sihl_facade.Queue.register (module Sihl_queue.MariaDb)
   ]
 ;;
+
+let suite = Queue.with_implementation (module Sihl_queue.MariaDb)
 
 let () =
   Unix.putenv "DATABASE_URL" "mariadb://admin:password@127.0.0.1:3306/dev";
@@ -20,6 +16,6 @@ let () =
   Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
-     let* () = Migration.run_all () in
-     Alcotest_lwt.run "queue mariadb" Queue.suite)
+     let* () = Sihl_facade.Migration.run_all () in
+     Alcotest_lwt.run "queue mariadb" suite)
 ;;

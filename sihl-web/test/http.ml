@@ -6,16 +6,16 @@ let match_first_route _ () =
   let was_called2 = ref false in
   let handler1 _ =
     was_called1 := true;
-    Lwt.return (Sihl_type.Http_response.of_plain_text "ello 1")
+    Lwt.return (Opium.Response.of_plain_text "ello 1")
   in
   let handler2 _ =
     was_called2 := true;
-    Lwt.return (Sihl_type.Http_response.of_plain_text "ello 2")
+    Lwt.return (Opium.Response.of_plain_text "ello 2")
   in
-  let route1 = Sihl_type.Http_route.get "/some/path" handler1 in
-  let route2 = Sihl_type.Http_route.get "/**" handler2 in
+  let route1 = Sihl_contract.Http.get "/some/path" handler1 in
+  let route2 = Sihl_contract.Http.get "/**" handler2 in
   let router =
-    Sihl_type.Http_route.router ~scope:"/scope" ~middlewares:[] [ route1; route2 ]
+    Sihl_contract.Http.router ~scope:"/scope" ~middlewares:[] [ route1; route2 ]
   in
   let _ = Sihl_web.Http.register ~routers:[ router ] () in
   let* () = Sihl_web.Http.start () in

@@ -1,19 +1,9 @@
 open Lwt.Syntax
 
-module Migration =
-  Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.MariaDb)
-
-module TokenRepo = Sihl_user.Token_repo.MariaDb (Migration)
-module SessionRepo = Sihl_user.Session_repo.MakeMariaDb (Migration)
-module Token = Sihl_user.Token.Make (TokenRepo)
-module Session = Sihl_user.Session.Make (SessionRepo)
-module Csrf = Csrf.Make (Token) (Session)
-
 let services =
-  [ Sihl_persistence.Database.register ()
-  ; Migration.register ()
-  ; Token.register ()
-  ; Session.register ()
+  [ Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
+  ; Sihl_facade.Token.register (module Sihl_user.Token.MariaDb)
+  ; Sihl_facade.Session.register (module Sihl_user.Session.MariaDb)
   ]
 ;;
 
@@ -23,6 +13,6 @@ let () =
   Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
-     let* () = Migration.run_all () in
-     Alcotest_lwt.run "mariadb" Csrf.suite)
+     let* () = Sihl_facade.Migration.run_all () in
+     Alcotest_lwt.run "mariadb csrf" Csrf.suite)
 ;;

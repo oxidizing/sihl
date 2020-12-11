@@ -1,25 +1,16 @@
-open Lwt.Syntax
-
-module Migration =
-  Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.MariaDb)
-
-module SessionRepo = Sihl_user.Session_repo.MakeMariaDb (Migration)
-module SessionService = Sihl_user.Session.Make (SessionRepo)
-module UserRepo = Sihl_user.User_repo.MakeMariaDb (Migration)
-module UserService = Sihl_user.User.Make (UserRepo)
-module AuthnService = Sihl_user.Authn.Make (SessionService) (UserService)
-module Authn = Authn.Make (SessionService) (UserService) (AuthnService)
+module Migration = Sihl_persistence.Migration.MariaDb
 
 let services =
   [ Sihl_persistence.Database.register ()
-  ; Migration.register ()
-  ; UserService.register ()
-  ; SessionService.register ()
-  ; AuthnService.register ()
+  ; Sihl_facade.Migration.register (module Migration)
+  ; Sihl_facade.User.register (module Sihl_user.User.MariaDb)
+  ; Sihl_facade.Session.register (module Sihl_user.Session.MariaDb)
+  ; Sihl_facade.Authn.register (module Sihl_user.Authn)
   ]
 ;;
 
 let () =
+  let open Lwt.Syntax in
   Unix.putenv "DATABASE_URL" "mariadb://admin:password@127.0.0.1:3306/dev";
   Logs.set_level (Sihl_core.Log.get_log_level ());
   Logs.set_reporter (Sihl_core.Log.cli_reporter ());

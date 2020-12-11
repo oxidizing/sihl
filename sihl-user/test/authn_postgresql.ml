@@ -3,19 +3,15 @@ open Lwt.Syntax
 module Migration =
   Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.PostgreSql)
 
-module SessionRepo = Sihl_user.Session_repo.MakePostgreSql (Migration)
-module SessionService = Sihl_user.Session.Make (SessionRepo)
 module UserRepo = Sihl_user.User_repo.MakePostgreSql (Migration)
 module UserService = Sihl_user.User.Make (UserRepo)
-module AuthnService = Sihl_user.Authn.Make (SessionService) (UserService)
-module Authn = Authn.Make (SessionService) (UserService) (AuthnService)
 
 let services =
   [ Sihl_persistence.Database.register ()
   ; Migration.register ()
   ; UserService.register ()
-  ; SessionService.register ()
-  ; AuthnService.register ()
+  ; Sihl_facade.Session.register (module Sihl_user.Session.PostgreSql)
+  ; Sihl_facade.Authn.register (module Sihl_user.Authn)
   ]
 ;;
 
