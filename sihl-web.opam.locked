@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.2.0"
+version: "0.2.1"
 synopsis: "Contains HTTP server implementations as Sihl service"
 description:
   "Use this package to implement run your HTTP routers on a HTTP server."
@@ -21,6 +21,7 @@ depends: [
   "bigstringaf" {= "0.6.1"}
   "biniou" {= "1.2.1"}
   "cmdliner" {= "1.0.4"}
+  "conf-libev" {= "4-11"}
   "conf-m4" {= "1"}
   "conf-pkg-config" {= "1.3"}
   "cppo" {= "1.6.6"}
@@ -47,19 +48,18 @@ depends: [
   "multipart-form-data" {= "0.3.0"}
   "ocaml" {= "4.11.1"}
   "ocaml-base-compiler" {= "4.11.1"}
-  "ocaml-config" {= "1"}
   "ocaml-migrate-parsetree" {= "1.7.3"}
   "ocaml-syntax-shims" {= "1.0.0"}
   "ocamlbuild" {= "0.14.0"}
   "ocamlfind" {= "1.8.1"}
   "ocplib-endian" {= "1.1"}
-  "opium" {= "0.19.0"}
+  "opium" {= "0.20.0"}
   "ppx_derivers" {= "1.2.1"}
   "ppx_tools_versioned" {= "5.4.0"}
   "ptime" {= "0.8.5"}
   "re" {= "1.9.0"}
   "result" {= "1.5"}
-  "rock" {= "0.19.0"}
+  "rock" {= "0.20.0"}
   "seq" {= "base"}
   "sexplib0" {= "v0.14.0"}
   "stdlib-shims" {= "0.1.0"}

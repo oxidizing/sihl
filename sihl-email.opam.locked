@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.2.0"
+version: "0.2.1"
 synopsis: "A Sihl service for sending emails using Lwt"
 description: """
 
@@ -34,6 +34,7 @@ depends: [
   "conduit-lwt-unix" {= "2.2.2"}
   "conf-gmp" {= "2"}
   "conf-gmp-powm-sec" {= "2"}
+  "conf-libev" {= "4-11"}
   "conf-libssl" {= "2"}
   "conf-m4" {= "1"}
   "conf-perl" {= "1"}
@@ -81,7 +82,6 @@ depends: [
   "ocaml" {= "4.11.1"}
   "ocaml-base-compiler" {= "4.11.1"}
   "ocaml-compiler-libs" {= "v0.12.3"}
-  "ocaml-config" {= "1"}
   "ocaml-migrate-parsetree" {= "1.7.3"}
   "ocaml-syntax-shims" {= "1.0.0"}
   "ocamlbuild" {= "0.14.0"}
