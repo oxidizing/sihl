@@ -53,6 +53,7 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y libmariadbclient-dev libpq-dev
+          opam depext conf-libev
           opam pin add -y .
           opam depext -y sihl-core sihl-type sihl-contract sihl-persistence sihl-user sihl-web sihl-storage sihl-email sihl-queue sihl
       - name: Install dependencies
