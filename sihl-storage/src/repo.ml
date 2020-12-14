@@ -22,15 +22,6 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
-      let ( let* ) = Result.bind in
-      let* id =
-        id |> Sihl_type.Database.Id.of_bytes |> Result.map Sihl_type.Database.Id.to_string
-      in
-      let* blob =
-        blob
-        |> Sihl_type.Database.Id.of_bytes
-        |> Result.map Sihl_type.Database.Id.to_string
-      in
       let file = Sihl_type.Storage_file.make ~id ~filename ~filesize ~mime in
       Ok (StoredFile.make ~file ~blob)
     in
@@ -95,11 +86,23 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
       stored_file
       {sql|
          SELECT
-         uuid,
+           LOWER(CONCAT(
+           SUBSTR(HEX(uuid), 1, 8), '-',
+           SUBSTR(HEX(uuid), 9, 4), '-',
+           SUBSTR(HEX(uuid), 13, 4), '-',
+           SUBSTR(HEX(uuid), 17, 4), '-',
+           SUBSTR(HEX(uuid), 21)
+           )),
          filename,
          filesize,
          mime,
-         asset_blob
+         LOWER(CONCAT(
+           SUBSTR(HEX(asset_blob), 1, 8), '-',
+           SUBSTR(HEX(asset_blob), 9, 4), '-',
+           SUBSTR(HEX(asset_blob), 13, 4), '-',
+           SUBSTR(HEX(asset_blob), 17, 4), '-',
+           SUBSTR(HEX(asset_blob), 21)
+           ))
          FROM storage_handles
          WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
          |sql}
@@ -204,11 +207,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let clean_handles_request =
-    Caqti_request.exec
-      Caqti_type.unit
-      {sql|
-           TRUNCATE storage_handles;
-          |sql}
+    Caqti_request.exec Caqti_type.unit "TRUNCATE storage_handles;"
   ;;
 
   let clean_handles () =
@@ -217,13 +216,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
-  let clean_blobs_request =
-    Caqti_request.exec
-      Caqti_type.unit
-      {sql|
-           TRUNCATE storage_blobs;
-          |sql}
-  ;;
+  let clean_blobs_request = Caqti_request.exec Caqti_type.unit "TRUNCATE storage_blobs;"
 
   let clean_blobs () =
     Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
@@ -292,5 +285,3 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
     Sihl_persistence.Repository.register_cleaner cleaner
   ;;
 end
-
-(* TODO [jerben] Implement postgres repo *)

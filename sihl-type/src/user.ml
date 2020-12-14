@@ -1,4 +1,4 @@
-(* TODO add Status.Active and Status.Inactive *)
+(* TODO [jerben] add Status.Active and Status.Inactive *)
 
 module Error = struct
   type t =
@@ -101,7 +101,7 @@ let create ~email ~password ~username ~admin ~confirmed =
   let hash = password |> Sihl_core.Utils.Hashing.hash in
   Result.map
     (fun hash ->
-      { id = Database.Id.random () |> Database.Id.to_string
+      { id = Uuidm.v `V4 |> Uuidm.to_string
       ; (* TODO add support for lowercase UTF-8
          * String.lowercase only supports US-ASCII, but
          * email addresses can contain other letters
@@ -116,30 +116,4 @@ let create ~email ~password ~username ~admin ~confirmed =
       ; created_at = Ptime_clock.now ()
       })
     hash
-;;
-
-let t =
-  let encode m =
-    Ok
-      ( m.id
-      , ( m.email
-        , (m.username, (m.password, (m.status, (m.admin, (m.confirmed, m.created_at)))))
-        ) )
-  in
-  let decode
-      (id, (email, (username, (password, (status, (admin, (confirmed, created_at)))))))
-    =
-    Ok { id; email; username; password; status; admin; confirmed; created_at }
-  in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2
-         string
-         (tup2
-            string
-            (tup2
-               (option string)
-               (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
 ;;

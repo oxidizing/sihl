@@ -1,6 +1,8 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
+let token_alco = Alcotest.testable Sihl_type.Token.pp Sihl_type.Token.equal
+
 module Make
     (TokenService : Sihl_contract.Token.Sig)
     (SessionService : Sihl_contract.Session.Sig) =
@@ -209,7 +211,7 @@ struct
     let status = Opium.Response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     let* token = TokenService.find_opt !token_ref1 in
-    Alcotest.(check (option Sihl_type.Token.alco) "Token is invalidated" None token);
+    Alcotest.(check (option token_alco) "Token is invalidated" None token);
     Lwt.return ()
   ;;
 
@@ -240,7 +242,7 @@ struct
     let status = Opium.Response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     let* token = TokenService.find_opt !token_ref1 in
-    Alcotest.(check (option Sihl_type.Token.alco) "Token is invalidated" None token);
+    Alcotest.(check (option token_alco) "Token is invalidated" None token);
     (* Do second POST *)
     (* TODO [aerben] do opium everywhere *)
     Alcotest.(
@@ -259,7 +261,7 @@ struct
     let status = Opium.Response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     let* token = TokenService.find_opt !token_ref2 in
-    Alcotest.(check (option Sihl_type.Token.alco) "Token is invalidated" None token);
+    Alcotest.(check (option token_alco) "Token is invalidated" None token);
     Lwt.return ()
   ;;
 

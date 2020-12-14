@@ -57,10 +57,10 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
               msg);
         Lwt.return None
       | Ok () ->
-        Logs.err (fun m -> m "Clean up job %a" Uuidm.pp job_instance_id);
+        Logs.err (fun m -> m "Clean up job %s" job_instance_id);
         Lwt.return None)
     | Ok () ->
-      Logs.debug (fun m -> m "Successfully ran job instance %a" Uuidm.pp job_instance_id);
+      Logs.debug (fun m -> m "Successfully ran job instance %s" job_instance_id);
       Lwt.return @@ Some ()
   ;;
 

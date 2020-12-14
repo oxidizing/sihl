@@ -9,18 +9,48 @@ module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val lifecycles : Sihl_core.Container.Lifecycle.t list
-
-  val get_all
-    :  query:Sihl_type.Database.Ql.t
-    -> (Model.t list * Sihl_type.Database.Meta.t) Lwt.t
-
+  val get_all : query:Sihl_type.Database.Ql.t -> (Model.t list * int) Lwt.t
   val get : id:string -> Model.t option Lwt.t
   val get_by_email : email:string -> Model.t option Lwt.t
   val insert : user:Model.t -> unit Lwt.t
   val update : user:Model.t -> unit Lwt.t
 end
 
+module Dynparam = struct
+  type t = Pack : 'a Caqti_type.t * 'a -> t
+
+  let empty = Pack (Caqti_type.unit, ())
+  let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
+end
+
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  let user =
+    let open Sihl_type.User in
+    let encode m =
+      Ok
+        ( m.id
+        , ( m.email
+          , (m.username, (m.password, (m.status, (m.admin, (m.confirmed, m.created_at)))))
+          ) )
+    in
+    let decode
+        (id, (email, (username, (password, (status, (admin, (confirmed, created_at)))))))
+      =
+      Ok { id; email; username; password; status; admin; confirmed; created_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2
+              string
+              (tup2
+                 (option string)
+                 (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
+  ;;
+
   let lifecycles =
     [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
   ;;
@@ -71,12 +101,10 @@ CREATE TABLE IF NOT EXISTS user_users (
       match values with
       | [] -> param
       | value :: values ->
-        create_param
-          values
-          (Sihl_type.Database.Dynparam.add Caqti_type.string value param)
+        create_param values (Dynparam.add Caqti_type.string value param)
     in
-    let param = create_param values Sihl_type.Database.Dynparam.empty in
-    let (Sihl_type.Database.Dynparam.Pack (pt, pv)) = param in
+    let param = create_param values Dynparam.empty in
+    let (Dynparam.Pack (pt, pv)) = param in
     let query =
       Printf.sprintf
         {sql|
@@ -106,7 +134,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     in
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request = Caqti_request.collect ~oneshot:true pt Model.t query in
+        let request = Caqti_request.collect ~oneshot:true pt user query in
         let* users = Connection.collect_list request pv |> Lwt.map Database.raise_error in
         let request =
           Caqti_request.find
@@ -115,18 +143,14 @@ CREATE TABLE IF NOT EXISTS user_users (
             Caqti_type.int
             "SELECT FOUND_ROWS()"
         in
-        let* meta =
-          Connection.find request ()
-          |> Lwt.map Database.raise_error
-          |> Lwt.map (fun total -> Sihl_type.Database.Meta.make ~total)
-        in
+        let* meta = Connection.find request () |> Lwt.map Database.raise_error in
         Lwt.return (users, meta))
   ;;
 
   let get_request =
     Caqti_request.find_opt
       Caqti_type.string
-      Model.t
+      user
       {sql|
         SELECT
           LOWER(CONCAT(
@@ -157,7 +181,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get_by_email_request =
     Caqti_request.find_opt
       Caqti_type.string
-      Model.t
+      user
       {sql|
         SELECT
           LOWER(CONCAT(
@@ -187,7 +211,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 
   let insert_request =
     Caqti_request.exec
-      Model.t
+      user
       {sql|
         INSERT INTO user_users (
           uuid,
@@ -219,7 +243,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 
   let update_request =
     Caqti_request.exec
-      Model.t
+      user
       {sql|
         UPDATE user_users SET
           email = $2,
@@ -251,6 +275,34 @@ CREATE TABLE IF NOT EXISTS user_users (
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  open Sihl_type.User
+
+  let user =
+    let encode m =
+      Ok
+        ( m.id
+        , ( m.email
+          , (m.username, (m.password, (m.status, (m.admin, (m.confirmed, m.created_at)))))
+          ) )
+    in
+    let decode
+        (id, (email, (username, (password, (status, (admin, (confirmed, created_at)))))))
+      =
+      Ok { id; email; username; password; status; admin; confirmed; created_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2
+              string
+              (tup2
+                 (option string)
+                 (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
+  ;;
+
   let lifecycles =
     [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
   ;;
@@ -291,12 +343,10 @@ CREATE TABLE IF NOT EXISTS user_users (
       match values with
       | [] -> param
       | value :: values ->
-        create_param
-          values
-          (Sihl_type.Database.Dynparam.add Caqti_type.string value param)
+        create_param values (Dynparam.add Caqti_type.string value param)
     in
-    let param = create_param values Sihl_type.Database.Dynparam.empty in
-    let (Sihl_type.Database.Dynparam.Pack (pt, pv)) = param in
+    let param = create_param values Dynparam.empty in
+    let (Dynparam.Pack (pt, pv)) = param in
     let query =
       Printf.sprintf
         {sql|
@@ -320,17 +370,17 @@ CREATE TABLE IF NOT EXISTS user_users (
     in
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request = Caqti_request.collect ~oneshot:true pt Model.t query in
+        let request = Caqti_request.collect ~oneshot:true pt user query in
         let* users = Connection.collect_list request pv |> Lwt.map Database.raise_error in
         (* TODO Find out best way to get total rows for that query without limit *)
-        let meta = Sihl_type.Database.Meta.make ~total:(List.length users) in
+        let meta = List.length users in
         Lwt.return @@ (users, meta))
   ;;
 
   let get_request =
     Caqti_request.find_opt
       Caqti_type.string
-      Model.t
+      user
       {sql|
         SELECT
           uuid as id,
@@ -355,7 +405,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   let get_by_email_request =
     Caqti_request.find_opt
       Caqti_type.string
-      Model.t
+      user
       {sql|
         SELECT
           uuid as id,
@@ -379,7 +429,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 
   let insert_request =
     Caqti_request.exec
-      Model.t
+      user
       {sql|
         INSERT INTO user_users (
           uuid,
@@ -411,7 +461,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 
   let update_request =
     Caqti_request.exec
-      Model.t
+      user
       {sql|
         UPDATE user_users
         SET

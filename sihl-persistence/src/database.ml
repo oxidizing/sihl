@@ -1,5 +1,4 @@
 open Lwt.Syntax
-open Sihl_type.Database
 module Core = Sihl_core
 
 exception Exception of string
@@ -8,7 +7,9 @@ let log_src = Logs.Src.create ~doc:"database" "sihl.service.database"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let pool_ref : pool option ref = ref None
+let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref =
+  ref None
+;;
 
 type config =
   { url : string

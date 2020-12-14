@@ -13,17 +13,8 @@ let set_name name template = { template with name }
 let set_text content_text template = { template with content_text }
 let set_html content_html template = { template with content_html }
 
-let t =
-  let encode m = Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at)))) in
-  let decode (id, (name, (content_text, (content_html, created_at)))) =
-    Ok { id; name; content_text; content_html; created_at }
-  in
-  Caqti_type.(
-    custom ~encode ~decode (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
-;;
-
 let make ?text ?html name =
-  { id = Database.Id.random () |> Database.Id.to_string
+  { id = Uuidm.v `V4 |> Uuidm.to_string
   ; name
   ; content_text = text |> Option.value ~default:""
   ; content_html = html |> Option.value ~default:""

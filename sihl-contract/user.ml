@@ -3,7 +3,7 @@ open Sihl_type
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
-  val find_all : query:Database.Ql.t -> (User.t list * Database.Meta.t) Lwt.t
+  val find_all : query:Database.Ql.t -> (User.t list * int) Lwt.t
   val find_opt : user_id:string -> User.t option Lwt.t
   val find : user_id:string -> User.t Lwt.t
   val find_by_email : email:string -> User.t Lwt.t

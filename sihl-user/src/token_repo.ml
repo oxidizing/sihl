@@ -14,11 +14,54 @@ module type Sig = sig
 end
 
 module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  open Sihl_type.Token
+
+  let token =
+    let ( let* ) = Result.bind in
+    let encode m =
+      let status = Status.to_string m.status in
+      let* id =
+        m.id
+        |> Uuidm.of_string
+        |> Option.map Uuidm.to_bytes
+        |> Option.to_result
+             ~none:
+               (Printf.sprintf
+                  "Invalid id %s provided, can not convert string to uuidv4"
+                  m.id)
+      in
+      Ok (id, (m.value, (m.data, (m.kind, (status, (m.expires_at, m.created_at))))))
+    in
+    let decode (id, (value, (data, (kind, (status, (expires_at, created_at)))))) =
+      let* status = Status.of_string status in
+      let* id =
+        id
+        |> Uuidm.of_bytes
+        |> Option.map Uuidm.to_string
+        |> Option.to_result
+             ~none:
+               (Printf.sprintf
+                  "Invalid id %s provided, can not convert bytes to uuidv4"
+                  id)
+      in
+      Ok { id; value; data; kind; status; expires_at; created_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2
+              string
+              (tup2 (option string) (tup2 string (tup2 string (tup2 ptime ptime)))))))
+  ;;
+
   module Sql = struct
     let find_request =
       Caqti_request.find
         Caqti_type.string
-        Model.t
+        token
         {sql|
         SELECT
           uuid,
@@ -40,8 +83,8 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
 
     let find_by_id_request =
       Caqti_request.find
-        Sihl_type.Database.Id.t_string
-        Model.t
+        Caqti_type.string
+        token
         {sql|
         SELECT
           uuid,
@@ -52,7 +95,7 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
           expires_at,
           created_at
         FROM token_tokens
-        WHERE token_tokens.uuid = ?
+        WHERE token_tokens.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
     ;;
 
@@ -63,7 +106,7 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
 
     let insert_request =
       Caqti_request.exec
-        Model.t
+        token
         {sql|
         INSERT INTO token_tokens (
           uuid,
@@ -92,7 +135,7 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
 
     let update_request =
       Caqti_request.exec
-        Model.t
+        token
         {sql|
         UPDATE token_tokens
         SET

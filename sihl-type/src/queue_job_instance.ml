@@ -24,7 +24,7 @@ module Status = struct
 end
 
 type t =
-  { id : Database.Id.t
+  { id : string
   ; name : string
   ; input : string option
   ; tries : int
@@ -43,7 +43,7 @@ let create ~input ~delay ~now job =
     | None -> now
   in
   let max_tries = Queue_job.max_tries job in
-  { id = Database.Id.random ()
+  { id = Uuidm.v `V4 |> Uuidm.to_string
   ; name
   ; input
   ; tries = 0

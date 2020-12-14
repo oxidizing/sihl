@@ -6,7 +6,7 @@ let alco_file = Alcotest.testable Sihl_type.Storage_file.pp Sihl_type.Storage_fi
 module Make (StorageService : Sihl_contract.Storage.Sig) = struct
   let fetch_uploaded_file _ () =
     let* () = Sihl_persistence.Repository.clean_all () in
-    let file_id = Sihl_type.Database.Id.(random () |> to_string) in
+    let file_id = Uuidm.v `V4 |> Uuidm.to_string in
     let file =
       Sihl_type.Storage_file.make
         ~id:file_id
@@ -25,7 +25,7 @@ module Make (StorageService : Sihl_contract.Storage.Sig) = struct
 
   let update_uploaded_file _ () =
     let* () = Sihl_persistence.Repository.clean_all () in
-    let file_id = Sihl_type.Database.Id.(random () |> to_string) in
+    let file_id = Uuidm.v `V4 |> Uuidm.to_string in
     let file =
       Sihl_type.Storage_file.make
         ~id:file_id
