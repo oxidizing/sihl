@@ -71,7 +71,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
     in
     let query = Sihl_type.Database.Ql.(empty |> set_limit 10 |> set_filter filter) in
     let* actual_users, meta = UserService.find_all ~query in
-    Alcotest.(check int "has correct meta" 1 (Sihl_type.Database.Meta.total meta));
+    Alcotest.(check int "has correct meta" 1 meta);
     Alcotest.(check (list alcotest) "has one user" actual_users [ user1 ]);
     Lwt.return ()
   ;;

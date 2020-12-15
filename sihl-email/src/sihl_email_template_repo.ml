@@ -8,13 +8,25 @@ module type Sig = sig
 end
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  let template =
+    let open Sihl_type.Email_template in
+    let encode m =
+      Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
+    in
+    let decode (id, (name, (content_text, (content_html, created_at)))) =
+      Ok { id; name; content_text; content_html; created_at }
+    in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
+  ;;
+
   module Sql = struct
     module Model = Sihl_type.Email_template
 
     let get_request =
       Caqti_request.find_opt
         Caqti_type.string
-        Model.t
+        template
         {sql|
         SELECT
           LOWER(CONCAT(
@@ -42,7 +54,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
     let get_by_name_request =
       Caqti_request.find_opt
         Caqti_type.string
-        Model.t
+        template
         {sql|
         SELECT
           LOWER(CONCAT(
@@ -69,7 +81,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
     let insert_request =
       Caqti_request.exec
-        Model.t
+        template
         {sql|
         INSERT INTO email_templates (
           uuid,
@@ -95,7 +107,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
     let update_request =
       Caqti_request.exec
-        Model.t
+        template
         {sql|
         UPDATE email_templates
         SET
@@ -168,13 +180,25 @@ CREATE TABLE IF NOT EXISTS email_templates (
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  let template =
+    let open Sihl_type.Email_template in
+    let encode m =
+      Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
+    in
+    let decode (id, (name, (content_text, (content_html, created_at)))) =
+      Ok { id; name; content_text; content_html; created_at }
+    in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
+  ;;
+
   module Sql = struct
     module Model = Sihl_type.Email_template
 
     let get_request =
       Caqti_request.find_opt
         Caqti_type.string
-        Model.t
+        template
         {sql|
         SELECT
           uuid,
@@ -196,7 +220,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
     let get_by_name_request =
       Caqti_request.find_opt
         Caqti_type.string
-        Model.t
+        template
         {sql|
         SELECT
           uuid,
@@ -217,7 +241,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
 
     let insert_request =
       Caqti_request.exec
-        Model.t
+        template
         {sql|
         INSERT INTO email_templates (
           uuid,
@@ -243,7 +267,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
 
     let update_request =
       Caqti_request.exec
-        Model.t
+        template
         {sql|
         UPDATE email_templates
         SET

@@ -26,14 +26,14 @@ module Memory : Sig = struct
   let register_migration () = ()
 
   let enqueue ~job_instance =
-    let id = JobInstance.id job_instance |> Sihl_type.Database.Id.to_string in
+    let id = JobInstance.id job_instance in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let update ~job_instance =
-    let id = JobInstance.id job_instance |> Sihl_type.Database.Id.to_string in
+    let id = JobInstance.id job_instance in
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
@@ -54,7 +54,7 @@ module Memory : Sig = struct
   ;;
 end
 
-module Model = struct
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   open JobInstance
 
   let status =
@@ -63,11 +63,32 @@ module Model = struct
     Caqti_type.(custom ~encode ~decode string)
   ;;
 
-  let t =
+  let job =
+    let ( let* ) = Result.bind in
     let encode m =
-      Ok (m.id, (m.name, (m.input, (m.tries, (m.next_run_at, (m.max_tries, m.status))))))
+      let* id =
+        m.id
+        |> Uuidm.of_string
+        |> Option.map Uuidm.to_bytes
+        |> Option.to_result
+             ~none:
+               (Printf.sprintf
+                  "Invalid id %s provided, can not convert string to uuidv4"
+                  m.id)
+      in
+      Ok (id, (m.name, (m.input, (m.tries, (m.next_run_at, (m.max_tries, m.status))))))
     in
     let decode (id, (name, (input, (tries, (next_run_at, (max_tries, status)))))) =
+      let* id =
+        id
+        |> Uuidm.of_bytes
+        |> Option.map Uuidm.to_string
+        |> Option.to_result
+             ~none:
+               (Printf.sprintf
+                  "Invalid id %s provided, can not convert bytes to uuidv4"
+                  id)
+      in
       Ok { id; name; input; tries; next_run_at; max_tries; status }
     in
     Caqti_type.(
@@ -75,15 +96,13 @@ module Model = struct
         ~encode
         ~decode
         (tup2
-           Sihl_type.Database.Id.t
+           string
            (tup2 string (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
   ;;
-end
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let enqueue_request =
     Caqti_request.exec
-      Model.t
+      job
       {sql|
         INSERT INTO queue_jobs (
           uuid,
@@ -114,7 +133,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
   let update_request =
     Caqti_request.exec
-      Model.t
+      job
       {sql|
         UPDATE queue_jobs
         SET
@@ -139,7 +158,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   let find_workable_request =
     Caqti_request.collect
       Caqti_type.unit
-      Model.t
+      job
       {sql|
         SELECT
           uuid,

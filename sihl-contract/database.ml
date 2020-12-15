@@ -1,5 +1,3 @@
-open Sihl_type
-
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
@@ -7,7 +5,7 @@ module type Sig = sig
   val raise_error : ('a, Caqti_error.t) Result.t -> 'a
 
   (** [fetch_pool ()] returns the connection pool. *)
-  val fetch_pool : unit -> Database.pool
+  val fetch_pool : unit -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 
   (** [query ctx f] runs the query [f] on the connection pool and returns the result. If
       the query fails the Lwt.t fails as well. *)
