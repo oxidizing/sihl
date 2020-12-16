@@ -150,26 +150,26 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
     Lwt.return @@ Ok ()
   ;;
 
-  let progress_bar cur goal =
-    let scale = 0.7 in
-    let width = Terminal_size.get_columns () in
-    match width with
-    | None -> ()
-    | Some width ->
-      (* TOOD [aerben] maybe print newline after cur == goal *)
-      let progress = Float.div cur goal in
-      let bar_width = Float.mul scale (Int.to_float width) in
-      let markers = Float.to_int @@ Float.round @@ Float.mul bar_width progress in
-      let percentage = Float.to_int @@ Float.round @@ Float.mul 100.0 progress in
-      let bar =
-        Printf.sprintf
-          "|%s%s| (%s)\r"
-          (String.make markers '#')
-          (String.make (Float.to_int bar_width - markers) '-')
-          (Int.to_string percentage)
-      in
-      print_string bar
-  ;;
+  (* let progress_bar cur goal =
+   *   let scale = 0.7 in
+   *   let width = Terminal_size.get_columns () in
+   *   match width with
+   *   | None -> ()
+   *   | Some width ->
+   *     (\* TOOD [aerben] maybe print newline after cur == goal *\)
+   *     let progress = Float.div cur goal in
+   *     let bar_width = Float.mul scale (Int.to_float width) in
+   *     let markers = Float.to_int @@ Float.round @@ Float.mul bar_width progress in
+   *     let percentage = Float.to_int @@ Float.round @@ Float.mul 100.0 progress in
+   *     let bar =
+   *       Printf.sprintf
+   *         "|%s%s| (%s)\r"
+   *         (String.make markers '#')
+   *         (String.make (Float.to_int bar_width - markers) '-')
+   *         (Int.to_string percentage)
+   *     in
+   *     print_string bar
+   * ;; *)
 
   let execute migrations =
     let n = List.length migrations in
@@ -202,24 +202,11 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
         run_all ())
   ;;
 
-  let get_unapplied migrations_states all_migrations =
-    List.map
-      (fun migrations_state ->
-        let namespace = Migration_state.namespace migrations_state in
-        let migrations = Map.find_opt namespace all_migrations in
-        match migrations with
-        | None -> namespace, None
-        | Some migrations ->
-          let unapplied_migrations_count =
-            List.length migrations - Migration_state.version migrations_state
-          in
-          namespace, Some unapplied_migrations_count)
-      migrations_states
-  ;;
-
-  let check_unapplied () =
+  let check_migrations_status () =
     let* migrations = MigrationRepo.get_all () in
-    let unapplied = get_unapplied migrations !registered_migrations in
+    let unapplied =
+      Sihl_type.Migration.get_migrations_status migrations !registered_migrations
+    in
     List.iter
       (fun (namespace, count) ->
         match count with
@@ -255,7 +242,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
     Lwt.return ()
   ;;
 
-  let start () = check_unapplied ()
+  let start () = check_migrations_status ()
   let stop _ = Lwt.return ()
 
   let lifecycle =

@@ -1,4 +1,5 @@
 open Sihl_type
+module Map = Map.Make (String)
 
 exception Exception of string
 
