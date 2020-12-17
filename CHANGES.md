@@ -1,3 +1,7 @@
+## [0.2.2] - 2020-12-17
+### Fixed
+- Merge form data and urlencoded form parsing and provide them in one middleware
+
 ## [0.2.1] - 2020-12-09
 ### Fixed
 - Two subsequent `POST` request works now with the CSRF middleware

@@ -28,11 +28,11 @@ struct
   let apply_middlewares handler =
     let csrf_middleware = Middleware.m () in
     let session_middleware = SessionMiddleware.m () in
-    let urlencoded_middleware = Sihl_web.Middleware.Urlencoded.m () in
+    let form_parser_middleware = Sihl_web.Middleware.Form_parser.m () in
     handler
     |> Rock.Middleware.apply csrf_middleware
     |> Rock.Middleware.apply session_middleware
-    |> Rock.Middleware.apply urlencoded_middleware
+    |> Rock.Middleware.apply form_parser_middleware
   ;;
 
   let get_request_yields_token _ () =
@@ -87,7 +87,7 @@ struct
 
   let post_request_yields_token _ () =
     let* () = Sihl_persistence.Repository.clean_all () in
-    let post_req = Opium.Request.post "/foo" in
+    let post_req = Opium.Request.of_urlencoded ~body:[] "/foo" `POST in
     let handler req =
       let token_value = Sihl_web.Middleware.Csrf.find req in
       Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
@@ -100,7 +100,7 @@ struct
 
   let post_request_without_token_fails _ () =
     let* () = Sihl_persistence.Repository.clean_all () in
-    let post_req = Opium.Request.post "/foo" in
+    let post_req = Opium.Request.of_urlencoded ~body:[] "/foo" `POST in
     let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
     let wrapped_handler = apply_middlewares handler in
     let* response = wrapped_handler post_req in
@@ -201,9 +201,8 @@ struct
     let status = Opium.Response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     (* Do POST to use created token *)
-    let body = Uri.pct_encode @@ "csrf=" ^ !token_ref1 in
     let post_req =
-      Opium.Request.of_plain_text ~body "/foo" `POST
+      Opium.Request.of_urlencoded ~body:[ "csrf", [ !token_ref1 ] ] "/foo" `POST
       |> Opium.Request.add_cookie cookie.Opium.Cookie.value
     in
     let wrapped_handler = apply_middlewares @@ handler token_ref2 in
@@ -232,9 +231,11 @@ struct
     let status = Opium.Response.status response |> Opium.Status.to_code in
     Alcotest.(check int "Has status 200" 200 status);
     (* Do first POST *)
-    let body = Uri.pct_encode @@ "csrf=" ^ !token_ref1 in
     let post_req =
-      Opium.Request.of_plain_text ~body "/foo" `POST
+      Opium.Request.of_urlencoded
+        ~body:[ "csrf", [ Uri.pct_encode !token_ref1 ] ]
+        "/foo"
+        `POST
       |> Opium.Request.add_cookie cookie.Opium.Cookie.value
     in
     let wrapped_handler = apply_middlewares @@ handler token_ref2 in
@@ -251,9 +252,11 @@ struct
         "New token generated after POST"
         false
         (String.equal (get_secret !token_ref1) (get_secret !token_ref2)));
-    let body = Uri.pct_encode @@ "csrf=" ^ !token_ref2 in
     let post_req =
-      Opium.Request.of_plain_text ~body "/foo" `POST
+      Opium.Request.of_urlencoded
+        ~body:[ "csrf", [ Uri.pct_encode !token_ref2 ] ]
+        "/foo"
+        `POST
       |> Opium.Request.add_cookie @@ cookie.Opium.Cookie.value
     in
     let wrapped_handler = apply_middlewares @@ handler token_ref3 in
