@@ -110,7 +110,7 @@ struct
       if is_safe
       then handler req
       else (
-        let req, value = Middleware_urlencoded.consume req "csrf" in
+        let req, value = Form_parser.consume req "csrf" in
         match value with
         (* Give 403 if no token provided *)
         | None ->
