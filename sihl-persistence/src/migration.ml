@@ -1,14 +1,11 @@
 open Lwt.Syntax
-module Core = Sihl_core
-module Migration = Sihl_contract.Migration
-module Migration_state = Sihl_contract.Migration.State
 
 let log_src = Logs.Src.create "sihl.service.migration"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Map = Map.Make (String)
 
-let registered_migrations : Migration.t Map.t ref = ref Map.empty
+let registered_migrations : Sihl_contract.Migration.t Map.t ref = ref Map.empty
 
 let register_migration migration =
   let label, _ = migration in
@@ -44,21 +41,21 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
 
   let mark_dirty ~namespace =
     let* state = get ~namespace in
-    let dirty_state = Migration_state.mark_dirty state in
+    let dirty_state = Sihl_contract.Migration.State.mark_dirty state in
     let* () = upsert dirty_state in
     Lwt.return dirty_state
   ;;
 
   let mark_clean ~namespace =
     let* state = get ~namespace in
-    let clean_state = Migration_state.mark_clean state in
+    let clean_state = Sihl_contract.Migration.State.mark_clean state in
     let* () = upsert clean_state in
     Lwt.return clean_state
   ;;
 
   let increment ~namespace =
     let* state = get ~namespace in
-    let updated_state = Migration_state.increment state in
+    let updated_state = Sihl_contract.Migration.State.increment state in
     let* () = upsert updated_state in
     Lwt.return updated_state
   ;;
@@ -87,7 +84,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
     let rec run steps =
       match steps with
       | [] -> Lwt.return ()
-      | Migration.{ label; statement; check_fk = true } :: steps ->
+      | Sihl_contract.Migration.{ label; statement; check_fk = true } :: steps ->
         Logs.debug (fun m -> m "Running %s" label);
         let query (module Connection : Caqti_lwt.CONNECTION) =
           let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
@@ -128,7 +125,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
       if has_state
       then
         let* state = get ~namespace in
-        if Migration_state.dirty state
+        if Sihl_contract.Migration.State.dirty state
         then (
           let msg =
             Printf.sprintf
@@ -140,11 +137,13 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
         else mark_dirty ~namespace
       else (
         Logs.debug (fun m -> m "Setting up table for %s" namespace);
-        let state = Migration_state.create ~namespace in
+        let state = Sihl_contract.Migration.State.create ~namespace in
         let* () = upsert state in
         Lwt.return state)
     in
-    let migration_to_apply = Migration_state.steps_to_apply migration state in
+    let migration_to_apply =
+      Sihl_contract.Migration.State.steps_to_apply migration state
+    in
     let* () = execute_steps migration_to_apply in
     let* _ = mark_clean ~namespace in
     Lwt.return @@ Ok ()
@@ -165,7 +164,11 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
         | Ok () -> run migrations
         | Error err ->
           Logs.err (fun m ->
-              m "Error while running migration %a: %s" Migration.pp migration err);
+              m
+                "Error while running migration %a: %s"
+                Sihl_contract.Migration.pp
+                migration
+                err);
           raise (Sihl_contract.Migration.Exception err))
     in
     run migrations
@@ -177,7 +180,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
   ;;
 
   let migrate_cmd =
-    Core.Command.make ~name:"migrate" ~description:"Run all migrations" (fun _ ->
+    Sihl_core.Command.make ~name:"migrate" ~description:"Run all migrations" (fun _ ->
         run_all ())
   ;;
 
@@ -185,7 +188,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create
+    Sihl_core.Container.Lifecycle.create
       "migration"
       ~dependencies:(fun () -> [ Database.lifecycle ])
       ~start
@@ -194,7 +197,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
 
   let register ?(migrations = []) () =
     register_migrations migrations;
-    Core.Container.Service.create ~commands:[ migrate_cmd ] lifecycle
+    Sihl_core.Container.Service.create ~commands:[ migrate_cmd ] lifecycle
   ;;
 end
 

@@ -225,6 +225,10 @@ module Ql = struct
   ;;
 end
 
+type database_type =
+  | MariaDb
+  | PostgreSql
+
 (* Signature *)
 let name = "sihl.service.database"
 

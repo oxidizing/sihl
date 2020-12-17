@@ -1,66 +1,98 @@
 (* Core *)
-module Container = Sihl_core.Container
+module Service = Sihl_core.Container
 module App = Sihl_core.App
+
+(* Core services *)
 module Configuration = Sihl_core.Configuration
 module Command = Sihl_core.Command
 module Log = Sihl_core.Log
-module Random = Sihl_core.Random
+module Utils = Sihl_core.Utils
+module Time = Sihl_core.Time
 
-(* Contract *)
-module Contract = Sihl_contract
-
-(* Services *)
-module Service = struct
-  module Authn = Sihl_user.Authn
-  module Database = Sihl_persistence.Database
-  module Email = Sihl_email
-  module Email_template = Sihl_email.Template
-  module Email_template_repo = Sihl_email.Template_repo
-  module Http = Sihl_web.Http
-  module Migration = Sihl_persistence.Migration
-  module Migration_repo = Sihl_persistence.Migration_repo
-  module Password_reset = Sihl_user.Password_reset
-  module Repository = Sihl_persistence.Repository
-  module Schedule = Sihl_core.Schedule
-  module Session = Sihl_user.Session
-  module Session_repo = Sihl_user.Session_repo
-  module Storage = Sihl_storage
-  module Token = Sihl_user.Token
-  module Token_repo = Sihl_user.Token_repo
-  module User = Sihl_user.User
-  module User_repo = Sihl_user.User_repo
-  module Queue = Sihl_queue
+(* Schedule module *)
+module Schedule = struct
+  include Sihl_contract.Schedule
+  include Sihl_facade.Schedule
 end
 
-(* Types *)
-module Database = Sihl_contract.Database
-module Email = Sihl_contract.Email
-module Email_template = Sihl_contract.Email_template
-
-module Http = struct
+(* Web module *)
+module Web = struct
   module Route = Sihl_contract.Http
+  module Http = Sihl_web.Http
+  module Middleware = Sihl_web.Middleware
 end
 
-module Migration = Sihl_contract.Migration
+(* Persistence module *)
+module Persistence = struct
+  module Cleaner = Sihl_persistence.Repository
 
+  module Database = struct
+    include Sihl_contract.Database
+    include Sihl_persistence.Database
+  end
+
+  module Migration = struct
+    include Sihl_contract.Migration
+    include Sihl_persistence.Migration
+  end
+end
+
+(* User & Security module *)
+module Security = struct
+  module User = struct
+    include Sihl_contract.User
+    include Sihl_facade.User
+  end
+
+  module Session = struct
+    include Sihl_contract.Session
+    include Sihl_facade.Session
+  end
+
+  module Password_reset = struct
+    include Sihl_contract.Password_reset
+    include Sihl_facade.Password_reset
+  end
+
+  module Authn = struct
+    include Sihl_contract.Authn
+    include Sihl_facade.Authn
+  end
+
+  module Token = struct
+    include Sihl_contract.Token
+    include Sihl_facade.Token
+  end
+
+  module Random = Sihl_core.Random
+  module Authz = Sihl_user.Authz
+end
+
+(* Email module *)
+module Email = struct
+  include Sihl_contract.Email
+  include Sihl_facade.Email
+
+  module Template = struct
+    include Sihl_contract.Email_template
+    include Sihl_facade.Email_template
+  end
+end
+
+(* Queue module *)
 module Queue = struct
   module Job = Sihl_contract.Queue_job
   module Job_instance = Sihl_contract.Queue_job_instance
   module Workable_job = Sihl_contract.Queue_workable_job
+  include Sihl_facade.Queue
 end
 
-module Session = Sihl_contract.Session
-module Authz = Sihl_user.Authz
-
+(* Storage module *)
 module Storage = struct
   module File = Sihl_contract.Storage.File
   module Stored = Sihl_contract.Storage.Stored
+  include Sihl_facade.Storage
 end
 
-module Token = Sihl_contract.Token
-module User = Sihl_contract.User
-module Utils = Sihl_core.Utils
-module Time = Sihl_core.Time
-
-(* Rest *)
-module Middleware = Sihl_web.Middleware
+(* Service contracts *)
+module Contract = Sihl_contract

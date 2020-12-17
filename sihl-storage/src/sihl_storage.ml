@@ -99,4 +99,5 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
   ;;
 end
 
-module MariaDb = Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+module MariaDb : Sihl_contract.Storage.Sig =
+  Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
