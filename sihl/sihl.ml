@@ -93,6 +93,3 @@ module Storage = struct
   module Stored = Sihl_contract.Storage.Stored
   include Sihl_facade.Storage
 end
-
-(* Service contracts *)
-module Contract = Sihl_contract

@@ -49,19 +49,15 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-type (= :version))
   (sihl-core (= :version))
   (opium (>= 0.20.0))
   (caqti-lwt (>= 1.2.0))
-  (multipart-form-data (>= 0.3.0))
-  (uuidm (>= 0.9.7))
-  (alcotest (>= 1.2.0))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-facade)
- (synopsis "")
- (description "")
+ (synopsis "Contains the service facade layer of Sihl")
+ (description "The facade comprises of the API of all Sihl services. Implementations can be swapped transparently.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -75,9 +71,10 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-contract (= :version))
+  (sihl-facade (= :version))
   (caqti (>= 1.2.1))
-  (caqti-lwt (>= 1.2.0))))
+  (caqti-lwt (>= 1.2.0))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-web)
@@ -87,8 +84,7 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-contract (= :version))
-  (opium (>= 0.20.0))
-  (multipart-form-data (>= 0.3.0))))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-user)
@@ -97,8 +93,9 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-contract (= :version))
-  (sihl-persistence (= :version))))
+  (sihl-facade (= :version))
+  (sihl-persistence (= :version))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-storage)
@@ -108,8 +105,9 @@ This service can be used to handle large binary blobs that are typically not sto
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-contract (= :version))
-  (sihl-persistence (= :version))))
+  (sihl-facade (= :version))
+  (sihl-persistence (= :version))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-email)
@@ -120,9 +118,10 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
   dune
   (ocaml (>= 4.08.0))
   (letters (>= 0.2.1))
-  (sihl-contract (= :version))
+  (sihl-facade (= :version))
   (sihl-persistence (= :version))
-  (cohttp-lwt-unix (>= 2.5.4))))
+  (cohttp-lwt-unix (>= 2.5.4))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-queue)
@@ -132,8 +131,9 @@ A Sihl service for putting and working jobs on queues. Various queue backends ar
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-contract (= :version))
-  (sihl-persistence (= :version))))
+  (sihl-facade (= :version))
+  (sihl-persistence (= :version))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl)
@@ -144,13 +144,11 @@ A Sihl service for putting and working jobs on queues. Various queue backends ar
   dune
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
-  (sihl-type (= :version))
   (sihl-contract (= :version))
+  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (sihl-web (= :version))
   (sihl-user (= :version))
   (sihl-queue (= :version))
   (sihl-storage (= :version))
-  (sihl-email (= :version))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))
-  (cohttp-lwt-unix (and (>= 2.5.1) (< 3.0.0) :with-test))))
+  (sihl-email (= :version))))
