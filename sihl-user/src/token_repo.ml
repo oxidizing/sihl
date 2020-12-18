@@ -1,5 +1,5 @@
 module Database = Sihl_persistence.Database
-module Repository = Sihl_persistence.Repository
+module Repository = Sihl_core.Cleaner
 module Migration = Sihl_contract.Migration
 module Migration_state = Sihl_contract.Migration.State
 module Model = Sihl_contract.Token

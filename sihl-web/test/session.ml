@@ -2,7 +2,7 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 let multiple_requests_create_one_session _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let middleware = Sihl_web.Middleware.Session.m () in
   let req = Opium.Request.get "" in
   let* res =
@@ -30,7 +30,7 @@ let multiple_requests_create_one_session _ () =
 ;;
 
 let requests_persist_session_variables _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let middleware = Sihl_web.Middleware.Session.m () in
   let req = Opium.Request.get "" in
   let handler req =

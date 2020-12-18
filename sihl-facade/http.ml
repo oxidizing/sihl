@@ -8,8 +8,8 @@ let lifecycle () =
   Service.lifecycle
 ;;
 
-let register implementation =
+let register implementation routers =
   let module Service = (val implementation : Sig) in
   instance := Some implementation;
-  Service.register ()
+  Service.register ~routers ()
 ;;

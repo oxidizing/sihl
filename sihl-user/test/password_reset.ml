@@ -2,7 +2,7 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 let reset_password_suceeds _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* _ = Sihl_facade.User.Seed.user () ~email:"foo@example.com" ~password:"123456789" in
   let* token =
     Sihl_facade.Password_reset.create_reset_token ~email:"foo@example.com"

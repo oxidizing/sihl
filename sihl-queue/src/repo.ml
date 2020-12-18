@@ -20,7 +20,7 @@ module Memory : Sig = struct
       ordered_ids := [];
       Lwt.return ()
     in
-    Sihl_persistence.Repository.register_cleaner cleaner
+    Sihl_core.Cleaner.register_cleaner cleaner
   ;;
 
   let register_migration () = ()
@@ -230,6 +230,6 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
   end
 
-  let register_cleaner () = Sihl_persistence.Repository.register_cleaner clean
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
   let register_migration () = MigrationService.register_migration Migration.migration
 end

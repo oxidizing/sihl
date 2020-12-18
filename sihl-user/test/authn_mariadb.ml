@@ -1,8 +1,6 @@
-module Migration = Sihl_persistence.Migration.MariaDb
-
 let services =
   [ Sihl_persistence.Database.register ()
-  ; Sihl_facade.Migration.register (module Migration)
+  ; Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
   ; Sihl_facade.User.register (module Sihl_user.User.MariaDb)
   ; Sihl_facade.Session.register (module Sihl_user.Session.MariaDb)
   ; Sihl_facade.Authn.register (module Sihl_user.Authn)
@@ -16,6 +14,6 @@ let () =
   Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
-     let* () = Migration.run_all () in
+     let* () = Sihl_facade.Migration.run_all () in
      Alcotest_lwt.run "authn mariadb" Authn.suite)
 ;;

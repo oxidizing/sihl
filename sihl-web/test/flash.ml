@@ -13,7 +13,7 @@ let wrap handler =
 ;;
 
 let set_and_read_flash_message _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let req = Opium.Request.get "" in
   let* res =
     wrap

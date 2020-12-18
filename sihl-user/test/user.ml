@@ -4,7 +4,7 @@ open Alcotest_lwt
 let alcotest = Alcotest.testable Sihl_contract.User.pp Sihl_contract.User.equal
 
 let update_details _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
     Sihl_facade.User.Seed.user ~email:"foobar@example.com" ~password:"123123123" ()
   in
@@ -19,7 +19,7 @@ let update_details _ () =
 ;;
 
 let update_password _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
     Sihl_facade.User.Seed.user ~email:"foobar@example.com" ~password:"123123123" ()
   in
@@ -43,7 +43,7 @@ let update_password _ () =
 ;;
 
 let update_password_fails _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
     Sihl_facade.User.Seed.user ~email:"foobar@example.com" ~password:"123123123" ()
   in
@@ -65,7 +65,7 @@ let update_password_fails _ () =
 ;;
 
 let filter_users_by_email _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* user1 =
     Sihl_facade.User.Seed.user ~email:"user1@example.com" ~password:"123123123" ()
   in

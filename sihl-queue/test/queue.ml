@@ -7,7 +7,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let* () =
       Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
     in
-    let* () = Sihl_persistence.Repository.clean_all () in
+    let* () = Sihl_core.Cleaner.clean_all () in
     let job =
       Sihl_contract.Queue_job.create
         ~name:"foo"
@@ -33,7 +33,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let* () =
       Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
     in
-    let* () = Sihl_persistence.Repository.clean_all () in
+    let* () = Sihl_core.Cleaner.clean_all () in
     let job1 =
       Sihl_contract.Queue_job.create
         ~name:"foo1"
@@ -71,7 +71,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let* () =
       Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
     in
-    let* () = Sihl_persistence.Repository.clean_all () in
+    let* () = Sihl_core.Cleaner.clean_all () in
     let job =
       Sihl_contract.Queue_job.create
         ~name:"foo"
@@ -96,7 +96,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let* () =
       Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
     in
-    let* () = Sihl_persistence.Repository.clean_all () in
+    let* () = Sihl_core.Cleaner.clean_all () in
     let job =
       Sihl_contract.Queue_job.create
         ~name:"foo"

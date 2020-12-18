@@ -13,8 +13,8 @@ let run_all () =
   Service.run_all ()
 ;;
 
-let register implementation =
+let register ?migrations implementation =
   let module Service = (val implementation : Sig) in
   instance := Some implementation;
-  Service.register ()
+  Service.register ?migrations ()
 ;;

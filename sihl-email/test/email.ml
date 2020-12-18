@@ -2,7 +2,7 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 let create_template _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* created =
     Sihl_facade.Email_template.create ~name:"foo" ~html:"some html" ~text:"some text"
   in
@@ -21,7 +21,7 @@ let create_template _ () =
 ;;
 
 let update_template _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* created =
     Sihl_facade.Email_template.create ~name:"foo" ~html:"some html" ~text:"some text"
   in

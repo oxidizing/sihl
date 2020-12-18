@@ -2,7 +2,7 @@ open Lwt.Syntax
 open Alcotest_lwt
 
 let authenticate_session _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* session = Sihl_facade.Session.create [] in
   let* user = Sihl_facade.Authn.find_user_in_session_opt session in
   let () =
@@ -23,7 +23,7 @@ let authenticate_session _ () =
 ;;
 
 let unauthenticate_session _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let* session = Sihl_facade.Session.create [] in
   let* user =
     Sihl_facade.User.create_user

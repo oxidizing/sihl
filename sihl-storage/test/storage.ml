@@ -6,7 +6,7 @@ let alco_file =
 ;;
 
 let fetch_uploaded_file _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let file_id = Uuidm.v `V4 |> Uuidm.to_string in
   let file =
     Sihl_contract.Storage.File.make
@@ -25,7 +25,7 @@ let fetch_uploaded_file _ () =
 ;;
 
 let update_uploaded_file _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let file_id = Uuidm.v `V4 |> Uuidm.to_string in
   let file =
     Sihl_contract.Storage.File.make

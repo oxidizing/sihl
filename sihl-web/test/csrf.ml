@@ -29,7 +29,7 @@ let apply_middlewares handler =
 ;;
 
 let get_request_yields_token _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let req = Opium.Request.get "" in
   let handler req =
     let token_value = Sihl_web.Middleware.Csrf.find req in
@@ -42,7 +42,7 @@ let get_request_yields_token _ () =
 ;;
 
 let get_request_without_token_succeeds _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let req = Opium.Request.get "" in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
@@ -53,7 +53,7 @@ let get_request_without_token_succeeds _ () =
 ;;
 
 let two_get_requests_yield_same_token _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   (* Do GET to set a token *)
   let req = Opium.Request.get "" in
   let token_ref1 = ref "" in
@@ -79,7 +79,7 @@ let two_get_requests_yield_same_token _ () =
 ;;
 
 let post_request_yields_token _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let post_req = Opium.Request.post "/foo" in
   let handler req =
     let token_value = Sihl_web.Middleware.Csrf.find req in
@@ -92,7 +92,7 @@ let post_request_yields_token _ () =
 ;;
 
 let post_request_without_token_fails _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let post_req = Opium.Request.post "/foo" in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
@@ -103,7 +103,7 @@ let post_request_without_token_fails _ () =
 ;;
 
 let post_request_with_invalid_b64_token_fails _ () =
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let post_req =
     Opium.Request.of_urlencoded ~body:[ "csrf", [ "invalid_token" ] ] "/foo" `POST
   in
@@ -122,7 +122,7 @@ let post_request_with_invalid_token_fails _ () =
   let post_req =
     Opium.Request.of_urlencoded ~body:[ "csrf", [ "aGVsbG8=" ] ] "/foo" `POST
   in
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
   Lwt.catch
@@ -137,7 +137,7 @@ let post_request_with_invalid_token_fails _ () =
 let post_request_with_nonmatching_token_fails _ () =
   (* Do GET to set a token *)
   let req = Opium.Request.get "" in
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let token_ref = ref "" in
   let handler req =
     token_ref := Sihl_web.Middleware.Csrf.find req;
@@ -168,7 +168,7 @@ let post_request_with_nonexisting_token_fails _ () =
       "/foo"
       `POST
   in
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
   let* response = wrapped_handler post_req in
@@ -180,7 +180,7 @@ let post_request_with_nonexisting_token_fails _ () =
 let post_request_with_valid_token_succeeds _ () =
   (* Do GET to set a token *)
   let req = Opium.Request.get "" in
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let token_ref1 = ref "" in
   let token_ref2 = ref "" in
   let handler tkn req =
@@ -210,7 +210,7 @@ let post_request_with_valid_token_succeeds _ () =
 let two_post_requests_succeed _ () =
   (* Do GET to set a token *)
   let req = Opium.Request.get "" in
-  let* () = Sihl_persistence.Repository.clean_all () in
+  let* () = Sihl_core.Cleaner.clean_all () in
   let token_ref1 = ref "" in
   let token_ref2 = ref "" in
   let token_ref3 = ref "" in

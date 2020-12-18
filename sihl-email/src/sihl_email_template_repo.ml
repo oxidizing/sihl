@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
-  let register_cleaner () = Sihl_persistence.Repository.register_cleaner Sql.clean
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
   let get_by_name = Sql.get_by_name
   let insert = Sql.insert
@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
-  let register_cleaner () = Sihl_persistence.Repository.register_cleaner Sql.clean
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
   let get_by_name = Sql.get_by_name
   let insert = Sql.insert

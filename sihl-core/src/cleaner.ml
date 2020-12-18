@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let registered_cleaners : (unit -> unit Lwt.t) list ref = ref []
 
 let register_cleaner cleaner =
@@ -11,6 +9,7 @@ let register_cleaners cleaners =
 ;;
 
 let clean_all () =
+  let open Lwt.Syntax in
   let cleaners = !registered_cleaners in
   let rec clean_repos cleaners =
     match cleaners with
@@ -23,10 +22,10 @@ let clean_all () =
 ;;
 
 let start () = Lwt.return ()
-let stop _ = Lwt.return ()
-let lifecycle = Sihl_core.Container.Lifecycle.create "repo" ~start ~stop
+let stop () = Lwt.return ()
+let lifecycle = Container.Lifecycle.create "cleaner" ~start ~stop
 
-let register ?(cleaners = []) () =
+let register cleaners =
   register_cleaners cleaners;
-  Sihl_core.Container.Service.create lifecycle
+  Container.Service.create lifecycle
 ;;

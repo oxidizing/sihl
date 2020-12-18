@@ -282,6 +282,6 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
       let* () = clean_handles () in
       clean_blobs ()
     in
-    Sihl_persistence.Repository.register_cleaner cleaner
+    Sihl_core.Cleaner.register_cleaner cleaner
   ;;
 end
