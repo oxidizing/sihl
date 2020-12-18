@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create "sihl.container"
+let log_src = Logs.Src.create "sihl.core.container"
 let () = Printexc.record_backtrace true
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)

@@ -13,7 +13,11 @@ module Schedule = struct
   include Sihl_facade.Schedule
 
   module Setup = struct
-    let register = Sihl_facade.Schedule.register
+    let default = (module Sihl_core.Schedule : Sihl_contract.Schedule.Sig)
+
+    let register ?(implementation = default) () =
+      Sihl_facade.Schedule.register implementation
+    ;;
   end
 end
 
@@ -98,7 +102,11 @@ module Security = struct
     include Sihl_facade.Password_reset
 
     module Setup = struct
-      let register = Sihl_facade.Password_reset.register
+      let default = (module Sihl_user.Password_reset : Sihl_contract.Password_reset.Sig)
+
+      let register ?(implementation = default) () =
+        Sihl_facade.Password_reset.register implementation
+      ;;
     end
   end
 
@@ -107,7 +115,11 @@ module Security = struct
     include Sihl_facade.Authn
 
     module Setup = struct
-      let register = Sihl_facade.Authn.register
+      let default = (module Sihl_user.Authn : Sihl_contract.Authn.Sig)
+
+      let register ?(implementation = default) () =
+        Sihl_facade.Authn.register implementation
+      ;;
     end
   end
 

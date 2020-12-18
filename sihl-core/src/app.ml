@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create "sihl.app"
+let log_src = Logs.Src.create "sihl.core.app"
 
 module Logger = (val Logs.src_log log_src : Logs.LOG)
 

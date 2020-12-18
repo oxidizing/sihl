@@ -1,4 +1,4 @@
-let log_src = Logs.Src.create ~doc:"CLI command handling" "sihl.command"
+let log_src = Logs.Src.create "service.core.command"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 

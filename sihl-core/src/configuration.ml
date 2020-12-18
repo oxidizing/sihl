@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create "sihl.configuration"
+let log_src = Logs.Src.create "sihl.core.configuration"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
