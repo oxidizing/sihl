@@ -125,7 +125,7 @@ let name = "sihl.service.user"
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
-  val find_all : query:Database.Ql.t -> (t list * int) Lwt.t
+  val search : ?sort:[ `Desc | `Asc ] -> ?filter:string -> int -> (t list * int) Lwt.t
   val find_opt : user_id:string -> t option Lwt.t
   val find : user_id:string -> t Lwt.t
   val find_by_email : email:string -> t Lwt.t

@@ -3,9 +3,9 @@ open Sihl_core.Container
 
 let instance : (module Sig) option ref = ref None
 
-let find_all ~query =
+let search ?sort ?filter limit =
   let module Service = (val unpack name instance : Sig) in
-  Service.find_all ~query
+  Service.search ?sort ?filter limit
 ;;
 
 let find_opt ~user_id =

@@ -75,12 +75,8 @@ let filter_users_by_email _ () =
   let* _ =
     Sihl_facade.User.Seed.user ~email:"user3@example.com" ~password:"123123123" ()
   in
-  let filter =
-    Sihl_contract.Database.Ql.Filter.(C { key = "email"; value = "%user1%"; op = Like })
-  in
-  let query = Sihl_contract.Database.Ql.(empty |> set_limit 10 |> set_filter filter) in
-  let* actual_users, meta = Sihl_facade.User.find_all ~query in
-  Alcotest.(check int "has correct meta" 1 meta);
+  let* actual_users, meta = Sihl_facade.User.search ~filter:"%user1%" 10 in
+  Alcotest.(check int "has correct meta" 3 meta);
   Alcotest.(check (list alcotest) "has one user" actual_users [ user1 ]);
   Lwt.return ()
 ;;
