@@ -36,6 +36,7 @@
   (caqti (>= 1.2.1))
   (safepass (>= 3.0))
   (jwto (>= 0.3.0))
+  (uuidm (>= 0.9.7))
   (ppx_fields_conv (>= v0.13.0))
   (ppx_sexp_conv (>= v0.13.0))
 
@@ -83,7 +84,7 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-contract (= :version))
+  (sihl-facade (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
