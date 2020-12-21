@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.2.1"
+version: "0.2.2"
 synopsis: "The core of the Sihl web framework"
 description:
   "Deals with configuration, service lifecycle, app, CLI commands, logging and randomness."
@@ -97,6 +97,7 @@ depends: [
   "topkg" {= "1.0.3"}
   "tsort" {= "2.0.0"}
   "uri" {= "3.1.0"}
+  "uuidm" {= "0.9.7"}
   "x509" {= "0.11.2"}
   "yojson" {= "1.7.0"}
   "zarith" {= "1.10"}

@@ -13,7 +13,7 @@ bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08.0"}
-  "sihl-contract" {= version}
+  "sihl-facade" {= version}
   "alcotest-lwt" {>= "1.2.0" & < "3.0.0" & with-test}
   "odoc" {with-doc}
 ]
