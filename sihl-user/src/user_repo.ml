@@ -16,13 +16,6 @@ module type Sig = sig
   val update : user:Model.t -> unit Lwt.t
 end
 
-module Dynparam = struct
-  type t = Pack : 'a Caqti_type.t * 'a -> t
-
-  let empty = Pack (Caqti_type.unit, ())
-  let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
-end
-
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let user =
     let open Sihl_contract.User in
