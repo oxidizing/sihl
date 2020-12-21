@@ -6,35 +6,35 @@ struct
   let get_by_name ~name = Repo.get_by_name ~name
 
   let create ~name ~html ~text =
-    let template = Sihl_type.Email_template.make ~text ~html name in
+    let template = Sihl_contract.Email_template.make ~text ~html name in
     let* () = Repo.insert ~template in
-    let id = Sihl_type.Email_template.id template in
+    let id = Sihl_contract.Email_template.id template in
     let* created = Repo.get ~id in
     match created with
     | None ->
       Logs.err (fun m ->
-          m "EMAIL: Could not create template %a" Sihl_type.Email_template.pp template);
-      raise (Sihl_type.Email.Exception "Could not create email template")
+          m "EMAIL: Could not create template %a" Sihl_contract.Email_template.pp template);
+      raise (Sihl_contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;
 
   let update ~template =
     let* () = Repo.update ~template in
-    let id = Sihl_type.Email_template.id template in
+    let id = Sihl_contract.Email_template.id template in
     let* created = Repo.get ~id in
     match created with
     | None ->
       Logs.err (fun m ->
-          m "EMAIL: Could not update template %a" Sihl_type.Email_template.pp template);
-      raise (Sihl_type.Email.Exception "Could not create email template")
+          m "EMAIL: Could not update template %a" Sihl_contract.Email_template.pp template);
+      raise (Sihl_contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;
 
   let render email =
-    let template_id = Sihl_type.Email.template_id email in
-    let template_data = Sihl_type.Email.template_data email in
-    let text_content = Sihl_type.Email.text_content email in
-    let html_content = Sihl_type.Email.html_content email in
+    let template_id = Sihl_contract.Email.template_id email in
+    let template_data = Sihl_contract.Email.template_data email in
+    let text_content = Sihl_contract.Email.text_content email in
+    let html_content = Sihl_contract.Email.html_content email in
     let* text_content, html_content =
       match template_id with
       | Some template_id ->
@@ -43,16 +43,16 @@ struct
           match template with
           | None ->
             raise
-              (Sihl_type.Email.Exception
+              (Sihl_contract.Email.Exception
                  (Printf.sprintf "Template with id %s not found" template_id))
           | Some template -> Lwt.return template
         in
-        Sihl_type.Email_template.render template_data template |> Lwt.return
+        Sihl_contract.Email_template.render template_data template |> Lwt.return
       | None -> Lwt.return (text_content, html_content)
     in
     email
-    |> Sihl_type.Email.set_text_content text_content
-    |> Sihl_type.Email.set_html_content html_content
+    |> Sihl_contract.Email.set_text_content text_content
+    |> Sihl_contract.Email.set_html_content html_content
     |> Lwt.return
   ;;
 
@@ -66,3 +66,9 @@ struct
     Sihl_core.Container.Service.create lifecycle
   ;;
 end
+
+module PostgreSql =
+  Make (Sihl_email_template_repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+
+module MariaDb =
+  Make (Sihl_email_template_repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))

@@ -1,16 +1,9 @@
 open Lwt.Syntax
 
-module Migration =
-  Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.MariaDb)
-
-module EmailTemplateRepo = Sihl_email.Template_repo.MakeMariaDb (Migration)
-module EmailTemplateService = Sihl_email.Template.Make (EmailTemplateRepo)
-module Email = Email.Make (EmailTemplateService)
-
 let services =
-  [ Sihl_persistence.Database.register ()
-  ; Migration.register ()
-  ; EmailTemplateService.register ()
+  [ Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
+  ; Sihl_facade.Email_template.register (module Sihl_email.Template.MariaDb)
+  ; Sihl_facade.Email.register (module Sihl_email.Smtp)
   ]
 ;;
 
@@ -20,6 +13,6 @@ let () =
   Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
-     let* () = Migration.run_all () in
+     let* () = Sihl_facade.Migration.run_all () in
      Alcotest_lwt.run "email mariadb" Email.suite)
 ;;

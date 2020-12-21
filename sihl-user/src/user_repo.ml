@@ -1,15 +1,15 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
-module Repository = Sihl_persistence.Repository
-module Migration = Sihl_type.Migration
-module Migration_state = Sihl_type.Migration_state
-module Model = Sihl_type.User
+module Repository = Sihl_core.Cleaner
+module Migration = Sihl_contract.Migration
+module Migration_state = Sihl_contract.Migration.State
+module Model = Sihl_contract.User
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val lifecycles : Sihl_core.Container.Lifecycle.t list
-  val get_all : query:Sihl_type.Database.Ql.t -> (Model.t list * int) Lwt.t
+  val search : [< `Desc | `Asc ] -> string option -> int -> (Model.t list * int) Lwt.t
   val get : id:string -> Model.t option Lwt.t
   val get_by_email : email:string -> Model.t option Lwt.t
   val insert : user:Model.t -> unit Lwt.t
@@ -25,7 +25,7 @@ end
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let user =
-    let open Sihl_type.User in
+    let open Sihl_contract.User in
     let encode m =
       Ok
         ( m.id
@@ -90,25 +90,16 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
   end
 
-  let get_all ~query =
-    let fields =
-      [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
-    in
-    let filter_fragment, sort_fragment, pagination_fragment, values =
-      Sihl_type.Database.Ql.to_sql_fragments fields query
-    in
-    let rec create_param values param =
-      match values with
-      | [] -> param
-      | value :: values ->
-        create_param values (Dynparam.add Caqti_type.string value param)
-    in
-    let param = create_param values Dynparam.empty in
-    let (Dynparam.Pack (pt, pv)) = param in
-    let query =
-      Printf.sprintf
-        {sql|
-        SELECT SQL_CALC_FOUND_ROWS
+  let filter_fragment =
+    {sql|
+        WHERE user_users.email LIKE $1
+          OR user_users.username LIKE $1
+          OR user_users.status LIKE $1 |sql}
+  ;;
+
+  let search_query =
+    {sql|
+        SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
            SUBSTR(HEX(uuid), 9, 4), '-',
@@ -123,28 +114,29 @@ CREATE TABLE IF NOT EXISTS user_users (
           admin,
           confirmed,
           created_at
-        FROM user_users
-        %s
-        %s
-        %s
-           |sql}
-        filter_fragment
-        sort_fragment
-        pagination_fragment
-    in
-    Database.query (fun connection ->
+        FROM user_users |sql}
+  ;;
+
+  let requests =
+    Sihl_contract.Database.prepare_requests search_query filter_fragment "id" user
+  ;;
+
+  let found_rows_request =
+    Caqti_request.find
+      ~oneshot:true
+      Caqti_type.unit
+      Caqti_type.int
+      "SELECT COUNT(*) FROM user_users"
+  ;;
+
+  let search sort filter limit =
+    Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request = Caqti_request.collect ~oneshot:true pt user query in
-        let* users = Connection.collect_list request pv |> Lwt.map Database.raise_error in
-        let request =
-          Caqti_request.find
-            ~oneshot:true
-            Caqti_type.unit
-            Caqti_type.int
-            "SELECT FOUND_ROWS()"
+        let* result =
+          Sihl_contract.Database.run_request connection requests sort filter limit
         in
-        let* meta = Connection.find request () |> Lwt.map Database.raise_error in
-        Lwt.return (users, meta))
+        let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
+        Lwt.return (result, amount))
   ;;
 
   let get_request =
@@ -275,7 +267,7 @@ CREATE TABLE IF NOT EXISTS user_users (
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open Sihl_type.User
+  open Sihl_contract.User
 
   let user =
     let encode m =
@@ -332,26 +324,17 @@ CREATE TABLE IF NOT EXISTS user_users (
     let migration () = Migration.(empty "user" |> add_step create_users_table)
   end
 
-  let get_all ~query =
-    let fields =
-      [ "id"; "email"; "username"; "status"; "admin"; "confirmed"; "created_at" ]
-    in
-    let filter_fragment, sort_fragment, pagination_fragment, values =
-      Sihl_type.Database.Ql.to_sql_fragments fields query
-    in
-    let rec create_param values param =
-      match values with
-      | [] -> param
-      | value :: values ->
-        create_param values (Dynparam.add Caqti_type.string value param)
-    in
-    let param = create_param values Dynparam.empty in
-    let (Dynparam.Pack (pt, pv)) = param in
-    let query =
-      Printf.sprintf
-        {sql|
+  let filter_fragment =
+    {sql|
+        WHERE user_users.email LIKE $1
+          OR user_users.username LIKE $1
+          OR user_users.status LIKE $1 |sql}
+  ;;
+
+  let search_query =
+    {sql|
         SELECT
-          uuid as id,
+          uuid,
           email,
           username,
           password,
@@ -359,22 +342,29 @@ CREATE TABLE IF NOT EXISTS user_users (
           admin,
           confirmed,
           created_at
-        FROM user_users
-        %s
-        %s
-        %s
-        |sql}
-        filter_fragment
-        sort_fragment
-        pagination_fragment
-    in
-    Database.query (fun connection ->
+        FROM user_users |sql}
+  ;;
+
+  let requests =
+    Sihl_contract.Database.prepare_requests search_query filter_fragment "id" user
+  ;;
+
+  let found_rows_request =
+    Caqti_request.find
+      ~oneshot:true
+      Caqti_type.unit
+      Caqti_type.int
+      "SELECT COUNT(*) FROM user_users"
+  ;;
+
+  let search sort filter limit =
+    Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let request = Caqti_request.collect ~oneshot:true pt user query in
-        let* users = Connection.collect_list request pv |> Lwt.map Database.raise_error in
-        (* TODO Find out best way to get total rows for that query without limit *)
-        let meta = List.length users in
-        Lwt.return @@ (users, meta))
+        let* result =
+          Sihl_contract.Database.run_request connection requests sort filter limit
+        in
+        let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
+        Lwt.return (result, amount))
   ;;
 
   let get_request =

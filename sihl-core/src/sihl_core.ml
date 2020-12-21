@@ -7,3 +7,4 @@ module Random = Random
 module Utils = Utils
 module Schedule = Schedule
 module Time = Time
+module Cleaner = Cleaner

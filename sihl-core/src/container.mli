@@ -13,7 +13,7 @@ module Lifecycle : sig
   type stop = unit -> unit Lwt.t
 
   val name : t -> string
-  val create : ?dependencies:t list -> string -> start:start -> stop:stop -> t
+  val create : ?dependencies:(unit -> t list) -> string -> start:start -> stop:stop -> t
 end
 
 (** {1 Service}
@@ -58,3 +58,4 @@ end
 
 val collect_all_lifecycles : Lifecycle.t list -> Lifecycle.t Map.t
 val top_sort_lifecycles : Lifecycle.t list -> Lifecycle.t list
+val unpack : string -> ?default:'a -> 'a option ref -> 'a

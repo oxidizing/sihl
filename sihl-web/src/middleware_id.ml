@@ -1,5 +1,3 @@
-module Core = Sihl_core
-
 let key : string Opium.Context.key =
   Opium.Context.Key.create ("id", Sexplib.Std.sexp_of_string)
 ;;
@@ -27,7 +25,7 @@ let set id req =
 
 let m () =
   let filter handler req =
-    let id = Core.Random.bytes ~nr:32 |> List.to_seq |> String.of_seq in
+    let id = Sihl_facade.Random.bytes ~nr:32 |> List.to_seq |> String.of_seq in
     let req = set id req in
     handler req
   in

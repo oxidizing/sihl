@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create "sihl.middleware.flash"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -29,22 +27,21 @@ let set flash res =
   { res with env }
 ;;
 
-module Make (SessionService : Sihl_contract.Session.Sig) = struct
-  let m ?(flash_store_name = "flash.store") () =
-    let filter handler req =
-      let session = Middleware_session.find req in
-      let* current_flash = SessionService.find_value session flash_store_name in
-      let env = req.Opium.Request.env in
-      let env = Opium.Context.add key current_flash env in
-      (* Put current flash message into request context *)
-      let req = { req with env } in
-      (* User might call set() in handler *)
-      let* res = handler req in
-      let next_flash = Option.join (Opium.Context.find key res.Opium.Response.env) in
-      (* Put next flash message into flash store *)
-      let* () = SessionService.set_value session ~k:flash_store_name ~v:next_flash in
-      Lwt.return res
-    in
-    Rock.Middleware.create ~name:"session.flash" ~filter
-  ;;
-end
+let m ?(flash_store_name = "flash.store") () =
+  let open Lwt.Syntax in
+  let filter handler req =
+    let session = Middleware_session.find req in
+    let* current_flash = Sihl_facade.Session.find_value session flash_store_name in
+    let env = req.Opium.Request.env in
+    let env = Opium.Context.add key current_flash env in
+    (* Put current flash message into request context *)
+    let req = { req with env } in
+    (* User might call set() in handler *)
+    let* res = handler req in
+    let next_flash = Option.join (Opium.Context.find key res.Opium.Response.env) in
+    (* Put next flash message into flash store *)
+    let* () = Sihl_facade.Session.set_value session ~k:flash_store_name ~v:next_flash in
+    Lwt.return res
+  in
+  Rock.Middleware.create ~name:"session.flash" ~filter
+;;

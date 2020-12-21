@@ -123,6 +123,18 @@ let query f =
     Lwt.fail (Exception msg)
 ;;
 
+let used_database () =
+  let host = (Core.Configuration.read schema).url |> Uri.of_string |> Uri.host in
+  match host with
+  | Some "mariadb" -> Some Sihl_contract.Database.MariaDb
+  | Some "mysql" -> Some Sihl_contract.Database.MariaDb
+  | Some "postgresql" -> Some Sihl_contract.Database.PostgreSql
+  | Some not_supported ->
+    Logs.warn (fun m -> m "Unsupported database %s found" not_supported);
+    None
+  | None -> None
+;;
+
 (* Service lifecycle *)
 
 let start () =
@@ -132,7 +144,7 @@ let start () =
   Lwt.return ()
 ;;
 
-let stop _ = Lwt.return ()
+let stop () = Lwt.return ()
 let lifecycle = Core.Container.Lifecycle.create "database" ~start ~stop
 
 let register () =

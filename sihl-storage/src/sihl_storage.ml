@@ -16,7 +16,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
 
   let delete ~id =
     let* file = find ~id in
-    let blob_id = Sihl_type.Storage_stored.blob file in
+    let blob_id = Sihl_contract.Storage.Stored.blob file in
     let* () = Repo.delete_file ~id:file.file.id in
     Repo.delete_blob ~id:blob_id
   ;;
@@ -27,25 +27,28 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
       match Base64.decode base64 with
       | Error (`Msg msg) ->
         Logs.err (fun m ->
-            m "Could not upload base64 content of file %a" Sihl_type.Storage_file.pp file);
+            m
+              "Could not upload base64 content of file %a"
+              Sihl_contract.Storage.File.pp
+              file);
         raise (Sihl_contract.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
     let* () = Repo.insert_blob ~id:blob_id ~blob in
-    let stored_file = Sihl_type.Storage_stored.make ~file ~blob:blob_id in
+    let stored_file = Sihl_contract.Storage.Stored.make ~file ~blob:blob_id in
     let* () = Repo.insert_file ~file:stored_file in
     Lwt.return stored_file
   ;;
 
   let update_base64 ~file ~base64 =
-    let blob_id = Sihl_type.Storage_stored.blob file in
+    let blob_id = Sihl_contract.Storage.Stored.blob file in
     let* blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
         Logs.err (fun m ->
             m
               "Could not upload base64 content of file %a"
-              Sihl_type.Storage_stored.pp
+              Sihl_contract.Storage.Stored.pp
               file);
         raise (Sihl_contract.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
@@ -56,24 +59,24 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
   ;;
 
   let download_data_base64_opt ~file =
-    let blob_id = Sihl_type.Storage_stored.blob file in
+    let blob_id = Sihl_contract.Storage.Stored.blob file in
     let* blob = Repo.get_blob ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
-          m "Could not get base64 content of file %a" Sihl_type.Storage_stored.pp file);
+          m "Could not get base64 content of file %a" Sihl_contract.Storage.Stored.pp file);
       raise (Sihl_contract.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
   ;;
 
   let download_data_base64 ~file =
-    let blob_id = Sihl_type.Storage_stored.blob file in
+    let blob_id = Sihl_contract.Storage.Stored.blob file in
     let* blob = Repo.get_blob ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
-          m "Could not get base64 content of file %a" Sihl_type.Storage_stored.pp file);
+          m "Could not get base64 content of file %a" Sihl_contract.Storage.Stored.pp file);
       raise (Sihl_contract.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return blob
     | None ->
@@ -81,7 +84,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
         (Sihl_contract.Storage.Exception
            (Format.asprintf
               "File data not found for file %a"
-              Sihl_type.Storage_stored.pp
+              Sihl_contract.Storage.Stored.pp
               file))
   ;;
 
@@ -96,4 +99,5 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
   ;;
 end
 
-module Repo = Repo
+module MariaDb : Sihl_contract.Storage.Sig =
+  Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))

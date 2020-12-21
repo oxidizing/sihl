@@ -1,4 +1,4 @@
 (library
  (name sihl_queue)
  (public_name sihl-queue)
- (libraries sihl-contract sihl-persistence))
+ (libraries sihl-facade sihl-persistence))

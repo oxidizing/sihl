@@ -1,5 +1,5 @@
-module Job = Sihl_type.Queue_job
-module JobInstance = Sihl_type.Queue_job_instance
+module Job = Sihl_contract.Queue_job
+module JobInstance = Sihl_contract.Queue_job_instance
 module Map = Map.Make (String)
 
 module type Sig = sig
@@ -20,7 +20,7 @@ module Memory : Sig = struct
       ordered_ids := [];
       Lwt.return ()
     in
-    Sihl_persistence.Repository.register_cleaner cleaner
+    Sihl_core.Cleaner.register_cleaner cleaner
   ;;
 
   let register_migration () = ()
@@ -200,13 +200,13 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
   module Migration = struct
     let fix_collation =
-      Sihl_type.Migration.create_step
+      Sihl_contract.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci';"
     ;;
 
     let create_jobs_table =
-      Sihl_type.Migration.create_step
+      Sihl_contract.Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -225,11 +225,11 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
 
     let migration =
-      Sihl_type.Migration.(
+      Sihl_contract.Migration.(
         empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
     ;;
   end
 
-  let register_cleaner () = Sihl_persistence.Repository.register_cleaner clean
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
   let register_migration () = MigrationService.register_migration Migration.migration
 end

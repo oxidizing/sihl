@@ -1,10 +1,11 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create "sihl.container"
+let log_src = Logs.Src.create "sihl.core.container"
+let () = Printexc.record_backtrace true
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-exception Exception of string
+exception Exception
 
 module Lifecycle = struct
   type start = unit -> unit Lwt.t
@@ -12,13 +13,16 @@ module Lifecycle = struct
 
   type t =
     { name : string
-    ; dependencies : t list
+    ; dependencies : unit -> t list
     ; start : start
     ; stop : stop
     }
 
   let name lifecycle = lifecycle.name
-  let create ?(dependencies = []) name ~start ~stop = { name; dependencies; start; stop }
+
+  let create ?(dependencies = fun () -> []) name ~start ~stop =
+    { name; dependencies; start; stop }
+  ;;
 end
 
 module Service = struct
@@ -54,7 +58,7 @@ module Map = Map.Make (String)
 
 let collect_all_lifecycles lifecycles =
   let rec collect_lifecycles lifecycle =
-    match lifecycle.Lifecycle.dependencies with
+    match lifecycle.Lifecycle.dependencies () with
     | [] -> [ lifecycle ]
     | lifecycles ->
       List.cons
@@ -79,7 +83,8 @@ let top_sort_lifecycles lifecycles =
     |> List.of_seq
     |> List.map (fun (name, lifecycle) ->
            let dependencies =
-             lifecycle.Lifecycle.dependencies |> List.map (fun dep -> dep.Lifecycle.name)
+             lifecycle.Lifecycle.dependencies ()
+             |> List.map (fun dep -> dep.Lifecycle.name)
            in
            name, dependencies)
   in
@@ -91,14 +96,15 @@ let top_sort_lifecycles lifecycles =
            | Some l -> l
            | None ->
              Logs.err (fun m -> m "Failed to sort lifecycle of: %s" name);
-             raise (Exception "Dependency graph not sortable"))
+             raise Exception)
   | Tsort.ErrorCycle remaining_names ->
     let msg = String.concat ", " remaining_names in
-    raise
-      (Exception
-         ("Cycle detected while starting services. These are the services after the \
-           cycle: "
-         ^ msg))
+    Logs.err (fun m ->
+        m
+          "Cycle detected while starting services. These are the services after the \
+           cycle: %s"
+          msg);
+    raise Exception
 ;;
 
 let start_services services =
@@ -135,4 +141,23 @@ let stop_services services =
   let* () = loop lifecycles in
   Logs.info (fun m -> m "Stopped Sihl, Good Bye!");
   Lwt.return ()
+;;
+
+let unpack name ?default service =
+  match !service, default with
+  | Some service, _ -> service
+  | None, Some default -> default
+  | None, None ->
+    Logs.err (fun m ->
+        m "%s was called before a service implementation was registered" name);
+    Logs.info (fun m ->
+        m
+          "I was not able to find a default implementation either. Please make sure to \
+           provide a implementation using Sihl.Service.<Service>.register() of %s"
+          name);
+    print_endline
+      "A service was called before it was registered. If you don't see any other output, \
+       this means that you implemented a service facade incorrectly. No log reporter was \
+       configured because this error happens at module evaluation time";
+    raise Exception
 ;;

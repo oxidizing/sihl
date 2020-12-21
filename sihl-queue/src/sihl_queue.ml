@@ -1,7 +1,7 @@
 open Lwt.Syntax
-module Job = Sihl_type.Queue_job
-module JobInstance = Sihl_type.Queue_job_instance
-module WorkableJob = Sihl_type.Queue_workable_job
+module Job = Sihl_contract.Queue_job
+module JobInstance = Sihl_contract.Queue_job_instance
+module WorkableJob = Sihl_contract.Queue_workable_job
 
 let registered_jobs : WorkableJob.t list ref = ref []
 let stop_schedule : (unit -> unit) option ref = ref None
@@ -9,8 +9,7 @@ let log_src = Logs.Src.create "sihl.service.queue"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.Sig) :
-  Sihl_contract.Queue.Sig = struct
+module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   let dispatch ~job ?delay input =
     let name = Job.name job in
     Logs.debug (fun m -> m "Dispatching job %s" name);
@@ -144,7 +143,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
         ~f:scheduled_function
         ~label:"job_queue"
     in
-    stop_schedule := Some (ScheduleService.schedule schedule);
+    stop_schedule := Some (Sihl_facade.Schedule.schedule schedule);
     Lwt.return ()
   ;;
 
@@ -164,7 +163,7 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
   let lifecycle =
     Sihl_core.Container.Lifecycle.create
       "queue"
-      ~dependencies:[ ScheduleService.lifecycle ]
+      ~dependencies:(fun () -> [ Sihl_facade.Schedule.lifecycle () ])
       ~start
       ~stop
   ;;
@@ -178,4 +177,5 @@ module MakePolling (ScheduleService : Sihl_contract.Schedule.Sig) (Repo : Repo.S
   ;;
 end
 
-module Repo = Repo
+module Memory = Make (Repo.Memory)
+module MariaDb = Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))

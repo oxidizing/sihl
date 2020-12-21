@@ -1,15 +1,15 @@
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val get : id:string -> Sihl_type.Email_template.t option Lwt.t
-  val get_by_name : name:string -> Sihl_type.Email_template.t option Lwt.t
-  val insert : template:Sihl_type.Email_template.t -> unit Lwt.t
-  val update : template:Sihl_type.Email_template.t -> unit Lwt.t
+  val get : id:string -> Sihl_contract.Email_template.t option Lwt.t
+  val get_by_name : name:string -> Sihl_contract.Email_template.t option Lwt.t
+  val insert : template:Sihl_contract.Email_template.t -> unit Lwt.t
+  val update : template:Sihl_contract.Email_template.t -> unit Lwt.t
 end
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let template =
-    let open Sihl_type.Email_template in
+    let open Sihl_contract.Email_template in
     let encode m =
       Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
     in
@@ -21,7 +21,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   module Sql = struct
-    module Model = Sihl_type.Email_template
+    module Model = Sihl_contract.Email_template
 
     let get_request =
       Caqti_request.find_opt
@@ -142,13 +142,13 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
   module Migration = struct
     let fix_collation =
-      Sihl_type.Migration.create_step
+      Sihl_contract.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci'"
     ;;
 
     let create_templates_table =
-      Sihl_type.Migration.create_step
+      Sihl_contract.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -166,13 +166,13 @@ CREATE TABLE IF NOT EXISTS email_templates (
     ;;
 
     let migration () =
-      Sihl_type.Migration.(
+      Sihl_contract.Migration.(
         empty "email" |> add_step fix_collation |> add_step create_templates_table)
     ;;
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
-  let register_cleaner () = Sihl_persistence.Repository.register_cleaner Sql.clean
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
   let get_by_name = Sql.get_by_name
   let insert = Sql.insert
@@ -181,7 +181,7 @@ end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let template =
-    let open Sihl_type.Email_template in
+    let open Sihl_contract.Email_template in
     let encode m =
       Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
     in
@@ -193,7 +193,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
   ;;
 
   module Sql = struct
-    module Model = Sihl_type.Email_template
+    module Model = Sihl_contract.Email_template
 
     let get_request =
       Caqti_request.find_opt
@@ -298,7 +298,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
 
   module Migration = struct
     let create_templates_table =
-      Sihl_type.Migration.create_step
+      Sihl_contract.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -316,12 +316,12 @@ CREATE TABLE IF NOT EXISTS email_templates (
     ;;
 
     let migration () =
-      Sihl_type.Migration.(empty "email" |> add_step create_templates_table)
+      Sihl_contract.Migration.(empty "email" |> add_step create_templates_table)
     ;;
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
-  let register_cleaner () = Sihl_persistence.Repository.register_cleaner Sql.clean
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
   let get_by_name = Sql.get_by_name
   let insert = Sql.insert

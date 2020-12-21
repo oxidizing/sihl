@@ -1,17 +1,17 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
-module Repository = Sihl_persistence.Repository
-module Migration = Sihl_type.Migration
-module Migration_state = Sihl_type.Migration_state
+module Repository = Sihl_core.Cleaner
+module Migration = Sihl_contract.Migration
+module Migration_state = Sihl_contract.Migration.State
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val find_all : unit -> Sihl_type.Session.t list Lwt.t
-  val find_opt : string -> Sihl_type.Session.t option Lwt.t
-  val find_data : Sihl_type.Session.t -> string Sihl_type.Session.Map.t Lwt.t
-  val insert : Sihl_type.Session.t -> string Sihl_type.Session.Map.t -> unit Lwt.t
-  val update : Sihl_type.Session.t -> string Sihl_type.Session.Map.t -> unit Lwt.t
+  val find_all : unit -> Sihl_contract.Session.t list Lwt.t
+  val find_opt : string -> Sihl_contract.Session.t option Lwt.t
+  val find_data : Sihl_contract.Session.t -> string Sihl_contract.Session.Map.t Lwt.t
+  val insert : Sihl_contract.Session.t -> string Sihl_contract.Session.Map.t -> unit Lwt.t
+  val update : Sihl_contract.Session.t -> string Sihl_contract.Session.Map.t -> unit Lwt.t
   val delete : string -> unit Lwt.t
 end
 
@@ -21,7 +21,7 @@ type k_v = (string * string) list [@@deriving yojson]
 
 let string_of_data data =
   data
-  |> Sihl_type.Session.Map.to_seq
+  |> Sihl_contract.Session.Map.to_seq
   |> List.of_seq
   |> k_v_to_yojson
   |> Yojson.Safe.to_string
@@ -32,11 +32,11 @@ let data_of_string str =
   |> Yojson.Safe.from_string
   |> k_v_of_yojson
   |> Result.map List.to_seq
-  |> Result.map Sihl_type.Session.Map.of_seq
+  |> Result.map Sihl_contract.Session.Map.of_seq
 ;;
 
 let t =
-  let open Sihl_type.Session in
+  let open Sihl_contract.Session in
   let encode m = Ok (m.key, m.expire_date) in
   let decode (key, expire_date) = Ok { key; expire_date } in
   Caqti_type.(custom ~encode ~decode (tup2 string ptime))
@@ -91,7 +91,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let find_data session =
-    let key = Sihl_type.Session.key session in
+    let key = Sihl_contract.Session.key session in
     let* data =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find find_data_request key |> Lwt.map Database.raise_error)
@@ -118,7 +118,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let insert session data_map =
-    let open Sihl_type.Session in
+    let open Sihl_contract.Session in
     let data = string_of_data data_map in
     let input = session.key, data, session.expire_date in
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
@@ -137,7 +137,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let update session data_map =
-    let open Sihl_type.Session in
+    let open Sihl_contract.Session in
     let data = string_of_data data_map in
     let input = session.key, data, session.expire_date in
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
@@ -243,7 +243,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
   ;;
 
   let find_data session =
-    let key = Sihl_type.Session.key session in
+    let key = Sihl_contract.Session.key session in
     let* data =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find find_data_request key |> Lwt.map Database.raise_error)
@@ -270,7 +270,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
   ;;
 
   let insert session data_map =
-    let open Sihl_type.Session in
+    let open Sihl_contract.Session in
     let data = string_of_data data_map in
     let input = session.key, data, session.expire_date in
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
@@ -289,7 +289,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
   ;;
 
   let update session data_map =
-    let open Sihl_type.Session in
+    let open Sihl_contract.Session in
     let data = string_of_data data_map in
     let input = session.key, data, session.expire_date in
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
