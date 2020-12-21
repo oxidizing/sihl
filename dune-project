@@ -32,6 +32,7 @@
   (ppx_deriving_yojson (>= 3.5.2))
   (tls (>= 0.11.1))
   (ssl (>= 0.5.9))
+  (uuidm (>= 0.9.7))
   (lwt_ssl (>= 1.1.3))
   (caqti (>= 1.2.1))
   (safepass (>= 3.0))
@@ -53,7 +54,6 @@
   (opium (>= 0.20.0))
   (caqti-lwt (>= 1.2.0))
   (multipart-form-data (>= 0.3.0))
-  (uuidm (>= 0.9.7))
   (alcotest (>= 1.2.0))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
