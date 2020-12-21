@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.2.2"
+version: "0.3.0"
 synopsis: "Contains Sihl service signatures"
 description:
   "Use the service contracts to implement your own services with the rest of the Sihl ecosystem."
@@ -10,7 +10,6 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "alcotest" {= "1.2.3"}
   "angstrom" {= "0.15.0"}
   "astring" {= "0.8.5"}
   "base-bigarray" {= "base"}
@@ -74,7 +73,6 @@ depends: [
   "tyxml" {= "4.4.0"}
   "uchar" {= "0.0.2"}
   "uri" {= "3.1.0"}
-  "uuidm" {= "0.9.7"}
   "uutf" {= "1.0.2"}
   "yojson" {= "1.7.0"}
 ]

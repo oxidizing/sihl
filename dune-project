@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.2.2)
+(version 0.3.0)
 
 (authors
   "Josef Erben"

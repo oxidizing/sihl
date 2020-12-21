@@ -1,3 +1,7 @@
+## [0.3.0] - ?
+### Fixed
+- Replace functor based approach with service facade pattern based approach to increase ergonomy
+
 ## [0.2.2] - 2020-12-17
 ### Fixed
 - Merge form data and urlencoded form parsing and provide them in one middleware
