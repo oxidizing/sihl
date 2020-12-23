@@ -23,7 +23,7 @@ let set id req =
   { req with env }
 ;;
 
-let m () =
+let middleware =
   let filter handler req =
     let id = Sihl_facade.Random.bytes ~nr:32 |> List.to_seq |> String.of_seq in
     let req = set id req in

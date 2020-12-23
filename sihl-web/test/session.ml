@@ -1,9 +1,11 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
+let cookie_name = "sihl_session"
+
 let multiple_requests_create_one_session _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
-  let middleware = Sihl_web.Middleware.Session.m () in
+  let middleware = Sihl_web.Session.middleware ~cookie_name () in
   let req = Opium.Request.get "" in
   let* res =
     Rock.Middleware.apply
@@ -14,7 +16,7 @@ let multiple_requests_create_one_session _ () =
   let* sessions = Sihl_facade.Session.find_all () in
   let session_value1 = sessions |> List.hd |> Sihl_contract.Session.key in
   Alcotest.(check int "Has created a session" 1 (List.length sessions));
-  let cookie = Opium.Response.cookie "sihl.session" res |> Option.get in
+  let cookie = Opium.Response.cookie cookie_name res |> Option.get in
   let cookie_value = cookie.Opium.Cookie.value in
   let* _ =
     Rock.Middleware.apply
@@ -31,10 +33,10 @@ let multiple_requests_create_one_session _ () =
 
 let requests_persist_session_variables _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
-  let middleware = Sihl_web.Middleware.Session.m () in
+  let middleware = Sihl_web.Session.middleware () in
   let req = Opium.Request.get "" in
   let handler req =
-    let session = Sihl_web.Middleware.Session.find req in
+    let session = Sihl_web.Session.find req in
     let* () = Sihl_facade.Session.set_value session ~k:"foo" ~v:(Some "bar") in
     Lwt.return @@ Opium.Response.of_plain_text ""
   in

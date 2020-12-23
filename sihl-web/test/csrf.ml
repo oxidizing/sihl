@@ -19,9 +19,9 @@ let get_secret tk =
 ;;
 
 let apply_middlewares handler =
-  let csrf_middleware = Sihl_web.Middleware.Csrf.m () in
-  let session_middleware = Sihl_web.Middleware.Session.m () in
-  let form_parser_middleware = Sihl_web.Middleware.Form_parser.m () in
+  let csrf_middleware = Sihl_web.Csrf.middleware () in
+  let session_middleware = Sihl_web.Session.middleware () in
+  let form_parser_middleware = Sihl_web.Form.middleware in
   handler
   |> Rock.Middleware.apply csrf_middleware
   |> Rock.Middleware.apply session_middleware
@@ -32,7 +32,7 @@ let get_request_yields_token _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let req = Opium.Request.get "" in
   let handler req =
-    let token_value = Sihl_web.Middleware.Csrf.find req in
+    let token_value = Sihl_web.Csrf.find req in
     Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
@@ -59,7 +59,7 @@ let two_get_requests_yield_same_token _ () =
   let token_ref1 = ref "" in
   let token_ref2 = ref "" in
   let handler tkn req =
-    tkn := Sihl_web.Middleware.Csrf.find req;
+    tkn := Sihl_web.Csrf.find req;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler1 = apply_middlewares (handler token_ref1) in
@@ -82,7 +82,7 @@ let post_request_yields_token _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let post_req = Opium.Request.of_urlencoded ~body:[] "/foo" `POST in
   let handler req =
-    let token_value = Sihl_web.Middleware.Csrf.find req in
+    let token_value = Sihl_web.Csrf.find req in
     Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
@@ -112,7 +112,7 @@ let post_request_with_invalid_b64_token_fails _ () =
   Lwt.catch
     (fun () -> wrapped_handler post_req |> Lwt.map ignore)
     (function
-      | Sihl_web.Middleware.Csrf.Crypto_failed txt ->
+      | Sihl_web.Csrf.Crypto_failed txt ->
         Alcotest.(check string "Raises" "Failed to decode CSRF token. Wrong padding" txt);
         Lwt.return ()
       | exn -> Lwt.fail exn)
@@ -128,7 +128,7 @@ let post_request_with_invalid_token_fails _ () =
   Lwt.catch
     (fun () -> wrapped_handler post_req |> Lwt.map ignore)
     (function
-      | Sihl_web.Middleware.Csrf.Crypto_failed txt ->
+      | Sihl_web.Csrf.Crypto_failed txt ->
         Alcotest.(check string "Raises" "Failed to decrypt CSRF token" txt);
         Lwt.return ()
       | exn -> Lwt.fail exn)
@@ -140,7 +140,7 @@ let post_request_with_nonmatching_token_fails _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let token_ref = ref "" in
   let handler req =
-    token_ref := Sihl_web.Middleware.Csrf.find req;
+    token_ref := Sihl_web.Csrf.find req;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
@@ -184,7 +184,7 @@ let post_request_with_valid_token_succeeds _ () =
   let token_ref1 = ref "" in
   let token_ref2 = ref "" in
   let handler tkn req =
-    tkn := Sihl_web.Middleware.Csrf.find req;
+    tkn := Sihl_web.Csrf.find req;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref1 in
@@ -214,7 +214,7 @@ let two_post_requests_succeed _ () =
   let token_ref2 = ref "" in
   let token_ref3 = ref "" in
   let handler tkn req =
-    tkn := Sihl_web.Middleware.Csrf.find req;
+    tkn := Sihl_web.Csrf.find req;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref1 in

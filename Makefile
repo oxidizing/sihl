@@ -20,7 +20,6 @@ test-mariadb: build
 	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-user/test/token_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-user/test/user_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-user/test/authn_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/session_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/flash_mariadb.exe
