@@ -68,10 +68,10 @@ let secret_to_token secret =
   |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet
 ;;
 
-let m ?not_allowed_handler () =
+let middleware ?not_allowed_handler () =
   let filter handler req =
     (* Check if session already has a secret (token) *)
-    let session = Middleware_session.find req in
+    let session = Session.find req in
     let* id = Sihl_facade.Session.find_value session "csrf" in
     let* secret =
       match id with
@@ -103,7 +103,7 @@ let m ?not_allowed_handler () =
     if is_safe
     then handler req
     else (
-      let req, value = Form_parser.consume req "csrf" in
+      let req, value = Form.consume req "csrf" in
       match value with
       (* Give 403 if no token provided *)
       | None ->

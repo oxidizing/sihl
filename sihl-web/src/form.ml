@@ -44,7 +44,7 @@ let consume req k =
   req, value
 ;;
 
-let m () =
+let middleware =
   let filter handler req =
     match req.Opium.Request.meth with
     (* While GET requests can have bodies, they don't have any meaning and can be ignored.

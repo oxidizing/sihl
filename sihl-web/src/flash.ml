@@ -27,10 +27,10 @@ let set flash res =
   { res with env }
 ;;
 
-let m ?(flash_store_name = "flash.store") () =
+let middleware ?(flash_store_name = "flash.store") () =
   let open Lwt.Syntax in
   let filter handler req =
-    let session = Middleware_session.find req in
+    let session = Session.find req in
     let* current_flash = Sihl_facade.Session.find_value session flash_store_name in
     let env = req.Opium.Request.env in
     let env = Opium.Context.add key current_flash env in

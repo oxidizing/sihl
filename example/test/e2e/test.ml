@@ -3,7 +3,6 @@ let services =
   ; Sihl_facade.Migration.register (module Sihl_persistence.Migration.PostgreSql)
   ; Sihl_facade.User.register (module Sihl_user.User.PostgreSql)
   ; Sihl_facade.Session.register (module Sihl_user.Session.PostgreSql)
-  ; Sihl_facade.Authn.register (module Sihl_user.Authn)
   ]
 ;;
 

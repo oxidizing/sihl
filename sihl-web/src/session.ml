@@ -37,7 +37,7 @@ let add_session_cookie cookie_name session_key signer res =
     res
 ;;
 
-let m ?(cookie_name = "sihl.session") () =
+let middleware ?(cookie_name = "sihl_session") () =
   let open Lwt.Syntax in
   let filter handler req =
     let secret = Sihl_core.Configuration.read_secret () in

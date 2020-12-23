@@ -32,8 +32,7 @@ end
 (* Web module *)
 module Web = struct
   module Route = Sihl_contract.Http
-  module Http = Sihl_web.Http
-  module Middleware = Sihl_web.Middleware
+  include Sihl_web
 
   module Setup = struct
     let opium = (module Sihl_web.Http : Sihl_contract.Http.Sig)
@@ -106,19 +105,6 @@ module Security = struct
 
       let register ?(implementation = default) () =
         Sihl_facade.Password_reset.register implementation
-      ;;
-    end
-  end
-
-  module Authn = struct
-    include Sihl_contract.Authn
-    include Sihl_facade.Authn
-
-    module Setup = struct
-      let default = (module Sihl_user.Authn : Sihl_contract.Authn.Sig)
-
-      let register ?(implementation = default) () =
-        Sihl_facade.Authn.register implementation
       ;;
     end
   end
