@@ -23,6 +23,7 @@ test-mariadb: build
 	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/session_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/flash_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-web/test/user_mariadb.exe
 
 test-postgresql: build
 	SIHL_ENV=test ./_build/default/sihl-email/test/email_postgresql.exe
