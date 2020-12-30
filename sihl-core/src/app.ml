@@ -42,6 +42,11 @@ let starting_commands service =
     (Container.Service.commands service)
 ;;
 
+let run_forever () =
+  let p, _ = Lwt.wait () in
+  p
+;;
+
 let start_cmd services =
   Command.make ~name:"start" ~help:"" ~description:"Start the Sihl app" (fun _ ->
       let normal_services =
@@ -54,7 +59,8 @@ let start_cmd services =
       match server_services with
       | [ server ] ->
         let* _ = Container.start_services normal_services in
-        Container.Service.start server
+        let* () = Container.Service.start server in
+        run_forever ()
       | [] ->
         Logger.err (fun m ->
             m
