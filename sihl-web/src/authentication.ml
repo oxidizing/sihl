@@ -14,7 +14,7 @@ let key_login : credentials Opium.Context.key =
   Opium.Context.Key.create ("authenticate.login", sexp_of_credentials)
 ;;
 
-let login email password res =
+let login ~email ~password res =
   let env = res.Opium.Response.env in
   let credentials = { email; password } in
   let env = Opium.Context.add key_login credentials env in
@@ -71,7 +71,7 @@ let token_middleware ?(key = "token") ?(error_handler = default_json_error_handl
       | Error error -> error_handler error
       | Ok user ->
         let user_id = Sihl_contract.User.id user in
-        let* token = Sihl_facade.Token.create ~kind:"authn" ~data:user_id () in
+        let* token = Sihl_facade.Token.create ~kind:"auth" ~data:user_id () in
         let msg = Format.sprintf {|{"%s": "%s"}|} key token.Sihl_contract.Token.value in
         Lwt.return
           (Opium.Response.of_plain_text msg

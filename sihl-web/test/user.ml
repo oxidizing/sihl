@@ -5,11 +5,15 @@ let token_alco = Alcotest.testable Sihl_contract.Token.pp Sihl_contract.Token.eq
 
 let apply_middlewares handler =
   let token = Sihl_web.Bearer_token.middleware in
-  let user = Sihl_web.User.token_middleware in
-  handler |> Rock.Middleware.apply user |> Rock.Middleware.apply token
+  let authentication = Sihl_web.Authentication.token_middleware () in
+  let user = Sihl_web.User.token_middleware () in
+  handler
+  |> Rock.Middleware.apply user
+  |> Rock.Middleware.apply authentication
+  |> Rock.Middleware.apply token
 ;;
 
-let bearer_token_login _ () =
+let bearer_token_fetch_user _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
     Sihl_facade.User.create_user
@@ -23,6 +27,44 @@ let bearer_token_login _ () =
   let token_header = Format.sprintf "Bearer %s" (Sihl_contract.Token.value token) in
   let req =
     Opium.Request.get "/some/path/login"
+    |> Opium.Request.add_header ("authorization", token_header)
+  in
+  let handler req =
+    let user = Sihl_web.User.find req in
+    let email = Sihl_contract.User.email user in
+    Alcotest.(check string "has same email" "foo@example.com" email);
+    Lwt.return @@ Opium.Response.of_plain_text ""
+  in
+  let wrapped_handler = apply_middlewares handler in
+  let* _ = wrapped_handler req in
+  Lwt.return ()
+;;
+
+type token = { token : string } [@@deriving yojson]
+
+let bearer_token_login _ () =
+  let* () = Sihl_core.Cleaner.clean_all () in
+  let* _ =
+    Sihl_facade.User.create_user
+      ~email:"foo@example.com"
+      ~password:"123123"
+      ~username:None
+  in
+  let req = Opium.Request.get "/some/path/login" in
+  let handler _ =
+    let res = Opium.Response.of_plain_text "" in
+    let res =
+      Sihl_web.Authentication.login ~email:"foo@example.com" ~password:"123123" res
+    in
+    Lwt.return res
+  in
+  let wrapped_handler = apply_middlewares handler in
+  let* resp = wrapped_handler req in
+  let* json = Opium.Response.to_json_exn resp in
+  let { token } = token_of_yojson json |> Result.get_ok in
+  let token_header = Format.sprintf "Bearer %s" token in
+  let req =
+    Opium.Request.get "/some/api/path"
     |> Opium.Request.add_header ("authorization", token_header)
   in
   let handler req =
@@ -76,8 +118,9 @@ let bearer_token_logout _ () =
 
 let suite =
   [ ( "user"
-    , [ test_case "login with bearer token" `Quick bearer_token_login
-      ; test_case "logout with bearer token" `Quick bearer_token_logout
+    , [ test_case "bearer token fetch user" `Quick bearer_token_fetch_user
+      ; test_case "bearer token login" `Quick bearer_token_login
+      ; test_case "bearer token logout" `Quick bearer_token_logout
       ] )
   ]
 ;;
