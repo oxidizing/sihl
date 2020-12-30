@@ -68,8 +68,8 @@ let token_middleware =
   let open Lwt.Syntax in
   let filter handler req =
     match Bearer_token.find_opt req with
-    | Some token ->
-      let* token = Sihl_facade.Token.find token in
+    | Some token_value ->
+      let* token = Sihl_facade.Token.find token_value in
       let* user =
         match token.Sihl_contract.Token.data with
         | Some user_id -> Sihl_facade.User.find_opt ~user_id
@@ -82,7 +82,10 @@ let token_middleware =
         let env = resp.Opium.Response.env in
         (match Opium.Context.find key_logout env with
         | None -> Lwt.return resp
-        | Some () -> failwith "todo")
+        | Some () ->
+          let* token = Sihl_facade.Token.find token_value in
+          let* () = Sihl_facade.Token.invalidate token in
+          Lwt.return resp)
       | None -> handler req)
     | None -> handler req
   in
