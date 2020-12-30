@@ -6,7 +6,7 @@ let token_alco = Alcotest.testable Sihl_contract.Token.pp Sihl_contract.Token.eq
 let apply_middlewares handler =
   let token = Sihl_web.Bearer_token.middleware in
   let user = Sihl_web.User.token_middleware in
-  handler |> Rock.Middleware.apply token |> Rock.Middleware.apply user
+  handler |> Rock.Middleware.apply user |> Rock.Middleware.apply token
 ;;
 
 let login_with_bearer_token _ () =
