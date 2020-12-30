@@ -1,4 +1,4 @@
-let log_src = Logs.Src.create "sihl.middleware.user.session"
+let log_src = Logs.Src.create "sihl.middleware.user"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -27,38 +27,14 @@ let set user req =
   { req with env }
 ;;
 
-let key_login : Sihl_contract.User.t option Opium.Context.key =
-  Opium.Context.Key.create
-    ("user.login", Sexplib.Std.sexp_of_option Sihl_contract.User.sexp_of_t)
-;;
-
-let login user res =
-  let env = res.Opium.Response.env in
-  let env = Opium.Context.add key_login (Some user) env in
-  { res with env }
+let key_logout : unit Opium.Context.key =
+  Opium.Context.Key.create ("user.logout", Sexplib.Std.sexp_of_unit)
 ;;
 
 let logout res =
   let env = res.Opium.Response.env in
-  let env = Opium.Context.add key_login None env in
+  let env = Opium.Context.add key_logout () env in
   { res with env }
-;;
-
-let handle_login_logout_session resp key session =
-  let open Lwt.Syntax in
-  let env = resp.Opium.Response.env in
-  match Opium.Context.find key_login env with
-  | Some (Some user) ->
-    let* () =
-      Sihl_facade.Session.set_value session ~k:key ~v:(Some (Sihl_contract.User.id user))
-    in
-    Lwt.return resp
-  | Some None ->
-    let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
-    Lwt.return resp
-  | None ->
-    (* Nothing to do, whether login nor logout was called *)
-    Lwt.return resp
 ;;
 
 let session_middleware ?(key = "authn") () =
@@ -76,48 +52,16 @@ let session_middleware ?(key = "authn") () =
       | Some user ->
         let req = set user req in
         let* resp = handler req in
-        handle_login_logout_session resp key session
-      | None ->
-        let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
-        let* resp = handler req in
-        handle_login_logout_session resp key session)
-    | None ->
-      let* resp = handler req in
-      let env = resp.Opium.Response.env in
-      let () =
-        match Opium.Context.find key_login env with
-        | Some (Some _) ->
-          Logs.warn (fun m ->
-              m
-                "You called Sihl.Web.User.login(), but I didn't find a session that I \
-                 can authenticate. Make sure that Sihl.Web.Session.middleware is \
-                 registered before Sihl.Web.User.middleware_session")
-        | Some None ->
-          Logs.warn (fun m ->
-              m
-                "You called Sihl.Web.User.logout(), but I didn't find a session that I \
-                 can unauthenticate. Make sure that Sihl.Web.Session.middleware is \
-                 registered before Sihl.Web.User.middleware_session")
-        | None -> ()
-      in
-      Lwt.return resp
+        let env = resp.Opium.Response.env in
+        (match Opium.Context.find key_logout env with
+        | None -> Lwt.return resp
+        | Some () ->
+          let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
+          Lwt.return resp)
+      | None -> handler req)
+    | None -> handler req
   in
   Rock.Middleware.create ~name:"user.session" ~filter
-;;
-
-let handle_login_logout_token resp token =
-  let env = resp.Opium.Response.env in
-  match Opium.Context.find key_login env with
-  | Some (Some _) ->
-    token |> ignore;
-    (* TODO [jerben] 1. create session token 2. associate user with token 3. update token *)
-    Lwt.return resp
-  | Some None ->
-    (* TODO [jerben] 1. find token 2. remove token *)
-    Lwt.return resp
-  | None ->
-    (* Nothing to do, whether login nor logout was called *)
-    Lwt.return resp
 ;;
 
 let token_middleware =
@@ -135,30 +79,12 @@ let token_middleware =
       | Some user ->
         let req = set user req in
         let* resp = handler req in
-        handle_login_logout_token resp token
-      | None ->
-        let* resp = handler req in
-        handle_login_logout_token resp token)
-    | None ->
-      let* resp = handler req in
-      let env = resp.Opium.Response.env in
-      let () =
-        match Opium.Context.find key_login env with
-        | Some (Some _) ->
-          Logs.warn (fun m ->
-              m
-                "You called Sihl.Web.User.login(), but I didn't find a token that I can \
-                 authenticate. Make sure that Sihl.Web.Bearer_token.middleware is \
-                 registered before Sihl.Web.User.middleware_token")
-        | Some None ->
-          Logs.warn (fun m ->
-              m
-                "You called Sihl.Web.User.logout(), but I didn't find a token that I can \
-                 unauthenticate. Make sure that Sihl.Web.Bearer_token.middleware is \
-                 registered before Sihl.Web.User.middleware_token")
-        | None -> ()
-      in
-      Lwt.return resp
+        let env = resp.Opium.Response.env in
+        (match Opium.Context.find key_logout env with
+        | None -> Lwt.return resp
+        | Some () -> failwith "todo")
+      | None -> handler req)
+    | None -> handler req
   in
   Rock.Middleware.create ~name:"user.token" ~filter
 ;;
