@@ -6,8 +6,20 @@ let key : Sihl_contract.User.t Opium.Context.key =
   Opium.Context.Key.create ("user", Sihl_contract.User.sexp_of_t)
 ;;
 
-let find req = Opium.Context.find_exn key req.Opium.Request.env
-let find_opt req = Opium.Context.find key req.Opium.Request.env
+exception User_not_found
+
+let find req =
+  try Opium.Context.find_exn key req.Opium.Request.env with
+  | _ ->
+    Logs.err (fun m -> m "No user found");
+    Logs.info (fun m -> m "Have you applied the user middleware for this route?");
+    raise User_not_found
+;;
+
+let find_opt req =
+  try Some (find req) with
+  | _ -> None
+;;
 
 let set user req =
   let env = req.Opium.Request.env in
