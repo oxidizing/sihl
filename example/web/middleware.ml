@@ -19,6 +19,6 @@ let json_api () =
   ; Sihl.Web.Error.json_middleware
   ; Sihl.Web.Json.middleware
   ; Sihl.Web.Bearer_token.middleware
-  ; Sihl.Web.User.token_middleware
+  ; Sihl.Web.User.token_middleware ()
   ]
 ;;
