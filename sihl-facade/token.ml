@@ -3,34 +3,44 @@ open Sihl_core.Container
 
 let instance : (module Sig) option ref = ref None
 
-let create ~kind ?data ?expires_in ?length () =
+let create ?secret ?expires_in data =
   let module Service = (val unpack name instance : Sig) in
-  Service.create ~kind ?data ?expires_in ?length ()
+  Service.create ?secret ?expires_in data
 ;;
 
-let find str =
+let read ?secret ?force token ~k =
   let module Service = (val unpack name instance : Sig) in
-  Service.find str
+  Service.read ?secret ?force token ~k
 ;;
 
-let find_opt str =
+let read_all ?secret ?force token =
   let module Service = (val unpack name instance : Sig) in
-  Service.find_opt str
+  Service.read_all ?secret ?force token
 ;;
 
-let find_by_id id =
+let verify ?secret token =
   let module Service = (val unpack name instance : Sig) in
-  Service.find_opt id
+  Service.verify ?secret token
 ;;
 
-let find_by_id_opt id =
+let deactivate token =
   let module Service = (val unpack name instance : Sig) in
-  Service.find_by_id_opt id
+  Service.deactivate token
 ;;
 
-let invalidate token =
+let is_active token =
   let module Service = (val unpack name instance : Sig) in
-  Service.invalidate token
+  Service.is_active token
+;;
+
+let is_expired ?secret token =
+  let module Service = (val unpack name instance : Sig) in
+  Service.is_expired ?secret token
+;;
+
+let is_valid ?secret token =
+  let module Service = (val unpack name instance : Sig) in
+  Service.is_valid ?secret token
 ;;
 
 let lifecycle () =

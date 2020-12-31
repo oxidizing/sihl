@@ -2,7 +2,7 @@ open Lwt.Syntax
 
 let services =
   [ Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
-  ; Sihl_facade.Token.register (module Sihl_user.Token.MariaDb)
+  ; Sihl_facade.Token.register (module Sihl_token.Token.MariaDb)
   ; Sihl_facade.Session.register (module Sihl_user.Session.MariaDb)
   ]
 ;;

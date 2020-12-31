@@ -115,7 +115,7 @@ module Security = struct
 
     module Setup = struct
       let register = Sihl_facade.Token.register
-      let mariadb = (module Sihl_user.Token.MariaDb : Sihl_contract.Token.Sig)
+      let mariadb = (module Sihl_token.Token.MariaDb : Sihl_contract.Token.Sig)
     end
   end
 

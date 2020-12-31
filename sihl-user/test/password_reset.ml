@@ -9,7 +9,6 @@ let reset_password_suceeds _ () =
     |> Lwt.map (Option.to_result ~none:"User with email not found")
     |> Lwt.map Result.get_ok
   in
-  let token = Sihl_contract.Token.value token in
   let* () =
     Sihl_facade.Password_reset.reset_password
       ~token

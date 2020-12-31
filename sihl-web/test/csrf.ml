@@ -1,8 +1,6 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
-let token_alco = Alcotest.testable Sihl_contract.Token.pp Sihl_contract.Token.equal
-
 let get_secret tk =
   tk
   |> Base64.decode ~alphabet:Base64.uri_safe_alphabet
@@ -19,13 +17,10 @@ let get_secret tk =
 ;;
 
 let apply_middlewares handler =
-  let csrf_middleware = Sihl_web.Csrf.middleware () in
-  let session_middleware = Sihl_web.Session.middleware () in
-  let form_parser_middleware = Sihl_web.Form.middleware in
   handler
-  |> Rock.Middleware.apply csrf_middleware
-  |> Rock.Middleware.apply session_middleware
-  |> Rock.Middleware.apply form_parser_middleware
+  |> Rock.Middleware.apply (Sihl_web.Csrf.middleware ())
+  |> Rock.Middleware.apply Sihl_web.Form.middleware
+  |> Rock.Middleware.apply (Sihl_web.Session.middleware ())
 ;;
 
 let get_request_yields_token _ () =
@@ -33,7 +28,7 @@ let get_request_yields_token _ () =
   let req = Opium.Request.get "" in
   let handler req =
     let token_value = Sihl_web.Csrf.find req in
-    Alcotest.(check bool "Has CSRF token" true (not @@ String.equal "" token_value));
+    Alcotest.(check bool "Has CSRF token" true (String.length token_value > 0));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
@@ -201,8 +196,7 @@ let post_request_with_valid_token_succeeds _ () =
   let* response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
-  let* token = Sihl_facade.Token.find_opt !token_ref1 in
-  Alcotest.(check (option token_alco) "Token is invalidated" None token);
+  Alcotest.(check bool "Has changed token" false (String.equal !token_ref1 !token_ref2));
   Lwt.return ()
 ;;
 
@@ -234,10 +228,7 @@ let two_post_requests_succeed _ () =
   let* response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
-  let* token = Sihl_facade.Token.find_opt !token_ref1 in
-  Alcotest.(check (option token_alco) "Token is invalidated" None token);
   (* Do second POST *)
-  (* TODO [aerben] do opium everywhere *)
   Alcotest.(
     check
       bool
@@ -255,8 +246,7 @@ let two_post_requests_succeed _ () =
   let* response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
-  let* token = Sihl_facade.Token.find_opt !token_ref2 in
-  Alcotest.(check (option token_alco) "Token is invalidated" None token);
+  Alcotest.(check bool "Has changed token" false (String.equal !token_ref2 !token_ref3));
   Lwt.return ()
 ;;
 

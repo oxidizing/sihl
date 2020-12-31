@@ -9,7 +9,7 @@ type body = (string * string list) list [@@deriving sexp]
 
 exception Parsed_body_not_found
 
-let key : body Opium.Context.key = Opium.Context.Key.create ("body", sexp_of_body)
+let key : body Opium.Context.key = Opium.Context.Key.create ("form", sexp_of_body)
 
 let find_all req =
   match Opium.Context.find key req.Opium.Request.env with
@@ -47,8 +47,6 @@ let consume req k =
 let middleware =
   let filter handler req =
     match req.Opium.Request.meth with
-    (* While GET requests can have bodies, they don't have any meaning and can be ignored.
-       Forms only support POST and GET as action methods. *)
     | `POST ->
       let content_type =
         try
@@ -74,7 +72,13 @@ let middleware =
         let req = { req with env } in
         handler req
       | _ -> handler req)
-    | _ -> handler req
+    | _ ->
+      (* While GET requests can have bodies, they don't have any meaning and can be
+         ignored. Forms only support POST and GET as action methods. *)
+      let env = req.Opium.Request.env in
+      let env = Opium.Context.add key [] env in
+      let req = { req with env } in
+      handler req
   in
   Rock.Middleware.create ~name:"formparser" ~filter
 ;;

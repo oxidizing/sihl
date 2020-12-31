@@ -1,49 +1,3 @@
-module Data = struct
-  type t = { user_id : string } [@@deriving yojson, make, fields]
-end
-
-module Status = struct
-  type t =
-    | Active
-    | Inactive
-  [@@deriving yojson, show, eq]
-
-  let to_string = function
-    | Active -> "active"
-    | Inactive -> "inactive"
-  ;;
-
-  let of_string str =
-    match str with
-    | "active" -> Ok Active
-    | "inactive" -> Ok Inactive
-    | _ -> Error (Printf.sprintf "Invalid token status %s provided" str)
-  ;;
-end
-
-type t =
-  { id : string
-  ; value : string
-  ; data : string option
-  ; kind : string
-  ; status : Status.t
-  ; expires_at : Ptime.t
-  ; created_at : Ptime.t
-  }
-[@@deriving fields, show, eq]
-
-let make ~id ~value ~data ~kind ~status ~expires_at ~created_at =
-  { id; value; data; kind; status; expires_at; created_at }
-;;
-
-let invalidate token = { token with status = Inactive }
-
-let is_valid token =
-  Status.equal token.status Status.Active
-  && Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())
-;;
-
-(* Signature *)
 exception Exception of string
 
 let name = "sihl.service.token"
@@ -51,35 +5,56 @@ let name = "sihl.service.token"
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
-  (** Create a token and store a token.
-
-      Provide [expires_in] to define a duration in which the token is valid, default is
-      one day. Provide [data] to store optional data as string. Provide [length] to define
-      the length of the token in bytes. *)
+  (** [create ?expires_in ?secret data] returns a token that expires in [expires_in] with
+      the associated data [data]. If no [expires_in] is set, the default is 7 days. An
+      optional secret [secret] can be provided for the token signature, by default
+      `SIHL_SECRET` is used. *)
   val create
-    :  kind:string
-    -> ?data:string
+    :  ?secret:string
     -> ?expires_in:Sihl_core.Time.duration
-    -> ?length:int
-    -> unit
-    -> t Lwt.t
+    -> (string * string) list
+    -> string Lwt.t
 
-  (** Returns an active and non-expired token. Raises [Failure] if no token is found. *)
-  val find : string -> t Lwt.t
+  (** [read ?secret ?force token k] returns the value that is associated with the key [k]
+      in the token [token]. If [force] is set, the value is read and returned even if the
+      token is expired, deactivated and the signature is invalid. If the token is
+      completely invalid and can not be read, no value is returned. An optional secret
+      [secret] can be provided to override the default `SIHL_SECRET`. *)
+  val read : ?secret:string -> ?force:unit -> string -> k:string -> string option Lwt.t
 
-  (** Returns an active and non-expired token. *)
-  val find_opt : string -> t option Lwt.t
+  (** [read_all ?secret ?force token] returns all key-value pairs associated with the
+      token [token]. If [force] is set, the values are read and returned even if the token
+      is expired, deactivated and the signature is invalid. If the token is completely
+      invalid and can not be read, no value is returned. An optional secret [secret] can
+      be provided to override the default `SIHL_SECRET`.*)
+  val read_all
+    :  ?secret:string
+    -> ?force:unit
+    -> string
+    -> (string * string) list option Lwt.t
 
-  (** Returns an active and non-expired token by id. Raises [Failure] if no token is
-      found. *)
-  val find_by_id : string -> t Lwt.t
+  (** [verify ?secret token] returns true if the token has a valid structure and the
+      signature is valid, false otherwise. An optional secret [secret] can be provided to
+      override the default `SIHL_SECRET`. *)
+  val verify : ?secret:string -> string -> bool Lwt.t
 
-  (** Returns an active and non-expired token by id. *)
-  val find_by_id_opt : string -> t option Lwt.t
+  (** [deactivate token] deactivates the token. Depending on the backend of the token
+      service a blacklist is used to store the token. *)
+  val deactivate : string -> unit Lwt.t
 
-  (** Invalidate a token by marking it as such in the database and therefore marking it
-      "to be deleted" *)
-  val invalidate : t -> unit Lwt.t
+  (** [is_active token] returns true if the token is active, false if the token was
+      deactivated. An expired token or a token that has an invalid signature is not
+      necessarily inactive.*)
+  val is_active : string -> bool Lwt.t
+
+  (** [is_expired token] returns true if the token is expired, false otherwise. An
+      optional secret [secret] can be provided to override the default `SIHL_SECRET`. *)
+  val is_expired : ?secret:string -> string -> bool Lwt.t
+
+  (** [is_valid token] returns true if the token is not expired, active and the signature
+      is valid and false otherwise. A valid token can safely be used. An optional secret
+      [secret] can be provided to override the default `SIHL_SECRET`. *)
+  val is_valid : ?secret:string -> string -> bool Lwt.t
 
   val register : unit -> Sihl_core.Container.Service.t
 end
