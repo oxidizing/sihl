@@ -11,6 +11,7 @@ test-unit: build
 
 test-memory: build
 	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_memory.exe
+	SIHL_ENV=test ./_build/default/sihl-web/test/bearer_token.exe
 
 test-mariadb: build
 	SIHL_ENV=test ./_build/default/sihl-email/test/email_mariadb.exe
