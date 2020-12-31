@@ -1,8 +1,8 @@
 open Lwt.Syntax
 
 let services =
-  [ Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
-  ; Sihl_facade.User.register (module Sihl_user.User.MariaDb)
+  [ Sihl_persistence.Database.register ()
+  ; Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
   ; Sihl_facade.Token.register (module Sihl_token.Token.MariaDb)
   ]
 ;;
@@ -14,5 +14,5 @@ let () =
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
      let* () = Sihl_facade.Migration.run_all () in
-     Alcotest_lwt.run "mariadb user" User.suite)
+     Alcotest_lwt.run "token service" Token.suite)
 ;;

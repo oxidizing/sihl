@@ -3,7 +3,7 @@ opam-version: "2.0"
 version: "0.3.0"
 synopsis: "Contains Sihl services to deal with user related topics"
 description:
-  "Use this package to handle tokens, sessions, users, flash messages and password reset workflows."
+  "Use this package to handle sessions, users, flash messages and password reset workflows."
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"

@@ -71,8 +71,8 @@ let token_middleware ?(key = "token") ?(error_handler = default_json_error_handl
       | Error error -> error_handler error
       | Ok user ->
         let user_id = Sihl_contract.User.id user in
-        let* token = Sihl_facade.Token.create ~kind:"auth" ~data:user_id () in
-        let msg = Format.sprintf {|{"%s": "%s"}|} key token.Sihl_contract.Token.value in
+        let* token = Sihl_facade.Token.create [ "user_id", user_id ] in
+        let msg = Format.sprintf {|{"%s": "%s"}|} key token in
         Lwt.return
           (Opium.Response.of_plain_text msg
           |> Opium.Response.set_content_type "application/json"))

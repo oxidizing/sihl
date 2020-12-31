@@ -1,8 +1,6 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
-let token_alco = Alcotest.testable Sihl_contract.Token.pp Sihl_contract.Token.equal
-
 let apply_middlewares handler =
   let token = Sihl_web.Bearer_token.middleware in
   let authentication = Sihl_web.Authentication.token_middleware () in
@@ -21,10 +19,8 @@ let bearer_token_fetch_user _ () =
       ~password:"123123"
       ~username:None
   in
-  let* token =
-    Sihl_facade.Token.create ~kind:"auth" ~data:(Sihl_contract.User.id user) ()
-  in
-  let token_header = Format.sprintf "Bearer %s" (Sihl_contract.Token.value token) in
+  let* token = Sihl_facade.Token.create [ "user_id", Sihl_contract.User.id user ] in
+  let token_header = Format.sprintf "Bearer %s" token in
   let req =
     Opium.Request.get "/some/path/login"
     |> Opium.Request.add_header ("authorization", token_header)
@@ -86,10 +82,8 @@ let bearer_token_logout _ () =
       ~password:"123123"
       ~username:None
   in
-  let* token =
-    Sihl_facade.Token.create ~kind:"auth" ~data:(Sihl_contract.User.id user) ()
-  in
-  let token_header = Format.sprintf "Bearer %s" (Sihl_contract.Token.value token) in
+  let* token = Sihl_facade.Token.create [ "user_id", Sihl_contract.User.id user ] in
+  let token_header = Format.sprintf "Bearer %s" token in
   let req =
     Opium.Request.get "/some/path/login"
     |> Opium.Request.add_header ("authorization", token_header)

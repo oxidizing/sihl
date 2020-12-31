@@ -7,7 +7,7 @@ module type Sig = sig
 
       Returns [None] if there is no user with [email]. The reset token can be used with
       [reset_password] to set the password without knowing the old password. *)
-  val create_reset_token : email:string -> Token.t option Lwt.t
+  val create_reset_token : email:string -> string option Lwt.t
 
   (** Set the password of a user associated with the reset [token]. *)
   val reset_password

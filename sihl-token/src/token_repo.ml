@@ -2,24 +2,47 @@ module Database = Sihl_persistence.Database
 module Repository = Sihl_core.Cleaner
 module Migration = Sihl_contract.Migration
 module Migration_state = Sihl_contract.Migration.State
-module Model = Sihl_contract.Token
 
-module type Sig = sig
-  val register_migration : unit -> unit
-  val register_cleaner : unit -> unit
-  val find_opt : value:string -> Sihl_contract.Token.t option Lwt.t
-  val find_by_id_opt : id:string -> Sihl_contract.Token.t option Lwt.t
-  val insert : token:Sihl_contract.Token.t -> unit Lwt.t
-  val update : token:Sihl_contract.Token.t -> unit Lwt.t
-end
+module Model = struct
+  module Data = struct
+    type t = (string * string) list [@@deriving yojson]
 
-module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open Sihl_contract.Token
+    let to_string data = data |> to_yojson |> Yojson.Safe.to_string
+    let of_string str = str |> Yojson.Safe.from_string |> of_yojson
+  end
 
-  let token =
+  module Status = struct
+    type t =
+      | Active
+      | Inactive
+
+    let to_string = function
+      | Active -> "active"
+      | Inactive -> "inactive"
+    ;;
+
+    let of_string str =
+      match str with
+      | "active" -> Ok Active
+      | "inactive" -> Ok Inactive
+      | _ -> Error (Printf.sprintf "Invalid token status %s provided" str)
+    ;;
+  end
+
+  type t =
+    { id : string
+    ; value : string
+    ; data : Data.t
+    ; status : Status.t
+    ; expires_at : Ptime.t
+    ; created_at : Ptime.t
+    }
+
+  let t =
     let ( let* ) = Result.bind in
     let encode m =
       let status = Status.to_string m.status in
+      let data = Data.to_string m.data in
       let* id =
         m.id
         |> Uuidm.of_string
@@ -30,10 +53,11 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
                   "Invalid id %s provided, can not convert string to uuidv4"
                   m.id)
       in
-      Ok (id, (m.value, (m.data, (m.kind, (status, (m.expires_at, m.created_at))))))
+      Ok (id, (m.value, (data, (status, (m.expires_at, m.created_at)))))
     in
-    let decode (id, (value, (data, (kind, (status, (expires_at, created_at)))))) =
+    let decode (id, (value, (data, (status, (expires_at, created_at))))) =
       let* status = Status.of_string status in
+      let* data = Data.of_string data in
       let* id =
         id
         |> Uuidm.of_bytes
@@ -44,30 +68,41 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
                   "Invalid id %s provided, can not convert bytes to uuidv4"
                   id)
       in
-      Ok { id; value; data; kind; status; expires_at; created_at }
+      Ok { id; value; data; status; expires_at; created_at }
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
-        (tup2
-           string
-           (tup2
-              string
-              (tup2 (option string) (tup2 string (tup2 string (tup2 ptime ptime)))))))
+        (tup2 string (tup2 string (tup2 string (tup2 string (tup2 ptime ptime))))))
   ;;
+end
+
+module type Sig = sig
+  val register_migration : unit -> unit
+  val register_cleaner : unit -> unit
+  val find : string -> Model.t Lwt.t
+  val find_opt : string -> Model.t option Lwt.t
+  val find_by_id : string -> Model.t Lwt.t
+  val insert : Model.t -> unit Lwt.t
+  val update : Model.t -> unit Lwt.t
+
+  module Model = Model
+end
+
+module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+  module Model = Model
 
   module Sql = struct
     let find_request =
       Caqti_request.find
         Caqti_type.string
-        token
+        Model.t
         {sql|
         SELECT
           uuid,
           token_value,
           token_data,
-          token_kind,
           status,
           expires_at,
           created_at
@@ -76,7 +111,12 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find_opt ~value =
+    let find value =
+      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.find find_request value |> Lwt.map Database.raise_error)
+    ;;
+
+    let find_opt value =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt find_request value |> Lwt.map Database.raise_error)
     ;;
@@ -84,13 +124,12 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
     let find_by_id_request =
       Caqti_request.find
         Caqti_type.string
-        token
+        Model.t
         {sql|
         SELECT
           uuid,
           token_value,
           token_data,
-          token_kind,
           status,
           expires_at,
           created_at
@@ -99,20 +138,19 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find_by_id_opt ~id =
+    let find_by_id id =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_by_id_request id |> Lwt.map Database.raise_error)
+          Connection.find find_by_id_request id |> Lwt.map Database.raise_error)
     ;;
 
     let insert_request =
       Caqti_request.exec
-        token
+        Model.t
         {sql|
         INSERT INTO token_tokens (
           uuid,
           token_value,
           token_data,
-          token_kind,
           status,
           expires_at,
           created_at
@@ -122,33 +160,31 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
           $3,
           $4,
           $5,
-          $6,
-          $7
+          $6
         )
         |sql}
     ;;
 
-    let insert ~token =
+    let insert token =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request token |> Lwt.map Database.raise_error)
     ;;
 
     let update_request =
       Caqti_request.exec
-        token
+        Model.t
         {sql|
         UPDATE token_tokens
         SET
           token_data = $3,
-          token_kind = $4,
-          status = $5,
-          expires_at = $6,
-          created_at = $7
+          status = $4,
+          expires_at = $5,
+          created_at = $6
         WHERE token_tokens.token_value = $2
         |sql}
     ;;
 
-    let update ~token =
+    let update token =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request token |> Lwt.map Database.raise_error)
     ;;
@@ -188,15 +224,26 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
+    let remove_token_kind_column =
+      Migration.create_step
+        ~label:"remove token kind column"
+        "ALTER TABLE token_tokens DROP COLUMN token_kind;"
+    ;;
+
     let migration () =
-      Migration.(empty "tokens" |> add_step fix_collation |> add_step create_tokens_table)
+      Migration.(
+        empty "tokens"
+        |> add_step fix_collation
+        |> add_step create_tokens_table
+        |> add_step remove_token_kind_column)
     ;;
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Repository.register_cleaner Sql.clean
+  let find = Sql.find
   let find_opt = Sql.find_opt
-  let find_by_id_opt = Sql.find_by_id_opt
+  let find_by_id = Sql.find_by_id
   let insert = Sql.insert
   let update = Sql.update
 end

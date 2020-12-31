@@ -91,7 +91,18 @@
 (package
  (name sihl-user)
  (synopsis "Contains Sihl services to deal with user related topics")
- (description "Use this package to handle tokens, sessions, users, flash messages and password reset workflows.")
+ (description "Use this package to handle sessions, users, flash messages and password reset workflows.")
+ (depends
+  dune
+  (ocaml (>= 4.08.0))
+  (sihl-facade (= :version))
+  (sihl-persistence (= :version))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+
+(package
+ (name sihl-token)
+ (synopsis "A Sihl service for creating, storing and handling tokens")
+ (description "Various backends are supported like JWT or Databases.")
  (depends
   dune
   (ocaml (>= 4.08.0))
