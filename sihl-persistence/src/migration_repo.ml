@@ -1,12 +1,35 @@
-module Migration = Sihl_contract.Migration.State
+module Migration = struct
+  type t =
+    { namespace : string
+    ; version : int
+    ; dirty : bool
+    }
+
+  let create ~namespace = { namespace; version = 0; dirty = true }
+  let mark_dirty state = { state with dirty = true }
+  let mark_clean state = { state with dirty = false }
+  let increment state = { state with version = state.version + 1 }
+
+  let steps_to_apply (namespace, steps) { version; _ } =
+    namespace, CCList.drop version steps
+  ;;
+
+  let of_tuple (namespace, version, dirty) = { namespace; version; dirty }
+  let to_tuple state = state.namespace, state.version, state.dirty
+  let dirty state = state.dirty
+end
 
 module type Sig = sig
+  module Migration = Migration
+
   val create_table_if_not_exists : unit -> unit Lwt.t
   val get : namespace:string -> Migration.t option Lwt.t
   val upsert : state:Migration.t -> unit Lwt.t
 end
 
 module MariaDb : Sig = struct
+  module Migration = Migration
+
   let create_request =
     Caqti_request.exec
       Caqti_type.unit
@@ -71,6 +94,8 @@ dirty = VALUES(dirty)
 end
 
 module PostgreSql : Sig = struct
+  module Migration = Migration
+
   let create_request =
     Caqti_request.exec
       Caqti_type.unit

@@ -17,16 +17,16 @@ let register_migration migration =
 
 let register_migrations migrations = List.iter register_migration migrations
 
-module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
+module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let setup () =
     Logs.debug (fun m -> m "Setting up table if not exists");
-    MigrationRepo.create_table_if_not_exists ()
+    Repo.create_table_if_not_exists ()
   ;;
 
-  let has ~namespace = MigrationRepo.get ~namespace |> Lwt.map Option.is_some
+  let has ~namespace = Repo.get ~namespace |> Lwt.map Option.is_some
 
   let get ~namespace =
-    let* state = MigrationRepo.get ~namespace in
+    let* state = Repo.get ~namespace in
     Lwt.return
     @@
     match state with
@@ -37,25 +37,25 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
            (Printf.sprintf "Could not get migration state for %s" namespace))
   ;;
 
-  let upsert state = MigrationRepo.upsert ~state
+  let upsert state = Repo.upsert ~state
 
   let mark_dirty ~namespace =
     let* state = get ~namespace in
-    let dirty_state = Sihl_contract.Migration.State.mark_dirty state in
+    let dirty_state = Repo.Migration.mark_dirty state in
     let* () = upsert dirty_state in
     Lwt.return dirty_state
   ;;
 
   let mark_clean ~namespace =
     let* state = get ~namespace in
-    let clean_state = Sihl_contract.Migration.State.mark_clean state in
+    let clean_state = Repo.Migration.mark_clean state in
     let* () = upsert clean_state in
     Lwt.return clean_state
   ;;
 
   let increment ~namespace =
     let* state = get ~namespace in
-    let updated_state = Sihl_contract.Migration.State.increment state in
+    let updated_state = Repo.Migration.increment state in
     let* () = upsert updated_state in
     Lwt.return updated_state
   ;;
@@ -125,7 +125,7 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
       if has_state
       then
         let* state = get ~namespace in
-        if Sihl_contract.Migration.State.dirty state
+        if Repo.Migration.dirty state
         then (
           let msg =
             Printf.sprintf
@@ -137,13 +137,11 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
         else mark_dirty ~namespace
       else (
         Logs.debug (fun m -> m "Setting up table for %s" namespace);
-        let state = Sihl_contract.Migration.State.create ~namespace in
+        let state = Repo.Migration.create ~namespace in
         let* () = upsert state in
         Lwt.return state)
     in
-    let migration_to_apply =
-      Sihl_contract.Migration.State.steps_to_apply migration state
-    in
+    let migration_to_apply = Repo.Migration.steps_to_apply migration state in
     let* () = execute_steps migration_to_apply in
     let* _ = mark_clean ~namespace in
     Lwt.return @@ Ok ()

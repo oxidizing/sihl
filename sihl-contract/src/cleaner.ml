@@ -7,7 +7,6 @@ module type Sig = sig
 
       A cleaner function is used during integration testing to efficiently clean
       repositories. *)
-
   val register_cleaner : (unit -> unit Lwt.t) -> unit
 
   (** Register repository cleaner functions. *)
