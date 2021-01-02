@@ -1,4 +1,4 @@
 (tests
- (names email ql user session web http queue)
+ (names email ql user session web http)
  (package sihl-contract)
  (libraries sihl-contract alcotest alcotest-lwt))

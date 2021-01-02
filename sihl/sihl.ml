@@ -155,9 +155,6 @@ end
 
 (* Queue module *)
 module Queue = struct
-  module Job = Sihl_contract.Queue_job
-  module Job_instance = Sihl_contract.Queue_job_instance
-  module Workable_job = Sihl_contract.Queue_workable_job
   include Sihl_facade.Queue
 
   module Setup = struct

@@ -1,13 +1,12 @@
-module Job = Sihl_contract.Queue_job
-module JobInstance = Sihl_contract.Queue_job_instance
+module Job = Sihl_contract.Queue.Job
 module Map = Map.Make (String)
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val enqueue : job_instance:JobInstance.t -> unit Lwt.t
-  val find_workable : unit -> JobInstance.t list Lwt.t
-  val update : job_instance:JobInstance.t -> unit Lwt.t
+  val enqueue : job_instance:Job_instance.t -> unit Lwt.t
+  val find_workable : unit -> Job_instance.t list Lwt.t
+  val update : job_instance:Job_instance.t -> unit Lwt.t
 end
 
 module Memory : Sig = struct
@@ -26,14 +25,14 @@ module Memory : Sig = struct
   let register_migration () = ()
 
   let enqueue ~job_instance =
-    let id = JobInstance.id job_instance in
+    let id = Job_instance.id job_instance in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let update ~job_instance =
-    let id = JobInstance.id job_instance in
+    let id = Job_instance.id job_instance in
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
@@ -44,7 +43,7 @@ module Memory : Sig = struct
     let rec filter_pending all_job_instances result =
       match all_job_instances with
       | Some job_instance :: job_instances ->
-        if JobInstance.should_run ~job_instance ~now
+        if Job_instance.should_run ~job_instance ~now
         then filter_pending job_instances (List.cons job_instance result)
         else filter_pending job_instances result
       | None :: job_instances -> filter_pending job_instances result
@@ -55,7 +54,7 @@ module Memory : Sig = struct
 end
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open JobInstance
+  open Job_instance
 
   let status =
     let encode m = Ok (Status.to_string m) in

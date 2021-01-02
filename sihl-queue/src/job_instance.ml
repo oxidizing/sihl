@@ -1,5 +1,5 @@
-(** This is the actual job instance that is derived from the job description ['a Job.t]
-    and some input. This needs to be serialized and persisted for persistent job queues. *)
+(* This is the actual job instance that is derived from the job description ['a Job.t] and
+   some input. This needs to be serialized and persisted for persistent job queues. *)
 
 module Status = struct
   type t =
@@ -35,14 +35,14 @@ type t =
 [@@deriving show, eq, fields, make]
 
 let create ~input ~delay ~now job =
-  let input = Queue_job.input_to_string job input in
-  let name = Queue_job.name job in
+  let input = Sihl_contract.Queue.Job.input_to_string job input in
+  let name = Sihl_contract.Queue.Job.name job in
   let next_run_at =
     match Option.map Sihl_core.Time.duration_to_span delay with
     | Some at -> Option.value (Ptime.add_span now at) ~default:now
     | None -> now
   in
-  let max_tries = Queue_job.max_tries job in
+  let max_tries = Sihl_contract.Queue.Job.max_tries job in
   { id = Uuidm.v `V4 |> Uuidm.to_string
   ; name
   ; input
@@ -57,7 +57,7 @@ let is_pending job_instance = Status.equal job_instance.status Status.Pending
 let incr_tries job_instance = { job_instance with tries = job_instance.tries + 1 }
 
 let update_next_run_at job job_instance =
-  let delay = job |> Queue_workable_job.retry_delay |> Sihl_core.Time.duration_to_span in
+  let delay = job |> Workable_job.retry_delay |> Sihl_core.Time.duration_to_span in
   let next_run_at =
     match Ptime.add_span job_instance.next_run_at delay with
     | Some date -> date

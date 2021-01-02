@@ -290,15 +290,15 @@ module Queued : Sihl_contract.Email.Sig = struct
     let failed _ = Lwt_result.return ()
 
     let job =
-      Sihl_contract.Queue_job.create
+      Sihl_contract.Queue.Job.create
         ~name:"send_email"
         ~input_to_string
         ~string_to_input
         ~handle
         ~failed
         ()
-      |> Sihl_contract.Queue_job.set_max_tries 10
-      |> Sihl_contract.Queue_job.set_retry_delay Core.Time.OneHour
+      |> Sihl_contract.Queue.Job.set_max_tries 10
+      |> Sihl_contract.Queue.Job.set_retry_delay Core.Time.OneHour
     ;;
   end
 
