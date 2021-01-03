@@ -1,0 +1,4 @@
+(tests
+ (names user)
+ (package sihl-facade)
+ (libraries sihl-facade alcotest alcotest-lwt))

@@ -1,4 +1,0 @@
-(library
- (name sihl_facade)
- (public_name sihl-facade)
- (libraries sihl-core sihl-contract))

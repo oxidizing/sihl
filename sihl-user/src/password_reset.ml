@@ -7,7 +7,7 @@ let create_reset_token ~email =
   let* user = Sihl_facade.User.find_by_email_opt ~email in
   match user with
   | Some user ->
-    let user_id = Sihl_contract.User.id user in
+    let user_id = user.id in
     Sihl_facade.Token.create ~expires_in:Sihl_core.Time.OneDay [ "user_id", user_id ]
     |> Lwt.map Option.some
   | None ->

@@ -1,18 +1,44 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
-let alcotest = Alcotest.testable Sihl_contract.User.pp Sihl_contract.User.equal
+let equal u1 u2 =
+  String.equal
+    (Format.asprintf "%a" Sihl_facade.User.pp u1)
+    (Format.asprintf "%a" Sihl_facade.User.pp u2)
+;;
+
+let alcotest = Alcotest.testable Sihl_facade.User.pp equal
+
+let json_serialization _ () =
+  let* () = Sihl_core.Cleaner.clean_all () in
+  let* user =
+    Sihl_facade.User.create_user
+      ~email:"foobar@example.com"
+      ~password:"123123123"
+      ~username:None
+  in
+  let user_after =
+    user |> Sihl_facade.User.to_yojson |> Sihl_facade.User.of_yojson |> Option.get
+  in
+  let user = Format.asprintf "%a" Sihl_facade.User.pp user in
+  let user_after = Format.asprintf "%a" Sihl_facade.User.pp user_after in
+  Alcotest.(check string "is same user" user_after user);
+  Lwt.return ()
+;;
 
 let update_details _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
-    Sihl_facade.User.Seed.user ~email:"foobar@example.com" ~password:"123123123" ()
+    Sihl_facade.User.create_user
+      ~email:"foobar@example.com"
+      ~password:"123123123"
+      ~username:None
   in
   let* updated_user =
     Sihl_facade.User.update_details ~user ~email:"new@example.com" ~username:(Some "foo")
   in
-  let actual_email = Sihl_contract.User.email updated_user in
-  let actual_username = Sihl_contract.User.username updated_user in
+  let actual_email = updated_user.email in
+  let actual_username = updated_user.username in
   Alcotest.(check string "Has updated email" "new@example.com" actual_email);
   Alcotest.(check (option string) "Has updated username" (Some "foo") actual_username);
   Lwt.return ()
@@ -36,7 +62,7 @@ let update_password _ () =
     Sihl_facade.User.login ~email:"foobar@example.com" ~password:"12345678"
     |> Lwt.map Result.get_ok
   in
-  let actual_email = Sihl_contract.User.email user in
+  let actual_email = user.email in
   Alcotest.(
     check string "Can login with updated password" "foobar@example.com" actual_email);
   Lwt.return ()
@@ -82,8 +108,9 @@ let filter_users_by_email _ () =
 ;;
 
 let suite =
-  [ ( "user"
-    , [ test_case "update details" `Quick update_details
+  [ ( "user service"
+    , [ test_case "json serialization" `Quick json_serialization
+      ; test_case "update details" `Quick update_details
       ; test_case "update password" `Quick update_password
       ; test_case "update password fails" `Quick update_password_fails
       ; test_case "filter users by email" `Quick filter_users_by_email

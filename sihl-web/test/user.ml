@@ -19,7 +19,7 @@ let bearer_token_fetch_user _ () =
       ~password:"123123"
       ~username:None
   in
-  let* token = Sihl_facade.Token.create [ "user_id", Sihl_contract.User.id user ] in
+  let* token = Sihl_facade.Token.create [ "user_id", user.id ] in
   let token_header = Format.sprintf "Bearer %s" token in
   let req =
     Opium.Request.get "/some/path/login"
@@ -27,7 +27,7 @@ let bearer_token_fetch_user _ () =
   in
   let handler req =
     let user = Sihl_web.User.find req in
-    let email = Sihl_contract.User.email user in
+    let email = user.email in
     Alcotest.(check string "has same email" "foo@example.com" email);
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
@@ -65,7 +65,7 @@ let bearer_token_login _ () =
   in
   let handler req =
     let user = Sihl_web.User.find req in
-    let email = Sihl_contract.User.email user in
+    let email = user.email in
     Alcotest.(check string "has same email" "foo@example.com" email);
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
@@ -82,7 +82,7 @@ let bearer_token_logout _ () =
       ~password:"123123"
       ~username:None
   in
-  let* token = Sihl_facade.Token.create [ "user_id", Sihl_contract.User.id user ] in
+  let* token = Sihl_facade.Token.create [ "user_id", user.id ] in
   let token_header = Format.sprintf "Bearer %s" token in
   let req =
     Opium.Request.get "/some/path/login"
@@ -90,7 +90,7 @@ let bearer_token_logout _ () =
   in
   let handler req =
     let user = Sihl_web.User.find req in
-    let email = Sihl_contract.User.email user in
+    let email = user.email in
     Alcotest.(check string "has same email" "foo@example.com" email);
     let res = Opium.Response.of_plain_text "" |> Sihl_web.User.logout in
     Lwt.return res

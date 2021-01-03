@@ -36,12 +36,7 @@ let session_middleware ?(key = "authn") ?(error_handler = default_site_error_han
       (match user with
       | Error error -> error_handler error
       | Ok user ->
-        let* () =
-          Sihl_facade.Session.set_value
-            session
-            ~k:key
-            ~v:(Some (Sihl_contract.User.id user))
-        in
+        let* () = Sihl_facade.Session.set_value session ~k:key ~v:(Some user.id) in
         Lwt.return resp)
     | Some _, None -> handler req
     | None, Some _ -> handler req
@@ -70,8 +65,7 @@ let token_middleware ?(key = "token") ?(error_handler = default_json_error_handl
       (match user with
       | Error error -> error_handler error
       | Ok user ->
-        let user_id = Sihl_contract.User.id user in
-        let* token = Sihl_facade.Token.create [ "user_id", user_id ] in
+        let* token = Sihl_facade.Token.create [ "user_id", user.id ] in
         let msg = Format.sprintf {|{"%s": "%s"}|} key token in
         Lwt.return
           (Opium.Response.of_plain_text msg

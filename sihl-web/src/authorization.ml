@@ -15,7 +15,7 @@ let admin ~login_path_f =
     let user = User.find_opt req in
     match user with
     | Some user ->
-      if Sihl_contract.User.is_admin user
+      if Sihl_facade.User.is_admin user
       then handler req
       else (
         let login_path = login_path_f () in
