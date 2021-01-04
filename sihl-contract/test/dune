@@ -1,4 +1,0 @@
-(tests
- (names email session web http)
- (package sihl-contract)
- (libraries sihl-contract alcotest alcotest-lwt))

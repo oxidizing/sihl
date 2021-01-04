@@ -2,8 +2,7 @@ let cleaners = [ Pizza.cleaner ]
 
 let services =
   [ Sihl.Cleaner.Setup.register cleaners
-  ; Sihl.Persistence.Migration.Setup.(
-      register ~migrations:Database.Migration.all postgresql)
+  ; Sihl.Migration.Setup.(register ~migrations:Database.Migration.all postgresql)
   ; Sihl.Web.Setup.register Http.Route.all
   ]
 ;;

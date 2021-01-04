@@ -1,14 +1,13 @@
 open Lwt.Syntax
-module StoredFile = Sihl_contract.Storage.Stored
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val insert_file : file:StoredFile.t -> unit Lwt.t
+  val insert_file : file:Sihl_contract.Storage.stored -> unit Lwt.t
   val insert_blob : id:string -> blob:string -> unit Lwt.t
-  val get_file : id:string -> StoredFile.t option Lwt.t
+  val get_file : id:string -> Sihl_contract.Storage.stored option Lwt.t
   val get_blob : id:string -> string option Lwt.t
-  val update_file : file:StoredFile.t -> unit Lwt.t
+  val update_file : file:Sihl_contract.Storage.stored -> unit Lwt.t
   val update_blob : id:string -> blob:string -> unit Lwt.t
   val delete_file : id:string -> unit Lwt.t
   val delete_blob : id:string -> unit Lwt.t
@@ -17,13 +16,15 @@ end
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let stored_file =
     let encode m =
-      let StoredFile.{ file; blob } = m in
-      let Sihl_contract.Storage.File.{ id; filename; filesize; mime } = file in
+      let open Sihl_contract.Storage in
+      let { file; blob } = m in
+      let { id; filename; filesize; mime } = file in
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
-      let file = Sihl_contract.Storage.File.make ~id ~filename ~filesize ~mime in
-      Ok (StoredFile.make ~file ~blob)
+      let open Sihl_contract.Storage in
+      let file = { id; filename; filesize; mime } in
+      Ok { file; blob }
     in
     Caqti_type.(
       custom
@@ -225,7 +226,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let fix_collation =
-    Sihl_contract.Migration.create_step
+    Sihl_facade.Migration.create_step
       ~label:"fix collation"
       {sql|
          SET collation_server = 'utf8mb4_unicode_ci';
@@ -233,7 +234,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let create_blobs_table =
-    Sihl_contract.Migration.create_step
+    Sihl_facade.Migration.create_step
       ~label:"create blobs table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_blobs (
@@ -249,7 +250,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let create_handles_table =
-    Sihl_contract.Migration.create_step
+    Sihl_facade.Migration.create_step
       ~label:"create handles table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_handles (
@@ -268,7 +269,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let migration () =
-    Sihl_contract.Migration.(
+    Sihl_facade.Migration.(
       empty "storage"
       |> add_step fix_collation
       |> add_step create_blobs_table

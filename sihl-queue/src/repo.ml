@@ -1,4 +1,3 @@
-module Job = Sihl_contract.Queue.Job
 module Map = Map.Make (String)
 
 module type Sig = sig
@@ -25,14 +24,16 @@ module Memory : Sig = struct
   let register_migration () = ()
 
   let enqueue ~job_instance =
-    let id = Job_instance.id job_instance in
+    let open Job_instance in
+    let id = job_instance.id in
     ordered_ids := List.cons id !ordered_ids;
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
 
   let update ~job_instance =
-    let id = Job_instance.id job_instance in
+    let open Job_instance in
+    let id = job_instance.id in
     state := Map.add id job_instance !state;
     Lwt.return ()
   ;;
@@ -199,13 +200,13 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
   module Migration = struct
     let fix_collation =
-      Sihl_contract.Migration.create_step
+      Sihl_facade.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci';"
     ;;
 
     let create_jobs_table =
-      Sihl_contract.Migration.create_step
+      Sihl_facade.Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -224,7 +225,7 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
 
     let migration =
-      Sihl_contract.Migration.(
+      Sihl_facade.Migration.(
         empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
     ;;
   end

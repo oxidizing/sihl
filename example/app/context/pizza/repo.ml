@@ -39,7 +39,7 @@ let get_ingredients_for_pizza_request =
 ;;
 
 let get_ingredients_for_pizza ~id =
-  Sihl.Persistence.Database.query (fun connection ->
+  Sihl.Database.query (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let* ingredients = Connection.collect_list get_ingredients_for_pizza_request id in
       match ingredients with
@@ -90,7 +90,7 @@ let insert_pizza pizza =
   let pizza_tup =
     pizza.Model.id, pizza.Model.name, pizza.Model.created_at, pizza.Model.updated_at
   in
-  Sihl.Persistence.Database.transaction (fun connection ->
+  Sihl.Database.transaction (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let* res = Connection.exec insert_request_pizzas pizza_tup in
       let () =
@@ -125,7 +125,7 @@ let insert_pizza pizza =
 let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE pizzas CASCADE;"
 
 let clean () =
-  Sihl.Persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
       let* cleaned = Connection.exec clean_request () in
       match cleaned with
       | Ok cleaned -> Lwt.return cleaned

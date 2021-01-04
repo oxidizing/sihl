@@ -4,15 +4,15 @@ open Lwt.Syntax
 let should_run_job _ () =
   let now = Ptime_clock.now () in
   let job =
-    Sihl_contract.Queue.Job.create
+    Sihl_facade.Queue.create
       ~name:"foo"
       ~input_to_string:(fun _ -> None)
       ~string_to_input:(fun _ -> Ok None)
-      ~handle:(fun ~input:_ -> Lwt_result.return ())
+      ~handle:(fun _ -> Lwt_result.return ())
       ~failed:(fun _ -> Lwt_result.return ())
       ()
-    |> Sihl_contract.Queue.Job.set_max_tries 3
-    |> Sihl_contract.Queue.Job.set_retry_delay Sihl_core.Time.OneMinute
+    |> Sihl_facade.Queue.set_max_tries 3
+    |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
   in
   let job_instance = Sihl_queue.Job_instance.create ~input:None ~delay:None ~now job in
   let actual = Sihl_queue.Job_instance.should_run ~job_instance ~now in
@@ -69,19 +69,19 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
-      Sihl_contract.Queue.Job.create
+      Sihl_facade.Queue.create
         ~name:"foo"
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
-        ~handle:(fun ~input:_ -> Lwt_result.return (has_ran_job := true))
+        ~handle:(fun _ -> Lwt_result.return (has_ran_job := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
-      |> Sihl_contract.Queue.Job.set_max_tries 3
-      |> Sihl_contract.Queue.Job.set_retry_delay Sihl_core.Time.OneMinute
+      |> Sihl_facade.Queue.set_max_tries 3
+      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job ] (module Service) in
     let* _ = Sihl_core.Container.start_services [ service ] in
-    let* () = Sihl_facade.Queue.dispatch ~job () in
+    let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
     let* () = Sihl_core.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has processed job" true !has_ran_job) in
@@ -95,31 +95,31 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job1 =
-      Sihl_contract.Queue.Job.create
+      Sihl_facade.Queue.create
         ~name:"foo1"
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
-        ~handle:(fun ~input:_ -> Lwt_result.return (has_ran_job1 := true))
+        ~handle:(fun _ -> Lwt_result.return (has_ran_job1 := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
-      |> Sihl_contract.Queue.Job.set_max_tries 3
-      |> Sihl_contract.Queue.Job.set_retry_delay Sihl_core.Time.OneMinute
+      |> Sihl_facade.Queue.set_max_tries 3
+      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let job2 =
-      Sihl_contract.Queue.Job.create
+      Sihl_facade.Queue.create
         ~name:"foo2"
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
-        ~handle:(fun ~input:_ -> Lwt_result.return (has_ran_job2 := true))
+        ~handle:(fun _ -> Lwt_result.return (has_ran_job2 := true))
         ~failed:(fun _ -> Lwt_result.return ())
         ()
-      |> Sihl_contract.Queue.Job.set_max_tries 3
-      |> Sihl_contract.Queue.Job.set_retry_delay Sihl_core.Time.OneMinute
+      |> Sihl_facade.Queue.set_max_tries 3
+      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job1; job2 ] (module Service) in
     let* _ = Sihl_core.Container.start_services [ service ] in
-    let* () = Sihl_facade.Queue.dispatch ~job:job1 () in
-    let* () = Sihl_facade.Queue.dispatch ~job:job2 () in
+    let* () = Sihl_facade.Queue.dispatch job1 () in
+    let* () = Sihl_facade.Queue.dispatch job2 () in
     let* () = Lwt_unix.sleep 4.0 in
     let* () = Sihl_core.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has processed job1" true !has_ran_job1) in
@@ -133,19 +133,19 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
-      Sihl_contract.Queue.Job.create
+      Sihl_facade.Queue.create
         ~name:"foo"
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
-        ~handle:(fun ~input:_ -> Lwt_result.fail "didn't work")
+        ~handle:(fun _ -> Lwt_result.fail "didn't work")
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
-      |> Sihl_contract.Queue.Job.set_max_tries 3
-      |> Sihl_contract.Queue.Job.set_retry_delay Sihl_core.Time.OneMinute
+      |> Sihl_facade.Queue.set_max_tries 3
+      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job ] (module Service) in
     let* _ = Sihl_core.Container.start_services [ service ] in
-    let* () = Sihl_facade.Queue.dispatch ~job () in
+    let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
     let* () = Sihl_core.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job) in
@@ -158,19 +158,19 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
-      Sihl_contract.Queue.Job.create
+      Sihl_facade.Queue.create
         ~name:"foo"
         ~input_to_string:(fun _ -> None)
         ~string_to_input:(fun _ -> Ok ())
-        ~handle:(fun ~input:_ -> failwith "didn't work")
+        ~handle:(fun _ -> failwith "didn't work")
         ~failed:(fun _ -> Lwt_result.return (has_cleaned_up_job := true))
         ()
-      |> Sihl_contract.Queue.Job.set_max_tries 3
-      |> Sihl_contract.Queue.Job.set_retry_delay Sihl_core.Time.OneMinute
+      |> Sihl_facade.Queue.set_max_tries 3
+      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job ] (module Service) in
     let* _ = Sihl_core.Container.start_services [ service ] in
-    let* () = Sihl_facade.Queue.dispatch ~job () in
+    let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
     let* () = Sihl_core.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job) in

@@ -2,22 +2,22 @@
    directly because of the polymorphic type ('a Job.t). *)
 type t =
   { name : string
-  ; work : input:string option -> (unit, string) Result.t Lwt.t
-  ; failed : unit -> (unit, string) Result.t Lwt.t
+  ; work : string option -> (unit, string) Result.t Lwt.t
+  ; failed : string -> (unit, string) Result.t Lwt.t
   ; max_tries : int
   ; retry_delay : Sihl_core.Time.duration
   }
-[@@deriving show, fields]
 
 let of_job job =
-  let name = Sihl_contract.Queue.Job.name job in
-  let work ~input =
-    match (Sihl_contract.Queue.Job.string_to_input job) input with
+  let open Sihl_contract.Queue in
+  let name = job.name in
+  let work input =
+    match job.string_to_input input with
     | Error msg -> Lwt_result.fail msg
-    | Ok input -> (Sihl_contract.Queue.Job.handle job) ~input
+    | Ok input -> job.handle input
   in
-  let failed = Sihl_contract.Queue.Job.failed job in
-  let max_tries = Sihl_contract.Queue.Job.max_tries job in
-  let retry_delay = Sihl_contract.Queue.Job.retry_delay job in
+  let failed = job.failed in
+  let max_tries = job.max_tries in
+  let retry_delay = job.retry_delay in
   { name; work; failed; max_tries; retry_delay }
 ;;

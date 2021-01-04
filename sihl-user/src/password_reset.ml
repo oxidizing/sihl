@@ -1,4 +1,4 @@
-let log_src = Logs.Src.create "sihl.service.password-reset"
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Password_reset.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 

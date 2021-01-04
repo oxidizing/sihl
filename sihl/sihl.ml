@@ -36,39 +36,35 @@ module Web = struct
 
   module Setup = struct
     let opium = (module Sihl_web.Http : Sihl_contract.Http.Sig)
-
-    let register ?(implementation = opium) routers =
-      Sihl_facade.Http.register implementation routers
-    ;;
+    let register routers = Sihl_web.Http.register ~routers ()
   end
 end
 
-(* Persistence module *)
-module Persistence = struct
-  module Database = struct
-    include Sihl_contract.Database
-    include Sihl_persistence.Database
+(* Database module *)
+module Database = struct
+  include Sihl_contract.Database
+  include Sihl_persistence.Database
 
-    module Setup = struct
-      let register = Sihl_persistence.Database.register
-    end
+  module Setup = struct
+    let register = Sihl_persistence.Database.register
   end
+end
 
-  module Migration = struct
-    include Sihl_contract.Migration
-    include Sihl_facade.Migration
+(* Migration module *)
+module Migration = struct
+  include Sihl_contract.Migration
+  include Sihl_facade.Migration
 
-    module Setup = struct
-      let register = Sihl_facade.Migration.register
+  module Setup = struct
+    let register = Sihl_facade.Migration.register
 
-      let postgresql =
-        (module Sihl_persistence.Migration.PostgreSql : Sihl_contract.Migration.Sig)
-      ;;
+    let postgresql =
+      (module Sihl_persistence.Migration.PostgreSql : Sihl_contract.Migration.Sig)
+    ;;
 
-      let mariadb =
-        (module Sihl_persistence.Migration.MariaDb : Sihl_contract.Migration.Sig)
-      ;;
-    end
+    let mariadb =
+      (module Sihl_persistence.Migration.MariaDb : Sihl_contract.Migration.Sig)
+    ;;
   end
 end
 
@@ -166,8 +162,6 @@ end
 
 (* Storage module *)
 module Storage = struct
-  module File = Sihl_contract.Storage.File
-  module Stored = Sihl_contract.Storage.Stored
   include Sihl_facade.Storage
 
   module Setup = struct

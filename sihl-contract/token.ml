@@ -1,6 +1,6 @@
 exception Exception of string
 
-let name = "sihl.service.token"
+let name = "token"
 
 module type Sig = sig
   include Sihl_core.Container.Service.Sig

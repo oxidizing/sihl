@@ -1,24 +1,27 @@
 open Lwt.Syntax
 module Core = Sihl_core
-module Utils = Sihl_core.Utils
 module Template = Sihl_email_template
 
-let log_src = Logs.Src.create "sihl.service.email"
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Email.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
+let dev_inbox : Sihl_contract.Email.t list ref = ref []
+
+module DevInbox = struct
+  let inbox () = !dev_inbox
+  let add_to_inbox email = dev_inbox := List.cons email !dev_inbox
+  let clear_inbox () = dev_inbox := []
+end
+
 let print email =
-  let sender = Sihl_contract.Email.sender email in
-  let recipient = Sihl_contract.Email.recipient email in
-  let subject = Sihl_contract.Email.subject email in
-  let text_content = Sihl_contract.Email.text_content email in
-  let html_content = Sihl_contract.Email.html_content email in
+  let open Sihl_contract.Email in
   Logs.info (fun m ->
       m
         {|
 -----------------------
 Email sent by: %s
-Recpient: %s
+Recipient: %s
 Subject: %s
 -----------------------
 Text:
@@ -30,11 +33,11 @@ Html:
 %s
 -----------------------
 |}
-        sender
-        recipient
-        subject
-        text_content
-        html_content)
+        email.sender
+        email.recipient
+        email.subject
+        email.text
+        (Option.value ~default:"<None>" email.html))
 ;;
 
 let should_intercept () =
@@ -58,12 +61,12 @@ let intercept sender email =
       (Sihl_core.Configuration.read_bool "EMAIL_CONSOLE")
   in
   let () = if console then print email else () in
-  if should_intercept ()
-  then Lwt.return (Sihl_contract.Email.add_to_inbox email)
-  else sender email
+  if should_intercept () then Lwt.return (DevInbox.add_to_inbox email) else sender email
 ;;
 
 module Smtp : Sihl_contract.Email.Sig = struct
+  include DevInbox
+
   type config =
     { sender : string
     ; username : string
@@ -106,8 +109,8 @@ module Smtp : Sihl_contract.Email.Sig = struct
     in
     let body =
       match email.html with
-      | true -> Letters.Html email.html_content
-      | false -> Letters.Plain email.text_content
+      | Some html -> Letters.Html html
+      | None -> Letters.Plain email.text
     in
     let sender = (Core.Configuration.read schema).sender in
     let username = (Core.Configuration.read schema).username in
@@ -132,11 +135,7 @@ module Smtp : Sihl_contract.Email.Sig = struct
     | Error msg -> raise (Sihl_contract.Email.Exception msg)
   ;;
 
-  let send email =
-    let* email = Sihl_facade.Email_template.render email in
-    intercept send' email
-  ;;
-
+  let send email = intercept send' email
   let bulk_send _ = failwith "Bulk sending not implemented yet"
 
   let start () =
@@ -162,6 +161,8 @@ module Smtp : Sihl_contract.Email.Sig = struct
 end
 
 module SendGrid : Sihl_contract.Email.Sig = struct
+  include DevInbox
+
   let body ~recipient ~subject ~sender ~content =
     Printf.sprintf
       {|
@@ -208,15 +209,16 @@ module SendGrid : Sihl_contract.Email.Sig = struct
   ;;
 
   let send' email =
+    let open Sihl_contract.Email in
     let token = (Sihl_core.Configuration.read schema).api_key in
     let headers =
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token; "content-type", "application/json" ]
     in
-    let sender = Sihl_contract.Email.sender email in
-    let recipient = Sihl_contract.Email.recipient email in
-    let subject = Sihl_contract.Email.subject email in
-    let text_content = Sihl_contract.Email.text_content email in
+    let sender = email.sender in
+    let recipient = email.recipient in
+    let subject = email.subject in
+    let text_content = email.text in
     (* TODO support html content *)
     (* let html_content = Sihl.Email.text_content email in *)
     let req_body = body ~recipient ~subject ~sender ~content:text_content in
@@ -229,23 +231,19 @@ module SendGrid : Sihl_contract.Email.Sig = struct
     let status = Cohttp.Response.status resp |> Cohttp.Code.code_of_status in
     match status with
     | 200 | 202 ->
-      Logs.info (fun m -> m "EMAIL: Successfully sent email using sendgrid");
+      Logs.info (fun m -> m "Successfully sent email using sendgrid");
       Lwt.return ()
     | _ ->
       let* body = Cohttp_lwt.Body.to_string resp_body in
       Logs.err (fun m ->
           m
-            "EMAIL: Sending email using sendgrid failed with http status %i and body %s"
+            "Sending email using sendgrid failed with http status %i and body %s"
             status
             body);
-      raise (Sihl_contract.Email.Exception "EMAIL: Failed to send email")
+      raise (Sihl_contract.Email.Exception "Failed to send email")
   ;;
 
-  let send email =
-    let* email = Sihl_facade.Email_template.render email in
-    intercept send' email
-  ;;
-
+  let send email = intercept send' email
   let bulk_send _ = Lwt.return ()
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
@@ -267,9 +265,11 @@ end
 (* This is useful if you need to answer a request quickly while sending the email in the
    background *)
 module Queued : Sihl_contract.Email.Sig = struct
+  include DevInbox
+
   module Job = struct
     let input_to_string email =
-      email |> Sihl_contract.Email.to_yojson |> Yojson.Safe.to_string |> Option.some
+      email |> Sihl_facade.Email.to_yojson |> Yojson.Safe.to_string |> Option.some
     ;;
 
     let string_to_input email =
@@ -277,28 +277,40 @@ module Queued : Sihl_contract.Email.Sig = struct
       | None ->
         Logs.err (fun m ->
             m
-              "DELAYED_EMAIL: Serialized email string was NULL, can not deserialize \
-               email. Please fix the string manually and reset the job instance.");
+              "Serialized email string was NULL, can not deserialize email. Please fix \
+               the string manually and reset the job instance.");
         Error "Invalid serialized email string received"
       | Some email ->
-        Result.bind (email |> Utils.Json.parse) Sihl_contract.Email.of_yojson
+        let email =
+          try Ok (Yojson.Safe.from_string email) with
+          | _ ->
+            Logs.err (fun m ->
+                m
+                  "Serialized email string was NULL, can not deserialize email. Please \
+                   fix the string manually and reset the job instance.");
+            Error "Invalid serialized email string received"
+        in
+        Result.bind email (fun email ->
+            email
+            |> Sihl_facade.Email.of_yojson
+            |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
-    let handle ~input = Sihl_facade.Email.send input |> Lwt.map Result.ok
+    let handle input = Sihl_facade.Email.send input |> Lwt.map Result.ok
 
     (** Nothing to clean up, sending emails is a side effect *)
     let failed _ = Lwt_result.return ()
 
     let job =
-      Sihl_contract.Queue.Job.create
+      Sihl_facade.Queue.create
         ~name:"send_email"
         ~input_to_string
         ~string_to_input
         ~handle
         ~failed
         ()
-      |> Sihl_contract.Queue.Job.set_max_tries 10
-      |> Sihl_contract.Queue.Job.set_retry_delay Core.Time.OneHour
+      |> Sihl_facade.Queue.set_max_tries 10
+      |> Sihl_facade.Queue.set_retry_delay Core.Time.OneHour
     ;;
   end
 
@@ -308,7 +320,7 @@ module Queued : Sihl_contract.Email.Sig = struct
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
       Sihl_facade.Email.send email)
-    else Sihl_facade.Queue.dispatch ~job:Job.job email
+    else Sihl_facade.Queue.dispatch Job.job email
   ;;
 
   let bulk_send emails =

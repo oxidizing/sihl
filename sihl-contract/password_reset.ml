@@ -1,4 +1,4 @@
-let name = "sihl.service.password.reset"
+let name = "password.reset"
 
 module type Sig = sig
   include Sihl_core.Container.Service.Sig

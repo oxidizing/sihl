@@ -1,7 +1,7 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
 module Repository = Sihl_core.Cleaner
-module Migration = Sihl_contract.Migration
+module Migration = Sihl_facade.Migration
 module Model = Sihl_contract.User
 
 module type Sig = sig
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let requests =
-    Sihl_contract.Database.prepare_requests search_query filter_fragment "id" user
+    Sihl_persistence.Database.prepare_requests search_query filter_fragment "id" user
   ;;
 
   let found_rows_request =
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* result =
-          Sihl_contract.Database.run_request connection requests sort filter limit
+          Sihl_persistence.Database.run_request connection requests sort filter limit
         in
         let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
         Lwt.return (result, amount))
@@ -338,7 +338,7 @@ CREATE TABLE IF NOT EXISTS user_users (
   ;;
 
   let requests =
-    Sihl_contract.Database.prepare_requests search_query filter_fragment "id" user
+    Sihl_persistence.Database.prepare_requests search_query filter_fragment "id" user
   ;;
 
   let found_rows_request =
@@ -353,7 +353,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* result =
-          Sihl_contract.Database.run_request connection requests sort filter limit
+          Sihl_persistence.Database.run_request connection requests sort filter limit
         in
         let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
         Lwt.return (result, amount))

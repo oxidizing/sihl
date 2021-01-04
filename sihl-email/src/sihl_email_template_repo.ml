@@ -1,25 +1,26 @@
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val get : id:string -> Sihl_contract.Email_template.t option Lwt.t
-  val get_by_name : name:string -> Sihl_contract.Email_template.t option Lwt.t
-  val insert : template:Sihl_contract.Email_template.t -> unit Lwt.t
-  val update : template:Sihl_contract.Email_template.t -> unit Lwt.t
+  val get : string -> Sihl_contract.Email_template.t option Lwt.t
+  val get_by_label : string -> Sihl_contract.Email_template.t option Lwt.t
+  val insert : Sihl_contract.Email_template.t -> unit Lwt.t
+  val update : Sihl_contract.Email_template.t -> unit Lwt.t
 end
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  let template =
-    let open Sihl_contract.Email_template in
-    let encode m =
-      Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
-    in
-    let decode (id, (name, (content_text, (content_html, created_at)))) =
-      Ok { id; name; content_text; content_html; created_at }
-    in
-    Caqti_type.(
-      custom ~encode ~decode (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
-  ;;
+let template =
+  let open Sihl_contract.Email_template in
+  let encode m = Ok (m.id, (m.label, (m.text, (m.html, (m.created_at, m.updated_at))))) in
+  let decode (id, (label, (text, (html, (created_at, updated_at))))) =
+    Ok { id; label; text; html; created_at; updated_at }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2 string (tup2 string (tup2 string (tup2 (option string) (tup2 ptime ptime))))))
+;;
 
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   module Sql = struct
     module Model = Sihl_contract.Email_template
 
@@ -36,22 +37,23 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
            SUBSTR(HEX(uuid), 17, 4), '-',
            SUBSTR(HEX(uuid), 21)
            )),
-          name,
+          label,
           content_text,
           content_html,
-          created_at
+          created_at,
+          updated_at
         FROM email_templates
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
     ;;
 
-    let get ~id =
+    let get id =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request id
           |> Lwt.map Sihl_persistence.Database.raise_error)
     ;;
 
-    let get_by_name_request =
+    let get_by_label_request =
       Caqti_request.find_opt
         Caqti_type.string
         template
@@ -64,18 +66,19 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
            SUBSTR(HEX(uuid), 17, 4), '-',
            SUBSTR(HEX(uuid), 21)
            )),
-          name,
+          label,
           content_text,
           content_html,
-          created_at
+          created_at,
+          updated_at
         FROM email_templates
-        WHERE email_templates.name = ?
+        WHERE email_templates.label = ?
         |sql}
     ;;
 
-    let get_by_name ~name =
+    let get_by_label label =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_by_name_request name
+          Connection.find_opt get_by_label_request label
           |> Lwt.map Sihl_persistence.Database.raise_error)
     ;;
 
@@ -85,12 +88,14 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
         {sql|
         INSERT INTO email_templates (
           uuid,
-          name,
+          label,
           content_text,
           content_html,
-          created_at
+          created_at,
+          updated_at
         ) VALUES (
           UNHEX(REPLACE(?, '-', '')),
+          ?,
           ?,
           ?,
           ?,
@@ -99,7 +104,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
         |sql}
     ;;
 
-    let insert ~template =
+    let insert template =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request template
           |> Lwt.map Sihl_persistence.Database.raise_error)
@@ -111,15 +116,16 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
         {sql|
         UPDATE email_templates
         SET
-          name = $2,
+          label = $2,
           content_text = $3,
           content_html = $4,
-          created_at = $5
+          created_at = $5,
+          updated_at = $6
         WHERE email_templates.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
     ;;
 
-    let update ~template =
+    let update template =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request template
           |> Lwt.map Sihl_persistence.Database.raise_error)
@@ -142,13 +148,13 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
   module Migration = struct
     let fix_collation =
-      Sihl_contract.Migration.create_step
+      Sihl_facade.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci'"
     ;;
 
     let create_templates_table =
-      Sihl_contract.Migration.create_step
+      Sihl_facade.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -165,33 +171,53 @@ CREATE TABLE IF NOT EXISTS email_templates (
 |sql}
     ;;
 
+    let rename_name_column =
+      Sihl_facade.Migration.create_step
+        ~label:"rename name column"
+        {sql|
+ALTER TABLE email_templates
+CHANGE COLUMN `name` label VARCHAR(128) NOT NULL;
+|sql}
+    ;;
+
+    let add_updated_at_column =
+      Sihl_facade.Migration.create_step
+        ~label:"add updated_at column"
+        {sql|
+ALTER TABLE email_templates
+ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+|sql}
+    ;;
+
+    let make_html_nullable =
+      Sihl_facade.Migration.create_step
+        ~label:"make html nullable"
+        {sql|
+ALTER TABLE email_templates
+MODIFY content_html TEXT NULL;
+|sql}
+    ;;
+
     let migration () =
-      Sihl_contract.Migration.(
-        empty "email" |> add_step fix_collation |> add_step create_templates_table)
+      Sihl_facade.Migration.(
+        empty "email"
+        |> add_step fix_collation
+        |> add_step create_templates_table
+        |> add_step rename_name_column
+        |> add_step add_updated_at_column
+        |> add_step make_html_nullable)
     ;;
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
-  let get_by_name = Sql.get_by_name
+  let get_by_label = Sql.get_by_label
   let insert = Sql.insert
   let update = Sql.update
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  let template =
-    let open Sihl_contract.Email_template in
-    let encode m =
-      Ok (m.id, (m.name, (m.content_text, (m.content_html, m.created_at))))
-    in
-    let decode (id, (name, (content_text, (content_html, created_at)))) =
-      Ok { id; name; content_text; content_html; created_at }
-    in
-    Caqti_type.(
-      custom ~encode ~decode (tup2 string (tup2 string (tup2 string (tup2 string ptime)))))
-  ;;
-
   module Sql = struct
     module Model = Sihl_contract.Email_template
 
@@ -202,40 +228,42 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
         {sql|
         SELECT
           uuid,
-          name,
+          label,
           content_text,
           content_html,
-          created_at
+          created_at,
+          updated_at
         FROM email_templates
         WHERE email_templates.uuid = ?
         |sql}
     ;;
 
-    let get ~id =
+    let get id =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request id
           |> Lwt.map Sihl_persistence.Database.raise_error)
     ;;
 
-    let get_by_name_request =
+    let get_by_label_request =
       Caqti_request.find_opt
         Caqti_type.string
         template
         {sql|
         SELECT
           uuid,
-          name,
+          label,
           content_text,
           content_html,
-          created_at
+          created_at,
+          updated_at
         FROM email_templates
-        WHERE email_templates.name = ?
+        WHERE email_templates.label = ?
         |sql}
     ;;
 
-    let get_by_name ~name =
+    let get_by_label label =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_by_name_request name
+          Connection.find_opt get_by_label_request label
           |> Lwt.map Sihl_persistence.Database.raise_error)
     ;;
 
@@ -245,11 +273,13 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
         {sql|
         INSERT INTO email_templates (
           uuid,
-          name,
+          label,
           content_text,
           content_html,
-          created_at
+          created_at,
+          updated_at
         ) VALUES (
+          ?,
           ?,
           ?,
           ?,
@@ -259,7 +289,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
         |sql}
     ;;
 
-    let insert ~template =
+    let insert template =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request template
           |> Lwt.map Sihl_persistence.Database.raise_error)
@@ -271,15 +301,16 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
         {sql|
         UPDATE email_templates
         SET
-          name = $2,
+          label = $2,
           content_text = $3,
           content_html = $4,
-          created_at = $5
+          created_at = $5,
+          updated_at = $6
         WHERE email_templates.uuid = $1
         |sql}
     ;;
 
-    let update ~template =
+    let update template =
       Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request template
           |> Lwt.map Sihl_persistence.Database.raise_error)
@@ -298,7 +329,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
 
   module Migration = struct
     let create_templates_table =
-      Sihl_contract.Migration.create_step
+      Sihl_facade.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -315,15 +346,47 @@ CREATE TABLE IF NOT EXISTS email_templates (
 |sql}
     ;;
 
+    let rename_name_column =
+      Sihl_facade.Migration.create_step
+        ~label:"rename name column"
+        {sql|
+ALTER TABLE email_templates
+RENAME COLUMN name TO label;
+|sql}
+    ;;
+
+    let add_updated_at_column =
+      Sihl_facade.Migration.create_step
+        ~label:"add updated_at column"
+        {sql|
+ALTER TABLE email_templates
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+|sql}
+    ;;
+
+    let make_html_nullable =
+      Sihl_facade.Migration.create_step
+        ~label:"make html nullable"
+        {sql|
+ALTER TABLE email_templates
+ALTER COLUMN content_html DROP NOT NULL;
+|sql}
+    ;;
+
     let migration () =
-      Sihl_contract.Migration.(empty "email" |> add_step create_templates_table)
+      Sihl_facade.Migration.(
+        empty "email"
+        |> add_step create_templates_table
+        |> add_step rename_name_column
+        |> add_step add_updated_at_column
+        |> add_step make_html_nullable)
     ;;
   end
 
   let register_migration () = MigrationService.register_migration (Migration.migration ())
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
-  let get_by_name = Sql.get_by_name
+  let get_by_label = Sql.get_by_label
   let insert = Sql.insert
   let update = Sql.update
 end

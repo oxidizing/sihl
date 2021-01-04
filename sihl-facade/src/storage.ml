@@ -1,6 +1,47 @@
 open Sihl_contract.Storage
 open Sihl_core.Container
 
+let sexp_of_file { id; filename; filesize; mime } =
+  let open Sexplib0.Sexp_conv in
+  let open Sexplib0.Sexp in
+  List
+    [ List [ Atom "id"; sexp_of_string id ]
+    ; List [ Atom "filename"; sexp_of_string filename ]
+    ; List [ Atom "filesize"; sexp_of_int filesize ]
+    ; List [ Atom "mime"; sexp_of_string mime ]
+    ]
+;;
+
+let pp_file fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_file t)
+let set_mime mime file = { file with mime }
+let set_filesize filesize file = { file with filesize }
+let set_filename filename file = { file with filename }
+
+let set_mime_stored mime stored_file =
+  { stored_file with file = set_mime mime stored_file.file }
+;;
+
+let set_filesize_stored size stored_file =
+  { stored_file with file = set_filesize size stored_file.file }
+;;
+
+let set_filename_stored name stored_file =
+  { stored_file with file = set_filename name stored_file.file }
+;;
+
+let sexp_of_stored { file; _ } =
+  let open Sexplib0.Sexp_conv in
+  let open Sexplib0.Sexp in
+  List
+    [ List [ Atom "file"; sexp_of_file file ]
+    ; List [ Atom "blob"; sexp_of_string "<binary>" ]
+    ]
+;;
+
+let pp_stored fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_stored t)
+
+(* Service *)
+
 let instance : (module Sig) option ref = ref None
 
 let find_opt ~id =
@@ -18,24 +59,24 @@ let delete ~id =
   Service.delete ~id
 ;;
 
-let upload_base64 ~file ~base64 =
+let upload_base64 file ~base64 =
   let module Service = (val unpack name instance : Sig) in
-  Service.upload_base64 ~file ~base64
+  Service.upload_base64 file ~base64
 ;;
 
-let update_base64 ~file ~base64 =
+let update_base64 file ~base64 =
   let module Service = (val unpack name instance : Sig) in
-  Service.update_base64 ~file ~base64
+  Service.update_base64 file ~base64
 ;;
 
-let download_data_base64_opt ~file =
+let download_data_base64_opt file =
   let module Service = (val unpack name instance : Sig) in
-  Service.download_data_base64_opt ~file
+  Service.download_data_base64_opt file
 ;;
 
-let download_data_base64 ~file =
+let download_data_base64 file =
   let module Service = (val unpack name instance : Sig) in
-  Service.download_data_base64 ~file
+  Service.download_data_base64 file
 ;;
 
 let lifecycle () =

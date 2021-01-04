@@ -1,4 +1,4 @@
 (executables
- (names email email_mariadb email_postgresql)
+ (names template email_mariadb email_postgresql)
  (libraries sihl-email sihl-facade sihl-persistence alcotest-lwt
    caqti-driver-mariadb caqti-driver-postgresql))

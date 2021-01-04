@@ -2,7 +2,7 @@ open Lwt.Syntax
 module Database = Sihl_contract.Database
 module Model = Sihl_contract.Token
 
-let log_src = Logs.Src.create "sihl.service.token"
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Token.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -24,7 +24,7 @@ module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let make id ?(expires_in = Sihl_core.Time.OneDay) ?now ?(length = 80) data =
     let open Repo.Model in
-    let value = Sihl_core.Random.base64 ~nr:length in
+    let value = Sihl_core.Random.base64 length in
     let expires_in = Sihl_core.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
     let expires_at =

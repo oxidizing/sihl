@@ -1,7 +1,7 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
 module Repository = Sihl_core.Cleaner
-module Migration = Sihl_contract.Migration
+module Migration = Sihl_facade.Migration
 
 module type Sig = sig
   val register_migration : unit -> unit
@@ -90,7 +90,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let find_data session =
-    let key = Sihl_contract.Session.key session in
+    let key = Sihl_facade.Session.key session in
     let* data =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find find_data_request key |> Lwt.map Database.raise_error)
@@ -242,7 +242,7 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
   ;;
 
   let find_data session =
-    let key = Sihl_contract.Session.key session in
+    let key = Sihl_facade.Session.key session in
     let* data =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find find_data_request key |> Lwt.map Database.raise_error)

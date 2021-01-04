@@ -1,5 +1,5 @@
 let create_pizzas_table =
-  Sihl.Persistence.Migration.create_step
+  Sihl.Migration.create_step
     ~label:"create pizzas table"
     {sql|
      CREATE TABLE IF NOT EXISTS pizzas (
@@ -16,7 +16,7 @@ let create_pizzas_table =
 ;;
 
 let create_pizzas_ingredients_table =
-  Sihl.Persistence.Migration.create_step
+  Sihl.Migration.create_step
     ~label:"create pizzas_ingredients table"
     {sql|
      CREATE TABLE IF NOT EXISTS pizzas_ingredients (
@@ -32,7 +32,7 @@ let create_pizzas_ingredients_table =
 ;;
 
 let pizzas =
-  Sihl.Persistence.Migration.(
+  Sihl.Migration.(
     empty "pizzas"
     |> add_step create_pizzas_table
     |> add_step create_pizzas_ingredients_table)

@@ -1,14 +1,70 @@
 open Lwt.Syntax
 module Core = Sihl_core
 
-exception Exception of string
-
-let log_src = Logs.Src.create ~doc:"database" "sihl.service.database"
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Database.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref =
   ref None
+;;
+
+let prepare_requests search_query filter_fragment sort_field output_type =
+  let asc_request =
+    let input_type = Caqti_type.int in
+    let query =
+      Printf.sprintf "%s ORDER BY %s ASC %s" search_query sort_field "LIMIT $1"
+    in
+    Caqti_request.collect input_type output_type query
+  in
+  let desc_request =
+    let input_type = Caqti_type.int in
+    let query =
+      Printf.sprintf "%s ORDER BY %s DESC %s" search_query sort_field "LIMIT $1"
+    in
+    Caqti_request.collect input_type output_type query
+  in
+  let filter_asc_request =
+    let input_type = Caqti_type.(tup2 string int) in
+    let query =
+      Printf.sprintf
+        "%s %s ORDER BY %s ASC %s"
+        search_query
+        filter_fragment
+        sort_field
+        "LIMIT $2"
+    in
+    Caqti_request.collect input_type output_type query
+  in
+  let filter_desc_request =
+    let input_type = Caqti_type.(tup2 string int) in
+    let query =
+      Printf.sprintf
+        "%s %s ORDER BY %s DESC %s"
+        search_query
+        filter_fragment
+        sort_field
+        "LIMIT $2"
+    in
+    Caqti_request.collect input_type output_type query
+  in
+  asc_request, desc_request, filter_asc_request, filter_desc_request
+;;
+
+let run_request connection requests sort filter limit =
+  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+  let r1, r2, r3, r4 = requests in
+  let result =
+    match sort, filter with
+    | `Asc, None -> Connection.collect_list r1 limit
+    | `Desc, None -> Connection.collect_list r2 limit
+    | `Asc, Some filter -> Connection.collect_list r3 (filter, limit)
+    | `Desc, Some filter -> Connection.collect_list r4 (filter, limit)
+  in
+  result
+  |> Lwt.map (Result.map_error Caqti_error.show)
+  |> Lwt.map (Result.map_error failwith)
+  |> Lwt.map Result.get_ok
 ;;
 
 type config =
@@ -29,7 +85,7 @@ let schema =
 
 let raise_error err =
   match err with
-  | Error err -> raise (Exception (Caqti_error.show err))
+  | Error err -> raise (Sihl_contract.Database.Exception (Caqti_error.show err))
   | Ok result -> result
 ;;
 
@@ -59,7 +115,7 @@ let fetch_pool () =
     | Error err ->
       let msg = "Failed to connect to DB pool" in
       Logs.err (fun m -> m "%s %s" msg (Caqti_error.show err));
-      raise (Exception ("Failed to create pool " ^ msg)))
+      raise (Sihl_contract.Database.Exception ("Failed to create pool " ^ msg)))
 ;;
 
 let transaction f =
@@ -88,7 +144,8 @@ let transaction f =
               | Error error ->
                 Logs.err (fun m ->
                     m "Failed to commit transaction %s" (Caqti_error.show error));
-                Lwt.fail @@ Exception "Failed to commit transaction")
+                Lwt.fail
+                @@ Sihl_contract.Database.Exception "Failed to commit transaction")
             (fun e ->
               let* rollback_result = Connection.rollback () in
               match rollback_result with
@@ -98,7 +155,8 @@ let transaction f =
               | Error error ->
                 Logs.err (fun m ->
                     m "Failed to rollback transaction %s" (Caqti_error.show error));
-                Lwt.fail @@ Exception "Failed to rollback transaction"))
+                Lwt.fail
+                @@ Sihl_contract.Database.Exception "Failed to rollback transaction"))
       pool
   in
   match result with
@@ -106,7 +164,7 @@ let transaction f =
   | Error error ->
     let msg = Caqti_error.show error in
     Logs.err (fun m -> m "%s" msg);
-    Lwt.fail (Exception msg)
+    Lwt.fail (Sihl_contract.Database.Exception msg)
 ;;
 
 let query f =
@@ -120,7 +178,7 @@ let query f =
   | Error error ->
     let msg = Caqti_error.show error in
     Logs.err (fun m -> m "%s" msg);
-    Lwt.fail (Exception msg)
+    Lwt.fail (Sihl_contract.Database.Exception msg)
 ;;
 
 let used_database () =

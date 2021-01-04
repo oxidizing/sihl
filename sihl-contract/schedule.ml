@@ -1,9 +1,9 @@
-let name = "sihl.service.schedule"
+let name = "schedule"
 
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
-  (** Run a schedule.
+  (** [schedule t] runs a schedule [t].
 
       Call the returned function to cancel a schedule. *)
   val schedule : Sihl_core.Schedule.t -> Sihl_core.Schedule.stop_schedule

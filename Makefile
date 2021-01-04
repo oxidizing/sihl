@@ -10,6 +10,7 @@ test-unit: build
 	SIHL_ENV=test opam exec -- dune test
 
 test-memory: build
+	SIHL_ENV=test ./_build/default/sihl-email/test/template.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/bearer_token.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_inmemory.exe
 	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_memory.exe

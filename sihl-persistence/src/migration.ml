@@ -1,21 +1,11 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create "sihl.service.migration"
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Migration.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Map = Map.Make (String)
 
 let registered_migrations : Sihl_contract.Migration.t Map.t ref = ref Map.empty
-
-let register_migration migration =
-  let label, _ = migration in
-  let found = Map.find_opt label !registered_migrations in
-  match found with
-  | Some _ -> Logs.debug (fun m -> m "Found duplicate migration '%s', ignoring it" label)
-  | None -> registered_migrations := Map.add label migration !registered_migrations
-;;
-
-let register_migrations migrations = List.iter register_migration migrations
 
 module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let setup () =
@@ -60,8 +50,16 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
     Lwt.return updated_state
   ;;
 
-  let register_migration migration = register_migration migration |> ignore
-  let register_migrations migrations = register_migrations migrations |> ignore
+  let register_migration migration =
+    let label, _ = migration in
+    let found = Map.find_opt label !registered_migrations in
+    match found with
+    | Some _ ->
+      Logs.debug (fun m -> m "Found duplicate migration '%s', ignoring it" label)
+    | None -> registered_migrations := Map.add label migration !registered_migrations
+  ;;
+
+  let register_migrations migrations = List.iter register_migration migrations
 
   let set_fk_check_request =
     Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
@@ -164,7 +162,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
           Logs.err (fun m ->
               m
                 "Error while running migration %a: %s"
-                Sihl_contract.Migration.pp
+                Sihl_facade.Migration.pp
                 migration
                 err);
           raise (Sihl_contract.Migration.Exception err))

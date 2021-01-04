@@ -40,7 +40,7 @@ let set token req =
  *)
 
 let create_token session =
-  let token = Sihl_core.Random.base64 ~nr:80 in
+  let token = Sihl_core.Random.base64 80 in
   let* () = Sihl_facade.Session.set_value session ~k:"csrf" ~v:(Some token) in
   Lwt.return token
 ;;
@@ -49,7 +49,7 @@ let secret_to_token secret =
   (* Randomize and scramble secret (XOR with salt) to make a token *)
   (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
   let secret_length = String.length secret in
-  let salt = Sihl_facade.Random.bytes ~nr:secret_length in
+  let salt = Sihl_facade.Random.bytes secret_length in
   let secret_value = secret |> String.to_seq |> List.of_seq in
   let encrypted =
     match Sihl_core.Utils.Encryption.xor salt secret_value with

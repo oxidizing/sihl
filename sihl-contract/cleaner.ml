@@ -1,4 +1,4 @@
-let name = "sihl.service.cleaner"
+let name = "cleaner"
 
 module type Sig = sig
   include Sihl_core.Container.Service.Sig

@@ -1,6 +1,6 @@
 open Lwt.Syntax
 
-let log_src = Logs.Src.create Sihl_contract.Session.name
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Session.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -8,13 +8,14 @@ let session_key_nr_bytes = 20
 
 module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
   let make ?expire_date now =
-    let open Sihl_contract.Session in
+    let open Sihl_facade.Session in
     let expire_date =
       match expire_date, expiration_date now with
       | Some expire_date, _ -> expire_date
       | None, expire_date -> expire_date
     in
-    { key = Sihl_core.Random.base64 ~nr:session_key_nr_bytes; expire_date }
+    Sihl_contract.Session.
+      { key = Sihl_core.Random.base64 session_key_nr_bytes; expire_date }
   ;;
 
   let create data =

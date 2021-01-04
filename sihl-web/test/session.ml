@@ -14,7 +14,7 @@ let multiple_requests_create_one_session _ () =
       req
   in
   let* sessions = Sihl_facade.Session.find_all () in
-  let session_value1 = sessions |> List.hd |> Sihl_contract.Session.key in
+  let session_value1 = sessions |> List.hd |> Sihl_facade.Session.key in
   Alcotest.(check int "Has created a session" 1 (List.length sessions));
   let cookie = Opium.Response.cookie cookie_name res |> Option.get in
   let cookie_value = cookie.Opium.Cookie.value in
@@ -25,7 +25,7 @@ let multiple_requests_create_one_session _ () =
       (Opium.Request.add_cookie cookie_value req)
   in
   let* sessions = Sihl_facade.Session.find_all () in
-  let session_value2 = sessions |> List.hd |> Sihl_contract.Session.key in
+  let session_value2 = sessions |> List.hd |> Sihl_facade.Session.key in
   Alcotest.(check int "Has created just one session" 1 (List.length sessions));
   Alcotest.(check string "Same session reused" session_value1 session_value2);
   Lwt.return ()
