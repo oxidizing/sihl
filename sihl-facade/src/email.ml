@@ -1,7 +1,7 @@
 open Sihl_contract.Email
 open Sihl_core.Container
 
-let sexp_of_t { sender; recipient; subject; text; html; cc; bcc } =
+let to_sexp { sender; recipient; subject; text; html; cc; bcc } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   let cc = List (List.cons (Atom "cc") (List.map sexp_of_string cc)) in
@@ -17,7 +17,7 @@ let sexp_of_t { sender; recipient; subject; text; html; cc; bcc } =
     ]
 ;;
 
-let pp fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_t t)
+let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 
 let all list =
   List.fold_left

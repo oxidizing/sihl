@@ -15,34 +15,38 @@ module type Sig = sig
   val update : user:Model.t -> unit Lwt.t
 end
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  let user =
-    let open Sihl_contract.User in
-    let encode m =
-      Ok
-        ( m.id
-        , ( m.email
-          , (m.username, (m.password, (m.status, (m.admin, (m.confirmed, m.created_at)))))
-          ) )
-    in
-    let decode
-        (id, (email, (username, (password, (status, (admin, (confirmed, created_at)))))))
-      =
-      Ok { id; email; username; password; status; admin; confirmed; created_at }
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2
-           string
-           (tup2
-              string
-              (tup2
-                 (option string)
-                 (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
-  ;;
+let user =
+  let open Sihl_contract.User in
+  let encode m =
+    Ok
+      ( m.id
+      , ( m.email
+        , ( m.username
+          , ( m.password
+            , (m.status, (m.admin, (m.confirmed, (m.created_at, m.updated_at)))) ) ) ) )
+  in
+  let decode
+      ( id
+      , ( email
+        , (username, (password, (status, (admin, (confirmed, (created_at, updated_at))))))
+        ) )
+    =
+    Ok { id; email; username; password; status; admin; confirmed; created_at; updated_at }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         string
+         (tup2
+            string
+            (tup2
+               (option string)
+               (tup2 string (tup2 string (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))
+;;
 
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let lifecycles =
     [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
   ;;
@@ -77,8 +81,21 @@ CREATE TABLE IF NOT EXISTS user_users (
          |sql}
     ;;
 
+    let add_updated_at_column =
+      Sihl_facade.Migration.create_step
+        ~label:"add updated_at column"
+        {sql|
+ALTER TABLE user_users
+ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+|sql}
+    ;;
+
     let migration () =
-      Migration.(empty "user" |> add_step fix_collation |> add_step create_users_table)
+      Migration.(
+        empty "user"
+        |> add_step fix_collation
+        |> add_step create_users_table
+        |> add_step add_updated_at_column)
     ;;
   end
 
@@ -105,7 +122,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         FROM user_users |sql}
   ;;
 
@@ -150,7 +168,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         FROM user_users
         WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
@@ -181,7 +200,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         FROM user_users
         WHERE user_users.email = ?
         |sql}
@@ -205,7 +225,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         ) VALUES (
           UNHEX(REPLACE($1, '-', '')),
           $2,
@@ -214,7 +235,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           $5,
           $6,
           $7,
-          $8
+          $8,
+          $9
         )
         |sql}
   ;;
@@ -229,14 +251,16 @@ CREATE TABLE IF NOT EXISTS user_users (
     Caqti_request.exec
       user
       {sql|
-        UPDATE user_users SET
+        UPDATE user_users
+        SET
           email = $2,
           username = $3,
           password = $4,
           status = $5,
           admin = $6,
           confirmed = $7,
-          created_at = $8
+          created_at = $8,
+          updated_at = $9
         WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
   ;;
@@ -259,34 +283,6 @@ CREATE TABLE IF NOT EXISTS user_users (
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open Sihl_contract.User
-
-  let user =
-    let encode m =
-      Ok
-        ( m.id
-        , ( m.email
-          , (m.username, (m.password, (m.status, (m.admin, (m.confirmed, m.created_at)))))
-          ) )
-    in
-    let decode
-        (id, (email, (username, (password, (status, (admin, (confirmed, created_at)))))))
-      =
-      Ok { id; email; username; password; status; admin; confirmed; created_at }
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2
-           string
-           (tup2
-              string
-              (tup2
-                 (option string)
-                 (tup2 string (tup2 string (tup2 bool (tup2 bool ptime))))))))
-  ;;
-
   let lifecycles =
     [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
   ;;
@@ -313,7 +309,19 @@ CREATE TABLE IF NOT EXISTS user_users (
 |sql}
     ;;
 
-    let migration () = Migration.(empty "user" |> add_step create_users_table)
+    let add_updated_at_column =
+      Sihl_facade.Migration.create_step
+        ~label:"add updated_at column"
+        {sql|
+ALTER TABLE user_users
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+|sql}
+    ;;
+
+    let migration () =
+      Migration.(
+        empty "user" |> add_step create_users_table |> add_step add_updated_at_column)
+    ;;
   end
 
   let filter_fragment =
@@ -333,7 +341,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         FROM user_users |sql}
   ;;
 
@@ -372,7 +381,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         FROM user_users
         WHERE user_users.uuid = ?::uuid
         |sql}
@@ -397,7 +407,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         FROM user_users
         WHERE user_users.email = ?
         |sql}
@@ -421,7 +432,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status,
           admin,
           confirmed,
-          created_at
+          created_at,
+          updated_at
         ) VALUES (
           $1,
           $2,
@@ -430,7 +442,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           $5,
           $6,
           $7,
-          $8
+          $8,
+          $9
         )
         |sql}
   ;;
@@ -453,7 +466,8 @@ CREATE TABLE IF NOT EXISTS user_users (
           status = $5,
           admin = $6,
           confirmed = $7,
-          created_at = $8
+          created_at = $8,
+          updated_at = $9
         WHERE user_users.uuid = $1
         |sql}
   ;;

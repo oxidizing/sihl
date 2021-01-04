@@ -1,3 +1,4 @@
+val to_sexp : Sihl_contract.Email.t -> Sexplib0.Sexp.t
 val to_yojson : Sihl_contract.Email.t -> Yojson.Safe.t
 val of_yojson : Yojson.Safe.t -> Sihl_contract.Email.t option
 val pp : Format.formatter -> Sihl_contract.Email.t -> unit

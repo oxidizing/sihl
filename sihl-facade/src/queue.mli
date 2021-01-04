@@ -1,5 +1,7 @@
 open Sihl_contract
 
+val to_sexp : 'a Queue.t -> Sexplib0.Sexp.t
+val pp : Format.formatter -> 'a Queue.t -> unit
 val default_tries : int
 val default_retry_delay : Sihl_core.Time.duration
 
@@ -14,7 +16,6 @@ val create
 
 val set_max_tries : int -> 'a Queue.t -> 'a Queue.t
 val set_retry_delay : Sihl_core.Time.duration -> 'a Queue.t -> 'a Queue.t
-val pp : Format.formatter -> 'a Queue.t -> unit
 
 include Sihl_contract.Queue.Sig
 

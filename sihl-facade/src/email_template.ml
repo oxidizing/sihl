@@ -1,7 +1,7 @@
 open Sihl_contract.Email_template
 open Sihl_core.Container
 
-let sexp_of_t { id; label; text; html; created_at; updated_at } =
+let to_sexp { id; label; text; html; created_at; updated_at } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   List
@@ -14,7 +14,7 @@ let sexp_of_t { id; label; text; html; created_at; updated_at } =
     ]
 ;;
 
-let pp fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_t t)
+let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 
 let of_yojson json =
   let open Yojson.Safe.Util in

@@ -1,8 +1,7 @@
-type t = Sihl_contract.User.t
-
-val to_yojson : t -> Yojson.Safe.t
-val of_yojson : Yojson.Safe.t -> t option
-val pp : Format.formatter -> t -> unit
+val to_sexp : Sihl_contract.User.t -> Sexplib0.Sexp.t
+val to_yojson : Sihl_contract.User.t -> Yojson.Safe.t
+val of_yojson : Yojson.Safe.t -> Sihl_contract.User.t option
+val pp : Format.formatter -> Sihl_contract.User.t -> unit
 
 val make
   :  email:string
@@ -10,16 +9,25 @@ val make
   -> username:string option
   -> admin:bool
   -> confirmed:bool
-  -> (t, string) Result.t
+  -> (Sihl_contract.User.t, string) Result.t
 
-val sexp_of_t : t -> Sexplib0.Sexp.t
-val confirm : t -> t
-val set_user_password : t -> string -> (t, string) result
-val set_user_details : t -> email:string -> username:string option -> t
-val is_admin : t -> bool
-val is_owner : t -> string -> bool
-val is_confirmed : t -> bool
-val matches_password : string -> t -> bool
+val confirm : Sihl_contract.User.t -> Sihl_contract.User.t
+
+val set_user_password
+  :  Sihl_contract.User.t
+  -> string
+  -> (Sihl_contract.User.t, string) result
+
+val set_user_details
+  :  Sihl_contract.User.t
+  -> email:string
+  -> username:string option
+  -> Sihl_contract.User.t
+
+val is_admin : Sihl_contract.User.t -> bool
+val is_owner : Sihl_contract.User.t -> string -> bool
+val is_confirmed : Sihl_contract.User.t -> bool
+val matches_password : string -> Sihl_contract.User.t -> bool
 val default_password_policy : string -> (unit, string) result
 
 val validate_new_password
@@ -29,7 +37,7 @@ val validate_new_password
   -> (unit, string) result
 
 val validate_change_password
-  :  t
+  :  Sihl_contract.User.t
   -> old_password:string
   -> new_password:string
   -> new_password_confirmation:string
@@ -40,8 +48,3 @@ include Sihl_contract.User.Sig
 
 val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
 val register : (module Sihl_contract.User.Sig) -> Sihl_core.Container.Service.t
-
-module Seed : sig
-  val admin : email:string -> password:string -> t Lwt.t
-  val user : email:string -> password:string -> ?username:string -> unit -> t Lwt.t
-end

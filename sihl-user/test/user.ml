@@ -47,7 +47,10 @@ let update_details _ () =
 let update_password _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
-    Sihl_facade.User.Seed.user ~email:"foobar@example.com" ~password:"123123123" ()
+    Sihl_facade.User.create_user
+      ~email:"foobar@example.com"
+      ~password:"123123123"
+      ~username:None
   in
   let* _ =
     Sihl_facade.User.update_password
@@ -71,7 +74,10 @@ let update_password _ () =
 let update_password_fails _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let* user =
-    Sihl_facade.User.Seed.user ~email:"foobar@example.com" ~password:"123123123" ()
+    Sihl_facade.User.create_user
+      ~email:"foobar@example.com"
+      ~password:"123123123"
+      ~username:None
   in
   let* change_result =
     Sihl_facade.User.update_password
@@ -93,13 +99,22 @@ let update_password_fails _ () =
 let filter_users_by_email _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let* user1 =
-    Sihl_facade.User.Seed.user ~email:"user1@example.com" ~password:"123123123" ()
+    Sihl_facade.User.create_user
+      ~email:"user1@example.com"
+      ~password:"123123123"
+      ~username:None
   in
   let* _ =
-    Sihl_facade.User.Seed.user ~email:"user2@example.com" ~password:"123123123" ()
+    Sihl_facade.User.create_user
+      ~email:"user2@example.com"
+      ~password:"123123123"
+      ~username:None
   in
   let* _ =
-    Sihl_facade.User.Seed.user ~email:"user3@example.com" ~password:"123123123" ()
+    Sihl_facade.User.create_user
+      ~email:"user3@example.com"
+      ~password:"123123123"
+      ~username:None
   in
   let* actual_users, meta = Sihl_facade.User.search ~filter:"%user1%" 10 in
   Alcotest.(check int "has correct meta" 3 meta);

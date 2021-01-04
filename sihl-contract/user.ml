@@ -1,11 +1,10 @@
-(* TODO [jerben] add Status.Active and Status.Inactive *)
-
 type error =
   | AlreadyRegistered
   | IncorrectPassword
   | InvalidPasswordProvided of string
   | DoesNotExist
 
+(* TODO [jerben] add Status.Active and Status.Inactive *)
 type t =
   { id : string
   ; email : string
@@ -15,6 +14,7 @@ type t =
   ; admin : bool
   ; confirmed : bool
   ; created_at : Ptime.t
+  ; updated_at : Ptime.t
   }
 
 exception Exception of string

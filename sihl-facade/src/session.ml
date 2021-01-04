@@ -1,7 +1,7 @@
 open Sihl_contract.Session
 open Sihl_core.Container
 
-let sexp_of_t { key; expire_date; _ } =
+let to_sexp { key; expire_date; _ } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   List
@@ -10,7 +10,7 @@ let sexp_of_t { key; expire_date; _ } =
     ]
 ;;
 
-let pp fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_t t)
+let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 let expiration_date now = Sihl_core.Time.date_from_now now Sihl_core.Time.OneWeek
 let key session = session.key
 let is_expired now session = Ptime.is_later now ~than:session.expire_date

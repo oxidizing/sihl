@@ -3,7 +3,7 @@ let log_src = Logs.Src.create "sihl.middleware.session"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let key : Sihl_contract.Session.t Opium.Context.key =
-  Opium.Context.Key.create ("session", Sihl_facade.Session.sexp_of_t)
+  Opium.Context.Key.create ("session", Sihl_facade.Session.to_sexp)
 ;;
 
 exception Session_not_found

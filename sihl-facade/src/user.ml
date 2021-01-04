@@ -1,16 +1,22 @@
 open Sihl_contract.User
 
-type t = Sihl_contract.User.t
-
-(* TODO [jerben] improve *)
-let sexp_of_t { id; email; _ } =
+let to_sexp { id; email; username; status; admin; confirmed; created_at; updated_at; _ } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   List
-    [ List [ Atom "id"; sexp_of_string id ]; List [ Atom "email"; sexp_of_string email ] ]
+    [ List [ Atom "id"; sexp_of_string id ]
+    ; List [ Atom "email"; sexp_of_string email ]
+    ; List [ Atom "username"; sexp_of_option sexp_of_string username ]
+    ; List [ Atom "password"; sexp_of_string "********" ]
+    ; List [ Atom "status"; sexp_of_string status ]
+    ; List [ Atom "admin"; sexp_of_bool admin ]
+    ; List [ Atom "confirmed"; sexp_of_bool confirmed ]
+    ; List [ Atom "created_at"; sexp_of_string (Ptime.to_rfc3339 created_at) ]
+    ; List [ Atom "updated_at"; sexp_of_string (Ptime.to_rfc3339 updated_at) ]
+    ]
 ;;
 
-let pp fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_t t)
+let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 
 let of_yojson json =
   let open Yojson.Safe.Util in
@@ -23,14 +29,17 @@ let of_yojson json =
   let* admin = json |> member "admin" |> to_bool_option in
   let* confirmed = json |> member "confirmed" |> to_bool_option in
   let* created_at = json |> member "created_at" |> to_string_option in
-  match Ptime.of_rfc3339 created_at with
-  | Ok (created_at, _, _) ->
-    Some { id; email; username; password; status; admin; confirmed; created_at }
+  let* updated_at = json |> member "updated_at" |> to_string_option in
+  match Ptime.of_rfc3339 created_at, Ptime.of_rfc3339 updated_at with
+  | Ok (created_at, _, _), Ok (updated_at, _, _) ->
+    Some
+      { id; email; username; password; status; admin; confirmed; created_at; updated_at }
   | _ -> None
 ;;
 
 let to_yojson user =
   let created_at = Ptime.to_rfc3339 user.created_at in
+  let updated_at = Ptime.to_rfc3339 user.updated_at in
   let list =
     [ "id", `String user.id
     ; "email", `String user.email
@@ -39,6 +48,7 @@ let to_yojson user =
     ; "admin", `Bool user.admin
     ; "confirmed", `Bool user.confirmed
     ; "created_at", `String created_at
+    ; "updated_at", `String updated_at
     ]
   in
   match user.username with
@@ -115,6 +125,7 @@ let validate_change_password
 
 let make ~email ~password ~username ~admin ~confirmed =
   let hash = password |> Sihl_core.Utils.Hashing.hash in
+  let now = Ptime_clock.now () in
   Result.map
     (fun hash ->
       { id = Uuidm.v `V4 |> Uuidm.to_string
@@ -129,7 +140,8 @@ let make ~email ~password ~username ~admin ~confirmed =
       ; admin
       ; confirmed
       ; status = "active"
-      ; created_at = Ptime_clock.now ()
+      ; created_at = now
+      ; updated_at = now
       })
     hash
 ;;
@@ -230,8 +242,3 @@ let register implementation =
   instance := Some implementation;
   Service.register ()
 ;;
-
-module Seed = struct
-  let admin ~email ~password = create_admin ~email ~password ~username:None
-  let user ~email ~password ?username () = create_user ~email ~password ~username
-end

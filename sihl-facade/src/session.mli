@@ -1,4 +1,4 @@
-val sexp_of_t : Sihl_contract.Session.t -> Sexplib0.Sexp.t
+val to_sexp : Sihl_contract.Session.t -> Sexplib0.Sexp.t
 val pp : Format.formatter -> Sihl_contract.Session.t -> unit
 val expiration_date : Ptime.t -> Ptime.t
 val key : Sihl_contract.Session.t -> string

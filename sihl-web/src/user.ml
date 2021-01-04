@@ -3,7 +3,7 @@ let log_src = Logs.Src.create "sihl.middleware.user"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let key : Sihl_contract.User.t Opium.Context.key =
-  Opium.Context.Key.create ("user", Sihl_facade.User.sexp_of_t)
+  Opium.Context.Key.create ("user", Sihl_facade.User.to_sexp)
 ;;
 
 exception User_not_found

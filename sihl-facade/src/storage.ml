@@ -1,7 +1,7 @@
 open Sihl_contract.Storage
 open Sihl_core.Container
 
-let sexp_of_file { id; filename; filesize; mime } =
+let file_to_sexp { id; filename; filesize; mime } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   List
@@ -12,7 +12,7 @@ let sexp_of_file { id; filename; filesize; mime } =
     ]
 ;;
 
-let pp_file fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_file t)
+let pp_file fmt t = Sexplib0.Sexp.pp_hum fmt (file_to_sexp t)
 let set_mime mime file = { file with mime }
 let set_filesize filesize file = { file with filesize }
 let set_filename filename file = { file with filename }
@@ -29,16 +29,16 @@ let set_filename_stored name stored_file =
   { stored_file with file = set_filename name stored_file.file }
 ;;
 
-let sexp_of_stored { file; _ } =
+let stored_to_sexp { file; _ } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   List
-    [ List [ Atom "file"; sexp_of_file file ]
+    [ List [ Atom "file"; file_to_sexp file ]
     ; List [ Atom "blob"; sexp_of_string "<binary>" ]
     ]
 ;;
 
-let pp_stored fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_stored t)
+let pp_stored fmt t = Sexplib0.Sexp.pp_hum fmt (stored_to_sexp t)
 
 (* Service *)
 
