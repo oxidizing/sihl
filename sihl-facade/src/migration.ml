@@ -34,9 +34,24 @@ let execute migrations =
   Service.execute migrations
 ;;
 
+let register_migrations migrations =
+  let module Service = (val unpack name instance : Sig) in
+  Service.register_migrations migrations
+;;
+
+let register_migration migration =
+  let module Service = (val unpack name instance : Sig) in
+  Service.register_migration migration
+;;
+
 let run_all () =
   let module Service = (val unpack name instance : Sig) in
   Service.run_all ()
+;;
+
+let lifecycle () =
+  let module Service = (val Sihl_core.Container.unpack name instance : Sig) in
+  Service.lifecycle
 ;;
 
 let register ?migrations implementation =

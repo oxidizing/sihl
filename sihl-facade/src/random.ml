@@ -11,3 +11,14 @@ let base64 nr =
   let module Service = (val !instance : Sig) in
   Service.base64 nr
 ;;
+
+let lifecycle () =
+  let module Service = (val !instance : Sig) in
+  Service.lifecycle
+;;
+
+let register implementation =
+  let module Service = (val implementation : Sig) in
+  instance := implementation;
+  Service.register ()
+;;
