@@ -14,5 +14,5 @@ let () =
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
      let* () = Sihl_facade.Migration.run_all () in
-     Alcotest_lwt.run "flash mariadb" Flash.suite)
+     Alcotest_lwt.run "session service" Session.suite)
 ;;

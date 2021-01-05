@@ -102,8 +102,8 @@ module Session = struct
 
   module Setup = struct
     let register = Sihl_facade.Session.register
-    let postgresql = (module Sihl_user.Session.PostgreSql : Sihl_contract.Session.Sig)
-    let mariadb = (module Sihl_user.Session.MariaDb : Sihl_contract.Session.Sig)
+    let postgresql = (module Sihl_session.PostgreSql : Sihl_contract.Session.Sig)
+    let mariadb = (module Sihl_session.MariaDb : Sihl_contract.Session.Sig)
   end
 end
 
