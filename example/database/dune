@@ -1,3 +1,0 @@
-(library
- (name database)
- (libraries sihl))

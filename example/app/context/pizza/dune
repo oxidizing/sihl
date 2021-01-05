@@ -1,5 +1,0 @@
-(library
- (name pizza)
- (libraries sihl)
- (preprocess
-  (pps ppx_fields_conv ppx_deriving.eq ppx_deriving.show ppx_deriving.make)))

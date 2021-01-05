@@ -1,8 +1,0 @@
-(executable
- (name test)
- (libraries sihl alcotest-lwt caqti-driver-postgresql))
-
-(rule
- (alias runtest-all)
- (action
-  (run ./test.exe)))
