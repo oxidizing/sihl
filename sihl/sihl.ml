@@ -6,6 +6,8 @@ module Command = Sihl_core.Command
 module Log = Sihl_core.Log
 module Utils = Sihl_core.Utils
 module Time = Sihl_core.Time
+module Random = Sihl_facade.Random
+module Authz = Sihl_user.Authz
 
 (* Schedule module *)
 module Schedule = struct
@@ -69,27 +71,14 @@ module Migration = struct
 end
 
 (* User & Security module *)
-module Security = struct
-  module User = struct
-    include Sihl_contract.User
-    include Sihl_facade.User
+module User = struct
+  include Sihl_contract.User
+  include Sihl_facade.User
 
-    module Setup = struct
-      let register = Sihl_facade.User.register
-      let postgresql = (module Sihl_user.User.PostgreSql : Sihl_contract.User.Sig)
-      let mariadb = (module Sihl_user.User.MariaDb : Sihl_contract.User.Sig)
-    end
-  end
-
-  module Session = struct
-    include Sihl_contract.Session
-    include Sihl_facade.Session
-
-    module Setup = struct
-      let register = Sihl_facade.Session.register
-      let postgresql = (module Sihl_user.Session.PostgreSql : Sihl_contract.Session.Sig)
-      let mariadb = (module Sihl_user.Session.MariaDb : Sihl_contract.Session.Sig)
-    end
+  module Setup = struct
+    let register = Sihl_facade.User.register
+    let postgresql = (module Sihl_user.User.PostgreSql : Sihl_contract.User.Sig)
+    let mariadb = (module Sihl_user.User.MariaDb : Sihl_contract.User.Sig)
   end
 
   module Password_reset = struct
@@ -104,19 +93,39 @@ module Security = struct
       ;;
     end
   end
+end
 
-  module Token = struct
-    include Sihl_contract.Token
-    include Sihl_facade.Token
+(* Session module*)
+module Session = struct
+  include Sihl_contract.Session
+  include Sihl_facade.Session
 
-    module Setup = struct
-      let register = Sihl_facade.Token.register
-      let mariadb = (module Sihl_token.Token.MariaDb : Sihl_contract.Token.Sig)
-    end
+  module Setup = struct
+    let register = Sihl_facade.Session.register
+    let postgresql = (module Sihl_user.Session.PostgreSql : Sihl_contract.Session.Sig)
+    let mariadb = (module Sihl_user.Session.MariaDb : Sihl_contract.Session.Sig)
   end
+end
 
-  module Random = Sihl_facade.Random
-  module Authz = Sihl_user.Authz
+(* Token module *)
+module Token = struct
+  include Sihl_contract.Token
+  include Sihl_facade.Token
+
+  module Setup = struct
+    let register = Sihl_facade.Token.register
+    let mariadb = (module Sihl_token.Token.MariaDb : Sihl_contract.Token.Sig)
+
+    (* TODO [jerben] implement postgresql backend *)
+    let postgresql = (module Sihl_token.Token.MariaDb : Sihl_contract.Token.Sig)
+    let jwt_in_memory = (module Sihl_token.Token.JwtInMemory : Sihl_contract.Token.Sig)
+
+    (* TODO [jerben] implement mariadb backend *)
+    let jwt_mariadb = (module Sihl_token.Token.JwtInMemory : Sihl_contract.Token.Sig)
+
+    (* TODO [jerben] implement postgresql backend *)
+    let jwt_postgresql = (module Sihl_token.Token.JwtInMemory : Sihl_contract.Token.Sig)
+  end
 end
 
 (* Email module *)
@@ -130,22 +139,20 @@ module Email = struct
     let sendgid = (module Sihl_email.SendGrid : Sihl_contract.Email.Sig)
     let queued = (module Sihl_email.Queued : Sihl_contract.Email.Sig)
   end
+end
 
-  module Template = struct
-    include Sihl_contract.Email_template
-    include Sihl_facade.Email_template
+module Email_template = struct
+  include Sihl_contract.Email_template
+  include Sihl_facade.Email_template
 
-    module Setup = struct
-      let register = Sihl_facade.Email_template.register
+  module Setup = struct
+    let register = Sihl_facade.Email_template.register
 
-      let postgresql =
-        (module Sihl_email.Template.PostgreSql : Sihl_contract.Email_template.Sig)
-      ;;
+    let postgresql =
+      (module Sihl_email.Template.PostgreSql : Sihl_contract.Email_template.Sig)
+    ;;
 
-      let mariadb =
-        (module Sihl_email.Template.MariaDb : Sihl_contract.Email_template.Sig)
-      ;;
-    end
+    let mariadb = (module Sihl_email.Template.MariaDb : Sihl_contract.Email_template.Sig)
   end
 end
 
@@ -155,6 +162,9 @@ module Queue = struct
 
   module Setup = struct
     let register = Sihl_facade.Queue.register
+
+    (* TODO [jerben] implement postgresl backend *)
+    let postgresql = (module Sihl_queue.MariaDb : Sihl_contract.Queue.Sig)
     let mariadb = (module Sihl_queue.MariaDb : Sihl_contract.Queue.Sig)
     let memory = (module Sihl_queue.Memory : Sihl_contract.Queue.Sig)
   end
