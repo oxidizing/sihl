@@ -114,17 +114,15 @@ module Token = struct
 
   module Setup = struct
     let register = Sihl_facade.Token.register
-    let mariadb = (module Sihl_token.Token.MariaDb : Sihl_contract.Token.Sig)
-
-    (* TODO [jerben] implement postgresql backend *)
-    let postgresql = (module Sihl_token.Token.MariaDb : Sihl_contract.Token.Sig)
-    let jwt_in_memory = (module Sihl_token.Token.JwtInMemory : Sihl_contract.Token.Sig)
+    let mariadb = (module Sihl_token.MariaDb : Sihl_contract.Token.Sig)
+    let postgresql = (module Sihl_token.PostgreSql : Sihl_contract.Token.Sig)
+    let jwt_in_memory = (module Sihl_token.JwtInMemory : Sihl_contract.Token.Sig)
 
     (* TODO [jerben] implement mariadb backend *)
-    let jwt_mariadb = (module Sihl_token.Token.JwtInMemory : Sihl_contract.Token.Sig)
+    let jwt_mariadb = (module Sihl_token.JwtInMemory : Sihl_contract.Token.Sig)
 
     (* TODO [jerben] implement postgresql backend *)
-    let jwt_postgresql = (module Sihl_token.Token.JwtInMemory : Sihl_contract.Token.Sig)
+    let jwt_postgresql = (module Sihl_token.JwtInMemory : Sihl_contract.Token.Sig)
   end
 end
 

@@ -1,4 +1,4 @@
 (executables
- (names mariadb jwt_inmemory)
+ (names mariadb postgresql jwt_inmemory)
  (libraries sihl-contract sihl-token sihl-web alcotest-lwt
    caqti-driver-mariadb caqti-driver-postgresql))

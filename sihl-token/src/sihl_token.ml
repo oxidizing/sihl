@@ -6,7 +6,7 @@ let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Token.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
+module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
   type config = { token_length : int option }
 
   let config token_length = { token_length }
@@ -48,9 +48,9 @@ module Make (Repo : Token_repo.Sig) : Sihl_contract.Token.Sig = struct
     Repo.find_by_id id |> Lwt.map (fun token -> token.value)
   ;;
 
-  let read ?secret:_ ?force token ~k =
+  let read ?secret:_ ?force token_value ~k =
     let open Repo.Model in
-    let* token = Repo.find_opt token in
+    let* token = Repo.find_opt token_value in
     match token with
     | None -> Lwt.return None
     | Some token ->
@@ -252,5 +252,6 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   ;;
 end
 
-module MariaDb = Make (Token_repo.MariaDb (Sihl_persistence.Migration.MariaDb))
+module MariaDb = Make (Repo.MariaDb (Sihl_persistence.Migration.MariaDb))
+module PostgreSql = Make (Repo.PostgreSql (Sihl_persistence.Migration.PostgreSql))
 module JwtInMemory = MakeJwt (Blacklist_repo.InMemory)
