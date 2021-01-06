@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Email_template.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -10,6 +8,7 @@ struct
   let get_by_label label = Repo.get_by_label label
 
   let create ?html ~label text =
+    let open Lwt.Syntax in
     let open Sihl_contract.Email_template in
     let now = Ptime_clock.now () in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
@@ -25,13 +24,14 @@ struct
   ;;
 
   let update template =
+    let open Lwt.Syntax in
     let* () = Repo.update template in
     let id = template.id in
     let* created = Repo.get id in
     match created with
     | None ->
       Logs.err (fun m ->
-          m "EMAIL: Could not update template %a" Sihl_facade.Email_template.pp template);
+          m "Could not update template %a" Sihl_facade.Email_template.pp template);
       raise (Sihl_contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;

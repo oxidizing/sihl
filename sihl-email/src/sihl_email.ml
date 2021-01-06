@@ -1,5 +1,3 @@
-open Lwt.Syntax
-module Core = Sihl_core
 module Template = Sihl_email_template
 
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Email.name)
@@ -112,14 +110,14 @@ module Smtp : Sihl_contract.Email.Sig = struct
       | Some html -> Letters.Html html
       | None -> Letters.Plain email.text
     in
-    let sender = (Core.Configuration.read schema).sender in
-    let username = (Core.Configuration.read schema).username in
-    let password = (Core.Configuration.read schema).password in
-    let hostname = (Core.Configuration.read schema).hostname in
-    let port = (Core.Configuration.read schema).port in
-    let with_starttls = (Core.Configuration.read schema).start_tls in
-    let ca_path = (Core.Configuration.read schema).ca_path in
-    let ca_cert = (Core.Configuration.read schema).ca_cert in
+    let sender = (Sihl_core.Configuration.read schema).sender in
+    let username = (Sihl_core.Configuration.read schema).username in
+    let password = (Sihl_core.Configuration.read schema).password in
+    let hostname = (Sihl_core.Configuration.read schema).hostname in
+    let port = (Sihl_core.Configuration.read schema).port in
+    let with_starttls = (Sihl_core.Configuration.read schema).start_tls in
+    let ca_path = (Sihl_core.Configuration.read schema).ca_path in
+    let ca_cert = (Sihl_core.Configuration.read schema).ca_cert in
     let config =
       Letters.Config.make ~username ~password ~hostname ~with_starttls
       |> Letters.Config.set_port port
@@ -140,14 +138,14 @@ module Smtp : Sihl_contract.Email.Sig = struct
 
   let start () =
     (* if mail is intercepted, don't punish user for not providing SMTP credentials *)
-    if should_intercept () then () else Core.Configuration.require schema;
+    if should_intercept () then () else Sihl_core.Configuration.require schema;
     Lwt.return ()
   ;;
 
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create
+    Sihl_core.Container.Lifecycle.create
       "email"
       ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
@@ -155,8 +153,8 @@ module Smtp : Sihl_contract.Email.Sig = struct
   ;;
 
   let register () =
-    let configuration = Core.Configuration.make ~schema () in
-    Core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl_core.Configuration.make ~schema () in
+    Sihl_core.Container.Service.create ~configuration lifecycle
   ;;
 end
 
@@ -209,6 +207,7 @@ module SendGrid : Sihl_contract.Email.Sig = struct
   ;;
 
   let send' email =
+    let open Lwt.Syntax in
     let open Sihl_contract.Email in
     let token = (Sihl_core.Configuration.read schema).api_key in
     let headers =
@@ -249,7 +248,7 @@ module SendGrid : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create
+    Sihl_core.Container.Lifecycle.create
       "email"
       ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
@@ -257,8 +256,8 @@ module SendGrid : Sihl_contract.Email.Sig = struct
   ;;
 
   let register () =
-    let configuration = Core.Configuration.make ~schema () in
-    Core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl_core.Configuration.make ~schema () in
+    Sihl_core.Container.Service.create ~configuration lifecycle
   ;;
 end
 
@@ -310,7 +309,7 @@ module Queued : Sihl_contract.Email.Sig = struct
         ~failed
         ()
       |> Sihl_facade.Queue.set_max_tries 10
-      |> Sihl_facade.Queue.set_retry_delay Core.Time.OneHour
+      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneHour
     ;;
   end
 
@@ -338,14 +337,18 @@ module Queued : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create "delayed-email" ~start ~stop ~dependencies:(fun () ->
+    Sihl_core.Container.Lifecycle.create
+      "delayed-email"
+      ~start
+      ~stop
+      ~dependencies:(fun () ->
         [ Sihl_facade.Email.lifecycle ()
         ; Sihl_persistence.Database.lifecycle
         ; Sihl_facade.Queue.lifecycle ()
         ])
   ;;
 
-  let register () = Core.Container.Service.create lifecycle
+  let register () = Sihl_core.Container.Service.create lifecycle
 end
 
 module Template_repo = Sihl_email_template_repo

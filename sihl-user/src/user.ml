@@ -1,7 +1,3 @@
-open Lwt.Syntax
-module Core = Sihl_core
-module User = Sihl_contract.User
-
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.User.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -10,6 +6,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let find_opt ~user_id = Repo.get ~id:user_id
 
   let find ~user_id =
+    let open Lwt.Syntax in
     let* m_user = find_opt ~user_id in
     match m_user with
     | Some user -> Lwt.return user
@@ -28,6 +25,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let find_by_email ~email =
+    let open Lwt.Syntax in
     let* user = find_by_email_opt ~email in
     match user with
     | Some user -> Lwt.return user
@@ -46,6 +44,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       ~new_password_confirmation
       ()
     =
+    let open Lwt.Syntax in
     match
       Sihl_facade.User.validate_change_password
         user
@@ -68,6 +67,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let update_details ~user ~email ~username =
+    let open Lwt.Syntax in
     let updated_user = Sihl_facade.User.set_user_details user ~email ~username in
     let* () = Repo.update ~user:updated_user in
     find ~user_id:user.id
@@ -80,6 +80,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       ~password_confirmation
       ()
     =
+    let open Lwt.Syntax in
     let* result =
       Sihl_facade.User.validate_new_password
         ~password
@@ -102,6 +103,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let create ~email ~password ~username ~admin ~confirmed =
+    let open Lwt.Syntax in
     let user = Sihl_facade.User.make ~email ~password ~username ~admin ~confirmed in
     match user with
     | Ok user ->
@@ -111,6 +113,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let create_user ~email ~password ~username =
+    let open Lwt.Syntax in
     let* user =
       Sihl_facade.User.create ~email ~password ~username ~admin:false ~confirmed:false
     in
@@ -123,6 +126,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let create_admin ~email ~password ~username =
+    let open Lwt.Syntax in
     let* user = Repo.get_by_email ~email in
     let* () =
       match user with
@@ -153,6 +157,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       ~password_confirmation
       ()
     =
+    let open Lwt.Syntax in
     let open Sihl_contract.User in
     match
       Sihl_facade.User.validate_new_password
@@ -169,6 +174,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let login ~email ~password =
+    let open Lwt.Syntax in
     let open Sihl_contract.User in
     let* user = find_by_email_opt ~email in
     match user with
@@ -180,7 +186,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let create_admin_cmd =
-    Core.Command.make
+    Sihl_core.Command.make
       ~name:"createadmin"
       ~help:"<username> <email> <password>"
       ~description:"Create an admin user"
@@ -188,15 +194,15 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         match args with
         | [ username; email; password ] ->
           create_admin ~email ~password ~username:(Some username) |> Lwt.map ignore
-        | _ -> raise (Core.Command.Exception "Usage: <username> <email> <password>"))
+        | _ -> raise (Sihl_core.Command.Exception "Usage: <username> <email> <password>"))
   ;;
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Core.Container.Lifecycle.create
-      "user"
+    Sihl_core.Container.Lifecycle.create
+      Sihl_contract.User.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start
       ~stop
@@ -205,7 +211,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
+    Sihl_core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
   ;;
 end
 

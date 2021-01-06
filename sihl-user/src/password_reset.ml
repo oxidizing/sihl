@@ -33,7 +33,7 @@ let stop () = Lwt.return ()
 
 let lifecycle =
   Sihl_core.Container.Lifecycle.create
-    "password-reset"
+    Sihl_contract.Password_reset.name
     ~start
     ~stop
     ~dependencies:(fun () ->

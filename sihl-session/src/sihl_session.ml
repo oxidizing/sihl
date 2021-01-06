@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Session.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -19,6 +17,7 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
   ;;
 
   let create data =
+    let open Lwt.Syntax in
     let session = make (Ptime_clock.now ()) in
     let data_map = data |> List.to_seq |> Sihl_contract.Session.Map.of_seq in
     let* () = Repo.insert session data_map in
@@ -31,6 +30,7 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
   let find_opt = Repo.find_opt
 
   let find key =
+    let open Lwt.Syntax in
     let* session = Repo.find_opt key in
     match session with
     | Some session -> Lwt.return session
@@ -42,6 +42,7 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
   let find_all = Repo.find_all
 
   let set_value session ~k ~v =
+    let open Lwt.Syntax in
     let open Sihl_contract.Session in
     let session_key = session.key in
     match v with
@@ -58,6 +59,7 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
   ;;
 
   let find_value session k =
+    let open Lwt.Syntax in
     let open Sihl_contract.Session in
     let session_key = session.key in
     let* session = find session_key in

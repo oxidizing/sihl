@@ -196,14 +196,15 @@ let used_database () =
 (* Service lifecycle *)
 
 let start () =
-  (* Make sure that database is online when starting service. *)
+  (* Make sure that configuration is valid *)
   Core.Configuration.require schema;
+  (* Make sure that database is online when starting service. *)
   let _ = fetch_pool () in
   Lwt.return ()
 ;;
 
 let stop () = Lwt.return ()
-let lifecycle = Core.Container.Lifecycle.create "database" ~start ~stop
+let lifecycle = Core.Container.Lifecycle.create Sihl_contract.Database.name ~start ~stop
 
 let register () =
   let configuration = Core.Configuration.make ~schema () in

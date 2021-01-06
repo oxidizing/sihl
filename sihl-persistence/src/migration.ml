@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Migration.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -16,6 +14,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let has ~namespace = Repo.get ~namespace |> Lwt.map Option.is_some
 
   let get ~namespace =
+    let open Lwt.Syntax in
     let* state = Repo.get ~namespace in
     Lwt.return
     @@
@@ -30,6 +29,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let upsert state = Repo.upsert ~state
 
   let mark_dirty ~namespace =
+    let open Lwt.Syntax in
     let* state = get ~namespace in
     let dirty_state = Repo.Migration.mark_dirty state in
     let* () = upsert dirty_state in
@@ -37,6 +37,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let mark_clean ~namespace =
+    let open Lwt.Syntax in
     let* state = get ~namespace in
     let clean_state = Repo.Migration.mark_clean state in
     let* () = upsert clean_state in
@@ -44,6 +45,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let increment ~namespace =
+    let open Lwt.Syntax in
     let* state = get ~namespace in
     let updated_state = Repo.Migration.increment state in
     let* () = upsert updated_state in
@@ -66,6 +68,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let with_disabled_fk_check f =
+    let open Lwt.Syntax in
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* () =
@@ -78,6 +81,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let execute_steps migration =
+    let open Lwt.Syntax in
     let namespace, steps = migration in
     let rec run steps =
       match steps with
@@ -115,6 +119,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let execute_migration migration =
+    let open Lwt.Syntax in
     let namespace, _ = migration in
     Logs.debug (fun m -> m "Execute migrations for %s" namespace);
     let* () = setup () in

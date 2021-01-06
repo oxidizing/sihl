@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Queue.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -21,6 +19,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   ;;
 
   let run_job input ~job ~job_instance =
+    let open Lwt.Syntax in
     let job_instance_id = job_instance.Job_instance.id in
     let* result =
       Lwt.catch
@@ -68,6 +67,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   let update ~job_instance = Repo.update ~job_instance
 
   let work_job ~job ~job_instance =
+    let open Lwt.Syntax in
     let now = Ptime_clock.now () in
     if Job_instance.should_run ~job_instance ~now
     then (
@@ -92,6 +92,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   ;;
 
   let work_queue ~jobs =
+    let open Lwt.Syntax in
     let* pending_job_instances = Repo.find_workable () in
     let n_job_instances = List.length pending_job_instances in
     if n_job_instances > 0
@@ -166,7 +167,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
 
   let lifecycle =
     Sihl_core.Container.Lifecycle.create
-      "queue"
+      Sihl_contract.Queue.name
       ~dependencies:(fun () -> [ Sihl_facade.Schedule.lifecycle () ])
       ~start
       ~stop
