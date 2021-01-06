@@ -178,14 +178,14 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
   in
   let suite =
     [ ( "queue"
-      , [ test_case "dispatched job gets processed" `Quick dispatched_job_gets_processed
+      , [ test_case "should job run" `Quick should_run_job
+        ; test_case "dispatched job gets processed" `Quick dispatched_job_gets_processed
         ; test_case
             "two dispatched jobs get processed"
             `Quick
             two_dispatched_jobs_get_processed
         ; test_case "cleans up job after error" `Quick cleans_up_job_after_error
         ; test_case "cleans up job after exception" `Quick cleans_up_job_after_exception
-        ; test_case "should job run" `Quick should_run_job
         ] )
     ]
   in

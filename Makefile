@@ -13,7 +13,7 @@ test-memory: build
 	SIHL_ENV=test ./_build/default/sihl-email/test/template.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/bearer_token.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_inmemory.exe
-	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_memory.exe
+	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_inmemory.exe
 
 test-mariadb: build
 	SIHL_ENV=test ./_build/default/sihl-email/test/email_mariadb.exe
@@ -37,6 +37,7 @@ test-postgresql: build
 	SIHL_ENV=test ./_build/default/sihl-session/test/postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/session_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/flash_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_postgresql.exe
 
 test-http: build
 	SIHL_ENV=test ./_build/default/sihl-web/test/http.exe

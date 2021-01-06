@@ -181,5 +181,6 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   ;;
 end
 
-module Memory = Make (Repo.Memory)
+module InMemory = Make (Repo.InMemory)
 module MariaDb = Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+module PostgreSql = Make (Repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))

@@ -160,11 +160,9 @@ module Queue = struct
 
   module Setup = struct
     let register = Sihl_facade.Queue.register
-
-    (* TODO [jerben] implement postgresl backend *)
-    let postgresql = (module Sihl_queue.MariaDb : Sihl_contract.Queue.Sig)
+    let postgresql = (module Sihl_queue.PostgreSql : Sihl_contract.Queue.Sig)
     let mariadb = (module Sihl_queue.MariaDb : Sihl_contract.Queue.Sig)
-    let memory = (module Sihl_queue.Memory : Sihl_contract.Queue.Sig)
+    let in_memory = (module Sihl_queue.InMemory : Sihl_contract.Queue.Sig)
   end
 end
 

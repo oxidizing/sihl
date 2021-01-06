@@ -8,7 +8,7 @@ module type Sig = sig
   val update : job_instance:Job_instance.t -> unit Lwt.t
 end
 
-module Memory : Sig = struct
+module InMemory : Sig = struct
   let state = ref Map.empty
   let ordered_ids = ref []
 
@@ -54,52 +54,166 @@ module Memory : Sig = struct
   ;;
 end
 
+let status =
+  let open Job_instance in
+  let encode m = Ok (Status.to_string m) in
+  let decode = Status.of_string in
+  Caqti_type.(custom ~encode ~decode string)
+;;
+
+let job =
+  let open Job_instance in
+  let encode m =
+    Ok (m.id, (m.name, (m.input, (m.tries, (m.next_run_at, (m.max_tries, m.status))))))
+  in
+  let decode (id, (name, (input, (tries, (next_run_at, (max_tries, status)))))) =
+    Ok { id; name; input; tries; next_run_at; max_tries; status }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         string
+         (tup2 string (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
+;;
+
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  open Job_instance
-
-  let status =
-    let encode m = Ok (Status.to_string m) in
-    let decode = Status.of_string in
-    Caqti_type.(custom ~encode ~decode string)
+  let enqueue_request =
+    Caqti_request.exec
+      job
+      {sql|
+        INSERT INTO queue_jobs (
+          uuid,
+          name,
+          input,
+          tries,
+          next_run_at,
+          max_tries,
+          status
+        ) VALUES (
+          UNHEX(REPLACE(?, '-', '')),
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
+        |sql}
   ;;
 
-  let job =
-    let ( let* ) = Result.bind in
-    let encode m =
-      let* id =
-        m.id
-        |> Uuidm.of_string
-        |> Option.map Uuidm.to_bytes
-        |> Option.to_result
-             ~none:
-               (Printf.sprintf
-                  "Invalid id %s provided, can not convert string to uuidv4"
-                  m.id)
-      in
-      Ok (id, (m.name, (m.input, (m.tries, (m.next_run_at, (m.max_tries, m.status))))))
-    in
-    let decode (id, (name, (input, (tries, (next_run_at, (max_tries, status)))))) =
-      let* id =
-        id
-        |> Uuidm.of_bytes
-        |> Option.map Uuidm.to_string
-        |> Option.to_result
-             ~none:
-               (Printf.sprintf
-                  "Invalid id %s provided, can not convert bytes to uuidv4"
-                  id)
-      in
-      Ok { id; name; input; tries; next_run_at; max_tries; status }
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2
-           string
-           (tup2 string (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
+  let enqueue ~job_instance =
+    Sihl_persistence.Database.query (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Connection.exec enqueue_request job_instance
+        |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
+  let update_request =
+    Caqti_request.exec
+      job
+      {sql|
+        UPDATE queue_jobs
+        SET
+          name = $2,
+          input = $3,
+          tries = $4,
+          next_run_at = $5,
+          max_tries = $6,
+          status = $7
+        WHERE
+          queue_jobs.uuid = UNHEX(REPLACE($1, '-', ''))
+        |sql}
+  ;;
+
+  let update ~job_instance =
+    Sihl_persistence.Database.query (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Connection.exec update_request job_instance
+        |> Lwt.map Sihl_persistence.Database.raise_error)
+  ;;
+
+  let find_workable_request =
+    Caqti_request.collect
+      Caqti_type.unit
+      job
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+           SUBSTR(HEX(uuid), 1, 8), '-',
+           SUBSTR(HEX(uuid), 9, 4), '-',
+           SUBSTR(HEX(uuid), 13, 4), '-',
+           SUBSTR(HEX(uuid), 17, 4), '-',
+           SUBSTR(HEX(uuid), 21)
+           )),
+          name,
+          input,
+          tries,
+          next_run_at,
+          max_tries,
+          status
+        FROM queue_jobs
+        WHERE
+          status = "pending"
+          AND next_run_at <= NOW()
+          AND tries < max_tries
+        ORDER BY id DESC
+        |sql}
+  ;;
+
+  let find_workable () =
+    Sihl_persistence.Database.query (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Connection.collect_list find_workable_request ()
+        |> Lwt.map Sihl_persistence.Database.raise_error)
+  ;;
+
+  let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
+
+  let clean () =
+    Sihl_persistence.Database.query (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Connection.exec clean_request () |> Lwt.map Sihl_persistence.Database.raise_error)
+  ;;
+
+  module Migration = struct
+    let fix_collation =
+      Sihl_facade.Migration.create_step
+        ~label:"fix collation"
+        "SET collation_server = 'utf8mb4_unicode_ci';"
+    ;;
+
+    let create_jobs_table =
+      Sihl_facade.Migration.create_step
+        ~label:"create jobs table"
+        {sql|
+CREATE TABLE IF NOT EXISTS queue_jobs (
+  id BIGINT UNSIGNED AUTO_INCREMENT,
+  uuid BINARY(16) NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  input TEXT NULL,
+  tries BIGINT UNSIGNED,
+  next_run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  max_tries BIGINT UNSIGNED,
+  status VARCHAR(128) NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+|sql}
+    ;;
+
+    let migration =
+      Sihl_facade.Migration.(
+        empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
+    ;;
+  end
+
+  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
+  let register_migration () = MigrationService.register_migration Migration.migration
+end
+
+module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let enqueue_request =
     Caqti_request.exec
       job
@@ -144,7 +258,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
           max_tries = $6,
           status = $7
         WHERE
-          queue_jobs.uuid = $1
+          queue_jobs.uuid = $1::uuid
         |sql}
   ;;
 
@@ -170,7 +284,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
           status
         FROM queue_jobs
         WHERE
-          status = "pending"
+          status = 'pending'
           AND next_run_at <= NOW()
           AND tries < max_tries
         ORDER BY id DESC
@@ -184,13 +298,7 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
-  let clean_request =
-    Caqti_request.exec
-      Caqti_type.unit
-      {sql|
-        TRUNCATE TABLE email_templates;
-         |sql}
-  ;;
+  let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
 
   let clean () =
     Sihl_persistence.Database.query (fun connection ->
@@ -199,35 +307,26 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   module Migration = struct
-    let fix_collation =
-      Sihl_facade.Migration.create_step
-        ~label:"fix collation"
-        "SET collation_server = 'utf8mb4_unicode_ci';"
-    ;;
-
     let create_jobs_table =
       Sihl_facade.Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
+  id serial,
+  uuid uuid NOT NULL,
   name VARCHAR(128) NOT NULL,
   input TEXT NULL,
-  tries BIGINT UNSIGNED,
-  next_run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  max_tries BIGINT UNSIGNED,
+  tries BIGINT,
+  next_run_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  max_tries BIGINT,
   status VARCHAR(128) NOT NULL,
   PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE (uuid)
+);
 |sql}
     ;;
 
-    let migration =
-      Sihl_facade.Migration.(
-        empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
-    ;;
+    let migration = Sihl_facade.Migration.(empty "queue" |> add_step create_jobs_table)
   end
 
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
