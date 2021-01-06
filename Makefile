@@ -49,8 +49,7 @@ test-postgresql: build
 test-http: build
 	SIHL_ENV=test ./_build/default/sihl-web/test/http.exe
 
-test:
-	test-unit test-memory test-http test-postgresql test-mariadb
+test: test-unit test-memory test-http test-postgresql test-mariadb
 
 doc:
 	opam exec -- dune build @doc

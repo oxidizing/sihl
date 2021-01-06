@@ -22,10 +22,12 @@ let set_and_read_flash_message _ () =
   let* res =
     wrap
       (fun req ->
-        let flash = Sihl_web.Flash.find req in
-        Alcotest.(check (option string) "has no flash content" None flash);
+        let alert = Sihl_web.Flash.find_alert req in
+        let notice = Sihl_web.Flash.find_notice req in
+        Alcotest.(check (option string) "has no alert" None alert);
+        Alcotest.(check (option string) "has no notice" None notice);
         let res = Opium.Response.of_plain_text "" in
-        let res = Sihl_web.Flash.set (Some "foobar") res in
+        let res = Sihl_web.Flash.set_alert (Some "foobar") res in
         Lwt.return res)
       req
   in
@@ -37,20 +39,23 @@ let set_and_read_flash_message _ () =
   let* _ =
     wrap
       (fun req ->
-        let flash = Sihl_web.Flash.find req in
-        Alcotest.(
-          check (option string) "has flash content" (Some "foobar") flash);
+        let alert = Sihl_web.Flash.find_alert req in
+        let notice = Sihl_web.Flash.find_notice req in
+        Alcotest.(check (option string) "has alert" (Some "foobar") alert);
+        Alcotest.(check (option string) "has no notice" None notice);
         let res = Opium.Response.of_plain_text "" in
-        let res = Sihl_web.Flash.set (Some "nextfoo") res in
+        let res = Sihl_web.Flash.set_alert (Some "nextfoo") res in
+        let res = Sihl_web.Flash.set_custom (Some "hello") res in
         Lwt.return res)
       req
   in
   let* _ =
     wrap
       (fun req ->
-        let flash = Sihl_web.Flash.find req in
-        Alcotest.(
-          check (option string) "has flash content" (Some "nextfoo") flash);
+        let alert = Sihl_web.Flash.find_alert req in
+        let custom = Sihl_web.Flash.find_custom req in
+        Alcotest.(check (option string) "has alert" (Some "nextfoo") alert);
+        Alcotest.(check (option string) "has custom" (Some "hello") custom);
         let res = Opium.Response.of_plain_text "" in
         Lwt.return res)
       req
@@ -58,7 +63,7 @@ let set_and_read_flash_message _ () =
   let* _ =
     wrap
       (fun req ->
-        let flash = Sihl_web.Flash.find req in
+        let flash = Sihl_web.Flash.find_alert req in
         Alcotest.(check (option string) "has no flash content" None flash);
         let res = Opium.Response.of_plain_text "" in
         Lwt.return res)
