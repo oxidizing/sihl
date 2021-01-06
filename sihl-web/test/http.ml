@@ -13,7 +13,8 @@ let externalize_link _ () =
 
 let prefix_route _ () =
   let route =
-    Sihl_web.Http.get "/users" (fun _ -> Lwt.return (Opium.Response.of_plain_text ""))
+    Sihl_web.Http.get "/users" (fun _ ->
+        Lwt.return (Opium.Response.of_plain_text ""))
   in
   let _, prefixed_path, _ = Sihl_web.Http.prefix "/admin" route in
   Alcotest.(check string "prefix" "/admin/users" prefixed_path);
@@ -22,7 +23,8 @@ let prefix_route _ () =
 
 let prefix_route_trailing_slash_prefix _ () =
   let route =
-    Sihl_web.Http.get "/users" (fun _ -> Lwt.return (Opium.Response.of_plain_text ""))
+    Sihl_web.Http.get "/users" (fun _ ->
+        Lwt.return (Opium.Response.of_plain_text ""))
   in
   let _, prefixed_path, _ = Sihl_web.Http.prefix "/admin/" route in
   Alcotest.(check string "prefix" "/admin/users" prefixed_path);
@@ -31,7 +33,8 @@ let prefix_route_trailing_slash_prefix _ () =
 
 let prefix_route_trailing_slash _ () =
   let route =
-    Sihl_web.Http.get "/users/" (fun _ -> Lwt.return (Opium.Response.of_plain_text ""))
+    Sihl_web.Http.get "/users/" (fun _ ->
+        Lwt.return (Opium.Response.of_plain_text ""))
   in
   let _, prefixed_path, _ = Sihl_web.Http.prefix "/admin" route in
   Alcotest.(check string "prefix" "/admin/users/" prefixed_path);
@@ -41,10 +44,12 @@ let prefix_route_trailing_slash _ () =
 let router_prefix _ () =
   let open Sihl_web.Http in
   let route1 =
-    get "/users" (fun _ -> Lwt.return (Opium.Response.of_plain_text "many users"))
+    get "/users" (fun _ ->
+        Lwt.return (Opium.Response.of_plain_text "many users"))
   in
   let route2 =
-    get "/users/:id" (fun _ -> Lwt.return (Opium.Response.of_plain_text "one user"))
+    get "/users/:id" (fun _ ->
+        Lwt.return (Opium.Response.of_plain_text "one user"))
   in
   let router = router ~scope:"/api" [ route1; route2 ] in
   let routes = router_to_routes router in
@@ -108,11 +113,14 @@ let match_first_route _ () =
   in
   let route1 = Sihl_web.Http.get "/some/path" handler1 in
   let route2 = Sihl_web.Http.get "/**" handler2 in
-  let router = Sihl_web.Http.router ~scope:"/scope" ~middlewares:[] [ route1; route2 ] in
+  let router =
+    Sihl_web.Http.router ~scope:"/scope" ~middlewares:[] [ route1; route2 ]
+  in
   let _ = Sihl_web.Http.register ~routers:[ router ] () in
   let* () = Sihl_web.Http.start () in
   let* _ =
-    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/scope/some/path")
+    Cohttp_lwt_unix.Client.get
+      (Uri.of_string "http://localhost:3000/scope/some/path")
   in
   Alcotest.(check bool "was called" true !was_called1);
   Alcotest.(check bool "was not called" false !was_called2);
@@ -128,7 +136,10 @@ let suite =
           "prefix route trailing slash prefix"
           `Quick
           prefix_route_trailing_slash_prefix
-      ; test_case "prefix route trailing slash" `Quick prefix_route_trailing_slash
+      ; test_case
+          "prefix route trailing slash"
+          `Quick
+          prefix_route_trailing_slash
       ; test_case "router prefix" `Quick router_prefix
       ; test_case "router middleware" `Quick router_middleware
       ] )

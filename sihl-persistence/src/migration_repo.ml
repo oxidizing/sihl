@@ -64,7 +64,8 @@ WHERE namespace = ?;
 
   let get ~namespace =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt get_request namespace |> Lwt.map Database.raise_error)
+        Connection.find_opt get_request namespace
+        |> Lwt.map Database.raise_error)
     |> Lwt.map (Option.map Migration.of_tuple)
   ;;
 
@@ -129,7 +130,8 @@ WHERE namespace = ?;
 
   let get ~namespace =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt get_request namespace |> Lwt.map Database.raise_error)
+        Connection.find_opt get_request namespace
+        |> Lwt.map Database.raise_error)
     |> Lwt.map (Option.map Migration.of_tuple)
   ;;
 

@@ -8,9 +8,21 @@ module type Sig = sig
   val register_cleaner : unit -> unit
   val find_all : unit -> Sihl_contract.Session.t list Lwt.t
   val find_opt : string -> Sihl_contract.Session.t option Lwt.t
-  val find_data : Sihl_contract.Session.t -> string Sihl_contract.Session.Map.t Lwt.t
-  val insert : Sihl_contract.Session.t -> string Sihl_contract.Session.Map.t -> unit Lwt.t
-  val update : Sihl_contract.Session.t -> string Sihl_contract.Session.Map.t -> unit Lwt.t
+
+  val find_data
+    :  Sihl_contract.Session.t
+    -> string Sihl_contract.Session.Map.t Lwt.t
+
+  val insert
+    :  Sihl_contract.Session.t
+    -> string Sihl_contract.Session.Map.t
+    -> unit Lwt.t
+
+  val update
+    :  Sihl_contract.Session.t
+    -> string Sihl_contract.Session.Map.t
+    -> unit Lwt.t
+
   val delete : string -> unit Lwt.t
 end
 
@@ -41,7 +53,8 @@ let t =
   Caqti_type.(custom ~encode ~decode (tup2 string ptime))
 ;;
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let find_all_request =
     Caqti_request.find
       Caqti_type.unit
@@ -56,7 +69,8 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
 
   let find_all () =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.collect_list find_all_request () |> Lwt.map Database.raise_error)
+        Connection.collect_list find_all_request ()
+        |> Lwt.map Database.raise_error)
   ;;
 
   let find_opt_request =
@@ -186,14 +200,20 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 |sql}
     ;;
 
-    let migration () = Migration.(empty "session" |> add_step create_sessions_table)
+    let migration () =
+      Migration.(empty "session" |> add_step create_sessions_table)
+    ;;
   end
 
-  let register_migration () = MigrationService.register_migration (Migration.migration ())
+  let register_migration () =
+    MigrationService.register_migration (Migration.migration ())
+  ;;
+
   let register_cleaner () = Repository.register_cleaner clean
 end
 
-module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let find_all_request =
     Caqti_request.collect
       Caqti_type.unit
@@ -208,7 +228,8 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
 
   let find_all () =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.collect_list find_all_request () |> Lwt.map Database.raise_error)
+        Connection.collect_list find_all_request ()
+        |> Lwt.map Database.raise_error)
   ;;
 
   let find_opt_request =
@@ -338,9 +359,14 @@ CREATE TABLE IF NOT EXISTS session_sessions (
 |sql}
     ;;
 
-    let migration () = Migration.(empty "session" |> add_step create_sessions_table)
+    let migration () =
+      Migration.(empty "session" |> add_step create_sessions_table)
+    ;;
   end
 
-  let register_migration () = MigrationService.register_migration (Migration.migration ())
+  let register_migration () =
+    MigrationService.register_migration (Migration.migration ())
+  ;;
+
   let register_cleaner () = Repository.register_cleaner clean
 end

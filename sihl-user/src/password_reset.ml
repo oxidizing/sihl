@@ -1,4 +1,6 @@
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Password_reset.name)
+let log_src =
+  Logs.Src.create ("sihl.service." ^ Sihl_contract.Password_reset.name)
+;;
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -8,7 +10,9 @@ let create_reset_token ~email =
   match user with
   | Some user ->
     let user_id = user.id in
-    Sihl_facade.Token.create ~expires_in:Sihl_core.Time.OneDay [ "user_id", user_id ]
+    Sihl_facade.Token.create
+      ~expires_in:Sihl_core.Time.OneDay
+      [ "user_id", user_id ]
     |> Lwt.map Option.some
   | None ->
     Logs.warn (fun m -> m "No user found with email %s" email);

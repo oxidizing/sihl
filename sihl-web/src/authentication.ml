@@ -22,10 +22,15 @@ let login ~email ~password res =
 ;;
 
 let default_site_error_handler _ =
-  Lwt.return (Opium.Response.of_plain_text "" |> Opium.Response.set_status `Unauthorized)
+  Lwt.return
+    (Opium.Response.of_plain_text "" |> Opium.Response.set_status `Unauthorized)
 ;;
 
-let session_middleware ?(key = "authn") ?(error_handler = default_site_error_handler) () =
+let session_middleware
+    ?(key = "authn")
+    ?(error_handler = default_site_error_handler)
+    ()
+  =
   let open Lwt.Syntax in
   let filter handler req =
     let* resp = handler req in
@@ -36,7 +41,9 @@ let session_middleware ?(key = "authn") ?(error_handler = default_site_error_han
       (match user with
       | Error error -> error_handler error
       | Ok user ->
-        let* () = Sihl_facade.Session.set_value session ~k:key ~v:(Some user.id) in
+        let* () =
+          Sihl_facade.Session.set_value session ~k:key ~v:(Some user.id)
+        in
         Lwt.return resp)
     | Some _, None -> handler req
     | None, Some _ -> handler req
@@ -53,7 +60,11 @@ let default_json_error_handler _ =
     |> Opium.Response.set_content_type "application/json")
 ;;
 
-let token_middleware ?(key = "token") ?(error_handler = default_json_error_handler) () =
+let token_middleware
+    ?(key = "token")
+    ?(error_handler = default_json_error_handler)
+    ()
+  =
   let open Lwt.Syntax in
   let filter handler req =
     let* resp = handler req in

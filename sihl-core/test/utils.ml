@@ -1,5 +1,6 @@
 let ptime =
-  Alcotest.of_pp (fun ppf ptime -> Format.fprintf ppf "%s" (Ptime.to_rfc3339 ptime))
+  Alcotest.of_pp (fun ppf ptime ->
+      Format.fprintf ppf "%s" (Ptime.to_rfc3339 ptime))
 ;;
 
 let parse_ptime _ () =
@@ -9,7 +10,9 @@ let parse_ptime _ () =
   Lwt.return ()
 ;;
 
-let suite = Alcotest_lwt.[ "utils", [ test_case "parse ptime" `Quick parse_ptime ] ]
+let suite =
+  Alcotest_lwt.[ "utils", [ test_case "parse ptime" `Quick parse_ptime ] ]
+;;
 
 let () =
   Unix.putenv "SIHL_ENV" "test";

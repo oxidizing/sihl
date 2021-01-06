@@ -16,7 +16,8 @@ let find req =
   try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No CSRF token found");
-    Logs.info (fun m -> m "Have you applied the CSRF middleware for this route?");
+    Logs.info (fun m ->
+        m "Have you applied the CSRF middleware for this route?");
     raise @@ Csrf_token_not_found
 ;;
 
@@ -34,7 +35,10 @@ let set token req =
 let xor c1 c2 =
   try
     Some
-      (List.map2 (fun chr1 chr2 -> Char.chr (Char.code chr1 lxor Char.code chr2)) c1 c2)
+      (List.map2
+         (fun chr1 chr2 -> Char.chr (Char.code chr1 lxor Char.code chr2))
+         c1
+         c2)
   with
   | exn ->
     Logs.err (fun m ->
@@ -51,7 +55,8 @@ let decrypt_with_salt ~salted_cipher ~salt_length =
   then (
     Logs.err (fun m ->
         m
-          "Failed to decrypt cipher %s. Salt length does not match cipher length."
+          "Failed to decrypt cipher %s. Salt length does not match cipher \
+           length."
           (salted_cipher |> List.to_seq |> Caml.String.of_seq));
     None)
   else (
@@ -108,7 +113,11 @@ let default_not_allowed_handler _ =
   Opium.Response.(of_plain_text ~status:`Forbidden "") |> Lwt.return
 ;;
 
-let middleware ?(not_allowed_handler = default_not_allowed_handler) ?(key = "csrf") () =
+let middleware
+    ?(not_allowed_handler = default_not_allowed_handler)
+    ?(key = "csrf")
+    ()
+  =
   let filter handler req =
     let session = Session.find req in
     let req, secret = Form.consume req "csrf" in
@@ -148,7 +157,9 @@ let middleware ?(not_allowed_handler = default_not_allowed_handler) ?(key = "csr
       let salted_cipher = decoded |> String.to_seq |> List.of_seq in
       let decrypted_secret =
         match
-          decrypt_with_salt ~salted_cipher ~salt_length:(List.length salted_cipher / 2)
+          decrypt_with_salt
+            ~salted_cipher
+            ~salt_length:(List.length salted_cipher / 2)
         with
         | None ->
           Logs.err (fun m -> m "Failed to decrypt CSRF token %s " token);
@@ -161,12 +172,15 @@ let middleware ?(not_allowed_handler = default_not_allowed_handler) ?(key = "csr
       | Some stored_token ->
         if not @@ String.equal stored_token received_token
         then (
-          Logs.err (fun m -> m "Associated CSRF token does not match with received token");
+          Logs.err (fun m ->
+              m "Associated CSRF token does not match with received token");
           not_allowed_handler req)
         else
-          (* Provided secret matches and is valid => Invalidate it so it can't be reused *)
+          (* Provided secret matches and is valid => Invalidate it so it can't
+             be reused *)
           let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
-          (* To allow fetching a new valid token from the context, generate a new one *)
+          (* To allow fetching a new valid token from the context, generate a
+             new one *)
           let* token = create_token session in
           let req = set token req in
           handler req

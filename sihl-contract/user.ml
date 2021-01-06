@@ -26,7 +26,12 @@ let name = "user"
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
-  val search : ?sort:[ `Desc | `Asc ] -> ?filter:string -> int -> (t list * int) Lwt.t
+  val search
+    :  ?sort:[ `Desc | `Asc ]
+    -> ?filter:string
+    -> int
+    -> (t list * int) Lwt.t
+
   val find_opt : user_id:string -> t option Lwt.t
   val find : user_id:string -> t Lwt.t
   val find_by_email : email:string -> t Lwt.t
@@ -41,7 +46,11 @@ module type Sig = sig
     -> unit
     -> (t, string) Result.t Lwt.t
 
-  val update_details : user:t -> email:string -> username:string option -> t Lwt.t
+  val update_details
+    :  user:t
+    -> email:string
+    -> username:string option
+    -> t Lwt.t
 
   (** Set the password of a user without knowing the old password.
 
@@ -63,14 +72,23 @@ module type Sig = sig
     -> (t, string) result Lwt.t
 
   (** Create and store a user. *)
-  val create_user : email:string -> password:string -> username:string option -> t Lwt.t
+  val create_user
+    :  email:string
+    -> password:string
+    -> username:string option
+    -> t Lwt.t
 
   (** Create and store a user that is also an admin. *)
-  val create_admin : email:string -> password:string -> username:string option -> t Lwt.t
+  val create_admin
+    :  email:string
+    -> password:string
+    -> username:string option
+    -> t Lwt.t
 
   (** Create and store new user.
 
-      Provide [password_policy] to check whether the password fulfills certain criteria. *)
+      Provide [password_policy] to check whether the password fulfills certain
+      criteria. *)
   val register_user
     :  ?password_policy:(string -> (unit, string) result)
     -> ?username:string

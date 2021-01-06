@@ -13,12 +13,12 @@ exception Exception of string
 module type Sig = sig
   include Sihl_core.Container.Service.Sig
 
-  (** [register_migration migration] registers a migration [migration] with the migration
-      service so it can be executed with `run_all`. *)
+  (** [register_migration migration] registers a migration [migration] with the
+      migration service so it can be executed with `run_all`. *)
   val register_migration : t -> unit
 
-  (** [register_migrations migrations] registers migrations [migrations] with the
-      migration service so it can be executed with `run_all`. *)
+  (** [register_migrations migrations] registers migrations [migrations] with
+      the migration service so it can be executed with `run_all`. *)
   val register_migrations : t list -> unit
 
   (** [execute migrations] runs all migrations [migrations]. *)

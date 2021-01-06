@@ -18,7 +18,8 @@ module InMemory : Sig = struct
   let delete token = Lwt.return @@ Hashtbl.remove store token
 
   let register_cleaner () =
-    Sihl_core.Cleaner.register_cleaner (fun () -> Lwt.return (Hashtbl.clear store))
+    Sihl_core.Cleaner.register_cleaner (fun () ->
+        Lwt.return (Hashtbl.clear store))
   ;;
 
   let register_migration () = ()
@@ -43,7 +44,8 @@ module MariaDb : Sig = struct
 
   let insert token =
     let now = Ptime_clock.now () in
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec insert_request (token, now)
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
@@ -62,7 +64,8 @@ module MariaDb : Sig = struct
   ;;
 
   let find_opt token =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.find_opt find_request_opt token
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
@@ -83,7 +86,8 @@ module MariaDb : Sig = struct
   ;;
 
   let delete token =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec delete_request token
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
@@ -109,15 +113,22 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
 
   let migration =
     Sihl_facade.Migration.(
-      empty "tokens_blacklist" |> add_step fix_collation |> add_step create_jobs_table)
+      empty "tokens_blacklist"
+      |> add_step fix_collation
+      |> add_step create_jobs_table)
   ;;
 
   let register_migration () = Migration.register_migration migration
-  let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
+
+  let clean_request =
+    Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
+  ;;
 
   let clean () =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Sihl_persistence.Database.raise_error)
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request ()
+        |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
@@ -142,7 +153,8 @@ module PostgreSql : Sig = struct
 
   let insert token =
     let now = Ptime_clock.now () in
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec insert_request (token, now)
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
@@ -161,7 +173,8 @@ module PostgreSql : Sig = struct
   ;;
 
   let find_opt token =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.find_opt find_request_opt token
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
@@ -182,7 +195,8 @@ module PostgreSql : Sig = struct
   ;;
 
   let delete token =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec delete_request token
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
@@ -201,15 +215,21 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let migration =
-    Sihl_facade.Migration.(empty "tokens_blacklist" |> add_step create_jobs_table)
+    Sihl_facade.Migration.(
+      empty "tokens_blacklist" |> add_step create_jobs_table)
   ;;
 
   let register_migration () = Migration.register_migration migration
-  let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
+
+  let clean_request =
+    Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
+  ;;
 
   let clean () =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Sihl_persistence.Database.raise_error)
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request ()
+        |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean

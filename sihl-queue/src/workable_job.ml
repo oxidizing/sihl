@@ -1,5 +1,5 @@
-(* A workable job can process a job instance that is persisted. We can not store the job
-   directly because of the polymorphic type ('a Job.t). *)
+(* A workable job can process a job instance that is persisted. We can not store
+   the job directly because of the polymorphic type ('a Job.t). *)
 type t =
   { name : string
   ; work : string option -> (unit, string) Result.t Lwt.t

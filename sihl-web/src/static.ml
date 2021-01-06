@@ -1,6 +1,8 @@
 let middleware () =
   let local_path =
-    Option.value (Sihl_core.Configuration.read_string "PUBLIC_DIR") ~default:"./public"
+    Option.value
+      (Sihl_core.Configuration.read_string "PUBLIC_DIR")
+      ~default:"./public"
   in
   let internal_uri_prefix =
     Option.value

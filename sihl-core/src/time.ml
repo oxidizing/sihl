@@ -34,7 +34,10 @@ let ptime_to_yojson ptime = `String (Ptime.to_rfc3339 ptime)
 
 let ptime_of_yojson yojson =
   match
-    yojson |> Yojson.Safe.to_string |> Ptime.of_rfc3339 |> Ptime.rfc3339_error_to_msg
+    yojson
+    |> Yojson.Safe.to_string
+    |> Ptime.of_rfc3339
+    |> Ptime.rfc3339_error_to_msg
   with
   | Ok (ptime, _, _) -> Ok ptime
   | Error (`Msg msg) -> Error msg
@@ -48,7 +51,8 @@ let ptime_of_date_string date =
     |> List.map
          (Option.to_result
             ~none:
-              "Invalid date string provided, make sure that year, month and date are ints")
+              "Invalid date string provided, make sure that year, month and \
+               date are ints")
     |> List.fold_left
          (fun result item ->
            match item with
@@ -60,7 +64,8 @@ let ptime_of_date_string date =
   match date with
   | Ok [ year; month; day ] ->
     Ptime.of_date (year, month, day)
-    |> Option.to_result ~none:"Invalid date provided, only format 1990-12-01 is accepted"
+    |> Option.to_result
+         ~none:"Invalid date provided, only format 1990-12-01 is accepted"
   | Ok _ -> Error "Invalid date provided, only format 1990-12-01 is accepted"
   | Error msg -> Error msg
 ;;
@@ -70,6 +75,8 @@ let ptime_to_date_string ptime =
   let month =
     if month < 10 then Printf.sprintf "0%d" month else Printf.sprintf "%d" month
   in
-  let day = if day < 10 then Printf.sprintf "0%d" day else Printf.sprintf "%d" day in
+  let day =
+    if day < 10 then Printf.sprintf "0%d" day else Printf.sprintf "%d" day
+  in
   Printf.sprintf "%d-%s-%s" year month day
 ;;

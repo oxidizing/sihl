@@ -24,7 +24,9 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
     let* session = Repo.find_opt session.key in
     match session with
     | Some session -> Lwt.return session
-    | None -> raise @@ Sihl_contract.Session.Exception "Failed to insert created session"
+    | None ->
+      raise
+      @@ Sihl_contract.Session.Exception "Failed to insert created session"
   ;;
 
   let find_opt = Repo.find_opt

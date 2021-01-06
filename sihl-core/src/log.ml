@@ -60,7 +60,12 @@ let lwt_file_reporter () =
     match level with
     | Logs.Error ->
       let ppf = Format.formatter_of_buffer err in
-      Format.kfprintf k ppf ("%s [%s]: @[" ^^ fmt ^^ "@]@.") now (Logs.Src.name src)
+      Format.kfprintf
+        k
+        ppf
+        ("%s [%s]: @[" ^^ fmt ^^ "@]@.")
+        now
+        (Logs.Src.name src)
     | _ ->
       let ppf = Format.formatter_of_buffer app in
       Format.kfprintf
@@ -143,7 +148,12 @@ let format_reporter
     msgf
     @@ fun ?header ?tags:_ fmt ->
     let ppf = if level = Logs.App then app else dst in
-    Format.kfprintf k ppf ("%a@[" ^^ fmt ^^ "@]@.") (pp_header src) (level, header)
+    Format.kfprintf
+      k
+      ppf
+      ("%a@[" ^^ fmt ^^ "@]@.")
+      (pp_header src)
+      (level, header)
   in
   { Logs.report }
 ;;

@@ -9,7 +9,9 @@ type body = (string * string list) list [@@deriving sexp]
 
 exception Parsed_body_not_found
 
-let key : body Opium.Context.key = Opium.Context.Key.create ("form", sexp_of_body)
+let key : body Opium.Context.key =
+  Opium.Context.Key.create ("form", sexp_of_body)
+;;
 
 let find_all req =
   match Opium.Context.find key req.Opium.Request.env with
@@ -22,7 +24,8 @@ let find_all req =
 
 let find key req =
   let result =
-    List.find_opt (fun (k, _) -> String.equal k key) (find_all req) |> Option.map snd
+    List.find_opt (fun (k, _) -> String.equal k key) (find_all req)
+    |> Option.map snd
   in
   let result =
     try Some (Option.map List.hd result) with
@@ -31,13 +34,15 @@ let find key req =
   Option.join result
 ;;
 
-(** [consume req key] returns the value of the parsed body for the key [key] and a request
-    with an updated context where the parsed value is missing the key [key]. The value is
-    returned and removed from the context, it is consumed. **)
+(** [consume req key] returns the value of the parsed body for the key [key] and
+    a request with an updated context where the parsed value is missing the key
+    [key]. The value is returned and removed from the context, it is consumed. **)
 let consume req k =
   let urlencoded = find_all req in
   let value = find k req in
-  let updated = List.filter (fun (k_, _) -> not (String.equal k_ k)) urlencoded in
+  let updated =
+    List.filter (fun (k_, _) -> not (String.equal k_ k)) urlencoded
+  in
   let env = req.Opium.Request.env in
   let env = Opium.Context.add key updated env in
   let req = { req with env } in
@@ -73,8 +78,8 @@ let middleware =
         handler req
       | _ -> handler req)
     | _ ->
-      (* While GET requests can have bodies, they don't have any meaning and can be
-         ignored. Forms only support POST and GET as action methods. *)
+      (* While GET requests can have bodies, they don't have any meaning and can
+         be ignored. Forms only support POST and GET as action methods. *)
       let env = req.Opium.Request.env in
       let env = Opium.Context.add key [] env in
       let req = { req with env } in

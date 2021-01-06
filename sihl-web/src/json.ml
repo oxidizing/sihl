@@ -4,7 +4,8 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let key : Yojson.Safe.t Opium.Context.key =
   Opium.Context.Key.create
-    ("json", fun json -> json |> Yojson.Safe.to_string |> Sexplib.Std.sexp_of_string)
+    ( "json"
+    , fun json -> json |> Yojson.Safe.to_string |> Sexplib.Std.sexp_of_string )
 ;;
 
 exception Json_body_not_found
@@ -13,7 +14,8 @@ let find req =
   try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No JSON body found");
-    Logs.info (fun m -> m "Have you applied the JSON parser middleware for this route?");
+    Logs.info (fun m ->
+        m "Have you applied the JSON parser middleware for this route?");
     raise Json_body_not_found
 ;;
 
@@ -32,8 +34,8 @@ let middleware =
   let open Lwt.Syntax in
   let filter handler req =
     match req.Opium.Request.meth with
-    (* While GET requests can have bodies, they don't have any meaning and can be ignored.
-       Forms only support POST and GET as action methods. *)
+    (* While GET requests can have bodies, they don't have any meaning and can
+       be ignored. Forms only support POST and GET as action methods. *)
     | `POST ->
       let content_type =
         try

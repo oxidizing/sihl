@@ -12,7 +12,8 @@ let find req =
   try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No session found");
-    Logs.info (fun m -> m "Have you applied the session middleware for this route?");
+    Logs.info (fun m ->
+        m "Have you applied the session middleware for this route?");
     raise @@ Session_not_found
 ;;
 

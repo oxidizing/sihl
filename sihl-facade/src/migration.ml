@@ -19,7 +19,10 @@ let to_sexp (namespace, steps) =
 
 let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 let empty namespace = namespace, []
-let create_step ~label ?(check_fk = true) statement = { label; check_fk; statement }
+
+let create_step ~label ?(check_fk = true) statement =
+  { label; check_fk; statement }
+;;
 
 (* Append the migration step to the list of steps *)
 let add_step step (label, steps) = label, List.concat [ steps; [ step ] ]

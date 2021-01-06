@@ -1,7 +1,12 @@
 val to_sexp : Sihl_contract.Migration.t -> Sexplib0.Sexp.t
 val pp : Format.formatter -> Sihl_contract.Migration.t -> unit
 val empty : string -> Sihl_contract.Migration.t
-val create_step : label:string -> ?check_fk:bool -> string -> Sihl_contract.Migration.step
+
+val create_step
+  :  label:string
+  -> ?check_fk:bool
+  -> string
+  -> Sihl_contract.Migration.step
 
 val add_step
   :  Sihl_contract.Migration.step

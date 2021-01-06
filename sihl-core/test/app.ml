@@ -45,7 +45,9 @@ module UserService = struct
         Lwt.return_unit)
   ;;
 
-  let register () = Sihl_core.Container.Service.create ~commands:[ ban ] lifecycle
+  let register () =
+    Sihl_core.Container.Service.create ~commands:[ ban ] lifecycle
+  ;;
 end
 
 let order_service_running = ref false
@@ -71,11 +73,15 @@ module OrderService = struct
   ;;
 
   let order =
-    Sihl_core.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
-        Lwt.return_unit)
+    Sihl_core.Command.make
+      ~name:"order"
+      ~description:"Dispatch an order"
+      (fun _ -> Lwt.return_unit)
   ;;
 
-  let register () = Sihl_core.Container.Service.create ~commands:[ order ] lifecycle
+  let register () =
+    Sihl_core.Container.Service.create ~commands:[ order ] lifecycle
+  ;;
 end
 
 let run_user_command _ () =
@@ -90,7 +96,8 @@ let run_user_command _ () =
     |> Sihl_core.App.run' ~args:[ "ban" ] ~log_reporter:Logs.nop_reporter
   in
   Alcotest.(check bool "database is running" !database_running true);
-  Alcotest.(check bool "order service is not running" !order_service_running false);
+  Alcotest.(
+    check bool "order service is not running" !order_service_running false);
   Alcotest.(check bool "user service is running" !user_service_running true);
   Lwt.return ()
 ;;
@@ -99,7 +106,9 @@ let run_order_command _ () =
   database_running := false;
   user_service_running := false;
   order_service_running := false;
-  let set_config _ = Lwt.return @@ Unix.putenv "ORDER_NOTIFICATION_URL" "https://" in
+  let set_config _ =
+    Lwt.return @@ Unix.putenv "ORDER_NOTIFICATION_URL" "https://"
+  in
   let* () =
     Sihl_core.App.empty
     |> Sihl_core.App.with_services [ OrderService.register () ]
@@ -108,7 +117,8 @@ let run_order_command _ () =
   in
   Alcotest.(check bool "database is running" !database_running true);
   Alcotest.(check bool "order service is running" !order_service_running true);
-  Alcotest.(check bool "user service is not running" !user_service_running false);
+  Alcotest.(
+    check bool "user service is not running" !user_service_running false);
   Lwt.return ()
 ;;
 

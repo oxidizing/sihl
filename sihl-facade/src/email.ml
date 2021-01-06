@@ -38,8 +38,12 @@ let of_yojson json =
   let* subject = json |> member "subject" |> to_string_option in
   let* text = json |> member "text" |> to_string_option in
   let html = json |> member "html" |> to_string_option in
-  let* cc = json |> member "cc" |> to_list |> List.map to_string_option |> all in
-  let* bcc = json |> member "bcc" |> to_list |> List.map to_string_option |> all in
+  let* cc =
+    json |> member "cc" |> to_list |> List.map to_string_option |> all
+  in
+  let* bcc =
+    json |> member "bcc" |> to_list |> List.map to_string_option |> all
+  in
   Some { sender; recipient; subject; text; html; cc; bcc }
 ;;
 

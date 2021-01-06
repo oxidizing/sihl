@@ -29,5 +29,7 @@ let reset_password_suceeds _ () =
 ;;
 
 let suite =
-  [ "password reset", [ test_case "password reset" `Quick reset_password_suceeds ] ]
+  [ ( "password reset"
+    , [ test_case "password reset" `Quick reset_password_suceeds ] )
+  ]
 ;;

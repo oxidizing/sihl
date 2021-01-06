@@ -53,7 +53,9 @@ module Model = struct
       custom
         ~encode
         ~decode
-        (tup2 string (tup2 string (tup2 string (tup2 string (tup2 ptime ptime))))))
+        (tup2
+           string
+           (tup2 string (tup2 string (tup2 string (tup2 ptime ptime))))))
   ;;
 end
 
@@ -126,7 +128,8 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
 
     let find_opt value =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_request_opt value |> Lwt.map Database.raise_error)
+          Connection.find_opt find_request_opt value
+          |> Lwt.map Database.raise_error)
     ;;
 
     let find_by_id_request =
@@ -203,7 +206,9 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
           Connection.exec update_request token |> Lwt.map Database.raise_error)
     ;;
 
-    let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
+    let clean_request =
+      Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
+    ;;
 
     let clean () =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
@@ -253,7 +258,10 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
     ;;
   end
 
-  let register_migration () = MigrationService.register_migration (Migration.migration ())
+  let register_migration () =
+    MigrationService.register_migration (Migration.migration ())
+  ;;
+
   let register_cleaner () = Repository.register_cleaner Sql.clean
   let find = Sql.find
   let find_opt = Sql.find_opt
@@ -262,7 +270,8 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let update = Sql.update
 end
 
-module PostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module PostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   module Model = Model
 
   module Sql = struct
@@ -307,7 +316,8 @@ module PostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struc
 
     let find_opt value =
       Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_request_opt value |> Lwt.map Database.raise_error)
+          Connection.find_opt find_request_opt value
+          |> Lwt.map Database.raise_error)
     ;;
 
     let find_by_id_request =
@@ -409,10 +419,15 @@ module PostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struc
         |sql}
     ;;
 
-    let migration () = Migration.(empty "tokens" |> add_step create_tokens_table)
+    let migration () =
+      Migration.(empty "tokens" |> add_step create_tokens_table)
+    ;;
   end
 
-  let register_migration () = MigrationService.register_migration (Migration.migration ())
+  let register_migration () =
+    MigrationService.register_migration (Migration.migration ())
+  ;;
+
   let register_cleaner () = Repository.register_cleaner Sql.clean
   let find = Sql.find
   let find_opt = Sql.find_opt

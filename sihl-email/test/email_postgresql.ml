@@ -1,7 +1,8 @@
 open Lwt.Syntax
 
 let services =
-  [ Sihl_facade.Migration.register (module Sihl_persistence.Migration.PostgreSql)
+  [ Sihl_facade.Migration.register
+      (module Sihl_persistence.Migration.PostgreSql)
   ; Sihl_facade.Email_template.register (module Sihl_email.Template.PostgreSql)
   ; Sihl_facade.Email.register (module Sihl_email.Smtp)
   ]

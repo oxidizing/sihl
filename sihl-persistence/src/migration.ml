@@ -57,8 +57,10 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
     let found = Map.find_opt label !registered_migrations in
     match found with
     | Some _ ->
-      Logs.debug (fun m -> m "Found duplicate migration '%s', ignoring it" label)
-    | None -> registered_migrations := Map.add label migration !registered_migrations
+      Logs.debug (fun m ->
+          m "Found duplicate migration '%s', ignoring it" label)
+    | None ->
+      registered_migrations := Map.add label migration !registered_migrations
   ;;
 
   let register_migrations migrations = List.iter register_migration migrations
@@ -72,12 +74,14 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* () =
-          Connection.exec set_fk_check_request false |> Lwt.map Database.raise_error
+          Connection.exec set_fk_check_request false
+          |> Lwt.map Database.raise_error
         in
         Lwt.finalize
           (fun () -> f connection)
           (fun () ->
-            Connection.exec set_fk_check_request true |> Lwt.map Database.raise_error))
+            Connection.exec set_fk_check_request true
+            |> Lwt.map Database.raise_error))
   ;;
 
   let execute_steps migration =
@@ -86,10 +90,13 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
     let rec run steps =
       match steps with
       | [] -> Lwt.return ()
-      | Sihl_contract.Migration.{ label; statement; check_fk = true } :: steps ->
+      | Sihl_contract.Migration.{ label; statement; check_fk = true } :: steps
+        ->
         Logs.debug (fun m -> m "Running %s" label);
         let query (module Connection : Caqti_lwt.CONNECTION) =
-          let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
+          let req =
+            Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+          in
           Connection.exec req () |> Lwt.map Database.raise_error
         in
         let* () = Database.query query in
@@ -101,7 +108,9 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
           with_disabled_fk_check (fun connection ->
               Logs.debug (fun m -> m "Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
-                let req = Caqti_request.exec ~oneshot:true Caqti_type.unit statement in
+                let req =
+                  Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+                in
                 Connection.exec req () |> Lwt.map Database.raise_error
               in
               query connection)
@@ -153,7 +162,8 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let execute migrations =
     let n = List.length migrations in
     if n > 0
-    then Logs.debug (fun m -> m "Executing %i migrations" (List.length migrations))
+    then
+      Logs.debug (fun m -> m "Executing %i migrations" (List.length migrations))
     else Logs.debug (fun m -> m "No migrations to execute");
     let open Lwt in
     let rec run migrations =
@@ -176,13 +186,17 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let run_all () =
-    let steps = !registered_migrations |> Map.to_seq |> List.of_seq |> List.map snd in
+    let steps =
+      !registered_migrations |> Map.to_seq |> List.of_seq |> List.map snd
+    in
     execute steps
   ;;
 
   let migrate_cmd =
-    Sihl_core.Command.make ~name:"migrate" ~description:"Run all migrations" (fun _ ->
-        run_all ())
+    Sihl_core.Command.make
+      ~name:"migrate"
+      ~description:"Run all migrations"
+      (fun _ -> run_all ())
   ;;
 
   let start () = Lwt.return ()

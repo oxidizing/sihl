@@ -1,5 +1,6 @@
-(* This is the actual job instance that is derived from the job description ['a Job.t] and
-   some input. This needs to be serialized and persisted for persistent job queues. *)
+(* This is the actual job instance that is derived from the job description ['a
+   Job.t] and some input. This needs to be serialized and persisted for
+   persistent job queues. *)
 
 module Status = struct
   type t =
@@ -74,7 +75,9 @@ let is_pending job_instance =
   | _ -> false
 ;;
 
-let incr_tries job_instance = { job_instance with tries = job_instance.tries + 1 }
+let incr_tries job_instance =
+  { job_instance with tries = job_instance.tries + 1 }
+;;
 
 let update_next_run_at job job_instance =
   let delay = job.Workable_job.retry_delay |> Sihl_core.Time.duration_to_span in

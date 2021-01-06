@@ -40,7 +40,9 @@ type config =
   ; ca_path : string option
   }
 
-let config username port start_tls ca_path = { username; port; start_tls; ca_path }
+let config username port start_tls ca_path =
+  { username; port; start_tls; ca_path }
+;;
 
 let sexp_of_config { username; port; start_tls; ca_path } =
   let open Sexplib0.Sexp_conv in
@@ -69,7 +71,10 @@ let schema =
 
 let read_schema_invalid _ () =
   Sihl_core.Configuration.store
-    [ "SMTP_PORT", "1234"; "SMTP_START_TLS", "true"; "SMTP_CA_PATH", "/ca/file" ];
+    [ "SMTP_PORT", "1234"
+    ; "SMTP_START_TLS", "true"
+    ; "SMTP_CA_PATH", "/ca/file"
+    ];
   Alcotest.check_raises
     "raises"
     (Sihl_core.Configuration.Exception "Invalid configuration provided")
@@ -123,8 +128,10 @@ let read_env_file switch () =
   in
   let* data = Sihl_core.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in
-  Alcotest.(check (list string) "Returns keys" (List.rev keys) (List.map fst data));
-  Alcotest.(check (list string) "Returns values" (List.rev values) (List.map snd data));
+  Alcotest.(
+    check (list string) "Returns keys" (List.rev keys) (List.map fst data));
+  Alcotest.(
+    check (list string) "Returns values" (List.rev values) (List.map snd data));
   Lwt.return ()
 ;;
 
@@ -168,7 +175,8 @@ end = struct
     Sihl_core.Configuration.store data;
     let exc = Sihl_core.Configuration.Exception "Configuration check failed" in
     Alcotest.(
-      check_raises "raises" exc (fun () -> Sihl_core.Configuration.require schema));
+      check_raises "raises" exc (fun () ->
+          Sihl_core.Configuration.require schema));
     Lwt.return ()
   ;;
 end
@@ -181,7 +189,10 @@ let suite =
         ; test_case "read existing" `Quick read_existing
         ; test_case "read schema invalid" `Quick read_schema_invalid
         ; test_case "read schema" `Quick read_schema
-        ; test_case "read env file non-existing" `Quick read_env_file_non_existing
+        ; test_case
+            "read env file non-existing"
+            `Quick
+            read_env_file_non_existing
         ; test_case "read env file" `Quick read_env_file
         ; test_case "require succeeds" `Quick Test1.test
         ; test_case "require fails" `Quick Test2.test

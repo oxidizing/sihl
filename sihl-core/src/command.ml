@@ -66,8 +66,8 @@ let run commands args =
   let command = find_command_by_args commands args in
   match command with
   | Some command ->
-    (* We use the first argument to find the command, the command it self receives all the
-       rest *)
+    (* We use the first argument to find the command, the command it self
+       receives all the rest *)
     let rest_args =
       try args |> List.tl with
       | _ -> []

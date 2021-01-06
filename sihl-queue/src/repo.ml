@@ -39,7 +39,9 @@ module InMemory : Sig = struct
   ;;
 
   let find_workable () =
-    let all_job_instances = List.map (fun id -> Map.find_opt id !state) !ordered_ids in
+    let all_job_instances =
+      List.map (fun id -> Map.find_opt id !state) !ordered_ids
+    in
     let now = Ptime_clock.now () in
     let rec filter_pending all_job_instances result =
       match all_job_instances with
@@ -64,7 +66,10 @@ let status =
 let job =
   let open Job_instance in
   let encode m =
-    Ok (m.id, (m.name, (m.input, (m.tries, (m.next_run_at, (m.max_tries, m.status))))))
+    Ok
+      ( m.id
+      , (m.name, (m.input, (m.tries, (m.next_run_at, (m.max_tries, m.status)))))
+      )
   in
   let decode (id, (name, (input, (tries, (next_run_at, (max_tries, status)))))) =
     Ok { id; name; input; tries; next_run_at; max_tries; status }
@@ -75,10 +80,13 @@ let job =
       ~decode
       (tup2
          string
-         (tup2 string (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
+         (tup2
+            string
+            (tup2 (option string) (tup2 int (tup2 ptime (tup2 int status)))))))
 ;;
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let enqueue_request =
     Caqti_request.exec
       job
@@ -169,12 +177,15 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
-  let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
+  let clean_request =
+    Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
+  ;;
 
   let clean () =
     Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt.map Sihl_persistence.Database.raise_error)
+        Connection.exec clean_request ()
+        |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
   module Migration = struct
@@ -210,10 +221,14 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
   end
 
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
-  let register_migration () = MigrationService.register_migration Migration.migration
+
+  let register_migration () =
+    MigrationService.register_migration Migration.migration
+  ;;
 end
 
-module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let enqueue_request =
     Caqti_request.exec
       job
@@ -298,12 +313,15 @@ module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = s
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
-  let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
+  let clean_request =
+    Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
+  ;;
 
   let clean () =
     Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt.map Sihl_persistence.Database.raise_error)
+        Connection.exec clean_request ()
+        |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
   module Migration = struct
@@ -326,9 +344,14 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
 |sql}
     ;;
 
-    let migration = Sihl_facade.Migration.(empty "queue" |> add_step create_jobs_table)
+    let migration =
+      Sihl_facade.Migration.(empty "queue" |> add_step create_jobs_table)
+    ;;
   end
 
   let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
-  let register_migration () = MigrationService.register_migration Migration.migration
+
+  let register_migration () =
+    MigrationService.register_migration Migration.migration
+  ;;
 end

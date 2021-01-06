@@ -9,7 +9,10 @@ let post path handler = Post, path, handler
 let put path handler = Put, path, handler
 let delete path handler = Delete, path, handler
 let any path handler = Any, path, handler
-let router ?(scope = "/") ?(middlewares = []) routes = { scope; routes; middlewares }
+
+let router ?(scope = "/") ?(middlewares = []) routes =
+  { scope; routes; middlewares }
+;;
 
 let trailing_char s =
   let length = String.length s in
@@ -32,8 +35,8 @@ let prefix prefix (meth, path, handler) =
 ;;
 
 let apply_middleware_stack middleware_stack (meth, path, handler) =
-  (* The request goes through the middleware stack from top to bottom, so we have to
-     reverse the middleware stack *)
+  (* The request goes through the middleware stack from top to bottom, so we
+     have to reverse the middleware stack *)
   let middleware_stack = List.rev middleware_stack in
   let wrapped_handler =
     List.fold_left
@@ -45,7 +48,9 @@ let apply_middleware_stack middleware_stack (meth, path, handler) =
 ;;
 
 let router_to_routes { scope; routes; middlewares } =
-  routes |> List.map (prefix scope) |> List.map (apply_middleware_stack middlewares)
+  routes
+  |> List.map (prefix scope)
+  |> List.map (apply_middleware_stack middlewares)
 ;;
 
 let externalize_path ?prefix path =
@@ -94,7 +99,9 @@ let registered_routers = ref []
 let start_server () =
   let open Lwt.Syntax in
   Logs.debug (fun m -> m "Starting HTTP server");
-  let port_nr = Option.value (Sihl_core.Configuration.read schema).port ~default:33000 in
+  let port_nr =
+    Option.value (Sihl_core.Configuration.read schema).port ~default:33000
+  in
   let app = Opium.App.(empty |> port port_nr |> cmd_name "Sihl App") in
   let builders = routers_to_opium_builders !registered_routers in
   let app = List.fold_left (fun app builder -> builder app) app builders in

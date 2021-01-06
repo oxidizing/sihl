@@ -101,15 +101,17 @@ let top_sort_lifecycles lifecycles =
     let msg = String.concat ", " remaining_names in
     Logs.err (fun m ->
         m
-          "Cycle detected while starting services. These are the services after the \
-           cycle: %s"
+          "Cycle detected while starting services. These are the services \
+           after the cycle: %s"
           msg);
     raise Exception
 ;;
 
 let start_services services =
   Logs.info (fun m -> m "Starting Sihl");
-  let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
+  let lifecycles =
+    List.map (fun service -> service.Service.lifecycle) services
+  in
   let lifecycles = lifecycles |> top_sort_lifecycles in
   let rec loop lifecycles =
     match lifecycles with
@@ -127,7 +129,9 @@ let start_services services =
 
 let stop_services services =
   Logs.info (fun m -> m "Stopping Sihl");
-  let lifecycles = List.map (fun service -> service.Service.lifecycle) services in
+  let lifecycles =
+    List.map (fun service -> service.Service.lifecycle) services
+  in
   let lifecycles = lifecycles |> top_sort_lifecycles in
   let rec loop lifecycles =
     match lifecycles with
@@ -152,12 +156,14 @@ let unpack name ?default service =
         m "%s was called before a service implementation was registered" name);
     Logs.info (fun m ->
         m
-          "I was not able to find a default implementation either. Please make sure to \
-           provide a implementation using Sihl.Service.<Service>.register() of %s"
+          "I was not able to find a default implementation either. Please make \
+           sure to provide a implementation using \
+           Sihl.Service.<Service>.register() of %s"
           name);
     print_endline
-      "A service was called before it was registered. If you don't see any other output, \
-       this means that you implemented a service facade incorrectly. No log reporter was \
-       configured because this error happens at module evaluation time";
+      "A service was called before it was registered. If you don't see any \
+       other output, this means that you implemented a service facade \
+       incorrectly. No log reporter was configured because this error happens \
+       at module evaluation time";
     raise Exception
 ;;

@@ -50,7 +50,10 @@ let bearer_token_login _ () =
   let handler _ =
     let res = Opium.Response.of_plain_text "" in
     let res =
-      Sihl_web.Authentication.login ~email:"foo@example.com" ~password:"123123" res
+      Sihl_web.Authentication.login
+        ~email:"foo@example.com"
+        ~password:"123123"
+        res
     in
     Lwt.return res
   in

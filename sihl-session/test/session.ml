@@ -16,7 +16,9 @@ let update_session _ () =
   let* session = Sihl_facade.Session.create [ "foo", "bar"; "fooz", "baz" ] in
   let* value = Sihl_facade.Session.find_value session "foo" in
   Alcotest.(check (option string) "has value" (Some "bar") value);
-  let* () = Sihl_facade.Session.set_value session ~k:"foo" ~v:(Some "updated") in
+  let* () =
+    Sihl_facade.Session.set_value session ~k:"foo" ~v:(Some "updated")
+  in
   let* value = Sihl_facade.Session.find_value session "foo" in
   Alcotest.(check (option string) "has value" (Some "updated") value);
   let* () = Sihl_facade.Session.set_value session ~k:"foo" ~v:None in

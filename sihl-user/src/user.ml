@@ -58,7 +58,8 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         match Sihl_facade.User.set_user_password user new_password with
         | Ok user -> user
         | Error msg ->
-          Logs.err (fun m -> m "Can not update password of user %s: %s" user.email msg);
+          Logs.err (fun m ->
+              m "Can not update password of user %s: %s" user.email msg);
           raise (Sihl_contract.User.Exception msg)
       in
       let* () = Repo.update ~user:updated_user in
@@ -68,7 +69,9 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
 
   let update_details ~user ~email ~username =
     let open Lwt.Syntax in
-    let updated_user = Sihl_facade.User.set_user_details user ~email ~username in
+    let updated_user =
+      Sihl_facade.User.set_user_details user ~email ~username
+    in
     let* () = Repo.update ~user:updated_user in
     find ~user_id:user.id
   ;;
@@ -95,7 +98,8 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         match Sihl_facade.User.set_user_password user password with
         | Ok user -> user
         | Error msg ->
-          Logs.err (fun m -> m "USER: Can not set password of user %s: %s" user.email msg);
+          Logs.err (fun m ->
+              m "USER: Can not set password of user %s: %s" user.email msg);
           raise (Sihl_contract.User.Exception msg)
       in
       let* () = Repo.update ~user:updated_user in
@@ -104,7 +108,9 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
 
   let create ~email ~password ~username ~admin ~confirmed =
     let open Lwt.Syntax in
-    let user = Sihl_facade.User.make ~email ~password ~username ~admin ~confirmed in
+    let user =
+      Sihl_facade.User.make ~email ~password ~username ~admin ~confirmed
+    in
     match user with
     | Ok user ->
       let* () = Repo.insert ~user in
@@ -115,7 +121,12 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let create_user ~email ~password ~username =
     let open Lwt.Syntax in
     let* user =
-      Sihl_facade.User.create ~email ~password ~username ~admin:false ~confirmed:false
+      Sihl_facade.User.create
+        ~email
+        ~password
+        ~username
+        ~admin:false
+        ~confirmed:false
     in
     let user =
       match user with
@@ -137,7 +148,12 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       | None -> Lwt.return ()
     in
     let* user =
-      Sihl_facade.User.create ~email ~password ~username ~admin:true ~confirmed:true
+      Sihl_facade.User.create
+        ~email
+        ~password
+        ~username
+        ~admin:true
+        ~confirmed:true
     in
     let user =
       match user with
@@ -193,8 +209,11 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
-          create_admin ~email ~password ~username:(Some username) |> Lwt.map ignore
-        | _ -> raise (Sihl_core.Command.Exception "Usage: <username> <email> <password>"))
+          create_admin ~email ~password ~username:(Some username)
+          |> Lwt.map ignore
+        | _ ->
+          raise
+            (Sihl_core.Command.Exception "Usage: <username> <email> <password>"))
   ;;
 
   let start () = Lwt.return ()
@@ -215,5 +234,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 end
 
-module PostgreSql = Make (User_repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+module PostgreSql =
+  Make (User_repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+
 module MariaDb = Make (User_repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))

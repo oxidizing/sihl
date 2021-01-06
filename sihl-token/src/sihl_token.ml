@@ -14,7 +14,9 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let is_valid_token token =
     let open Repo.Model in
-    String.equal (Status.to_string token.status) (Status.to_string Status.Active)
+    String.equal
+      (Status.to_string token.status)
+      (Status.to_string Status.Active)
     && Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())
   ;;
 
@@ -38,7 +40,9 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
     let open Repo.Model in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
     let length =
-      Option.value ~default:30 (Sihl_core.Configuration.read schema).token_length
+      Option.value
+        ~default:30
+        (Sihl_core.Configuration.read schema).token_length
     in
     let token = make id ?expires_in ~length data in
     let* () = Repo.insert token in
@@ -54,7 +58,9 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
     | Some token ->
       (match is_valid_token token, force with
       | true, _ | false, Some () ->
-        (match List.find_opt (fun (key, _) -> String.equal k key) token.data with
+        (match
+           List.find_opt (fun (key, _) -> String.equal k key) token.data
+         with
         | Some (_, value) -> Lwt.return (Some value)
         | None -> Lwt.return None)
       | false, None -> Lwt.return None)
@@ -146,7 +152,9 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   ;;
 
   let create ?secret ?(expires_in = Sihl_core.Time.OneWeek) data =
-    let secret = Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret in
+    let secret =
+      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+    in
     let data =
       match List.find_opt (fun (k, _) -> String.equal k "exp") data with
       | Some (_, v) ->
@@ -170,7 +178,9 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let read ?secret ?force token_value ~k =
     let open Lwt.Syntax in
-    let secret = Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret in
+    let secret =
+      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+    in
     match Jwto.decode_and_verify secret token_value, force with
     | Error msg, None ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
@@ -180,14 +190,18 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
       if is_active
       then (
         match
-          List.find_opt (fun (key, _) -> String.equal k key) (Jwto.get_payload token)
+          List.find_opt
+            (fun (key, _) -> String.equal k key)
+            (Jwto.get_payload token)
         with
         | Some (_, value) -> Lwt.return (Some value)
         | None -> Lwt.return None)
       else Lwt.return None
     | Ok token, Some () ->
       (match
-         List.find_opt (fun (key, _) -> String.equal k key) (Jwto.get_payload token)
+         List.find_opt
+           (fun (key, _) -> String.equal k key)
+           (Jwto.get_payload token)
        with
       | Some (_, value) -> Lwt.return (Some value)
       | None -> Lwt.return None)
@@ -199,7 +213,9 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
         Lwt.return None
       | Ok token ->
         (match
-           List.find_opt (fun (key, _) -> String.equal k key) (Jwto.get_payload token)
+           List.find_opt
+             (fun (key, _) -> String.equal k key)
+             (Jwto.get_payload token)
          with
         | Some (_, value) -> Lwt.return (Some value)
         | None -> Lwt.return None))
@@ -207,7 +223,9 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let read_all ?secret ?force token_value =
     let open Lwt.Syntax in
-    let secret = Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret in
+    let secret =
+      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+    in
     match Jwto.decode_and_verify secret token_value, force with
     | Error msg, None ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
@@ -215,7 +233,9 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
     | Ok token, Some () -> Lwt.return (Some (Jwto.get_payload token))
     | Ok token, None ->
       let* is_active = is_active token_value in
-      if is_active then Lwt.return (Some (Jwto.get_payload token)) else Lwt.return None
+      if is_active
+      then Lwt.return (Some (Jwto.get_payload token))
+      else Lwt.return None
     | Error msg, Some () ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
       (match Jwto.decode token_value with
@@ -226,29 +246,39 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   ;;
 
   let verify ?secret token =
-    let secret = Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret in
+    let secret =
+      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+    in
     match Jwto.decode_and_verify secret token with
     | Ok _ -> Lwt.return true
     | Error _ -> Lwt.return false
   ;;
 
   let is_expired ?secret token_value =
-    let secret = Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret in
+    let secret =
+      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+    in
     match Jwto.decode_and_verify secret token_value with
     | Ok token ->
       (match
-         List.find_opt (fun (k, _) -> String.equal k "exp") (Jwto.get_payload token)
+         List.find_opt
+           (fun (k, _) -> String.equal k "exp")
+           (Jwto.get_payload token)
        with
       | Some (_, exp) ->
         let exp = exp |> int_of_string_opt |> Option.map float_of_int in
         (match Option.bind exp Ptime.of_float_s with
         | Some expiration_date ->
-          let is_expired = Ptime.is_earlier expiration_date ~than:(Ptime_clock.now ()) in
+          let is_expired =
+            Ptime.is_earlier expiration_date ~than:(Ptime_clock.now ())
+          in
           Lwt.return is_expired
         | None ->
           raise
           @@ Sihl_contract.Token.Exception
-               (Format.sprintf "Invalid 'exp' claim found in token '%s'" token_value))
+               (Format.sprintf
+                  "Invalid 'exp' claim found in token '%s'"
+                  token_value))
       | None -> Lwt.return false)
     | Error msg ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
@@ -276,7 +306,9 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
 end
 
 module MariaDb = Make (Repo.MariaDb (Sihl_persistence.Migration.MariaDb))
+
 module PostgreSql = Make (Repo.PostgreSql (Sihl_persistence.Migration.PostgreSql))
+
 module JwtInMemory = MakeJwt (Blacklist_repo.InMemory)
 module JwtMariaDb = MakeJwt (Blacklist_repo.MariaDb)
 module JwtPostgreSql = MakeJwt (Blacklist_repo.PostgreSql)

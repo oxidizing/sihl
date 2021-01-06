@@ -8,7 +8,9 @@ let to_sexp { name; max_tries; retry_delay; _ } =
     [ List [ Atom "name"; sexp_of_string name ]
     ; List [ Atom "max_tries"; sexp_of_int max_tries ]
     ; List
-        [ Atom "retry_delay"; sexp_of_string (Sihl_core.Time.show_duration retry_delay) ]
+        [ Atom "retry_delay"
+        ; sexp_of_string (Sihl_core.Time.show_duration retry_delay)
+        ]
     ]
 ;;
 
@@ -17,7 +19,9 @@ let default_tries = 5
 let default_retry_delay = Sihl_core.Time.OneMinute
 
 let create ~name ~input_to_string ~string_to_input ~handle ?failed () =
-  let failed = failed |> Option.value ~default:(fun _ -> Lwt_result.return ()) in
+  let failed =
+    failed |> Option.value ~default:(fun _ -> Lwt_result.return ())
+  in
   { name
   ; input_to_string
   ; string_to_input

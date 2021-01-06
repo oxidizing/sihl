@@ -37,15 +37,16 @@ let schedule schedule =
   let rec loop () =
     let now = Ptime_clock.now () in
     let duration = run_in schedule ~now in
-    Logs.debug (fun m -> m "Running schedule %s in %f seconds" (label schedule) duration);
+    Logs.debug (fun m ->
+        m "Running schedule %s in %f seconds" (label schedule) duration);
     let* () =
       Lwt.catch
         (fun () -> scheduled_function ())
         (fun exn ->
           Logs.err (fun m ->
               m
-                "Exception caught while running schedule, this is a bug in your \
-                 scheduled function. %s"
+                "Exception caught while running schedule, this is a bug in \
+                 your scheduled function. %s"
                 (Printexc.to_string exn));
           Lwt.return ())
     in

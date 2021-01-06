@@ -14,11 +14,15 @@ let should_run_job _ () =
     |> Sihl_facade.Queue.set_max_tries 3
     |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
   in
-  let job_instance = Sihl_queue.Job_instance.create ~input:None ~delay:None ~now job in
+  let job_instance =
+    Sihl_queue.Job_instance.create ~input:None ~delay:None ~now job
+  in
   let actual = Sihl_queue.Job_instance.should_run ~job_instance ~now in
   Alcotest.(check bool) "pending job should run" true actual;
   let delay = Some Sihl_core.Time.OneDay in
-  let job_instance = Sihl_queue.Job_instance.create ~input:None ~delay ~now job in
+  let job_instance =
+    Sihl_queue.Job_instance.create ~input:None ~delay ~now job
+  in
   let actual = Sihl_queue.Job_instance.should_run ~job_instance ~now in
   Alcotest.(check bool)
     "pending job with start_at in the future should not run"
@@ -30,7 +34,10 @@ let should_run_job _ () =
     |> Sihl_queue.Job_instance.incr_tries
   in
   let actual = Sihl_queue.Job_instance.should_run ~job_instance ~now in
-  Alcotest.(check bool) "pending job with tries < max_tries should not run" true actual;
+  Alcotest.(check bool)
+    "pending job with tries < max_tries should not run"
+    true
+    actual;
   let job_instance =
     Sihl_queue.Job_instance.create ~input:None ~delay:None ~now job
     |> Sihl_queue.Job_instance.incr_tries
@@ -38,7 +45,10 @@ let should_run_job _ () =
     |> Sihl_queue.Job_instance.incr_tries
   in
   let actual = Sihl_queue.Job_instance.should_run ~job_instance ~now in
-  Alcotest.(check bool) "pending job with tries = max_tries should not run" false actual;
+  Alcotest.(check bool)
+    "pending job with tries = max_tries should not run"
+    false
+    actual;
   let job_instance =
     Sihl_queue.Job_instance.create ~input:None ~delay:None ~now job
     |> Sihl_queue.Job_instance.set_failed
@@ -57,7 +67,10 @@ let should_run_job _ () =
     |> Sihl_queue.Job_instance.update_next_run_at workable_job
   in
   let actual = Sihl_queue.Job_instance.should_run ~job_instance ~now in
-  Alcotest.(check bool) "job that hasn't cooled down should not run" false actual;
+  Alcotest.(check bool)
+    "job that hasn't cooled down should not run"
+    false
+    actual;
   Lwt.return ()
 ;;
 
@@ -65,7 +78,8 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
   let dispatched_job_gets_processed _ () =
     let has_ran_job = ref false in
     let* () =
-      Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
+      Sihl_core.Container.stop_services
+        [ Sihl_facade.Queue.register (module Service) ]
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
@@ -91,7 +105,8 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
     let* () =
-      Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
+      Sihl_core.Container.stop_services
+        [ Sihl_facade.Queue.register (module Service) ]
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job1 =
@@ -116,7 +131,9 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
       |> Sihl_facade.Queue.set_max_tries 3
       |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
-    let service = Sihl_facade.Queue.register ~jobs:[ job1; job2 ] (module Service) in
+    let service =
+      Sihl_facade.Queue.register ~jobs:[ job1; job2 ] (module Service)
+    in
     let* _ = Sihl_core.Container.start_services [ service ] in
     let* () = Sihl_facade.Queue.dispatch job1 () in
     let* () = Sihl_facade.Queue.dispatch job2 () in
@@ -129,7 +146,8 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
   let cleans_up_job_after_error _ () =
     let has_cleaned_up_job = ref false in
     let* () =
-      Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
+      Sihl_core.Container.stop_services
+        [ Sihl_facade.Queue.register (module Service) ]
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
@@ -148,13 +166,16 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
     let* () = Sihl_core.Container.stop_services [ service ] in
-    let () = Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job) in
+    let () =
+      Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
+    in
     Lwt.return ()
   in
   let cleans_up_job_after_exception _ () =
     let has_cleaned_up_job = ref false in
     let* () =
-      Sihl_core.Container.stop_services [ Sihl_facade.Queue.register (module Service) ]
+      Sihl_core.Container.stop_services
+        [ Sihl_facade.Queue.register (module Service) ]
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
@@ -173,19 +194,27 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
     let* () = Sihl_core.Container.stop_services [ service ] in
-    let () = Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job) in
+    let () =
+      Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
+    in
     Lwt.return ()
   in
   let suite =
     [ ( "queue"
       , [ test_case "should job run" `Quick should_run_job
-        ; test_case "dispatched job gets processed" `Quick dispatched_job_gets_processed
+        ; test_case
+            "dispatched job gets processed"
+            `Quick
+            dispatched_job_gets_processed
         ; test_case
             "two dispatched jobs get processed"
             `Quick
             two_dispatched_jobs_get_processed
         ; test_case "cleans up job after error" `Quick cleans_up_job_after_error
-        ; test_case "cleans up job after exception" `Quick cleans_up_job_after_exception
+        ; test_case
+            "cleans up job after exception"
+            `Quick
+            cleans_up_job_after_exception
         ] )
     ]
   in

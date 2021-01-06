@@ -14,7 +14,11 @@ let fetch_uploaded_file _ () =
   let file_id = Uuidm.v `V4 |> Uuidm.to_string in
   let file =
     Sihl_contract.Storage.
-      { id = file_id; filename = "diploma.pdf"; filesize = 123; mime = "application/pdf" }
+      { id = file_id
+      ; filename = "diploma.pdf"
+      ; filesize = 123
+      ; mime = "application/pdf"
+      }
   in
   let* _ = Sihl_facade.Storage.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ=" in
   let* uploaded_file = Sihl_facade.Storage.find ~id:file_id in
@@ -30,9 +34,15 @@ let update_uploaded_file _ () =
   let file_id = Uuidm.v `V4 |> Uuidm.to_string in
   let file =
     Sihl_contract.Storage.
-      { id = file_id; filename = "diploma.pdf"; filesize = 123; mime = "application/pdf" }
+      { id = file_id
+      ; filename = "diploma.pdf"
+      ; filesize = 123
+      ; mime = "application/pdf"
+      }
   in
-  let* stored_file = Sihl_facade.Storage.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ=" in
+  let* stored_file =
+    Sihl_facade.Storage.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ="
+  in
   let updated_file =
     Sihl_facade.Storage.set_filename_stored "assessment.pdf" stored_file
   in

@@ -5,7 +5,8 @@ let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Database.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref =
+let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
+  =
   ref None
 ;;
 
@@ -103,7 +104,9 @@ let fetch_pool () =
     Logs.debug (fun m -> m "Skipping pool creation, re-using existing pool");
     pool
   | None ->
-    let pool_size = Option.value (Core.Configuration.read schema).pool_size ~default:10 in
+    let pool_size =
+      Option.value (Core.Configuration.read schema).pool_size ~default:10
+    in
     Logs.debug (fun m -> m "Create pool with size %i" pool_size);
     (Core.Configuration.read schema).url
     |> Uri.of_string
@@ -129,7 +132,8 @@ let transaction f =
         let* start_result = Connection.start () in
         match start_result with
         | Error msg ->
-          Logs.debug (fun m -> m "Failed to start transaction %s" (Caqti_error.show msg));
+          Logs.debug (fun m ->
+              m "Failed to start transaction %s" (Caqti_error.show msg));
           Lwt.return @@ Error msg
         | Ok () ->
           Logs.debug (fun m -> m "Started transaction");
@@ -145,7 +149,8 @@ let transaction f =
                 Logs.err (fun m ->
                     m "Failed to commit transaction %s" (Caqti_error.show error));
                 Lwt.fail
-                @@ Sihl_contract.Database.Exception "Failed to commit transaction")
+                @@ Sihl_contract.Database.Exception
+                     "Failed to commit transaction")
             (fun e ->
               let* rollback_result = Connection.rollback () in
               match rollback_result with
@@ -154,9 +159,12 @@ let transaction f =
                 Lwt.fail e
               | Error error ->
                 Logs.err (fun m ->
-                    m "Failed to rollback transaction %s" (Caqti_error.show error));
+                    m
+                      "Failed to rollback transaction %s"
+                      (Caqti_error.show error));
                 Lwt.fail
-                @@ Sihl_contract.Database.Exception "Failed to rollback transaction"))
+                @@ Sihl_contract.Database.Exception
+                     "Failed to rollback transaction"))
       pool
   in
   match result with
@@ -171,7 +179,9 @@ let query f =
   let pool = fetch_pool () in
   print_pool_usage pool;
   let* result =
-    Caqti_lwt.Pool.use (fun connection -> f connection |> Lwt.map Result.ok) pool
+    Caqti_lwt.Pool.use
+      (fun connection -> f connection |> Lwt.map Result.ok)
+      pool
   in
   match result with
   | Ok result -> Lwt.return result
@@ -182,7 +192,9 @@ let query f =
 ;;
 
 let used_database () =
-  let host = (Core.Configuration.read schema).url |> Uri.of_string |> Uri.host in
+  let host =
+    (Core.Configuration.read schema).url |> Uri.of_string |> Uri.host
+  in
   match host with
   | Some "mariadb" -> Some Sihl_contract.Database.MariaDb
   | Some "mysql" -> Some Sihl_contract.Database.MariaDb
@@ -204,7 +216,10 @@ let start () =
 ;;
 
 let stop () = Lwt.return ()
-let lifecycle = Core.Container.Lifecycle.create Sihl_contract.Database.name ~start ~stop
+
+let lifecycle =
+  Core.Container.Lifecycle.create Sihl_contract.Database.name ~start ~stop
+;;
 
 let register () =
   let configuration = Core.Configuration.make ~schema () in

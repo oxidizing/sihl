@@ -1,7 +1,7 @@
 (** A module to manage the service container and service lifecycles.
 
-    The service container knows how to start services in the right order by respecting the
-    defined dependencies. Use it to implement your own services. *)
+    The service container knows how to start services in the right order by
+    respecting the defined dependencies. Use it to implement your own services. *)
 
 (** {1 Lifecycle}
 
@@ -13,7 +13,13 @@ module Lifecycle : sig
   type stop = unit -> unit Lwt.t
 
   val name : t -> string
-  val create : ?dependencies:(unit -> t list) -> string -> start:start -> stop:stop -> t
+
+  val create
+    :  ?dependencies:(unit -> t list)
+    -> string
+    -> start:start
+    -> stop:stop
+    -> t
 end
 
 (** {1 Service}
@@ -42,14 +48,14 @@ module Service : sig
   val name : t -> string
 end
 
-(** [start_services lifecycles] starts a list of service [lifecycles]. The order does not
-    matter as the services are started in the order of their dependencies. (No service is
-    started before its dependency) *)
+(** [start_services lifecycles] starts a list of service [lifecycles]. The order
+    does not matter as the services are started in the order of their
+    dependencies. (No service is started before its dependency) *)
 val start_services : Service.t list -> Lifecycle.t list Lwt.t
 
-(** [stop_services ctx services] stops a list of service [lifecycles] with a context
-    [ctx]. The order does not matter as the services are stopped in the order of their
-    dependencies. (No service is stopped after its dependency) *)
+(** [stop_services ctx services] stops a list of service [lifecycles] with a
+    context [ctx]. The order does not matter as the services are stopped in the
+    order of their dependencies. (No service is stopped after its dependency) *)
 val stop_services : Service.t list -> unit Lwt.t
 
 module Map : sig

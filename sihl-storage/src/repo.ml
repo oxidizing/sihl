@@ -13,7 +13,8 @@ module type Sig = sig
   val delete_blob : id:string -> unit Lwt.t
 end
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let stored_file =
     let encode m =
       let open Sihl_contract.Storage in
@@ -212,15 +213,19 @@ module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = stru
   ;;
 
   let clean_handles () =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_handles_request ()
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;
 
-  let clean_blobs_request = Caqti_request.exec Caqti_type.unit "TRUNCATE storage_blobs;"
+  let clean_blobs_request =
+    Caqti_request.exec Caqti_type.unit "TRUNCATE storage_blobs;"
+  ;;
 
   let clean_blobs () =
-    Sihl_persistence.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl_persistence.Database.query
+      (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_blobs_request ()
         |> Lwt.map Sihl_persistence.Database.raise_error)
   ;;

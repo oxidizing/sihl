@@ -11,7 +11,8 @@ let drop_table_request =
 
 let drop_table_if_exists connection =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  Connection.exec drop_table_request () |> Lwt.map Sihl_persistence.Database.raise_error
+  Connection.exec drop_table_request ()
+  |> Lwt.map Sihl_persistence.Database.raise_error
 ;;
 
 let create_table_request =
@@ -26,11 +27,14 @@ let create_table_request =
 
 let create_table_if_not_exists connection =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  Connection.exec create_table_request () |> Lwt.map Sihl_persistence.Database.raise_error
+  Connection.exec create_table_request ()
+  |> Lwt.map Sihl_persistence.Database.raise_error
 ;;
 
 let insert_username_request =
-  Caqti_request.exec Caqti_type.string "INSERT INTO testing_user(username) VALUES (?)"
+  Caqti_request.exec
+    Caqti_type.string
+    "INSERT INTO testing_user(username) VALUES (?)"
 ;;
 
 let insert_username connection username =
@@ -105,7 +109,8 @@ let failing_query connection =
   Lwt.catch
     (fun () ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec invalid_request () |> Lwt.map Sihl_persistence.Database.raise_error)
+      Connection.exec invalid_request ()
+      |> Lwt.map Sihl_persistence.Database.raise_error)
     (* eat the exception silently *)
       (fun _ -> Lwt.return ())
 ;;

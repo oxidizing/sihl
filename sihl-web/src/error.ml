@@ -58,9 +58,12 @@ let site_error_handler req =
 let json_error_handler req =
   let request_id = Id.find req in
   let msg =
-    Format.sprintf "Something went wrong, our administrators have been notified."
+    Format.sprintf
+      "Something went wrong, our administrators have been notified."
   in
-  let body = Format.sprintf {|"{"errors": ["%s"], "request_id": "%s"}"|} msg request_id in
+  let body =
+    Format.sprintf {|"{"errors": ["%s"], "request_id": "%s"}"|} msg request_id
+  in
   Opium.Response.of_plain_text body
   |> Opium.Response.set_content_type "application/json; charset=utf-8"
   |> Opium.Response.set_status `Internal_server_error
@@ -77,11 +80,16 @@ let middleware error_handler =
         let request_id = Id.find req in
         let req_str = Format.asprintf "%a" Opium.Request.pp_hum req in
         Logs.err (fun m ->
-            m "Request id %s: %s\nError: %s\nStacktrace: %s" request_id req_str msg stack);
+            m
+              "Request id %s: %s\nError: %s\nStacktrace: %s"
+              request_id
+              req_str
+              msg
+              stack);
         error_handler req)
   in
-  (* In a production setting we don't want to use the built in debugger middleware of
-     opium *)
+  (* In a production setting we don't want to use the built in debugger
+     middleware of opium *)
   if Sihl_core.Configuration.is_production ()
   then Rock.Middleware.create ~name:"error" ~filter
   else Opium.Middleware.debugger

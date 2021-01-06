@@ -18,7 +18,10 @@ let json_serialization _ () =
       ~username:None
   in
   let user_after =
-    user |> Sihl_facade.User.to_yojson |> Sihl_facade.User.of_yojson |> Option.get
+    user
+    |> Sihl_facade.User.to_yojson
+    |> Sihl_facade.User.of_yojson
+    |> Option.get
   in
   let user = Format.asprintf "%a" Sihl_facade.User.pp user in
   let user_after = Format.asprintf "%a" Sihl_facade.User.pp user_after in
@@ -35,12 +38,16 @@ let update_details _ () =
       ~username:None
   in
   let* updated_user =
-    Sihl_facade.User.update_details ~user ~email:"new@example.com" ~username:(Some "foo")
+    Sihl_facade.User.update_details
+      ~user
+      ~email:"new@example.com"
+      ~username:(Some "foo")
   in
   let actual_email = updated_user.email in
   let actual_username = updated_user.username in
   Alcotest.(check string "Has updated email" "new@example.com" actual_email);
-  Alcotest.(check (option string) "Has updated username" (Some "foo") actual_username);
+  Alcotest.(
+    check (option string) "Has updated username" (Some "foo") actual_username);
   Lwt.return ()
 ;;
 
@@ -67,7 +74,11 @@ let update_password _ () =
   in
   let actual_email = user.email in
   Alcotest.(
-    check string "Can login with updated password" "foobar@example.com" actual_email);
+    check
+      string
+      "Can login with updated password"
+      "foobar@example.com"
+      actual_email);
   Lwt.return ()
 ;;
 

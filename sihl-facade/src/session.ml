@@ -11,7 +11,11 @@ let to_sexp { key; expire_date; _ } =
 ;;
 
 let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
-let expiration_date now = Sihl_core.Time.date_from_now now Sihl_core.Time.OneWeek
+
+let expiration_date now =
+  Sihl_core.Time.date_from_now now Sihl_core.Time.OneWeek
+;;
+
 let key session = session.key
 let is_expired now session = Ptime.is_later now ~than:session.expire_date
 

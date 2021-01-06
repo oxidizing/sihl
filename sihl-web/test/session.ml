@@ -44,7 +44,11 @@ let requests_persist_session_variables _ () =
   let* session = Sihl_facade.Session.find_all () |> Lwt.map List.hd in
   let* value = Sihl_facade.Session.find_value session "foo" in
   Alcotest.(
-    check (option string) "Has created session with session value" (Some "bar") value);
+    check
+      (option string)
+      "Has created session with session value"
+      (Some "bar")
+      value);
   Lwt.return ()
 ;;
 

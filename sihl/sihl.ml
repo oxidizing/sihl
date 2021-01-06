@@ -64,7 +64,8 @@ module Migration = struct
     let register = Sihl_facade.Migration.register
 
     let postgresql =
-      (module Sihl_persistence.Migration.PostgreSql : Sihl_contract.Migration.Sig)
+      (module Sihl_persistence.Migration.PostgreSql
+      : Sihl_contract.Migration.Sig)
     ;;
 
     let mariadb =
@@ -87,7 +88,9 @@ module User = struct
     include Sihl_facade.Password_reset
 
     module Setup = struct
-      let default = (module Sihl_user.Password_reset : Sihl_contract.Password_reset.Sig)
+      let default =
+        (module Sihl_user.Password_reset : Sihl_contract.Password_reset.Sig)
+      ;;
 
       let register ?(implementation = default) () =
         Sihl_facade.Password_reset.register implementation
@@ -102,7 +105,11 @@ module Session = struct
 
   module Setup = struct
     let register = Sihl_facade.Session.register
-    let postgresql = (module Sihl_session.PostgreSql : Sihl_contract.Session.Sig)
+
+    let postgresql =
+      (module Sihl_session.PostgreSql : Sihl_contract.Session.Sig)
+    ;;
+
     let mariadb = (module Sihl_session.MariaDb : Sihl_contract.Session.Sig)
   end
 end
@@ -115,9 +122,16 @@ module Token = struct
     let register = Sihl_facade.Token.register
     let mariadb = (module Sihl_token.MariaDb : Sihl_contract.Token.Sig)
     let postgresql = (module Sihl_token.PostgreSql : Sihl_contract.Token.Sig)
-    let jwt_in_memory = (module Sihl_token.JwtInMemory : Sihl_contract.Token.Sig)
+
+    let jwt_in_memory =
+      (module Sihl_token.JwtInMemory : Sihl_contract.Token.Sig)
+    ;;
+
     let jwt_mariadb = (module Sihl_token.JwtMariaDb : Sihl_contract.Token.Sig)
-    let jwt_postgresql = (module Sihl_token.JwtPostgreSql : Sihl_contract.Token.Sig)
+
+    let jwt_postgresql =
+      (module Sihl_token.JwtPostgreSql : Sihl_contract.Token.Sig)
+    ;;
   end
 end
 
@@ -143,7 +157,9 @@ module Email_template = struct
       (module Sihl_email.Template.PostgreSql : Sihl_contract.Email_template.Sig)
     ;;
 
-    let mariadb = (module Sihl_email.Template.MariaDb : Sihl_contract.Email_template.Sig)
+    let mariadb =
+      (module Sihl_email.Template.MariaDb : Sihl_contract.Email_template.Sig)
+    ;;
   end
 end
 

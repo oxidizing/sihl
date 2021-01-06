@@ -3,7 +3,8 @@ open Lwt.Syntax
 let services =
   [ Sihl_facade.Schedule.register (module Sihl_core.Schedule)
   ; Sihl_persistence.Database.register ()
-  ; Sihl_facade.Migration.register (module Sihl_persistence.Migration.PostgreSql)
+  ; Sihl_facade.Migration.register
+      (module Sihl_persistence.Migration.PostgreSql)
   ; Sihl_facade.Queue.register (module Sihl_queue.PostgreSql)
   ]
 ;;

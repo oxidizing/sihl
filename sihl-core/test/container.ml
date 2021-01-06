@@ -17,8 +17,11 @@ module ServiceB : Sihl_core.Container.Service.Sig = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create "b" ~start ~stop ~dependencies:(fun () ->
-        [ ServiceA.lifecycle ])
+    Sihl_core.Container.Lifecycle.create
+      "b"
+      ~start
+      ~stop
+      ~dependencies:(fun () -> [ ServiceA.lifecycle ])
   ;;
 end
 
@@ -31,8 +34,11 @@ module ServiceC : Sihl_core.Container.Service.Sig = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create "c" ~start ~stop ~dependencies:(fun () ->
-        [ ServiceB.lifecycle ])
+    Sihl_core.Container.Lifecycle.create
+      "c"
+      ~start
+      ~stop
+      ~dependencies:(fun () -> [ ServiceB.lifecycle ])
   ;;
 end
 
@@ -45,8 +51,11 @@ module ServiceD : Sihl_core.Container.Service.Sig = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create "d" ~start ~stop ~dependencies:(fun () ->
-        [ ServiceB.lifecycle; ServiceC.lifecycle ])
+    Sihl_core.Container.Lifecycle.create
+      "d"
+      ~start
+      ~stop
+      ~dependencies:(fun () -> [ ServiceB.lifecycle; ServiceC.lifecycle ])
   ;;
 end
 
@@ -72,7 +81,10 @@ let suite =
   Alcotest.
     [ ( "service container"
       , [ test_case "order all dependencies" `Quick order_all_dependencies
-        ; test_case "order simple dependency list" `Quick order_simple_dependency_list
+        ; test_case
+            "order simple dependency list"
+            `Quick
+            order_simple_dependency_list
         ] )
     ]
 ;;

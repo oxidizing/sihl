@@ -2,7 +2,8 @@ open Lwt.Syntax
 
 let services =
   [ Sihl_persistence.Database.register ()
-  ; Sihl_facade.Migration.register (module Sihl_persistence.Migration.PostgreSql)
+  ; Sihl_facade.Migration.register
+      (module Sihl_persistence.Migration.PostgreSql)
   ; Sihl_facade.Token.register (module Sihl_token.PostgreSql)
   ]
 ;;

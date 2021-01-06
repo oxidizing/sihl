@@ -60,7 +60,9 @@ let envs_to_kv envs =
 ;;
 
 (* TODO [jerben] Consider memoizing this or any consumer functions *)
-let environment_variables () = Unix.environment () |> Array.to_list |> envs_to_kv
+let environment_variables () =
+  Unix.environment () |> Array.to_list |> envs_to_kv
+;;
 
 let read schema =
   let data = environment_variables () in
@@ -75,7 +77,8 @@ let read schema =
   | errors ->
     let errors =
       List.map
-        (fun (k, v) -> Format.sprintf "Configuration '%s' has invalid value: %s" k v)
+        (fun (k, v) ->
+          Format.sprintf "Configuration '%s' has invalid value: %s" k v)
         errors
     in
     List.iter (fun error -> Logs.err (fun m -> m "%s" error)) errors;
@@ -138,7 +141,9 @@ let root_path () =
     let markers = [ ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
     let rec find_markers path_els =
       let path = String.concat "/" path_els in
-      if List.exists (fun marker -> Sys.file_exists (path ^ "/" ^ marker)) markers
+      if List.exists
+           (fun marker -> Sys.file_exists (path ^ "/" ^ marker))
+           markers
       then (
         (* Path found => Write it into the env var to "memoize" it *)
         Unix.putenv "ROOT_PATH" path;
@@ -176,13 +181,15 @@ let read_env_file () =
       let* envs = read_to_end file [] in
       envs |> envs_to_kv |> Option.some |> Lwt.return)
     else (
-      Logs.info (fun m -> m "Env file not found: %s. Continuing without it." filename);
+      Logs.info (fun m ->
+          m "Env file not found: %s. Continuing without it." filename);
       Lwt.return None)
   | None ->
     Logs.debug (fun m ->
         m
-          "No env files directory found, please provide your own directory path with \
-           environment variable ENV_FILES_PATH if you would like to use env files");
+          "No env files directory found, please provide your own directory \
+           path with environment variable ENV_FILES_PATH if you would like to \
+           use env files");
     Lwt.return None
 ;;
 
@@ -195,7 +202,8 @@ let require schema =
     let errors =
       errors
       |> List.map (fun (k, v) -> Format.sprintf "Key %s: %s" k v)
-      |> List.cons "There were some errors while validating the provided configuration:"
+      |> List.cons
+           "There were some errors while validating the provided configuration:"
       |> String.concat "\n"
     in
     Logs.err (fun m -> m "%s" errors);
@@ -223,9 +231,12 @@ let show_cmd configurations =
       let header = "Name, Description, Type, Default" in
       let str =
         configurations
-        |> List.filter (fun (_, configurations) -> List.length configurations > 0)
+        |> List.filter (fun (_, configurations) ->
+               List.length configurations > 0)
         |> List.map (fun (service_name, configurations) ->
-               String.concat "\n" [ ""; service_name; show_configurations configurations ])
+               String.concat
+                 "\n"
+                 [ ""; service_name; show_configurations configurations ])
         |> List.cons header
         |> String.concat "\n"
       in

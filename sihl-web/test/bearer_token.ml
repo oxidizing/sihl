@@ -23,7 +23,9 @@ let find_bearer_token _ () =
   Lwt.return ()
 ;;
 
-let suite = [ "bearer token", [ test_case "find bearer token" `Quick find_bearer_token ] ]
+let suite =
+  [ "bearer token", [ test_case "find bearer token" `Quick find_bearer_token ] ]
+;;
 
 let () =
   Logs.set_level (Sihl_core.Log.get_log_level ());

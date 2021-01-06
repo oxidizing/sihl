@@ -12,7 +12,8 @@ let find req =
   try Opium.Context.find_exn key req.Opium.Request.env with
   | _ ->
     Logs.err (fun m -> m "No user found");
-    Logs.info (fun m -> m "Have you applied the user middleware for this route?");
+    Logs.info (fun m ->
+        m "Have you applied the user middleware for this route?");
     raise User_not_found
 ;;
 

@@ -38,7 +38,8 @@ let set_and_read_flash_message _ () =
     wrap
       (fun req ->
         let flash = Sihl_web.Flash.find req in
-        Alcotest.(check (option string) "has flash content" (Some "foobar") flash);
+        Alcotest.(
+          check (option string) "has flash content" (Some "foobar") flash);
         let res = Opium.Response.of_plain_text "" in
         let res = Sihl_web.Flash.set (Some "nextfoo") res in
         Lwt.return res)
@@ -48,7 +49,8 @@ let set_and_read_flash_message _ () =
     wrap
       (fun req ->
         let flash = Sihl_web.Flash.find req in
-        Alcotest.(check (option string) "has flash content" (Some "nextfoo") flash);
+        Alcotest.(
+          check (option string) "has flash content" (Some "nextfoo") flash);
         let res = Opium.Response.of_plain_text "" in
         Lwt.return res)
       req
@@ -68,6 +70,8 @@ let set_and_read_flash_message _ () =
 ;;
 
 let suite =
-  [ "flash", [ test_case "set and read flash message" `Quick set_and_read_flash_message ]
+  [ ( "flash"
+    , [ test_case "set and read flash message" `Quick set_and_read_flash_message
+      ] )
   ]
 ;;

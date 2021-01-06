@@ -9,7 +9,8 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
     let open Lwt.Syntax in
     let* file = Repo.get_file ~id in
     match file with
-    | None -> raise (Sihl_contract.Storage.Exception ("File not found with id " ^ id))
+    | None ->
+      raise (Sihl_contract.Storage.Exception ("File not found with id " ^ id))
     | Some file -> Lwt.return file
   ;;
 
@@ -67,7 +68,10 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
-          m "Could not get base64 content of file %a" Sihl_facade.Storage.pp_stored file);
+          m
+            "Could not get base64 content of file %a"
+            Sihl_facade.Storage.pp_stored
+            file);
       raise (Sihl_contract.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
@@ -80,7 +84,10 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
-          m "Could not get base64 content of file %a" Sihl_facade.Storage.pp_stored file);
+          m
+            "Could not get base64 content of file %a"
+            Sihl_facade.Storage.pp_stored
+            file);
       raise (Sihl_contract.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return blob
     | None ->

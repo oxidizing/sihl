@@ -8,7 +8,13 @@ module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val lifecycles : Sihl_core.Container.Lifecycle.t list
-  val search : [< `Desc | `Asc ] -> string option -> int -> (Model.t list * int) Lwt.t
+
+  val search
+    :  [< `Desc | `Asc ]
+    -> string option
+    -> int
+    -> (Model.t list * int) Lwt.t
+
   val get : id:string -> Model.t option Lwt.t
   val get_by_email : email:string -> Model.t option Lwt.t
   val insert : user:Model.t -> unit Lwt.t
@@ -23,15 +29,27 @@ let user =
       , ( m.email
         , ( m.username
           , ( m.password
-            , (m.status, (m.admin, (m.confirmed, (m.created_at, m.updated_at)))) ) ) ) )
+            , (m.status, (m.admin, (m.confirmed, (m.created_at, m.updated_at))))
+            ) ) ) )
   in
   let decode
       ( id
       , ( email
-        , (username, (password, (status, (admin, (confirmed, (created_at, updated_at))))))
-        ) )
+        , ( username
+          , (password, (status, (admin, (confirmed, (created_at, updated_at)))))
+          ) ) )
     =
-    Ok { id; email; username; password; status; admin; confirmed; created_at; updated_at }
+    Ok
+      { id
+      ; email
+      ; username
+      ; password
+      ; status
+      ; admin
+      ; confirmed
+      ; created_at
+      ; updated_at
+      }
   in
   Caqti_type.(
     custom
@@ -43,10 +61,13 @@ let user =
             string
             (tup2
                (option string)
-               (tup2 string (tup2 string (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))
+               (tup2
+                  string
+                  (tup2 string (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))
 ;;
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let lifecycles =
     [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
   ;;
@@ -128,7 +149,11 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
   ;;
 
   let requests =
-    Sihl_persistence.Database.prepare_requests search_query filter_fragment "id" user
+    Sihl_persistence.Database.prepare_requests
+      search_query
+      filter_fragment
+      "id"
+      user
   ;;
 
   let found_rows_request =
@@ -143,9 +168,16 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
     Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* result =
-          Sihl_persistence.Database.run_request connection requests sort filter limit
+          Sihl_persistence.Database.run_request
+            connection
+            requests
+            sort
+            filter
+            limit
         in
-        let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
+        let* amount =
+          Connection.find found_rows_request () |> Lwt.map Result.get_ok
+        in
         Lwt.return (result, amount))
   ;;
 
@@ -210,7 +242,8 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
   let get_by_email ~email =
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email |> Lwt.map Database.raise_error)
+        Connection.find_opt get_by_email_request email
+        |> Lwt.map Database.raise_error)
   ;;
 
   let insert_request =
@@ -278,11 +311,15 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
         Connection.exec clean_request () |> Lwt.map Database.raise_error)
   ;;
 
-  let register_migration () = MigrationService.register_migration (Migration.migration ())
+  let register_migration () =
+    MigrationService.register_migration (Migration.migration ())
+  ;;
+
   let register_cleaner () = Repository.register_cleaner clean
 end
 
-module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+struct
   let lifecycles =
     [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
   ;;
@@ -320,7 +357,9 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
     let migration () =
       Migration.(
-        empty "user" |> add_step create_users_table |> add_step add_updated_at_column)
+        empty "user"
+        |> add_step create_users_table
+        |> add_step add_updated_at_column)
     ;;
   end
 
@@ -347,7 +386,11 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   ;;
 
   let requests =
-    Sihl_persistence.Database.prepare_requests search_query filter_fragment "id" user
+    Sihl_persistence.Database.prepare_requests
+      search_query
+      filter_fragment
+      "id"
+      user
   ;;
 
   let found_rows_request =
@@ -362,9 +405,16 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     Sihl_persistence.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* result =
-          Sihl_persistence.Database.run_request connection requests sort filter limit
+          Sihl_persistence.Database.run_request
+            connection
+            requests
+            sort
+            filter
+            limit
         in
-        let* amount = Connection.find found_rows_request () |> Lwt.map Result.get_ok in
+        let* amount =
+          Connection.find found_rows_request () |> Lwt.map Result.get_ok
+        in
         Lwt.return (result, amount))
   ;;
 
@@ -417,7 +467,8 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   let get_by_email ~email =
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email |> Lwt.map Database.raise_error)
+        Connection.find_opt get_by_email_request email
+        |> Lwt.map Database.raise_error)
   ;;
 
   let insert_request =
@@ -487,6 +538,9 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
         Connection.exec clean_request () |> Lwt.map Database.raise_error)
   ;;
 
-  let register_migration () = MigrationService.register_migration (Migration.migration ())
+  let register_migration () =
+    MigrationService.register_migration (Migration.migration ())
+  ;;
+
   let register_cleaner () = Repository.register_cleaner clean
 end

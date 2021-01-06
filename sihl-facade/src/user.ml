@@ -14,7 +14,9 @@ module Hashing = struct
   let matches ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
 end
 
-let to_sexp { id; email; username; status; admin; confirmed; created_at; updated_at; _ } =
+let to_sexp
+    { id; email; username; status; admin; confirmed; created_at; updated_at; _ }
+  =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
   List
@@ -47,7 +49,16 @@ let of_yojson json =
   match Ptime.of_rfc3339 created_at, Ptime.of_rfc3339 updated_at with
   | Ok (created_at, _, _), Ok (updated_at, _, _) ->
     Some
-      { id; email; username; password; status; admin; confirmed; created_at; updated_at }
+      { id
+      ; email
+      ; username
+      ; password
+      ; status
+      ; admin
+      ; confirmed
+      ; created_at
+      ; updated_at
+      }
   | _ -> None
 ;;
 
@@ -89,7 +100,10 @@ let set_user_details user ~email ~username =
 let is_admin user = user.admin
 let is_owner user id = String.equal user.id id
 let is_confirmed user = user.confirmed
-let matches_password password user = Hashing.matches ~hash:user.password ~plain:password
+
+let matches_password password user =
+  Hashing.matches ~hash:user.password ~plain:password
+;;
 
 let default_password_policy password =
   if String.length password >= 8
@@ -214,7 +228,12 @@ let update_details ~user ~email ~username =
 
 let set_password ?password_policy ~user ~password ~password_confirmation () =
   let module Service = (val Sihl_core.Container.unpack name instance : Sig) in
-  Service.set_password ?password_policy ~user ~password ~password_confirmation ()
+  Service.set_password
+    ?password_policy
+    ~user
+    ~password
+    ~password_confirmation
+    ()
 ;;
 
 let create_user ~email ~password ~username =
@@ -227,7 +246,14 @@ let create_admin ~email ~password ~username =
   Service.create_admin ~email ~password ~username
 ;;
 
-let register_user ?password_policy ?username ~email ~password ~password_confirmation () =
+let register_user
+    ?password_policy
+    ?username
+    ~email
+    ~password
+    ~password_confirmation
+    ()
+  =
   let module Service = (val Sihl_core.Container.unpack name instance : Sig) in
   Service.register_user
     ?password_policy

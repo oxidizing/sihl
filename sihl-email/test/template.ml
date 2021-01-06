@@ -9,7 +9,9 @@ let test_email_rendering_simple () =
 
 let test_email_rendering_complex () =
   let data = [ "foo", "hey"; "bar", "ho" ] in
-  let actual, _ = Sihl_facade.Email_template.render data "{foo} {bar}{foo}" None in
+  let actual, _ =
+    Sihl_facade.Email_template.render data "{foo} {bar}{foo}" None
+  in
   Alcotest.(check string) "Renders template" "hey hohey" actual
 ;;
 

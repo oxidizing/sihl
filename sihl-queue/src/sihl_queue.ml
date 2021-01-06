@@ -28,14 +28,18 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
           let exn_string = Printexc.to_string exn in
           Lwt.return
           @@ Error
-               ("Exception caught while running job, this is a bug in your job handler, \
-                 make sure to not throw exceptions "
+               ("Exception caught while running job, this is a bug in your job \
+                 handler, make sure to not throw exceptions "
                ^ exn_string))
     in
     match result with
     | Error msg ->
       Logs.err (fun m ->
-          m "Failure while running job instance %a %s" Job_instance.pp job_instance msg);
+          m
+            "Failure while running job instance %a %s"
+            Job_instance.pp
+            job_instance
+            msg);
       let* result =
         Lwt.catch
           (fun () -> job.Workable_job.failed msg)
@@ -43,8 +47,9 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
             let exn_string = Printexc.to_string exn in
             Lwt.return
             @@ Error
-                 ("Exception caught while cleaning up job, this is a bug in your job \
-                   failure handler, make sure to not throw exceptions "
+                 ("Exception caught while cleaning up job, this is a bug in \
+                   your job failure handler, make sure to not throw \
+                   exceptions "
                  ^ exn_string))
       in
       (match result with
@@ -74,7 +79,9 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
       let input_string = job_instance.Job_instance.input in
       let* job_run_status = run_job input_string ~job ~job_instance in
       let job_instance =
-        job_instance |> Job_instance.incr_tries |> Job_instance.update_next_run_at job
+        job_instance
+        |> Job_instance.incr_tries
+        |> Job_instance.update_next_run_at job
       in
       let job_instance =
         match job_run_status with
@@ -98,7 +105,9 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
     if n_job_instances > 0
     then (
       Logs.debug (fun m ->
-          m "Start working queue of length %d" (List.length pending_job_instances));
+          m
+            "Start working queue of length %d"
+            (List.length pending_job_instances));
       let rec loop job_instances jobs =
         match job_instances with
         | [] -> Lwt.return ()
@@ -106,7 +115,8 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
           let job =
             List.find_opt
               (fun job ->
-                job.Workable_job.name |> String.equal job_instance.Job_instance.name)
+                job.Workable_job.name
+                |> String.equal job_instance.Job_instance.name)
               jobs
           in
           (match job with
@@ -127,16 +137,19 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
 
   let start_queue () =
     Logs.debug (fun m -> m "Start job queue");
-    (* This function run every second, the request context gets created here with each
-       tick *)
+    (* This function run every second, the request context gets created here
+       with each tick *)
     let scheduled_function () =
       let jobs = !registered_jobs in
       if List.length jobs > 0
       then (
         let job_strings =
-          jobs |> List.map (fun job -> job.Workable_job.name) |> String.concat ", "
+          jobs
+          |> List.map (fun job -> job.Workable_job.name)
+          |> String.concat ", "
         in
-        Logs.debug (fun m -> m "Run job queue with registered jobs: %s" job_strings);
+        Logs.debug (fun m ->
+            m "Run job queue with registered jobs: %s" job_strings);
         work_queue ~jobs)
       else (
         Logs.debug (fun m -> m "No jobs found to run, trying again later");
@@ -184,4 +197,6 @@ end
 
 module InMemory = Make (Repo.InMemory)
 module MariaDb = Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
-module PostgreSql = Make (Repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+
+module PostgreSql =
+  Make (Repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
