@@ -1,5 +1,19 @@
 open Sihl_contract.User
 
+module Hashing = struct
+  let hash ?count plain =
+    match count, not (Sihl_core.Configuration.is_production ()) with
+    | _, true -> Ok (Bcrypt.hash ~count:4 plain |> Bcrypt.string_of_hash)
+    | Some count, false ->
+      if count < 4 || count > 31
+      then Error "Password hashing count has to be between 4 and 31"
+      else Ok (Bcrypt.hash ~count plain |> Bcrypt.string_of_hash)
+    | None, false -> Ok (Bcrypt.hash ~count:10 plain |> Bcrypt.string_of_hash)
+  ;;
+
+  let matches ~hash ~plain = Bcrypt.verify plain (Bcrypt.hash_of_string hash)
+end
+
 let to_sexp { id; email; username; status; admin; confirmed; created_at; updated_at; _ } =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
@@ -59,7 +73,7 @@ let to_yojson user =
 let confirm user = { user with confirmed = true }
 
 let set_user_password user new_password =
-  let hash = new_password |> Sihl_core.Utils.Hashing.hash in
+  let hash = new_password |> Hashing.hash in
   Result.map (fun hash -> { user with password = hash }) hash
 ;;
 
@@ -75,10 +89,7 @@ let set_user_details user ~email ~username =
 let is_admin user = user.admin
 let is_owner user id = String.equal user.id id
 let is_confirmed user = user.confirmed
-
-let matches_password password user =
-  Sihl_core.Utils.Hashing.matches ~hash:user.password ~plain:password
-;;
+let matches_password password user = Hashing.matches ~hash:user.password ~plain:password
 
 let default_password_policy password =
   if String.length password >= 8
@@ -124,7 +135,7 @@ let validate_change_password
 ;;
 
 let make ~email ~password ~username ~admin ~confirmed =
-  let hash = password |> Sihl_core.Utils.Hashing.hash in
+  let hash = password |> Hashing.hash in
   let now = Ptime_clock.now () in
   Result.map
     (fun hash ->

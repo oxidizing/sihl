@@ -4,14 +4,11 @@ module App = Sihl_core.App
 module Configuration = Sihl_core.Configuration
 module Command = Sihl_core.Command
 module Log = Sihl_core.Log
-module Utils = Sihl_core.Utils
 module Time = Sihl_core.Time
-module Random = Sihl_facade.Random
 module Authz = Sihl_user.Authz
 
 (* Schedule module *)
 module Schedule = struct
-  include Sihl_contract.Schedule
   include Sihl_facade.Schedule
 
   module Setup = struct
@@ -23,6 +20,16 @@ module Schedule = struct
   end
 end
 
+(* Random module *)
+module Random = struct
+  include Sihl_facade.Random
+
+  module Setup = struct
+    let register = Sihl_core.Random.register
+  end
+end
+
+(* Cleaner module *)
 module Cleaner = struct
   include Sihl_core.Cleaner
 
@@ -33,18 +40,15 @@ end
 
 (* Web module *)
 module Web = struct
-  module Route = Sihl_contract.Http
   include Sihl_web
 
   module Setup = struct
-    let opium = (module Sihl_web.Http : Sihl_contract.Http.Sig)
     let register routers = Sihl_web.Http.register ~routers ()
   end
 end
 
 (* Database module *)
 module Database = struct
-  include Sihl_contract.Database
   include Sihl_persistence.Database
 
   module Setup = struct
@@ -54,7 +58,6 @@ end
 
 (* Migration module *)
 module Migration = struct
-  include Sihl_contract.Migration
   include Sihl_facade.Migration
 
   module Setup = struct
@@ -72,7 +75,6 @@ end
 
 (* User & Security module *)
 module User = struct
-  include Sihl_contract.User
   include Sihl_facade.User
 
   module Setup = struct
@@ -82,7 +84,6 @@ module User = struct
   end
 
   module Password_reset = struct
-    include Sihl_contract.Password_reset
     include Sihl_facade.Password_reset
 
     module Setup = struct
@@ -97,7 +98,6 @@ end
 
 (* Session module*)
 module Session = struct
-  include Sihl_contract.Session
   include Sihl_facade.Session
 
   module Setup = struct
@@ -109,7 +109,6 @@ end
 
 (* Token module *)
 module Token = struct
-  include Sihl_contract.Token
   include Sihl_facade.Token
 
   module Setup = struct
@@ -124,7 +123,6 @@ end
 
 (* Email module *)
 module Email = struct
-  include Sihl_contract.Email
   include Sihl_facade.Email
 
   module Setup = struct
@@ -136,7 +134,6 @@ module Email = struct
 end
 
 module Email_template = struct
-  include Sihl_contract.Email_template
   include Sihl_facade.Email_template
 
   module Setup = struct

@@ -31,6 +31,44 @@ let set token req =
   { req with env }
 ;;
 
+let xor c1 c2 =
+  try
+    Some
+      (List.map2 (fun chr1 chr2 -> Char.chr (Char.code chr1 lxor Char.code chr2)) c1 c2)
+  with
+  | exn ->
+    Logs.err (fun m ->
+        m
+          "Failed to XOR %s and %s. %s"
+          (c1 |> List.to_seq |> Caml.String.of_seq)
+          (c2 |> List.to_seq |> Caml.String.of_seq)
+          (Printexc.to_string exn));
+    None
+;;
+
+let decrypt_with_salt ~salted_cipher ~salt_length =
+  if List.length salted_cipher - salt_length != salt_length
+  then (
+    Logs.err (fun m ->
+        m
+          "Failed to decrypt cipher %s. Salt length does not match cipher length."
+          (salted_cipher |> List.to_seq |> Caml.String.of_seq));
+    None)
+  else (
+    try
+      let salt = CCList.take salt_length salted_cipher in
+      let encrypted_value = CCList.drop salt_length salted_cipher in
+      xor salt encrypted_value
+    with
+    | exn ->
+      Logs.err (fun m ->
+          m
+            "Failed to decrypt cipher %s. %s"
+            (salted_cipher |> List.to_seq |> Caml.String.of_seq)
+            (Printexc.to_string exn));
+      None)
+;;
+
 (* TODO (https://docs.djangoproject.com/en/3.0/ref/csrf/#how-it-works) Check other Django
    specifics namely:
  * Testing views with custom HTTP client
@@ -52,7 +90,7 @@ let secret_to_token secret =
   let salt = Sihl_facade.Random.bytes secret_length in
   let secret_value = secret |> String.to_seq |> List.of_seq in
   let encrypted =
-    match Sihl_core.Utils.Encryption.xor salt secret_value with
+    match xor salt secret_value with
     | None ->
       Logs.err (fun m -> m "Failed to encrypt CSRF secret");
       raise @@ Crypto_failed "Failed to encrypt CSRF secret"
@@ -110,9 +148,7 @@ let middleware ?(not_allowed_handler = default_not_allowed_handler) ?(key = "csr
       let salted_cipher = decoded |> String.to_seq |> List.of_seq in
       let decrypted_secret =
         match
-          Sihl_core.Utils.Encryption.decrypt_with_salt
-            ~salted_cipher
-            ~salt_length:(List.length salted_cipher / 2)
+          decrypt_with_salt ~salted_cipher ~salt_length:(List.length salted_cipher / 2)
         with
         | None ->
           Logs.err (fun m -> m "Failed to decrypt CSRF token %s " token);
