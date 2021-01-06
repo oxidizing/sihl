@@ -42,6 +42,10 @@ module type Sig = sig
       service a blacklist is used to store the token. *)
   val deactivate : string -> unit Lwt.t
 
+  (** [activate token] re-activates the token. Depending on the backend of the token
+      service a blacklist is used to store the token. *)
+  val activate : string -> unit Lwt.t
+
   (** [is_active token] returns true if the token is active, false if the token was
       deactivated. An expired token or a token that has an invalid signature is not
       necessarily inactive.*)

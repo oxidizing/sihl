@@ -17,7 +17,7 @@ let create_and_read_token _ () =
   Lwt.return ()
 ;;
 
-let deactivate_token _ () =
+let deactivate_and_reactivate_token _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let* token = Sihl_facade.Token.create [ "foo", "bar" ] in
   let* value = Sihl_facade.Token.read token ~k:"foo" in
@@ -27,6 +27,9 @@ let deactivate_token _ () =
   Alcotest.(check (option string) "reads no value" None value);
   let* value = Sihl_facade.Token.read ~force:() token ~k:"foo" in
   Alcotest.(check (option string) "force reads value" (Some "bar") value);
+  let* () = Sihl_facade.Token.activate token in
+  let* value = Sihl_facade.Token.read token ~k:"foo" in
+  Alcotest.(check (option string) "reads value again" (Some "bar") value);
   Lwt.return ()
 ;;
 
@@ -48,7 +51,10 @@ let forge_token _ () =
 let suite =
   [ ( "token"
     , [ test_case "create and find token" `Quick create_and_read_token
-      ; test_case "deactivate token" `Quick deactivate_token
+      ; test_case
+          "deactivate and re-activate token"
+          `Quick
+          deactivate_and_reactivate_token
       ; test_case "forge token" `Quick forge_token
       ] )
   ]

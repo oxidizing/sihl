@@ -22,6 +22,7 @@ test-mariadb: build
 	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-user/test/user_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-session/test/mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/session_mariadb.exe
@@ -34,6 +35,7 @@ test-postgresql: build
 	SIHL_ENV=test ./_build/default/sihl-persistence/test/database_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-user/test/user_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-session/test/postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/session_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/flash_postgresql.exe

@@ -28,6 +28,11 @@ let deactivate token =
   Service.deactivate token
 ;;
 
+let activate token =
+  let module Service = (val unpack name instance : Sig) in
+  Service.activate token
+;;
+
 let is_active token =
   let module Service = (val unpack name instance : Sig) in
   Service.is_active token

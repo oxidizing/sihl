@@ -84,6 +84,13 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
     Repo.update updated
   ;;
 
+  let activate token =
+    let open Repo.Model in
+    let* token = Repo.find token in
+    let updated = { token with status = Status.Active } in
+    Repo.update updated
+  ;;
+
   let is_active token =
     let open Repo.Model in
     let* token = Repo.find token in
@@ -112,7 +119,10 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
-  let lifecycle = Sihl_core.Container.Lifecycle.create "token" ~start ~stop
+
+  let lifecycle =
+    Sihl_core.Container.Lifecycle.create Sihl_contract.Token.name ~start ~stop
+  ;;
 
   let register () =
     Repo.register_migration ();
@@ -150,6 +160,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   ;;
 
   let deactivate token = Repo.insert token
+  let activate token = Repo.delete token
   let is_active token = Repo.has token |> Lwt.map not
 
   let read ?secret ?force token_value ~k =
@@ -244,9 +255,13 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
-  let lifecycle = Sihl_core.Container.Lifecycle.create "token" ~start ~stop
+
+  let lifecycle =
+    Sihl_core.Container.Lifecycle.create Sihl_contract.Token.name ~start ~stop
+  ;;
 
   let register () =
+    Repo.register_migration ();
     Repo.register_cleaner ();
     Sihl_core.Container.Service.create lifecycle
   ;;
@@ -255,3 +270,5 @@ end
 module MariaDb = Make (Repo.MariaDb (Sihl_persistence.Migration.MariaDb))
 module PostgreSql = Make (Repo.PostgreSql (Sihl_persistence.Migration.PostgreSql))
 module JwtInMemory = MakeJwt (Blacklist_repo.InMemory)
+module JwtMariaDb = MakeJwt (Blacklist_repo.MariaDb)
+module JwtPostgreSql = MakeJwt (Blacklist_repo.PostgreSql)
