@@ -18,16 +18,18 @@ let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 
 let of_yojson json =
   let open Yojson.Safe.Util in
-  let ( let* ) = Option.bind in
-  let* id = json |> member "id" |> to_string_option in
-  let* label = json |> member "label" |> to_string_option in
-  let* text = json |> member "text" |> to_string_option in
-  let html = json |> member "html" |> to_string_option in
-  let* created_at = json |> member "created_at" |> to_string_option in
-  let* updated_at = json |> member "updated_at" |> to_string_option in
-  match Ptime.of_rfc3339 created_at, Ptime.of_rfc3339 updated_at with
-  | Ok (created_at, _, _), Ok (updated_at, _, _) ->
-    Some { id; label; text; html; created_at; updated_at }
+  try
+    let id = json |> member "id" |> to_string in
+    let label = json |> member "label" |> to_string in
+    let text = json |> member "text" |> to_string in
+    let html = json |> member "html" |> to_string_option in
+    let created_at = json |> member "created_at" |> to_string in
+    let updated_at = json |> member "updated_at" |> to_string in
+    match Ptime.of_rfc3339 created_at, Ptime.of_rfc3339 updated_at with
+    | Ok (created_at, _, _), Ok (updated_at, _, _) ->
+      Some { id; label; text; html; created_at; updated_at }
+    | _ -> None
+  with
   | _ -> None
 ;;
 

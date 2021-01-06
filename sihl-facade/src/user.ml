@@ -36,29 +36,31 @@ let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 
 let of_yojson json =
   let open Yojson.Safe.Util in
-  let ( let* ) = Option.bind in
-  let* id = json |> member "id" |> to_string_option in
-  let* email = json |> member "email" |> to_string_option in
-  let username = json |> member "username" |> to_string_option in
-  let* password = json |> member "password" |> to_string_option in
-  let* status = json |> member "status" |> to_string_option in
-  let* admin = json |> member "admin" |> to_bool_option in
-  let* confirmed = json |> member "confirmed" |> to_bool_option in
-  let* created_at = json |> member "created_at" |> to_string_option in
-  let* updated_at = json |> member "updated_at" |> to_string_option in
-  match Ptime.of_rfc3339 created_at, Ptime.of_rfc3339 updated_at with
-  | Ok (created_at, _, _), Ok (updated_at, _, _) ->
-    Some
-      { id
-      ; email
-      ; username
-      ; password
-      ; status
-      ; admin
-      ; confirmed
-      ; created_at
-      ; updated_at
-      }
+  try
+    let id = json |> member "id" |> to_string in
+    let email = json |> member "email" |> to_string in
+    let username = json |> member "username" |> to_string_option in
+    let password = json |> member "password" |> to_string in
+    let status = json |> member "status" |> to_string in
+    let admin = json |> member "admin" |> to_bool in
+    let confirmed = json |> member "confirmed" |> to_bool in
+    let created_at = json |> member "created_at" |> to_string in
+    let updated_at = json |> member "updated_at" |> to_string in
+    match Ptime.of_rfc3339 created_at, Ptime.of_rfc3339 updated_at with
+    | Ok (created_at, _, _), Ok (updated_at, _, _) ->
+      Some
+        { id
+        ; email
+        ; username
+        ; password
+        ; status
+        ; admin
+        ; confirmed
+        ; created_at
+        ; updated_at
+        }
+    | _ -> None
+  with
   | _ -> None
 ;;
 

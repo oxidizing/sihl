@@ -19,32 +19,19 @@ let to_sexp { sender; recipient; subject; text; html; cc; bcc } =
 
 let pp fmt t = Sexplib0.Sexp.pp_hum fmt (to_sexp t)
 
-let all list =
-  List.fold_left
-    (fun a b ->
-      match a, b with
-      | Some _, None -> None
-      | Some a, Some b -> Some (List.cons b a)
-      | None, _ -> None)
-    (Some [])
-    list
-;;
-
 let of_yojson json =
   let open Yojson.Safe.Util in
-  let ( let* ) = Option.bind in
-  let* sender = json |> member "sender" |> to_string_option in
-  let* recipient = json |> member "recipient" |> to_string_option in
-  let* subject = json |> member "subject" |> to_string_option in
-  let* text = json |> member "text" |> to_string_option in
-  let html = json |> member "html" |> to_string_option in
-  let* cc =
-    json |> member "cc" |> to_list |> List.map to_string_option |> all
-  in
-  let* bcc =
-    json |> member "bcc" |> to_list |> List.map to_string_option |> all
-  in
-  Some { sender; recipient; subject; text; html; cc; bcc }
+  try
+    let sender = json |> member "sender" |> to_string in
+    let recipient = json |> member "recipient" |> to_string in
+    let subject = json |> member "subject" |> to_string in
+    let text = json |> member "text" |> to_string in
+    let html = json |> member "html" |> to_string_option in
+    let cc = json |> member "cc" |> to_list |> List.map to_string in
+    let bcc = json |> member "bcc" |> to_list |> List.map to_string in
+    Some { sender; recipient; subject; text; html; cc; bcc }
+  with
+  | _ -> None
 ;;
 
 let to_yojson email =
