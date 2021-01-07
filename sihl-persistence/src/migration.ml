@@ -130,7 +130,6 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let execute_migration migration =
     let open Lwt.Syntax in
     let namespace, _ = migration in
-    Logs.debug (fun m -> m "Execute migrations for %s" namespace);
     let* () = setup () in
     let* has_state = has ~namespace in
     let* state =
@@ -139,13 +138,15 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
         let* state = get ~namespace in
         if Repo.Migration.dirty state
         then (
-          let msg =
-            Printf.sprintf
-              "Dirty migration found for %s, has to be fixed manually"
-              namespace
-          in
-          Logs.err (fun m -> m "%s" msg);
-          raise (Sihl_contract.Migration.Exception msg))
+          Logs.err (fun m ->
+              m
+                "Dirty migration found for %s, this has to be fixed manually"
+                namespace);
+          Logs.info (fun m ->
+              m
+                "Set the column 'dirty' from 1/true to 0/false after you have \
+                 fixed the database state.");
+          raise Sihl_contract.Migration.Dirty_migration)
         else mark_dirty ~namespace
       else (
         Logs.debug (fun m -> m "Setting up table for %s" namespace);
@@ -154,33 +155,45 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
         Lwt.return state)
     in
     let migration_to_apply = Repo.Migration.steps_to_apply migration state in
-    let* () = execute_steps migration_to_apply in
-    let* _ = mark_clean ~namespace in
-    Lwt.return @@ Ok ()
-  ;;
-
-  let execute migrations =
-    let n = List.length migrations in
-    if n > 0
+    let n_migrations = List.length (snd migration_to_apply) in
+    if n_migrations > 0
     then
-      Logs.debug (fun m -> m "Executing %i migrations" (List.length migrations))
-    else Logs.debug (fun m -> m "No migrations to execute");
-    let open Lwt in
-    let rec run migrations =
-      match migrations with
-      | [] -> Lwt.return ()
-      | migration :: migrations ->
-        execute_migration migration
-        >>= (function
-        | Ok () -> run migrations
-        | Error err ->
+      Logs.info (fun m ->
+          m
+            "Executing %d migrations for '%s'..."
+            (List.length (snd migration_to_apply))
+            namespace)
+    else Logs.info (fun m -> m "No migrations to execute for '%s'" namespace);
+    let* () =
+      Lwt.catch
+        (fun () -> execute_steps migration_to_apply)
+        (fun exn ->
+          let err = Printexc.to_string exn in
           Logs.err (fun m ->
               m
-                "Error while running migration %a: %s"
+                "Error while running migration '%a': %s"
                 Sihl_facade.Migration.pp
                 migration
                 err);
           raise (Sihl_contract.Migration.Exception err))
+    in
+    let* _ = mark_clean ~namespace in
+    Lwt.return ()
+  ;;
+
+  let execute migrations =
+    let open Lwt.Syntax in
+    let n = List.length migrations in
+    if n > 0
+    then
+      Logs.info (fun m -> m "Looking at %i migrations" (List.length migrations))
+    else Logs.info (fun m -> m "No migrations to execute");
+    let rec run migrations =
+      match migrations with
+      | [] -> Lwt.return ()
+      | migration :: migrations ->
+        let* () = execute_migration migration in
+        run migrations
     in
     run migrations
   ;;
@@ -199,12 +212,12 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
       (fun _ -> run_all ())
   ;;
 
-  let start () = Lwt.return ()
+  let start () = run_all ()
   let stop () = Lwt.return ()
 
   let lifecycle =
     Sihl_core.Container.Lifecycle.create
-      "migration"
+      Sihl_contract.Migration.name
       ~dependencies:(fun () -> [ Database.lifecycle ])
       ~start
       ~stop

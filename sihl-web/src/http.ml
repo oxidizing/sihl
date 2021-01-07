@@ -113,14 +113,18 @@ let start_server () =
 let start_cmd =
   Sihl_core.Command.make
     ~name:"start-http"
-    ~help:""
-    ~description:"Start the web server"
+    ~description:"Start the HTTP server"
     (fun _ -> start_server ())
 ;;
 
 (* Lifecycle *)
 
-let start () = start_server ()
+let start () =
+  (* Make sure that configuration is valid *)
+  Sihl_core.Configuration.require schema;
+  start_server ()
+;;
+
 let stop () = Lwt.return ()
 let lifecycle = Sihl_core.Container.Lifecycle.create "http" ~start ~stop
 

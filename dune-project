@@ -172,6 +172,8 @@ A Sihl service for putting and working jobs on queues. Various queue backends ar
   (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (sihl-web (= :version))
+  (sihl-token (= :version))
+  (sihl-session (= :version))
   (sihl-user (= :version))
   (sihl-queue (= :version))
   (sihl-storage (= :version))

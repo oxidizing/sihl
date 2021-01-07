@@ -1,6 +1,7 @@
 module Map = Map.Make (String)
 
 module type Sig = sig
+  val lifecycles : Sihl_core.Container.Lifecycle.t list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val enqueue : job_instance:Job_instance.t -> unit Lwt.t
@@ -9,6 +10,7 @@ module type Sig = sig
 end
 
 module InMemory : Sig = struct
+  let lifecycles = [ Sihl_core.Cleaner.lifecycle ]
   let state = ref Map.empty
   let ordered_ids = ref []
 
@@ -87,6 +89,13 @@ let job =
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
+  let lifecycles =
+    [ Sihl_persistence.Database.lifecycle
+    ; Sihl_core.Cleaner.lifecycle
+    ; MigrationService.lifecycle
+    ]
+  ;;
+
   let enqueue_request =
     Caqti_request.exec
       job
@@ -229,6 +238,13 @@ end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
+  let lifecycles =
+    [ Sihl_persistence.Database.lifecycle
+    ; Sihl_core.Cleaner.lifecycle
+    ; MigrationService.lifecycle
+    ]
+  ;;
+
   let enqueue_request =
     Caqti_request.exec
       job

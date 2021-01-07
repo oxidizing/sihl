@@ -1,9 +1,10 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
-module Repository = Sihl_core.Cleaner
+module Cleaner = Sihl_core.Cleaner
 module Migration = Sihl_facade.Migration
 
 module type Sig = sig
+  val lifecycles : Sihl_core.Container.Lifecycle.t list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val find_all : unit -> Sihl_contract.Session.t list Lwt.t
@@ -55,6 +56,10 @@ let t =
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
+  let lifecycles =
+    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
+  ;;
+
   let find_all_request =
     Caqti_request.find
       Caqti_type.unit
@@ -209,11 +214,15 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Repository.register_cleaner clean
+  let register_cleaner () = Cleaner.register_cleaner clean
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
+  let lifecycles =
+    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
+  ;;
+
   let find_all_request =
     Caqti_request.collect
       Caqti_type.unit
@@ -368,5 +377,5 @@ CREATE TABLE IF NOT EXISTS session_sessions (
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Repository.register_cleaner clean
+  let register_cleaner () = Cleaner.register_cleaner clean
 end

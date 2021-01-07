@@ -9,6 +9,7 @@ type t = string * step list
 let name = "migration"
 
 exception Exception of string
+exception Dirty_migration
 
 module type Sig = sig
   include Sihl_core.Container.Service.Sig

@@ -1,6 +1,6 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
-module Repository = Sihl_core.Cleaner
+module Cleaner = Sihl_core.Cleaner
 module Migration = Sihl_facade.Migration
 module Model = Sihl_contract.User
 
@@ -69,7 +69,7 @@ let user =
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
   let lifecycles =
-    [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
+    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
   ;;
 
   module Migration = struct
@@ -315,13 +315,13 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Repository.register_cleaner clean
+  let register_cleaner () = Cleaner.register_cleaner clean
 end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
   let lifecycles =
-    [ Database.lifecycle; Repository.lifecycle; MigrationService.lifecycle ]
+    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
   ;;
 
   module Migration = struct
@@ -542,5 +542,5 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Repository.register_cleaner clean
+  let register_cleaner () = Cleaner.register_cleaner clean
 end

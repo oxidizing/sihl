@@ -73,7 +73,14 @@ module Make (Repo : Session_repo.Sig) : Sihl_contract.Session.Sig = struct
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
-  let lifecycle = Sihl_core.Container.Lifecycle.create "session" ~start ~stop
+
+  let lifecycle =
+    Sihl_core.Container.Lifecycle.create
+      Sihl_contract.Session.name
+      ~dependencies:(fun () -> Repo.lifecycles)
+      ~start
+      ~stop
+  ;;
 
   let register () =
     Repo.register_migration ();

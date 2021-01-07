@@ -1,4 +1,5 @@
 module type Sig = sig
+  val lifecycles : Sihl_core.Container.Lifecycle.t list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val get : string -> Sihl_contract.Email_template.t option Lwt.t
@@ -26,6 +27,13 @@ let template =
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
+  let lifecycles =
+    [ Sihl_persistence.Database.lifecycle
+    ; Sihl_core.Cleaner.lifecycle
+    ; MigrationService.lifecycle
+    ]
+  ;;
+
   module Sql = struct
     module Model = Sihl_contract.Email_template
 
@@ -232,6 +240,13 @@ end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
+  let lifecycles =
+    [ Sihl_persistence.Database.lifecycle
+    ; Sihl_core.Cleaner.lifecycle
+    ; MigrationService.lifecycle
+    ]
+  ;;
+
   module Sql = struct
     module Model = Sihl_contract.Email_template
 

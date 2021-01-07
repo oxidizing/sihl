@@ -48,11 +48,7 @@ let run_forever () =
 ;;
 
 let start_cmd services =
-  Command.make
-    ~name:"start"
-    ~help:""
-    ~description:"Start the Sihl app"
-    (fun _ ->
+  Command.make ~name:"start" ~description:"Start the Sihl app" (fun _ ->
       let normal_services =
         List.filter
           (function

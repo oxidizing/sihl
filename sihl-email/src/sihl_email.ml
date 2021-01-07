@@ -162,6 +162,8 @@ module Smtp : Sihl_contract.Email.Sig = struct
   let bulk_send _ = failwith "Bulk sending not implemented yet"
 
   let start () =
+    (* Make sure that configuration is valid *)
+    Sihl_core.Configuration.require schema;
     (* if mail is intercepted, don't punish user for not providing SMTP
        credentials *)
     if should_intercept () then () else Sihl_core.Configuration.require schema;
@@ -172,7 +174,7 @@ module Smtp : Sihl_contract.Email.Sig = struct
 
   let lifecycle =
     Sihl_core.Container.Lifecycle.create
-      "email"
+      Sihl_contract.Email.name
       ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
       ~stop
@@ -275,12 +277,18 @@ module SendGrid : Sihl_contract.Email.Sig = struct
 
   let send email = intercept send' email
   let bulk_send _ = Lwt.return ()
-  let start () = Lwt.return ()
+
+  let start () =
+    (* Make sure that configuration is valid *)
+    Sihl_core.Configuration.require schema;
+    Lwt.return ()
+  ;;
+
   let stop () = Lwt.return ()
 
   let lifecycle =
     Sihl_core.Container.Lifecycle.create
-      "email"
+      Sihl_contract.Email.name
       ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
       ~stop
@@ -373,7 +381,7 @@ module Queued : Sihl_contract.Email.Sig = struct
 
   let lifecycle =
     Sihl_core.Container.Lifecycle.create
-      "delayed-email"
+      Sihl_contract.Email.name
       ~start
       ~stop
       ~dependencies:(fun () ->

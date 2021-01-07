@@ -180,7 +180,7 @@ module Storage = struct
   include Sihl_facade.Storage
 
   module Setup = struct
-    let register = Sihl_facade.Queue.register
+    let register = Sihl_facade.Storage.register
     let mariadb = (module Sihl_storage.MariaDb : Sihl_contract.Storage.Sig)
   end
 end

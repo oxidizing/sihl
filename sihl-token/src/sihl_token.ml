@@ -128,11 +128,20 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
         Lwt.return (Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())))
   ;;
 
-  let start () = Lwt.return ()
+  let start () =
+    (* Make sure that configuration is valid *)
+    Sihl_core.Configuration.require schema;
+    Lwt.return ()
+  ;;
+
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create Sihl_contract.Token.name ~start ~stop
+    Sihl_core.Container.Lifecycle.create
+      Sihl_contract.Token.name
+      ~dependencies:(fun () -> Repo.lifecycles)
+      ~start
+      ~stop
   ;;
 
   let register () =
@@ -295,7 +304,11 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create Sihl_contract.Token.name ~start ~stop
+    Sihl_core.Container.Lifecycle.create
+      Sihl_contract.Token.name
+      ~dependencies:(fun () -> Repo.lifecycles)
+      ~start
+      ~stop
   ;;
 
   let register () =

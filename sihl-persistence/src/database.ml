@@ -107,7 +107,7 @@ let fetch_pool () =
     let pool_size =
       Option.value (Core.Configuration.read schema).pool_size ~default:10
     in
-    Logs.debug (fun m -> m "Create pool with size %i" pool_size);
+    Logs.info (fun m -> m "Create pool with size %i" pool_size);
     (Core.Configuration.read schema).url
     |> Uri.of_string
     |> Caqti_lwt.connect_pool ~max_size:pool_size

@@ -225,7 +225,6 @@ let show_configurations configurations =
 let show_cmd configurations =
   Command.make
     ~name:"show-config"
-    ~help:""
     ~description:"Print a list of required service configurations"
     (fun _ ->
       let header = "Name, Description, Type, Default" in
