@@ -36,7 +36,7 @@
 
 *Note that even though Sihl is being used in production, the API is still under active development.*
 
-Sihl is a high-level web application framework providing a set of composable building blocks and recipes that allow you to develop web apps quickly and sustainably. Batteries are included by they can be swapped easily.
+Sihl is a high-level web application framework providing a set of composable building blocks and recipes that allow you to develop web apps quickly and sustainably. Batteries are included but they can be swapped easily.
 Statically typed functional programming with OCaml makes web development fun and safe.
 
 Let's have a look at a tiny Sihl app in a file `sihl.ml`:
