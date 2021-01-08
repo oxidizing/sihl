@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.3.0-rc1)
+(version 0.3.0~rc1)
 
 (authors
   "Josef Erben"
@@ -53,8 +53,7 @@
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
   (opium (>= 0.20.0))
-  (caqti-lwt (>= 1.2.0))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (caqti-lwt (>= 1.2.0))))
 
 (package
  (name sihl-facade)
@@ -64,7 +63,8 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl-contract (= :version))
-  (sihl-core (= :version))))
+  (sihl-core (= :version))
+  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-persistence)

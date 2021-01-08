@@ -163,7 +163,9 @@ module Smtp : Sihl_contract.Email.Sig = struct
 
   let start () =
     (* Make sure that configuration is valid *)
-    Sihl_core.Configuration.require schema;
+    if Sihl_core.Configuration.is_production ()
+    then Sihl_core.Configuration.require schema
+    else ();
     (* if mail is intercepted, don't punish user for not providing SMTP
        credentials *)
     if should_intercept () then () else Sihl_core.Configuration.require schema;
