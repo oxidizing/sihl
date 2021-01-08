@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.3.0)
+(version 0.3.0-rc1)
 
 (authors
   "Josef Erben"
@@ -19,7 +19,7 @@
 (package
  (name sihl-core)
  (synopsis "The core of the Sihl web framework")
- (description "Deals with configuration, service lifecycle, app, CLI commands, logging and randomness.")
+ (description "Modules for dealing with configuration, service lifecycle, app, CLI commands, logging, random number generation and schedules.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -46,8 +46,8 @@
 
 (package
  (name sihl-contract)
- (synopsis "Contains Sihl service signatures")
- (description "Use the service contracts to implement your own services with the rest of the Sihl ecosystem.")
+ (synopsis "Sihl serivce interfaces")
+ (description "Module signatures and types that can be implemented to create services that can be registered in a Sihl app. The interfaces define a standard for the Sihl ecosystem.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -58,8 +58,8 @@
 
 (package
  (name sihl-facade)
- (synopsis "Contains the service facade layer of Sihl")
- (description "The facade comprises of the API of all Sihl services. Implementations can be swapped transparently.")
+ (synopsis "Sihl service facade that uses the facade pattern to hide service implementations")
+ (description "The facade provides API to register service implementations as the main mechanism for dependency injection.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -68,8 +68,8 @@
 
 (package
  (name sihl-persistence)
- (synopsis "Contains Sihl services regarding data persistence")
- (description "Use this package to deal with database pools, transactions, migrations and integration tests involving the database layer.")
+ (synopsis "Sihl services to deal with data persistence")
+ (description "Modules for database pools, transactions, migrations and integration tests involving the database layer.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -80,8 +80,8 @@
 
 (package
  (name sihl-web)
- (synopsis "Contains HTTP server implementations as Sihl service")
- (description "Use this package to implement run your HTTP routers on a HTTP server.")
+ (synopsis "Sihl HTTP service and middlewares")
+ (description "An Opium based HTTP service and a set of middlewares to implement traditional web forms and JSON APIs.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -90,8 +90,8 @@
 
 (package
  (name sihl-user)
- (synopsis "Contains Sihl services to deal with user related topics")
- (description "Use this package to handle users and password reset workflows.")
+ (synopsis "Sihl services to deal with users")
+ (description "Modules for user handling and password reset workflows.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -101,8 +101,8 @@
 
 (package
  (name sihl-session)
- (synopsis "Contains Sihl services to deal with sessions related topics")
- (description "Use this package to handle sessions and flash storage.")
+ (synopsis "Sihl service to deal with sessions")
+ (description "Modules for session storage.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -112,8 +112,8 @@
 
 (package
  (name sihl-token)
- (synopsis "A Sihl service for creating, storing and handling tokens")
- (description "Various backends are supported like JWT or Databases.")
+ (synopsis "Sihl service to deal with tokens")
+ (description "Modules for token handling with support for JWT blacklisting and database-based tokens.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -123,7 +123,7 @@
 
 (package
  (name sihl-storage)
- (synopsis "A Sihl service for storing and retrieving large files")
+ (synopsis "Sihl service to deal with storage of large files")
  (description "
 This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
  (depends
@@ -135,9 +135,9 @@ This service can be used to handle large binary blobs that are typically not sto
 
 (package
  (name sihl-email)
- (synopsis "A Sihl service for sending emails using Lwt")
+ (synopsis "Sihl service to deal with sending emails")
  (description "
-A Sihl service for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
+Modules for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -149,9 +149,9 @@ A Sihl service for sending emails using Lwt. Various email transports are provid
 
 (package
  (name sihl-queue)
- (synopsis "A Sihl service for queue jobs")
+ (synopsis "Sihl service to deal with queuing jobs")
  (description "
-A Sihl service for putting and working jobs on queues. Various queue backends are provided.")
+Modules for putting and working jobs on queues. Various queue backends are provided.")
  (depends
   dune
   (ocaml (>= 4.08.0))

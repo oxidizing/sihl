@@ -1,6 +1,11 @@
-## [0.3.0] - ?
+## [0.3.0] - 2021-01-08
 ### Fixed
 - Replace functor based approach with service facade pattern based approach to increase ergonomy
+
+### Added
+- Implement MariaDB and PostgreSql backends for all services except storage service
+- JSON Web Token backend for the token service
+- Default middlewares for server side rendered forms and JSON API
 
 ## [0.2.2] - 2020-12-17
 ### Fixed

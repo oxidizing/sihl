@@ -1,9 +1,9 @@
 opam-version: "2.0"
 version: "0.3.0"
-synopsis: "A Sihl service for queue jobs"
+synopsis: "Sihl service to deal with queuing jobs"
 description: """
 
-A Sihl service for putting and working jobs on queues. Various queue backends are provided."""
+Modules for putting and working jobs on queues. Various queue backends are provided."""
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"

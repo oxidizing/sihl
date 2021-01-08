@@ -1,6 +1,6 @@
 opam-version: "2.0"
 version: "0.3.0"
-synopsis: "A Sihl service for storing and retrieving large files"
+synopsis: "Sihl service to deal with storage of large files"
 description: """
 
 This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided."""

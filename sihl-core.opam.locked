@@ -2,7 +2,7 @@ opam-version: "2.0"
 version: "0.3.0"
 synopsis: "The core of the Sihl web framework"
 description:
-  "Deals with configuration, service lifecycle, app, CLI commands, logging and randomness."
+  "Modules for dealing with configuration, service lifecycle, app, CLI commands, logging, random number generation and schedules."
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"
