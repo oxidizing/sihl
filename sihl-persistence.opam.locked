@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.3.0~rc1"
+version: "0.4.0"
 synopsis: "Sihl services to deal with data persistence"
 description:
   "Modules for database pools, transactions, migrations and integration tests involving the database layer."

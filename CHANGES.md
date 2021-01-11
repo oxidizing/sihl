@@ -1,3 +1,5 @@
+## [0.4.0] - ?
+
 ## [0.3.0] - 2021-01-08
 ### Fixed
 - Replace functor based approach with service facade pattern based approach to increase ergonomy
