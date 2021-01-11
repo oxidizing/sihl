@@ -70,30 +70,76 @@ let json_error_handler req =
   |> Lwt.return
 ;;
 
-let middleware error_handler =
+let exn_to_string exn req =
+  let msg = Printexc.to_string exn
+  and stack = Printexc.get_backtrace () in
+  let request_id = Id.find req in
+  let req_str = Format.asprintf "%a" Opium.Request.pp_hum req in
+  Format.asprintf
+    "Request id %s: %s\nError: %s\nStacktrace: %s"
+    request_id
+    req_str
+    msg
+    stack
+;;
+
+let create_error_email (sender, recipient) error =
+  Sihl_facade.Email.create ~sender ~recipient ~subject:"Exception caught" error
+;;
+
+let middleware ?email ?(reporter = fun _ -> Lwt.return ()) ?error_handler () =
   let filter handler req =
     Lwt.catch
       (fun () -> handler req)
       (fun exn ->
-        let msg = Printexc.to_string exn
-        and stack = Printexc.get_backtrace () in
-        let request_id = Id.find req in
-        let req_str = Format.asprintf "%a" Opium.Request.pp_hum req in
-        Logs.err (fun m ->
-            m
-              "Request id %s: %s\nError: %s\nStacktrace: %s"
-              request_id
-              req_str
-              msg
-              stack);
-        error_handler req)
+        (* Make sure to Lwt.catch everything that might go wrong. *)
+        (* Log the error *)
+        let error = exn_to_string exn req in
+        Logs.err (fun m -> m "%s" error);
+        (* Report error via email, don't wait for it.*)
+        let _ =
+          match email with
+          | Some credentials ->
+            let email = create_error_email credentials error in
+            Lwt.catch
+              (fun () -> Sihl_facade.Email.send email)
+              (fun exn ->
+                let msg = Printexc.to_string exn in
+                Logs.err (fun m -> m "Failed to report error per email: %s" msg);
+                Lwt.return ())
+          | _ -> Lwt.return ()
+        in
+        (* Use custom reporter to catch error, don't wait for it. *)
+        let _ =
+          Lwt.catch
+            (fun () -> reporter error)
+            (fun exn ->
+              let msg = Printexc.to_string exn in
+              Logs.err (fun m ->
+                  m "Failed to run custom error reporter: %s" msg);
+              Lwt.return ())
+        in
+        let content_type =
+          try
+            req
+            |> Opium.Request.header "Content-Type"
+            |> Option.map (String.split_on_char ';')
+            |> Option.map List.hd
+          with
+          | _ -> None
+        in
+        match error_handler with
+        | Some error_handler -> error_handler req
+        | None ->
+          (match content_type with
+          | Some "application/json" -> json_error_handler req
+          (* Default to text/html *)
+          | _ -> site_error_handler req))
   in
   (* In a production setting we don't want to use the built in debugger
-     middleware of opium *)
+     middleware of opium. It is useful for development but it exposed too much
+     information. *)
   if Sihl_core.Configuration.is_production ()
   then Rock.Middleware.create ~name:"error" ~filter
   else Opium.Middleware.debugger
 ;;
-
-let site_middleware = middleware site_error_handler
-let json_middleware = middleware json_error_handler
