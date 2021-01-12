@@ -16,5 +16,4 @@ let create_todos_table =
      |sql}
 ;;
 
-let all = [
-    Sihl.Migration.(empty "demo" |> add_step create_todos_table) ]
+let all = [ Sihl.Migration.(empty "demo" |> add_step create_todos_table) ]

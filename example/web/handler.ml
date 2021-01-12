@@ -1,7 +1,7 @@
 (* The handlers map HTTP responses to HTTP requests.
 
-   Authentication, authorization and input sanitization/validation
-   usually happen here. *)
+   Authentication, authorization and input sanitization/validation usually
+   happen here. *)
 
 let list req =
   let open Lwt.Syntax in
@@ -28,7 +28,8 @@ let add req =
     Lwt.return @@ Sihl.Web.Flash.set_notice (Some "Successfully updated") resp
   | _ ->
     let resp = Opium.Response.redirect_to "/" in
-    Lwt.return @@ Sihl.Web.Flash.set_alert (Some "Failed to update todo description") resp
+    Lwt.return
+    @@ Sihl.Web.Flash.set_alert (Some "Failed to update todo description") resp
 ;;
 
 let do_ req =
@@ -43,8 +44,10 @@ let do_ req =
     | Some todo ->
       let* () = Todo.do_ todo in
       let resp = Opium.Response.redirect_to "/" in
-      Lwt.return @@ Sihl.Web.Flash.set_notice (Some "Successfully set to done") resp)
+      Lwt.return
+      @@ Sihl.Web.Flash.set_notice (Some "Successfully set to done") resp)
   | _ ->
     let resp = Opium.Response.redirect_to "/" in
-    Lwt.return @@ Sihl.Web.Flash.set_alert (Some "Failed to set to-do to done") resp
+    Lwt.return
+    @@ Sihl.Web.Flash.set_alert (Some "Failed to set to-do to done") resp
 ;;

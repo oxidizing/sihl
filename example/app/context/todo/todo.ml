@@ -1,11 +1,9 @@
-(* The service provides functionality to the outside world and is the main
-   entry point to the "todo" context.
+(* The service provides functionality to the outside world and is the main entry
+   point to the "todo" context.
 
-   Once a request makes it to the service, we can safely assume that the
-   request has been validated and authorized. Business rules that can
-   not be placed in the model go here. The service calls models and
-   repositories.
-*)
+   Once a request makes it to the service, we can safely assume that the request
+   has been validated and authorized. Business rules that can not be placed in
+   the model go here. The service calls models and repositories. *)
 
 module Model = Model
 

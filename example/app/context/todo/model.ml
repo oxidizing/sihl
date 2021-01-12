@@ -1,9 +1,8 @@
 (* The model encapsulates business rules expressed as types and pure functions.
 
    The functions are easy to test. Try to squeeze as many business rules as
-   possible in here. Make sure to not do any side effects here. If you are
-   using Lwt.t here, consider moving that part into the service.
-*)
+   possible in here. Make sure to not do any side effects here. If you are using
+   Lwt.t here, consider moving that part into the service. *)
 
 type status =
   | Active

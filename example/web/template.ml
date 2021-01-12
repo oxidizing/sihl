@@ -17,9 +17,16 @@ let home_page_doc content =
   html
     (head
        this_title
-       [ link ~rel:[ `Stylesheet ] ~href:"https://cdn.simplecss.org/simple.min.css" () ])
+       [ link
+           ~rel:[ `Stylesheet ]
+           ~href:"https://cdn.simplecss.org/simple.min.css"
+           ()
+       ])
     (body
-       [ header [ h1 [ txt "To-do list" ]; txt "Edit, add and mark to-do items as done." ]
+       [ header
+           [ h1 [ txt "To-do list" ]
+           ; txt "Edit, add and mark to-do items as done."
+           ]
        ; main [ content ]
        ; common_footer
        ])
@@ -32,7 +39,11 @@ let add_form csrf =
         [ label [ txt "Description" ]
         ; br ()
         ; input
-            ~a:[ a_input_type `Text; a_name "description"; a_placeholder "Do laundry" ]
+            ~a:
+              [ a_input_type `Text
+              ; a_name "description"
+              ; a_placeholder "Do laundry"
+              ]
             ()
         ]
     ; p [ input ~a:[ a_input_type `Hidden; a_name "csrf"; a_value csrf ] () ]
@@ -55,12 +66,23 @@ let todo_list csrf todos =
                      | Active ->
                        div
                          [ form
-                             ~a:[ a_method `Post; a_action (uri_of_string "/do") ]
+                             ~a:
+                               [ a_method `Post
+                               ; a_action (uri_of_string "/do")
+                               ]
                              [ input
-                                 ~a:[ a_input_type `Hidden; a_name "csrf"; a_value csrf ]
+                                 ~a:
+                                   [ a_input_type `Hidden
+                                   ; a_name "csrf"
+                                   ; a_value csrf
+                                   ]
                                  ()
                              ; input
-                                 ~a:[ a_input_type `Hidden; a_name "id"; a_value id ]
+                                 ~a:
+                                   [ a_input_type `Hidden
+                                   ; a_name "id"
+                                   ; a_value id
+                                   ]
                                  ()
                              ; button [ span [ txt "Do" ] ]
                              ]

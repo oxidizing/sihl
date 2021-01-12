@@ -1,8 +1,7 @@
 (* All the HTTP entry points are listed here as routes.
 
-   Don't put actual logic here to keep it declarative and easy to read.
-   The overall scope of the web app should be clear after scanning the routes.
-*)
+   Don't put actual logic here to keep it declarative and easy to read. The
+   overall scope of the web app should be clear after scanning the routes. *)
 
 let list_todos = Sihl.Web.Http.get "" Handler.list
 let add_todos = Sihl.Web.Http.post "add" Handler.add
