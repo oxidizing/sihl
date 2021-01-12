@@ -78,6 +78,8 @@ Visit `http://localhost:3000/` to use the demo to-do list app.
   </a>
 </p>
 
+Check out the (adjusted) [example project](https://github.com/oxidizing/sihl/tree/master/example) to see how the code looks like. We use that project for testing but the file structure gives you an idea of how a real world project might look like.
+
 ## Background
 
 ### Design Goals
