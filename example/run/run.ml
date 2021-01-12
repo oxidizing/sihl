@@ -15,18 +15,18 @@ let cleaners = [ Todo.cleaner ]
 let jobs = []
 
 let services =
-  [ Sihl.Cleaner.Setup.register cleaners
-  ; Sihl.Migration.Setup.(register ~migrations postgresql)
-  ; Sihl.Token.Setup.(register postgresql)
-  ; Sihl.Email_template.Setup.(register postgresql)
-  ; Sihl.User.Setup.(register postgresql)
-  ; Sihl.Session.Setup.(register postgresql)
-  ; Sihl.Token.Setup.(register postgresql)
-  ; Sihl.Queue.Setup.(register ~jobs postgresql)
-  ; Sihl.User.Password_reset.Setup.register ()
-  ; Sihl.Email.Setup.(register smtp)
-  ; Sihl.Schedule.Setup.register ()
-  ; Sihl.Web.Setup.register Web.Route.all
+  [ Sihl.Cleaner.register cleaners
+  ; Sihl.Database.Migration.(register ~migrations Implementation.postgresql)
+  ; Sihl.Token.(register Implementation.postgresql)
+  ; Sihl.Email_template.(register Implementation.postgresql)
+  ; Sihl.User.(register Implementation.postgresql)
+  ; Sihl.Session.(register Implementation.postgresql)
+  ; Sihl.Token.(register Implementation.postgresql)
+  ; Sihl.Queue.(register ~jobs Implementation.postgresql)
+  ; Sihl.User.Password_reset.register ()
+  ; Sihl.Email.(register Implementation.smtp)
+  ; Sihl.Schedule.register ()
+  ; Sihl.Web.register Web.Route.all
   ]
 ;;
 

@@ -24,7 +24,9 @@ val set_user_details
   -> username:string option
   -> Sihl_contract.User.t
 
+(** [is_admin user] returns true if user [user] is an admin. *)
 val is_admin : Sihl_contract.User.t -> bool
+
 val is_owner : Sihl_contract.User.t -> string -> bool
 val is_confirmed : Sihl_contract.User.t -> bool
 val matches_password : string -> Sihl_contract.User.t -> bool

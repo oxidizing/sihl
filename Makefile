@@ -23,6 +23,10 @@ switch: create_switch deps ## Create an opam switch and install development depe
 lock: ## Generate a lock file
 	opam lock -y .
 
+.PHONY: watch
+watch: ## Build the project, including non installable libraries and executables
+	opam exec -- dune build -w --root .
+
 .PHONY: build
 build: ## Build the project, including non installable libraries and executables
 	opam exec -- dune build --root .

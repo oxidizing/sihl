@@ -1,6 +1,6 @@
 (* Database migrations. *)
 let create_todos_table =
-  Sihl.Migration.create_step
+  Sihl.Database.Migration.create_step
     ~label:"create todos table"
     {sql|
      CREATE TABLE IF NOT EXISTS todos (
@@ -16,4 +16,6 @@ let create_todos_table =
      |sql}
 ;;
 
-let all = [ Sihl.Migration.(empty "demo" |> add_step create_todos_table) ]
+let all =
+  [ Sihl.Database.Migration.(empty "demo" |> add_step create_todos_table) ]
+;;
