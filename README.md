@@ -78,6 +78,8 @@ Visit `http://localhost:3000/` to use the demo to-do list app.
   </a>
 </p>
 
+Check out the (adjusted) [example project](https://github.com/oxidizing/sihl/tree/master/example) to see how the code looks like. We use that project for testing but the file structure gives you an idea of how a real world project might look like.
+
 ## Background
 
 ### Design Goals
@@ -159,14 +161,3 @@ Distributed under the MIT License. See `LICENSE` for more information.
 Oxidizing Systems - [@oxidizingsys](https://twitter.com/oxidizingsys) - hello@oxidizing.io
 
 Project Link: [https://github.com/oxidizing/sihl](https://github.com/oxidizing/sihl)
-
-## Acknowledgements
-
-Sihl would not be possible without some amazing projects like:
-
-* [OCaml](https://ocaml.org/)
-* [Reason](https://reasonml.github.io/)
-* [Opium](https://github.com/rgrinberg/opium)
-* [Caqti](https://github.com/paurkedal/ocaml-caqti)
-* [Tree vector created by brgfx - www.freepik.com](https://www.freepik.com/vectors/tree)
-* And [many more!](https://github.com/oxidizing/sihl/blob/master/dune-project)

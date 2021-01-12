@@ -45,7 +45,7 @@ format: ## Format the codebase with ocamlformat
 
 .PHONY: sihl
 sihl: all ## Run the produced executable of the included Sihl app
-	opam exec -- dune exec --root . app/run/run.exe $(ARGS)
+	ROOT_PATH=$(CURDIR)/example opam exec -- dune exec --root . example/run/run.exe $(ARGS)
 
 .PHONY: test-unit
 test-unit: build
