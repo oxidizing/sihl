@@ -1,10 +1,51 @@
+.DEFAULT_GOAL := all
+
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+$(eval $(ARGS):;@:)
+
+.PHONY: all
+all:
+	opam exec -- dune build --root . @install
+
+.PHONY: deps
+deps: ## Install development dependencies
+	opam install -y dune-release merlin ocamlformat utop ocaml-lsp-server
+	opam install --deps-only --with-test --with-doc -y .
+
+.PHONY: create_switch
+create_switch:
+	opam switch create . --no-install
+
+.PHONY: switch
+switch: create_switch deps ## Create an opam switch and install development dependencies
+
+.PHONY: lock
+lock: ## Generate a lock file
+	opam lock -y .
+
 .PHONY: build
-build:
-	opam exec -- dune build
+build: ## Build the project, including non installable libraries and executables
+	opam exec -- dune build --root .
+
+.PHONY: install
+install: all ## Install the packages on the system
+	opam exec -- dune install --root .
 
 .PHONY: clean
-clean:
-	opam exec -- dune clean
+clean: ## Clean build artifacts and other generated files
+	opam exec -- dune clean --root .
+
+.PHONY: doc
+doc: ## Generate odoc documentation
+	opam exec -- dune build --root . @doc
+
+.PHONY: format
+format: ## Format the codebase with ocamlformat
+	opam exec -- dune build --root . --auto-promote @fmt
+
+.PHONY: sihl
+sihl: all ## Run the produced executable of the included Sihl app
+	opam exec -- dune exec --root . app/run/run.exe $(ARGS)
 
 .PHONY: test-unit
 test-unit: build
@@ -49,11 +90,21 @@ test-postgresql: build
 test-http: build
 	SIHL_ENV=test ./_build/default/sihl-web/test/http.exe
 
+.PHONY: test
 test: test-unit test-memory test-http test-postgresql test-mariadb
 
-doc:
-	opam exec -- dune build @doc
+.PHONY: utop
+utop: ## Run a REPL and link with the project's libraries
+	opam exec -- dune utop --root . lib -- -implicit-bindings
 
 .PHONY: fmt
 fmt:
 	opam exec -- dune build --root . --auto-promote @fmt
+
+.PHONY: db
+db: ## Starts the database using docker-compose
+	docker-compose -f docker-compose.dev.yml up -d
+
+.PHONY: db_down
+db_down: ## Removes the database using docker-compose
+	docker-compose -f docker-compose.dev.yml down
