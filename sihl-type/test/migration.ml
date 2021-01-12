@@ -19,7 +19,11 @@ let find_missing_migrations _ () =
   in
   let status = Sihl_type.Migration.get_migrations_status migration_states migrations in
   let missing =
-    List.map fst @@ List.filter (fun stat -> Option.is_none @@ snd stat) status
+    List.filter_map
+      (function
+        | ns, None -> Some ns
+        | _ -> None)
+      status
   in
   Alcotest.(
     check
@@ -33,7 +37,7 @@ let find_missing_migrations _ () =
 let find_unapplied_migrations _ () =
   let migration_states =
     [ { (Sihl_type.Migration_state.create ~namespace:"Mathematicians") with version = 1 }
-    ; { (Sihl_type.Migration_state.create ~namespace:"Logicians") with version = 2 }
+    ; { (Sihl_type.Migration_state.create ~namespace:"Logicians") with version = 3 }
     ; { (Sihl_type.Migration_state.create ~namespace:"Engineers") with version = 5 }
     ]
   in
@@ -55,7 +59,7 @@ let find_unapplied_migrations _ () =
       (list (option int))
       "find unapplied migration count"
       (List.map snd status)
-      [ Some 2; Some 1; Some (-2) ]);
+      [ Some 2; Some 0; Some (-2) ]);
   Lwt.return ()
 ;;
 

@@ -242,7 +242,12 @@ module Make (MigrationRepo : Migration_repo.Sig) : Sihl_contract.Migration.Sig =
     Lwt.return ()
   ;;
 
-  let start () = check_migrations_status ()
+  let start () =
+    if Sihl_core.Configuration.is_test ()
+    then Lwt.return ()
+    else check_migrations_status ()
+  ;;
+
   let stop _ = Lwt.return ()
 
   let lifecycle =
