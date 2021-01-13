@@ -1,9 +1,26 @@
-module App = Sihl_core.App
-module Configuration = Sihl_core.Configuration
-module Command = Sihl_core.Command
-module Log = Sihl_core.Log
-module Time = Sihl_core.Time
-module Authz = Sihl_user.Authz
+module App : sig
+  include module type of Sihl_core.App
+end
+
+module Configuration : sig
+  include module type of Sihl_core.Configuration
+end
+
+module Command : sig
+  include module type of Sihl_core.Command
+end
+
+module Log : sig
+  include module type of Sihl_core.Log
+end
+
+module Time : sig
+  include module type of Sihl_core.Time
+end
+
+module Authz : sig
+  include module type of Sihl_user.Authz
+end
 
 module Schedule : sig
   include module type of Sihl_facade.Schedule
@@ -27,20 +44,61 @@ module Cleaner : sig
 end
 
 module Web : sig
-  module Authentication = Sihl_web.Authentication
-  module Authorization = Sihl_web.Authorization
-  module Bearer_token = Sihl_web.Bearer_token
-  module Csrf = Sihl_web.Csrf
-  module Error = Sihl_web.Error
-  module Flash = Sihl_web.Flash
-  module Form = Sihl_web.Form
-  module Htmx = Sihl_web.Htmx
-  module Http = Sihl_web.Http
-  module Id = Sihl_web.Id
-  module Json = Sihl_web.Json
-  module Session = Sihl_web.Session
-  module Static = Sihl_web.Static
-  module User = Sihl_web.User
+  module Authentication : sig
+    include module type of Sihl_web.Authentication
+  end
+
+  module Authorization : sig
+    include module type of Sihl_web.Authorization
+  end
+
+  module Bearer_token : sig
+    include module type of Sihl_web.Bearer_token
+  end
+
+  module Csrf : sig
+    include module type of Sihl_web.Csrf
+  end
+
+  module Error : sig
+    include module type of Sihl_web.Error
+  end
+
+  module Flash : sig
+    include module type of Sihl_web.Flash
+  end
+
+  module Form : sig
+    include module type of Sihl_web.Form
+  end
+
+  module Html : sig
+    include module type of Sihl_web.Htmx
+  end
+
+  module Http : sig
+    include module type of Sihl_web.Http
+  end
+
+  module Id : sig
+    include module type of Sihl_web.Id
+  end
+
+  module Json : sig
+    include module type of Sihl_web.Json
+  end
+
+  module Session : sig
+    include module type of Sihl_web.Session
+  end
+
+  module Static : sig
+    include module type of Sihl_web.Static
+  end
+
+  module User : sig
+    include module type of Sihl_web.User
+  end
 
   val register : Sihl_contract.Http.router list -> Sihl_core.Container.Service.t
 end

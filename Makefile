@@ -43,6 +43,10 @@ clean: ## Clean build artifacts and other generated files
 doc: ## Generate odoc documentation
 	opam exec -- dune build --root . @doc
 
+.PHONY: watch-doc
+watch-doc: ## Generate odoc documentation
+	opam exec -- dune build -w --root . @doc
+
 .PHONY: format
 format: ## Format the codebase with ocamlformat
 	opam exec -- dune build --root . --auto-promote @fmt

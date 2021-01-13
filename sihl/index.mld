@@ -1,0 +1,585 @@
+{0 Sihl}
+
+{%html:
+<p align="center">
+  <a href="https://github.com/oxidizing/sihl">
+    <img style="display: block; margin: 0 auto;" src="https://github.com/oxidizing/sihl/blob/master/images/logo.png?raw=true" alt="Logo"/>
+  </a>
+</p>
+%}
+
+Sihl is a batteries-included web framework built on top of {{: https://github.com/rgrinberg/opium } opium}, {{: https://github.com/paurkedal/ocaml-caqti } caqti}, {{: https://erratique.ch/software/logs } logs} and {{: https://github.com/oxidizing/sihl/blob/master/dune-project } many more}. Thanks to the modular architecture, included batteries can be swapped easily. Statically typed functional programming with OCaml makes web development fun and safe.
+
+{1 Getting Started}
+
+{2 Installation}
+
+Sihl is distributed through {{: https://opam.ocaml.org/doc/Install.html} opam}, so go ahead and install it.
+The easiest way to get started is to use {{: https://github.com/tmattio/spin} Spin} to generate a Sihl app. Go ahead and install it.
+With opam it can be installed easily with [opam install spin].
+
+{2 App Generation}
+
+Run [spin new https://github.com/oxidizing/spin-sihl.git app] where [app] is the directory where you want to create your app in.
+After providing Spin with the answers you have to wait for the dependencies to be compiled. This takes a while the first time.
+
+{%html: <p align="center">
+  <a href="https://github.com/oxidizing/sihl">
+    <img src="https://raw.githubusercontent.com/oxidizing/sihl/master/images/sihl-demo.svg" alt="Spin template for project generation.">
+  </a>
+</p>
+%}
+
+{2 Configuration}
+
+One of the design goals of Sihl is safety. A Sihl app does not start if the required configurations are not present. You can get a list of required configurations with the command [make sihl config:list]. Note that the list of configurations depends on the services that are installed.
+
+{3 Providing Configuration}
+
+There are three ways to provide configurations:
+- environment variables
+- [.env] files
+- programmatically using {!val:Sihl.Configuration.store}
+
+[.env] files have to be placed in the project root directory. Sihl tries to find out where that is, in general the root is where you have your [.git] folder. You can override the project root with the environment variables [ROOT_PATH]. You can set the location of your [.env] file with the environment variable [ENV_FILES_PATH] if you want to move it away from the project root.
+
+{3 Reading Configuration}
+
+Use {!module:Sihl.Configuration} for reading configuration. You can also use it to programmatically store some configuration
+
+Examples:
+
+{[
+let smtp_host = Sihl.Configuration.read_string "SMTP_HOST" in
+]}
+
+{2 Directory Structure}
+
+TODO after making final changes
+
+{1 Architecture Concepts}
+
+As wisely stated in Laravel's {{:https://laravel.com/docs/8.x/lifecycle#introduction}documentation}:
+
+"When using any tool in the "real world", you feel more confident if you understand how that tool works. Application development is no different. When you understand how your development tools function, you feel more comfortable and confident using them."
+
+{2 Request Lifecycle}
+
+In backend web development, everything starts with a HTTP request. Sihl uses {{:todo}Opium} and {{:todo}Rock} under the hood. Your job is it, to create a [Rock.Response.t] given a [Rock.Request.t].
+
+This is done using a handler, which has the signature [val handler : Rock.Request.t -> Rock.Response.t Lwt.t]. In the handler you call your own code and Sihl services. A handler looks like this:
+{[
+let list req =
+  let open Lwt.Syntax in
+  let csrf = Sihl.Web.Csrf.find req in
+  let notice = Sihl.Web.Flash.find_notice req in
+  let alert = Sihl.Web.Flash.find_alert req in
+  let* todos, _ = Todo.search 100 in
+  Lwt.return @@ Opium.Response.of_html (Template.page csrf todos alert notice)
+;;
+]}
+
+In order to wrap handlers and add functionality to them in a functional way, we need a function that takes a handler and returns a handler [val middleware : handler -> handler].
+
+A request has following lifecycle:
+{ul
+{- {b HTTP Request}: The HTTP server receives a request}
+{- {b Route}: The request either matches one of the routes or it doesn't }
+{- {b Middleware in}: The request goes through a list of middlewares }
+{- {b Handler}: The request reaches a handler and triggers service calls which yields in a response }
+{- {b Middleware out}: The response goes through a list of middlewares }
+{- {b HTTP Response}: The response is sent back }
+}
+
+In order to learn more about the request lifcycle, check out Opium's {{:todo}examples}.
+
+{2 Service Container}
+
+Sihl provides its features with a service abstration.
+
+Services can have dependencies on each other. The {!module:Sihl.User} service depends on the {!module:Sihl.Database.Migration} service, since it has to create its tables in a database.
+
+To be precise, service {e implementations} can have dependencies. It is important to differentiate between service implementation and service contract. Nothing says, that {!module:Sihl.User} has to depend on {!module:Sihl.Database.Migration} since the user service might be implemented in-memory. Both provided implementations {!val:Sihl.User.Implementation.mariadb} and {!val:Sihl.User.Implementation.postgresql} depend on the migration service.
+
+In the file [run.ml] you find a list of registered services. Sihl knows about their dependencies and starts them in the right order.
+
+A [run.ml] setup when using PostgreSql could look like this:
+
+{[
+let services =
+  [ Sihl.Cleaner.register cleaners
+  ; Sihl.Database.Migration.(register ~migrations Implementation.postgresql)
+  ; Sihl.Token.(register Implementation.postgresql)
+  ; Sihl.Email_template.(register Implementation.postgresql)
+  ; Sihl.User.(register Implementation.postgresql)
+  ; Sihl.Session.(register Implementation.postgresql)
+  ; Sihl.Token.(register Implementation.postgresql)
+  ; Sihl.Queue.(register ~jobs Implementation.postgresql)
+  ; Sihl.User.Password_reset.register ()
+  ; Sihl.Email.(register Implementation.smtp)
+  ; Sihl.Schedule.register ()
+  ; Sihl.Web.register Web.Route.all
+  ]
+;;
+]}
+
+{2 Facade}
+
+Strictly speaking, neither {!module:Sihl.User} or {!module:Sihl.Token} are services. They are service facades. This pattern makes sure, that the API remains stable, while the service implementation can be swapped out.
+
+Make sure that you register a service in [run.ml] before you use it. If you want to use anything from {!module:Sihl.Email}, you have to register a service implementation like this:
+
+{[
+let services =
+ [ Sihl.Email.(register Implementation.smtp) ]
+]}
+
+or
+
+{[
+let services =
+ [ Sihl.Email.(register Implementation.sendgrid) ]
+]}
+
+By convention, there is a module [Implementation] in every root module in Sihl that provides some implementations. You can provide your own implementations by implementating the contract in {!module:Sihl_contract}. In order to provide your own email service implementation, you need to write a module that implementations {!module-type:Sihl_contract.Email.Sig}.
+
+{2 Context}
+
+In the directory [app/context] you have multiple {{:https://martinfowler.com/bliki/BoundedContext.html}contexts}. You can have one big context in the beginning and extract parts into separate contexts as you go. Sihl makes no assumptions about this directory and you are free to do what you want. Have your repos, services, models, DTO's and what not here.
+
+The crucial part is that your app containing all the business rules is in [app/context]. Sihl helps you to make that app accessible through the internet, but your app should be more or less portable. You should be able to take [app/context] and use it with some other framework. Not that you should of course, this is just a useful mental model :).
+
+{1 The Basics}
+
+This section guides you through the basics to build simple web apps with Sihl.
+
+{2 Routing}
+
+The routes are the entry points to your app through HTTP. They define in a declrative what can be done with it, either by a human user or by another application.
+
+Routes can be created with {!module:Sihl.Web.Http} like:
+
+{[
+let list_todos = Sihl.Web.Http.get "/" Handler.list
+let add_todos = Sihl.Web.Http.post "/add" Handler.add
+let do_todos = Sihl.Web.Http.post "/do" Handler.do_
+]}
+
+A route takes a path and a handler.
+
+The routes live in the the root directory [/route/api.ml] or [/route/site.ml]. A list of routes can be mounted under a path (called scope) with a middleware stack. The site routes for instance are mounted like:
+
+{[
+let site_router =
+  Sihl.Web.Http.router
+    ~middlewares:(Middleware.site ())
+    ~scope:"/"
+    [ list_todos; add_todos; do_todos ]
+;;
+]}
+
+This creates a {!type:Sihl_contract.Http.router} that can be registered with the HTTP service in [run.ml].
+
+{2 Middleware}
+
+Provided Sihl middlewares live in {!module:Sihl.Web} like {!module:Sihl.Web.Csrf} or {!module:Sihl.Web.Session}. Check out their documentation below to learn about the usage.
+
+By default Sihl creates two middleware stacks:
+
+{[
+let site () =
+  [ Sihl.Web.Id.middleware
+  ; Sihl.Web.Error.middleware ()
+  ; Opium.Middleware.logger
+  ; Opium.Middleware.content_length
+  ; Opium.Middleware.etag
+  ; Sihl.Web.Static.middleware ()
+  ; Sihl.Web.Session.middleware ()
+  ; Sihl.Web.Form.middleware
+  ; Sihl.Web.Csrf.middleware ()
+  ; Sihl.Web.Flash.middleware ()
+  ; Sihl.Web.User.session_middleware ()
+  ]
+;;
+
+let json_api () =
+  [ Sihl.Web.Id.middleware
+  ; Opium.Middleware.logger
+  ; Sihl.Web.Error.middleware ()
+  ; Sihl.Web.Json.middleware
+  ; Sihl.Web.Bearer_token.middleware
+  ; Sihl.Web.User.token_middleware ()
+  ]
+;;
+]}
+
+Have a look at the {{:todo}middlewares} that ship with Opium.
+
+- {!module:Sihl.Web.Authentication}
+- {!module:Sihl.Web.Authorization}
+- {!module:Sihl.Web.Bearer_token}
+- {!module:Sihl.Web.Csrf}
+- {!module:Sihl.Web.Error}
+- {!module:Sihl.Web.Flash}
+- {!module:Sihl.Web.Form}
+- {!module:Sihl.Web.Id}
+- {!module:Sihl.Web.Json}
+- {!module:Sihl.Web.Session}
+- {!module:Sihl.Web.Static}
+- {!module:Sihl.Web.User}
+
+{2 CSRF Protection}
+
+{2 Requests}
+
+{2 Responses}
+
+{2 Session}
+
+{2 Error Handling}
+
+{2 Logging}
+
+{1 Database}
+
+{2 Migrations}
+
+{2 Seeding}
+
+{2 Query Interface}
+
+{1 Testing}
+
+{2 Cleaning}
+
+{2 System Tests}
+
+{1 Digging Deeper}
+
+{2 Emailing}
+
+{3 Email Templates}
+
+{2 Queue}
+
+{2 Randomness}
+
+{2 Scheduling}
+
+{2 Storage}
+
+{2 Tokens}
+
+{2 Users}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{1 Quickstart}
+
+{2 Install using opam}
+
+The library can be installed with OPAM: [opam install streaming]. You can run
+[opam info streaming] to make sure that the library is installed.
+
+
+{2 Install using esy}
+
+Add ["@opam/streaming": "0.1"] to dependencies in your [package.json] file and
+install the dependencies with [esy install]. Run [esy ls-modules] to make sure
+that the library is installed for your project.
+
+
+{2 Use with dune}
+
+To start using {!module:Streaming} in your dune project add it to [libraries]
+in the [dune] file.
+
+{[
+(executable
+  (public_name myexe)
+  (libraries streaming))
+]}
+
+Open the entrypoint module in your code to start using Streams:
+
+{[
+open Streaming
+]}
+
+
+{2 Use in the top-level}
+
+Fire up {{:https://github.com/ocaml-community/utop} utop} or {{:https://github.com/dbuenzli/down} down} and run:
+
+{[
+# #require "streaming";;
+# open Streaming;;
+# Stream.(stdin |> stdout);;
+We're streaming!<Enter>
+We're streaming!
+<Ctrl+d>
+- : unit = ()
+]}
+
+That's it! Scroll down to see some examples or jump into the {{!module:Streaming} API documentation}.
+
+
+{1 Examples}
+
+{3 Read lines from [STDIN]}
+
+{[
+# Stream.stdin
+  |> Stream.filter ((<>) "")
+  |> Stream.map (fun line -> "You wrote: " ^ line)
+  |> Stream.each print_endline
+]}
+
+{3 Using stream notation}
+
+{[
+# let items =
+    let open Stream.Syntax in
+    let* n = Stream.range 1 3 in
+    let* c = Stream.of_list ['x'; 'y'] in
+    yield (n, c)
+
+# Stream.to_list items
+- : (int * char) list = [(1, 'x'); (1, 'y'); (2, 'x'); (2, 'y')])
+]}
+
+{3 Using sink notation}
+Compute the arithmetic mean in a single iteration of the input.
+{[
+# let mean =
+    let open Sink.Syntax in
+    let+ total = Sink.sum
+    and+ count = Sink.len in
+    total / count
+
+# Stream.(iota 20 |> into mean)
+- : int = 9
+]}
+
+
+{1 Resource handling}
+
+Input and output resources involved in stream processing will have the
+following two properties:
+
+- Resources are aquired lazily and only if neeeded. For example,
+  {!val:Streaming.Stream.of_file} will only open the file for reading when the
+  stream is being consumed. Similarly, a sink for a file will only open the
+  file when elements are being written into it. Sinks are initialized before
+  sources, when the computation begins.
+- Stream operations do not leak resources. The clean up functions for sources
+  and sinks are guaranteed to be called in the presence of early termination
+  (when not all input is consumed) and in case of exceptions in the streaming
+  pipeline.
+
+
+The following examples demonstrate these two properties in practice.
+
+{3 Examples}
+
+{[
+(* Create a source that must not be initialized. *)
+# let bomb () =
+    Source.make
+      ~init:(fun () -> failwith "Boom!")
+      ~pull:(fun () -> None)
+      ()
+val bomb : unit -> 'a source = <fun>
+
+(* Feed it into a stream that terminates early. *)
+# bomb ()
+  |> Stream.from
+  |> Stream.take 0
+  |> Stream.to_list
+- : 'a list = []
+]}
+
+And... nothing! As you can see our "bomb" was never detonated. This is because
+in streams, sinks (in our case it's [to_list] combined with [take]) are
+checked for "fullness" before sources are initialized.
+
+In the next example let's look at how streams behave in the presence of exceptions.
+
+{[
+# let i'm_a_source_i_must_not_leak () =
+    Source.make
+      ~init:(fun () -> `Dangerous_input)
+      ~pull:(fun st -> Some ("always blue", st))
+      ~stop:(fun `Dangerous_input ->
+          print_endline "Stopping input... Phew!")
+      ()
+val i'm_a_source_i_must_not_leak : unit -> string source = <fun>
+
+# let i'm_a_sink_i_must_not_leak () =
+    Sink.make
+      ~init:(fun () -> `Dangerous_output)
+      ~push:(fun `Dangerous_output x -> `Dangerous_output)
+      ~stop:(fun `Dangerous_output ->
+          print_endline "Stopping output... That was close!")
+      ()
+val i'm_a_sink_i_must_not_leak : unit -> ('a, unit) sink = <fun>
+
+# i'm_a_source_i_must_not_leak ()
+  |> Stream.from
+  |> Stream.map (fun x -> failwith "Boom!")
+  |> Stream.into (i'm_a_sink_i_must_not_leak ())
+Stopping input... Phew!
+Stopping output... That was close!
+Exception: Failure "Boom!".
+]}
+
+Our termination functions run just before the world exploded!
+
+
+{3 Limitations}
+
+The termination functions in streaming are always guaranteed to be called. What
+is currently not well specified is the state they will be called with. It is
+possible for a source, for example, to stream lines from multiple files, while
+seamlessly opening and closing them as the input is read. In normal termination
+conditions, streaming will correctly call all termination functions with
+correct states.
+
+The same is not true in situations when exceptions are raised. Currently, when
+there is an exception, streaming will call the termination function on the
+first instance of the state, even though it might have changed.
+
+This is not a difficult problem to solve, but a correct implementation has a
+high performance cost.
+
+In the future, streaming might expose safer stream management functions to help
+with these situations. For now, it is recommended that sources and sinks
+implement their [stop] functions in a way that allows them to close all
+allocated resources when given only the first state. This can be achieved by
+aggregating the intermediate states or using refs to allow the initial state to
+point to the latest sate.
+
+
+{1 Questions }
+
+{2 When should I use [streaming]?}
+
+[streaming] is a general-purpose streaming library with abstractions meant to
+be used as a drop-in replacement for concrete sequential data-structures such
+as lists. It is always a good idea to use a streaming model if you need
+sequential access to data. For very small collections that do not need to be
+processed multiple times, using lists is adequate. In all other situations,
+streams are significantly better in terms of performance and composition.
+
+Streaming abstractions are an excellent choice for stateful producers and
+consumers that require precise resource management. Consuming elements
+from a file or a database handler with streams is significantly safer. All
+models in [streaming] are lazy (they will only initialise resources when
+needed) and support prompt termination (the resources will be terminated
+immediately when they are no longer needed). This is guaranteed even when
+streaming pipelines raise exceptions.
+
+Finally, streaming encourages implementation of small decoupled sources, sinks
+and flow that can be reused in a wide spectrum of situations.
+
+{2 How fast are Streams compared to other streaming models?}
+
+In short - fast ({{:https://github.com/rizo/streams-bench} see} for yourself).
+The {!module:Streaming.Stream} module was designed to improve the most
+efficient iteration model currently available for OCaml, which is the so called
+"internal iterator" with the type [('a -> unit) -> unit]. This iterator is
+related to the commonly available "iter" functions in the standard library.
+
+Streams are a variant of internal iterators that add support for resource
+safety, early termination and avoid the need for mutations and exceptions in
+the combinators. In addition to that, they provide a similar performance
+profile.
+
+
+{2 What's the difference between Sources and Streams?}
+
+Both sources and streams produce values. The main difference is flow control:
+with sources, consumers of the elements are in charge of control; while with
+streams, it's the producers who drive the computation. This means that sources
+should be used for situations where the elements are requested on demand, while
+streams are best suited for "reactive" inputs.
+
+In general, streams offer better performance than sources for the most common
+operations (including concatenation) and offer
+{{:Streaming/Stream/index.html#adaptors} integration} with sinks and
+flows. On the other hand, sources are easier to create, and support
+{{:Streaming/Source/index.html#zipping-sources} zipping}.
+
+It is recommended to use sources to define decoupled producers that can be
+consumed with streams. Any source can become a stream, but the opposite is not
+so easy.
+
+{2 Why are all streaming types in this library abstract?}
+
+Even though the core types in streaming are very simple, stable and have many
+nice properties, it is possible that the types might change in the future to
+support new functionality such as backpressure and concurrency. To avoid
+breaking changes, and until the library reaches the 1.0 milestone, the types are
+going to be abstract.
+
+If you have a use-case that requires access to the internal type, please
+{{:https://github.com/odis-labs/streaming/issues/new} open an issue}.
+
+
+{2 How can the net amount of entropy of the universe be massively decreased?}
+
+{%html: <details style="cursor: pointer"><summary>You should ask AC.</summary> %}
+{[
+let answer () =
+  let x = "84726982693273833265833289698432737883857070736773697" ^
+          "8843268658465327079823265327769657873787170857632657883876982
+  What if there was no space and time?" in
+  let open Format in let (%^) = printf in
+  let open Streaming in let open Stream in
+  let (%)=fun f g x->f (g x) and
+  (|/-)=(%^)"\027[1m\027[41m";"\\|/-"in let (//) x = (|/-)
+    |> of_string
+    |> interpose '\b' |> append '\b'
+    |> cycle ~times:(Random.int 10)
+    |> append x
+    |> each (fun c -> "%c%!" %^ (Unix.sleepf 0.003; c)) in
+  from @@ (let pull i =
+      if i >= 114 then None
+      else Some (String.sub x i 2, i + 2)
+    in Source.make ~init:(fun () -> 0) ~pull ())
+  |> via (Flow.map (char_of_int%int_of_string))
+  |> into (Sink.each (//)); (%^) "\027[0m"
+]}
+{%html: </details> %}
+
+
+{1 Troubleshooting}
+
+- {b Incorrect [Stream] module} - if you forget to open [Streaming] you might
+  start using the [Stream] module from the standard library. This will result
+  in [Unbound value] and type mismatch errors.
+- {b My stream pipeline never terminates} - this indicates that one of your
+  producers or transformers produces an infinite stream. Make sure that you are
+  limiting the stream input with operations such as
+  {!val:Streaming.Stream.take} or {!val:Streaming.Stream.drop}.
+
+{1 Acknowledgements}
+
+This library is based on ideas found in other libraries and research projects
+such as: Haskell's {{:https://github.com/Gabriel439/Haskell-Pipes-Library}
+Pipes } and {{:https://github.com/Gabriel439/Haskell-Foldl-Library} Foldl}
+libraries, Scala's {{:https://zio.dev} ZIO Streams}, Clojure's
+{{:https://clojure.org/reference/transducers} Transducers} and the
+{{:http://okmij.org/ftp/Streams.html} Iteratees} streaming model by Oleg
+Kiselyov.

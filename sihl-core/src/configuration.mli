@@ -67,7 +67,6 @@ val root_path : unit -> string option
 (** [env_files_path] contains the path where the env files are kept. It reads
     the value of [ENV_FILES_PATH]. If that environment variable is not set,
     [root_path] is used. If no root path can be found, [None] is returned. *)
-
 val env_files_path : unit -> string option
 
 (** [read_env_file ()] reads an [.env] file from the directory given by
@@ -75,7 +74,6 @@ val env_files_path : unit -> string option
     set to [test], [.env.test] is read. Otherwise [.env] is read. If the file
     doesn't exist or the directory containing the file can't be found, [None] is
     returned. *)
-
 val read_env_file : unit -> data option Lwt.t
 
 (** [read schema] returns the decoded, statically typed version of configuration
