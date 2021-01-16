@@ -73,9 +73,7 @@ module type Sig = sig
 end
 
 module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
-  let lifecycles =
-    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   module Model = Model
 
@@ -277,9 +275,7 @@ end
 
 module PostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   module Model = Model
 

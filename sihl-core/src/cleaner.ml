@@ -20,12 +20,3 @@ let clean_all () =
   in
   clean_repos cleaners
 ;;
-
-let start () = Lwt.return ()
-let stop () = Lwt.return ()
-let lifecycle = Container.Lifecycle.create "cleaner" ~start ~stop
-
-let register cleaners =
-  register_cleaners cleaners;
-  Container.Service.create lifecycle
-;;

@@ -28,10 +28,7 @@ let template =
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
   let lifecycles =
-    [ Sihl_persistence.Database.lifecycle
-    ; Sihl_core.Cleaner.lifecycle
-    ; MigrationService.lifecycle
-    ]
+    [ Sihl_persistence.Database.lifecycle; MigrationService.lifecycle ]
   ;;
 
   module Sql = struct
@@ -241,10 +238,7 @@ end
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
   let lifecycles =
-    [ Sihl_persistence.Database.lifecycle
-    ; Sihl_core.Cleaner.lifecycle
-    ; MigrationService.lifecycle
-    ]
+    [ Sihl_persistence.Database.lifecycle; MigrationService.lifecycle ]
   ;;
 
   module Sql = struct

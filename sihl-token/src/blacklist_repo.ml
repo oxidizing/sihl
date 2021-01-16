@@ -8,7 +8,7 @@ module type Sig = sig
 end
 
 module InMemory : Sig = struct
-  let lifecycles = [ Sihl_core.Cleaner.lifecycle ]
+  let lifecycles = []
   let store = Hashtbl.create 100
 
   let insert token =
@@ -30,12 +30,7 @@ end
 module MariaDb : Sig = struct
   module Migration = Sihl_persistence.Migration.MariaDb
 
-  let lifecycles =
-    [ Sihl_persistence.Database.lifecycle
-    ; Sihl_core.Cleaner.lifecycle
-    ; Migration.lifecycle
-    ]
-  ;;
+  let lifecycles = [ Sihl_persistence.Database.lifecycle; Migration.lifecycle ]
 
   let insert_request =
     Caqti_request.exec
@@ -146,12 +141,7 @@ end
 module PostgreSql : Sig = struct
   module Migration = Sihl_persistence.Migration.PostgreSql
 
-  let lifecycles =
-    [ Sihl_persistence.Database.lifecycle
-    ; Sihl_core.Cleaner.lifecycle
-    ; Migration.lifecycle
-    ]
-  ;;
+  let lifecycles = [ Sihl_persistence.Database.lifecycle; Migration.lifecycle ]
 
   let insert_request =
     Caqti_request.exec

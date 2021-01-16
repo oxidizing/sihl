@@ -56,9 +56,7 @@ let t =
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   let find_all_request =
     Caqti_request.find
@@ -219,9 +217,7 @@ end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   let find_all_request =
     Caqti_request.collect

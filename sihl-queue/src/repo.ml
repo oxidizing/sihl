@@ -10,7 +10,7 @@ module type Sig = sig
 end
 
 module InMemory : Sig = struct
-  let lifecycles = [ Sihl_core.Cleaner.lifecycle ]
+  let lifecycles = []
   let state = ref Map.empty
   let ordered_ids = ref []
 
@@ -90,10 +90,7 @@ let job =
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
   let lifecycles =
-    [ Sihl_persistence.Database.lifecycle
-    ; Sihl_core.Cleaner.lifecycle
-    ; MigrationService.lifecycle
-    ]
+    [ Sihl_persistence.Database.lifecycle; MigrationService.lifecycle ]
   ;;
 
   let enqueue_request =
@@ -239,10 +236,7 @@ end
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
   let lifecycles =
-    [ Sihl_persistence.Database.lifecycle
-    ; Sihl_core.Cleaner.lifecycle
-    ; MigrationService.lifecycle
-    ]
+    [ Sihl_persistence.Database.lifecycle; MigrationService.lifecycle ]
   ;;
 
   let enqueue_request =

@@ -68,9 +68,7 @@ let user =
 
 module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   module Migration = struct
     let fix_collation =
@@ -320,9 +318,7 @@ end
 
 module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Database.lifecycle; Cleaner.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   module Migration = struct
     let create_users_table =

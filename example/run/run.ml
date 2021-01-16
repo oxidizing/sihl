@@ -15,8 +15,7 @@ let cleaners = [ Todo.cleaner ]
 let jobs = []
 
 let services =
-  [ Sihl.Cleaner.register cleaners
-  ; Sihl.Database.Migration.(register ~migrations Implementation.postgresql)
+  [ Sihl.Database.Migration.(register ~migrations Implementation.postgresql)
   ; Sihl.Token.(register Implementation.postgresql)
   ; Sihl.Email_template.(register Implementation.postgresql)
   ; Sihl.User.(register Implementation.postgresql)
