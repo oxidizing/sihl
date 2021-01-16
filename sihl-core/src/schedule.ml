@@ -67,7 +67,7 @@ let start ctx =
 ;;
 
 let stop _ = Lwt.return ()
-let lifecycle = Container.Lifecycle.create "schedule" ~start ~stop
+let lifecycle = Container.create_lifecycle "schedule" ~start ~stop
 
 let register ?(schedules = []) () =
   registered_schedules := schedules;

@@ -126,7 +126,7 @@ let start () =
 ;;
 
 let stop () = Lwt.return ()
-let lifecycle = Sihl_core.Container.Lifecycle.create "http" ~start ~stop
+let lifecycle = Sihl_core.Container.create_lifecycle "http" ~start ~stop
 
 let register ?(routers = []) () =
   registered_routers := routers;

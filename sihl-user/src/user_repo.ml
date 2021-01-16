@@ -7,7 +7,7 @@ module Model = Sihl_contract.User
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val lifecycles : Sihl_core.Container.Lifecycle.t list
+  val lifecycles : Sihl_core.Container.lifecycle list
 
   val search
     :  [< `Desc | `Asc ]

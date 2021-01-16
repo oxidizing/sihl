@@ -220,7 +220,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       Sihl_contract.User.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start

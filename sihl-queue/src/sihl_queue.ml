@@ -179,7 +179,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   ;;
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       Sihl_contract.Queue.name
       ~dependencies:(fun () ->
         List.cons (Sihl_facade.Schedule.lifecycle ()) Repo.lifecycles)

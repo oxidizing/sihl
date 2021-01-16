@@ -7,31 +7,29 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Exception
 
-module Lifecycle = struct
-  type start = unit -> unit Lwt.t
-  type stop = unit -> unit Lwt.t
+type lifecycle =
+  { name : string
+  ; dependencies : unit -> lifecycle list
+  ; start : unit -> unit Lwt.t
+  ; stop : unit -> unit Lwt.t
+  }
 
-  type t =
-    { name : string
-    ; dependencies : unit -> t list
-    ; start : start
-    ; stop : stop
-    }
-
-  let name lifecycle = lifecycle.name
-
-  let create ?(dependencies = fun () -> []) name ~start ~stop =
-    { name; dependencies; start; stop }
-  ;;
-end
+let create_lifecycle
+    ?(dependencies = fun () -> [])
+    ?(start = fun () -> Lwt.return ())
+    ?(stop = fun () -> Lwt.return ())
+    name
+  =
+  { name; dependencies; start; stop }
+;;
 
 module Service = struct
   module type Sig = sig
-    val lifecycle : Lifecycle.t
+    val lifecycle : lifecycle
   end
 
   type t =
-    { lifecycle : Lifecycle.t
+    { lifecycle : lifecycle
     ; configuration : Configuration.t
     ; commands : Command.t list
     ; server : bool
@@ -58,7 +56,7 @@ module Map = Map.Make (String)
 
 let collect_all_lifecycles lifecycles =
   let rec collect_lifecycles lifecycle =
-    match lifecycle.Lifecycle.dependencies () with
+    match lifecycle.dependencies () with
     | [] -> [ lifecycle ]
     | lifecycles ->
       List.cons
@@ -70,7 +68,7 @@ let collect_all_lifecycles lifecycles =
   lifecycles
   |> List.map collect_lifecycles
   |> List.concat
-  |> List.map (fun lifecycle -> lifecycle.Lifecycle.name, lifecycle)
+  |> List.map (fun lifecycle -> lifecycle.name, lifecycle)
   |> List.to_seq
   |> Map.of_seq
 ;;
@@ -83,8 +81,7 @@ let top_sort_lifecycles lifecycles =
     |> List.of_seq
     |> List.map (fun (name, lifecycle) ->
            let dependencies =
-             lifecycle.Lifecycle.dependencies ()
-             |> List.map (fun dep -> dep.Lifecycle.name)
+             lifecycle.dependencies () |> List.map (fun dep -> dep.name)
            in
            name, dependencies)
   in
@@ -116,7 +113,7 @@ let start_services services =
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Logs.info (fun m -> m "Starting service: %s" lifecycle.Lifecycle.name);
+      Logs.info (fun m -> m "Starting service: %s" lifecycle.name);
       let f = lifecycle.start in
       let* () = f () in
       loop lifecycles
@@ -136,7 +133,7 @@ let stop_services services =
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Logs.info (fun m -> m "Stopping service: %s" lifecycle.Lifecycle.name);
+      Logs.info (fun m -> m "Stopping service: %s" lifecycle.name);
       let f = lifecycle.stop in
       let* () = f () in
       loop lifecycles

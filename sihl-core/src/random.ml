@@ -16,5 +16,5 @@ let base64 nr =
 
 let start () = Lwt.return ()
 let stop () = Lwt.return ()
-let lifecycle = Container.Lifecycle.create "random" ~start ~stop
+let lifecycle = Container.create_lifecycle "random" ~start ~stop
 let register () = Container.Service.create lifecycle

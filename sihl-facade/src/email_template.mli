@@ -34,7 +34,7 @@ val email_of_template
 
 include Sihl_contract.Email_template.Sig
 
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
   :  (module Sihl_contract.Email_template.Sig)

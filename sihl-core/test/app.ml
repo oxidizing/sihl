@@ -14,7 +14,7 @@ module Database = struct
     Lwt.return ()
   ;;
 
-  let lifecycle = Sihl_core.Container.Lifecycle.create ~start ~stop "database"
+  let lifecycle = Sihl_core.Container.create_lifecycle ~start ~stop "database"
   let register () = Sihl_core.Container.Service.create lifecycle
 end
 
@@ -33,7 +33,7 @@ module UserService = struct
   ;;
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       "user service"
       ~start
       ~stop
@@ -65,7 +65,7 @@ module OrderService = struct
   ;;
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       "order service"
       ~start
       ~stop

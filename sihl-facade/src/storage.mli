@@ -36,7 +36,7 @@ val pp_stored : Format.formatter -> Sihl_contract.Storage.stored -> unit
 
 include Sihl_contract.Storage.Sig
 
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
   :  (module Sihl_contract.Storage.Sig)

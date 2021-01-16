@@ -1,5 +1,5 @@
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.Lifecycle.t list
+  val lifecycles : Sihl_core.Container.lifecycle list
   val insert : string -> unit Lwt.t
   val has : string -> bool Lwt.t
   val delete : string -> unit Lwt.t

@@ -7,20 +7,19 @@
 
     Every service has a lifecycle, meaning it can be started and stopped. **)
 
-module Lifecycle : sig
-  type t
-  type start = unit -> unit Lwt.t
-  type stop = unit -> unit Lwt.t
+type lifecycle =
+  { name : string
+  ; dependencies : unit -> lifecycle list
+  ; start : unit -> unit Lwt.t
+  ; stop : unit -> unit Lwt.t
+  }
 
-  val name : t -> string
-
-  val create
-    :  ?dependencies:(unit -> t list)
-    -> string
-    -> start:start
-    -> stop:stop
-    -> t
-end
+val create_lifecycle
+  :  ?dependencies:(unit -> lifecycle list)
+  -> ?start:(unit -> unit Lwt.t)
+  -> ?stop:(unit -> unit Lwt.t)
+  -> string
+  -> lifecycle
 
 (** {1 Service}
 
@@ -28,7 +27,7 @@ end
 
 module Service : sig
   module type Sig = sig
-    val lifecycle : Lifecycle.t
+    val lifecycle : lifecycle
   end
 
   type t
@@ -40,7 +39,7 @@ module Service : sig
     :  ?commands:Command.t list
     -> ?configuration:Configuration.t
     -> ?server:bool
-    -> Lifecycle.t
+    -> lifecycle
     -> t
 
   val server : t -> bool
@@ -51,7 +50,7 @@ end
 (** [start_services lifecycles] starts a list of service [lifecycles]. The order
     does not matter as the services are started in the order of their
     dependencies. (No service is started before its dependency) *)
-val start_services : Service.t list -> Lifecycle.t list Lwt.t
+val start_services : Service.t list -> lifecycle list Lwt.t
 
 (** [stop_services ctx services] stops a list of service [lifecycles] with a
     context [ctx]. The order does not matter as the services are stopped in the
@@ -62,6 +61,6 @@ module Map : sig
   type 'a t
 end
 
-val collect_all_lifecycles : Lifecycle.t list -> Lifecycle.t Map.t
-val top_sort_lifecycles : Lifecycle.t list -> Lifecycle.t list
+val collect_all_lifecycles : lifecycle list -> lifecycle Map.t
+val top_sort_lifecycles : lifecycle list -> lifecycle list
 val unpack : string -> ?default:'a -> 'a option ref -> 'a

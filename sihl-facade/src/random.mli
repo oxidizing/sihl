@@ -1,6 +1,6 @@
 include Sihl_contract.Random.Sig
 
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
   :  (module Sihl_contract.Random.Sig)

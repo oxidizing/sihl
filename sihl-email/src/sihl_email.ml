@@ -175,7 +175,7 @@ module Smtp : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       Sihl_contract.Email.name
       ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
@@ -289,7 +289,7 @@ module SendGrid : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       Sihl_contract.Email.name
       ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
       ~start
@@ -382,7 +382,7 @@ module Queued : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       Sihl_contract.Email.name
       ~start
       ~stop

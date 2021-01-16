@@ -15,7 +15,7 @@ val add_step
 
 include Sihl_contract.Migration.Sig
 
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
   :  ?migrations:Sihl_contract.Migration.t list

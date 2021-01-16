@@ -101,7 +101,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Storage.Sig = struct
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
-  let lifecycle = Sihl_core.Container.Lifecycle.create "storage" ~start ~stop
+  let lifecycle = Sihl_core.Container.create_lifecycle "storage" ~start ~stop
 
   let register () =
     Repo.register_migration ();

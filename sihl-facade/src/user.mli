@@ -48,5 +48,5 @@ val validate_change_password
 
 include Sihl_contract.User.Sig
 
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 val register : (module Sihl_contract.User.Sig) -> Sihl_core.Container.Service.t

@@ -15,7 +15,7 @@ val create : (string * string) list -> Sihl_contract.Session.t Lwt.t
 val find_opt : string -> Sihl_contract.Session.t option Lwt.t
 val find : string -> Sihl_contract.Session.t Lwt.t
 val find_all : unit -> Sihl_contract.Session.t list Lwt.t
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
   :  (module Sihl_contract.Session.Sig)

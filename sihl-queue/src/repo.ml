@@ -1,7 +1,7 @@
 module Map = Map.Make (String)
 
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.Lifecycle.t list
+  val lifecycles : Sihl_core.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val enqueue : job_instance:Job_instance.t -> unit Lwt.t

@@ -19,7 +19,7 @@ val set_retry_delay : Sihl_core.Time.duration -> 'a Queue.t -> 'a Queue.t
 
 include Sihl_contract.Queue.Sig
 
-val lifecycle : unit -> Sihl_core.Container.Lifecycle.t
+val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
   :  ?jobs:'a Queue.t list

@@ -218,7 +218,7 @@ let start () =
 let stop () = Lwt.return ()
 
 let lifecycle =
-  Core.Container.Lifecycle.create Sihl_contract.Database.name ~start ~stop
+  Core.Container.create_lifecycle Sihl_contract.Database.name ~start ~stop
 ;;
 
 let register () =

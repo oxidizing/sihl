@@ -50,7 +50,7 @@ module Make (Repo : Sihl_email_template_repo.Sig) :
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       Sihl_contract.Email_template.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start

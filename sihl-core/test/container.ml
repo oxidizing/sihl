@@ -5,7 +5,7 @@ module ServiceA : Sihl_core.Container.Service.Sig = struct
   ;;
 
   let stop _ = Lwt.return ()
-  let lifecycle = Sihl_core.Container.Lifecycle.create ~start ~stop "a"
+  let lifecycle = Sihl_core.Container.create_lifecycle ~start ~stop "a"
 end
 
 module ServiceB : Sihl_core.Container.Service.Sig = struct
@@ -17,7 +17,7 @@ module ServiceB : Sihl_core.Container.Service.Sig = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       "b"
       ~start
       ~stop
@@ -34,7 +34,7 @@ module ServiceC : Sihl_core.Container.Service.Sig = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       "c"
       ~start
       ~stop
@@ -51,7 +51,7 @@ module ServiceD : Sihl_core.Container.Service.Sig = struct
   let stop _ = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.Lifecycle.create
+    Sihl_core.Container.create_lifecycle
       "d"
       ~start
       ~stop
@@ -63,7 +63,7 @@ let order_all_dependencies () =
   let expected = [ "a"; "b"; "c"; "d" ] in
   let actual =
     Sihl_core.Container.top_sort_lifecycles [ ServiceD.lifecycle ]
-    |> List.map Sihl_core.Container.Lifecycle.name
+    |> List.map (fun lifecycle -> lifecycle.Sihl_core.Container.name)
   in
   Alcotest.(check (list string) "calculates dependencies" expected actual)
 ;;
@@ -72,7 +72,7 @@ let order_simple_dependency_list () =
   let expected = [ "a"; "b" ] in
   let actual =
     Sihl_core.Container.top_sort_lifecycles [ ServiceB.lifecycle ]
-    |> List.map Sihl_core.Container.Lifecycle.name
+    |> List.map (fun lifecycle -> lifecycle.Sihl_core.Container.name)
   in
   Alcotest.(check (list string) "calculates dependencies" expected actual)
 ;;

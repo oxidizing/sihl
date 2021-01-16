@@ -4,7 +4,7 @@ module Cleaner = Sihl_core.Cleaner
 module Migration = Sihl_facade.Migration
 
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.Lifecycle.t list
+  val lifecycles : Sihl_core.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val find_all : unit -> Sihl_contract.Session.t list Lwt.t
