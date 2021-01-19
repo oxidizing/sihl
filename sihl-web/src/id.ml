@@ -23,9 +23,11 @@ let set id req =
   { req with env }
 ;;
 
+(* TODO [jerben] read HTTP-Request-ID if exists, to make debugging easier on the
+   client *)
 let middleware =
   let filter handler req =
-    let id = Sihl_facade.Random.bytes 32 |> List.to_seq |> String.of_seq in
+    let id = Sihl_facade.Random.base64 64 in
     let req = set id req in
     handler req
   in
