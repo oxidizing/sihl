@@ -34,6 +34,7 @@ module Web : sig
   module Error = Sihl_web.Error
   module Flash = Sihl_web.Flash
   module Form = Sihl_web.Form
+  module Htmx = Sihl_web.Htmx
   module Http = Sihl_web.Http
   module Id = Sihl_web.Id
   module Json = Sihl_web.Json
