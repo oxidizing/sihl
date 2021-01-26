@@ -4,6 +4,7 @@ module Migration = struct
     ; version : int
     ; dirty : bool
     }
+  [@@deriving fields]
 
   let create ~namespace = { namespace; version = 0; dirty = true }
   let mark_dirty state = { state with dirty = true }
@@ -24,6 +25,7 @@ module type Sig = sig
 
   val create_table_if_not_exists : unit -> unit Lwt.t
   val get : namespace:string -> Migration.t option Lwt.t
+  val get_all : unit -> Migration.t list Lwt.t
   val upsert : state:Migration.t -> unit Lwt.t
 end
 
@@ -34,13 +36,13 @@ module MariaDb : Sig = struct
     Caqti_request.exec
       Caqti_type.unit
       {sql|
-CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL,
-  version INTEGER,
-  dirty BOOL NOT NULL,
-  PRIMARY KEY (namespace)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
- |sql}
+       CREATE TABLE IF NOT EXISTS core_migration_state (
+         namespace VARCHAR(128) NOT NULL,
+         version INTEGER,
+         dirty BOOL NOT NULL,
+       PRIMARY KEY (namespace)
+       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      |sql}
   ;;
 
   let create_table_if_not_exists () =
@@ -53,13 +55,13 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
       Caqti_type.string
       Caqti_type.(tup3 string int bool)
       {sql|
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_state
-WHERE namespace = ?;
-|sql}
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM core_migration_state
+       WHERE namespace = ?;
+       |sql}
   ;;
 
   let get ~namespace =
@@ -69,22 +71,42 @@ WHERE namespace = ?;
     |> Lwt.map (Option.map Migration.of_tuple)
   ;;
 
+  let get_all_request =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup3 string int bool)
+      {sql|
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM core_migration_state;
+       |sql}
+  ;;
+
+  let get_all () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.collect_list get_all_request ()
+        |> Lwt.map Database.raise_error)
+    |> Lwt.map (List.map Migration.of_tuple)
+  ;;
+
   let upsert_request =
     Caqti_request.exec
       Caqti_type.(tup3 string int bool)
       {sql|
-INSERT INTO core_migration_state (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  ?,
-  ?,
-  ?
-) ON DUPLICATE KEY UPDATE
-version = VALUES(version),
-dirty = VALUES(dirty)
-|sql}
+       INSERT INTO core_migration_state (
+         namespace,
+         version,
+         dirty
+       ) VALUES (
+         ?,
+         ?,
+         ?
+       ) ON DUPLICATE KEY UPDATE
+         version = VALUES(version),
+         dirty = VALUES(dirty)
+       |sql}
   ;;
 
   let upsert ~state =
@@ -101,12 +123,12 @@ module PostgreSql : Sig = struct
     Caqti_request.exec
       Caqti_type.unit
       {sql|
-CREATE TABLE IF NOT EXISTS core_migration_state (
-  namespace VARCHAR(128) NOT NULL PRIMARY KEY,
-  version INTEGER,
-  dirty BOOL NOT NULL
-);
- |sql}
+       CREATE TABLE IF NOT EXISTS core_migration_state (
+         namespace VARCHAR(128) NOT NULL PRIMARY KEY,
+         version INTEGER,
+         dirty BOOL NOT NULL
+       );
+       |sql}
   ;;
 
   let create_table_if_not_exists () =
@@ -119,13 +141,13 @@ CREATE TABLE IF NOT EXISTS core_migration_state (
       Caqti_type.string
       Caqti_type.(tup3 string int bool)
       {sql|
-SELECT
-  namespace,
-  version,
-  dirty
-FROM core_migration_state
-WHERE namespace = ?;
-|sql}
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM core_migration_state
+       WHERE namespace = ?;
+       |sql}
   ;;
 
   let get ~namespace =
@@ -135,22 +157,42 @@ WHERE namespace = ?;
     |> Lwt.map (Option.map Migration.of_tuple)
   ;;
 
+  let get_all_request =
+    Caqti_request.collect
+      Caqti_type.unit
+      Caqti_type.(tup3 string int bool)
+      {sql|
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM core_migration_state;
+       |sql}
+  ;;
+
+  let get_all () =
+    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.collect_list get_all_request ()
+        |> Lwt.map Database.raise_error)
+    |> Lwt.map (List.map Migration.of_tuple)
+  ;;
+
   let upsert_request =
     Caqti_request.exec
       Caqti_type.(tup3 string int bool)
       {sql|
-INSERT INTO core_migration_state (
-  namespace,
-  version,
-  dirty
-) VALUES (
-  ?,
-  ?,
-  ?
-) ON CONFLICT (namespace)
-DO UPDATE SET version = EXCLUDED.version,
-dirty = EXCLUDED.dirty
-|sql}
+       INSERT INTO core_migration_state (
+         namespace,
+         version,
+         dirty
+       ) VALUES (
+         ?,
+         ?,
+         ?
+       ) ON CONFLICT (namespace)
+       DO UPDATE SET version = EXCLUDED.version,
+         dirty = EXCLUDED.dirty
+       |sql}
   ;;
 
   let upsert ~state =

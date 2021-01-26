@@ -4,7 +4,8 @@ type step =
   ; check_fk : bool
   }
 
-type t = string * step list
+type steps = step list
+type t = string * steps
 
 let name = "migration"
 

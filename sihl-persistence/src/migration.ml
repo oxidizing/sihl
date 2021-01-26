@@ -3,7 +3,25 @@ let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Migration.name)
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Map = Map.Make (String)
 
-let registered_migrations : Sihl_contract.Migration.t Map.t ref = ref Map.empty
+let registered_migrations : Sihl_contract.Migration.steps Map.t ref =
+  ref Map.empty
+;;
+
+let get_migrations_status migrations_states all_migrations =
+  List.map
+    (fun migrations_state ->
+      let namespace = migrations_state.Migration_repo.Migration.namespace in
+      let migrations = Map.find_opt namespace all_migrations in
+      match migrations with
+      | None -> namespace, None
+      | Some migrations ->
+        let unapplied_migrations_count =
+          List.length migrations
+          - migrations_state.Migration_repo.Migration.version
+        in
+        namespace, Some unapplied_migrations_count)
+    migrations_states
+;;
 
 module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   let setup () =
@@ -60,7 +78,8 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
       Logs.debug (fun m ->
           m "Found duplicate migration '%s', ignoring it" label)
     | None ->
-      registered_migrations := Map.add label migration !registered_migrations
+      registered_migrations
+        := Map.add label (snd migration) !registered_migrations
   ;;
 
   let register_migrations migrations = List.iter register_migration migrations
@@ -199,9 +218,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
   ;;
 
   let run_all () =
-    let steps =
-      !registered_migrations |> Map.to_seq |> List.of_seq |> List.map snd
-    in
+    let steps = !registered_migrations |> Map.to_seq |> List.of_seq in
     execute steps
   ;;
 
@@ -212,7 +229,53 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
       (fun _ -> run_all ())
   ;;
 
-  let start () = run_all ()
+  let check_migrations_status () =
+    let open Lwt.Syntax in
+    let* migrations = Repo.get_all () in
+    let unapplied = get_migrations_status migrations !registered_migrations in
+    List.iter
+      (fun (namespace, count) ->
+        match count with
+        | None ->
+          Logs.warn (fun m ->
+              m
+                "Could not find registered migrations for namespace '%s'. This \
+                 implies you removed all migrations of that namespace. \
+                 Migrations should be append-only. If you intended to remove \
+                 those migrations, make sure to remove the migration state in \
+                 your database/other persistence layer."
+                namespace)
+        | Some count ->
+          if count > 0
+          then
+            Logs.info (fun m ->
+                m
+                  "Unapplied migrations for namespace '%s' detected. Found %s \
+                   unapplied migrations, run command 'migrate'."
+                  namespace
+                  (Int.to_string count))
+          else if count < 0
+          then
+            Logs.warn (fun m ->
+                m
+                  "Fewer registered migrations found than migration state \
+                   indicates for namespace '%s'. Current migration state \
+                   version is ahead of registered migrations by %s. This \
+                   implies you removed migrations, which should be \
+                   append-only."
+                  namespace
+                  (Int.to_string @@ Int.abs count))
+          else ())
+      unapplied;
+    Lwt.return ()
+  ;;
+
+  let start () =
+    if Sihl_core.Configuration.is_test ()
+    then Lwt.return ()
+    else check_migrations_status ()
+  ;;
+
   let stop () = Lwt.return ()
 
   let lifecycle =
