@@ -45,9 +45,9 @@ let session_middleware
           Sihl_facade.Session.set_value session ~k:key ~v:(Some user.id)
         in
         Lwt.return resp)
-    | Some _, None -> handler req
-    | None, Some _ -> handler req
-    | None, None -> handler req
+    | Some _, None -> Lwt.return resp
+    | None, Some _ -> Lwt.return resp
+    | None, None -> Lwt.return resp
   in
   Rock.Middleware.create ~name:"user.session" ~filter
 ;;
