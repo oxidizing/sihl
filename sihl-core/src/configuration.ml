@@ -26,26 +26,28 @@ let make ?schema () =
 ;;
 
 let empty = []
+let cache = Hashtbl.create 100
 
-let memoize f =
-  (* We assume a total number of initial configurations of 100 *)
-  let cache = Hashtbl.create 100 in
-  fun arg ->
-    try Hashtbl.find cache arg with
-    | Not_found ->
-      let result = f arg in
-      (* We don't want to fill up the cache with None *)
-      if Option.is_some result then Hashtbl.add cache arg result;
-      result
+let memoize
+    f (* We assume a total number of initial configurations of 100 *)
+    arg
+  =
+  try Hashtbl.find cache arg with
+  | Not_found ->
+    let result = f arg in
+    (* We don't want to fill up the cache with None *)
+    if Option.is_some result then Hashtbl.add cache arg result;
+    result
 ;;
 
 let store data =
   List.iter
     (fun (key, value) ->
-      let stored = Sys.getenv_opt key in
-      if Option.is_some stored || Option.equal String.equal (Some "") stored
+      if String.equal "" value
       then ()
-      else Unix.putenv key value)
+      else (
+        Hashtbl.replace cache key (Some value);
+        Unix.putenv key value))
     data
 ;;
 

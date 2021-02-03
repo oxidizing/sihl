@@ -16,7 +16,7 @@ let read_non_existing _ () =
   Alcotest.(
     check
       (option string)
-      "empty"
+      "different"
       (Sihl_core.Configuration.read_string "non-existent")
       None);
   Lwt.return ()
@@ -27,9 +27,21 @@ let read_existing _ () =
   Alcotest.(
     check
       (option string)
-      "empty"
+      "existing"
       (Sihl_core.Configuration.read_string "foo")
       (Some "value"));
+  Lwt.return ()
+;;
+
+let read_updated _ () =
+  Sihl_core.Configuration.store [ "foo", "value" ];
+  Sihl_core.Configuration.store [ "foo", "bar" ];
+  Alcotest.(
+    check
+      (option string)
+      "updated"
+      (Sihl_core.Configuration.read_string "foo")
+      (Some "bar"));
   Lwt.return ()
 ;;
 
