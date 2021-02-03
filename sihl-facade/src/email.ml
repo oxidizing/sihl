@@ -51,39 +51,50 @@ let to_yojson email =
 
 let set_text text email = { email with text }
 let set_html html email = { email with html }
-let instance : (module Sig) option ref = ref None
+let default_instance : (module Sig) option ref = ref None
+let additional_instances : (module Sig) list option ref = ref None
 
 let create ?html ?(cc = []) ?(bcc = []) ~sender ~recipient ~subject text =
   { sender; recipient; subject; html; text; cc; bcc }
 ;;
 
 let inbox () =
-  let module Service = (val unpack name instance : Sig) in
+  let module Service = (val unpack name default_instance : Sig) in
   Service.inbox ()
 ;;
 
 let clear_inbox () =
-  let module Service = (val unpack name instance : Sig) in
+  let module Service = (val unpack name default_instance : Sig) in
   Service.clear_inbox ()
 ;;
 
 let send email =
-  let module Service = (val unpack name instance : Sig) in
+  let module Service = (val unpack name default_instance : Sig) in
   Service.send email
 ;;
 
 let bulk_send emails =
-  let module Service = (val unpack name instance : Sig) in
+  let module Service = (val unpack name default_instance : Sig) in
   Service.bulk_send emails
 ;;
 
 let lifecycle () =
-  let module Service = (val unpack name instance : Sig) in
+  let module Service = (val unpack name default_instance : Sig) in
   Service.lifecycle
 ;;
 
-let register implementation =
-  let module Service = (val implementation : Sig) in
-  instance := Some implementation;
-  Service.register ()
+let register ~default ?additional () =
+  default_instance := Some default;
+  additional_instances := additional;
+  let module Service = (val default : Sig) in
+  match additional with
+  | None -> [ Service.register () ]
+  | Some additionals ->
+    List.cons
+      (Service.register ())
+      (List.map
+         (fun a ->
+           let module Service = (val a : Sig) in
+           Service.register ())
+         additionals)
 ;;

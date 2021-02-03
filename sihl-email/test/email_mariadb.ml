@@ -1,10 +1,17 @@
 open Lwt.Syntax
 
-let services =
+let services_single_impl =
   [ Sihl_facade.Migration.register (module Sihl_persistence.Migration.MariaDb)
   ; Sihl_facade.Email_template.register (module Sihl_email.Template.MariaDb)
-  ; Sihl_facade.Email.register (module Sihl_email.Smtp)
   ]
+;;
+
+let services_multi_impl =
+  [ Sihl_facade.Email.register ~default:(module Sihl_email.Smtp) () ]
+;;
+
+let services =
+  List.append services_single_impl @@ List.concat services_multi_impl
 ;;
 
 let () =
