@@ -26,12 +26,11 @@ let make ?schema () =
 ;;
 
 let empty = []
+
+(* We assume a total number of initial configurations of 100 *)
 let cache = Hashtbl.create 100
 
-let memoize
-    f (* We assume a total number of initial configurations of 100 *)
-    arg
-  =
+let memoize f arg =
   try Hashtbl.find cache arg with
   | Not_found ->
     let result = f arg in
