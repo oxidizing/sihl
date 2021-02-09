@@ -51,8 +51,7 @@ let start_cmd services =
   Command.make ~name:"start" ~description:"Start the Sihl app" (fun _ ->
       let normal_services =
         List.filter
-          (function
-            | service -> not (Container.Service.server service))
+          (fun service -> not (Container.Service.server service))
           services
       in
       let server_services = List.filter Container.Service.server services in
