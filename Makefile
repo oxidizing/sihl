@@ -86,6 +86,7 @@ test-postgresql: build
 	SIHL_ENV=test ./_build/default/sihl-token/test/postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-session/test/postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/session_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/flash_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_postgresql.exe
