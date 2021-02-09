@@ -20,4 +20,4 @@ val lifecycle : unit -> Sihl_core.Container.lifecycle
 val register
   :  ?migrations:Sihl_contract.Migration.t list
   -> (module Sihl_contract.Migration.Sig)
-  -> Sihl_core.Container.Service.t
+  -> Sihl_core.Container.Service.t list

@@ -8,7 +8,7 @@ type t
 val empty : t
 
 (** [with_services services app] adds [services] to an [app]. *)
-val with_services : Container.Service.t list -> t -> t
+val with_services : Container.Service.t list list -> t -> t
 
 (** [before_start f app] registers a callback f with [app]. The callback is
     executed before any service is started. This means you must not use any

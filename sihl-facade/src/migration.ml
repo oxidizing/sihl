@@ -59,5 +59,5 @@ let lifecycle () =
 let register ?migrations implementation =
   let module Service = (val implementation : Sig) in
   instance := Some implementation;
-  Service.register ?migrations ()
+  [ Service.register ?migrations () ]
 ;;

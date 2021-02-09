@@ -19,7 +19,11 @@ let empty =
   }
 ;;
 
-let with_services services app = { app with services }
+let with_services services app =
+  let services = List.concat services in
+  { app with services }
+;;
+
 let before_start before_start app = { app with before_start }
 let after_stop after_stop app = { app with after_stop }
 

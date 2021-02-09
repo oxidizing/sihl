@@ -12,15 +12,25 @@ type lifecycle =
   ; dependencies : unit -> lifecycle list
   ; start : unit -> unit Lwt.t
   ; stop : unit -> unit Lwt.t
+  ; implementation : string
   }
 
 let create_lifecycle
     ?(dependencies = fun () -> [])
     ?(start = fun () -> Lwt.return ())
     ?(stop = fun () -> Lwt.return ())
+    ?(implementation = "default")
     name
   =
-  { name; dependencies; start; stop }
+  { name; dependencies; start; stop; implementation }
+;;
+
+let set_implementation ?(implementation = "default") lifecycle =
+  { lifecycle with implementation }
+;;
+
+let build_name lifecycle =
+  Format.sprintf "%s.%s" lifecycle.name lifecycle.implementation
 ;;
 
 module Service = struct
@@ -49,7 +59,7 @@ module Service = struct
 
   let server t = t.server
   let start t = t.lifecycle.start ()
-  let name t = t.lifecycle.name
+  let name t = build_name t.lifecycle
 end
 
 module Map = Map.Make (String)
@@ -68,7 +78,7 @@ let collect_all_lifecycles lifecycles =
   lifecycles
   |> List.map collect_lifecycles
   |> List.concat
-  |> List.map (fun lifecycle -> lifecycle.name, lifecycle)
+  |> List.map (fun lifecycle -> build_name lifecycle, lifecycle)
   |> List.to_seq
   |> Map.of_seq
 ;;
@@ -81,7 +91,7 @@ let top_sort_lifecycles lifecycles =
     |> List.of_seq
     |> List.map (fun (name, lifecycle) ->
            let dependencies =
-             lifecycle.dependencies () |> List.map (fun dep -> dep.name)
+             lifecycle.dependencies () |> List.map build_name
            in
            name, dependencies)
   in
@@ -113,7 +123,7 @@ let start_services services =
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Logs.info (fun m -> m "Starting service: %s" lifecycle.name);
+      Logs.info (fun m -> m "Starting service: %s" (build_name lifecycle));
       let f = lifecycle.start in
       let* () = f () in
       loop lifecycles
@@ -133,7 +143,7 @@ let stop_services services =
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Logs.info (fun m -> m "Stopping service: %s" lifecycle.name);
+      Logs.info (fun m -> m "Stopping service: %s" (build_name lifecycle));
       let f = lifecycle.stop in
       let* () = f () in
       loop lifecycles

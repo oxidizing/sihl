@@ -46,7 +46,7 @@ module UserService = struct
   ;;
 
   let register () =
-    Sihl_core.Container.Service.create ~commands:[ ban ] lifecycle
+    [ Sihl_core.Container.Service.create ~commands:[ ban ] lifecycle ]
   ;;
 end
 
@@ -80,7 +80,7 @@ module OrderService = struct
   ;;
 
   let register () =
-    Sihl_core.Container.Service.create ~commands:[ order ] lifecycle
+    [ Sihl_core.Container.Service.create ~commands:[ order ] lifecycle ]
   ;;
 end
 

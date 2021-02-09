@@ -223,5 +223,5 @@ let lifecycle =
 
 let register () =
   let configuration = Core.Configuration.make ~schema () in
-  Core.Container.Service.create ~configuration lifecycle
+  [ Core.Container.Service.create ~configuration lifecycle ]
 ;;

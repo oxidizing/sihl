@@ -56,5 +56,5 @@ let lifecycle () =
 let register ?(jobs = []) implementation =
   let module Service = (val implementation : Sig) in
   instance := Some implementation;
-  Service.register ~jobs ()
+  [ Service.register ~jobs () ]
 ;;

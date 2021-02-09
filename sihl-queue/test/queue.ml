@@ -79,7 +79,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let has_ran_job = ref false in
     let* () =
       Sihl_core.Container.stop_services
-        [ Sihl_facade.Queue.register (module Service) ]
+        (Sihl_facade.Queue.register (module Service))
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
@@ -94,10 +94,10 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
       |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job ] (module Service) in
-    let* _ = Sihl_core.Container.start_services [ service ] in
+    let* _ = Sihl_core.Container.start_services service in
     let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl_core.Container.stop_services [ service ] in
+    let* () = Sihl_core.Container.stop_services service in
     let () = Alcotest.(check bool "has processed job" true !has_ran_job) in
     Lwt.return ()
   in
@@ -106,7 +106,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let has_ran_job2 = ref false in
     let* () =
       Sihl_core.Container.stop_services
-        [ Sihl_facade.Queue.register (module Service) ]
+        (Sihl_facade.Queue.register (module Service))
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job1 =
@@ -134,11 +134,11 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let service =
       Sihl_facade.Queue.register ~jobs:[ job1; job2 ] (module Service)
     in
-    let* _ = Sihl_core.Container.start_services [ service ] in
+    let* _ = Sihl_core.Container.start_services service in
     let* () = Sihl_facade.Queue.dispatch job1 () in
     let* () = Sihl_facade.Queue.dispatch job2 () in
     let* () = Lwt_unix.sleep 4.0 in
-    let* () = Sihl_core.Container.stop_services [ service ] in
+    let* () = Sihl_core.Container.stop_services service in
     let () = Alcotest.(check bool "has processed job1" true !has_ran_job1) in
     let () = Alcotest.(check bool "has processed job2" true !has_ran_job1) in
     Lwt.return ()
@@ -147,7 +147,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let has_cleaned_up_job = ref false in
     let* () =
       Sihl_core.Container.stop_services
-        [ Sihl_facade.Queue.register (module Service) ]
+        (Sihl_facade.Queue.register (module Service))
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
@@ -162,10 +162,10 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
       |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job ] (module Service) in
-    let* _ = Sihl_core.Container.start_services [ service ] in
+    let* _ = Sihl_core.Container.start_services service in
     let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl_core.Container.stop_services [ service ] in
+    let* () = Sihl_core.Container.stop_services service in
     let () =
       Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
     in
@@ -175,7 +175,7 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
     let has_cleaned_up_job = ref false in
     let* () =
       Sihl_core.Container.stop_services
-        [ Sihl_facade.Queue.register (module Service) ]
+        (Sihl_facade.Queue.register (module Service))
     in
     let* () = Sihl_core.Cleaner.clean_all () in
     let job =
@@ -190,10 +190,10 @@ let with_implementation (module Service : Sihl_contract.Queue.Sig) =
       |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneMinute
     in
     let service = Sihl_facade.Queue.register ~jobs:[ job ] (module Service) in
-    let* _ = Sihl_core.Container.start_services [ service ] in
+    let* _ = Sihl_core.Container.start_services service in
     let* () = Sihl_facade.Queue.dispatch job () in
     let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl_core.Container.stop_services [ service ] in
+    let* () = Sihl_core.Container.stop_services service in
     let () =
       Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
     in

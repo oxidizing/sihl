@@ -182,9 +182,11 @@ module Smtp : Sihl_contract.Email.Sig = struct
       ~stop
   ;;
 
-  let register () =
+  let register ?implementation () =
     let configuration = Sihl_core.Configuration.make ~schema () in
-    Sihl_core.Container.Service.create ~configuration lifecycle
+    Sihl_core.Container.Service.create
+      ~configuration
+      (Sihl_core.Container.set_implementation ?implementation lifecycle)
   ;;
 end
 
@@ -296,9 +298,11 @@ module SendGrid : Sihl_contract.Email.Sig = struct
       ~stop
   ;;
 
-  let register () =
+  let register ?implementation () =
     let configuration = Sihl_core.Configuration.make ~schema () in
-    Sihl_core.Container.Service.create ~configuration lifecycle
+    Sihl_core.Container.Service.create
+      ~configuration
+      (Sihl_core.Container.set_implementation ?implementation lifecycle)
   ;;
 end
 
@@ -393,7 +397,10 @@ module Queued : Sihl_contract.Email.Sig = struct
         ])
   ;;
 
-  let register () = Sihl_core.Container.Service.create lifecycle
+  let register ?implementation () =
+    Sihl_core.Container.Service.create
+      (Sihl_core.Container.set_implementation ?implementation lifecycle)
+  ;;
 end
 
 module Template_repo = Sihl_email_template_repo

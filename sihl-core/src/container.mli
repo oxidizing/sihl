@@ -7,19 +7,23 @@
 
     Every service has a lifecycle, meaning it can be started and stopped. **)
 
-type lifecycle =
-  { name : string
-  ; dependencies : unit -> lifecycle list
-  ; start : unit -> unit Lwt.t
-  ; stop : unit -> unit Lwt.t
-  }
+type lifecycle
 
 val create_lifecycle
   :  ?dependencies:(unit -> lifecycle list)
   -> ?start:(unit -> unit Lwt.t)
   -> ?stop:(unit -> unit Lwt.t)
+  -> ?implementation:string
   -> string
   -> lifecycle
+
+(** [build_name lifecycle] returns the globally unique name of the [lifecycle]
+    by concatenating its name and its implementation. *)
+val build_name : lifecycle -> string
+
+(** [build_name lifecycle] returns the globally unique name of the [lifecycle]
+    by concatenating its name and its implementation. *)
+val set_implementation : ?implementation:string -> lifecycle -> lifecycle
 
 (** {1 Service}
 

@@ -131,9 +131,10 @@ let lifecycle = Sihl_core.Container.create_lifecycle "http" ~start ~stop
 let register ?(routers = []) () =
   registered_routers := routers;
   let configuration = Sihl_core.Configuration.make ~schema () in
-  Sihl_core.Container.Service.create
-    ~configuration
-    ~commands:[ start_cmd ]
-    ~server:true
-    lifecycle
+  [ Sihl_core.Container.Service.create
+      ~configuration
+      ~commands:[ start_cmd ]
+      ~server:true
+      lifecycle
+  ]
 ;;

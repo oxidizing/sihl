@@ -24,4 +24,4 @@ val lifecycle : unit -> Sihl_core.Container.lifecycle
 val register
   :  ?jobs:'a Queue.t list
   -> (module Queue.Sig)
-  -> Sihl_core.Container.Service.t
+  -> Sihl_core.Container.Service.t list

@@ -59,20 +59,41 @@ module ServiceD : Sihl_core.Container.Service.Sig = struct
   ;;
 end
 
+module ServiceE : Sihl_core.Container.Service.Sig = struct
+  let start ctx =
+    print_endline "Starting module E";
+    Lwt.return ctx
+  ;;
+
+  let stop _ = Lwt.return ()
+
+  let lifecycle =
+    Sihl_core.Container.create_lifecycle
+      "d"
+      ~start
+      ~stop
+      ~dependencies:(fun () -> [ ServiceB.lifecycle; ServiceC.lifecycle ])
+      ~implementation:"e"
+  ;;
+end
+
 let order_all_dependencies () =
-  let expected = [ "a"; "b"; "c"; "d" ] in
+  let expected =
+    [ "a.default"; "b.default"; "c.default"; "d.e"; "d.default" ]
+  in
   let actual =
-    Sihl_core.Container.top_sort_lifecycles [ ServiceD.lifecycle ]
-    |> List.map (fun lifecycle -> lifecycle.Sihl_core.Container.name)
+    Sihl_core.Container.top_sort_lifecycles
+      [ ServiceD.lifecycle; ServiceE.lifecycle ]
+    |> List.map Sihl_core.Container.build_name
   in
   Alcotest.(check (list string) "calculates dependencies" expected actual)
 ;;
 
 let order_simple_dependency_list () =
-  let expected = [ "a"; "b" ] in
+  let expected = [ "a.default"; "b.default" ] in
   let actual =
     Sihl_core.Container.top_sort_lifecycles [ ServiceB.lifecycle ]
-    |> List.map (fun lifecycle -> lifecycle.Sihl_core.Container.name)
+    |> List.map Sihl_core.Container.build_name
   in
   Alcotest.(check (list string) "calculates dependencies" expected actual)
 ;;
@@ -91,5 +112,7 @@ let suite =
 
 let () =
   Unix.putenv "SIHL_ENV" "test";
+  Logs.set_level (Sihl_core.Log.get_log_level ());
+  Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Alcotest.run "container" suite
 ;;

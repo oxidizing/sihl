@@ -20,5 +20,5 @@ let lifecycle () =
 let register implementation =
   let module Service = (val implementation : Sig) in
   instance := implementation;
-  Service.register ()
+  [ Service.register () ]
 ;;

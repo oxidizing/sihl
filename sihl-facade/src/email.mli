@@ -20,7 +20,6 @@ include Sihl_contract.Email.Sig
 val lifecycle : unit -> Sihl_core.Container.lifecycle
 
 val register
-  :  default:(module Sihl_contract.Email.Sig)
-  -> ?additional:(module Sihl_contract.Email.Sig) list
-  -> unit
+  :  ?additional:((module Sihl_contract.Email.Sig) * string) list
+  -> (module Sihl_contract.Email.Sig)
   -> Sihl_core.Container.Service.t list

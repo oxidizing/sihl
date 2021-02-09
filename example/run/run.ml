@@ -14,26 +14,21 @@ let cleaners = [ Todo.cleaner ]
    service only processes jobs that have been registered. *)
 let jobs = []
 
-let services_single_impl =
+let services =
   [ Sihl.Database.Migration.(register ~migrations Implementation.postgresql)
   ; Sihl.Token.(register Implementation.postgresql)
   ; Sihl.Email_template.(register Implementation.postgresql)
+  ; Sihl.Email.(
+      register
+        ~additional:[ Implementation.sendgid, "sendgrid" ]
+        Implementation.smtp)
   ; Sihl.User.(register Implementation.postgresql)
   ; Sihl.Session.(register Implementation.postgresql)
-  ; Sihl.Token.(register Implementation.postgresql)
   ; Sihl.Queue.(register ~jobs Implementation.postgresql)
   ; Sihl.User.Password_reset.register ()
   ; Sihl.Schedule.register ()
   ; Sihl.Web.register Web.Route.all
   ]
-;;
-
-let services_multi_impl =
-  [ Sihl.Email.(register ~default:Implementation.smtp ()) ]
-;;
-
-let services =
-  List.append services_single_impl @@ List.concat services_multi_impl
 ;;
 
 let () = Sihl.App.(empty |> with_services services |> run ~commands)

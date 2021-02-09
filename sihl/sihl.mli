@@ -11,7 +11,7 @@ module Schedule : sig
   val register
     :  ?implementation:(module Sihl_contract.Schedule.Sig)
     -> unit
-    -> Sihl_core.Container.Service.t
+    -> Sihl_core.Container.Service.t list
 
   module Implementation : sig
     val default : (module Sihl_contract.Schedule.Sig)
@@ -42,7 +42,9 @@ module Web : sig
   module Static = Sihl_web.Static
   module User = Sihl_web.User
 
-  val register : Sihl_contract.Http.router list -> Sihl_core.Container.Service.t
+  val register
+    :  Sihl_contract.Http.router list
+    -> Sihl_core.Container.Service.t list
 end
 
 module Database : sig
@@ -72,7 +74,7 @@ module User : sig
     val register
       :  ?implementation:(module Sihl_contract.Password_reset.Sig)
       -> unit
-      -> Sihl_core.Container.Service.t
+      -> Sihl_core.Container.Service.t list
 
     module Implementation : sig
       val default : (module Sihl_contract.Password_reset.Sig)

@@ -33,5 +33,5 @@ module type Sig = sig
       them fails, the returned Lwt.t fails. *)
   val bulk_send : t list -> unit Lwt.t
 
-  val register : unit -> Sihl_core.Container.Service.t
+  val register : ?implementation:string -> unit -> Sihl_core.Container.Service.t
 end

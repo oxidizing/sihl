@@ -52,7 +52,7 @@ let to_yojson email =
 let set_text text email = { email with text }
 let set_html html email = { email with html }
 let default_instance : (module Sig) option ref = ref None
-let additional_instances : (module Sig) list option ref = ref None
+let additional_instances : ((module Sig) * string) list option ref = ref None
 
 let create ?html ?(cc = []) ?(bcc = []) ~sender ~recipient ~subject text =
   { sender; recipient; subject; html; text; cc; bcc }
@@ -83,18 +83,18 @@ let lifecycle () =
   Service.lifecycle
 ;;
 
-let register ~default ?additional () =
+let register ?additional default =
   default_instance := Some default;
-  additional_instances := additional;
   let module Service = (val default : Sig) in
   match additional with
   | None -> [ Service.register () ]
   | Some additionals ->
+    additional_instances := additional;
     List.cons
       (Service.register ())
       (List.map
-         (fun a ->
+         (fun (a, l) ->
            let module Service = (val a : Sig) in
-           Service.register ())
+           Service.register ~implementation:l ())
          additionals)
 ;;
