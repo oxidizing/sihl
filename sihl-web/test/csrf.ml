@@ -207,14 +207,10 @@ let post_request_with_invalid_b64_token_fails _ () =
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
-  Lwt.catch
-    (fun () -> wrapped_handler post_req |> Lwt.map ignore)
-    (function
-      | Sihl_web.Csrf.Crypto_failed txt ->
-        Alcotest.(
-          check string "Raises" "Failed to decode CSRF token. Wrong padding" txt);
-        Lwt.return ()
-      | exn -> Lwt.fail exn)
+  let* response = wrapped_handler post_req in
+  let status = Opium.Response.status response |> Opium.Status.to_code in
+  Alcotest.(check int "Has status 403" 403 status);
+  Lwt.return ()
 ;;
 
 let post_request_with_invalid_token_fails _ () =
@@ -224,13 +220,10 @@ let post_request_with_invalid_token_fails _ () =
   let* () = Sihl_core.Cleaner.clean_all () in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
-  Lwt.catch
-    (fun () -> wrapped_handler post_req |> Lwt.map ignore)
-    (function
-      | Sihl_web.Csrf.Crypto_failed txt ->
-        Alcotest.(check string "Raises" "Failed to decrypt CSRF token" txt);
-        Lwt.return ()
-      | exn -> Lwt.fail exn)
+  let* response = wrapped_handler post_req in
+  let status = Opium.Response.status response |> Opium.Status.to_code in
+  Alcotest.(check int "Has status 403" 403 status);
+  Lwt.return ()
 ;;
 
 let post_request_with_nonmatching_token_fails _ () =
