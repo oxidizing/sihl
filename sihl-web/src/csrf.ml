@@ -82,10 +82,10 @@ let decrypt_with_salt ~salted_cipher ~salt_length =
  * HTML caching token handling
  *)
 
-let create_token session =
-  let token = Sihl_core.Random.base64 80 in
-  let* () = Sihl_facade.Session.set_value session ~k:"csrf" ~v:(Some token) in
-  Lwt.return token
+let create_secret session =
+  let secret = Sihl_core.Random.base64 80 in
+  let* () = Sihl_facade.Session.set_value session ~k:"csrf" ~v:(Some secret) in
+  Lwt.return secret
 ;;
 
 let secret_to_token secret =
@@ -120,73 +120,74 @@ let middleware
   =
   let filter handler req =
     let session = Session.find req in
-    let req, secret = Form.consume req "csrf" in
+    let req, token = Form.consume req "csrf" in
     let is_safe =
       match req.Opium.Request.meth with
       | `GET | `HEAD | `OPTIONS | `TRACE -> true
       | _ -> false
     in
-    match secret, is_safe with
+    match token, is_safe with
     | None, true ->
-      (* Don't check for CSRF token in GET requests *)
-      let* stored_token = Sihl_facade.Session.find_value session key in
-      (match stored_token with
-      | Some token ->
-        let req = set token req in
+      (* Don't check for CSRF token in safe requests *)
+      let* stored_secret = Sihl_facade.Session.find_value session key in
+      (match stored_secret with
+      | Some secret ->
+        let req = set (secret_to_token secret) req in
         handler req
       | None ->
-        let* token = create_token session in
+        let* token = Lwt.map secret_to_token (create_secret session) in
         let req = set token req in
         handler req)
     | None, false -> not_allowed_handler req
-    | Some secret, true ->
-      let token = secret_to_token secret in
+    | Some token, true ->
       let req = set token req in
       handler req
-    | Some secret, false ->
-      let token = secret_to_token secret in
+    | Some token, false ->
       let req = set token req in
       let decoded = Base64.decode ~alphabet:Base64.uri_safe_alphabet token in
-      let decoded =
-        match decoded with
-        | Ok decoded -> decoded
-        | Error (`Msg msg) ->
-          Logs.err (fun m -> m "Failed to decode CSRF token. %s" msg);
-          raise @@ Crypto_failed ("Failed to decode CSRF token. " ^ msg)
-      in
-      let salted_cipher = decoded |> String.to_seq |> List.of_seq in
-      let decrypted_secret =
-        match
-          decrypt_with_salt
-            ~salted_cipher
-            ~salt_length:(List.length salted_cipher / 2)
-        with
+      (match decoded with
+      | Error (`Msg msg) ->
+        Logs.err (fun m -> m "Failed to decode CSRF token '%s'." msg);
+        not_allowed_handler req
+      | Ok decoded ->
+        let salted_cipher = decoded |> String.to_seq |> List.of_seq in
+        (match
+           decrypt_with_salt
+             ~salted_cipher
+             ~salt_length:(List.length salted_cipher / 2)
+         with
         | None ->
-          Logs.err (fun m -> m "Failed to decrypt CSRF token %s " token);
-          raise @@ Crypto_failed "Failed to decrypt CSRF token"
-        | Some dec -> dec
-      in
-      let received_token = decrypted_secret |> List.to_seq |> String.of_seq in
-      let* stored_token = Sihl_facade.Session.find_value session key in
-      (match stored_token with
-      | Some stored_token ->
-        if not @@ String.equal stored_token received_token
-        then (
-          Logs.err (fun m ->
-              m "Associated CSRF token does not match with received token");
-          not_allowed_handler req)
-        else
-          (* Provided secret matches and is valid => Invalidate it so it can't
-             be reused *)
-          let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
-          (* To allow fetching a new valid token from the context, generate a
-             new one *)
-          let* token = create_token session in
-          let req = set token req in
-          handler req
-      | None ->
-        Logs.err (fun m -> m "No token associated with CSRF token");
-        not_allowed_handler req)
+          Logs.err (fun m -> m "Failed to decrypt CSRF token '%s'." token);
+          not_allowed_handler req
+        | Some decrypted_secret ->
+          let received_secret =
+            decrypted_secret |> List.to_seq |> String.of_seq
+          in
+          let* stored_secret = Sihl_facade.Session.find_value session key in
+          (match stored_secret with
+          | Some stored_secret ->
+            if not @@ String.equal stored_secret received_secret
+            then (
+              Logs.err (fun m ->
+                  m
+                    "Associated CSRF token '%s' does not match with received \
+                     token '%s'"
+                    stored_secret
+                    received_secret);
+              not_allowed_handler req)
+            else
+              (* Provided secret matches and is valid => Invalidate it so it
+                 can't be reused *)
+              let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
+              (* To allow fetching a new valid token from the context, generate
+                 a new one *)
+              let* token = Lwt.map secret_to_token (create_secret session) in
+              let req = set token req in
+              handler req
+          | None ->
+            Logs.err (fun m ->
+                m "No token associated with CSRF token '%s'" received_secret);
+            not_allowed_handler req)))
   in
   Rock.Middleware.create ~name:"csrf" ~filter
 ;;
