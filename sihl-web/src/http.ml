@@ -95,6 +95,8 @@ let schema =
 ;;
 
 let registered_routers = ref []
+let registered_middlewares = ref []
+let started_server = ref None
 
 let start_server () =
   let open Lwt.Syntax in
@@ -103,10 +105,16 @@ let start_server () =
     Option.value (Sihl_core.Configuration.read schema).port ~default:33000
   in
   let app = Opium.App.(empty |> port port_nr |> cmd_name "Sihl App") in
+  let middlewares = List.map Opium.App.middleware !registered_middlewares in
+  (* Registered middlewares need to be mounted before routing happens, so that
+     every single request goes through them, not only requests that match
+     handlers *)
+  let app = List.fold_left (fun app builder -> builder app) app middlewares in
   let builders = routers_to_opium_builders !registered_routers in
   let app = List.fold_left (fun app builder -> builder app) app builders in
   (* We don't want to block here, the returned Lwt.t will never resolve *)
-  let* _ = Opium.App.start app in
+  let* server = Opium.App.start app in
+  started_server := Some server;
   Lwt.return ()
 ;;
 
@@ -125,11 +133,19 @@ let start () =
   start_server ()
 ;;
 
-let stop () = Lwt.return ()
+let stop () =
+  match !started_server with
+  | None ->
+    Logs.warn (fun m -> m "The server is not running, nothing to stop");
+    Lwt.return ()
+  | Some server -> Lwt_io.shutdown_server server
+;;
+
 let lifecycle = Sihl_core.Container.create_lifecycle "http" ~start ~stop
 
-let register ?(routers = []) () =
+let register ?(middlewares = []) ?(routers = []) () =
   registered_routers := routers;
+  registered_middlewares := middlewares;
   let configuration = Sihl_core.Configuration.make ~schema () in
   Sihl_core.Container.Service.create
     ~configuration

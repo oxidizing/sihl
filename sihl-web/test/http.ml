@@ -124,7 +124,25 @@ let match_first_route _ () =
   in
   Alcotest.(check bool "was called" true !was_called1);
   Alcotest.(check bool "was not called" false !was_called2);
-  Lwt.return ()
+  Sihl_web.Http.stop ()
+;;
+
+let global_middleware_before_router _ () =
+  let was_called = ref false in
+  let filter _ _ =
+    was_called := true;
+    Lwt.return @@ Opium.Response.of_plain_text "all good!"
+  in
+  let middleware = Rock.Middleware.create ~name:"test" ~filter in
+  let _ = Sihl_web.Http.register ~middlewares:[ middleware ] () in
+  let* () = Sihl_web.Http.start () in
+  let* resp, _ =
+    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000")
+  in
+  let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
+  Alcotest.(check int "matched scope without route" 200 status);
+  Alcotest.(check bool "middleware was called" true !was_called);
+  Sihl_web.Http.stop ()
 ;;
 
 let suite =
@@ -142,6 +160,10 @@ let suite =
           prefix_route_trailing_slash
       ; test_case "router prefix" `Quick router_prefix
       ; test_case "router middleware" `Quick router_middleware
+      ; test_case
+          "global middleware before router"
+          `Quick
+          global_middleware_before_router
       ] )
   ]
 ;;
