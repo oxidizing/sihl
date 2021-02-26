@@ -1,12 +1,10 @@
-val find : Rock.Request.t -> Sihl_contract.Session.t
-val find_opt : Rock.Request.t -> Sihl_contract.Session.t option
-val set : Sihl_contract.Session.t -> Rock.Request.t -> Rock.Request.t
+exception Session_not_found
 
-val add_session_cookie
-  :  string
-  -> string
-  -> Opium.Cookie.Signer.t
-  -> Rock.Response.t
-  -> Rock.Response.t
+val find : string -> Opium.Request.t -> string option
+val set : string * string option -> Opium.Response.t -> Opium.Response.t
 
-val middleware : ?cookie_name:string -> unit -> Rock.Middleware.t
+val middleware
+  :  ?cookie_key:string
+  -> ?secret:string
+  -> unit
+  -> Rock.Middleware.t

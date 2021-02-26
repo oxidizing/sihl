@@ -41,14 +41,9 @@ let logout res =
 let session_middleware ?(key = "authn") () =
   let open Lwt.Syntax in
   let filter handler req =
-    match Session.find_opt req with
-    | Some session ->
-      let* user =
-        let* user_id = Sihl_facade.Session.find_value session key in
-        match user_id with
-        | None -> Lwt.return None
-        | Some user_id -> Sihl_facade.User.find_opt ~user_id
-      in
+    match Session.find key req with
+    | Some user_id ->
+      let* user = Sihl_facade.User.find_opt ~user_id in
       (match user with
       | Some user ->
         let req = set user req in
@@ -57,7 +52,7 @@ let session_middleware ?(key = "authn") () =
         (match Opium.Context.find key_logout env with
         | None -> Lwt.return resp
         | Some () ->
-          let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
+          let resp = Session.set (key, None) resp in
           Lwt.return resp)
       | None -> handler req)
     | None -> handler req
@@ -65,12 +60,13 @@ let session_middleware ?(key = "authn") () =
   Rock.Middleware.create ~name:"user.session" ~filter
 ;;
 
-let token_middleware ?invalid_token_handler () =
+let token_middleware ?(key = "user_id") ?invalid_token_handler () =
+  (* TODO [jerben] make user id key user_id configurable *)
   let open Lwt.Syntax in
   let filter handler req =
     match Bearer_token.find_opt req with
     | Some token ->
-      let* user_id = Sihl_facade.Token.read token ~k:"user_id" in
+      let* user_id = Sihl_facade.Token.read token ~k:key in
       (match user_id with
       | None ->
         (match invalid_token_handler with

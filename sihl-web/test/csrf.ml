@@ -324,6 +324,7 @@ let two_post_requests_succeed _ () =
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref2 in
   let* response = wrapped_handler post_req in
+  let cookie = response |> Opium.Response.cookies |> List.hd in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
   (* Do second POST *)
@@ -338,14 +339,14 @@ let two_post_requests_succeed _ () =
       ~body:[ "csrf", [ Uri.pct_encode !token_ref2 ] ]
       "/foo"
       `POST
-    |> Opium.Request.add_cookie @@ cookie.Opium.Cookie.value
+    |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref3 in
   let* response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
-  Alcotest.(check int "Has status 200" 200 status);
   Alcotest.(
     check bool "Has changed token" false (String.equal !token_ref2 !token_ref3));
+  Alcotest.(check int "Has status 200" 200 status);
   Lwt.return ()
 ;;
 
