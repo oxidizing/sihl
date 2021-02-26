@@ -35,15 +35,13 @@ let session_middleware
   let filter handler req =
     let* resp = handler req in
     let env = resp.Opium.Response.env in
-    match Session.find_opt req, Opium.Context.find key_login env with
-    | Some session, Some { email; password } ->
+    match Session.find key req, Opium.Context.find key_login env with
+    | Some _, Some { email; password } ->
       let* user = Sihl_facade.User.login ~email ~password in
       (match user with
       | Error error -> error_handler error
       | Ok user ->
-        let* () =
-          Sihl_facade.Session.set_value session ~k:key ~v:(Some user.id)
-        in
+        let resp = Session.set (key, Some user.id) resp in
         Lwt.return resp)
     | Some _, None -> Lwt.return resp
     | None, Some _ -> Lwt.return resp

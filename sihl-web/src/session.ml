@@ -1,79 +1,185 @@
 let log_src = Logs.Src.create "sihl.middleware.session"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
+module Map = Map.Make (String)
 
-let key : Sihl_contract.Session.t Opium.Context.key =
-  Opium.Context.Key.create ("session", Sihl_facade.Session.to_sexp)
-;;
+module Session = struct
+  type t =
+    { data : string Map.t
+    ; should_set_cookie : bool
+    }
+
+  let create should_set_cookie = { data = Map.empty; should_set_cookie }
+
+  let of_yojson yojson =
+    let open Yojson.Safe.Util in
+    let session_list =
+      try
+        Some (yojson |> to_assoc |> List.map (fun (k, v) -> k, to_string v))
+      with
+      | _ -> None
+    in
+    session_list
+    |> Option.map List.to_seq
+    |> Option.map Map.of_seq
+    |> Option.map (fun data -> { data; should_set_cookie = false })
+  ;;
+
+  let to_yojson { data = session; _ } =
+    `Assoc
+      (session
+      |> Map.to_seq
+      |> List.of_seq
+      |> List.map (fun (k, v) -> k, `String v))
+  ;;
+
+  let of_json json =
+    try of_yojson (Yojson.Safe.from_string json) with
+    | _ -> None
+  ;;
+
+  let to_json session = session |> to_yojson |> Yojson.Safe.to_string
+
+  let to_sexp session =
+    let open Sexplib0.Sexp_conv in
+    let open Sexplib0.Sexp in
+    let data =
+      session.data
+      |> Map.to_seq
+      |> List.of_seq
+      |> sexp_of_list (sexp_of_pair sexp_of_string sexp_of_string)
+    in
+    List
+      [ List [ Atom "data"; data ]
+      ; List
+          [ Atom "should_set_cookie"; sexp_of_bool session.should_set_cookie ]
+      ]
+  ;;
+end
+
+module SessionChange = struct
+  type t = string option Map.t
+
+  let empty = Map.empty
+
+  let merge Session.{ data = session; should_set_cookie } t =
+    let data =
+      Map.merge
+        (fun _ session change ->
+          match session, change with
+          | _, Some (Some change) -> Some change
+          | _, Some None -> None
+          | Some session, None -> Some session
+          | None, None -> None)
+        session
+        t
+    in
+    Session.{ data; should_set_cookie }
+  ;;
+
+  let to_sexp t =
+    t
+    |> Map.to_seq
+    |> List.of_seq
+    |> Sexplib0.Sexp_conv.(
+         sexp_of_list
+           (sexp_of_pair sexp_of_string (sexp_of_option sexp_of_string)))
+  ;;
+end
+
+module Env = struct
+  let key : Session.t Opium.Context.key =
+    Opium.Context.Key.create ("session", Session.to_sexp)
+  ;;
+
+  let key_session_change : SessionChange.t Opium.Context.key =
+    Opium.Context.Key.create ("session change", SessionChange.to_sexp)
+  ;;
+end
 
 exception Session_not_found
 
-let find req =
-  try Opium.Context.find_exn key req.Opium.Request.env with
-  | _ ->
-    Logs.err (fun m -> m "No session found");
-    Logs.info (fun m ->
-        m "Have you applied the session middleware for this route?");
-    raise @@ Session_not_found
+let find key req =
+  let session =
+    try Opium.Context.find_exn Env.key req.Opium.Request.env with
+    | _ ->
+      Logs.err (fun m -> m "No session found");
+      Logs.info (fun m -> m "Have you applied the session middleware?");
+      raise @@ Session_not_found
+  in
+  Map.find_opt key session.data
 ;;
 
-let find_opt req =
-  try Some (find req) with
-  | _ -> None
+let set (key, value) resp =
+  let change =
+    match Opium.Context.find Env.key_session_change resp.Opium.Response.env with
+    | Some change -> Map.add key value change
+    | None -> SessionChange.empty |> Map.add key value
+  in
+  let env = resp.Opium.Response.env in
+  let env = Opium.Context.add Env.key_session_change change env in
+  { resp with env }
 ;;
 
-let set session req =
-  let env = req.Opium.Request.env in
-  let env = Opium.Context.add key session env in
-  { req with env }
+let decode_session cookie_key signed_with req =
+  match Opium.Request.cookie ~signed_with cookie_key req with
+  | None -> Session.create true
+  | Some cookie_value ->
+    (match Session.of_json cookie_value with
+    | None ->
+      Logs.err (fun m ->
+          m
+            "Failed to parse value found in session cookie '%s': '%s'"
+            cookie_key
+            cookie_value);
+      Logs.info (fun m ->
+          m
+            "Maybe the cookie key '%s' collides with a cookie issued by \
+             someone else. Try to change the cookie key."
+            cookie_key);
+      Session.create true
+    | Some session -> session)
 ;;
 
-let add_session_cookie cookie_name session_key signer res =
-  let scope = Uri.of_string "/" in
-  Opium.Response.add_cookie_unless_exists
-    ~sign_with:signer
-    ~scope
-    ~expires:`Session
-    (cookie_name, session_key)
-    res
+let persist_session current_session signed_with cookie_key resp =
+  let session_change =
+    Opium.Context.find Env.key_session_change resp.Opium.Response.env
+  in
+  let cookie =
+    match current_session.Session.should_set_cookie, session_change with
+    | true, Some session_change ->
+      let session = SessionChange.merge current_session session_change in
+      let cookie_value = Session.to_json session in
+      Some (cookie_key, cookie_value)
+    | true, None ->
+      let cookie_value = Session.to_json (Session.create true) in
+      Some (cookie_key, cookie_value)
+    | false, Some session_change ->
+      let session = SessionChange.merge current_session session_change in
+      let cookie_value = Session.to_json session in
+      Some (cookie_key, cookie_value)
+    | false, None -> None
+  in
+  match cookie with
+  | None -> resp
+  | Some cookie ->
+    Opium.Response.add_cookie_or_replace ~sign_with:signed_with cookie resp
 ;;
 
-let middleware ?(cookie_name = "sihl_session") () =
+let middleware
+    ?(cookie_key = "_session")
+    ?(secret = Sihl_core.Configuration.read_secret ())
+    ()
+  =
   let open Lwt.Syntax in
   let filter handler req =
-    let secret = Sihl_core.Configuration.read_secret () in
-    let signer = Opium.Cookie.Signer.make secret in
-    match Opium.Request.cookie ~signed_with:signer cookie_name req with
-    | Some session_key ->
-      (* A session cookie was found *)
-      Logs.debug (fun m -> m "Found session cookie with value %s" session_key);
-      let* session = Sihl_facade.Session.find_opt session_key in
-      (match session with
-      | Some session ->
-        Logs.debug (fun m -> m "Found session for cookie %s" session_key);
-        let* session =
-          if Sihl_facade.Session.is_expired (Ptime_clock.now ()) session
-          then (
-            Logs.debug (fun m -> m "Session expired, creating new one");
-            let* session = Sihl_facade.Session.create [] in
-            Lwt.return session)
-          else Lwt.return session
-        in
-        let req = set session req in
-        handler req
-      | None ->
-        Logs.debug (fun m -> m "No session found for cookie %s" session_key);
-        let* session = Sihl_facade.Session.create [] in
-        let req = set session req in
-        let* res = handler req in
-        add_session_cookie cookie_name session.key signer res |> Lwt.return)
-    | None ->
-      Logs.debug (fun m -> m "No session cookie found, set a new one");
-      (* No session cookie found *)
-      let* session = Sihl_facade.Session.create [] in
-      let req = set session req in
-      let* res = handler req in
-      add_session_cookie cookie_name session.key signer res |> Lwt.return
+    let signed_with = Opium.Cookie.Signer.make secret in
+    let session = decode_session cookie_key signed_with req in
+    let env = req.Opium.Request.env in
+    let env = Opium.Context.add Env.key session env in
+    let req = { req with env } in
+    let* resp = handler req in
+    Lwt.return @@ persist_session session signed_with cookie_key resp
   in
   Rock.Middleware.create ~name:"session" ~filter
 ;;

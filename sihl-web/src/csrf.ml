@@ -82,17 +82,11 @@ let decrypt_with_salt ~salted_cipher ~salt_length =
  * HTML caching token handling
  *)
 
-let create_secret session =
-  let secret = Sihl_core.Random.base64 80 in
-  let* () = Sihl_facade.Session.set_value session ~k:"csrf" ~v:(Some secret) in
-  Lwt.return secret
-;;
-
 let secret_to_token secret =
   (* Randomize and scramble secret (XOR with salt) to make a token *)
   (* Do this to mitigate BREACH attacks: http://breachattack.com/#mitigations *)
   let secret_length = String.length secret in
-  let salt = Sihl_facade.Random.bytes secret_length in
+  let salt = Sihl_core.Random.bytes secret_length in
   let secret_value = secret |> String.to_seq |> List.of_seq in
   let encrypted =
     match xor salt secret_value with
@@ -119,25 +113,27 @@ let middleware
     ()
   =
   let filter handler req =
-    let session = Session.find req in
     let req, token = Form.consume req "csrf" in
     let is_safe =
       match req.Opium.Request.meth with
       | `GET | `HEAD | `OPTIONS | `TRACE -> true
       | _ -> false
     in
+    let stored_secret = Session.find key req in
     match token, is_safe with
     | None, true ->
       (* Don't check for CSRF token in safe requests *)
-      let* stored_secret = Sihl_facade.Session.find_value session key in
       (match stored_secret with
       | Some secret ->
-        let req = set (secret_to_token secret) req in
+        let token = secret_to_token secret in
+        let req = set token req in
         handler req
       | None ->
-        let* token = Lwt.map secret_to_token (create_secret session) in
+        let secret = Sihl_core.Random.base64 80 in
+        let token = secret_to_token secret in
         let req = set token req in
-        handler req)
+        let* resp = handler req in
+        Lwt.return @@ Session.set (key, Some secret) resp)
     | None, false -> not_allowed_handler req
     | Some token, true ->
       let req = set token req in
@@ -163,7 +159,6 @@ let middleware
           let received_secret =
             decrypted_secret |> List.to_seq |> String.of_seq
           in
-          let* stored_secret = Sihl_facade.Session.find_value session key in
           (match stored_secret with
           | Some stored_secret ->
             if not @@ String.equal stored_secret received_secret
@@ -175,15 +170,16 @@ let middleware
                     stored_secret
                     received_secret);
               not_allowed_handler req)
-            else
+            else (
               (* Provided secret matches and is valid => Invalidate it so it
                  can't be reused *)
-              let* () = Sihl_facade.Session.set_value session ~k:key ~v:None in
               (* To allow fetching a new valid token from the context, generate
                  a new one *)
-              let* token = Lwt.map secret_to_token (create_secret session) in
+              let secret = Sihl_core.Random.base64 80 in
+              let token = secret_to_token secret in
               let req = set token req in
-              handler req
+              let* resp = handler req in
+              Lwt.return @@ Session.set (key, Some secret) resp)
           | None ->
             Logs.err (fun m ->
                 m "No token associated with CSRF token '%s'" received_secret);
