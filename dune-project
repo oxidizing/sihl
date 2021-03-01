@@ -56,24 +56,12 @@
   (caqti-lwt (>= 1.2.0))))
 
 (package
- (name sihl-facade)
- (synopsis "Sihl service facade that uses the facade pattern to hide service implementations")
- (description "The facade provides API to register service implementations as the main mechanism for dependency injection.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl-contract (= :version))
-  (sihl-core (= :version))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
-
-(package
  (name sihl-persistence)
  (synopsis "Sihl services to deal with data persistence")
  (description "Modules for database pools, transactions, migrations and integration tests involving the database layer.")
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
@@ -85,7 +73,6 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -95,7 +82,6 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -106,7 +92,6 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -117,7 +102,6 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -129,7 +113,6 @@ This service can be used to handle large binary blobs that are typically not sto
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -142,7 +125,6 @@ Modules for sending emails using Lwt. Various email transports are provided that
   dune
   (ocaml (>= 4.08.0))
   (letters (>= 0.2.1))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (cohttp-lwt-unix (>= 2.5.4))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
@@ -155,7 +137,6 @@ Modules for putting and working jobs on queues. Various queue backends are provi
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -169,7 +150,6 @@ Modules for putting and working jobs on queues. Various queue backends are provi
   (ocaml (>= 4.08.0))
   (sihl-core (= :version))
   (sihl-contract (= :version))
-  (sihl-facade (= :version))
   (sihl-persistence (= :version))
   (sihl-web (= :version))
   (sihl-token (= :version))

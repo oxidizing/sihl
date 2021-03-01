@@ -163,13 +163,13 @@ struct
 
   module Migration = struct
     let fix_collation =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci'"
     ;;
 
     let create_templates_table =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
     ;;
 
     let rename_name_column =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"rename name column"
         {sql|
 ALTER TABLE email_templates
@@ -196,7 +196,7 @@ CHANGE COLUMN `name` label VARCHAR(128) NOT NULL;
     ;;
 
     let add_updated_at_column =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE email_templates
@@ -205,7 +205,7 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
     ;;
 
     let make_html_nullable =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"make html nullable"
         {sql|
 ALTER TABLE email_templates
@@ -214,7 +214,7 @@ MODIFY content_html TEXT NULL;
     ;;
 
     let migration () =
-      Sihl_facade.Migration.(
+      Sihl_persistence.Migration.(
         empty "email"
         |> add_step fix_collation
         |> add_step create_templates_table
@@ -359,7 +359,7 @@ struct
 
   module Migration = struct
     let create_templates_table =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -377,7 +377,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
     ;;
 
     let rename_name_column =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"rename name column"
         {sql|
 ALTER TABLE email_templates
@@ -386,7 +386,7 @@ RENAME COLUMN name TO label;
     ;;
 
     let add_updated_at_column =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE email_templates
@@ -395,7 +395,7 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     ;;
 
     let make_html_nullable =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"make html nullable"
         {sql|
 ALTER TABLE email_templates
@@ -404,7 +404,7 @@ ALTER COLUMN content_html DROP NOT NULL;
     ;;
 
     let migration () =
-      Sihl_facade.Migration.(
+      Sihl_persistence.Migration.(
         empty "email"
         |> add_step create_templates_table
         |> add_step rename_name_column

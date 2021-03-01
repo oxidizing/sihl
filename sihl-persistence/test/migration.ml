@@ -3,9 +3,9 @@ module Service = Sihl_persistence.Migration
 module Repo = Sihl_persistence.Migration_repo
 
 let migrations =
-  [ Sihl_facade.Migration.create_step ~label:"mig1" "some migs"
-  ; Sihl_facade.Migration.create_step ~label:"mig2" "some more migs"
-  ; Sihl_facade.Migration.create_step ~label:"mig3" "even more migs"
+  [ Sihl_persistence.Migration.create_step ~label:"mig1" "some migs"
+  ; Sihl_persistence.Migration.create_step ~label:"mig2" "some more migs"
+  ; Sihl_persistence.Migration.create_step ~label:"mig3" "even more migs"
   ]
 ;;
 

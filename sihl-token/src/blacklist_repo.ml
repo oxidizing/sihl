@@ -97,13 +97,13 @@ module MariaDb : Sig = struct
   ;;
 
   let fix_collation =
-    Sihl_facade.Migration.create_step
+    Sihl_persistence.Migration.create_step
       ~label:"fix collation"
       "SET collation_server = 'utf8mb4_unicode_ci';"
   ;;
 
   let create_jobs_table =
-    Sihl_facade.Migration.create_step
+    Sihl_persistence.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
 CREATE TABLE IF NOT EXISTS token_blacklist (
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let migration =
-    Sihl_facade.Migration.(
+    Sihl_persistence.Migration.(
       empty "tokens_blacklist"
       |> add_step fix_collation
       |> add_step create_jobs_table)
@@ -208,7 +208,7 @@ module PostgreSql : Sig = struct
   ;;
 
   let create_jobs_table =
-    Sihl_facade.Migration.create_step
+    Sihl_persistence.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
 CREATE TABLE IF NOT EXISTS token_blacklist (
@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let migration =
-    Sihl_facade.Migration.(
+    Sihl_persistence.Migration.(
       empty "tokens_blacklist" |> add_step create_jobs_table)
   ;;
 

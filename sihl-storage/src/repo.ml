@@ -231,7 +231,7 @@ struct
   ;;
 
   let fix_collation =
-    Sihl_facade.Migration.create_step
+    Sihl_persistence.Migration.create_step
       ~label:"fix collation"
       {sql|
          SET collation_server = 'utf8mb4_unicode_ci';
@@ -239,7 +239,7 @@ struct
   ;;
 
   let create_blobs_table =
-    Sihl_facade.Migration.create_step
+    Sihl_persistence.Migration.create_step
       ~label:"create blobs table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_blobs (
@@ -255,7 +255,7 @@ struct
   ;;
 
   let create_handles_table =
-    Sihl_facade.Migration.create_step
+    Sihl_persistence.Migration.create_step
       ~label:"create handles table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_handles (
@@ -274,7 +274,7 @@ struct
   ;;
 
   let migration () =
-    Sihl_facade.Migration.(
+    Sihl_persistence.Migration.(
       empty "storage"
       |> add_step fix_collation
       |> add_step create_blobs_table

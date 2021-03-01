@@ -1,10 +1,11 @@
 let services =
   [ Sihl_persistence.Database.register ()
-  ; Sihl_facade.Migration.register
-      (module Sihl_persistence.Migration.PostgreSql)
-  ; Sihl_facade.Token.register (module Sihl_token.JwtPostgreSql)
+  ; Sihl_persistence.Migration.PostgreSql.register ()
+  ; Sihl_token.JwtPostgreSql.register ()
   ]
 ;;
+
+module Test = Token.Make (Sihl_token.JwtPostgreSql)
 
 let () =
   let open Lwt.Syntax in
@@ -13,6 +14,6 @@ let () =
   Logs.set_reporter (Sihl_core.Log.cli_reporter ());
   Lwt_main.run
     (let* _ = Sihl_core.Container.start_services services in
-     let* () = Sihl_facade.Migration.run_all () in
-     Alcotest_lwt.run "token jwt postgresql" Token.suite)
+     let* () = Sihl_persistence.Migration.PostgreSql.run_all () in
+     Alcotest_lwt.run "jwt postgresql" Test.suite)
 ;;

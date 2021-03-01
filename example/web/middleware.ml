@@ -10,7 +10,7 @@ let site () =
   ; Sihl.Web.Form.middleware
   ; Sihl.Web.Csrf.middleware ()
   ; Sihl.Web.Flash.middleware ()
-  ; Sihl.Web.User.session_middleware ()
+  ; Sihl.Web.User.session_middleware Service.User.find_opt
   ]
 ;;
 
@@ -21,6 +21,9 @@ let json_api () =
   ; Sihl.Web.Error.middleware ()
   ; Sihl.Web.Json.middleware
   ; Sihl.Web.Bearer_token.middleware
-  ; Sihl.Web.User.token_middleware ()
+  ; Sihl.Web.User.token_middleware
+      (fun token ~k -> Service.Token.read token ~k)
+      Service.User.find_opt
+      Service.Token.deactivate
   ]
 ;;
