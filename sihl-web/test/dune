@@ -1,7 +1,7 @@
 (executables
  (names csrf_mariadb csrf_postgresql http session
    flash user_mariadb bearer_token)
- (libraries sihl-user sihl-token sihl-web sihl-session sihl-persistence
+ (libraries sihl-user sihl-token sihl-web sihl-cache sihl-persistence
    alcotest-lwt caqti-driver-mariadb caqti-driver-postgresql cohttp-lwt-unix)
  (preprocess
   (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show

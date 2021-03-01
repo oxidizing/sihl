@@ -55,7 +55,7 @@ jobs:
           sudo apt-get install -y libmariadbclient-dev libpq-dev
           opam depext conf-libev
           opam pin add -y .
-          opam depext -y sihl-core sihl-contract sihl-facade sihl-persistence sihl-user sihl-web sihl-storage sihl-email sihl-queue sihl-session sihl-token sihl
+          opam depext -y sihl-core sihl-contract sihl-facade sihl-persistence sihl-user sihl-web sihl-storage sihl-email sihl-queue sihl-cache sihl-token sihl
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |

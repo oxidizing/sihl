@@ -19,7 +19,6 @@ let services =
   ; Sihl.Token.(register Implementation.postgresql)
   ; Sihl.Email_template.(register Implementation.postgresql)
   ; Sihl.User.(register Implementation.postgresql)
-  ; Sihl.Session.(register Implementation.postgresql)
   ; Sihl.Token.(register Implementation.postgresql)
   ; Sihl.Queue.(register ~jobs Implementation.postgresql)
   ; Sihl.User.Password_reset.register ()

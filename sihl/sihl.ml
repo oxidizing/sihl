@@ -82,19 +82,6 @@ module User = struct
   end
 end
 
-(* Session module*)
-module Session = struct
-  include Sihl_facade.Session
-
-  module Implementation = struct
-    let postgresql =
-      (module Sihl_session.PostgreSql : Sihl_contract.Session.Sig)
-    ;;
-
-    let mariadb = (module Sihl_session.MariaDb : Sihl_contract.Session.Sig)
-  end
-end
-
 (* Token module *)
 module Token = struct
   include Sihl_facade.Token
