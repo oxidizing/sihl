@@ -1,0 +1,4 @@
+(executables
+ (names mariadb postgresql)
+ (libraries sihl-contract sihl-cache alcotest-lwt caqti-driver-mariadb
+   caqti-driver-postgresql))

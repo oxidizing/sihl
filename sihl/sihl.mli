@@ -80,15 +80,6 @@ module User : sig
   end
 end
 
-module Session : sig
-  include module type of Sihl_facade.Session
-
-  module Implementation : sig
-    val postgresql : (module Sihl_contract.Session.Sig)
-    val mariadb : (module Sihl_contract.Session.Sig)
-  end
-end
-
 module Token : sig
   include module type of Sihl_facade.Token
 

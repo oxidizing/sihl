@@ -100,9 +100,9 @@
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
- (name sihl-session)
- (synopsis "Sihl service to deal with sessions")
- (description "Modules for session storage.")
+ (name sihl-cache)
+ (synopsis "A module that provides services to store and retrieve data with key-value semantics.")
+ (description "Depending on the backend the cache service can be used to improve performance or to persist arbitrary data.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -173,7 +173,7 @@ Modules for putting and working jobs on queues. Various queue backends are provi
   (sihl-persistence (= :version))
   (sihl-web (= :version))
   (sihl-token (= :version))
-  (sihl-session (= :version))
+  (sihl-cache (= :version))
   (sihl-user (= :version))
   (sihl-queue (= :version))
   (sihl-storage (= :version))
