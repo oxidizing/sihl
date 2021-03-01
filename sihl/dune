@@ -1,5 +1,5 @@
 (library
  (name sihl)
  (public_name sihl)
- (libraries sihl-core sihl-contract sihl-facade sihl-persistence sihl-web
+ (libraries sihl-core sihl-contract sihl-persistence sihl-web
    sihl-token sihl-user sihl-queue sihl-storage sihl-email sihl-cache))

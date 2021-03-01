@@ -84,10 +84,19 @@ let exn_to_string exn req =
 ;;
 
 let create_error_email (sender, recipient) error =
-  Sihl_facade.Email.create ~sender ~recipient ~subject:"Exception caught" error
+  Sihl_contract.Email.create
+    ~sender
+    ~recipient
+    ~subject:"Exception caught"
+    error
 ;;
 
-let middleware ?email ?(reporter = fun _ -> Lwt.return ()) ?error_handler () =
+let middleware
+    ?email_config
+    ?(reporter = fun _ -> Lwt.return ())
+    ?error_handler
+    ()
+  =
   let filter handler req =
     Lwt.catch
       (fun () -> handler req)
@@ -98,11 +107,11 @@ let middleware ?email ?(reporter = fun _ -> Lwt.return ()) ?error_handler () =
         Logs.err (fun m -> m "%s" error);
         (* Report error via email, don't wait for it.*)
         let _ =
-          match email with
-          | Some credentials ->
-            let email = create_error_email credentials error in
+          match email_config with
+          | Some (sender, recipient, send_fn) ->
+            let email = create_error_email (sender, recipient) error in
             Lwt.catch
-              (fun () -> Sihl_facade.Email.send email)
+              (fun () -> send_fn email)
               (fun exn ->
                 let msg = Printexc.to_string exn in
                 Logs.err (fun m -> m "Failed to report error per email: %s" msg);

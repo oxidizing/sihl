@@ -1,4 +1,4 @@
-module Template = Sihl_email_template
+include Sihl_contract.Email
 
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Email.name)
 
@@ -175,11 +175,7 @@ module Smtp : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Email.name
-      ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
-      ~start
-      ~stop
+    Sihl_core.Container.create_lifecycle Sihl_contract.Email.name ~start ~stop
   ;;
 
   let register () =
@@ -289,11 +285,7 @@ module SendGrid : Sihl_contract.Email.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Email.name
-      ~dependencies:(fun () -> [ Sihl_facade.Email_template.lifecycle () ])
-      ~start
-      ~stop
+    Sihl_core.Container.create_lifecycle Sihl_contract.Email.name ~start ~stop
   ;;
 
   let register () =
@@ -304,13 +296,14 @@ end
 
 (* This is useful if you need to answer a request quickly while sending the
    email in the background *)
-module Queued : Sihl_contract.Email.Sig = struct
+module Queued (Email : Sihl_contract.Email.Sig) : Sihl_contract.Email.Sig =
+struct
   include DevInbox
 
   module Job = struct
     let input_to_string email =
       email
-      |> Sihl_facade.Email.to_yojson
+      |> Sihl_contract.Email.to_yojson
       |> Yojson.Safe.to_string
       |> Option.some
     ;;
@@ -336,25 +329,25 @@ module Queued : Sihl_contract.Email.Sig = struct
         in
         Result.bind email (fun email ->
             email
-            |> Sihl_facade.Email.of_yojson
+            |> Sihl_contract.Email.of_yojson
             |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
-    let handle input = Sihl_facade.Email.send input |> Lwt.map Result.ok
+    let handle input = Email.send input |> Lwt.map Result.ok
 
     (** Nothing to clean up, sending emails is a side effect *)
     let failed _ = Lwt_result.return ()
 
     let job =
-      Sihl_facade.Queue.create
+      Sihl_contract.Queue.create
         ~name:"send_email"
         ~input_to_string
         ~string_to_input
         ~handle
         ~failed
         ()
-      |> Sihl_facade.Queue.set_max_tries 10
-      |> Sihl_facade.Queue.set_retry_delay Sihl_core.Time.OneHour
+      |> Sihl_contract.Queue.set_max_tries 10
+      |> Sihl_contract.Queue.set_retry_delay Sihl_core.Time.OneHour
     ;;
   end
 
@@ -363,8 +356,8 @@ module Queued : Sihl_contract.Email.Sig = struct
     if not (Sihl_core.Configuration.is_production ())
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
-      Sihl_facade.Email.send email)
-    else Sihl_facade.Queue.dispatch Job.job email
+      Email.send email)
+    else Sihl_queue.InMemory.dispatch Job.job email
   ;;
 
   let bulk_send emails =
@@ -378,7 +371,7 @@ module Queued : Sihl_contract.Email.Sig = struct
     loop emails
   ;;
 
-  let start () = Sihl_facade.Queue.register_jobs [ Job.job ] |> Lwt.map ignore
+  let start () = Sihl_queue.InMemory.register_jobs [ Job.job ] |> Lwt.map ignore
   let stop () = Lwt.return ()
 
   let lifecycle =
@@ -387,13 +380,13 @@ module Queued : Sihl_contract.Email.Sig = struct
       ~start
       ~stop
       ~dependencies:(fun () ->
-        [ Sihl_facade.Email.lifecycle ()
+        [ Email.lifecycle
         ; Sihl_persistence.Database.lifecycle
-        ; Sihl_facade.Queue.lifecycle ()
+        ; Sihl_queue.InMemory.lifecycle
         ])
   ;;
 
   let register () = Sihl_core.Container.Service.create lifecycle
 end
 
-module Template_repo = Sihl_email_template_repo
+module Template = Template

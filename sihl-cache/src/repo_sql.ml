@@ -95,7 +95,7 @@ struct
 
   module Migration = struct
     let create_cache_table =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"create cache table"
         {sql|
 CREATE TABLE IF NOT EXISTS cache (
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS cache (
     ;;
 
     let migration () =
-      Sihl_facade.Migration.(empty "cache" |> add_step create_cache_table)
+      Sihl_persistence.Migration.(empty "cache" |> add_step create_cache_table)
     ;;
   end
 
@@ -132,7 +132,7 @@ struct
 
   module Migration = struct
     let create_cache_table =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"create cache table"
         {sql|
 CREATE TABLE IF NOT EXISTS cache (
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS cache (
     ;;
 
     let migration () =
-      Sihl_facade.Migration.(empty "cache" |> add_step create_cache_table)
+      Sihl_persistence.Migration.(empty "cache" |> add_step create_cache_table)
     ;;
   end
 

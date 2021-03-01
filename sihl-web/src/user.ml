@@ -3,7 +3,7 @@ let log_src = Logs.Src.create "sihl.middleware.user"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let key : Sihl_contract.User.t Opium.Context.key =
-  Opium.Context.Key.create ("user", Sihl_facade.User.to_sexp)
+  Opium.Context.Key.create ("user", Sihl_contract.User.to_sexp)
 ;;
 
 exception User_not_found
@@ -38,12 +38,12 @@ let logout res =
   { res with env }
 ;;
 
-let session_middleware ?(key = "authn") () =
+let session_middleware ?(key = "authn") find_user =
   let open Lwt.Syntax in
   let filter handler req =
     match Session.find key req with
     | Some user_id ->
-      let* user = Sihl_facade.User.find_opt ~user_id in
+      let* user = find_user ~user_id in
       (match user with
       | Some user ->
         let req = set user req in
@@ -60,20 +60,26 @@ let session_middleware ?(key = "authn") () =
   Rock.Middleware.create ~name:"user.session" ~filter
 ;;
 
-let token_middleware ?(key = "user_id") ?invalid_token_handler () =
+let token_middleware
+    ?(key = "user_id")
+    ?invalid_token_handler
+    read_token
+    find_user
+    deactivate_token
+  =
   (* TODO [jerben] make user id key user_id configurable *)
   let open Lwt.Syntax in
   let filter handler req =
     match Bearer_token.find_opt req with
     | Some token ->
-      let* user_id = Sihl_facade.Token.read token ~k:key in
+      let* user_id = read_token token ~k:key in
       (match user_id with
       | None ->
         (match invalid_token_handler with
         | Some handler -> handler req
         | None -> handler req)
       | Some user_id ->
-        let* user = Sihl_facade.User.find_opt ~user_id in
+        let* user = find_user ~user_id in
         (match user with
         | Some user ->
           let req = set user req in
@@ -82,7 +88,7 @@ let token_middleware ?(key = "user_id") ?invalid_token_handler () =
           (match Opium.Context.find key_logout env with
           | None -> Lwt.return resp
           | Some () ->
-            let* () = Sihl_facade.Token.deactivate token in
+            let* () = deactivate_token token in
             Lwt.return resp)
         | None -> handler req))
     | None -> handler req

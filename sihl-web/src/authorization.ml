@@ -10,12 +10,12 @@ let user ~login_path_f =
   Rock.Middleware.create ~name:"authorization.user" ~filter
 ;;
 
-let admin ~login_path_f =
+let admin ~login_path_f is_admin =
   let filter handler req =
     let user = User.find_opt req in
     match user with
     | Some user ->
-      if Sihl_facade.User.is_admin user
+      if is_admin user
       then handler req
       else (
         let login_path = login_path_f () in

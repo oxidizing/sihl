@@ -83,10 +83,12 @@ test-postgresql: build
 	SIHL_ENV=test ./_build/default/sihl-email/test/email_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-persistence/test/database_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-user/test/user_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-cache/test/postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-web/test/user_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_postgresql.exe
 
 .PHONY: test-http

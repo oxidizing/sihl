@@ -1,7 +1,7 @@
 open Lwt.Syntax
 module Database = Sihl_persistence.Database
 module Cleaner = Sihl_core.Cleaner
-module Migration = Sihl_facade.Migration
+module Migration = Sihl_persistence.Migration
 module Model = Sihl_contract.User
 
 module type Sig = sig
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
 
     let add_updated_at_column =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE user_users
@@ -343,7 +343,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
 
     let add_updated_at_column =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE user_users

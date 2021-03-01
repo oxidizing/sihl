@@ -29,7 +29,7 @@ let default_site_error_handler _ =
 let session_middleware
     ?(key = "authn")
     ?(error_handler = default_site_error_handler)
-    ()
+    login
   =
   let open Lwt.Syntax in
   let filter handler req =
@@ -37,11 +37,11 @@ let session_middleware
     let env = resp.Opium.Response.env in
     match Session.find key req, Opium.Context.find key_login env with
     | Some _, Some { email; password } ->
-      let* user = Sihl_facade.User.login ~email ~password in
+      let* user = login ~email ~password in
       (match user with
       | Error error -> error_handler error
       | Ok user ->
-        let resp = Session.set (key, Some user.id) resp in
+        let resp = Session.set (key, Some user.Sihl_contract.User.id) resp in
         Lwt.return resp)
     | Some _, None -> Lwt.return resp
     | None, Some _ -> Lwt.return resp
@@ -61,7 +61,8 @@ let default_json_error_handler _ =
 let token_middleware
     ?(key = "token")
     ?(error_handler = default_json_error_handler)
-    ()
+    login
+    create_token
   =
   let open Lwt.Syntax in
   let filter handler req =
@@ -70,11 +71,11 @@ let token_middleware
     match Opium.Context.find key_login env with
     | None -> Lwt.return resp
     | Some { email; password } ->
-      let* user = Sihl_facade.User.login ~email ~password in
+      let* user = login ~email ~password in
       (match user with
       | Error error -> error_handler error
       | Ok user ->
-        let* token = Sihl_facade.Token.create [ "user_id", user.id ] in
+        let* token = create_token [ "user_id", user.Sihl_contract.User.id ] in
         let msg = Format.sprintf {|{"%s": "%s"}|} key token in
         Lwt.return
           (Opium.Response.of_plain_text msg

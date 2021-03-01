@@ -1,4 +1,4 @@
 (executables
- (names password_reset_mariadb user_mariadb user_postgresql)
+ (names password_reset_mariadb password_reset_postgresql user_mariadb user_postgresql)
  (libraries sihl-contract sihl-user sihl-token sihl-web alcotest-lwt
    caqti-driver-mariadb caqti-driver-postgresql))

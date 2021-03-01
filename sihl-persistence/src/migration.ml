@@ -1,3 +1,5 @@
+include Sihl_contract.Migration
+
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Migration.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -189,11 +191,7 @@ module Make (Repo : Migration_repo.Sig) : Sihl_contract.Migration.Sig = struct
         (fun exn ->
           let err = Printexc.to_string exn in
           Logs.err (fun m ->
-              m
-                "Error while running migration '%a': %s"
-                Sihl_facade.Migration.pp
-                migration
-                err);
+              m "Error while running migration '%a': %s" pp migration err);
           raise (Sihl_contract.Migration.Exception err))
     in
     let* _ = mark_clean ~namespace in

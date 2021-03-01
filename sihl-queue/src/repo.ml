@@ -196,13 +196,13 @@ struct
 
   module Migration = struct
     let fix_collation =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci';"
     ;;
 
     let create_jobs_table =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
 
     let migration =
-      Sihl_facade.Migration.(
+      Sihl_persistence.Migration.(
         empty "queue" |> add_step fix_collation |> add_step create_jobs_table)
     ;;
   end
@@ -336,7 +336,7 @@ struct
 
   module Migration = struct
     let create_jobs_table =
-      Sihl_facade.Migration.create_step
+      Sihl_persistence.Migration.create_step
         ~label:"create jobs table"
         {sql|
 CREATE TABLE IF NOT EXISTS queue_jobs (
@@ -355,7 +355,7 @@ CREATE TABLE IF NOT EXISTS queue_jobs (
     ;;
 
     let migration =
-      Sihl_facade.Migration.(empty "queue" |> add_step create_jobs_table)
+      Sihl_persistence.Migration.(empty "queue" |> add_step create_jobs_table)
     ;;
   end
 

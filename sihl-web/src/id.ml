@@ -27,7 +27,7 @@ let set id req =
    client *)
 let middleware =
   let filter handler req =
-    let id = Sihl_facade.Random.base64 64 in
+    let id = Sihl_core.Random.base64 64 in
     let req = set id req in
     handler req
   in
