@@ -1,3 +1,5 @@
+include Sihl_contract.User
+
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.User.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -37,7 +39,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let search ?(sort = `Desc) ?filter limit = Repo.search sort filter limit
 
   let update_password
-      ?(password_policy = Sihl_facade.User.default_password_policy)
+      ?(password_policy = default_password_policy)
       ~user
       ~old_password
       ~new_password
@@ -46,7 +48,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     =
     let open Lwt.Syntax in
     match
-      Sihl_facade.User.validate_change_password
+      validate_change_password
         user
         ~old_password
         ~new_password
@@ -55,7 +57,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     with
     | Ok () ->
       let updated_user =
-        match Sihl_facade.User.set_user_password user new_password with
+        match set_user_password user new_password with
         | Ok user -> user
         | Error msg ->
           Logs.err (fun m ->
@@ -69,15 +71,13 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
 
   let update_details ~user ~email ~username =
     let open Lwt.Syntax in
-    let updated_user =
-      Sihl_facade.User.set_user_details user ~email ~username
-    in
+    let updated_user = set_user_details user ~email ~username in
     let* () = Repo.update ~user:updated_user in
     find ~user_id:user.id
   ;;
 
   let set_password
-      ?(password_policy = Sihl_facade.User.default_password_policy)
+      ?(password_policy = default_password_policy)
       ~user
       ~password
       ~password_confirmation
@@ -85,17 +85,14 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     =
     let open Lwt.Syntax in
     let* result =
-      Sihl_facade.User.validate_new_password
-        ~password
-        ~password_confirmation
-        ~password_policy
+      validate_new_password ~password ~password_confirmation ~password_policy
       |> Lwt.return
     in
     match result with
     | Error msg -> Lwt.return @@ Error msg
     | Ok () ->
       let updated_user =
-        match Sihl_facade.User.set_user_password user password with
+        match set_user_password user password with
         | Ok user -> user
         | Error msg ->
           Logs.err (fun m ->
@@ -108,9 +105,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
 
   let create ~email ~password ~username ~admin ~confirmed =
     let open Lwt.Syntax in
-    let user =
-      Sihl_facade.User.make ~email ~password ~username ~admin ~confirmed
-    in
+    let user = make ~email ~password ~username ~admin ~confirmed in
     match user with
     | Ok user ->
       let* () = Repo.insert ~user in
@@ -121,12 +116,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let create_user ~email ~password ~username =
     let open Lwt.Syntax in
     let* user =
-      Sihl_facade.User.create
-        ~email
-        ~password
-        ~username
-        ~admin:false
-        ~confirmed:false
+      create ~email ~password ~username ~admin:false ~confirmed:false
     in
     let user =
       match user with
@@ -147,14 +137,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         raise (Sihl_contract.User.Exception "Email already taken")
       | None -> Lwt.return ()
     in
-    let* user =
-      Sihl_facade.User.create
-        ~email
-        ~password
-        ~username
-        ~admin:true
-        ~confirmed:true
-    in
+    let* user = create ~email ~password ~username ~admin:true ~confirmed:true in
     let user =
       match user with
       | Ok user -> user
@@ -166,7 +149,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let register_user
-      ?(password_policy = Sihl_facade.User.default_password_policy)
+      ?(password_policy = default_password_policy)
       ?username
       ~email
       ~password
@@ -176,10 +159,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     let open Lwt.Syntax in
     let open Sihl_contract.User in
     match
-      Sihl_facade.User.validate_new_password
-        ~password
-        ~password_confirmation
-        ~password_policy
+      validate_new_password ~password ~password_confirmation ~password_policy
     with
     | Error msg -> Lwt_result.fail @@ InvalidPasswordProvided msg
     | Ok () ->
@@ -196,7 +176,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     match user with
     | None -> Lwt_result.fail DoesNotExist
     | Some user ->
-      if Sihl_facade.User.matches_password password user
+      if matches_password password user
       then Lwt_result.return user
       else Lwt_result.fail IncorrectPassword
   ;;
@@ -238,3 +218,10 @@ module PostgreSql =
   Make (User_repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
 
 module MariaDb = Make (User_repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+
+module Password_reset = struct
+  module PostgreSql =
+    Password_reset.Make (PostgreSql) (Sihl_token.JwtPostgreSql)
+
+  module MariaDb = Password_reset.Make (MariaDb) (Sihl_token.JwtMariaDb)
+end

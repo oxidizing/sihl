@@ -1,3 +1,5 @@
+include Sihl_contract.Queue
+
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Queue.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -161,7 +163,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
         ~f:scheduled_function
         ~label:"job_queue"
     in
-    stop_schedule := Some (Sihl_facade.Schedule.schedule schedule);
+    stop_schedule := Some (Sihl_core.Schedule.schedule schedule);
     Lwt.return ()
   ;;
 
@@ -182,7 +184,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
     Sihl_core.Container.create_lifecycle
       Sihl_contract.Queue.name
       ~dependencies:(fun () ->
-        List.cons (Sihl_facade.Schedule.lifecycle ()) Repo.lifecycles)
+        List.cons Sihl_core.Schedule.lifecycle Repo.lifecycles)
       ~start
       ~stop
   ;;

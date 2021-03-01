@@ -1,11 +1,13 @@
+include Sihl_contract.Email_template
+
 let log_src =
   Logs.Src.create ("sihl.service." ^ Sihl_contract.Email_template.name)
 ;;
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module Make (Repo : Sihl_email_template_repo.Sig) :
-  Sihl_contract.Email_template.Sig = struct
+module Make (Repo : Template_repo_sql.Sig) : Sihl_contract.Email_template.Sig =
+struct
   let get id = Repo.get id
   let get_by_label label = Repo.get_by_label label
 
@@ -24,7 +26,7 @@ module Make (Repo : Sihl_email_template_repo.Sig) :
       Logs.err (fun m ->
           m
             "Could not create template %a"
-            Sihl_facade.Email_template.pp
+            Sihl_contract.Email_template.pp
             template);
       raise (Sihl_contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
@@ -40,7 +42,7 @@ module Make (Repo : Sihl_email_template_repo.Sig) :
       Logs.err (fun m ->
           m
             "Could not update template %a"
-            Sihl_facade.Email_template.pp
+            Sihl_contract.Email_template.pp
             template);
       raise (Sihl_contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
@@ -65,9 +67,7 @@ module Make (Repo : Sihl_email_template_repo.Sig) :
 end
 
 module PostgreSql =
-  Make
-    (Sihl_email_template_repo.MakePostgreSql
-       (Sihl_persistence.Migration.PostgreSql))
+  Make (Template_repo_sql.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
 
 module MariaDb =
-  Make (Sihl_email_template_repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+  Make (Template_repo_sql.MakeMariaDb (Sihl_persistence.Migration.MariaDb))

@@ -1,7 +1,7 @@
 open Lwt.Syntax
 module Core = Sihl_core
 
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Database.name)
+let log_src = Logs.Src.create "sihl.service.database"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 

@@ -1,6 +1,6 @@
 module Database = Sihl_persistence.Database
 module Cleaner = Sihl_core.Cleaner
-module Migration = Sihl_facade.Migration
+module Migration = Sihl_persistence.Migration
 
 module Model = struct
   module Data = struct
