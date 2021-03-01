@@ -51,52 +51,58 @@ format: ## Format the codebase with ocamlformat
 sihl: all ## Run the produced executable of the included Sihl app
 	ROOT_PATH=$(CURDIR)/example opam exec -- dune exec --root . example/run/run.exe $(ARGS)
 
-.PHONY: test-unit
-test-unit: build
+.PHONY: test
+test: build	## Run unit tests with dune and then all sihl tests
 	SIHL_ENV=test opam exec -- dune test
+	SIHL_ENV=test ./_build/default/sihl/test/web_bearer_token.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_flash.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_session.exe
+	SIHL_ENV=test ./_build/default/sihl/test/database_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl/test/database_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_csrf_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_user_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_csrf_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_user_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_http.exe
 
-.PHONY: test-memory
-test-memory: build
-	SIHL_ENV=test ./_build/default/sihl-email/test/template.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/bearer_token.exe
-	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_inmemory.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/flash.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/session.exe
-	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_inmemory.exe
-
-.PHONY: test-mariadb
-test-mariadb: build
-	SIHL_ENV=test ./_build/default/sihl-email/test/email_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-persistence/test/database_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-storage/test/storage_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-user/test/user_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-token/test/mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_mariadb.exe
+.PHONY: test-cache
+test-cache: build
 	SIHL_ENV=test ./_build/default/sihl-cache/test/mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/user_mariadb.exe
-	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_mariadb.exe
-
-.PHONY: test-postgresql
-test-postgresql: build
-	SIHL_ENV=test ./_build/default/sihl-email/test/email_postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-persistence/test/database_postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-user/test/user_postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-token/test/postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_postgresql.exe
 	SIHL_ENV=test ./_build/default/sihl-cache/test/postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/csrf_postgresql.exe
-	SIHL_ENV=test ./_build/default/sihl-web/test/user_postgresql.exe
+
+.PHONY: test-email
+test-email: build
+	SIHL_ENV=test ./_build/default/sihl-email/test/template.exe
+	SIHL_ENV=test ./_build/default/sihl-email/test/email_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-email/test/email_postgresql.exe
+
+.PHONE: test-queue
+test-queue: build
+	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_inmemory.exe
+	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_mariadb.exe
 	SIHL_ENV=test ./_build/default/sihl-queue/test/queue_postgresql.exe
 
-.PHONY: test-http
-test-http: build
-	SIHL_ENV=test ./_build/default/sihl-web/test/http.exe
+.PHONE: test-storage
+test-storage: build
+	SIHL_ENV=test ./_build/default/sihl-storage/test/storage_mariadb.exe
 
-.PHONY: test
-test: test-unit test-memory test-http test-postgresql test-mariadb
+.PHONE: test-token
+test-token: build
+	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_inmemory.exe
+	SIHL_ENV=test ./_build/default/sihl-token/test/mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-token/test/postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-token/test/jwt_postgresql.exe
+
+.PHONE: test-user
+test-user: build
+	SIHL_ENV=test ./_build/default/sihl-user/test/user_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-user/test/user_postgresql.exe
+	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_mariadb.exe
+	SIHL_ENV=test ./_build/default/sihl-user/test/password_reset_postgresql.exe
+
+.PHONY: test-all
+test-all: test test-cache test-email test-queue test-storage test-token test-user
 
 .PHONY: utop
 utop: ## Run a REPL and link with the project's libraries

@@ -20,10 +20,10 @@ let services =
   ; Sihl_email.Template.PostgreSql.register ()
   ; Sihl_user.PostgreSql.register ()
   ; Sihl_queue.PostgreSql.register ~jobs ()
-  ; Sihl_user.Password_reset.PostgreSql.register ()
+  ; Service.PasswordResetService.register ()
   ; Sihl_email.Smtp.register ()
-  ; Sihl_core.Schedule.register ()
-  ; Sihl.Web.register Web.Route.all
+  ; Sihl.Schedule.register ()
+  ; Sihl.Web.Http.register ~routers:Web.Route.all ()
   ]
 ;;
 

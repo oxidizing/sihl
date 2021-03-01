@@ -1,19 +1,19 @@
-include Sihl_contract.Email_template
+include Sihl.Contract.Email_template
 
 let log_src =
-  Logs.Src.create ("sihl.service." ^ Sihl_contract.Email_template.name)
+  Logs.Src.create ("sihl.service." ^ Sihl.Contract.Email_template.name)
 ;;
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module Make (Repo : Template_repo_sql.Sig) : Sihl_contract.Email_template.Sig =
+module Make (Repo : Template_repo_sql.Sig) : Sihl.Contract.Email_template.Sig =
 struct
   let get id = Repo.get id
   let get_by_label label = Repo.get_by_label label
 
   let create ?html ~label text =
     let open Lwt.Syntax in
-    let open Sihl_contract.Email_template in
+    let open Sihl.Contract.Email_template in
     let now = Ptime_clock.now () in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
     let template =
@@ -26,9 +26,9 @@ struct
       Logs.err (fun m ->
           m
             "Could not create template %a"
-            Sihl_contract.Email_template.pp
+            Sihl.Contract.Email_template.pp
             template);
-      raise (Sihl_contract.Email.Exception "Could not create email template")
+      raise (Sihl.Contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;
 
@@ -42,9 +42,9 @@ struct
       Logs.err (fun m ->
           m
             "Could not update template %a"
-            Sihl_contract.Email_template.pp
+            Sihl.Contract.Email_template.pp
             template);
-      raise (Sihl_contract.Email.Exception "Could not create email template")
+      raise (Sihl.Contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;
 
@@ -52,8 +52,8 @@ struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Email_template.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Email_template.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start
       ~stop
@@ -62,12 +62,12 @@ struct
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Sihl_core.Container.Service.create lifecycle
+    Sihl.Container.Service.create lifecycle
   ;;
 end
 
 module PostgreSql =
-  Make (Template_repo_sql.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+  Make (Template_repo_sql.MakePostgreSql (Sihl.Database.Migration.PostgreSql))
 
 module MariaDb =
-  Make (Template_repo_sql.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+  Make (Template_repo_sql.MakeMariaDb (Sihl.Database.Migration.MariaDb))

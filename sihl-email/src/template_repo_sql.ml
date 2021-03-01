@@ -1,15 +1,15 @@
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.lifecycle list
+  val lifecycles : Sihl.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val get : string -> Sihl_contract.Email_template.t option Lwt.t
-  val get_by_label : string -> Sihl_contract.Email_template.t option Lwt.t
-  val insert : Sihl_contract.Email_template.t -> unit Lwt.t
-  val update : Sihl_contract.Email_template.t -> unit Lwt.t
+  val get : string -> Sihl.Contract.Email_template.t option Lwt.t
+  val get_by_label : string -> Sihl.Contract.Email_template.t option Lwt.t
+  val insert : Sihl.Contract.Email_template.t -> unit Lwt.t
+  val update : Sihl.Contract.Email_template.t -> unit Lwt.t
 end
 
 let template =
-  let open Sihl_contract.Email_template in
+  let open Sihl.Contract.Email_template in
   let encode m =
     Ok (m.id, (m.label, (m.text, (m.html, (m.created_at, m.updated_at)))))
   in
@@ -25,14 +25,12 @@ let template =
          (tup2 string (tup2 string (tup2 (option string) (tup2 ptime ptime))))))
 ;;
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Sihl_persistence.Database.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Sihl.Database.lifecycle; MigrationService.lifecycle ]
 
   module Sql = struct
-    module Model = Sihl_contract.Email_template
+    module Model = Sihl.Contract.Email_template
 
     let get_request =
       Caqti_request.find_opt
@@ -58,10 +56,9 @@ struct
     ;;
 
     let get id =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request id
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let get_by_label_request =
@@ -88,10 +85,9 @@ struct
     ;;
 
     let get_by_label label =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_by_label_request label
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let insert_request =
@@ -117,10 +113,9 @@ struct
     ;;
 
     let insert template =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request template
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let update_request =
@@ -139,10 +134,9 @@ struct
     ;;
 
     let update template =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request template
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let clean_request =
@@ -154,22 +148,20 @@ struct
     ;;
 
     let clean () =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request ()
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
     ;;
   end
 
   module Migration = struct
     let fix_collation =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"fix collation"
         "SET collation_server = 'utf8mb4_unicode_ci'"
     ;;
 
     let create_templates_table =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -187,7 +179,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
     ;;
 
     let rename_name_column =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"rename name column"
         {sql|
 ALTER TABLE email_templates
@@ -196,7 +188,7 @@ CHANGE COLUMN `name` label VARCHAR(128) NOT NULL;
     ;;
 
     let add_updated_at_column =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE email_templates
@@ -205,7 +197,7 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
     ;;
 
     let make_html_nullable =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"make html nullable"
         {sql|
 ALTER TABLE email_templates
@@ -214,7 +206,7 @@ MODIFY content_html TEXT NULL;
     ;;
 
     let migration () =
-      Sihl_persistence.Migration.(
+      Sihl.Database.Migration.(
         empty "email"
         |> add_step fix_collation
         |> add_step create_templates_table
@@ -228,21 +220,19 @@ MODIFY content_html TEXT NULL;
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
+  let register_cleaner () = Sihl.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
   let get_by_label = Sql.get_by_label
   let insert = Sql.insert
   let update = Sql.update
 end
 
-module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
-  let lifecycles =
-    [ Sihl_persistence.Database.lifecycle; MigrationService.lifecycle ]
-  ;;
+  let lifecycles = [ Sihl.Database.lifecycle; MigrationService.lifecycle ]
 
   module Sql = struct
-    module Model = Sihl_contract.Email_template
+    module Model = Sihl.Contract.Email_template
 
     let get_request =
       Caqti_request.find_opt
@@ -262,10 +252,9 @@ struct
     ;;
 
     let get id =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_request id
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let get_by_label_request =
@@ -286,10 +275,9 @@ struct
     ;;
 
     let get_by_label label =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt get_by_label_request label
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let insert_request =
@@ -315,10 +303,9 @@ struct
     ;;
 
     let insert template =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec insert_request template
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let update_request =
@@ -337,10 +324,9 @@ struct
     ;;
 
     let update template =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.exec update_request template
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+          |> Lwt.map Sihl.Database.raise_error)
     ;;
 
     let clean_request =
@@ -350,16 +336,14 @@ struct
     ;;
 
     let clean () =
-      Sihl_persistence.Database.query
-        (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request ()
-          |> Lwt.map Sihl_persistence.Database.raise_error)
+      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+          Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
     ;;
   end
 
   module Migration = struct
     let create_templates_table =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"create templates table"
         {sql|
 CREATE TABLE IF NOT EXISTS email_templates (
@@ -377,7 +361,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
     ;;
 
     let rename_name_column =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"rename name column"
         {sql|
 ALTER TABLE email_templates
@@ -386,7 +370,7 @@ RENAME COLUMN name TO label;
     ;;
 
     let add_updated_at_column =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE email_templates
@@ -395,7 +379,7 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     ;;
 
     let make_html_nullable =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"make html nullable"
         {sql|
 ALTER TABLE email_templates
@@ -404,7 +388,7 @@ ALTER COLUMN content_html DROP NOT NULL;
     ;;
 
     let migration () =
-      Sihl_persistence.Migration.(
+      Sihl.Database.Migration.(
         empty "email"
         |> add_step create_templates_table
         |> add_step rename_name_column
@@ -417,7 +401,7 @@ ALTER COLUMN content_html DROP NOT NULL;
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Sihl_core.Cleaner.register_cleaner Sql.clean
+  let register_cleaner () = Sihl.Cleaner.register_cleaner Sql.clean
   let get = Sql.get
   let get_by_label = Sql.get_by_label
   let insert = Sql.insert

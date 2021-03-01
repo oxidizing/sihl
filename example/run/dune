@@ -1,3 +1,4 @@
 (executable
  (name run)
- (libraries sihl web database command caqti-driver-postgresql))
+ (libraries sihl sihl-email sihl-token sihl-queue web database command
+   caqti-driver-postgresql))

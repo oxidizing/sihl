@@ -1,6 +1,0 @@
-(library
- (name sihl_web)
- (public_name sihl-web)
- (libraries sihl-core sihl-contract opium)
- (preprocess
-  (pps ppx_sexp_conv)))

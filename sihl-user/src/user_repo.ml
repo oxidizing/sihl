@@ -1,13 +1,13 @@
 open Lwt.Syntax
-module Database = Sihl_persistence.Database
-module Cleaner = Sihl_core.Cleaner
-module Migration = Sihl_persistence.Migration
-module Model = Sihl_contract.User
+module Database = Sihl.Database
+module Cleaner = Sihl.Cleaner
+module Migration = Sihl.Database.Migration
+module Model = Sihl.Contract.User
 
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val lifecycles : Sihl_core.Container.lifecycle list
+  val lifecycles : Sihl.Container.lifecycle list
 
   val search
     :  [< `Desc | `Asc ]
@@ -22,7 +22,7 @@ module type Sig = sig
 end
 
 let user =
-  let open Sihl_contract.User in
+  let open Sihl.Contract.User in
   let encode m =
     Ok
       ( m.id
@@ -66,7 +66,7 @@ let user =
                   (tup2 string (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))
 ;;
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
   let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
 
     let add_updated_at_column =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE user_users
@@ -147,11 +147,7 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
   ;;
 
   let requests =
-    Sihl_persistence.Database.prepare_requests
-      search_query
-      filter_fragment
-      "id"
-      user
+    Sihl.Database.prepare_requests search_query filter_fragment "id" user
   ;;
 
   let found_rows_request =
@@ -163,15 +159,10 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
   ;;
 
   let search sort filter limit =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* result =
-          Sihl_persistence.Database.run_request
-            connection
-            requests
-            sort
-            filter
-            limit
+          Sihl.Database.run_request connection requests sort filter limit
         in
         let* amount =
           Connection.find found_rows_request () |> Lwt.map Result.get_ok
@@ -316,7 +307,7 @@ ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
   let register_cleaner () = Cleaner.register_cleaner clean
 end
 
-module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
   let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
@@ -343,7 +334,7 @@ CREATE TABLE IF NOT EXISTS user_users (
     ;;
 
     let add_updated_at_column =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
 ALTER TABLE user_users
@@ -382,11 +373,7 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   ;;
 
   let requests =
-    Sihl_persistence.Database.prepare_requests
-      search_query
-      filter_fragment
-      "id"
-      user
+    Sihl.Database.prepare_requests search_query filter_fragment "id" user
   ;;
 
   let found_rows_request =
@@ -398,15 +385,10 @@ ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   ;;
 
   let search sort filter limit =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let* result =
-          Sihl_persistence.Database.run_request
-            connection
-            requests
-            sort
-            filter
-            limit
+          Sihl.Database.run_request connection requests sort filter limit
         in
         let* amount =
           Connection.find found_rows_request () |> Lwt.map Result.get_ok

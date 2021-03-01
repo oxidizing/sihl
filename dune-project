@@ -2,7 +2,7 @@
 (generate_opam_files true)
 
 (name sihl)
-(version 0.4.0)
+(version 0.3.0)
 
 (authors
   "Josef Erben"
@@ -17,9 +17,9 @@
 (documentation "https://oxidizing.github.io/sihl/")
 
 (package
- (name sihl-core)
- (synopsis "The core of the Sihl web framework")
- (description "Modules for dealing with configuration, service lifecycle, app, CLI commands, logging, random number generation and schedules.")
+ (name sihl)
+ (synopsis "The Sihl web framework")
+ (description "Modules for dealing with configuration, service lifecycle, app, CLI commands, logging, random number generation, middlewares and database.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -40,39 +40,12 @@
   (uuidm (>= 0.9.7))
   (ppx_fields_conv (>= v0.13.0))
   (ppx_sexp_conv (>= v0.13.0))
-
-  (cohttp-lwt-unix (and (>= 2.5.4) :with-test))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
-
-(package
- (name sihl-contract)
- (synopsis "Sihl serivce interfaces")
- (description "Module signatures and types that can be implemented to create services that can be registered in a Sihl app. The interfaces define a standard for the Sihl ecosystem.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl-core (= :version))
   (opium (>= 0.20.0))
-  (caqti-lwt (>= 1.2.0))))
-
-(package
- (name sihl-persistence)
- (synopsis "Sihl services to deal with data persistence")
- (description "Modules for database pools, transactions, migrations and integration tests involving the database layer.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
-
-(package
- (name sihl-web)
- (synopsis "Sihl HTTP service and middlewares")
- (description "An Opium based HTTP service and a set of middlewares to implement traditional web forms and JSON APIs.")
- (depends
-  dune
-  (ocaml (>= 4.08.0))
+  (sihl-token (and (= :version) :with-test))
+  (sihl-user (and (= :version) :with-test))
+  (cohttp-lwt-unix (and (>= 2.5.4) :with-test))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -82,17 +55,18 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-persistence (= :version))
+  (sihl (= :version))
+  (sihl-token (and (= :version) :with-test))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
  (name sihl-cache)
- (synopsis "A module that provides services to store and retrieve data with key-value semantics.")
+ (synopsis "A module that provides services to store and retrieve data with key-value semantics")
  (description "Depending on the backend the cache service can be used to improve performance or to persist arbitrary data.")
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-persistence (= :version))
+  (sihl (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -102,7 +76,7 @@
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-persistence (= :version))
+  (sihl (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -113,7 +87,7 @@ This service can be used to handle large binary blobs that are typically not sto
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-persistence (= :version))
+  (sihl (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
 (package
@@ -125,7 +99,7 @@ Modules for sending emails using Lwt. Various email transports are provided that
   dune
   (ocaml (>= 4.08.0))
   (letters (>= 0.2.1))
-  (sihl-persistence (= :version))
+  (sihl (= :version))
   (cohttp-lwt-unix (>= 2.5.4))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 
@@ -137,24 +111,5 @@ Modules for putting and working jobs on queues. Various queue backends are provi
  (depends
   dune
   (ocaml (>= 4.08.0))
-  (sihl-persistence (= :version))
+  (sihl (= :version))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
-
-(package
- (name sihl)
- (synopsis "A modular functional web framework")
- (description "Build web apps fast with long-term maintainability in mind.")
- (depends
-  ;; General system dependencies
-  dune
-  (ocaml (>= 4.08.0))
-  (sihl-core (= :version))
-  (sihl-contract (= :version))
-  (sihl-persistence (= :version))
-  (sihl-web (= :version))
-  (sihl-token (= :version))
-  (sihl-cache (= :version))
-  (sihl-user (= :version))
-  (sihl-queue (= :version))
-  (sihl-storage (= :version))
-  (sihl-email (= :version))))

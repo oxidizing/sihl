@@ -1,5 +1,5 @@
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.lifecycle list
+  val lifecycles : Sihl.Container.lifecycle list
   val insert : string -> unit Lwt.t
   val has : string -> bool Lwt.t
   val delete : string -> unit Lwt.t
@@ -20,17 +20,16 @@ module InMemory : Sig = struct
   let delete token = Lwt.return @@ Hashtbl.remove store token
 
   let register_cleaner () =
-    Sihl_core.Cleaner.register_cleaner (fun () ->
-        Lwt.return (Hashtbl.clear store))
+    Sihl.Cleaner.register_cleaner (fun () -> Lwt.return (Hashtbl.clear store))
   ;;
 
   let register_migration () = ()
 end
 
 module MariaDb : Sig = struct
-  module Migration = Sihl_persistence.Migration.MariaDb
+  module Migration = Sihl.Database.Migration.MariaDb
 
-  let lifecycles = [ Sihl_persistence.Database.lifecycle; Migration.lifecycle ]
+  let lifecycles = [ Sihl.Database.lifecycle; Migration.lifecycle ]
 
   let insert_request =
     Caqti_request.exec
@@ -48,10 +47,9 @@ module MariaDb : Sig = struct
 
   let insert token =
     let now = Ptime_clock.now () in
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec insert_request (token, now)
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let find_request_opt =
@@ -68,10 +66,9 @@ module MariaDb : Sig = struct
   ;;
 
   let find_opt token =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.find_opt find_request_opt token
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let has token =
@@ -90,20 +87,19 @@ module MariaDb : Sig = struct
   ;;
 
   let delete token =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec delete_request token
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let fix_collation =
-    Sihl_persistence.Migration.create_step
+    Sihl.Database.Migration.create_step
       ~label:"fix collation"
       "SET collation_server = 'utf8mb4_unicode_ci';"
   ;;
 
   let create_jobs_table =
-    Sihl_persistence.Migration.create_step
+    Sihl.Database.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
 CREATE TABLE IF NOT EXISTS token_blacklist (
@@ -116,7 +112,7 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let migration =
-    Sihl_persistence.Migration.(
+    Sihl.Database.Migration.(
       empty "tokens_blacklist"
       |> add_step fix_collation
       |> add_step create_jobs_table)
@@ -129,19 +125,17 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let clean () =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request ()
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
   ;;
 
-  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
+  let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end
 
 module PostgreSql : Sig = struct
-  module Migration = Sihl_persistence.Migration.PostgreSql
+  module Migration = Sihl.Database.Migration.PostgreSql
 
-  let lifecycles = [ Sihl_persistence.Database.lifecycle; Migration.lifecycle ]
+  let lifecycles = [ Sihl.Database.lifecycle; Migration.lifecycle ]
 
   let insert_request =
     Caqti_request.exec
@@ -159,10 +153,9 @@ module PostgreSql : Sig = struct
 
   let insert token =
     let now = Ptime_clock.now () in
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec insert_request (token, now)
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let find_request_opt =
@@ -179,10 +172,9 @@ module PostgreSql : Sig = struct
   ;;
 
   let find_opt token =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.find_opt find_request_opt token
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let has token =
@@ -201,14 +193,13 @@ module PostgreSql : Sig = struct
   ;;
 
   let delete token =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec delete_request token
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let create_jobs_table =
-    Sihl_persistence.Migration.create_step
+    Sihl.Database.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
 CREATE TABLE IF NOT EXISTS token_blacklist (
@@ -221,7 +212,7 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let migration =
-    Sihl_persistence.Migration.(
+    Sihl.Database.Migration.(
       empty "tokens_blacklist" |> add_step create_jobs_table)
   ;;
 
@@ -232,11 +223,9 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   ;;
 
   let clean () =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request ()
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+        Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
   ;;
 
-  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
+  let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end

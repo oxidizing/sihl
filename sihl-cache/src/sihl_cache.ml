@@ -1,10 +1,10 @@
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Cache.name)
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.Cache.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let session_key_nr_bytes = 20
 
-module MakeSql (Repo : Repo_sql.Sig) : Sihl_contract.Cache.Sig = struct
+module MakeSql (Repo : Repo_sql.Sig) : Sihl.Contract.Cache.Sig = struct
   let find = Repo.find
 
   let set (k, v) =
@@ -30,8 +30,8 @@ module MakeSql (Repo : Repo_sql.Sig) : Sihl_contract.Cache.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Cache.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Cache.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start
       ~stop
@@ -40,15 +40,11 @@ module MakeSql (Repo : Repo_sql.Sig) : Sihl_contract.Cache.Sig = struct
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Sihl_core.Container.Service.create lifecycle
+    Sihl.Container.Service.create lifecycle
   ;;
 end
 
-module MigrationPostgreSql =
-  Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.PostgreSql)
+module PostgreSql =
+  MakeSql (Repo_sql.MakePostgreSql (Sihl.Database.Migration.PostgreSql))
 
-module MigrationMariaDb =
-  Sihl_persistence.Migration.Make (Sihl_persistence.Migration_repo.MariaDb)
-
-module PostgreSql = MakeSql (Repo_sql.MakePostgreSql (MigrationPostgreSql))
-module MariaDb = MakeSql (Repo_sql.MakeMariaDb (MigrationMariaDb))
+module MariaDb = MakeSql (Repo_sql.MakeMariaDb (Sihl.Database.Migration.MariaDb))

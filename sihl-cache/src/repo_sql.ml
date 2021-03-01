@@ -1,5 +1,5 @@
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.lifecycle list
+  val lifecycles : Sihl.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val find : string -> string option Lwt.t
@@ -7,8 +7,6 @@ module type Sig = sig
   val update : string * string -> unit Lwt.t
   val delete : string -> unit Lwt.t
 end
-
-module Database = Sihl_persistence.Database
 
 (* Common functions that are shared by SQL implementations *)
 
@@ -25,8 +23,8 @@ let find_request =
 ;;
 
 let find key =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.find_opt find_request key |> Lwt.map Database.raise_error)
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.find_opt find_request key |> Lwt.map Sihl.Database.raise_error)
 ;;
 
 let insert_request =
@@ -44,8 +42,9 @@ let insert_request =
 ;;
 
 let insert key_value =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec insert_request key_value |> Lwt.map Database.raise_error)
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.exec insert_request key_value
+      |> Lwt.map Sihl.Database.raise_error)
 ;;
 
 let update_request =
@@ -59,8 +58,9 @@ let update_request =
 ;;
 
 let update key_value =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec update_request key_value |> Lwt.map Database.raise_error)
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.exec update_request key_value
+      |> Lwt.map Sihl.Database.raise_error)
 ;;
 
 let delete_request =
@@ -73,20 +73,20 @@ let delete_request =
 ;;
 
 let delete key =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec delete_request key |> Lwt.map Database.raise_error)
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.exec delete_request key |> Lwt.map Sihl.Database.raise_error)
 ;;
 
 let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE cache;"
 
 let clean () =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec clean_request () |> Lwt.map Database.raise_error)
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
 ;;
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
-  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
+  let lifecycles = [ Sihl.Database.lifecycle; MigrationService.lifecycle ]
   let find = find
   let insert = insert
   let update = update
@@ -95,7 +95,7 @@ struct
 
   module Migration = struct
     let create_cache_table =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"create cache table"
         {sql|
 CREATE TABLE IF NOT EXISTS cache (
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS cache (
     ;;
 
     let migration () =
-      Sihl_persistence.Migration.(empty "cache" |> add_step create_cache_table)
+      Sihl.Database.Migration.(empty "cache" |> add_step create_cache_table)
     ;;
   end
 
@@ -118,12 +118,12 @@ CREATE TABLE IF NOT EXISTS cache (
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
+  let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end
 
-module MakePostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
-  let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
+  let lifecycles = [ Sihl.Database.lifecycle; MigrationService.lifecycle ]
   let find = find
   let insert = insert
   let update = update
@@ -132,7 +132,7 @@ struct
 
   module Migration = struct
     let create_cache_table =
-      Sihl_persistence.Migration.create_step
+      Sihl.Database.Migration.create_step
         ~label:"create cache table"
         {sql|
 CREATE TABLE IF NOT EXISTS cache (
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS cache (
     ;;
 
     let migration () =
-      Sihl_persistence.Migration.(empty "cache" |> add_step create_cache_table)
+      Sihl.Database.Migration.(empty "cache" |> add_step create_cache_table)
     ;;
   end
 
@@ -155,5 +155,5 @@ CREATE TABLE IF NOT EXISTS cache (
     MigrationService.register_migration (Migration.migration ())
   ;;
 
-  let register_cleaner () = Sihl_core.Cleaner.register_cleaner clean
+  let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end

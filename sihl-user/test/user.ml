@@ -38,9 +38,9 @@ let validate_invalid_password _ () =
   Lwt.return ()
 ;;
 
-module Make (UserService : Sihl_contract.User.Sig) = struct
+module Make (UserService : Sihl.Contract.User.Sig) = struct
   let json_serialization _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* user =
       UserService.create_user
         ~email:"foobar@example.com"
@@ -57,7 +57,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
   ;;
 
   let update_details _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* user =
       UserService.create_user
         ~email:"foobar@example.com"
@@ -79,7 +79,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
   ;;
 
   let update_password _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* user =
       UserService.create_user
         ~email:"foobar@example.com"
@@ -110,7 +110,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
   ;;
 
   let update_password_fails _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* user =
       UserService.create_user
         ~email:"foobar@example.com"
@@ -135,7 +135,7 @@ module Make (UserService : Sihl_contract.User.Sig) = struct
   ;;
 
   let filter_users_by_email _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* user1 =
       UserService.create_user
         ~email:"user1@example.com"

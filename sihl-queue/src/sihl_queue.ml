@@ -1,6 +1,6 @@
-include Sihl_contract.Queue
+include Sihl.Contract.Queue
 
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Queue.name)
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.Queue.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
@@ -10,9 +10,9 @@ let stop_schedule : (unit -> unit) option ref = ref None
 module Job_instance = Job_instance
 module Workable_job = Workable_job
 
-module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
+module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let dispatch job ?delay input =
-    let open Sihl_contract.Queue in
+    let open Sihl.Contract.Queue in
     let name = job.name in
     Logs.debug (fun m -> m "Dispatching job %s" name);
     let now = Ptime_clock.now () in
@@ -158,12 +158,12 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
         Lwt.return ())
     in
     let schedule =
-      Sihl_core.Schedule.create
-        Sihl_core.Schedule.every_second
+      Sihl.Schedule.create
+        Sihl.Schedule.every_second
         ~f:scheduled_function
         ~label:"job_queue"
     in
-    stop_schedule := Some (Sihl_core.Schedule.schedule schedule);
+    stop_schedule := Some (Sihl.Schedule.schedule schedule);
     Lwt.return ()
   ;;
 
@@ -181,10 +181,10 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
   ;;
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Queue.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Queue.name
       ~dependencies:(fun () ->
-        List.cons Sihl_core.Schedule.lifecycle Repo.lifecycles)
+        List.cons Sihl.Schedule.lifecycle Repo.lifecycles)
       ~start
       ~stop
   ;;
@@ -194,12 +194,12 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Queue.Sig = struct
     Repo.register_cleaner ();
     let jobs_to_register = jobs |> List.map Workable_job.of_job in
     registered_jobs := List.concat [ !registered_jobs; jobs_to_register ];
-    Sihl_core.Container.Service.create lifecycle
+    Sihl.Container.Service.create lifecycle
   ;;
 end
 
 module InMemory = Make (Repo.InMemory)
-module MariaDb = Make (Repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+module MariaDb = Make (Repo.MakeMariaDb (Sihl.Database.Migration.MariaDb))
 
 module PostgreSql =
-  Make (Repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+  Make (Repo.MakePostgreSql (Sihl.Database.Migration.PostgreSql))

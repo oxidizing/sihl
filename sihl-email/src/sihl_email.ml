@@ -1,10 +1,10 @@
-include Sihl_contract.Email
+include Sihl.Contract.Email
 
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Email.name)
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.Email.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let dev_inbox : Sihl_contract.Email.t list ref = ref []
+let dev_inbox : Sihl.Contract.Email.t list ref = ref []
 
 module DevInbox = struct
   let inbox () = !dev_inbox
@@ -13,7 +13,7 @@ module DevInbox = struct
 end
 
 let print email =
-  let open Sihl_contract.Email in
+  let open Sihl.Contract.Email in
   Logs.info (fun m ->
       m
         {|
@@ -39,11 +39,11 @@ Html:
 ;;
 
 let should_intercept () =
-  let is_production = Sihl_core.Configuration.is_production () in
+  let is_production = Sihl.Configuration.is_production () in
   let bypass =
     Option.value
       ~default:false
-      (Sihl_core.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
+      (Sihl.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
   in
   match is_production, bypass with
   | false, true -> false
@@ -52,11 +52,11 @@ let should_intercept () =
 ;;
 
 let intercept sender email =
-  let is_development = Sihl_core.Configuration.is_development () in
+  let is_development = Sihl.Configuration.is_development () in
   let console =
     Option.value
       ~default:is_development
-      (Sihl_core.Configuration.read_bool "EMAIL_CONSOLE")
+      (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
   in
   let () = if console then print email else () in
   if should_intercept ()
@@ -64,7 +64,7 @@ let intercept sender email =
   else sender email
 ;;
 
-module Smtp : Sihl_contract.Email.Sig = struct
+module Smtp : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   type config =
@@ -118,7 +118,7 @@ module Smtp : Sihl_contract.Email.Sig = struct
       config
   ;;
 
-  let send' (email : Sihl_contract.Email.t) =
+  let send' (email : Sihl.Contract.Email.t) =
     let recipients =
       List.concat
         [ [ Letters.To email.recipient ]
@@ -131,14 +131,14 @@ module Smtp : Sihl_contract.Email.Sig = struct
       | Some html -> Letters.Html html
       | None -> Letters.Plain email.text
     in
-    let sender = (Sihl_core.Configuration.read schema).sender in
-    let username = (Sihl_core.Configuration.read schema).username in
-    let password = (Sihl_core.Configuration.read schema).password in
-    let hostname = (Sihl_core.Configuration.read schema).hostname in
-    let port = (Sihl_core.Configuration.read schema).port in
-    let with_starttls = (Sihl_core.Configuration.read schema).start_tls in
-    let ca_path = (Sihl_core.Configuration.read schema).ca_path in
-    let ca_cert = (Sihl_core.Configuration.read schema).ca_cert in
+    let sender = (Sihl.Configuration.read schema).sender in
+    let username = (Sihl.Configuration.read schema).username in
+    let password = (Sihl.Configuration.read schema).password in
+    let hostname = (Sihl.Configuration.read schema).hostname in
+    let port = (Sihl.Configuration.read schema).port in
+    let with_starttls = (Sihl.Configuration.read schema).start_tls in
+    let ca_path = (Sihl.Configuration.read schema).ca_path in
+    let ca_cert = (Sihl.Configuration.read schema).ca_cert in
     let config =
       Letters.Config.make ~username ~password ~hostname ~with_starttls
       |> Letters.Config.set_port port
@@ -155,7 +155,7 @@ module Smtp : Sihl_contract.Email.Sig = struct
       ~body
     |> function
     | Ok message -> Letters.send ~config ~sender ~recipients ~message
-    | Error msg -> raise (Sihl_contract.Email.Exception msg)
+    | Error msg -> raise (Sihl.Contract.Email.Exception msg)
   ;;
 
   let send email = intercept send' email
@@ -163,28 +163,28 @@ module Smtp : Sihl_contract.Email.Sig = struct
 
   let start () =
     (* Make sure that configuration is valid *)
-    if Sihl_core.Configuration.is_production ()
-    then Sihl_core.Configuration.require schema
+    if Sihl.Configuration.is_production ()
+    then Sihl.Configuration.require schema
     else ();
     (* if mail is intercepted, don't punish user for not providing SMTP
        credentials *)
-    if should_intercept () then () else Sihl_core.Configuration.require schema;
+    if should_intercept () then () else Sihl.Configuration.require schema;
     Lwt.return ()
   ;;
 
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle Sihl_contract.Email.name ~start ~stop
+    Sihl.Container.create_lifecycle Sihl.Contract.Email.name ~start ~stop
   ;;
 
   let register () =
-    let configuration = Sihl_core.Configuration.make ~schema () in
-    Sihl_core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl.Configuration.make ~schema () in
+    Sihl.Container.Service.create ~configuration lifecycle
   ;;
 end
 
-module SendGrid : Sihl_contract.Email.Sig = struct
+module SendGrid : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   let body ~recipient ~subject ~sender ~content =
@@ -236,8 +236,8 @@ module SendGrid : Sihl_contract.Email.Sig = struct
 
   let send' email =
     let open Lwt.Syntax in
-    let open Sihl_contract.Email in
-    let token = (Sihl_core.Configuration.read schema).api_key in
+    let open Sihl.Contract.Email in
+    let token = (Sihl.Configuration.read schema).api_key in
     let headers =
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token
@@ -270,7 +270,7 @@ module SendGrid : Sihl_contract.Email.Sig = struct
              %s"
             status
             body);
-      raise (Sihl_contract.Email.Exception "Failed to send email")
+      raise (Sihl.Contract.Email.Exception "Failed to send email")
   ;;
 
   let send email = intercept send' email
@@ -278,32 +278,33 @@ module SendGrid : Sihl_contract.Email.Sig = struct
 
   let start () =
     (* Make sure that configuration is valid *)
-    Sihl_core.Configuration.require schema;
+    Sihl.Configuration.require schema;
     Lwt.return ()
   ;;
 
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle Sihl_contract.Email.name ~start ~stop
+    Sihl.Container.create_lifecycle Sihl.Contract.Email.name ~start ~stop
   ;;
 
   let register () =
-    let configuration = Sihl_core.Configuration.make ~schema () in
-    Sihl_core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl.Configuration.make ~schema () in
+    Sihl.Container.Service.create ~configuration lifecycle
   ;;
 end
 
 (* This is useful if you need to answer a request quickly while sending the
    email in the background *)
-module Queued (Email : Sihl_contract.Email.Sig) : Sihl_contract.Email.Sig =
-struct
+module Queued
+    (QueueService : Sihl.Contract.Queue.Sig)
+    (Email : Sihl.Contract.Email.Sig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   module Job = struct
     let input_to_string email =
       email
-      |> Sihl_contract.Email.to_yojson
+      |> Sihl.Contract.Email.to_yojson
       |> Yojson.Safe.to_string
       |> Option.some
     ;;
@@ -329,7 +330,7 @@ struct
         in
         Result.bind email (fun email ->
             email
-            |> Sihl_contract.Email.of_yojson
+            |> Sihl.Contract.Email.of_yojson
             |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
@@ -339,25 +340,25 @@ struct
     let failed _ = Lwt_result.return ()
 
     let job =
-      Sihl_contract.Queue.create
+      Sihl.Contract.Queue.create
         ~name:"send_email"
         ~input_to_string
         ~string_to_input
         ~handle
         ~failed
         ()
-      |> Sihl_contract.Queue.set_max_tries 10
-      |> Sihl_contract.Queue.set_retry_delay Sihl_core.Time.OneHour
+      |> Sihl.Contract.Queue.set_max_tries 10
+      |> Sihl.Contract.Queue.set_retry_delay Sihl.Time.OneHour
     ;;
   end
 
   let send email =
     (* skip queue when running tests *)
-    if not (Sihl_core.Configuration.is_production ())
+    if not (Sihl.Configuration.is_production ())
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
       Email.send email)
-    else Sihl_queue.InMemory.dispatch Job.job email
+    else QueueService.dispatch Job.job email
   ;;
 
   let bulk_send emails =
@@ -371,22 +372,19 @@ struct
     loop emails
   ;;
 
-  let start () = Sihl_queue.InMemory.register_jobs [ Job.job ] |> Lwt.map ignore
+  let start () = QueueService.register_jobs [ Job.job ] |> Lwt.map ignore
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Email.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Email.name
       ~start
       ~stop
       ~dependencies:(fun () ->
-        [ Email.lifecycle
-        ; Sihl_persistence.Database.lifecycle
-        ; Sihl_queue.InMemory.lifecycle
-        ])
+        [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
   ;;
 
-  let register () = Sihl_core.Container.Service.create lifecycle
+  let register () = Sihl.Container.Service.create lifecycle
 end
 
 module Template = Template

@@ -2,11 +2,11 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 module Make
-    (UserService : Sihl_contract.User.Sig)
-    (PasswordResetService : Sihl_contract.Password_reset.Sig) =
+    (UserService : Sihl.Contract.User.Sig)
+    (PasswordResetService : Sihl.Contract.Password_reset.Sig) =
 struct
   let reset_password_suceeds _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* _ =
       UserService.create_user
         ~email:"foo@example.com"

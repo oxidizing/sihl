@@ -1,9 +1,9 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
-module Make (CacheService : Sihl_contract.Cache.Sig) = struct
+module Make (CacheService : Sihl.Contract.Cache.Sig) = struct
   let create_and_read_cache _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* () = CacheService.set ("foo", Some "bar") in
     let* () = CacheService.set ("fooz", Some "baz") in
     let* value = CacheService.find "foo" in
@@ -14,7 +14,7 @@ module Make (CacheService : Sihl_contract.Cache.Sig) = struct
   ;;
 
   let update_cache _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* () = CacheService.set ("foo", Some "bar") in
     let* () = CacheService.set ("fooz", Some "baz") in
     let* value = CacheService.find "foo" in

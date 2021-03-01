@@ -5,11 +5,11 @@ type t =
   ; work : string option -> (unit, string) Result.t Lwt.t
   ; failed : string -> (unit, string) Result.t Lwt.t
   ; max_tries : int
-  ; retry_delay : Sihl_core.Time.duration
+  ; retry_delay : Sihl.Time.duration
   }
 
 let of_job job =
-  let open Sihl_contract.Queue in
+  let open Sihl.Contract.Queue in
   let name = job.name in
   let work input =
     match job.string_to_input input with
