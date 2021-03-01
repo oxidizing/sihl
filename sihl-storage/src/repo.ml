@@ -3,27 +3,27 @@ open Lwt.Syntax
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val insert_file : file:Sihl_contract.Storage.stored -> unit Lwt.t
+  val insert_file : file:Sihl.Contract.Storage.stored -> unit Lwt.t
   val insert_blob : id:string -> blob:string -> unit Lwt.t
-  val get_file : id:string -> Sihl_contract.Storage.stored option Lwt.t
+  val get_file : id:string -> Sihl.Contract.Storage.stored option Lwt.t
   val get_blob : id:string -> string option Lwt.t
-  val update_file : file:Sihl_contract.Storage.stored -> unit Lwt.t
+  val update_file : file:Sihl.Contract.Storage.stored -> unit Lwt.t
   val update_blob : id:string -> blob:string -> unit Lwt.t
   val delete_file : id:string -> unit Lwt.t
   val delete_blob : id:string -> unit Lwt.t
 end
 
-module MakeMariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
   let stored_file =
     let encode m =
-      let open Sihl_contract.Storage in
+      let open Sihl.Contract.Storage in
       let { file; blob } = m in
       let { id; filename; filesize; mime } = file in
       Ok (id, (filename, (filesize, (mime, blob))))
     in
     let decode (id, (filename, (filesize, (mime, blob)))) =
-      let open Sihl_contract.Storage in
+      let open Sihl.Contract.Storage in
       let file = { id; filename; filesize; mime } in
       Ok { file; blob }
     in
@@ -55,10 +55,9 @@ struct
   ;;
 
   let insert_file ~file =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request file
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        Connection.exec insert_request file |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let update_file_request =
@@ -76,10 +75,10 @@ struct
   ;;
 
   let update_file ~file =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_file_request file
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let get_file_request =
@@ -111,10 +110,10 @@ struct
   ;;
 
   let get_file ~id =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_file_request id
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let delete_file_request =
@@ -127,10 +126,10 @@ struct
   ;;
 
   let delete_file ~id =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec delete_file_request id
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let get_blob_request =
@@ -146,10 +145,10 @@ struct
   ;;
 
   let get_blob ~id =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.find_opt get_blob_request id
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let insert_blob_request =
@@ -167,10 +166,10 @@ struct
   ;;
 
   let insert_blob ~id ~blob =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec insert_blob_request (id, blob)
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let update_blob_request =
@@ -185,10 +184,10 @@ struct
   ;;
 
   let update_blob ~id ~blob =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec update_blob_request (id, blob)
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let delete_blob_request =
@@ -202,10 +201,10 @@ struct
   ;;
 
   let delete_blob ~id =
-    Sihl_persistence.Database.query (fun connection ->
+    Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.exec delete_blob_request id
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let clean_handles_request =
@@ -213,10 +212,9 @@ struct
   ;;
 
   let clean_handles () =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_handles_request ()
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let clean_blobs_request =
@@ -224,14 +222,13 @@ struct
   ;;
 
   let clean_blobs () =
-    Sihl_persistence.Database.query
-      (fun (module Connection : Caqti_lwt.CONNECTION) ->
+    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
         Connection.exec clean_blobs_request ()
-        |> Lwt.map Sihl_persistence.Database.raise_error)
+        |> Lwt.map Sihl.Database.raise_error)
   ;;
 
   let fix_collation =
-    Sihl_persistence.Migration.create_step
+    Sihl.Database.Migration.create_step
       ~label:"fix collation"
       {sql|
          SET collation_server = 'utf8mb4_unicode_ci';
@@ -239,7 +236,7 @@ struct
   ;;
 
   let create_blobs_table =
-    Sihl_persistence.Migration.create_step
+    Sihl.Database.Migration.create_step
       ~label:"create blobs table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_blobs (
@@ -255,7 +252,7 @@ struct
   ;;
 
   let create_handles_table =
-    Sihl_persistence.Migration.create_step
+    Sihl.Database.Migration.create_step
       ~label:"create handles table"
       {sql|
          CREATE TABLE IF NOT EXISTS storage_handles (
@@ -274,7 +271,7 @@ struct
   ;;
 
   let migration () =
-    Sihl_persistence.Migration.(
+    Sihl.Database.Migration.(
       empty "storage"
       |> add_step fix_collation
       |> add_step create_blobs_table
@@ -288,6 +285,6 @@ struct
       let* () = clean_handles () in
       clean_blobs ()
     in
-    Sihl_core.Cleaner.register_cleaner cleaner
+    Sihl.Cleaner.register_cleaner cleaner
   ;;
 end

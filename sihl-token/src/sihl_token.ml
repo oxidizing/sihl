@@ -1,8 +1,8 @@
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.Token.name)
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.Token.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
+module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
   type config = { token_length : int option }
 
   let config token_length = { token_length }
@@ -20,10 +20,10 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
     && Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())
   ;;
 
-  let make id ?(expires_in = Sihl_core.Time.OneDay) ?now ?(length = 80) data =
+  let make id ?(expires_in = Sihl.Time.OneDay) ?now ?(length = 80) data =
     let open Repo.Model in
-    let value = Sihl_core.Random.base64 length in
-    let expires_in = Sihl_core.Time.duration_to_span expires_in in
+    let value = Sihl.Random.base64 length in
+    let expires_in = Sihl.Time.duration_to_span expires_in in
     let now = Option.value ~default:(Ptime_clock.now ()) now in
     let expires_at =
       match Ptime.add_span now expires_in with
@@ -40,9 +40,7 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
     let open Repo.Model in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
     let length =
-      Option.value
-        ~default:30
-        (Sihl_core.Configuration.read schema).token_length
+      Option.value ~default:30 (Sihl.Configuration.read schema).token_length
     in
     let token = make id ?expires_in ~length data in
     let* () = Repo.insert token in
@@ -130,15 +128,15 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let start () =
     (* Make sure that configuration is valid *)
-    Sihl_core.Configuration.require schema;
+    Sihl.Configuration.require schema;
     Lwt.return ()
   ;;
 
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Token.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Token.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start
       ~stop
@@ -147,22 +145,22 @@ module Make (Repo : Repo.Sig) : Sihl_contract.Token.Sig = struct
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    let configuration = Sihl_core.Configuration.make ~schema () in
-    Sihl_core.Container.Service.create ~configuration lifecycle
+    let configuration = Sihl.Configuration.make ~schema () in
+    Sihl.Container.Service.create ~configuration lifecycle
   ;;
 end
 
-module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
+module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
   let calculate_exp expires_in =
-    Sihl_core.Time.date_from_now (Ptime_clock.now ()) expires_in
+    Sihl.Time.date_from_now (Ptime_clock.now ()) expires_in
     |> Ptime.to_float_s
     |> Int.of_float
     |> string_of_int
   ;;
 
-  let create ?secret ?(expires_in = Sihl_core.Time.OneWeek) data =
+  let create ?secret ?(expires_in = Sihl.Time.OneWeek) data =
     let secret =
-      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+      Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
     let data =
       match List.find_opt (fun (k, _) -> String.equal k "exp") data with
@@ -177,7 +175,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
         List.cons ("exp", exp) data
     in
     match Jwto.encode HS512 secret data with
-    | Error msg -> raise @@ Sihl_contract.Token.Exception msg
+    | Error msg -> raise @@ Sihl.Contract.Token.Exception msg
     | Ok token -> Lwt.return token
   ;;
 
@@ -188,7 +186,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   let read ?secret ?force token_value ~k =
     let open Lwt.Syntax in
     let secret =
-      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+      Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
     match Jwto.decode_and_verify secret token_value, force with
     | Error msg, None ->
@@ -233,7 +231,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   let read_all ?secret ?force token_value =
     let open Lwt.Syntax in
     let secret =
-      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+      Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
     match Jwto.decode_and_verify secret token_value, force with
     | Error msg, None ->
@@ -256,7 +254,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let verify ?secret token =
     let secret =
-      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+      Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
     match Jwto.decode_and_verify secret token with
     | Ok _ -> Lwt.return true
@@ -265,7 +263,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
 
   let is_expired ?secret token_value =
     let secret =
-      Option.value ~default:(Sihl_core.Configuration.read_secret ()) secret
+      Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
     match Jwto.decode_and_verify secret token_value with
     | Ok token ->
@@ -284,7 +282,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
           Lwt.return is_expired
         | None ->
           raise
-          @@ Sihl_contract.Token.Exception
+          @@ Sihl.Contract.Token.Exception
                (Format.sprintf
                   "Invalid 'exp' claim found in token '%s'"
                   token_value))
@@ -304,8 +302,8 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Token.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Token.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start
       ~stop
@@ -314,14 +312,12 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl_contract.Token.Sig = struct
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Sihl_core.Container.Service.create lifecycle
+    Sihl.Container.Service.create lifecycle
   ;;
 end
 
-module MariaDb = Make (Repo.MariaDb (Sihl_persistence.Migration.MariaDb))
-
-module PostgreSql = Make (Repo.PostgreSql (Sihl_persistence.Migration.PostgreSql))
-
+module MariaDb = Make (Repo.MariaDb (Sihl.Database.Migration.MariaDb))
+module PostgreSql = Make (Repo.PostgreSql (Sihl.Database.Migration.PostgreSql))
 module JwtInMemory = MakeJwt (Blacklist_repo.InMemory)
 module JwtMariaDb = MakeJwt (Blacklist_repo.MariaDb)
 module JwtPostgreSql = MakeJwt (Blacklist_repo.PostgreSql)

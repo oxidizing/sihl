@@ -1,12 +1,12 @@
 let log_src =
-  Logs.Src.create ("sihl.service." ^ Sihl_contract.Password_reset.name)
+  Logs.Src.create ("sihl.service." ^ Sihl.Contract.Password_reset.name)
 ;;
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module Make
-    (UserService : Sihl_contract.User.Sig)
-    (TokenService : Sihl_contract.Token.Sig) =
+    (UserService : Sihl.Contract.User.Sig)
+    (TokenService : Sihl.Contract.Token.Sig) =
 struct
   let create_reset_token ~email =
     let open Lwt.Syntax in
@@ -14,9 +14,7 @@ struct
     match user with
     | Some user ->
       let user_id = user.id in
-      TokenService.create
-        ~expires_in:Sihl_core.Time.OneDay
-        [ "user_id", user_id ]
+      TokenService.create ~expires_in:Sihl.Time.OneDay [ "user_id", user_id ]
       |> Lwt.map Option.some
     | None ->
       Logs.warn (fun m -> m "No user found with email %s" email);
@@ -40,13 +38,13 @@ struct
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.Password_reset.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.Password_reset.name
       ~start
       ~stop
       ~dependencies:(fun () ->
         [ TokenService.lifecycle; UserService.lifecycle ])
   ;;
 
-  let register () = Sihl_core.Container.Service.create lifecycle
+  let register () = Sihl.Container.Service.create lifecycle
 end

@@ -1,4 +1,0 @@
-(executables
- (names database_mariadb database_postgresql)
- (libraries sihl-persistence sihl-core alcotest-lwt caqti-driver-mariadb
-   caqti-driver-postgresql))

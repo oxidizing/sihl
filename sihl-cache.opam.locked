@@ -1,7 +1,7 @@
 opam-version: "2.0"
-version: "0.4.0"
+version: "0.3.0"
 synopsis:
-  "A module that provides services to store and retrieve data with key-value semantics."
+  "A module that provides services to store and retrieve data with key-value semantics"
 description:
   "Depending on the backend the cache service can be used to improve performance or to persist arbitrary data."
 maintainer: ["josef@oxidizing.io"]

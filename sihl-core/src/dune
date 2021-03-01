@@ -1,9 +1,0 @@
-(library
- (name sihl_core)
- (public_name sihl-core)
- (libraries sexplib fmt fmt.tty logs logs.fmt lwt lwt.unix tsort conformist
-   base64 yojson ppx_deriving_yojson.runtime safepass ptime ptime.clock.os
-   jwto uuidm)
- (preprocess
-  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
-    ppx_deriving.make ppx_sexp_conv)))

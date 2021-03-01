@@ -1,10 +1,10 @@
-include Sihl_contract.User
+include Sihl.Contract.User
 
-let log_src = Logs.Src.create ("sihl.service." ^ Sihl_contract.User.name)
+let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.User.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
+module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   let find_opt ~user_id = Repo.get ~id:user_id
 
   let find ~user_id =
@@ -14,7 +14,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     | Some user -> Lwt.return user
     | None ->
       Logs.err (fun m -> m "User not found with id %s" user_id);
-      raise (Sihl_contract.User.Exception "User not found")
+      raise (Sihl.Contract.User.Exception "User not found")
   ;;
 
   let find_by_email_opt ~email =
@@ -33,7 +33,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     | Some user -> Lwt.return user
     | None ->
       Logs.err (fun m -> m "User not found with email %s" email);
-      raise (Sihl_contract.User.Exception "User not found")
+      raise (Sihl.Contract.User.Exception "User not found")
   ;;
 
   let search ?(sort = `Desc) ?filter limit = Repo.search sort filter limit
@@ -62,7 +62,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         | Error msg ->
           Logs.err (fun m ->
               m "Can not update password of user %s: %s" user.email msg);
-          raise (Sihl_contract.User.Exception msg)
+          raise (Sihl.Contract.User.Exception msg)
       in
       let* () = Repo.update ~user:updated_user in
       Lwt.return @@ Ok updated_user
@@ -97,7 +97,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
         | Error msg ->
           Logs.err (fun m ->
               m "USER: Can not set password of user %s: %s" user.email msg);
-          raise (Sihl_contract.User.Exception msg)
+          raise (Sihl.Contract.User.Exception msg)
       in
       let* () = Repo.update ~user:updated_user in
       Lwt_result.return updated_user
@@ -110,7 +110,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     | Ok user ->
       let* () = Repo.insert ~user in
       Lwt.return (Ok user)
-    | Error msg -> raise (Sihl_contract.User.Exception msg)
+    | Error msg -> raise (Sihl.Contract.User.Exception msg)
   ;;
 
   let create_user ~email ~password ~username =
@@ -121,7 +121,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
     let user =
       match user with
       | Ok user -> user
-      | Error msg -> raise (Sihl_contract.User.Exception msg)
+      | Error msg -> raise (Sihl.Contract.User.Exception msg)
     in
     Lwt.return user
   ;;
@@ -134,7 +134,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       | Some _ ->
         Logs.err (fun m ->
             m "Can not create admin %s since the email is already taken" email);
-        raise (Sihl_contract.User.Exception "Email already taken")
+        raise (Sihl.Contract.User.Exception "Email already taken")
       | None -> Lwt.return ()
     in
     let* user = create ~email ~password ~username ~admin:true ~confirmed:true in
@@ -143,7 +143,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       | Ok user -> user
       | Error msg ->
         Logs.err (fun m -> m "Can not create admin %s %s" email msg);
-        raise (Sihl_contract.User.Exception msg)
+        raise (Sihl.Contract.User.Exception msg)
     in
     Lwt.return user
   ;;
@@ -157,7 +157,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
       ()
     =
     let open Lwt.Syntax in
-    let open Sihl_contract.User in
+    let open Sihl.Contract.User in
     match
       validate_new_password ~password ~password_confirmation ~password_policy
     with
@@ -171,7 +171,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
 
   let login ~email ~password =
     let open Lwt.Syntax in
-    let open Sihl_contract.User in
+    let open Sihl.Contract.User in
     let* user = find_by_email_opt ~email in
     match user with
     | None -> Lwt_result.fail DoesNotExist
@@ -182,7 +182,7 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   ;;
 
   let create_admin_cmd =
-    Sihl_core.Command.make
+    Sihl.Command.make
       ~name:"createadmin"
       ~help:"<username> <email> <password>"
       ~description:"Create an admin user"
@@ -192,16 +192,15 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
           create_admin ~email ~password ~username:(Some username)
           |> Lwt.map ignore
         | _ ->
-          raise
-            (Sihl_core.Command.Exception "Usage: <username> <email> <password>"))
+          raise (Sihl.Command.Exception "Usage: <username> <email> <password>"))
   ;;
 
   let start () = Lwt.return ()
   let stop () = Lwt.return ()
 
   let lifecycle =
-    Sihl_core.Container.create_lifecycle
-      Sihl_contract.User.name
+    Sihl.Container.create_lifecycle
+      Sihl.Contract.User.name
       ~dependencies:(fun () -> Repo.lifecycles)
       ~start
       ~stop
@@ -210,18 +209,19 @@ module Make (Repo : User_repo.Sig) : Sihl_contract.User.Sig = struct
   let register () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Sihl_core.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
+    Sihl.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
   ;;
 end
 
 module PostgreSql =
-  Make (User_repo.MakePostgreSql (Sihl_persistence.Migration.PostgreSql))
+  Make (User_repo.MakePostgreSql (Sihl.Database.Migration.PostgreSql))
 
-module MariaDb = Make (User_repo.MakeMariaDb (Sihl_persistence.Migration.MariaDb))
+module MariaDb = Make (User_repo.MakeMariaDb (Sihl.Database.Migration.MariaDb))
 
 module Password_reset = struct
-  module PostgreSql =
-    Password_reset.Make (PostgreSql) (Sihl_token.JwtPostgreSql)
+  module MakePostgreSql (TokenService : Sihl.Contract.Token.Sig) =
+    Password_reset.Make (PostgreSql) (TokenService)
 
-  module MariaDb = Password_reset.Make (MariaDb) (Sihl_token.JwtMariaDb)
+  module MakeMariaDb (TokenService : Sihl.Contract.Token.Sig) =
+    Password_reset.Make (MariaDb) (TokenService)
 end

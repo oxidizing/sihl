@@ -50,11 +50,11 @@ let sexp_of_t { id; input; name; tries; next_run_at; max_tries; status } =
 let pp fmt t = Sexplib0.Sexp.pp_hum fmt (sexp_of_t t)
 
 let create ~input ~delay ~now job =
-  let open Sihl_contract.Queue in
+  let open Sihl.Contract.Queue in
   let input = job.input_to_string input in
   let name = job.name in
   let next_run_at =
-    match Option.map Sihl_core.Time.duration_to_span delay with
+    match Option.map Sihl.Time.duration_to_span delay with
     | Some at -> Option.value (Ptime.add_span now at) ~default:now
     | None -> now
   in
@@ -80,7 +80,7 @@ let incr_tries job_instance =
 ;;
 
 let update_next_run_at job job_instance =
-  let delay = job.Workable_job.retry_delay |> Sihl_core.Time.duration_to_span in
+  let delay = job.Workable_job.retry_delay |> Sihl.Time.duration_to_span in
   let next_run_at =
     match Ptime.add_span job_instance.next_run_at delay with
     | Some date -> date

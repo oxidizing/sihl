@@ -1,4 +1,4 @@
 (library
  (name sihl_user)
  (public_name sihl-user)
- (libraries sihl-token sihl-persistence))
+ (libraries sihl))

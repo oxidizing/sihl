@@ -1,9 +1,9 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
-module Make (TokenService : Sihl_contract.Token.Sig) = struct
+module Make (TokenService : Sihl.Contract.Token.Sig) = struct
   let create_and_read_token _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* token = TokenService.create [ "foo", "bar"; "fooz", "baz" ] in
     let* value = TokenService.read token ~k:"foo" in
     Alcotest.(check (option string) "reads value" (Some "bar") value);
@@ -19,7 +19,7 @@ module Make (TokenService : Sihl_contract.Token.Sig) = struct
   ;;
 
   let deactivate_and_reactivate_token _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* token = TokenService.create [ "foo", "bar" ] in
     let* value = TokenService.read token ~k:"foo" in
     Alcotest.(check (option string) "reads value" (Some "bar") value);
@@ -35,7 +35,7 @@ module Make (TokenService : Sihl_contract.Token.Sig) = struct
   ;;
 
   let forge_token _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* token = TokenService.create [ "foo", "bar" ] in
     let* value = TokenService.read token ~k:"foo" in
     Alcotest.(check (option string) "reads value" (Some "bar") value);

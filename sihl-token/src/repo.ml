@@ -1,6 +1,6 @@
-module Database = Sihl_persistence.Database
-module Cleaner = Sihl_core.Cleaner
-module Migration = Sihl_persistence.Migration
+module Database = Sihl.Database
+module Cleaner = Sihl.Cleaner
+module Migration = Sihl.Database.Migration
 
 module Model = struct
   module Data = struct
@@ -60,7 +60,7 @@ module Model = struct
 end
 
 module type Sig = sig
-  val lifecycles : Sihl_core.Container.lifecycle list
+  val lifecycles : Sihl.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
   val find : string -> Model.t Lwt.t
@@ -72,7 +72,7 @@ module type Sig = sig
   module Model = Model
 end
 
-module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
+module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
   let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 
   module Model = Model
@@ -273,7 +273,7 @@ module MariaDb (MigrationService : Sihl_contract.Migration.Sig) : Sig = struct
   let update = Sql.update
 end
 
-module PostgreSql (MigrationService : Sihl_contract.Migration.Sig) : Sig =
+module PostgreSql (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
   let lifecycles = [ Database.lifecycle; MigrationService.lifecycle ]
 

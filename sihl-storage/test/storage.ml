@@ -9,12 +9,12 @@ let file_equal f1 f2 =
 
 let alco_file = Alcotest.testable Sihl_storage.pp_file file_equal
 
-module Make (StorageService : Sihl_contract.Storage.Sig) = struct
+module Make (StorageService : Sihl.Contract.Storage.Sig) = struct
   let fetch_uploaded_file _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let file_id = Uuidm.v `V4 |> Uuidm.to_string in
     let file =
-      Sihl_contract.Storage.
+      Sihl.Contract.Storage.
         { id = file_id
         ; filename = "diploma.pdf"
         ; filesize = 123
@@ -23,7 +23,7 @@ module Make (StorageService : Sihl_contract.Storage.Sig) = struct
     in
     let* _ = StorageService.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ=" in
     let* uploaded_file = StorageService.find ~id:file_id in
-    let actual_file = uploaded_file.Sihl_contract.Storage.file in
+    let actual_file = uploaded_file.Sihl.Contract.Storage.file in
     Alcotest.(check alco_file "has same file" file actual_file);
     let* actual_blob = StorageService.download_data_base64 uploaded_file in
     Alcotest.(check string "has same blob" "ZmlsZWNvbnRlbnQ=" actual_blob);
@@ -31,10 +31,10 @@ module Make (StorageService : Sihl_contract.Storage.Sig) = struct
   ;;
 
   let update_uploaded_file _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let file_id = Uuidm.v `V4 |> Uuidm.to_string in
     let file =
-      Sihl_contract.Storage.
+      Sihl.Contract.Storage.
         { id = file_id
         ; filename = "diploma.pdf"
         ; filesize = 123
@@ -54,8 +54,8 @@ module Make (StorageService : Sihl_contract.Storage.Sig) = struct
       check
         alco_file
         "has updated file"
-        updated_file.Sihl_contract.Storage.file
-        actual_file.Sihl_contract.Storage.file);
+        updated_file.Sihl.Contract.Storage.file
+        actual_file.Sihl.Contract.Storage.file);
     let* actual_blob = StorageService.download_data_base64 stored_file in
     Alcotest.(check string "has updated blob" "bmV3Y29udGVudA==" actual_blob);
     Lwt.return ()

@@ -2,11 +2,11 @@ open Alcotest_lwt
 open Lwt.Syntax
 
 module Make
-    (EmailService : Sihl_contract.Email.Sig)
-    (EmailTemplateService : Sihl_contract.Email_template.Sig) =
+    (EmailService : Sihl.Contract.Email.Sig)
+    (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
 struct
   let create_template _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* template =
       EmailTemplateService.create ~label:"foo" ~html:"some html" "some text"
     in
@@ -17,7 +17,7 @@ struct
   ;;
 
   let update_template _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let* created =
       EmailTemplateService.create ~label:"foo" ~html:"some html" "some text"
     in
@@ -48,9 +48,9 @@ struct
   ;;
 
   let send_inline_templated_email _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let raw_email =
-      Sihl_contract.Email.create
+      Sihl.Contract.Email.create
         ~recipient:"recipient@example.com"
         ~sender:"sender@example.com"
         ~subject:"test"
@@ -75,7 +75,7 @@ struct
   ;;
 
   let send_templated_email _ () =
-    let* () = Sihl_core.Cleaner.clean_all () in
+    let* () = Sihl.Cleaner.clean_all () in
     let raw_email =
       Sihl_email.create
         ~sender:"sender@example.com"

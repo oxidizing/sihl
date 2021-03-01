@@ -1,6 +1,6 @@
 (library
  (name sihl_cache)
  (public_name sihl-cache)
- (libraries sihl-persistence)
+ (libraries sihl)
  (preprocess
   (pps ppx_deriving_yojson)))
