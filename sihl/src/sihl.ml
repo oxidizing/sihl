@@ -27,13 +27,9 @@ module Web = struct
   end
 
   module Csrf = struct
-    exception Crypto_failed = Web_csrf.Crypto_failed
     exception Csrf_token_not_found = Web_csrf.Csrf_token_not_found
 
     let find = Web_csrf.find
-    let find_opt = Web_csrf.find_opt
-    let xor = Web_csrf.xor
-    let decrypt_with_salt = Web_csrf.decrypt_with_salt
   end
 
   module Flash = struct

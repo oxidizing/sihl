@@ -38,17 +38,9 @@ module Web : sig
   end
 
   module Csrf : sig
-    exception Crypto_failed of string
     exception Csrf_token_not_found
 
     val find : Rock.Request.t -> string
-    val find_opt : Rock.Request.t -> string option
-    val xor : char list -> char list -> char list option
-
-    val decrypt_with_salt
-      :  salted_cipher:char list
-      -> salt_length:int
-      -> char list option
   end
 
   module Flash : sig
@@ -160,17 +152,35 @@ module Web : sig
 
     val bearer_token : Rock.Middleware.t
 
+    (** [csrf ?not_allowed_handler ?cookie_key ?secret ()] returns a middleware
+        that enables CSRF protection for unsafe HTTP requests.
+
+        [not_allowed_handler] is used if an unsafe request does not pass the
+        CSRF protection check. By default, [not_allowed_handler] returns an
+        empty response with status 403.
+
+        [cookie_key] is the key in the cookie under which a CSRF token will be
+        stored. By default, [cookie_key] has a [__Host] prefix to increase
+        cookie security. One important consequence of this prefix is, that the
+        cookie cannot be sent across unencrypted (HTTP) connections. You should
+        only set this argument if you know what you are doing and aware of the
+        consequences.
+
+        [secret] is the secret used to hash the CSRF cookie value with. By
+        default, [SIHL_SECRET] is used.
+
+        Internally, the CSRF protection is implemented as the Double Submit
+        Cookie approach. *)
+
     val csrf
       :  ?not_allowed_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
-      -> ?key:string
+      -> ?cookie_key:string
+      -> ?secret:string
       -> unit
       -> Rock.Middleware.t
 
-    (** The error middleware should be installed in the last position. It
-        catches, logs, reports and shows exceptions. *)
-
-    (** [middleware ?email_config ?reporter ?handler ()] returns a middleware
-        that catches all exceptions and shows them.
+    (** [error ?email_config ?reporter ?handler ()] returns a middleware that
+        catches all exceptions and shows them.
 
         By default, it logs the exception with the request details. The response
         is either `text/html` or `application/json`, depending on the
