@@ -181,7 +181,11 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       else Lwt_result.fail IncorrectPassword
   ;;
 
+  let start () = Lwt.return ()
+  let stop () = Lwt.return ()
+
   let create_admin_cmd =
+    let open Lwt.Syntax in
     Sihl.Command.make
       ~name:"createadmin"
       ~help:"<username> <email> <password>"
@@ -189,14 +193,12 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
+          let* () = start () in
           create_admin ~email ~password ~username:(Some username)
           |> Lwt.map ignore
         | _ ->
           raise (Sihl.Command.Exception "Usage: <username> <email> <password>"))
   ;;
-
-  let start () = Lwt.return ()
-  let stop () = Lwt.return ()
 
   let lifecycle =
     Sihl.Container.create_lifecycle
