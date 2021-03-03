@@ -74,9 +74,15 @@ val env_files_path : unit -> string option
     [env_files_path] and returns the key-value pairs as [data]. If [SIHL_ENV] is
     set to [test], [.env.test] is read. Otherwise [.env] is read. If the file
     doesn't exist or the directory containing the file can't be found, [None] is
-    returned. *)
+    returned.
 
-val read_env_file : unit -> data option Lwt.t
+    If you just want to access configuration values, use the read functions
+    instead. Every time you call [read_env_file] the file is read from disk. *)
+val read_env_file : unit -> data option
+
+(** [load_env_file ()] reads an [.env] file using {!read_env_file} and stores
+    its contents into the environment variables. *)
+val load_env_file : unit -> unit
 
 (** [read schema] returns the decoded, statically typed version of configuration
     [t] of the [schema]. This is used in services to declaratively define a
