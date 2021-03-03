@@ -25,6 +25,10 @@ module Make (CacheService : Sihl.Contract.Cache.Sig) = struct
     let* () = CacheService.set ("foo", None) in
     let* value = CacheService.find "foo" in
     Alcotest.(check (option string) "has value" None value);
+    (* Make sure setting value that is None to None works as well *)
+    let* () = CacheService.set ("foo", None) in
+    let* value = CacheService.find "foo" in
+    Alcotest.(check (option string) "has value" None value);
     Lwt.return ()
   ;;
 
