@@ -23,79 +23,91 @@ end
 module type Sig = sig
   module Migration = Migration
 
-  val create_table_if_not_exists : unit -> unit Lwt.t
-  val get : namespace:string -> Migration.t option Lwt.t
-  val get_all : unit -> Migration.t list Lwt.t
-  val upsert : state:Migration.t -> unit Lwt.t
+  val create_table_if_not_exists : string -> unit Lwt.t
+  val get : string -> namespace:string -> Migration.t option Lwt.t
+  val get_all : string -> Migration.t list Lwt.t
+  val upsert : string -> Migration.t -> unit Lwt.t
 end
+
+(* Common functions *)
+let get_request table =
+  Caqti_request.find_opt
+    Caqti_type.string
+    Caqti_type.(tup3 string int bool)
+    (Format.sprintf
+       {sql|
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM %s
+       WHERE namespace = ?;
+       |sql}
+       table)
+;;
+
+let get table ~namespace =
+  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.find_opt (get_request table) namespace
+      |> Lwt.map Database.raise_error)
+  |> Lwt.map (Option.map Migration.of_tuple)
+;;
+
+let get_all_request table =
+  Caqti_request.collect
+    Caqti_type.unit
+    Caqti_type.(tup3 string int bool)
+    (Format.sprintf
+       {sql|
+       SELECT
+         namespace,
+         version,
+         dirty
+       FROM %s;
+       |sql}
+       table)
+;;
+
+let get_all table =
+  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.collect_list (get_all_request table) ()
+      |> Lwt.map Database.raise_error)
+  |> Lwt.map (List.map Migration.of_tuple)
+;;
 
 module MariaDb : Sig = struct
   module Migration = Migration
 
-  let create_request =
+  let create_request table =
     Caqti_request.exec
       Caqti_type.unit
-      {sql|
-       CREATE TABLE IF NOT EXISTS core_migration_state (
+      (Format.sprintf
+         {sql|
+       CREATE TABLE IF NOT EXISTS %s (
          namespace VARCHAR(128) NOT NULL,
          version INTEGER,
          dirty BOOL NOT NULL,
        PRIMARY KEY (namespace)
        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       |sql}
+         table)
   ;;
 
-  let create_table_if_not_exists () =
+  let create_table_if_not_exists table =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec create_request () |> Lwt.map Database.raise_error)
-  ;;
-
-  let get_request =
-    Caqti_request.find_opt
-      Caqti_type.string
-      Caqti_type.(tup3 string int bool)
-      {sql|
-       SELECT
-         namespace,
-         version,
-         dirty
-       FROM core_migration_state
-       WHERE namespace = ?;
-       |sql}
-  ;;
-
-  let get ~namespace =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt get_request namespace
+        Connection.exec (create_request table) ()
         |> Lwt.map Database.raise_error)
-    |> Lwt.map (Option.map Migration.of_tuple)
   ;;
 
-  let get_all_request =
-    Caqti_request.collect
-      Caqti_type.unit
-      Caqti_type.(tup3 string int bool)
-      {sql|
-       SELECT
-         namespace,
-         version,
-         dirty
-       FROM core_migration_state;
-       |sql}
-  ;;
+  let get = get
+  let get_all = get_all
 
-  let get_all () =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.collect_list get_all_request ()
-        |> Lwt.map Database.raise_error)
-    |> Lwt.map (List.map Migration.of_tuple)
-  ;;
-
-  let upsert_request =
+  let upsert_request table =
     Caqti_request.exec
       Caqti_type.(tup3 string int bool)
-      {sql|
-       INSERT INTO core_migration_state (
+      (Format.sprintf
+         {sql|
+       INSERT INTO %s (
          namespace,
          version,
          dirty
@@ -107,11 +119,12 @@ module MariaDb : Sig = struct
          version = VALUES(version),
          dirty = VALUES(dirty)
        |sql}
+         table)
   ;;
 
-  let upsert ~state =
+  let upsert table state =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec upsert_request (Migration.to_tuple state)
+        Connection.exec (upsert_request table) (Migration.to_tuple state)
         |> Lwt.map Database.raise_error)
   ;;
 end
@@ -119,69 +132,35 @@ end
 module PostgreSql : Sig = struct
   module Migration = Migration
 
-  let create_request =
+  let create_request table =
     Caqti_request.exec
       Caqti_type.unit
-      {sql|
-       CREATE TABLE IF NOT EXISTS core_migration_state (
+      (Format.sprintf
+         {sql|
+       CREATE TABLE IF NOT EXISTS %s (
          namespace VARCHAR(128) NOT NULL PRIMARY KEY,
          version INTEGER,
          dirty BOOL NOT NULL
        );
        |sql}
+         table)
   ;;
 
-  let create_table_if_not_exists () =
+  let create_table_if_not_exists table =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec create_request () |> Lwt.map Database.raise_error)
-  ;;
-
-  let get_request =
-    Caqti_request.find_opt
-      Caqti_type.string
-      Caqti_type.(tup3 string int bool)
-      {sql|
-       SELECT
-         namespace,
-         version,
-         dirty
-       FROM core_migration_state
-       WHERE namespace = ?;
-       |sql}
-  ;;
-
-  let get ~namespace =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt get_request namespace
+        Connection.exec (create_request table) ()
         |> Lwt.map Database.raise_error)
-    |> Lwt.map (Option.map Migration.of_tuple)
   ;;
 
-  let get_all_request =
-    Caqti_request.collect
-      Caqti_type.unit
-      Caqti_type.(tup3 string int bool)
-      {sql|
-       SELECT
-         namespace,
-         version,
-         dirty
-       FROM core_migration_state;
-       |sql}
-  ;;
+  let get = get
+  let get_all = get_all
 
-  let get_all () =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.collect_list get_all_request ()
-        |> Lwt.map Database.raise_error)
-    |> Lwt.map (List.map Migration.of_tuple)
-  ;;
-
-  let upsert_request =
+  let upsert_request table =
     Caqti_request.exec
       Caqti_type.(tup3 string int bool)
-      {sql|
-       INSERT INTO core_migration_state (
+      (Format.sprintf
+         {sql|
+       INSERT INTO %s (
          namespace,
          version,
          dirty
@@ -193,11 +172,12 @@ module PostgreSql : Sig = struct
        DO UPDATE SET version = EXCLUDED.version,
          dirty = EXCLUDED.dirty
        |sql}
+         table)
   ;;
 
-  let upsert ~state =
+  let upsert table state =
     Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec upsert_request (Migration.to_tuple state)
+        Connection.exec (upsert_request table) (Migration.to_tuple state)
         |> Lwt.map Database.raise_error)
   ;;
 end
