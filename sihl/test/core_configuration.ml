@@ -115,7 +115,7 @@ let read_schema _ () =
 ;;
 
 let read_env_file_non_existing _ () =
-  let* data = Sihl.Configuration.read_env_file () in
+  let data = Sihl.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in
   Alcotest.(check (list string) "Returns empty keys" [] (List.map fst data));
   Alcotest.(check (list string) "Returns empty values" [] (List.map snd data));
@@ -138,7 +138,7 @@ let read_env_file switch () =
         let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
         Lwt_list.iter_s (Lwt_io.write_line ch) envs)
   in
-  let* data = Sihl.Configuration.read_env_file () in
+  let data = Sihl.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in
   Alcotest.(
     check (list string) "Returns keys" (List.rev keys) (List.map fst data));

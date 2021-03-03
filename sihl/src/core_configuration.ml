@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create "sihl.core.configuration"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
@@ -60,8 +58,76 @@ let envs_to_kv envs =
          | key :: values -> key, String.concat "" values)
 ;;
 
-(* TODO [jerben] Consider memoizing this or any consumer functions *)
+(* .env file handling *)
+let root_path () =
+  match Sys.getenv_opt "ROOT_PATH" with
+  | None | Some "" ->
+    let markers = [ ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
+    let rec find_markers path_els =
+      let path = String.concat "/" path_els in
+      if List.exists
+           (fun marker -> Sys.file_exists (path ^ "/" ^ marker))
+           markers
+      then (
+        (* Path found => Write it into the env var to "memoize" it *)
+        Unix.putenv "ROOT_PATH" path;
+        Some path)
+      else (
+        match path_els with
+        | [] -> None
+        | _ -> find_markers @@ CCList.take (List.length path_els - 1) path_els)
+    in
+    find_markers @@ String.split_on_char '/' (Unix.getcwd ())
+  | Some path -> Some path
+;;
+
+let env_files_path () =
+  match Sys.getenv_opt "ENV_FILES_PATH" with
+  | None | Some "" -> root_path ()
+  | Some path -> Some path
+;;
+
+let read_env_file () =
+  match env_files_path () with
+  | Some path ->
+    let is_test =
+      match Sys.getenv_opt "SIHL_ENV" with
+      | Some "test" -> true
+      | _ -> false
+    in
+    let filename = path ^ "/" ^ if is_test then ".env.test" else ".env" in
+    let exists = CCIO.File.exists filename in
+    if exists
+    then (
+      Logs.info (fun m -> m "Env file found: %s" filename);
+      let envs = CCIO.read_lines_l (open_in filename) in
+      Some (envs_to_kv envs))
+    else (
+      Logs.info (fun m ->
+          m "Env file not found: %s. Continuing without it." filename);
+      None)
+  | None ->
+    Logs.debug (fun m ->
+        m
+          "No env files directory found, please provide your own directory \
+           path with environment variable ENV_FILES_PATH if you would like to \
+           use env files");
+    None
+;;
+
+let file_was_read = ref false
+
+let load_env_file () =
+  if !file_was_read
+  then (* Nothing to do, the file was read already *) ()
+  else (
+    let file_configuration = read_env_file () in
+    file_was_read := true;
+    store (Option.value file_configuration ~default:[]))
+;;
+
 let environment_variables () =
+  load_env_file ();
   Unix.environment () |> Array.to_list |> envs_to_kv
 ;;
 
@@ -86,7 +152,11 @@ let read schema =
     raise (Exception "Invalid configuration provided")
 ;;
 
-let read_string' key = Sys.getenv_opt key
+let read_string' key =
+  load_env_file ();
+  Sys.getenv_opt key
+;;
+
 let read_string = memoize read_string'
 
 let is_test () =
@@ -136,64 +206,6 @@ let read_bool key =
   | None -> None
 ;;
 
-let root_path () =
-  match read_string "ROOT_PATH" with
-  | None | Some "" ->
-    let markers = [ ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
-    let rec find_markers path_els =
-      let path = String.concat "/" path_els in
-      if List.exists
-           (fun marker -> Sys.file_exists (path ^ "/" ^ marker))
-           markers
-      then (
-        (* Path found => Write it into the env var to "memoize" it *)
-        Unix.putenv "ROOT_PATH" path;
-        Some path)
-      else (
-        match path_els with
-        | [] -> None
-        | _ -> find_markers @@ CCList.take (List.length path_els - 1) path_els)
-    in
-    find_markers @@ String.split_on_char '/' (Unix.getcwd ())
-  | Some path -> Some path
-;;
-
-let env_files_path () =
-  match read_string "ENV_FILES_PATH" with
-  | None | Some "" -> root_path ()
-  | Some path -> Some path
-;;
-
-let read_env_file () =
-  match env_files_path () with
-  | Some path ->
-    let filename = path ^ "/" ^ if is_test () then ".env.test" else ".env" in
-    let* exists = Lwt_unix.file_exists filename in
-    if exists
-    then (
-      Logs.info (fun m -> m "Env file found: %s" filename);
-      let* file = Lwt_io.open_file ~mode:Lwt_io.Input filename in
-      let rec read_to_end file ls =
-        let* line = Lwt_io.read_line_opt file in
-        match line with
-        | Some line -> read_to_end file (line :: ls)
-        | None -> Lwt.return ls
-      in
-      let* envs = read_to_end file [] in
-      envs |> envs_to_kv |> Option.some |> Lwt.return)
-    else (
-      Logs.info (fun m ->
-          m "Env file not found: %s. Continuing without it." filename);
-      Lwt.return None)
-  | None ->
-    Logs.debug (fun m ->
-        m
-          "No env files directory found, please provide your own directory \
-           path with environment variable ENV_FILES_PATH if you would like to \
-           use env files");
-    Lwt.return None
-;;
-
 let require schema =
   let vars = environment_variables () in
   let data = List.map (fun (k, v) -> k, [ v ]) vars in
@@ -210,6 +222,8 @@ let require schema =
     Logs.err (fun m -> m "%s" errors);
     raise (Exception "Configuration check failed")
 ;;
+
+(* Displaying configurations *)
 
 let show_configurations configurations =
   configurations
