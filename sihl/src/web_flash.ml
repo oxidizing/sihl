@@ -11,44 +11,71 @@ module Flash = struct
 
   let empty = { alert = None; notice = None; custom = None }
 
-  let of_yojson json =
+  let is_empty (flash : t) : bool =
+    match flash.alert, flash.notice, flash.custom with
+    | None, None, None -> true
+    | _ -> false
+  ;;
+
+  let equals f1 f2 =
+    Option.equal String.equal f1.alert f2.alert
+    && Option.equal String.equal f1.notice f2.notice
+    && Option.equal String.equal f1.custom f2.custom
+  ;;
+
+  let of_yojson (json : Yojson.Safe.t) : t option =
+    (* In order to safe space, the empty flash cookie has the empty string as
+       value *)
     let open Yojson.Safe.Util in
-    try
-      let alert = json |> member "alert" |> to_string_option in
-      let notice = json |> member "notice" |> to_string_option in
-      let custom = json |> member "custom" |> to_string_option in
-      Some { alert; notice; custom }
-    with
-    | _ -> None
+    let empty_string =
+      try Some (to_string json) with
+      | _ -> None
+    in
+    match empty_string with
+    | Some _ -> Some empty
+    | None ->
+      (try
+         let alert = json |> member "alert" |> to_string_option in
+         let notice = json |> member "notice" |> to_string_option in
+         let custom = json |> member "custom" |> to_string_option in
+         Some { alert; notice; custom }
+       with
+      | _ -> None)
   ;;
 
-  let to_yojson { alert; notice; custom } =
-    let alert =
-      alert
-      |> Option.map (fun alert -> `String alert)
-      |> Option.value ~default:`Null
-    in
-    let notice =
-      notice
-      |> Option.map (fun notice -> `String notice)
-      |> Option.value ~default:`Null
-    in
-    let custom =
-      custom
-      |> Option.map (fun custom -> `String custom)
-      |> Option.value ~default:`Null
-    in
-    `Assoc [ "alert", alert; "notice", notice; "custom", custom ]
+  let to_yojson (flash : t) : Yojson.Safe.t =
+    (* In order to safe space, the empty flash cookie has the empty string as
+       value *)
+    if is_empty flash
+    then `String ""
+    else (
+      let { alert; notice; custom } = flash in
+      let alert =
+        alert
+        |> Option.map (fun alert -> `String alert)
+        |> Option.value ~default:`Null
+      in
+      let notice =
+        notice
+        |> Option.map (fun notice -> `String notice)
+        |> Option.value ~default:`Null
+      in
+      let custom =
+        custom
+        |> Option.map (fun custom -> `String custom)
+        |> Option.value ~default:`Null
+      in
+      `Assoc [ "alert", alert; "notice", notice; "custom", custom ])
   ;;
 
-  let of_json json =
+  let of_json (json : string) : t option =
     try of_yojson (Yojson.Safe.from_string json) with
     | _ -> None
   ;;
 
-  let to_json flash = flash |> to_yojson |> Yojson.Safe.to_string
+  let to_json (flash : t) : string = flash |> to_yojson |> Yojson.Safe.to_string
 
-  let to_sexp flash =
+  let to_sexp (flash : t) : Sexplib0.Sexp.t =
     let open Sexplib0.Sexp_conv in
     let open Sexplib0.Sexp in
     List
@@ -138,16 +165,28 @@ let decode_flash cookie_key req =
     | Some flash -> flash)
 ;;
 
-let persist_flash cookie_key resp =
+let persist_flash old_flash cookie_key resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
   match flash with
-  | None -> (* No need to touch the flash cookie *) resp
+  | None ->
+    if Flash.is_empty old_flash
+    then (* Flash was not touched, don't set cookie *)
+      resp
+    else (
+      (* Set empty flash cookie *)
+      let cookie = cookie_key, "" in
+      let resp = Opium.Response.add_cookie_or_replace cookie resp in
+      resp)
   | Some flash ->
-    (* The flash changed, we need to persist the new flash in the cookie *)
-    let cookie_value = Flash.to_json flash in
-    let cookie = cookie_key, cookie_value in
-    let resp = Opium.Response.add_cookie_or_replace cookie resp in
-    resp
+    if Flash.equals old_flash flash
+    then (* Flash was not touched, don't set cookie *)
+      resp
+    else (
+      (* Flash was changed, set cookie *)
+      let cookie_value = Flash.to_json flash in
+      let cookie = cookie_key, cookie_value in
+      let resp = Opium.Response.add_cookie_or_replace cookie resp in
+      resp)
 ;;
 
 let middleware ?(cookie_key = "_flash") () =
@@ -158,7 +197,7 @@ let middleware ?(cookie_key = "_flash") () =
     let env = Opium.Context.add Env.key flash env in
     let req = { req with env } in
     let* resp = handler req in
-    Lwt.return @@ persist_flash cookie_key resp
+    Lwt.return @@ persist_flash flash cookie_key resp
   in
   Rock.Middleware.create ~name:"flash" ~filter
 ;;
