@@ -3,8 +3,8 @@
    database_migration database_mariadb database_postgresql web_csrf_mariadb
    web_csrf_postgresql web_http web_session web_flash web_user_mariadb
    web_user_postgresql web_bearer_token)
- (libraries sihl sihl-token sihl-user alcotest-lwt caqti-driver-mariadb caqti-driver-postgresql
-   cohttp-lwt-unix)
+ (libraries sihl sihl-token sihl-user alcotest-lwt caqti-driver-mariadb
+   caqti-driver-postgresql cohttp-lwt-unix)
  (preprocess
   (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make ppx_sexp_conv)))
