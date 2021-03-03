@@ -30,19 +30,6 @@ let after_stop after_stop app = { app with after_stop }
    ctx app.services in print_endline "CORE: Services stopped"; app.after_stop
    ctx *)
 
-let starting_commands service =
-  (* When executing a starting command, the service that publishes that command
-     and all its dependencies is started before the command is run *)
-  List.map
-    (fun command ->
-      let fn args =
-        let* _ = Core_container.start_services [ service ] in
-        command.Core_command.fn args
-      in
-      Core_command.{ command with fn })
-    (Core_container.Service.commands service)
-;;
-
 let run_forever () =
   let p, _ = Lwt.wait () in
   p
@@ -75,10 +62,10 @@ let start_cmd services =
         let names = String.concat ", " names in
         Logger.err (fun m ->
             m
-              "Multiple server services registered: %s, you can only have one \
-               service registered that is a 'server' service."
+              "Multiple server services registered: '%s', you can only have \
+               one service registered that is a 'server' service."
               names);
-        raise (Exception "No server service registered"))
+        raise (Exception "Multiple server services registered"))
 ;;
 
 let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app =
@@ -98,7 +85,7 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
   let configuration_commands = Core_configuration.commands configurations in
   Logger.info (fun m -> m "Setup service commands");
   let service_commands =
-    app.services |> List.map starting_commands |> List.concat
+    app.services |> List.map Core_container.Service.commands |> List.concat
   in
   let start_sihl_cmd = start_cmd app.services in
   let commands =

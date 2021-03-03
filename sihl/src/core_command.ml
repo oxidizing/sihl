@@ -67,6 +67,7 @@ let print_all commands =
 ;;
 
 let run commands args =
+  let open Lwt.Syntax in
   let args =
     match args with
     | Some args -> args
@@ -83,8 +84,28 @@ let run commands args =
       try args |> List.tl with
       | _ -> []
     in
-    (* TODO catch all exceptions here *)
-    command.fn rest_args
+    let start = Mtime_clock.now () in
+    Lwt.catch
+      (fun () ->
+        let* () = command.fn rest_args in
+        let stop = Mtime_clock.now () in
+        let span = Mtime.span start stop in
+        print_endline
+          (Format.asprintf "Command ran successfully in %a" Mtime.Span.pp span);
+        Lwt.return ())
+      (fun exn ->
+        let stop = Mtime_clock.now () in
+        let span = Mtime.span start stop in
+        let msg = Printexc.to_string exn in
+        let stack = Printexc.get_backtrace () in
+        print_endline
+          (Format.asprintf
+             "Command aborted after %a: '%s'"
+             Mtime.Span.pp
+             span
+             msg);
+        print_endline stack;
+        Lwt.return ())
   | None ->
     print_all commands;
     Lwt.return ()

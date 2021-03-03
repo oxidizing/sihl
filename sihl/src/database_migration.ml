@@ -220,13 +220,6 @@ struct
     execute steps
   ;;
 
-  let migrate_cmd =
-    Core_command.make
-      ~name:"migrate"
-      ~description:"Run all migrations"
-      (fun _ -> run_all ())
-  ;;
-
   let check_migrations_status () =
     let open Lwt.Syntax in
     let* migrations = Repo.get_all () in
@@ -275,6 +268,17 @@ struct
   ;;
 
   let stop () = Lwt.return ()
+
+  let migrate_cmd =
+    let open Lwt.Syntax in
+    Core_command.make
+      ~name:"migrate"
+      ~description:"Run all migrations"
+      (fun _ ->
+        let* () = Database.start () in
+        let* () = start () in
+        run_all ())
+  ;;
 
   let lifecycle =
     Core_container.create_lifecycle
