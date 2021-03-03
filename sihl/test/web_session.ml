@@ -13,9 +13,15 @@ let unsigned_session_cookie _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let* response = Rock.Middleware.apply middleware handler req in
-  let cookies = Opium.Response.cookies response in
+  let cookie = Opium.Response.cookies response |> List.hd in
+  let cookie_value = cookie.Opium.Cookie.value in
   (* Unsigned cookie fails silently, new session is started *)
-  Alcotest.(check int "responds with one cookie" 1 (List.length cookies));
+  Alcotest.(
+    check
+      (pair string string)
+      "responds with empty cookie"
+      ("_session", "{}.byiLJwVqMzg39fb251SaoN+19fo=")
+      cookie_value);
   Lwt.return ()
 ;;
 
@@ -31,9 +37,15 @@ let invalid_session_cookie_signature _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let* response = Rock.Middleware.apply middleware handler req in
-  let cookies = Opium.Response.cookies response in
+  let cookie = Opium.Response.cookies response |> List.hd in
+  let cookie_value = cookie.Opium.Cookie.value in
   (* Invalid signature fails silently, new session is started *)
-  Alcotest.(check int "responds with one cookie" 1 (List.length cookies));
+  Alcotest.(
+    check
+      (pair string string)
+      "responds with empty cookie"
+      ("_session", "{}.byiLJwVqMzg39fb251SaoN+19fo=")
+      cookie_value);
   Lwt.return ()
 ;;
 
@@ -50,9 +62,15 @@ let invalid_session_cookie_value _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let* response = Rock.Middleware.apply middleware handler req in
-  let cookies = Opium.Response.cookies response in
+  let cookie = Opium.Response.cookies response |> List.hd in
+  let cookie_value = cookie.Opium.Cookie.value in
   (* Invalid cookie value fails silently, new session is started *)
-  Alcotest.(check int "responds with one cookie" 1 (List.length cookies));
+  Alcotest.(
+    check
+      (pair string string)
+      "responds with empty cookie"
+      ("_session", "{}.byiLJwVqMzg39fb251SaoN+19fo=")
+      cookie_value);
   Lwt.return ()
 ;;
 
@@ -102,8 +120,14 @@ let cookie_set _ () =
     Lwt.return @@ Sihl.Web.Session.set ("foo", Some "bar") resp
   in
   let* response = Rock.Middleware.apply middleware handler req in
-  let cookies = Opium.Response.cookies response in
-  Alcotest.(check int "responds with one cookie" 1 (List.length cookies));
+  let cookie = Opium.Response.cookies response |> List.hd in
+  let cookie_value = cookie.Opium.Cookie.value in
+  Alcotest.(
+    check
+      (pair string string)
+      "persists session values"
+      ("_session", {|{"foo":"bar"}.jE75kXj9sbZp6tP7oJLhrp9c/+w=|})
+      cookie_value);
   Lwt.return ()
 ;;
 
@@ -119,6 +143,13 @@ let session_persisted_across_requests _ () =
   Alcotest.(
     check int "responds with exactly one cookie" 1 (List.length cookies));
   let cookie = Opium.Response.cookie "_session" response |> Option.get in
+  let cookie_value = cookie.Opium.Cookie.value in
+  Alcotest.(
+    check
+      (pair string string)
+      "persists session values"
+      ("_session", {|{"foo":"bar"}.jE75kXj9sbZp6tP7oJLhrp9c/+w=|})
+      cookie_value);
   let req =
     Opium.Request.get "" |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
@@ -138,6 +169,13 @@ let session_persisted_across_requests _ () =
   Alcotest.(
     check int "responds with exactly one cookie" 1 (List.length cookies));
   let cookie = Opium.Response.cookie "_session" response |> Option.get in
+  let cookie_value = cookie.Opium.Cookie.value in
+  Alcotest.(
+    check
+      (pair string string)
+      "persists session values"
+      ("_session", {|{"fooz":"other"}.VRJU0/vmwzPLrDU0zulQ7MojZUU=|})
+      cookie_value);
   let req =
     Opium.Request.get "" |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
