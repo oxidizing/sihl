@@ -7,36 +7,37 @@ module Map = Map.Make (String)
 
 let registered_migrations : Contract_migration.steps Map.t ref = ref Map.empty
 
-let get_migrations_status migrations_states all_migrations =
-  List.map
-    (fun migrations_state ->
-      let namespace =
-        migrations_state.Database_migration_repo.Migration.namespace
-      in
-      let migrations = Map.find_opt namespace all_migrations in
-      match migrations with
-      | None -> namespace, None
-      | Some migrations ->
-        let unapplied_migrations_count =
-          List.length migrations
-          - migrations_state.Database_migration_repo.Migration.version
-        in
-        namespace, Some unapplied_migrations_count)
-    migrations_states
-;;
-
 module Make (Repo : Database_migration_repo.Sig) : Contract_migration.Sig =
 struct
-  let setup () =
-    Logs.debug (fun m -> m "Setting up table if not exists");
-    Repo.create_table_if_not_exists ()
+  type config = { migration_state_table : string option }
+
+  let config migration_state_table = { migration_state_table }
+
+  let schema =
+    let open Conformist in
+    make
+      [ optional
+          (string ~default:"core_migration_state" "MIGRATION_STATE_TABLE")
+      ]
+      config
   ;;
 
-  let has ~namespace = Repo.get ~namespace |> Lwt.map Option.is_some
+  let table () =
+    Option.value
+      ~default:"core_migration_state"
+      (Core_configuration.read schema).migration_state_table
+  ;;
+
+  let setup () =
+    Logs.debug (fun m -> m "Setting up table if not exists");
+    Repo.create_table_if_not_exists (table ())
+  ;;
+
+  let has ~namespace = Repo.get (table ()) ~namespace |> Lwt.map Option.is_some
 
   let get ~namespace =
     let open Lwt.Syntax in
-    let* state = Repo.get ~namespace in
+    let* state = Repo.get (table ()) ~namespace in
     Lwt.return
     @@
     match state with
@@ -47,7 +48,7 @@ struct
            (Printf.sprintf "Could not get migration state for %s" namespace))
   ;;
 
-  let upsert state = Repo.upsert ~state
+  let upsert state = Repo.upsert (table ()) state
 
   let mark_dirty ~namespace =
     let open Lwt.Syntax in
@@ -220,10 +221,69 @@ struct
     execute steps
   ;;
 
+  let migrations_status () =
+    let open Lwt.Syntax in
+    let* migrations_states = Repo.get_all (table ()) in
+    let migration_states_namespaces =
+      migrations_states
+      |> List.map (fun migration_state ->
+             migration_state.Database_migration_repo.Migration.namespace)
+    in
+    let registered_migrations_namespaces =
+      Map.to_seq !registered_migrations |> List.of_seq |> List.map fst
+    in
+    let namespaces_to_check =
+      List.concat
+        [ migration_states_namespaces; registered_migrations_namespaces ]
+      |> CCList.uniq ~eq:String.equal
+    in
+    Lwt.return
+    @@ List.map
+         (fun namespace ->
+           let migrations = Map.find_opt namespace !registered_migrations in
+           let migration_state =
+             List.find_opt
+               (fun migration_state ->
+                 String.equal
+                   migration_state.Database_migration_repo.Migration.namespace
+                   namespace)
+               migrations_states
+           in
+           match migrations, migration_state with
+           | None, None -> namespace, None
+           | None, Some migration_state ->
+             ( namespace
+             , Some (-migration_state.Database_migration_repo.Migration.version)
+             )
+           | Some migrations, Some migration_state ->
+             let unapplied_migrations_count =
+               List.length migrations
+               - migration_state.Database_migration_repo.Migration.version
+             in
+             namespace, Some unapplied_migrations_count
+           | Some migrations, None -> namespace, Some (List.length migrations))
+         namespaces_to_check
+  ;;
+
+  let pending_migrations () =
+    let open Lwt.Syntax in
+    let* unapplied = migrations_status () in
+    let rec find_pending result = function
+      | (namespace, Some n) :: xs ->
+        if n > 0
+        then (
+          let result = List.cons (namespace, n) result in
+          find_pending result xs)
+        else find_pending result xs
+      | (_, None) :: xs -> find_pending result xs
+      | [] -> result
+    in
+    Lwt.return @@ find_pending [] unapplied
+  ;;
+
   let check_migrations_status () =
     let open Lwt.Syntax in
-    let* migrations = Repo.get_all () in
-    let unapplied = get_migrations_status migrations !registered_migrations in
+    let* unapplied = migrations_status () in
     List.iter
       (fun (namespace, count) ->
         match count with
@@ -262,9 +322,14 @@ struct
   ;;
 
   let start () =
-    if Core_configuration.is_test ()
-    then Lwt.return ()
-    else check_migrations_status ()
+    let open Lwt.Syntax in
+    Core_configuration.require schema;
+    let* () =
+      if Core_configuration.is_test ()
+      then Lwt.return ()
+      else check_migrations_status ()
+    in
+    setup ()
   ;;
 
   let stop () = Lwt.return ()

@@ -27,6 +27,16 @@ module type Sig = sig
   (** [run_all ()] runs all migrations that have been registered. *)
   val run_all : unit -> unit Lwt.t
 
+  (** [pending_migrations ()] returns a list of migrations that need to be
+      executed in order to have all migrations applied. The returned migration
+      is a tuple [(namespace, number)] where [namespace] is the namespace of the
+      migration and [number] is the number of pending migrations that need to be
+      applied in order to achieve the desired schema version.
+
+      An empty list means that there are no pending migrations and that the
+      database schema is up-to-date. *)
+  val pending_migrations : unit -> (string * int) list Lwt.t
+
   val register : ?migrations:t list -> unit -> Core_container.Service.t
 
   include Core_container.Service.Sig
