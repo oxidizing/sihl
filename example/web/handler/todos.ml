@@ -9,7 +9,7 @@ let list req =
   let notice = Sihl.Web.Flash.find_notice req in
   let alert = Sihl.Web.Flash.find_alert req in
   let* todos, _ = Todo.search 100 in
-  Lwt.return @@ Opium.Response.of_html (Template.page csrf todos alert notice)
+  Lwt.return @@ Opium.Response.of_html (View.Page.c csrf todos alert notice)
 ;;
 
 let list_json _ =
