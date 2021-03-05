@@ -32,7 +32,13 @@ module type Sig = sig
 
   val find_opt : user_id:string -> t option Lwt.t
   val find : user_id:string -> t Lwt.t
+
+  (** [find_by_email email] returns a [User.t] if there is a user with email
+      address [email]. Raises an [{!Exception}] otherwise. *)
   val find_by_email : email:string -> t Lwt.t
+
+  (** [find_by_email_opt email] returns a [User.t] if there is a user with email
+      address [email]. *)
   val find_by_email_opt : email:string -> t option Lwt.t
 
   val update_password

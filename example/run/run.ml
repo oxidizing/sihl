@@ -3,7 +3,6 @@
    The parts of your app come together here and are wired to the services. This
    is also the central registry for infrastructure services. *)
 
-let commands = [ Command.Add_todo.run ]
 let migrations = Database.Migration.all
 
 (* Cleaners clean repositories and can be used before running tests to ensure
@@ -15,7 +14,7 @@ let cleaners = [ Todo.cleaner ]
 let jobs = []
 
 let services =
-  [ Service.Migration.register ()
+  [ Service.Migration.register ~migrations ()
   ; Service.Token.register ()
   ; Service.EmailTemplate.register ()
   ; Service.MarketingEmail.register ()
@@ -28,4 +27,7 @@ let services =
   ]
 ;;
 
-let () = Sihl.App.(empty |> with_services services |> run ~commands)
+let () =
+  Sihl.App.(
+    empty |> with_services services |> run ~commands:[ Command.Add_todo.run ])
+;;

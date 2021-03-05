@@ -70,15 +70,9 @@ spin new https://github.com/oxidizing/spin-sihl.git app
   </a>
 </p>
 
-Visit `http://localhost:3000/` to use the demo to-do list app.
+Visit `http://localhost:3000/`, you should see the Sihl logo.
 
-<p align="center">
-  <a href="https://github.com/oxidizing/sihl">
-    <img src="images/demo-app.png" alt="Generated demo to-do list app.">
-  </a>
-</p>
-
-Check out the (adjusted) [example project](https://github.com/oxidizing/sihl/tree/master/example) to see how the code looks like. We use that project for testing but the file structure gives you an idea of how a real world project might look like.
+Check out the (adjusted) [example project](https://github.com/oxidizing/sihl/tree/master/example). We use that project for testing but the file structure gives you an idea of how a real world project might look like.
 
 ## Background
 
@@ -142,13 +136,7 @@ Our main goal is to stabilize the service APIs, so updating Sihl in the future b
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**. If you have any questions just [contact](#contact) us.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/amazing-feature`)
-3. Commit your Changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the Branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Check out the [Contributing guidelines](/oxidizing/sihl/blob/master/docs/CONTRIBUTING.md).
 
 ## License
 

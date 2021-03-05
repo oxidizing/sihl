@@ -4,3 +4,6 @@
  (libraries sihl)
  (preprocess
   (pps ppx_deriving_yojson)))
+
+(documentation
+ (package sihl-cache))

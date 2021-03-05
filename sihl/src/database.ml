@@ -173,6 +173,8 @@ let transaction f =
     Lwt.fail (Contract_database.Exception msg)
 ;;
 
+let transaction' f = transaction f |> Lwt.map raise_error
+
 let query f =
   let pool = fetch_pool () in
   print_pool_usage pool;
@@ -188,6 +190,8 @@ let query f =
     Logs.err (fun m -> m "%s" msg);
     Lwt.fail (Contract_database.Exception msg)
 ;;
+
+let query' f = query f |> Lwt.map raise_error
 
 let used_database () =
   let host =

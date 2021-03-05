@@ -8,20 +8,33 @@
 </p>
 %}
 
-Sihl is a batteries-included web framework built on top of {{: https://github.com/rgrinberg/opium } opium}, {{: https://github.com/paurkedal/ocaml-caqti } caqti}, {{: https://erratique.ch/software/logs } logs} and {{: https://github.com/oxidizing/sihl/blob/master/dune-project } many more}. Thanks to the modular architecture, included batteries can be swapped easily. Statically typed functional programming with OCaml makes web development fun and safe.
+Sihl is a batteries-included web framework built on top of {{:https://github.com/rgrinberg/opium} Opium}, {{:https://github.com/paurkedal/ocaml-caqti} Caqti}, {{:https://erratique.ch/software/logs} Logs} and {{: https://github.com/oxidizing/sihl/blob/master/dune-project } many more}. Thanks to the modular architecture, included batteries can be swapped out easily. Statically typed functional programming with OCaml makes web development fun, fast and safe.
 
 {1 Getting Started}
 
+{2 Prerequisites}
+
+You need to have {{:https://opam.ocaml.org/doc/Install.html} OPAM} installed and you should somewhat know OCaml and its tools. {{:https://ocaml.org/learn/tutorials/up_and_running.html} This guide} walks you through setting up some development environment.
+
+It is also recommended that you know OCaml's standard library and {{:https://github.com/ocsigen/lwt} Lwt}. This documentation explains a lot of concepts in terms of types, so you should be comfortable reading type signatures. If you are a beginner, check out the section {{!learn_ocaml} OCaml for web development in Sihl} to learn enough to be dangerous.
+
 {2 Installation}
 
-Sihl is distributed through {{: https://opam.ocaml.org/doc/Install.html} opam}, so go ahead and install it.
-The easiest way to get started is to use {{: https://github.com/tmattio/spin} Spin} to generate a Sihl app. Go ahead and install it.
-With opam it can be installed easily with [opam install spin].
+Sihl is distributed through OPAM, so go ahead and {{:https://opam.ocaml.org/doc/Install.html} install OPAM}.
+The easiest way to get started is to use {{:https://github.com/tmattio/spin} Spin} to generate a Sihl app.
+
+With OPAM, Spin can be installed easily with
+
+{v opam install spin v}
 
 {2 App Generation}
 
-Run [spin new https://github.com/oxidizing/spin-sihl.git app] where [app] is the directory where you want to create your app in.
-After providing Spin with the answers you have to wait for the dependencies to be compiled. This takes a while the first time.
+Run
+
+{v spin new https://github.com/oxidizing/spin-sihl.git app v}
+
+where [app] is the directory where you want to create your app in.
+After providing Spin with the answers, you have to wait for the dependencies to be compiled. This takes a while.
 
 {%html: <p align="center">
   <a href="https://github.com/oxidizing/sihl">
@@ -29,6 +42,163 @@ After providing Spin with the answers you have to wait for the dependencies to b
   </a>
 </p>
 %}
+
+{2 Directory Structure}
+
+{3 Introduction}
+
+The default Sihl application structure is intended to provide a great starting point for both large and small applications. However, you are free to organize your application in whichever way you like.
+
+{v
+├── app
+│   ├── command
+│   ├── context
+│   ├── schedule
+├── database
+├── logs
+├── public
+├── resources
+├── routes
+│   └── site.ml
+│   └── api.ml
+├── run
+│   └── run.ml
+├── service
+│   └── service.ml
+├── test
+└── web
+    ├── handler
+    ├── middleware
+    └── view
+v}
+
+{3 The Root directory}
+
+{4 The App Directory}
+The [app] directory contains the core code of your application. We will explore this directory in more detail soon. However, almost all of your application code will be in this directory.
+
+{4 The Database Directory}
+The [database] directory contains your database migrations and seeds.
+
+{4 The Logs Directory}
+The [logs] directory contains your application logs, by default [app.log] and [error.log].
+
+{4 The Public Directory}
+The [public] directory is served by the HTTP server of Sihl. It is the target directory and it usually contains built CSS, JavaScript and assets.
+
+{4 The Resources Directory}
+The [resource] directory contains the source code of the static assets that are served from the [public] directory. Put the source code of your any JavaScript projects here for instance.
+
+{4 The Routes Directory}
+The [routes] directory contains all of the route definitions for your application. By default, two route files are included with Sihl: [site.ml] and [api.ml].
+
+The [site.ml] file contains routes that are using sessions, CSRF protection and flash messages. If your application doesn't have a JSON API then it is likely that all of your routes will be here.
+
+The [api.ml] file contains routes that are intended to be stateless, and are using tokens and request limiting.
+
+{4 The Run Directory}
+The [run] directory is the main entry point of the executable that is your Sihl app. The [run.ml] file knows all other modules and it is the single place where you wire up your app.
+
+In the file [run.ml], you register the services listed in [service.ml]. Sihl doesn't know about the services in [service.ml], so you must register the services that you want Sihl to start here.
+
+A [run.ml] setup when using PostgreSQL can look like this:
+
+{[
+let commands = [ Command.Add_todo.run ]
+
+let services =
+  [ Service.Migration.register ~migrations:Database.Migration.all ()
+  ; Service.Token.register ()
+  ; Service.EmailTemplate.register ()
+  ; Service.MarketingEmail.register ()
+  ; Service.TransactionalEmail.register ()
+  ; Service.User.register ()
+  ; Service.PasswordResetService.register ()
+  ; Sihl.Schedule.register ()
+  ; Sihl.Web.Http.register ~routers:[
+            Routes.Api.router;
+            Routes.Site.router
+      ] ()
+  ]
+;;
+
+let () = Sihl.App.(empty |> with_services services |> run ~commands)
+]}
+
+Run the executable to run the Sihl app, which will start the registered services.
+
+{4 The Service Directory}
+The [service] directory contains Sihl services that you can use in your application.
+
+Many of Sihl's features are provided as services.
+
+Services can have dependencies on each other. For instance, the {!module:Sihl.Database.Migration} service depends on the {!module:Sihl.Database} service, since a database connection is requied to run migrations.
+
+The [service.ml] file contains a list of modules of services that you can use in your project. This is where you decide the service implementation.
+
+{[
+module Migration = Sihl.Database.Migration.PostgreSql
+]}
+
+This is also where you have to list services of Sihl packages which are not contained in the [sihl] package like [sihl-user] and [sihl-token].
+
+{[
+module Migration = Sihl.Database.Migration.PostgreSql
+module User = Sihl_user.PostgreSql
+module Token = Sihl_token.JwtPostgreSql
+module EmailTemplate = Sihl_email.Template.PostgreSql
+module MarketingEmail = Sihl_email.SendGrid
+module TransactionalEmail = Sihl_email.Smtp
+]}
+
+In [service.ml], you also build your own services with module functors. This concept gives Sihl its modularity, which allows you to easily create your own services.
+
+{[
+module Token = Sihl_token.JwtPostgreSql
+module PasswordResetService = Sihl_user.Password_reset.MakePostgreSql (Token)
+]}
+
+In the example above [Sihl_user.Password_reset.MakePostgreSql] is a functor that takes a token service to instantiate a password reset service.
+
+{4 The Test Directory}
+The [test] directory contains [unit] and [service] tests.
+
+{4 The Web Directory}
+The [web] directory contains middlewares, HTML and JSON views and handlers. We have a closer look at these concepts at {{!thebasics} the basics}.
+
+{5 The Handler Directory}
+The [handler] directory contains your handlers and controllers. Here you take care of parsing the requests, calling application logic and creating responses.
+
+{5 The Middleware Directory}
+The [middleware] directory contains your own {{:https://opam.ocaml.org/packages/rock/}Rock} middleware implementations. Many of Sihl's features like CSRF tokens, session handling and flash messages are implemented as middlewares.
+
+{5 The View Directory}
+The [view] directory contains HTML and JSON views that render response bodies.
+
+{4 The App Directory}
+{5 The Command Directory}
+The [command] directory contains custom CLI commands that can be executed alongside the built-in commands. Next to HTTP, this is the other way to interact with your app.
+
+{5 The Context Directory}
+The [context] contains your application logic. You are free to structure your code however you like. It is not possible to depend on any of the [web] modules in here.
+
+The term context comes from {{:https://martinfowler.com/bliki/BoundedContext.html} Bounded Context}.
+
+We suggest that an approach that is inspired by {{:https://martinfowler.com/tags/domain%20driven%20design.html} Domain-Driven-Design}. You start with a service, a [model.ml] and a [repository.ml] for every context. The service is named after the context. Let's say the context is called [app/context/shopping], then your service is [app/context/shopping/shopping.ml].
+Once you identify other contexts, you can extract them. As an example you could extract a context [app/context/customer]. Grow your app in terms of contexts and be mindful about the dependencies between them.
+
+The [model.ml] file contains types and pure business logic. You are not allowed to do I/O like network requests here. Try to have as much as of your application as possible in models, as they are easy to test and understand.
+
+The [repository.ml] file contains database queries and helpers. You can have your database types which might differ from the business types defined in [model.ml].
+
+The service file contains code that glues pure business logic in [model.ml] to the impure [repository.ml]. The service exposes a public API that other contexts and services can use. It is not allowed to use repositories of other services directly.
+
+Sihl provides you with the surrounding infrastructure services like session handling, user management, job queues and many more.
+
+The app in [app/context] should not depend on infrastructure services. A well designed app will run with other web frameworks after minimal adjustments.
+
+{5 The Schedule Directory}
+The [schedule] directory contains schedules (or crons jobs) that run periodically.
 
 {2 Configuration}
 
@@ -41,11 +211,11 @@ There are three ways to provide configurations:
 - [.env] files
 - programmatically using {!val:Sihl.Configuration.store}
 
-[.env] files have to be placed in the project root directory. Sihl tries to find out where that is, in general the root is where you have your [.git] folder. You can override the project root with the environment variables [ROOT_PATH]. You can set the location of your [.env] file with the environment variable [ENV_FILES_PATH] if you want to move it away from the project root.
+[.env] files have to be placed in the project root directory. Sihl tries to find out where that is. In general, the root directory is the directory that is under version control, i.e. where the [.git] directory is. You can override the project root with [ROOT_PATH]. You can set the location of your [.env] file with [ENV_FILES_PATH] if you want to move it away from the project root.
 
 {3 Reading Configuration}
 
-Use {!module:Sihl.Configuration} for reading configuration. You can also use it to programmatically store some configuration
+Use {!module:Sihl.Configuration} to read configuration. You can also use it to programmatically store some configuration.
 
 Examples:
 
@@ -53,21 +223,49 @@ Examples:
 let smtp_host = Sihl.Configuration.read_string "SMTP_HOST" in
 ]}
 
-{2 Directory Structure}
+{1:thebasics The Basics}
 
-TODO after making final changes
+Everything regarding web lives in {!Sihl.Web}.
 
-{1 Architecture Concepts}
+{2 Routing}
 
-As wisely stated in Laravel's {{:https://laravel.com/docs/8.x/lifecycle#introduction}documentation}:
+The routes are the HTTP entry points to your app. They describe what can be done in a declarative way.
 
-"When using any tool in the "real world", you feel more confident if you understand how that tool works. Application development is no different. When you understand how your development tools function, you feel more comfortable and confident using them."
+Routes can be created with {!module:Sihl.Web.Http}:
 
-{2 Request Lifecycle}
+{[
+let list_todos = Sihl.Web.Http.get "/" Handler.list
+let add_todos = Sihl.Web.Http.post "/add" Handler.add
+let order_pizza = Sihl.Web.Http.post "/order" Handler.order
+]}
 
-In backend web development, everything starts with a HTTP request. Sihl uses {{:todo}Opium} and {{:todo}Rock} under the hood. Your job is it, to create a [Rock.Response.t] given a [Rock.Request.t].
+A route takes a path and a handler, the HTTP method is given by the function.
 
-This is done using a handler, which has the signature [val handler : Rock.Request.t -> Rock.Response.t Lwt.t]. In the handler you call your own code and Sihl services. A handler looks like this:
+The routes live in the root directory [route/api.ml] or [route/site.ml]. A list of routes can be mounted under a path (called scope) with a middleware stack. The site routes for instance are mounted like:
+
+{[
+let router =
+  Sihl.Web.Http.router
+    ~middlewares
+    ~scope:"/"
+    [ list_todos; add_todos; order_pizza ]
+;;
+]}
+
+This creates a {!type:Sihl.Contract.Http.router}. Routers are passed to the web server when registering the service {!Sihl.Web.Http}. When you run the Sihl app, Sihl starts the HTTP server serving the registered routes.
+
+{[
+let services = [
+   Sihl.Web.Http.register ~routers:[ Routes.Api.router; Routes.Site.router ] ()
+  ]
+]}
+
+{2 Requests}
+
+In backend web development, everything starts with an HTTP request. Sihl uses {{:https://github.com/rgrinberg/opium}Opium} (which uses {{:https://opam.ocaml.org/packages/rock/}Rock}) under the hood. Your job is to create a [Rock.Response.t] given a [Rock.Request.t].
+
+This is done using a handler, which has the signature [val handler : Rock.Request.t -> Rock.Response.t Lwt.t]. In the handler you call your own code or Sihl services. A handler looks like this:
+
 {[
 let list req =
   let open Lwt.Syntax in
@@ -79,188 +277,508 @@ let list req =
 ;;
 ]}
 
-In order to wrap handlers and add functionality to them in a functional way, we need a function that takes a handler and returns a handler [val middleware : handler -> handler].
-
-A request has following lifecycle:
+A request has the following lifecycle:
 {ul
-{- {b HTTP Request}: The HTTP server receives a request}
+{- {b HTTP request}: The HTTP server receives a request}
+{- {b Gloabal middlewares in}: The request goes through a list of global middlewares }
 {- {b Route}: The request either matches one of the routes or it doesn't }
-{- {b Middleware in}: The request goes through a list of middlewares }
-{- {b Handler}: The request reaches a handler and triggers service calls which yields in a response }
-{- {b Middleware out}: The response goes through a list of middlewares }
-{- {b HTTP Response}: The response is sent back }
+{- {b Scoped middlewares in}: If there is a match, the request goes through a list of middlewares }
+{- {b Handler}: If there was a match, the request reaches a handler and triggers service calls which yields a response }
+{- {b Scoped middlewares out}: If there was a match, the response goes through a list of scoped middlewares }
+{- {b Global middlewares out}: The response goes through a list of global middlewares }
+{- {b HTTP response}: The response is sent back to the client}
 }
 
-In order to learn more about the request lifcycle, check out Opium's {{:todo}examples}.
+In order to learn more about the request lifecycle, check out {{:https://github.com/rgrinberg/opium/tree/master/example}Opium examples}.
 
-{2 Service Container}
-
-Many of Sihl's features are provided as services.
-
-Services can have dependencies on each other. The {!module:Sihl.Database.Migration} service depends on the {!module:Sihl.Database} service, since running migrations requires a database connection.
-
-To be precise, service {e implementations} can have dependencies. It is important to differentiate between service implementation and service contract. Nothing says, that {!module:Sihl.User} has to depend on {!module:Sihl.Database.Migration} since the user service might be implemented in-memory. Both provided implementations {!val:Sihl.User.Implementation.mariadb} and {!val:Sihl.User.Implementation.postgresql} depend on the migration service.
-
-In the file [run.ml] you find a list of registered services. Sihl knows about their dependencies and starts them in the right order.
-
-A [run.ml] setup when using PostgreSql could look like this:
-
-{[
-let services =
-  [ Sihl.Cleaner.register cleaners
-  ; Sihl.Database.Migration.(register ~migrations Implementation.postgresql)
-  ; Sihl.Token.(register Implementation.postgresql)
-  ; Sihl.Email_template.(register Implementation.postgresql)
-  ; Sihl.User.(register Implementation.postgresql)
-  ; Sihl.Session.(register Implementation.postgresql)
-  ; Sihl.Token.(register Implementation.postgresql)
-  ; Sihl.Queue.(register ~jobs Implementation.postgresql)
-  ; Sihl.User.Password_reset.register ()
-  ; Sihl.Email.(register Implementation.smtp)
-  ; Sihl.Schedule.register ()
-  ; Sihl.Web.register Web.Route.all
-  ]
-;;
-]}
-
-{2 Context}
-
-In the directory [app/context] you have multiple {{:https://martinfowler.com/bliki/BoundedContext.html}contexts}. You can have one big context in the beginning and extract parts into separate contexts as you go. Sihl makes no assumptions about this directory and you are free to structure your code the way you want. Have your repos, services, models DTO's in here.
-
-The crucial part is that your app containing all the business rules is in [app/context]. Sihl helps you to make that app accessible through the internet, but your app should be more or less portable. You should be able to take [app/context] and use it with some other framework. Not that you should of course, this is just a useful mental model :).
-
-{1 The Basics}
-
-This section guides you through the basics to build simple web apps with Sihl.
-
-{2 Routing}
-
-The routes are the entry points to your app through HTTP. They define in a declrative what can be done with it, either by a human user or by another application.
-
-Routes can be created with {!module:Sihl.Web.Http} like:
-
-{[
-let list_todos = Sihl.Web.Http.get "/" Handler.list
-let add_todos = Sihl.Web.Http.post "/add" Handler.add
-let do_todos = Sihl.Web.Http.post "/do" Handler.do_
-]}
-
-A route takes a path and a handler.
-
-The routes live in the the root directory [/route/api.ml] or [/route/site.ml]. A list of routes can be mounted under a path (called scope) with a middleware stack. The site routes for instance are mounted like:
-
-{[
-let site_router =
-  Sihl.Web.Http.router
-    ~middlewares:(Middleware.site ())
-    ~scope:"/"
-    [ list_todos; add_todos; do_todos ]
-;;
-]}
-
-This creates a {!type:Sihl_contract.Http.router} that can be registered with the HTTP service in [run.ml].
-
-{2 Middleware}
-
-Provided Sihl middlewares live in {!module:Sihl.Web} like {!module:Sihl.Web.Csrf} or {!module:Sihl.Web.Session}. Check out their documentation below to learn about the usage.
-
-By default Sihl creates two middleware stacks:
-
-{[
-let site () =
-  [ Sihl.Web.Id.middleware
-  ; Sihl.Web.Error.middleware ()
-  ; Opium.Middleware.logger
-  ; Opium.Middleware.content_length
-  ; Opium.Middleware.etag
-  ; Sihl.Web.Static.middleware ()
-  ; Sihl.Web.Session.middleware ()
-  ; Sihl.Web.Form.middleware
-  ; Sihl.Web.Csrf.middleware ()
-  ; Sihl.Web.Flash.middleware ()
-  ; Sihl.Web.User.session_middleware ()
-  ]
-;;
-
-let json_api () =
-  [ Sihl.Web.Id.middleware
-  ; Opium.Middleware.logger
-  ; Sihl.Web.Error.middleware ()
-  ; Sihl.Web.Json.middleware
-  ; Sihl.Web.Bearer_token.middleware
-  ; Sihl.Web.User.token_middleware ()
-  ]
-;;
-]}
-
-Have a look at the {{:todo}middlewares} that ship with Opium.
-
-- {!module:Sihl.Web.Authentication}
-- {!module:Sihl.Web.Authorization}
-- {!module:Sihl.Web.Bearer_token}
-- {!module:Sihl.Web.Csrf}
-- {!module:Sihl.Web.Error}
-- {!module:Sihl.Web.Flash}
-- {!module:Sihl.Web.Form}
-- {!module:Sihl.Web.Id}
-- {!module:Sihl.Web.Json}
-- {!module:Sihl.Web.Session}
-- {!module:Sihl.Web.Static}
-- {!module:Sihl.Web.User}
-
-{2 CSRF Protection}
-
-TODO:
-- what is it?
-- middleware
-- fetch token
-- tyxml template
-
-{2 Requests}
-
-TODO:
-- it contains body, header, method
-- show opium samples
-- refer to opium
+To deal with requests, you can use {!Sihl.Web.Request} which is just an alias for [Opium.Request].
 
 {2 Responses}
 
-TODO:
-- it contains body, header, method
-- show opium samples
-- refer to opium
+To deal with responses, you can use {!Sihl.Web.Response} which is just an alias for [Opium.Response].
+
+{2 Views}
+
+Sihl makes no assumptions about how you create HTML and JSON responses, so you are free to use whatever you like. However, if you want to work with generators it can be helpful to understand the tools and conventions they use.
+
+{3 HTML}
+
+Use {{:https://ocsigen.org/tyxml/latest/manual/intro} TyXML} to generate HTML in a type-safe way.
+
+{3 JSON}
+
+Use {{:https://github.com/janestreet/ppx_yojson_conv} ppx_yojson_conv} to derive JSON encoders for your types.
+
+{2 Middleware}
+
+You have seen that a handler is a function with the signature [val handler : Rock.Request.t -> Rock.Response.t Lwt.t]. A middleware is a function with the signatures [val middleware : handler -> handler].
+
+Middlewares are used to wrap handlers and add functionality to them.
+
+Sihl middlewares live in {!module:Sihl.Web.Middleware}, go ahead and have a look to get an idea what middlewares can do.
+
+{!module:Sihl.Web} is built on top of {{:https://github.com/rgrinberg/opium} Opium} which allows you to use all {{:https://github.com/rgrinberg/opium/tree/master/opium/src/middlewares} middlewares shipped with Opium}.
+
+{3 Custom middlewares}
+
+Have a look at {{:https://github.com/rgrinberg/opium/tree/master/example/simple_middleware} this example} on how to build an Opium middleware. You can put your own Opium middlewares in [web/middleware].
+
+{3 Default stacks}
+
+A middleware stack is a chain of middlewares. A request has to go through the chain before your handler is called.
+By default, Sihl creates two routers with default middleware stacks.
+
+In [route/site.ml]:
+
+{[
+let middlewares =
+  [ Sihl.Web.Middleware.id
+  ; Sihl.Web.Middleware.error ()
+  ; Opium.Middleware.content_length
+  ; Opium.Middleware.etag
+  ; Sihl.Web.Middleware.static_file ()
+  ; Sihl.Web.Middleware.session ()
+  ; Sihl.Web.Middleware.form
+  ; Sihl.Web.Middleware.csrf ()
+  ; Sihl.Web.Middleware.flash ()
+  ]
+;;
+
+let handlers = (* Your handlers that return HTML responses *)
+
+let router = Sihl.Web.Http.router ~middlewares ~scope:"/api" handlers
+]}
+
+In [route/api.ml]
+
+{[
+let middlewares =
+  [ Sihl.Web.Middleware.id
+  ; Sihl.Web.Middleware.error ()
+  ; Sihl.Web.Middleware.json
+  ; Sihl.Web.Middleware.bearer_token
+  ]
+;;
+
+let handlers = (* Your handlers that return JSON responses *)
+
+let router = Sihl.Web.Http.router ~middlewares ~scope:"/site" handlers
+]}
+
+{2 CSRF Protection}
+
+{3 Introduction}
+
+Cross-Site Request Forgery (CSRF) is an attack that forces an end user to execute unwanted actions on a web application in which they’re currently authenticated. With a little help of social engineering (such as sending a link via email or chat), an attacker may trick the users of a web application into executing actions of the attacker’s choosing.
+If the victim is a normal user, a successful CSRF attack can force the user to perform state changing requests like transferring funds, changing their email address, and so forth. If the victim is an administrative account, CSRF can compromise the entire web application. ({:https://owasp.org/www-community/attacks/csrf})
+
+{3 Installation}
+
+Add {!Sihl.Web.Middleware.csrf} to your list of middlewares. This middleware is enabled by default for site routes in [routes/site.ml].
+
+{[
+let middlewares = [ Sihl.Web.Middleware.csrf () ]
+]}
+
+{3 Usage}
+
+Every form that uses [POST] needs to have a CSRF token associated to it. Use a hidden field [<input type="hidden" name="csrf" value=.../>] in all your forms.
+
+In a handler you can fetch the CSRF token with {!Sihl.Web.Csrf.find} and pass it to the view.
+
+{[
+let form req =
+  let csrf = Sihl.Web.Csrf.find req in
+  Lwt.return @@ Sihl.Web.Response.of_html (View.some_form csrf)
+]}
+
+During development the CSRF check is disabled to make it easier to debug requests. In order to enable CSRF checks you can set [FORCE_CSRF_CHECK].
 
 {2 Session}
 
-TODO:
-- session service
-- middleware
+{3 Introduction}
+
+Since HTTP driven applications are stateless, sessions provide a way to store information about the user across multiple requests. That user information is typically placed in a persistent store/backend which can be accessed from subsequent requests. ({:https://laravel.com/docs/8.x/session#introduction})
+
+Sihl ships with a cookie-based session implementation.
+
+{3 Installation}
+
+Add {!val:Sihl.Web.Middleware.session} to your list of middlewares. The session middleware is enabled by default for site routes in [routes/site.ml].
+
+{[
+let middlewares = [ Sihl.Web.Middleware.session () ]
+]}
+
+{3 Usage}
+
+Use {!Sihl.Web.Session} to handle sessions.
+
+In order to set session values create a response first:
+
+{[
+let handler _ =
+  let resp = Opium.Response.of_plain_text "some response" in
+  Lwt.return @@ Sihl.Web.Session.set ("user_id", Some "4882") resp
+]}
+
+To read a session value:
+{[
+let handler req =
+  let user_id = Sihl.Web.Session.find "user_id" req in
+  match user_id with
+  | Some user_id -> (* fetch user and do stuff *)
+  | None -> Opium.Response.of_plain_text "User not logged in"
+]}
+
+To delete a session value use [None] as value.
+
+{3 Limitations}
+
+The cookie-backed session stores the session content in a cookie that is signed and sent to the client. The session content can be inspected by the client and the maximum data size is 4kb.
+
+If you need to store sensitive data or values larger than 4kb, use [sihl-cache] as a generic persistent key-value store and just store a reference in the actual session. A common use case is to store the user id in the cookie and the associated values in the cache.
 
 {2 Error Handling}
 
-- custom error page
-- email on error
+{3 Introduction}
+
+Exceptions happen and they should be dealt with. They are not recoverable and should be logged and raised. The user gets to see a nice [500] error page.
+
+{3 Installation}
+
+Add {!Sihl.Web.Middleware.error} to your list of middlewares. Check out the documentation to learn how to install custom error reporters. The error middleware is enabled by default for site and JSON routes in [routes/site.ml] and [routes/api.ml].
+
+{[
+let middlewares = [ Sihl.Web.Middleware.error () ]
+]}
 
 {2 Logging}
 
+Sihl uses {{:https://erratique.ch/software/logs} Logs} for log reporting and log formatting. It is highly recommended to have a look {{:https://erratique.ch/software/logs/doc/Logs/index.html#basics} at the basics} if you intend to customize logging.
+
+Set the log level using [LOG_LEVEL] to either [error], [warning], [debug] or [info].
+
+{3 Reporters}
+
+By default Sihl has two log reporters: [CLI] and [file].
+
+The [CLI] reporter logs colored output to [stdout] and [stderr] and the [file] reporter logs to the [logs] directory.
+
+You can install custom log reporters if you want to stream logs to some logging service for instance. In [run/run.ml]:
+
+{[
+let my_log_reporter = (* streaming log reporter *)
+let () = Sihl.App.(empty |> with_services services |> run ~log_reporter:my_log_reporter)
+]}
+
+{3 Logging}
+
+Use {{:https://erratique.ch/software/logs} Logs} to actually log things. We recommand to create a custom log source for every service.
+
+{[
+let log_src = Logs.Src.create "booking.orders"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
+Logs.err (fun m -> m "This prevents the program from running correctly");
+Logs.warn (fun m -> m "This is a suspicious condition that might lead to the program not running correctly");
+Logs.info (fun m -> m "This allows the program user to understand what is going on. If your program is a pure HTTP app, you probably don't need this log level.")
+Logs.debug (fun m -> m "This is for programmers to understand what is going on.")
+]}
+
 {1 Database}
+
+Most Sihl services have MariaDB and PostgreSQL backends, SQLite is planned as well. However, Sihl doesn't make any assumptions about the persistence layer so you are free to bring your own tools and libraries.
+Sihl uses {{:https://github.com/paurkedal/ocaml-caqti} Caqti} under the hood, which provides a common abstraction on top of SQL databases.
 
 The {!Sihl.Database} module provides functions for querying the database, running database schema migrations and it deals with connection pooling.
 
 {2 Query Interface}
 
+The database service creates and manages a connection pool. Configure the pool size with [DATABASE_POOL_SIZE], the default is [10]. Connection pools are used to decrease latency by keeping datbase connections open.
+
+The main two functions to run queries on the connection pool are {!val:Sihl.Database.query} and {!val:Sihl.Database.transaction}.
+
+{[
+let find_request =
+  Caqti_request.find_opt
+    Caqti_type.string
+    Caqti_type.string
+    {sql|
+        SELECT
+          cache_value
+        FROM cache
+        WHERE cache.cache_key = ?
+        |sql}
+;;
+
+let find key =
+  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.find_opt find_request key |> Lwt.map Sihl.Database.raise_error)
+;;
+
+(* or *)
+
+let find key =
+  Sihl.Database.query' (fun (module Connection : Caqti_lwt.CONNECTION) ->
+      Connection.find_opt find_request key)
+;;
+
+]}
+
+{3 Transactions}
+
+Use {!Sihl.Database.transaction} and {!Sihl.Database.transaction'} to run queries in a database transaction.
+
 {2 Migrations}
+
+Migrations live in [database/migration.ml]. Use [make sihl migrate] to run pending migrations to update the database schema. The API is can be found at {!Sihl.Contract.Migration.Sig}.
+
+Services that you register can install their own migrations. It is important to run [make sihl migrate] after installing a new service with a SQL database backend.
 
 {2 Seeding}
 
+Seeds are used to set the state of a database to allow development with test data or to run automated tests.
+
+Seeds live in [database/seed.ml]. Unlike in other web frameworks, Sihl seeds are just function calls. This means that you can not export the current database state as seeds and you have to manually write them.
+Your seeds are using public service API which doesn't break often. This allows for seeding an app that uses many different service backends. Also, seeding doesn't depend on the data model.
+
+Often you want to run seeds before doing a development step. Use {{!commands} commands} to run seeds from the CLI.
+
 {1 Testing}
 
-{2 Cleaning}
+OCaml catches many bugs at compile-time and Sihl enforces certain invariants at start-up time. Howver, there are still many bugs out there that need to be caught. Automated tests can be a great tool to complement the safety of OCaml and Sihl.
 
-{2 System Tests}
+Have a look at {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/data/tdd.html} this introduction to test-driven development} in OCaml.
+
+Sihl uses {{:https://github.com/mirage/alcotest} Alcotest} as a test runner.
+
+{2 Arrange-Act-Assert}
+
+Structure your tests using {{:https://docs.microsoft.com/en-us/visualstudio/test/unit-test-basics?view=vs-2019} Arrange-Act-Assert}.
+
+Arranging your state requires you to clean up first. You don't have direct access to remove the state of infrastructure services provided by Sihl or Sihl packages such as [sihl-user]. In order to clean their state you can use {!Sihl.Cleaner.clean_all}.
+
+{[
+let create_list_and_do _ () =
+  let open Todo.Model in
+  let* () = Sihl_core.Cleaner.clean_all () in
+  let* _ = Todo.create "do laundry" in
+  let* _ = Todo.create "hoover" in
+  let* todos = Todo.search 10 in
+  let t1, t2 =
+    match todos with
+    | [ t1; t2 ], n ->
+      Alcotest.(check int "has 2" 2 n);
+      t1, t2
+    | _ -> Alcotest.fail "Unexpected number of todos received"
+  in
+  Alcotest.(check string "has description" "hoover" t1.description);
+  Alcotest.(check string "has description" "do laundry" t2.description);
+  let* () = Todo.do_ t1 in
+  let* t1 = Todo.find t1.id in
+  Alcotest.(check bool "is done" true (Todo.is_done t1));
+  Lwt.return ()
+;;
+]}
+
+If you have complex pre-conditions, you should move the service calls to the [database] directory and create seeds out of them. Parametrize the seeds as needed for re-use in other tests.
 
 {1 Digging Deeper}
 
+{2 Compiling assets}
+
+This feature is still to be implemented. For now, store your source assets in [resources].
+
+{2 File Storage}
+
+{3 Retrieving files}
+
+Sihl serves the [public] directory under the path [/assets] by default using {!val:Sihl.Web.Middleware.static_file}.
+
+You can configure the directory to be served using [PUBLIC_DIR]. The URI prefix can be configured using [PUBLIC_URI_PREFIX].
+
+{3 Uploading files}
+
+This feature is not implemented in Sihl yet. Use {{:https://github.com/rgrinberg/opium/tree/master/example/file_upload} this Opium example} meanwhile.
+
+{2:commands Commands}
+
+{3 Introduction}
+
+There are two ways to interact with a Sihl app, via HTTP and via the command line interface (CLI) commands. Sihl has built-in support for both.
+In fact, it is often better to implement CLI commands before creating the routes, handlers and views. Commands are a great way to quickly call parts of the app with parameters.
+
+Commands are handled with the module {!Sihl.Command}.
+
+{3 Built-in commands}
+
+Run [make sihl] if you used Spin to create the app, otherwise execute the Sihl app exectuable.
+
+{v
+2021-03-08T09:52:33-00:00 [INFO] [sihl.core.app]: Setup service configurations
+2021-03-08T09:52:33-00:00 [INFO] [sihl.core.configuration]: Env file found: /home/josef/src/app/.env
+2021-03-08T09:52:33-00:00 [INFO] [sihl.core.app]: Setup service commands
+
+  ______    _   __       __
+.' ____ \  (_) [  |     [  |
+| (___ \_| __   | |--.   | |
+ _.____`. [  |  | .-. |  | |
+| \____) | | |  | | | |  | |
+ \______.'[___][___]|__][___]
+
+ Run one of the following commands like "make sihl <command name>".
+-------------------------------------------------------------------
+ Command Name   | Usage                        | Description
+-------------------------------------------------------------------
+ start           -                              Start the Sihl app
+ show-config     -                              Print a list of required service configurations
+ migrate         -                              Run all migrations
+ createadmin     <username> <email> <password>  Create an admin user
+ start-http      -                              Start the HTTP server
+-------------------------------------------------------------------
+v}
+
+This is the list of built-in commands. Whenever you install a package and register Sihl services you get access to more commands.
+
+{3 Custom commands}
+
+Create a file in the directory [app/command] to create custom commands.
+
+{[
+let run =
+  let open Lwt.Syntax in
+  Sihl.Command.make
+    ~name:"add-todo"
+    ~help:"<todo description>"
+    ~description:"Adds a new todo to the backlog"
+    (fun args ->
+      match args with
+      | [ description ] ->
+        let* _ = Todo.create description in
+        Lwt.return ()
+      | _ -> raise (Sihl.Command.Exception "Usage: <todo description>"))
+;;
+]}
+
+Don't forget to pass the list of commands in [run/run.ml] when starting the app:
+
+{[
+let () =
+  Sihl.App.(
+    empty |> with_services services |> run ~commands:[ Command.Add_todo.run ])
+;;
+]}
+
+Run [make sihl] to see your custom command added to the list of registered commands.
+
+{v
+-------------------------------------------------------------------
+ Command Name   | Usage                        | Description
+-------------------------------------------------------------------
+ start           -                              Start the Sihl app
+ show-config     -                              Print a list of required service configurations
+ migrate         -                              Run all migrations
+ createadmin     <username> <email> <password>  Create an admin user
+ start-http      -                              Start the HTTP server
+ add-todo        <todo description>             Adds a new todo to the backlog
+-------------------------------------------------------------------
+v}
+
 {2 Randomness}
 
+Documentation is in the making, check out {!Sihl.Random} meanwhile.
+
+{2 Time}
+
+Documentation is in the making, check out {!Sihl.Time} meanwhile.
+
 {2 Scheduling}
+
+Documentation is in the making, check out {!Sihl.Schedule} meanwhile.
+
+{1:learn_ocaml OCaml for Sihl}
+
+This section will not tell you all about OCaml but instead give some pointers on where to look things up and list some conventions in Sihl.
+
+{2 Basics}
+
+After studying the {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/basics/intro.html} basics}, you should learn about {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/data/intro.html} data} and {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/hop/intro.html} higher-order programming} in order to manipulate data.
+
+Once you feel comfortable with these concepts, go ahead and read about the remaining Sihl-specific topics.
+
+{2 Error handling}
+
+A good primer can be found {{:https://ocaml.org/learn/tutorials/error_handling.html} here}.
+
+On top of the general error handling patterns in OCaml, there is a convention in Sihl services that you are going to use. Some services return [(unit, string) Result.t Lwt.t] while others return [unit Lwt.t] and raise an exception.
+
+{3 Exception and Option}
+
+Lets look at a function that returns a user given an email address.
+
+{[
+(** [find_by_email email] returns a [User.t] if there is a user with an [email]
+    address. Raises an [{!Exception}] if no user is found. *)
+val find_by_email : string -> t Lwt.t
+]}
+
+This function raises an exception if no user was found. But this function can also raise an exception if the connection to the database is broken.
+These two cases are different, but both raise exceptions.
+
+If you get the email address from the end user directly, you might want to use this function instead.
+
+{[
+(** [find_by_email_opt email] returns a [User.t] if there is a user with email
+    address [email]. *)
+val find_by_email_opt : string -> t option Lwt.t
+]}
+
+If there was no user found, you get [None] back and you can ask your user for the correct email address. This function still raises if the database connection breaks.
+The failing database connection is not the user's fault, it can not be recovered by the user doing something else. This is an issue with our infrastructure or our code. The best thing to do here is to let the service raise an exception and let the error middleware handle it with a nice [500] error page.
+
+Use exceptions for errors that are not the fault of a user. The variant [find_by_email] is included for convenient internal usage, when you want to send an email to a list of users in a bulk job for instance.
+
+{3 Result}
+
+Let's take a look at following function:
+
+{[
+(** [update_password user ~old new] sets the [new] password of the [user] if the current password matches [old]. *)
+val update_password : User.t -> ~old:string -> string -> (unit, string) Result.t Lwt.t
+]}
+
+In this case, the function returns an error with an error message if the provided password is wrong. Why can't we just return [unit option Lwt.t] and just act on [None] if something is wrong?
+
+We want to distinguish various invalid user inputs. The user might provide an old password that doesn't match the current one, but the user might also provide a password that is not long enough according to some password policy. In both cases, the user needs to fix the error so we show them the message.
+
+{2 Lwt}
+
+Sihl is built on top of the {{:https://ocsigen.org/tuto/6.4/manual/lwt} Lwt} library, which is similar to Promises in other languages. From the web module to the migration service, everything uses [Lwt] so it is crucial to understand the basic API and usage.
+
+OCaml 4.08.1 has got a syntax that is similar to async/await in other languages. Let's have a look at following example:
+
+{[
+let add req =
+  let open Lwt.Syntax in
+  match Sihl.Web.Form.find_all req with
+  | [ ("description", [ description ]) ] ->
+    let* _ = Todo.create description in
+    let resp = Opium.Response.redirect_to "/" in
+    let resp = Sihl.Web.Flash.set_notice (Some "Successfully updated") resp in
+    Lwt.return resp
+  | _ ->
+    let resp = Opium.Response.redirect_to "/" in
+    let resp = Sihl.Web.Flash.set_alert (Some "Failed to update todo description") resp in
+    Lwt.return resp
+;;
+]}
+
+[Todo.create] creates a todo with a description and it returns [unit Lwt.t] on success. In order to keep the code simple, open [Lwt.Syntax] locally which will give you access to [let*]. If you use [let*], you have to return ['a Lwt.t], so the last expression has to have an [Lwt].
+
+{2 Build system}
+
+Sihl uses {{:https://dune.build/} dune} as a build system. If you are using the {{:https://github.com/oxidizing/spin-sihl}Spin template}, the most common commands are listed in the [Makefile]. However, since you are in charge of your domain and its directory structure, you should become familiar with the basics of dune.
+
+The {{:https://dune.readthedocs.io/en/stable/quick-start.html} Quickstart} should cover most of it.
