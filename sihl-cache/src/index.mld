@@ -1,0 +1,45 @@
+{0 Sihl Cache}
+
+This module provides the cache service and helpers to store arbitrary values. Think of the cache service as a generic key-value store where you can choose a backend.
+
+Currently MariaDb ({!Sihl_cache.MariaDb}) and PostgreSql ({!Sihl_cache.PostgreSql}) are supported.
+
+{1 Installation}
+
+{2 Backend}
+
+First, decide for a backend in [service/service.ml]:
+
+{[
+module Cache = Sihl_cache.PostgreSql
+]}
+
+{2 Registration}
+
+Then, register the service in [run/run.ml]:
+
+{[
+let services = [ Service.Cache.register () ]
+]}
+
+{2 Migrations}
+
+Run pending migrations with [make sihl migrate].
+
+{1 Usage}
+
+The API is documented in {!Sihl.Contract.Cache.Sig}.
+
+{[
+  let open Lwt.Syntax in
+  (* Associated user_id with a value *)
+  let* () = Service.Cache.set ("user_id", Some "56") in
+  let* user_id = Service.Cache.find "user_id" in
+  let () =
+    match user_id with
+    | Some user_id -> print_endline @@ "Found user " ^ user_id
+    | None -> print_endline "No user found"
+  (* Delete user_id *)
+  Service.Cache.set ("user_id", None)
+]}
+

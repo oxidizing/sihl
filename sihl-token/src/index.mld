@@ -1,0 +1,21 @@
+{0 Sihl Token}
+
+A token is a string that has some values associated with it. They are often used for authentication by associating a [user_id].
+
+This documentation is WIP, please refer to {!Sihl.Contract.Token} and {!Sihl_token} meanwhile.
+
+{1 Backends}
+
+[sihl-token] provides 4 backend implementations.
+
+{2 JSON Web Token}
+
+{{:jwt.io}JSON Web Token} (JWT) is a standard for client-side tokens. The associated data is stored in the actual token, which is signed and sent to the client.
+
+JWTs are valid until they expire. If you want to invalidate them before, it is necessary to keep a blacklist on the server. This requires some persistent storage.
+
+Use either {!Sihl_token.JwtPostgreSql} or {!Sihl_token.JwtMariaDb}.
+
+{2 Server-side}
+
+Server-side tokens have their data persisted on the server. This is useful for sensitive information.

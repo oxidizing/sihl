@@ -1,0 +1,64 @@
+{0 Sihl Email}
+
+This module provides the email service and the email template service.
+
+{1 Email service}
+
+The email service provides API for sending emails. Currently SMTP and {{:https://sendgrid.com/} Sendgrid} are supported.
+
+{2 Installation}
+
+{3 Backend}
+
+First, decide for a backend in [service/service.ml]:
+
+{[
+module Email = Sihl_email.SMTP
+]}
+
+{3 Registration}
+
+Then, register the service in [run/run.ml]:
+
+{[
+let services = [ Service.Email.register () ]
+]}
+
+{2 Configuration}
+
+Run [make sihl] to get a list of required configurations.
+
+{2 Usage}
+
+The API is documented in {!Sihl.Contract.Email.Sig}.
+
+{1 Template service}
+
+The template service can be used to create and edit email templates. Email templates are rendered with parameters to emails, that can be sent with the [email service].
+Currently MariaDb ({!Sihl_cache.MariaDb}) and PostgreSql ({!Sihl_cache.PostgreSql}) are supported.
+
+{2 Installation}
+
+{3 Backend}
+
+First, decide for a backend in [service/service.ml]:
+
+{[
+module Email_template = Sihl_email.Temlate.PostgreSql
+]}
+
+{3 Registration}
+
+Then, register the service in [run/run.ml]:
+
+{[
+let services = [ Service.Email_template.register () ]
+]}
+
+{3 Migrations}
+
+Run [make sihl migrate] to run pending migrations.
+
+{2 Usage}
+
+The API is documented in {!Sihl.Contract.Email_template.Sig}.

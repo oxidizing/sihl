@@ -240,27 +240,6 @@ end
 module Database : sig
   include Contract_database.Sig
 
-  val prepare_requests
-    :  string
-    -> string
-    -> string
-    -> 'a Caqti_type.t
-    -> (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-
-  val run_request
-    :  (module Caqti_lwt.CONNECTION)
-    -> ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-    -> [< `Asc | `Desc ]
-    -> 'c option
-    -> 'a
-    -> 'b list Lwt.t
-
   type config =
     { url : string
     ; pool_size : int option
@@ -268,15 +247,6 @@ module Database : sig
 
   val config : string -> int option -> config
   val schema : (string, string -> int option -> config, config) Conformist.t
-  val raise_error : ('a, [< Caqti_error.t ]) result -> 'a
-  val print_pool_usage : ('a, 'b) Caqti_lwt.Pool.t -> unit
-
-  val fetch_pool
-    :  unit
-    -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
-
-  val transaction : (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
-  val query : (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
   val used_database : unit -> Contract_database.database_type option
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t

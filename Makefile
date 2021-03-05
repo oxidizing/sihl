@@ -42,6 +42,11 @@ clean: ## Clean build artifacts and other generated files
 .PHONY: doc
 doc: ## Generate odoc documentation
 	opam exec -- dune build --root . @doc
+	cp -f docs/odoc.css _build/default/_doc/_html/
+
+.PHONY: open-doc
+open-doc: ## Open generated odoc documentation
+	xdg-open _build/default/_doc/_html/index.html
 
 .PHONY: format
 format: ## Format the codebase with ocamlformat
