@@ -91,7 +91,11 @@ let run commands args =
         let stop = Mtime_clock.now () in
         let span = Mtime.span start stop in
         print_endline
-          (Format.asprintf "Command ran successfully in %a" Mtime.Span.pp span);
+          (Format.asprintf
+             "Command '%s' ran successfully in %a"
+             command.name
+             Mtime.Span.pp
+             span);
         Lwt.return ())
       (fun exn ->
         let stop = Mtime_clock.now () in
@@ -100,7 +104,8 @@ let run commands args =
         let stack = Printexc.get_backtrace () in
         print_endline
           (Format.asprintf
-             "Command aborted after %a: '%s'"
+             "Command '%s' aborted after %a: '%s'"
+             command.name
              Mtime.Span.pp
              span
              msg);
