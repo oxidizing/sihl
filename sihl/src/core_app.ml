@@ -71,7 +71,8 @@ let start_cmd services =
 let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app =
   (* Set the logger up as first thing so we can log *)
   Logs.set_reporter log_reporter;
-  Logger.info (fun m -> m "Setup service configurations");
+  Logger.info (fun m -> m "Setting up...");
+  Logger.debug (fun m -> m "Setup configurations");
   let configurations =
     List.map
       (fun service ->
@@ -82,7 +83,7 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
   let () = Core_configuration.load_env_file () in
   let* () = app.before_start () in
   let configuration_commands = Core_configuration.commands configurations in
-  Logger.info (fun m -> m "Setup service commands");
+  Logger.debug (fun m -> m "Setup service commands");
   let service_commands =
     app.services |> List.map Core_container.Service.commands |> List.concat
   in

@@ -105,7 +105,7 @@ let top_sort_lifecycles lifecycles =
 ;;
 
 let start_services services =
-  Logs.info (fun m -> m "Starting Sihl");
+  Logs.info (fun m -> m "Starting...");
   let lifecycles =
     List.map (fun service -> service.Service.lifecycle) services
   in
@@ -113,19 +113,19 @@ let start_services services =
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Logs.info (fun m -> m "Starting service: %s" lifecycle.name);
+      Logs.debug (fun m -> m "Starting service: %s" lifecycle.name);
       let f = lifecycle.start in
       let* () = f () in
       loop lifecycles
     | [] -> Lwt.return ()
   in
   let* () = loop lifecycles in
-  Logs.info (fun m -> m "All services online. Ready for Takeoff!");
+  Logs.info (fun m -> m "All services started.");
   Lwt.return lifecycles
 ;;
 
 let stop_services services =
-  Logs.info (fun m -> m "Stopping Sihl");
+  Logs.info (fun m -> m "Stopping...");
   let lifecycles =
     List.map (fun service -> service.Service.lifecycle) services
   in
@@ -133,14 +133,14 @@ let stop_services services =
   let rec loop lifecycles =
     match lifecycles with
     | lifecycle :: lifecycles ->
-      Logs.info (fun m -> m "Stopping service: %s" lifecycle.name);
+      Logs.debug (fun m -> m "Stopping service: %s" lifecycle.name);
       let f = lifecycle.stop in
       let* () = f () in
       loop lifecycles
     | [] -> Lwt.return ()
   in
   let* () = loop lifecycles in
-  Logs.info (fun m -> m "Stopped Sihl, Good Bye!");
+  Logs.info (fun m -> m "Stopped, Good Bye!");
   Lwt.return ()
 ;;
 
