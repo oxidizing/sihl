@@ -324,12 +324,10 @@ struct
   let start () =
     let open Lwt.Syntax in
     Core_configuration.require schema;
-    let* () =
-      if Core_configuration.is_test ()
-      then Lwt.return ()
-      else check_migrations_status ()
-    in
-    setup ()
+    let* () = setup () in
+    if Core_configuration.is_test ()
+    then Lwt.return ()
+    else check_migrations_status ()
   ;;
 
   let stop () = Lwt.return ()
