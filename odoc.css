@@ -1,12 +1,10 @@
 @charset "UTF-8";
 /* Copyright (c) 2016 The odoc contributors. All rights reserved.
    Distributed under the ISC license, see terms at the end of the file.
-   odoc 1.5.1 */
+   odoc 1.4.0 */
+/* This is an adjusted version acquired from https://github.com/odis-labs/streaming */
 
-/* Fonts */
-@import url('https://fonts.googleapis.com/css?family=Fira+Mono:400,500');
-@import url('https://fonts.googleapis.com/css?family=Noticia+Text:400,400i,700');
-@import url('https://fonts.googleapis.com/css?family=Fira+Sans:400,400i,500,500i,600,600i,700,700i');
+@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro:400,500&display=swap');
 
 
 /* Reset a few things. */
@@ -24,6 +22,7 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
   background: transparent;
 }
 
+/* Tables */
 table {
   border-collapse: collapse;
   border-spacing: 0;
@@ -34,38 +33,32 @@ table {
 }
 
 html {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 body {
-  font-family: "Fira Sans", Helvetica, Arial, sans-serif;
+  font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
   text-align: left;
   color: #333;
-  background: #FFFFFF;
 }
 
 .content {
-  max-width: 90ex;
+  max-width: 88ex;
   margin-left: calc(10vw + 20ex);
   margin-right: 4ex;
   margin-top: 20px;
   margin-bottom: 50px;
-  font-family: "Noticia Text", Georgia, serif;
-  line-height: 1.5;
+  line-height: 1.6em;
 }
 
 .content>header {
   margin-bottom: 30px;
 }
 
-.content>header nav {
-  font-family: "Fira Sans", Helvetica, Arial, sans-serif;
-}
-
 /* Basic markup elements */
 
 b, strong {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 i, em {
@@ -133,14 +126,17 @@ a {
 }
 
 a:hover {
-  box-shadow: 0 1px 0 0 #2C5CBD;
+  text-decoration: underline;
 }
 
 /* Linked highlight */
 *:target {
-  background-color: rgba(187,239,253,0.3) !important;
-  box-shadow: 0 0px 0 1px rgba(187,239,253,0.8) !important;
-  border-radius: 1px;
+  animation: highlight 2s ease;
+}
+@keyframes highlight {
+  0% {
+    background-color: #ffdb4d;
+  }
 }
 
 *:hover>a.anchor {
@@ -188,24 +184,17 @@ a.anchor {
    we restart the sequence there like h2  */
 
 h1, h2, h3, h4, h5, h6, .h7, .h8, .h9, .h10 {
-  font-family: "Fira Sans", Helvetica, Arial, sans-serif;
-  font-weight: 400;
-  margin: 0.5em 0 0.5em 0;
+  /* font-family: "Fira Sans", Helvetica, Arial, sans-serif; */
+  font-weight: 600;
+  margin: 1em 0 0.5em 0;
   padding-top: 0.1em;
   line-height: 1.2;
   overflow-wrap: break-word;
 }
 
 h1 {
-  font-weight: 500;
-  font-size: 2.441em;
   margin-top: 1.214em;
-}
-
-h1 {
-  font-weight: 500;
-  font-size: 1.953em;
-  box-shadow: 0 1px 0 0 #ddd;
+  font-size: 2.441em;
 }
 
 h2 {
@@ -248,64 +237,76 @@ h4 {
 /* Preformatted and code */
 
 tt, code, pre {
-  font-family: "Fira Mono", courier;
-  font-weight: 400;
+  font-family: "Source Code Pro", courier;
 }
 
 pre {
   padding: 0.1em;
-  border: 1px solid #eee;
   border-radius: 5px;
   overflow-x: auto;
 }
 
+/* Inline code */
 p code, li code {
-  background-color: #f6f8fa;
-  color: #0d2b3e;
+  background-color: rgba(27,31,35,.02);
+  border: 1px solid rgba(27,31,35,.05);
   border-radius: 3px;
-  padding: 0 0.3ex;
+  padding: 0 0.5ex;
+  /* font-size: 0.938em; */
 }
 
-p a > code {
+/* Links in code should be visible. */
+p a > code, li a > code {
   color: #2C5CBD;
 }
 
 /* Code blocks (e.g. Examples) */
 
 pre code {
-  font-size: 0.893rem;
+  font-size: 15px;
 }
 
 /* Code lexemes */
 
-.keyword {
-  font-weight: 500;
+.keyword, span.type-var {
+  font-style: italic;
 }
 
 /* Module member specification */
 
 .spec:not(.include), .spec.include details summary {
+  font-weight: 500;
   background-color: #f6f8fa;
   border-radius: 3px;
   border-left: 4px solid #5c9cf5;
   border-right: 5px solid transparent;
-  padding: 0.35em 0.5em;
+  padding: 0.28em 0.5em;
 }
 
 .spec.include details summary:hover {
   background-color: #ebeff2;
 }
 
+.spec.value code {
+  display: block;
+  margin-left: 2ch;
+  text-indent: -2ch;
+}
+
+.spec.value span {
+  white-space: pre;
+}
+
+dt.spec.value span.name {
+  font-weight: 500;
+}
+
 dl, div.spec, .doc, aside {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 dl > dd {
-  padding: 0.5em;
-}
-
-dd> :first-child {
-  margin-top: 0;
+  padding: 0.2em 0.5em;
 }
 
 dl:last-child, dd> :last-child, aside:last-child, article:last-child {
@@ -577,6 +578,18 @@ h1+.modules, h1+.sel {
 
 /* Sidebar and TOC */
 
+.module-index:before {
+  display: block;
+  content: "Modules";
+  text-transform: uppercase;
+  font-size: 1em;
+  margin: 1.414em 0 0.5em;
+  font-weight: 500;
+  color: #777;
+  line-height: 1.2;
+}
+
+
 .toc:before {
   display: block;
   content: "Contents";
@@ -604,7 +617,7 @@ h1+.modules, h1+.sel {
 }
 
 .toc ul li a {
-  font-family: "Fira Sans", sans-serif;
+  /* font-family: "Fira Sans", sans-serif; */
   font-size: 0.95em;
   color: #333;
   font-weight: 400;
@@ -617,10 +630,9 @@ h1+.modules, h1+.sel {
   text-decoration: underline;
 }
 
-/* First level titles */
-
+/* Section headings */
 .toc>ul>li>a {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .toc li ul {
@@ -639,9 +651,10 @@ h1+.modules, h1+.sel {
 }
 
 .toc ul li li {
-  border-left: 1px solid #ccc;
-  margin-left: 5px;
-  padding-left: 12px;
+  position: relative;
+  /* border-left: 1px solid #ccc; */
+  padding-left: 15px;
+  text-indent: -15px;
 }
 
 /* Mobile adjustements. */
@@ -678,10 +691,14 @@ h1+.modules, h1+.sel {
 
 .hljs {
   display: block;
-  background: white;
+  /* background: white; */
   padding: 0.5em;
   color: #333333;
   overflow-x: auto;
+
+  border-radius: 3px;
+  background-color: rgba(27,31,35,.02);
+  border: 1px solid rgba(27,31,35,.05);
 }
 
 .hljs-comment,
@@ -747,18 +764,21 @@ h1+.modules, h1+.sel {
   text-decoration: underline;
 }
 
-/*---------------------------------------------------------------------------
-   Copyright (c) 2016 The odoc contributors
 
-   Permission to use, copy, modify, and/or distribute this software for any
-   purpose with or without fee is hereby granted, provided that the above
-   copyright notice and this permission notice appear in all copies.
+/* Extended non-official definitions */
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-  ---------------------------------------------------------------------------*/
+table.xodoc th,
+table.xodoc td {
+  text-align: left;
+  vertical-align: top;
+  padding-top: 0.4em;
+  padding-bottom: 0.4em;
+}
+
+table.xodoc td + td {
+  padding-left: 0.8em;
+}
+
+table.xodoc tr + tr {
+  border-top: 1px solid rgba(27,31,35,.1);
+}
