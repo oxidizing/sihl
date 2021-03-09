@@ -128,7 +128,7 @@ Thanks to OCaml Sihl is ...
 
 ## Documentation
 
-The API documentation for the latest version can be found here: https://oxidizing.github.io/sihl/sihl/Sihl/index.html
+The API documentation for the latest version can be found here: https://oxidizing.github.io/sihl
 
 ## Roadmap
 

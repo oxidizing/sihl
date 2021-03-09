@@ -44,6 +44,19 @@ doc: ## Generate odoc documentation
 	opam exec -- dune build --root . @doc
 	cp -f docs/odoc.css _build/default/_doc/_html/
 
+.PHONY: release-doc
+release-doc: ## Release odoc documentation
+	make doc
+	rm -rf /tmp/sihl
+	mkdir -p /tmp/sihl/_html
+	mv -f _build/default/_doc/_html/* /tmp/sihl/_html
+	git checkout gh-pages
+	rm -r sihl*
+	mv -f /tmp/sihl/_html/* .
+	git commit -am "Update docs"
+	git push -f origin gh-pages
+	git checkout -f master
+
 .PHONY: open-doc
 open-doc: ## Open generated odoc documentation
 	xdg-open _build/default/_doc/_html/index.html
