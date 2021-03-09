@@ -164,45 +164,45 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create templates table"
         {sql|
-CREATE TABLE IF NOT EXISTS email_templates (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
-  name VARCHAR(128) NOT NULL,
-  content_text TEXT NOT NULL,
-  content_html TEXT NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-  CONSTRAINT unique_name UNIQUE KEY (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-|sql}
+         CREATE TABLE IF NOT EXISTS email_templates (
+           id BIGINT UNSIGNED AUTO_INCREMENT,
+           uuid BINARY(16) NOT NULL,
+           name VARCHAR(128) NOT NULL,
+           content_text TEXT NOT NULL,
+           content_html TEXT NOT NULL,
+           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+           PRIMARY KEY (id),
+           CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+           CONSTRAINT unique_name UNIQUE KEY (name)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+         |sql}
     ;;
 
     let rename_name_column =
       Sihl.Database.Migration.create_step
         ~label:"rename name column"
         {sql|
-ALTER TABLE email_templates
-CHANGE COLUMN `name` label VARCHAR(128) NOT NULL;
-|sql}
+         ALTER TABLE email_templates
+         CHANGE COLUMN `name` label VARCHAR(128) NOT NULL;
+         |sql}
     ;;
 
     let add_updated_at_column =
       Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
-ALTER TABLE email_templates
-ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
-|sql}
+         ALTER TABLE email_templates
+         ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+         |sql}
     ;;
 
     let make_html_nullable =
       Sihl.Database.Migration.create_step
         ~label:"make html nullable"
         {sql|
-ALTER TABLE email_templates
-MODIFY content_html TEXT NULL;
-|sql}
+         ALTER TABLE email_templates
+         MODIFY content_html TEXT NULL;
+         |sql}
     ;;
 
     let migration () =
@@ -346,45 +346,45 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create templates table"
         {sql|
-CREATE TABLE IF NOT EXISTS email_templates (
-  id SERIAL,
-  uuid UUID NOT NULL,
-  name VARCHAR(128) NOT NULL,
-  content_text TEXT NOT NULL,
-  content_html TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (id),
-  UNIQUE (uuid),
-  UNIQUE (name)
-);
-|sql}
+         CREATE TABLE IF NOT EXISTS email_templates (
+           id SERIAL,
+           uuid UUID NOT NULL,
+           name VARCHAR(128) NOT NULL,
+           content_text TEXT NOT NULL,
+           content_html TEXT NOT NULL,
+           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+           PRIMARY KEY (id),
+           UNIQUE (uuid),
+           UNIQUE (name)
+         );
+         |sql}
     ;;
 
     let rename_name_column =
       Sihl.Database.Migration.create_step
         ~label:"rename name column"
         {sql|
-ALTER TABLE email_templates
-RENAME COLUMN name TO label;
-|sql}
+         ALTER TABLE email_templates
+         RENAME COLUMN name TO label;
+         |sql}
     ;;
 
     let add_updated_at_column =
       Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
-ALTER TABLE email_templates
-ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-|sql}
+         ALTER TABLE email_templates
+         ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+         |sql}
     ;;
 
     let make_html_nullable =
       Sihl.Database.Migration.create_step
         ~label:"make html nullable"
         {sql|
-ALTER TABLE email_templates
-ALTER COLUMN content_html DROP NOT NULL;
-|sql}
+         ALTER TABLE email_templates
+         ALTER COLUMN content_html DROP NOT NULL;
+         |sql}
     ;;
 
     let migration () =

@@ -102,13 +102,13 @@ module MariaDb : Sig = struct
     Sihl.Database.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
-CREATE TABLE IF NOT EXISTS token_blacklist (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  token_value VARCHAR(2000) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-|sql}
+       CREATE TABLE IF NOT EXISTS token_blacklist (
+         id BIGINT UNSIGNED AUTO_INCREMENT,
+         token_value VARCHAR(2000) NOT NULL,
+         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+         PRIMARY KEY (id)
+       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+       |sql}
   ;;
 
   let migration =
@@ -202,13 +202,13 @@ module PostgreSql : Sig = struct
     Sihl.Database.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
-CREATE TABLE IF NOT EXISTS token_blacklist (
-  id serial,
-  token_value VARCHAR(2000) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id)
-);
-|sql}
+       CREATE TABLE IF NOT EXISTS token_blacklist (
+         id serial,
+         token_value VARCHAR(2000) NOT NULL,
+         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+         PRIMARY KEY (id)
+       );
+       |sql}
   ;;
 
   let migration =

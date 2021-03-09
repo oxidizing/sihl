@@ -75,28 +75,28 @@ struct
       Migration.create_step
         ~label:"fix collation"
         {sql|
-SET collation_server = 'utf8mb4_unicode_ci';
-|sql}
+         SET collation_server = 'utf8mb4_unicode_ci';
+         |sql}
     ;;
 
     let create_users_table =
       Migration.create_step
         ~label:"create users table"
         {sql|
-CREATE TABLE IF NOT EXISTS user_users (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
-  email VARCHAR(128) NOT NULL,
-  password VARCHAR(128) NOT NULL,
-  username VARCHAR(128),
-  status VARCHAR(128) NOT NULL,
-  admin BOOLEAN NOT NULL DEFAULT false,
-  confirmed BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-  CONSTRAINT unique_email UNIQUE KEY (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+         CREATE TABLE IF NOT EXISTS user_users (
+           id BIGINT UNSIGNED AUTO_INCREMENT,
+           uuid BINARY(16) NOT NULL,
+           email VARCHAR(128) NOT NULL,
+           password VARCHAR(128) NOT NULL,
+           username VARCHAR(128),
+           status VARCHAR(128) NOT NULL,
+           admin BOOLEAN NOT NULL DEFAULT false,
+           confirmed BOOLEAN NOT NULL DEFAULT false,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           PRIMARY KEY (id),
+           CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+           CONSTRAINT unique_email UNIQUE KEY (email)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
          |sql}
     ;;
 
@@ -104,9 +104,9 @@ CREATE TABLE IF NOT EXISTS user_users (
       Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
-ALTER TABLE user_users
-ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
-|sql}
+         ALTER TABLE user_users
+         ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+         |sql}
     ;;
 
     let migration () =
@@ -316,30 +316,30 @@ struct
       Migration.create_step
         ~label:"create users table"
         {sql|
-CREATE TABLE IF NOT EXISTS user_users (
-  id serial,
-  uuid uuid NOT NULL,
-  email VARCHAR(128) NOT NULL,
-  password VARCHAR(128) NOT NULL,
-  username VARCHAR(128),
-  status VARCHAR(128) NOT NULL,
-  admin BOOLEAN NOT NULL DEFAULT false,
-  confirmed BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE (uuid),
-  UNIQUE (email)
-);
-|sql}
+         CREATE TABLE IF NOT EXISTS user_users (
+           id serial,
+           uuid uuid NOT NULL,
+           email VARCHAR(128) NOT NULL,
+           password VARCHAR(128) NOT NULL,
+           username VARCHAR(128),
+           status VARCHAR(128) NOT NULL,
+           admin BOOLEAN NOT NULL DEFAULT false,
+           confirmed BOOLEAN NOT NULL DEFAULT false,
+           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+           PRIMARY KEY (id),
+           UNIQUE (uuid),
+           UNIQUE (email)
+         );
+         |sql}
     ;;
 
     let add_updated_at_column =
       Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
-ALTER TABLE user_users
-ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-|sql}
+         ALTER TABLE user_users
+         ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+         |sql}
     ;;
 
     let migration () =

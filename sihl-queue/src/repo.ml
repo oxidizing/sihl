@@ -202,19 +202,19 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create jobs table"
         {sql|
-CREATE TABLE IF NOT EXISTS queue_jobs (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
-  name VARCHAR(128) NOT NULL,
-  input TEXT NULL,
-  tries BIGINT UNSIGNED,
-  next_run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  max_tries BIGINT UNSIGNED,
-  status VARCHAR(128) NOT NULL,
-  PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-|sql}
+         CREATE TABLE IF NOT EXISTS queue_jobs (
+           id BIGINT UNSIGNED AUTO_INCREMENT,
+           uuid BINARY(16) NOT NULL,
+           name VARCHAR(128) NOT NULL,
+           input TEXT NULL,
+           tries BIGINT UNSIGNED,
+           next_run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+           max_tries BIGINT UNSIGNED,
+           status VARCHAR(128) NOT NULL,
+           PRIMARY KEY (id),
+           CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+         |sql}
     ;;
 
     let migration =
@@ -333,19 +333,19 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create jobs table"
         {sql|
-CREATE TABLE IF NOT EXISTS queue_jobs (
-  id serial,
-  uuid uuid NOT NULL,
-  name VARCHAR(128) NOT NULL,
-  input TEXT NULL,
-  tries BIGINT,
-  next_run_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  max_tries BIGINT,
-  status VARCHAR(128) NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE (uuid)
-);
-|sql}
+         CREATE TABLE IF NOT EXISTS queue_jobs (
+           id serial,
+           uuid uuid NOT NULL,
+           name VARCHAR(128) NOT NULL,
+           input TEXT NULL,
+           tries BIGINT,
+           next_run_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+           max_tries BIGINT,
+           status VARCHAR(128) NOT NULL,
+           PRIMARY KEY (id),
+           UNIQUE (uuid)
+         );
+         |sql}
     ;;
 
     let migration =

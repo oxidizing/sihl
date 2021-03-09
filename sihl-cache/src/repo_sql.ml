@@ -98,15 +98,15 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create cache table"
         {sql|
-CREATE TABLE IF NOT EXISTS cache (
-  id serial,
-  cache_key VARCHAR(64) NOT NULL,
-  cache_value VARCHAR(1024) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY(id),
-  CONSTRAINT unique_key UNIQUE(cache_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-|sql}
+         CREATE TABLE IF NOT EXISTS cache (
+           id serial,
+           cache_key VARCHAR(64) NOT NULL,
+           cache_value VARCHAR(1024) NOT NULL,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           PRIMARY KEY(id),
+           CONSTRAINT unique_key UNIQUE(cache_key)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+         |sql}
     ;;
 
     let migration () =
@@ -135,15 +135,15 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create cache table"
         {sql|
-CREATE TABLE IF NOT EXISTS cache (
-  id serial,
-  cache_key VARCHAR NOT NULL,
-  cache_value TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE (cache_key)
-);
-|sql}
+         CREATE TABLE IF NOT EXISTS cache (
+           id serial,
+           cache_key VARCHAR NOT NULL,
+           cache_value TEXT NOT NULL,
+           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+           PRIMARY KEY (id),
+           UNIQUE (cache_key)
+         );
+         |sql}
     ;;
 
     let migration () =
