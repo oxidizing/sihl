@@ -8,7 +8,7 @@ Currently MariaDb ({!Sihl_cache.MariaDb}) and PostgreSql ({!Sihl_cache.PostgreSq
 
 {2 Backend}
 
-First, decide for a backend in [service/service.ml]:
+First, choose a backend in [service/service.ml]:
 
 {[
 module Cache = Sihl_cache.PostgreSql

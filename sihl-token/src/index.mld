@@ -1,12 +1,10 @@
 {0 Sihl Token}
 
-A token is a string that has some values associated with it. They are often used for authentication by associating a [user_id].
-
-This documentation is WIP, please refer to {!Sihl.Contract.Token} and {!Sihl_token} meanwhile.
+A token is a string that has some values associated with it. Tokens are often used for authentication by associating a [user_id] to a string.
 
 {1 Backends}
 
-[sihl-token] provides 4 backend implementations.
+[sihl-token] ships with 4 backend implementations.
 
 {2 JSON Web Token}
 
@@ -19,3 +17,31 @@ Use either {!Sihl_token.JwtPostgreSql} or {!Sihl_token.JwtMariaDb}.
 {2 Server-side}
 
 Server-side tokens have their data persisted on the server. This is useful for sensitive information.
+
+Use either {!Sihl_token.PostgreSql} or {!Sihl_token.MariaDb}.
+
+{2 Installation}
+
+{3 Backend}
+
+First, choose a backend in [service/service.ml]:
+
+{[
+module Token = Sihl_token.JwtPostgresql
+]}
+
+{3 Registration}
+
+Register the service in [run/run.ml]:
+
+{[
+let services = [ Service.Token.register () ]
+]}
+
+{3 Migrations}
+
+Run [make sihl migrate] to run pending migrations.
+
+{2 Usage}
+
+The API is documented in {!Sihl.Contract.Token.Sig}.
