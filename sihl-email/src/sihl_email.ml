@@ -64,61 +64,74 @@ let intercept sender email =
   else sender email
 ;;
 
-module Smtp : Sihl.Contract.Email.Sig = struct
+module type SmtpConfig = sig
+  val sender : unit -> string Lwt.t
+  val username : unit -> string Lwt.t
+  val password : unit -> string Lwt.t
+  val hostname : unit -> string Lwt.t
+  val port : unit -> int option Lwt.t
+  val start_tls : unit -> bool Lwt.t
+  val ca_path : unit -> string option Lwt.t
+  val ca_cert : unit -> string option Lwt.t
+  val console : unit -> bool option Lwt.t
+end
+
+type smtp_config =
+  { sender : string
+  ; username : string
+  ; password : string
+  ; hostname : string
+  ; port : int option
+  ; start_tls : bool
+  ; ca_path : string option
+  ; ca_cert : string option
+  ; console : bool option
+  }
+
+let smtp_config
+    sender
+    username
+    password
+    hostname
+    port
+    start_tls
+    ca_path
+    ca_cert
+    console
+  =
+  { sender
+  ; username
+  ; password
+  ; hostname
+  ; port
+  ; start_tls
+  ; ca_path
+  ; ca_cert
+  ; console
+  }
+;;
+
+let smtp_schema =
+  let open Conformist in
+  make
+    [ string "SMTP_SENDER"
+    ; string "SMTP_USERNAME"
+    ; string "SMTP_PASSWORD"
+    ; string "SMTP_HOST"
+    ; optional (int ~default:587 "SMTP_PORT")
+    ; bool "SMTP_START_TLS"
+    ; optional (string ~default:"/etc/ssl/certs" "SMTP_CA_PATH")
+    ; optional (string ~default:"" "SMTP_CA_CERT")
+    ; optional (bool ~default:false "EMAIL_CONSOLE")
+    ]
+    smtp_config
+;;
+
+module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
-  type config =
-    { sender : string
-    ; username : string
-    ; password : string
-    ; hostname : string
-    ; port : int option
-    ; start_tls : bool
-    ; ca_path : string option
-    ; ca_cert : string option
-    ; console : bool option
-    }
-
-  let config
-      sender
-      username
-      password
-      hostname
-      port
-      start_tls
-      ca_path
-      ca_cert
-      console
-    =
-    { sender
-    ; username
-    ; password
-    ; hostname
-    ; port
-    ; start_tls
-    ; ca_path
-    ; ca_cert
-    ; console
-    }
-  ;;
-
-  let schema =
-    let open Conformist in
-    make
-      [ string "SMTP_SENDER"
-      ; string "SMTP_USERNAME"
-      ; string "SMTP_PASSWORD"
-      ; string "SMTP_HOST"
-      ; optional (int ~default:587 "SMTP_PORT")
-      ; bool "SMTP_START_TLS"
-      ; optional (string ~default:"/etc/ssl/certs" "SMTP_CA_PATH")
-      ; optional (string ~default:"" "SMTP_CA_CERT")
-      ; optional (bool ~default:false "EMAIL_CONSOLE")
-      ]
-      config
-  ;;
-
   let send' (email : Sihl.Contract.Email.t) =
+    let open Lwt.Syntax in
     let recipients =
       List.concat
         [ [ Letters.To email.recipient ]
@@ -131,14 +144,14 @@ module Smtp : Sihl.Contract.Email.Sig = struct
       | Some html -> Letters.Html html
       | None -> Letters.Plain email.text
     in
-    let sender = (Sihl.Configuration.read schema).sender in
-    let username = (Sihl.Configuration.read schema).username in
-    let password = (Sihl.Configuration.read schema).password in
-    let hostname = (Sihl.Configuration.read schema).hostname in
-    let port = (Sihl.Configuration.read schema).port in
-    let with_starttls = (Sihl.Configuration.read schema).start_tls in
-    let ca_path = (Sihl.Configuration.read schema).ca_path in
-    let ca_cert = (Sihl.Configuration.read schema).ca_cert in
+    let* sender = Config.sender ()
+    and* username = Config.username ()
+    and* password = Config.password ()
+    and* hostname = Config.hostname ()
+    and* port = Config.port ()
+    and* with_starttls = Config.start_tls ()
+    and* ca_path = Config.ca_path ()
+    and* ca_cert = Config.ca_cert () in
     let config =
       Letters.Config.make ~username ~password ~hostname ~with_starttls
       |> Letters.Config.set_port port
@@ -160,18 +173,7 @@ module Smtp : Sihl.Contract.Email.Sig = struct
 
   let send email = intercept send' email
   let bulk_send _ = failwith "Bulk sending not implemented yet"
-
-  let start () =
-    (* Make sure that configuration is valid *)
-    if Sihl.Configuration.is_production ()
-    then Sihl.Configuration.require schema
-    else ();
-    (* if mail is intercepted, don't punish user for not providing SMTP
-       credentials *)
-    if should_intercept () then () else Sihl.Configuration.require schema;
-    Lwt.return ()
-  ;;
-
+  let start () = Lwt.return ()
   let stop () = Lwt.return ()
 
   let lifecycle =
@@ -179,12 +181,47 @@ module Smtp : Sihl.Contract.Email.Sig = struct
   ;;
 
   let register () =
-    let configuration = Sihl.Configuration.make ~schema () in
+    let configuration = Sihl.Configuration.make ~schema:smtp_schema () in
     Sihl.Container.Service.create ~configuration lifecycle
   ;;
 end
 
-module SendGrid : Sihl.Contract.Email.Sig = struct
+module EnvSmtpConfig = struct
+  let sender () = Lwt.return (Sihl.Configuration.read smtp_schema).sender
+  let username () = Lwt.return (Sihl.Configuration.read smtp_schema).username
+  let password () = Lwt.return (Sihl.Configuration.read smtp_schema).password
+  let hostname () = Lwt.return (Sihl.Configuration.read smtp_schema).hostname
+  let port () = Lwt.return (Sihl.Configuration.read smtp_schema).port
+  let start_tls () = Lwt.return (Sihl.Configuration.read smtp_schema).start_tls
+  let ca_path () = Lwt.return (Sihl.Configuration.read smtp_schema).ca_path
+  let ca_cert () = Lwt.return (Sihl.Configuration.read smtp_schema).ca_cert
+  let console () = Lwt.return (Sihl.Configuration.read smtp_schema).console
+end
+
+module Smtp = MakeSmtp (EnvSmtpConfig)
+
+module type SendGridConfig = sig
+  val api_key : unit -> string Lwt.t
+  val console : unit -> bool option Lwt.t
+end
+
+type sendgrid_config =
+  { api_key : string
+  ; console : bool option
+  }
+
+let sendgrid_config api_key console = { api_key; console }
+
+let sendgrid_schema =
+  let open Conformist in
+  make
+    [ string "SENDGRID_API_KEY"
+    ; optional (bool ~default:false "EMAIL_CONSOLE")
+    ]
+    sendgrid_config
+;;
+
+module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   let body ~recipient ~subject ~sender ~content =
@@ -222,22 +259,10 @@ module SendGrid : Sihl.Contract.Email.Sig = struct
     "https://api.sendgrid.com/v3/mail/send" |> Uri.of_string
   ;;
 
-  type config =
-    { api_key : string
-    ; console : bool option
-    }
-
-  let config api_key console = { api_key; console }
-
-  let schema =
-    let open Conformist in
-    make [ string "SENDGRID_API_KEY"; optional (bool "EMAIL_CONSOLE") ] config
-  ;;
-
   let send' email =
     let open Lwt.Syntax in
     let open Sihl.Contract.Email in
-    let token = (Sihl.Configuration.read schema).api_key in
+    let* token = Config.api_key () in
     let headers =
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token
@@ -275,13 +300,7 @@ module SendGrid : Sihl.Contract.Email.Sig = struct
 
   let send email = intercept send' email
   let bulk_send _ = Lwt.return ()
-
-  let start () =
-    (* Make sure that configuration is valid *)
-    Sihl.Configuration.require schema;
-    Lwt.return ()
-  ;;
-
+  let start () = Lwt.return ()
   let stop () = Lwt.return ()
 
   let lifecycle =
@@ -289,10 +308,17 @@ module SendGrid : Sihl.Contract.Email.Sig = struct
   ;;
 
   let register () =
-    let configuration = Sihl.Configuration.make ~schema () in
+    let configuration = Sihl.Configuration.make ~schema:sendgrid_schema () in
     Sihl.Container.Service.create ~configuration lifecycle
   ;;
 end
+
+module EnvSendGridConfig = struct
+  let api_key () = Lwt.return (Sihl.Configuration.read sendgrid_schema).api_key
+  let console () = Lwt.return (Sihl.Configuration.read sendgrid_schema).console
+end
+
+module SendGrid = MakeSendGrid (EnvSendGridConfig)
 
 (* This is useful if you need to answer a request quickly while sending the
    email in the background *)

@@ -13,7 +13,24 @@ The email service provides API for sending emails. Currently SMTP and {{:https:/
 First, choose a backend in [service/service.ml]:
 
 {[
-module Email = Sihl_email.SMTP
+module Email = Sihl_email.Smtp
+]}
+
+If you want to use the same backend multiple times with different configs, you can use the [Make] functors with a config. The config fields are functions that take [()] and return a value wrapped in [Lwt.t]. This allows reading these config fields from IO.
+
+{[
+module MarketingSmtpConfig = struct
+  let sender () = Lwt.return "marketing@mail.io"
+  ...
+end
+
+module CustomerServiceSmtpConfig = struct
+  let sender () = Lwt.return "help@mail.io"
+  ...
+end
+
+module MarketingMail = Sihl_email.MakeSmtp (MarketingSmtpConfig)
+module CustomerServiceMail = Sihl_email.MakeSmtp (CustomerServiceSmtpConfig)
 ]}
 
 {3 Registration}
