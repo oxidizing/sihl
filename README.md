@@ -5,7 +5,7 @@
   <p align="center">
     A modular and functional web framework
     <br />
-    <a href="https://oxidizing.github.io/sihl/sihl/Sihl/index.html">
+    <a href="https://oxidizing.github.io/sihl">
     <strong>Explore the docs »</strong></a>
     <br />
     <br />
@@ -52,7 +52,7 @@ To initialize opam:
 opam init
 ```
 
-To install Spin, following the [instructions here](). You can install it using opam: 
+To install Spin, following the [instructions here](https://github.com/tmattio/spin). You can install it using opam: 
 ```sh
 opam install spin
 ```
