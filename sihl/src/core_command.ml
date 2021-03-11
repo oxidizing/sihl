@@ -27,8 +27,8 @@ let sexp_of_t { name; help; description; _ } =
 
 let show { name; help; description; _ } =
   let help = Option.value ~default:"-" help in
-  let n_left_pad_help = 15 - String.length name in
-  let n_left_pad_desc = 30 - String.length help in
+  let n_left_pad_help = 15 - String.length (CCString.take 15 name) in
+  let n_left_pad_desc = 30 - String.length (CCString.take 30 help) in
   let padding_help = String.make n_left_pad_help ' ' in
   let padding_desc = String.make n_left_pad_desc ' ' in
   Format.sprintf " %s%s %s%s %s" name padding_help help padding_desc description
