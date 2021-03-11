@@ -782,3 +782,19 @@ let add req =
 Sihl uses {{:https://dune.build/} dune} as a build system. If you are using the {{:https://github.com/oxidizing/spin-sihl}Spin template}, the most common commands are listed in the [Makefile]. However, since you are in charge of your domain and its directory structure, you should become familiar with the basics of dune.
 
 The {{:https://dune.readthedocs.io/en/stable/quick-start.html} Quickstart} should cover most of it.
+
+{1:api API}
+
+{!modules:
+Sihl.App
+Sihl.Cleaner
+Sihl.Command
+Sihl.Contract
+Sihl.Database
+Sihl.Configuration
+Sihl.Container
+Sihl.Log
+Sihl.Random
+Sihl.Schedule
+Sihl.Time
+Sihl.Web}
