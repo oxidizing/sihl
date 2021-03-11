@@ -80,7 +80,7 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
         , Core_container.Service.configuration service ))
       app.services
   in
-  let () = Core_configuration.load_env_file () in
+  let () = Core_configuration.load () in
   let* () = app.before_start () in
   let configuration_commands = Core_configuration.commands configurations in
   Logger.debug (fun m -> m "Setup service commands");

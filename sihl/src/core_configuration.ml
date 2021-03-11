@@ -159,6 +159,18 @@ let read_string' key =
 
 let read_string = memoize read_string'
 
+let load () =
+  load_env_file ();
+  match read_string "SIHL_ENV" with
+  | None ->
+    Logs.info (fun m ->
+        m
+          "SIHL_ENV not found. Set it to one of the following values: \
+           development, production, test");
+    raise @@ Exception "SIHL_ENV not found"
+  | Some env -> Logs.info (fun m -> m "SIHL_ENV: %s" env)
+;;
+
 let is_test () =
   match read_string "SIHL_ENV" with
   | Some "test" -> true

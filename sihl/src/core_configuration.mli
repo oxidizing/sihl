@@ -84,6 +84,9 @@ val read_env_file : unit -> data option
     its contents into the environment variables. *)
 val load_env_file : unit -> unit
 
+(** [load ()] calls {!load_env_file} and makes sure that [SIHL_ENV] was set. *)
+val load : unit -> unit
+
 (** [read schema] returns the decoded, statically typed version of configuration
     [t] of the [schema]. This is used in services to declaratively define a
     valid configuration.
