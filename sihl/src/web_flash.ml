@@ -24,23 +24,14 @@ module Flash = struct
   ;;
 
   let of_yojson (json : Yojson.Safe.t) : t option =
-    (* In order to safe space, the empty flash cookie has the empty string as
-       value *)
     let open Yojson.Safe.Util in
-    let empty_string =
-      try Some (to_string json) with
-      | _ -> None
-    in
-    match empty_string with
-    | Some _ -> Some empty
-    | None ->
-      (try
-         let alert = json |> member "alert" |> to_string_option in
-         let notice = json |> member "notice" |> to_string_option in
-         let custom = json |> member "custom" |> to_string_option in
-         Some { alert; notice; custom }
-       with
-      | _ -> None)
+    try
+      let alert = json |> member "alert" |> to_string_option in
+      let notice = json |> member "notice" |> to_string_option in
+      let custom = json |> member "custom" |> to_string_option in
+      Some { alert; notice; custom }
+    with
+    | _ -> None
   ;;
 
   let to_yojson (flash : t) : Yojson.Safe.t =
@@ -69,8 +60,13 @@ module Flash = struct
   ;;
 
   let of_json (json : string) : t option =
-    try of_yojson (Yojson.Safe.from_string json) with
-    | _ -> None
+    (* In order to safe space, the empty flash cookie has the empty string as
+       value. *)
+    if String.equal json ""
+    then Some empty
+    else (
+      try of_yojson (Yojson.Safe.from_string json) with
+      | _ -> None)
   ;;
 
   let to_json (flash : t) : string = flash |> to_yojson |> Yojson.Safe.to_string
