@@ -1,6 +1,21 @@
 open Alcotest_lwt
 open Lwt.Syntax
 
+let assert_delete_cookie cookie =
+  Alcotest.(
+    check
+      (pair string string)
+      "flash is empty"
+      ("_flash", "")
+      cookie.Opium.Cookie.value);
+  match cookie.Opium.Cookie.expires with
+  | `Max_age value ->
+    if Int64.equal value Int64.zero
+    then ()
+    else Alcotest.fail "Flash cookie did not expire"
+  | _ -> Alcotest.fail "Flash cookie did not expire"
+;;
+
 let not_touching_flash_without_set_cookie_doesnt_set_cookie _ () =
   let req = Opium.Request.get "/" in
   let* res =
@@ -68,13 +83,7 @@ let flash_is_cleared_after_request _ () =
         Lwt.return @@ Opium.Response.of_plain_text "")
       req
   in
-  Alcotest.(
-    check
-      (pair string string)
-      "flash is empty"
-      (* Default empty flash with default test secret *)
-      ("_flash", "")
-      cookie_value);
+  assert_delete_cookie cookie;
   Lwt.return ()
 ;;
 
@@ -130,9 +139,10 @@ let set_and_read_flash_message _ () =
   in
   (* Simulate the browser sending the last Set-Cookie *)
   let cookie = Opium.Response.cookie "_flash" response |> Option.get in
+  assert_delete_cookie cookie;
   let cookie_value = cookie.Opium.Cookie.value in
   let req = Opium.Request.get "" |> Opium.Request.add_cookie cookie_value in
-  let* _ =
+  let* resp =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
@@ -142,6 +152,8 @@ let set_and_read_flash_message _ () =
         Lwt.return res)
       req
   in
+  let cookie = Opium.Response.cookie "_flash" resp in
+  Alcotest.(check bool "no cookie was set" true (Option.is_none cookie));
   Lwt.return ()
 ;;
 
