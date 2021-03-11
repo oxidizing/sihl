@@ -35,38 +35,28 @@ module Flash = struct
   ;;
 
   let to_yojson (flash : t) : Yojson.Safe.t =
-    (* In order to safe space, the empty flash cookie has the empty string as
-       value *)
-    if is_empty flash
-    then `String ""
-    else (
-      let { alert; notice; custom } = flash in
-      let alert =
-        alert
-        |> Option.map (fun alert -> `String alert)
-        |> Option.value ~default:`Null
-      in
-      let notice =
-        notice
-        |> Option.map (fun notice -> `String notice)
-        |> Option.value ~default:`Null
-      in
-      let custom =
-        custom
-        |> Option.map (fun custom -> `String custom)
-        |> Option.value ~default:`Null
-      in
-      `Assoc [ "alert", alert; "notice", notice; "custom", custom ])
+    let { alert; notice; custom } = flash in
+    let alert =
+      alert
+      |> Option.map (fun alert -> `String alert)
+      |> Option.value ~default:`Null
+    in
+    let notice =
+      notice
+      |> Option.map (fun notice -> `String notice)
+      |> Option.value ~default:`Null
+    in
+    let custom =
+      custom
+      |> Option.map (fun custom -> `String custom)
+      |> Option.value ~default:`Null
+    in
+    `Assoc [ "alert", alert; "notice", notice; "custom", custom ]
   ;;
 
   let of_json (json : string) : t option =
-    (* In order to safe space, the empty flash cookie has the empty string as
-       value. *)
-    if String.equal json ""
-    then Some empty
-    else (
-      try of_yojson (Yojson.Safe.from_string json) with
-      | _ -> None)
+    try of_yojson (Yojson.Safe.from_string json) with
+    | _ -> None
   ;;
 
   let to_json (flash : t) : string = flash |> to_yojson |> Yojson.Safe.to_string
@@ -168,17 +158,17 @@ let persist_flash old_flash cookie_key resp =
     if Flash.is_empty old_flash
     then (* Flash was not touched, don't set cookie *)
       resp
-    else (
-      (* Set empty flash cookie *)
-      let cookie = cookie_key, "" in
-      let resp = Opium.Response.add_cookie_or_replace cookie resp in
-      resp)
+    else (* Remove flash cookie *)
+      Opium.Response.remove_cookie cookie_key resp
   | Some flash ->
     if Flash.equals old_flash flash
     then (* Flash was not touched, don't set cookie *)
       resp
+    else if Flash.is_empty flash
+    then (* Remove flash cookie *)
+      Opium.Response.remove_cookie cookie_key resp
     else (
-      (* Flash was changed, set cookie *)
+      (* Flash was changed and is not empty, set cookie *)
       let cookie_value = Flash.to_json flash in
       let cookie = cookie_key, cookie_value in
       let resp = Opium.Response.add_cookie_or_replace cookie resp in
