@@ -55,11 +55,12 @@ let middleware
     ()
   =
   let filter handler req =
-    if Core_configuration.is_development ()
-       && Option.value
-            (Core_configuration.read_bool "FORCE_CSRF_CHECK")
-            ~default:false
-    then handler req
+    let check_csrf =
+      Core_configuration.is_production ()
+      || Option.value (Core_configuration.read_bool "CHECK_CSRF") ~default:false
+    in
+    if not check_csrf (* Set fake token since CSRF is disabled *)
+    then handler (set "development" req)
     else (
       let req, token = Web_form.consume req "csrf" in
       (* Create a new token for each request to mitigate BREACH attack *)

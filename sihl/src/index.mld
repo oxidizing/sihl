@@ -392,7 +392,7 @@ let form req =
   Lwt.return @@ Sihl.Web.Response.of_html (View.some_form csrf)
 ]}
 
-During development the CSRF check is disabled to make it easier to debug requests. In order to enable CSRF checks you can set [FORCE_CSRF_CHECK].
+During development and testing the CSRF check is disabled to make it easier to debug requests. In order to enable CSRF checks you can set [CHECK_CSRF] to [true].
 
 {2 Session}
 
