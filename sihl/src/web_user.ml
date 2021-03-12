@@ -28,70 +28,18 @@ let set user req =
   { req with env }
 ;;
 
-let key_logout : unit Opium.Context.key =
-  Opium.Context.Key.create ("user.logout", Sexplib.Std.sexp_of_unit)
-;;
-
-let logout res =
-  let env = res.Opium.Response.env in
-  let env = Opium.Context.add key_logout () env in
-  { res with env }
-;;
-
-let session_middleware ?(key = "authn") find_user =
+let middleware ?(key = "user_id") find_user =
   let open Lwt.Syntax in
   let filter handler req =
     match Web_session.find key req with
     | Some user_id ->
-      let* user = find_user ~user_id in
+      let* user = find_user user_id in
       (match user with
       | Some user ->
         let req = set user req in
-        let* resp = handler req in
-        let env = resp.Opium.Response.env in
-        (match Opium.Context.find key_logout env with
-        | None -> Lwt.return resp
-        | Some () ->
-          let resp = Web_session.set (key, None) resp in
-          Lwt.return resp)
+        handler req
       | None -> handler req)
     | None -> handler req
   in
-  Rock.Middleware.create ~name:"user.session" ~filter
-;;
-
-let token_middleware
-    ?(key = "user_id")
-    ?invalid_token_handler
-    read_token
-    find_user
-    deactivate_token
-  =
-  (* TODO [jerben] make user id key user_id configurable *)
-  let open Lwt.Syntax in
-  let filter handler req =
-    match Web_bearer_token.find_opt req with
-    | Some token ->
-      let* user_id = read_token token ~k:key in
-      (match user_id with
-      | None ->
-        (match invalid_token_handler with
-        | Some handler -> handler req
-        | None -> handler req)
-      | Some user_id ->
-        let* user = find_user ~user_id in
-        (match user with
-        | Some user ->
-          let req = set user req in
-          let* resp = handler req in
-          let env = resp.Opium.Response.env in
-          (match Opium.Context.find key_logout env with
-          | None -> Lwt.return resp
-          | Some () ->
-            let* () = deactivate_token token in
-            Lwt.return resp)
-        | None -> handler req))
-    | None -> handler req
-  in
-  Rock.Middleware.create ~name:"user.token" ~filter
+  Rock.Middleware.create ~name:"session.user" ~filter
 ;;

@@ -148,6 +148,19 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
     let configuration = Sihl.Configuration.make ~schema () in
     Sihl.Container.Service.create ~configuration lifecycle
   ;;
+
+  module Web = struct
+    module User = struct
+      exception User_not_found = Web_user.User_not_found
+
+      let find = Web_user.find
+      let find_opt = Web_user.find_opt
+    end
+
+    module Middleware = struct
+      let user = Web_user.middleware (fun token ~k -> read token ~k)
+    end
+  end
 end
 
 module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
@@ -314,6 +327,19 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
     Repo.register_cleaner ();
     Sihl.Container.Service.create lifecycle
   ;;
+
+  module Web = struct
+    module User = struct
+      exception User_not_found = Web_user.User_not_found
+
+      let find = Web_user.find
+      let find_opt = Web_user.find_opt
+    end
+
+    module Middleware = struct
+      let user = Web_user.middleware (fun token ~k -> read token ~k)
+    end
+  end
 end
 
 module MariaDb = Make (Repo.MariaDb (Sihl.Database.Migration.MariaDb))

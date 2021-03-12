@@ -16,10 +16,6 @@ module Web = struct
   module Router = Opium.Router
   module Route = Opium.Route
 
-  module Authentication = struct
-    let login = Web_authentication.login
-  end
-
   module Bearer_token = struct
     let find = Web_bearer_token.find
     let find_opt = Web_bearer_token.find_opt
@@ -99,13 +95,13 @@ module Web = struct
   module User = struct
     let find = Web_user.find
     let find_opt = Web_user.find_opt
-    let logout = Web_user.logout
   end
 
   module Middleware = struct
-    let authentication_session = Web_authentication.session_middleware
-    let authentication_token = Web_authentication.token_middleware
+    (* TODO [jerben] Move this to sihl-authorization or sihl-user *)
     let authorization_user = Web_authorization.user
+
+    (* TODO [jerben] Move this to sihl-authorization or sihl-user *)
     let authorization_admin = Web_authorization.admin
     let bearer_token = Web_bearer_token.middleware
     let csrf = Web_csrf.middleware
@@ -117,8 +113,7 @@ module Web = struct
     let json = Web_json.middleware
     let session = Web_session.middleware
     let static_file = Web_static.middleware
-    let user_session = Web_user.session_middleware
-    let user_token = Web_user.token_middleware
+    let user = Web_user.middleware
   end
 end
 

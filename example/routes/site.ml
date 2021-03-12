@@ -12,7 +12,7 @@ let middlewares =
   ; Sihl.Web.Middleware.form
   ; Sihl.Web.Middleware.csrf ()
   ; Sihl.Web.Middleware.flash ()
-  ; Sihl.Web.Middleware.user_session Service.User.find_opt
+  ; Sihl.Web.Middleware.user (fun user_id -> Service.User.find_opt ~user_id)
   ]
 ;;
 

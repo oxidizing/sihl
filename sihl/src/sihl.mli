@@ -23,14 +23,6 @@ module Web : sig
     include module type of Web_http
   end
 
-  module Authentication : sig
-    val login
-      :  email:string
-      -> password:string
-      -> Rock.Response.t
-      -> Rock.Response.t
-  end
-
   module Bearer_token : sig
     val find : Rock.Request.t -> string
     val find_opt : Rock.Request.t -> string option
@@ -126,29 +118,21 @@ module Web : sig
   module User : sig
     val find : Rock.Request.t -> Contract_user.t
     val find_opt : Rock.Request.t -> Contract_user.t option
-    val logout : Rock.Response.t -> Rock.Response.t
   end
 
   module Middleware : sig
-    val authentication_session
-      :  ?key:String.t
-      -> ?error_handler:('a -> Response.t Lwt.t)
-      -> (email:string -> password:string -> (Contract_user.t, 'a) result Lwt.t)
-      -> Rock.Middleware.t
-
-    val authentication_token
-      :  ?key:string
-      -> ?error_handler:('a -> Response.t Lwt.t)
-      -> (email:string -> password:string -> (Contract_user.t, 'a) result Lwt.t)
-      -> ((string * string) list -> string Lwt.t)
-      -> Rock.Middleware.t
-
     val authorization_user : login_path_f:(unit -> string) -> Rock.Middleware.t
+      [@@ocaml.deprecated
+        "authorization_user will be moved to a dedicated authorization package \
+         sihl-authorization in the future."]
 
     val authorization_admin
       :  login_path_f:(unit -> string)
       -> (Contract_user.t -> bool)
       -> Rock.Middleware.t
+      [@@ocaml.deprecated
+        "authorization_admin will be moved to a dedicated authorization \
+         package sihl-authorization in the future."]
 
     val bearer_token : Rock.Middleware.t
 
@@ -212,6 +196,19 @@ module Web : sig
     val id : Rock.Middleware.t
     val json : Rock.Middleware.t
 
+    (** [session ?cookie_key ?secret ()] returns a middleware that reads and
+        stores session values. The actual session values are stored in a signed
+        cookie. Be aware of the limitations of this technique. Firstly, make
+        sure that the session value does not exceed 4KB. Secondly, the client is
+        able to read the session values. If you need to store a large amount of
+        data, use the [sihl-cache] package and store the key in the session
+        cookie.
+
+        [cookie_key] is the key of the session cookie. By default, the value is
+        [_session].
+
+        [secret] is a secret string that is used to sign cookies. By default
+        [SIHL_SECRET] is used. *)
     val session
       :  ?cookie_key:string
       -> ?secret:string
@@ -220,17 +217,16 @@ module Web : sig
 
     val static_file : unit -> Rock.Middleware.t
 
-    val user_session
-      :  ?key:string
-      -> (user_id:string -> Contract_user.t option Lwt.t)
-      -> Rock.Middleware.t
+    (** [user ?key find_user] returns a middleware that sets the user based on
+        the session cookie that was sent by the browser.
 
-    val user_token
+        [key] is the user id that has been used to store a user id in the
+        session. Be default, the value is [user_id].
+
+        [find_user] is a function that returns a user given a user id. *)
+    val user
       :  ?key:string
-      -> ?invalid_token_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
-      -> (string -> k:string -> 'a option Lwt.t)
-      -> (user_id:'a -> Contract_user.t option Lwt.t)
-      -> (string -> unit Lwt.t)
+      -> (string -> Contract_user.t option Lwt.t)
       -> Rock.Middleware.t
   end
 end

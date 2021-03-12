@@ -10,10 +10,6 @@ let middlewares =
   ; Sihl.Web.Middleware.error ()
   ; Sihl.Web.Middleware.json
   ; Sihl.Web.Middleware.bearer_token
-  ; Sihl.Web.Middleware.user_token
-      (fun token ~k -> Service.Token.read token ~k)
-      Service.User.find_opt
-      Service.Token.deactivate
   ]
 ;;
 

@@ -43,8 +43,6 @@
   (opium (>= 0.20.0))
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
-  (sihl-token (and (= :version) :with-test))
-  (sihl-user (and (= :version) :with-test))
   (cohttp-lwt-unix (and (>= 2.5.4) :with-test))
   (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
 

@@ -49,6 +49,53 @@ module Make (TokenService : Sihl.Contract.Token.Sig) = struct
     Lwt.return ()
   ;;
 
+  module Web = struct
+    let find_user id =
+      if String.equal id "1"
+      then
+        Lwt.return
+        @@ Some
+             Sihl.Contract.User.
+               { id = "1"
+               ; email = "foo@example.com"
+               ; username = None
+               ; password = "123123"
+               ; status = "active"
+               ; admin = false
+               ; confirmed = false
+               ; created_at = Ptime_clock.now ()
+               ; updated_at = Ptime_clock.now ()
+               }
+      else failwith "Invalid user id provided"
+    ;;
+
+    let apply_middlewares handler find_user =
+      handler
+      |> Rock.Middleware.apply
+           (TokenService.Web.Middleware.user ~key:"user_id" find_user)
+      |> Rock.Middleware.apply Sihl.Web.Middleware.bearer_token
+    ;;
+
+    let bearer_token_fetch_user _ () =
+      let* () = Sihl.Cleaner.clean_all () in
+      let* token = TokenService.create [ "user_id", "1" ] in
+      let token_header = Format.sprintf "Bearer %s" token in
+      let req =
+        Opium.Request.get "/some/path/login"
+        |> Opium.Request.add_header ("authorization", token_header)
+      in
+      let handler req =
+        let user = TokenService.Web.User.find req in
+        let email = user.email in
+        Alcotest.(check string "has same email" "foo@example.com" email);
+        Lwt.return @@ Opium.Response.of_plain_text ""
+      in
+      let wrapped_handler = apply_middlewares handler find_user in
+      let* _ = wrapped_handler req in
+      Lwt.return ()
+    ;;
+  end
+
   let suite =
     [ ( "token"
       , [ test_case "create and find token" `Quick create_and_read_token
@@ -57,6 +104,9 @@ module Make (TokenService : Sihl.Contract.Token.Sig) = struct
             `Quick
             deactivate_and_reactivate_token
         ; test_case "forge token" `Quick forge_token
+        ] )
+    ; ( "web user"
+      , [ test_case "bearer token fetch user" `Quick Web.bearer_token_fetch_user
         ] )
     ]
   ;;
