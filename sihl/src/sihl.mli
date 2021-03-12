@@ -139,6 +139,10 @@ module Web : sig
     (** [csrf ?not_allowed_handler ?cookie_key ?secret ()] returns a middleware
         that enables CSRF protection for unsafe HTTP requests.
 
+        [form_data_name] is the name of the input element that is used to send
+        the CSRF token. The default is [csrf]. It is recommended to use a
+        [<hidden>] field in a [<form>].
+
         [not_allowed_handler] is used if an unsafe request does not pass the
         CSRF protection check. By default, [not_allowed_handler] returns an
         empty response with status 403.
@@ -159,6 +163,7 @@ module Web : sig
     val csrf
       :  ?not_allowed_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
       -> ?cookie_key:string
+      -> ?form_data_name:string
       -> ?secret:string
       -> unit
       -> Rock.Middleware.t

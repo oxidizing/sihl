@@ -51,6 +51,7 @@ let verify ~with_secret ~hashed value =
 let middleware
     ?(not_allowed_handler = default_not_allowed_handler)
     ?(cookie_key = "__Host-csrf")
+    ?(form_data_name = "csrf")
     ?(secret = Core_configuration.read_secret ())
     ()
   =
@@ -60,9 +61,12 @@ let middleware
       || Option.value (Core_configuration.read_bool "CHECK_CSRF") ~default:false
     in
     if not check_csrf (* Set fake token since CSRF is disabled *)
-    then handler (set "development" req)
+    then (
+      (* Consume CSRF token so Sihl.Web.Form can be used properly *)
+      let req, _ = Web_form.consume req form_data_name in
+      handler (set "development" req))
     else (
-      let req, token = Web_form.consume req "csrf" in
+      let req, token = Web_form.consume req form_data_name in
       (* Create a new token for each request to mitigate BREACH attack *)
       let new_token = Core_random.base64 80 in
       let req = set new_token req in
