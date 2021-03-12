@@ -12,6 +12,8 @@ Sihl is a batteries-included web framework built on top of {{:https://github.com
 
 {1 Getting Started}
 
+If you want to jump into code, have a look at {{:https://github.com/oxidizing/sihl-demo} the demo project}. Otherwise keep reading and get started by creating your own app from scratch.
+
 {2 Prerequisites}
 
 You need to have {{:https://opam.ocaml.org/doc/Install.html} OPAM} installed and you should somewhat know OCaml and its tools. {{:https://ocaml.org/learn/tutorials/up_and_running.html} This guide} walks you through setting up some development environment.

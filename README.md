@@ -11,6 +11,8 @@
     <br />
     <a href="https://github.com/oxidizing/sihl#getting-started">Getting Started</a>
     ·
+    <a href="https://github.com/oxidizing/sihl-demo">Demo project</a>
+    ·
     <a href="https://github.com/oxidizing/sihl/issues">Report Bug</a>
     ·
     <a href="https://github.com/oxidizing/sihl/issues">Request Feature</a>
@@ -40,7 +42,7 @@ Sihl is a batteries-included web framework built on top of [Opium](https://githu
 
 ## Getting Started
 
-The easiest way to get started is by using [Spin](https://github.com/tmattio/spin).
+The easiest way to get started is by using [Spin](https://github.com/tmattio/spin). If you want to jump into code, have a look at the [demo project](https://github.com/oxidizing/sihl-demo).
 
 ### Prerequisites
 
