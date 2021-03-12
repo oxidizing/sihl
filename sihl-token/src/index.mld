@@ -45,3 +45,16 @@ Run [make sihl migrate] to run pending migrations.
 {2 Usage}
 
 The API is documented in {!Sihl.Contract.Token.Sig}.
+
+{3 Middleware}
+
+The token middleware {!val:Sihl.Contract.Token.Sig.Web.Middleware.user} fetches the current user based on the provided [Bearer Token].
+
+{[
+let index req =
+  let open Lwt.Syntax in
+  match Service.Token.Web.User.find_opt req with
+  | None -> Lwt.return @@ Sihl.Web.Response.redirect_to "/login"
+  | Some user -> Lwt.return @@ Sihl.Web.Response.of_html (View.Welcome.index user)
+;;
+]}

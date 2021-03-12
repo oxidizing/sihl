@@ -1,8 +1,7 @@
-## [0.4.0] - ?
-
-## [0.3.0] - 2021-01-08
+## [0.3.0] - 2021-03-12
 ### Fixed
 - Replace functor based approach with service facade pattern based approach to increase ergonomy
+- Move `user_token` middleware to `sihl-token` package
 
 ### Added
 - Implement MariaDB and PostgreSql backends for all services except storage service
