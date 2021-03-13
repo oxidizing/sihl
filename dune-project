@@ -44,7 +44,7 @@
   (caqti (>= 1.2.1))
   (caqti-lwt (>= 1.2.0))
   (cohttp-lwt-unix (and (>= 2.5.4) :with-test))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
 
 (package
  (name sihl-user)
@@ -55,7 +55,7 @@
   (ocaml (>= 4.08.0))
   (sihl (= :version))
   (sihl-token (and (= :version) :with-test))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
 
 (package
  (name sihl-cache)
@@ -65,7 +65,7 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
 
 (package
  (name sihl-token)
@@ -75,7 +75,7 @@
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
 
 (package
  (name sihl-storage)
@@ -86,7 +86,7 @@ This service can be used to handle large binary blobs that are typically not sto
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
 
 (package
  (name sihl-email)
@@ -99,7 +99,7 @@ Modules for sending emails using Lwt. Various email transports are provided that
   (letters (>= 0.2.1))
   (sihl (= :version))
   (cohttp-lwt-unix (>= 2.5.4))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
 
 (package
  (name sihl-queue)
@@ -110,4 +110,4 @@ Modules for putting and working jobs on queues. Various queue backends are provi
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.2.0) (< 3.0.0) :with-test))))
+  (alcotest-lwt (and (>= 1.3.0) :with-test))))
