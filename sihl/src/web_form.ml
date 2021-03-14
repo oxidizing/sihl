@@ -5,23 +5,23 @@ let log_src = Logs.Src.create "sihl.middleware.formparser"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-type body = (string * string list) list [@@deriving sexp, show]
+type data = (string * string list) list [@@deriving sexp, show]
 
-let pp = pp_body
+let pp = pp_data
 
-exception Parsed_body_not_found
+exception Parsed_data_not_found
 
-let key : body Opium.Context.key =
-  Opium.Context.Key.create ("form", sexp_of_body)
+let key : data Opium.Context.key =
+  Opium.Context.Key.create ("form", sexp_of_data)
 ;;
 
 let find_all req =
   match Opium.Context.find key req.Opium.Request.env with
   | Some all -> all
   | None ->
-    Logs.err (fun m -> m "Could not find parsed body");
-    Logs.info (fun m -> m "Have you applied the body parser middleware?");
-    raise Parsed_body_not_found
+    Logs.err (fun m -> m "Could not find parsed data");
+    Logs.info (fun m -> m "Have you applied the data parser middleware?");
+    raise Parsed_data_not_found
 ;;
 
 let find key req =
@@ -36,9 +36,6 @@ let find key req =
   Option.join result
 ;;
 
-(** [consume req key] returns the value of the parsed body for the key [key] and
-    a request with an updated context where the parsed value is missing the key
-    [key]. The value is returned and removed from the context, it is consumed. **)
 let consume req k =
   let urlencoded = find_all req in
   let value = find k req in

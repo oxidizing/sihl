@@ -26,7 +26,6 @@ module Web : sig
   module Bearer_token : sig
     val find : Rock.Request.t -> string
     val find_opt : Rock.Request.t -> string option
-    val set : string -> Rock.Request.t -> Rock.Request.t
   end
 
   module Csrf : sig
@@ -47,14 +46,21 @@ module Web : sig
   end
 
   module Form : sig
-    type body = (string * string list) list
+    type data = (string * string list) list
 
-    val pp : Format.formatter -> body -> unit
+    val pp : Format.formatter -> data -> unit
 
-    exception Parsed_body_not_found
+    exception Parsed_data_not_found
 
-    val find_all : Rock.Request.t -> body
+    val find_all : Rock.Request.t -> data
     val find : string -> Rock.Request.t -> string option
+
+    (** [consume req key] returns the value of the parsed body for the [key] and
+        a request with an updated context where the parsed value is missing. The
+        value is returned and removed from the context, it is consumed.
+
+        This is used by middlewares such as the CSRF middleware to transparently
+        remove the hidden CSRF token from the form data. *)
     val consume : Rock.Request.t -> string -> Rock.Request.t * string option
   end
 
@@ -90,7 +96,6 @@ module Web : sig
 
     val find : Rock.Request.t -> Yojson.Safe.t
     val find_opt : Rock.Request.t -> Yojson.Safe.t option
-    val set : Yojson.Safe.t -> Rock.Request.t -> Rock.Request.t
   end
 
   module Session : sig
@@ -119,7 +124,16 @@ module Web : sig
         "authorization_admin will be moved to a dedicated authorization \
          package sihl-authorization in the future."]
 
-    val bearer_token : Rock.Middleware.t
+    (** [bearer_token ?unauthenticated_handler ()] returns a middleware that
+        parses the [Bearer] token in the [Authorization] header. The header
+        value has to be of form [Bearer <token>].
+
+        If no [unauthenticated_handler] is provided a default handler is used
+        that returns [HTTP 401] with an empty body if no token is found. *)
+    val bearer_token
+      :  ?unauthenticated_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
+      -> unit
+      -> Rock.Middleware.t
 
     (** [csrf ?not_allowed_handler ?cookie_key ?secret ()] returns a middleware
         that enables CSRF protection for unsafe HTTP requests.
