@@ -19,7 +19,9 @@
 (package
  (name sihl)
  (synopsis "The Sihl web framework")
- (description "Modules for dealing with configuration, service lifecycle, app, CLI commands, logging, random number generation, middlewares and database.")
+ (description "
+Sihl is a batteries-included web framework. Thanks to the modular architecture, included batteries can be swapped out easily. Statically typed functional programming with OCaml makes web development fun, fast and safe. Sihl supports PostgreSQL and MariaDB.
+")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -48,8 +50,8 @@
 
 (package
  (name sihl-user)
- (synopsis "Sihl services to deal with users")
- (description "Modules for user handling and password reset workflows.")
+ (synopsis "User service implementations for Sihl")
+ (description "Modules for user management and password reset workflows with support for PostgreSQL and MariaDB.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -59,8 +61,8 @@
 
 (package
  (name sihl-cache)
- (synopsis "A module that provides services to store and retrieve data with key-value semantics")
- (description "Depending on the backend the cache service can be used to improve performance or to persist arbitrary data.")
+ (synopsis "Cache service implementations for Sihl")
+ (description "A key-value store with support for PostgreSQL and MariaDB.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -69,8 +71,8 @@
 
 (package
  (name sihl-token)
- (synopsis "Sihl service to deal with tokens")
- (description "Modules for token handling with support for JWT blacklisting and database-based tokens.")
+ (synopsis "Token service implementations for Sihl")
+ (description "Modules for token handling with support for JWT blacklisting and server-side stored tokens using PostgreSQL and MariaDB.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -79,9 +81,8 @@
 
 (package
  (name sihl-storage)
- (synopsis "Sihl service to deal with storage of large files")
- (description "
-This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided.")
+ (synopsis "Storage service implementations for Sihl")
+ (description "Modules for storing large binary blobs using either PostgreSQL or MariaDB.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -90,9 +91,8 @@ This service can be used to handle large binary blobs that are typically not sto
 
 (package
  (name sihl-email)
- (synopsis "Sihl service to deal with sending emails")
- (description "
-Modules for sending emails using Lwt. Various email transports are provided that can be used in production or testing such as SMTP, Sendgrid, in-memory and console printing.")
+ (synopsis "Email service implementations for Sihl")
+ (description "Modules for sending emails using Lwt and SMTP or Sendgrid.")
  (depends
   dune
   (ocaml (>= 4.08.0))
@@ -103,9 +103,8 @@ Modules for sending emails using Lwt. Various email transports are provided that
 
 (package
  (name sihl-queue)
- (synopsis "Sihl service to deal with queuing jobs")
- (description "
-Modules for putting and working jobs on queues. Various queue backends are provided.")
+ (synopsis "Queue service implementations for Sihl")
+ (description "Modules for running tasks in the background on a persistent queue.")
  (depends
   dune
   (ocaml (>= 4.08.0))
