@@ -83,8 +83,6 @@ module Web = struct
   end
 
   module Session = struct
-    exception Session_not_found = Web_session.Session_not_found
-
     let find = Web_session.find
     let set = Web_session.set
   end
@@ -107,7 +105,6 @@ module Web = struct
     let form = Web_form.middleware
     let id = Web_id.middleware
     let json = Web_json.middleware
-    let session = Web_session.middleware
     let static_file = Web_static.middleware
     let user = Web_user.middleware
   end

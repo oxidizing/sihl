@@ -404,14 +404,6 @@ Since HTTP driven applications are stateless, sessions provide a way to store in
 
 Sihl ships with a cookie-based session implementation.
 
-{3 Installation}
-
-Add {!val:Sihl.Web.Middleware.session} to your list of middlewares. The session middleware is enabled by default for site routes in [routes/site.ml].
-
-{[
-let middlewares = [ Sihl.Web.Middleware.session () ]
-]}
-
 {3 Usage}
 
 Use {!Sihl.Web.Session} to handle sessions.
@@ -421,10 +413,13 @@ In order to set session values create a response first:
 {[
 let handler _ =
   let resp = Opium.Response.of_plain_text "some response" in
-  Lwt.return @@ Sihl.Web.Session.set ("user_id", Some "4882") resp
+  Lwt.return @@ Sihl.Web.Session.set [("user_id", Some "4882")] resp
 ]}
 
+Note that setting the session like this overrides any previously set sessions. You should not chain {!val:Sihl.Web.Session.set} or touch the session cookie manually.
+
 To read a session value:
+
 {[
 let handler req =
   let user_id = Sihl.Web.Session.find "user_id" req in
@@ -432,8 +427,6 @@ let handler req =
   | Some user_id -> (* fetch user and do stuff *)
   | None -> Opium.Response.of_plain_text "User not logged in"
 ]}
-
-To delete a session value use [None] as value.
 
 {3 Limitations}
 
