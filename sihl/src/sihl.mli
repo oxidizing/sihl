@@ -86,9 +86,12 @@ module Web : sig
   module Id : sig
     exception Id_not_found
 
+    (** [find req] returns a the id of the request [req]. If no id was assigned
+        {!val:Id_not_found} is raised. *)
     val find : Rock.Request.t -> string
+
+    (** [find_opt req] returns a the id of the request [req]. *)
     val find_opt : Rock.Request.t -> string option
-    val set : string -> Rock.Request.t -> Rock.Request.t
   end
 
   module Json : sig
@@ -158,7 +161,6 @@ module Web : sig
 
         Internally, the CSRF protection is implemented as the Double Submit
         Cookie approach. *)
-
     val csrf
       :  ?not_allowed_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
       -> ?cookie_key:string
@@ -196,7 +198,17 @@ module Web : sig
 
     val flash : ?cookie_key:string -> unit -> Rock.Middleware.t
     val form : Rock.Middleware.t
+
+    (** [id] is a middleware that reads the [X-Request-ID] headers and assigns
+        it to the request.
+
+        If no [X-Request-ID] is present, a random id is generated which is
+        assigned to the request. The random id is a 64 byte long base64 encoded
+        string. There is no uniqueness guarantee among ids of pending requests.
+        However, generating two identical ids in a short period of time is
+        highly unlikely. *)
     val id : Rock.Middleware.t
+
     val json : Rock.Middleware.t
 
     (** [session ?cookie_key ?secret ()] returns a middleware that reads and

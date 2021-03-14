@@ -2,6 +2,7 @@
 ### Fixed
 - Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
 - Take custom `unauthenticated_handler` for `Sihl.Web.Middleware.bearer_token` and enforce existence of `Bearer` token in `Authorization` header
+- Read `Request-ID-X` header if present instead of generating a random id for`Sihl.Web.Id`
 
 ## [0.3.0] - 2021-03-12
 ### Fixed

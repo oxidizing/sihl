@@ -2,9 +2,10 @@
  (names core_app core_configuration core_container core_utils
    database_migration database_mariadb database_postgresql
    database_migration_mariadb database_migration_postgresql web_csrf_mariadb
-   web_csrf_postgresql web_http web_session web_flash web_user web_bearer_token)
- (libraries sihl alcotest-lwt caqti-driver-mariadb
-   caqti-driver-postgresql cohttp-lwt-unix)
+   web_csrf_postgresql web_http web_session web_flash web_user
+   web_bearer_token web_id)
+ (libraries sihl alcotest-lwt caqti-driver-mariadb caqti-driver-postgresql
+   cohttp-lwt-unix)
  (preprocess
   (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
     ppx_deriving.make ppx_sexp_conv)))
