@@ -102,10 +102,37 @@ module Web : sig
   end
 
   module Session : sig
-    exception Session_not_found
+    (** [find ?cookie_key ?secret key request] returns the value that is
+        associated to the [key] in the current session of the [request].
 
-    val find : string -> Opium.Request.t -> string option
-    val set : string * string option -> Opium.Response.t -> Opium.Response.t
+        [cookie_key] is the name of the session cookie. By default, the value is
+        [_session].
+
+        [secret] is the secret used to sign the session cookie. By default,
+        [SIHL_SECRET] is used. *)
+    val find
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> string
+      -> Opium.Request.t
+      -> string option
+
+    (** [set ?cookie_key ?secret data response] returns a response that has
+        [data] associated to the current session by setting the session cookie
+        of the response. [set] replaces the current session.
+
+        [cookie_key] is the name of the session cookie. By default, the value is
+        [_session]. If there is a session cookie already present it gets
+        replaced.
+
+        [secret] is the secret used to sign the session cookie. By default,
+        [SIHL_SECRET] is used. *)
+    val set
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> (string * string) list
+      -> Opium.Response.t
+      -> Opium.Response.t
   end
 
   module User : sig
@@ -210,26 +237,6 @@ module Web : sig
     val id : Rock.Middleware.t
 
     val json : Rock.Middleware.t
-
-    (** [session ?cookie_key ?secret ()] returns a middleware that reads and
-        stores session values. The actual session values are stored in a signed
-        cookie. Be aware of the limitations of this technique. Firstly, make
-        sure that the session value does not exceed 4KB. Secondly, the client is
-        able to read the session values. If you need to store a large amount of
-        data, use the [sihl-cache] package and store the key in the session
-        cookie.
-
-        [cookie_key] is the key of the session cookie. By default, the value is
-        [_session].
-
-        [secret] is a secret string that is used to sign cookies. By default
-        [SIHL_SECRET] is used. *)
-    val session
-      :  ?cookie_key:string
-      -> ?secret:string
-      -> unit
-      -> Rock.Middleware.t
-
     val static_file : unit -> Rock.Middleware.t
 
     (** [user ?key find_user] returns a middleware that sets the user based on
