@@ -13,8 +13,3 @@ let base64 nr =
     ~alphabet:Base64.uri_safe_alphabet
     (bytes nr |> List.to_seq |> String.of_seq)
 ;;
-
-let start () = Lwt.return ()
-let stop () = Lwt.return ()
-let lifecycle = Core_container.create_lifecycle "random" ~start ~stop
-let register () = Core_container.Service.create lifecycle

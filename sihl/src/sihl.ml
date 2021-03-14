@@ -70,7 +70,6 @@ module Web = struct
 
     let find = Web_id.find
     let find_opt = Web_id.find_opt
-    let set = Web_id.set
   end
 
   module Json = struct

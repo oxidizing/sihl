@@ -23,13 +23,13 @@ let set id req =
   { req with env }
 ;;
 
-(* TODO [jerben] read HTTP-Request-ID if exists, to make debugging easier on the
-   client *)
 let middleware =
   let filter handler req =
-    let id = Core_random.base64 64 in
-    let req = set id req in
-    handler req
+    match Opium.Request.header "x-request-id" req with
+    | Some request_id -> handler (set request_id req)
+    | None ->
+      let request_id = Core_random.base64 64 in
+      handler (set request_id req)
   in
   Rock.Middleware.create ~name:"id" ~filter
 ;;

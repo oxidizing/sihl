@@ -74,6 +74,7 @@ test: build	## Run unit tests with dune and then all sihl tests
 	SIHL_ENV=test opam exec -- dune test
 	SIHL_ENV=test ./_build/default/sihl/test/web_bearer_token.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_flash.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_id.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_session.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_user.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_csrf_postgresql.exe
