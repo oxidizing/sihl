@@ -73,7 +73,7 @@ module Make (TokenService : Sihl.Contract.Token.Sig) = struct
       handler
       |> Rock.Middleware.apply
            (TokenService.Web.Middleware.user ~key:"user_id" find_user)
-      |> Rock.Middleware.apply Sihl.Web.Middleware.bearer_token
+      |> Rock.Middleware.apply (Sihl.Web.Middleware.bearer_token ())
     ;;
 
     let bearer_token_fetch_user _ () =

@@ -19,7 +19,6 @@ module Web = struct
   module Bearer_token = struct
     let find = Web_bearer_token.find
     let find_opt = Web_bearer_token.find_opt
-    let set = Web_bearer_token.set
   end
 
   module Csrf = struct
@@ -40,11 +39,11 @@ module Web = struct
   end
 
   module Form = struct
-    type body = Web_form.body
+    type data = Web_form.data
 
     let pp = Web_form.pp
 
-    exception Parsed_body_not_found = Web_form.Parsed_body_not_found
+    exception Parsed_data_not_found = Web_form.Parsed_data_not_found
 
     let find_all = Web_form.find_all
     let find = Web_form.find
@@ -79,7 +78,6 @@ module Web = struct
 
     let find = Web_json.find
     let find_opt = Web_json.find_opt
-    let set = Web_json.set
   end
 
   module Session = struct
