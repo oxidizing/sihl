@@ -1,3 +1,7 @@
+## ?
+### Fixed
+- Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
+
 ## [0.3.0] - 2021-03-12
 ### Fixed
 - Replace functor based approach with service facade pattern based approach to increase ergonomy
