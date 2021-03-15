@@ -1,0 +1,133 @@
+{0 Sihl Queue}
+
+Queues are useful for running jobs in the background. Typical use cases are exporting tables as CSV files or sending emails over SMTP that take too long to perform during an HTTP request.
+
+In essence, you create a [job] and register it with a job worker. In your app, use {!val:Sihl.Contract.Queue.Sig.dispatch} to put the [job] onto a queue for later processing.
+
+{1 Backends}
+
+[sihl-queue] ships with 3 backend implementations.
+
+{ul
+{- {!Sihl_queue.InMemory}}
+{- {!Sihl_queue.PostgreSql}}
+{- {!Sihl_queue.MariaDb}}
+}
+
+{1 Installation}
+
+{2 Backend}
+
+First, choose a backend in [service/service.ml]:
+
+{[
+module Queue = Sihl_queue.PostgreSql
+]}
+
+{2 Registration}
+
+Register the service in [run/run.ml]:
+
+{[
+let services = [ Service.Queue.register ~jobs:[] () ]
+]}
+
+{2 Migrations}
+
+Run [make sihl migrate] to run pending migrations.
+
+{2 Usage}
+
+The service API is documented in {!Sihl.Contract.Queue.Sig}.
+
+{3 Creating jobs}
+
+With {!val:Sihl_queue.create} you can create a job in [app/job/job.ml]:
+
+{[
+let cook_pizza =
+  Sihl_queue.create
+    (fun pizza_name ->
+      Pizza.create_pizza pizza_name [] |> Lwt.map ignore |> Lwt.map Result.ok)
+    "cook-pizza"
+;;
+]}
+
+Don't forget to register the job with the queue service. The queue service comes with queue workers which need to know about the jobs available. In [run.ml]:
+
+{[
+let services =
+  [ Sihl.Database.register ()
+  ; Service.Migration.(register ~migrations:Database.Migration.all ())
+  ; Service.Queue.register ~jobs:[ Job.cook_pizza; Job.order_ingredient ] ()
+  ]
+;;
+]}
+
+{3 Dispatching jobs}
+
+You can only dispatch jobs that have been registered.
+
+{[
+Service.Queue.dispatch ~input:"funghi" cook_pizza
+]}
+
+{[
+Service.Queue.dispatch
+  ~input:"funghi"
+  ~delay:(Sihl.Time.Span.minutes 2)
+  Job.cook_pizza
+]}
+
+The returned [Lwt.t] resolves as soon as the job is queued.
+
+You can also dispatch multiple jobs of the same type with different inputs. Following dispatches the same job 3 times with different inputs.
+
+{[
+Service.Queue.dispatch_all
+  ~input:["funghi"; "salami"; "prosciutto"]
+  ~delay:(Sihl.Time.Span.hours 1)
+  Job.cook_pizza
+]}
+
+{3 Dashboard}
+
+[sihl-queue] comes with a built-in dashboard. The dashboard is packaged as a router {!val:Sihl.Contract.Queue.Sig.router} and can be mounted into any existing app.
+
+In order to only allow authenticated users to use the dashboard you can add your custom authentication and authorization middlewares. In [routes/site.ml]:
+
+{[
+let router_admin_queue =
+  Service.Queue.router
+    ~back:"/"
+    ~middlewares:
+      [ Sihl.Web.Middleware.user (fun user_id -> Service.User.find_opt ~user_id)
+      ; Middleware.Authn.middleware "/login"
+      ]
+    "/admin/queue"
+]}
+
+In [run.ml]:
+
+{[
+let services =
+  [ Sihl.Database.register ()
+  ; Service.Migration.(register ~migrations:Database.Migration.all ())
+  ; Sihl.Web.Http.register
+      ~middlewares:Routes.Global.middlewares
+      ~routers:
+        [ Routes.Api.router
+        ; Routes.Site.router_admin_queue
+        ]
+      ()
+  ; Service.Queue.register ~jobs:[ Job.cook_pizza; Job.order_ingredient ] ()
+  ]
+;;
+]}
+
+{4 HTMX}
+
+The dashboard has built-in support for {{:https://htmx.org/}HTMX}. However, it is not requird to use HTMX and the dahsboard remains usable without.
+HTMX is used for dynamic features like auto-refreshing parts of the job instance list.
+
+In order to use HTMX set [HTMX_SCRIPT_URL] to the URL of the HTMX JavaScript file, either served by Sihl from [public] or by a CDN.

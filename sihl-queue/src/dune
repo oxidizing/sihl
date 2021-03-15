@@ -3,5 +3,7 @@
  (public_name sihl-queue)
  (libraries sihl)
  (preprocess
-  (pps ppx_fields_conv ppx_deriving_yojson ppx_deriving.eq ppx_deriving.show
-    ppx_deriving.make ppx_sexp_conv)))
+  (pps tyxml-ppx)))
+
+(documentation
+ (package sihl-queue))
