@@ -1,3 +1,0 @@
-(library
- (name service)
- (libraries sihl sihl-user sihl-token sihl-email sihl-queue))

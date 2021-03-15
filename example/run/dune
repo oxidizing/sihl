@@ -1,4 +1,0 @@
-(executable
- (name run)
- (libraries sihl sihl-email sihl-token sihl-queue routes database command
-   caqti-driver-postgresql))

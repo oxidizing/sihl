@@ -72,9 +72,9 @@ spin new https://github.com/oxidizing/spin-sihl.git app
   </a>
 </p>
 
-Visit `http://localhost:3000/`, you should see the Sihl logo.
+Visit `http://localhost:3000/`, you should see a welcome text.
 
-Check out the (adjusted) [example project](https://github.com/oxidizing/sihl/tree/master/example). We use that project for testing but the file structure gives you an idea of how a real world project might look like.
+Check out the [demo project](https://github.com/oxidizing/sihl-demo). 
 
 ## Background
 
