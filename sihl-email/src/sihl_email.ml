@@ -303,53 +303,39 @@ module Queued
 
   module Job = struct
     let input_to_string email =
-      email
-      |> Sihl.Contract.Email.to_yojson
-      |> Yojson.Safe.to_string
-      |> Option.some
+      email |> Sihl.Contract.Email.to_yojson |> Yojson.Safe.to_string
     ;;
 
     let string_to_input email =
-      match email with
-      | None ->
-        Logs.err (fun m ->
-            m
-              "Serialized email string was NULL, can not deserialize email. \
-               Please fix the string manually and reset the job instance.");
-        Error "Invalid serialized email string received"
-      | Some email ->
-        let email =
-          try Ok (Yojson.Safe.from_string email) with
-          | _ ->
-            Logs.err (fun m ->
-                m
-                  "Serialized email string was NULL, can not deserialize \
-                   email. Please fix the string manually and reset the job \
-                   instance.");
-            Error "Invalid serialized email string received"
-        in
-        Result.bind email (fun email ->
-            email
-            |> Sihl.Contract.Email.of_yojson
-            |> Option.to_result ~none:"Failed to deserialize email")
+      let email =
+        try Ok (Yojson.Safe.from_string email) with
+        | _ ->
+          Logs.err (fun m ->
+              m
+                "Serialized email string was NULL, can not deserialize email. \
+                 Please fix the string manually and reset the job instance.");
+          Error "Invalid serialized email string received"
+      in
+      Result.bind email (fun email ->
+          email
+          |> Sihl.Contract.Email.of_yojson
+          |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
-    let handle input = Email.send input |> Lwt.map Result.ok
-
-    (** Nothing to clean up, sending emails is a side effect *)
-    let failed _ = Lwt_result.return ()
+    let handle email = Email.send email |> Lwt.map Result.ok
 
     let job =
-      Sihl.Contract.Queue.create
-        ~name:"send_email"
-        ~input_to_string
-        ~string_to_input
-        ~handle
-        ~failed
-        ()
-      |> Sihl.Contract.Queue.set_max_tries 10
-      |> Sihl.Contract.Queue.set_retry_delay Sihl.Time.OneHour
+      Sihl.Contract.Queue.create_job
+        handle
+        ~max_tries:10
+        ~retry_delay:(Sihl.Time.Span.hours 1)
+        input_to_string
+        string_to_input
+        "send_email"
     ;;
+
+    let dispatch email = QueueService.dispatch email job
+    let dispatch_all emails = QueueService.dispatch_all emails job
   end
 
   let send email =
@@ -358,21 +344,27 @@ module Queued
     then (
       Logs.debug (fun m -> m "Skipping queue for email sending");
       Email.send email)
-    else QueueService.dispatch Job.job email
+    else Job.dispatch email
   ;;
 
   let bulk_send emails =
-    (* TODO [jerben] Implement queue API for multiple jobs so we don't have to
-       use transactions here *)
-    let rec loop emails =
-      match emails with
-      | email :: emails -> Lwt.bind (send email) (fun () -> loop emails)
-      | [] -> Lwt.return ()
-    in
-    loop emails
+    if not (Sihl.Configuration.is_production ())
+    then (
+      Logs.debug (fun m -> m "Skipping queue for email sending");
+      let rec loop emails =
+        match emails with
+        | email :: emails -> Lwt.bind (Email.send email) (fun () -> loop emails)
+        | [] -> Lwt.return ()
+      in
+      loop emails)
+    else Job.dispatch_all emails
   ;;
 
-  let start () = QueueService.register_jobs [ Job.job ] |> Lwt.map ignore
+  let start () =
+    QueueService.register_jobs [ Sihl.Contract.Queue.hide Job.job ]
+    |> Lwt.map ignore
+  ;;
+
   let stop () = Lwt.return ()
 
   let lifecycle =
