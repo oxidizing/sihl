@@ -52,8 +52,6 @@ module Web = struct
   end
 
   module Htmx = struct
-    exception Exception = Web_htmx.Exception
-
     let is_htmx = Web_htmx.is_htmx
     let current_url = Web_htmx.current_url
     let prompt = Web_htmx.prompt
@@ -66,7 +64,6 @@ module Web = struct
     let set_trigger = Web_htmx.set_trigger
     let set_trigger_after_settle = Web_htmx.set_trigger_after_settle
     let set_trigger_after_swap = Web_htmx.set_trigger_after_swap
-    let add_htmx_resp_header = Web_htmx.add_htmx_resp_header
   end
 
   module Id = struct
@@ -108,7 +105,6 @@ module Web = struct
     let error = Web_error.middleware
     let flash = Web_flash.middleware
     let form = Web_form.middleware
-    let htmx = Web_htmx.middleware
     let id = Web_id.middleware
     let json = Web_json.middleware
     let session = Web_session.middleware

@@ -59,37 +59,22 @@ module Web : sig
   end
 
   module Htmx : sig
-    (** This module simplifies dealing with htmx requests in a type safe way.
-        Visit https://htmx.org/reference/ for the htmx documentation. *)
-
-    exception Exception
+    (** This module simplifies dealing with HTMX requests by adding type safe
+        helpers to manipulate HTMX headers. Visit https://htmx.org/reference/
+        for the HTMX documentation. *)
 
     val is_htmx : Rock.Request.t -> bool
-    val current_url : Rock.Request.t -> string
+    val current_url : Rock.Request.t -> string option
     val prompt : Rock.Request.t -> string option
     val target : Rock.Request.t -> string option
     val trigger_name : Rock.Request.t -> string option
     val trigger_req : Rock.Request.t -> string option
-    val set_push : string option -> Rock.Response.t -> Rock.Response.t
-    val set_redirect : string option -> Rock.Response.t -> Rock.Response.t
-    val set_refresh : string option -> Rock.Response.t -> Rock.Response.t
-    val set_trigger : string option -> Rock.Response.t -> Rock.Response.t
-
-    val set_trigger_after_settle
-      :  string option
-      -> Rock.Response.t
-      -> Rock.Response.t
-
-    val set_trigger_after_swap
-      :  string option
-      -> Rock.Response.t
-      -> Rock.Response.t
-
-    val add_htmx_resp_header
-      :  string
-      -> string option
-      -> Rock.Response.t
-      -> Rock.Response.t
+    val set_push : string -> Rock.Response.t -> Rock.Response.t
+    val set_redirect : string -> Rock.Response.t -> Rock.Response.t
+    val set_refresh : string -> Rock.Response.t -> Rock.Response.t
+    val set_trigger : string -> Rock.Response.t -> Rock.Response.t
+    val set_trigger_after_settle : string -> Rock.Response.t -> Rock.Response.t
+    val set_trigger_after_swap : string -> Rock.Response.t -> Rock.Response.t
   end
 
   module Id : sig
@@ -197,7 +182,6 @@ module Web : sig
 
     val flash : ?cookie_key:string -> unit -> Rock.Middleware.t
     val form : Rock.Middleware.t
-    val htmx : Rock.Middleware.t
     val id : Rock.Middleware.t
     val json : Rock.Middleware.t
 
