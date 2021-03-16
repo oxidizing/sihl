@@ -359,7 +359,7 @@ struct
           expires_at,
           created_at
         ) VALUES (
-          $1,
+          $1::uuid,
           $2,
           $3,
           $4,
@@ -380,7 +380,7 @@ struct
         {sql|
         UPDATE token_tokens
         SET
-          uuid = $1,
+          uuid = $1::uuid,
           token_data = $3,
           status = $4,
           expires_at = $5,

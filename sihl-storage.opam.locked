@@ -1,9 +1,8 @@
 opam-version: "2.0"
 version: "0.3.0"
-synopsis: "Sihl service to deal with storage of large files"
-description: """
-
-This service can be used to handle large binary blobs that are typically not stored in relational databases. Various storage backends are provided."""
+synopsis: "Storage service implementations for Sihl"
+description:
+  "Modules for storing large binary blobs using either PostgreSQL or MariaDB."
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"
@@ -11,12 +10,10 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "2.7.1"}
-  "ocaml" {= "4.11.1"}
-  "ocaml-base-compiler" {= "4.11.1"}
+  "dune" {= "2.8.4"}
+  "ocaml" {= "4.08.1"}
 ]
 build: [
   ["dune" "subst"] {dev}

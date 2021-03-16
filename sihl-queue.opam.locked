@@ -1,9 +1,8 @@
 opam-version: "2.0"
 version: "0.3.0"
-synopsis: "Sihl service to deal with queuing jobs"
-description: """
-
-Modules for putting and working jobs on queues. Various queue backends are provided."""
+synopsis: "Queue service implementations for Sihl"
+description:
+  "Modules for running tasks in the background on a persistent queue."
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"
@@ -11,12 +10,27 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "2.7.1"}
-  "ocaml" {= "4.11.1"}
-  "ocaml-base-compiler" {= "4.11.1"}
+  "cmdliner" {= "1.0.4"}
+  "conf-m4" {= "1"}
+  "dune" {= "2.8.4"}
+  "markup" {= "1.0.0-1"}
+  "ocaml" {= "4.08.1"}
+  "ocaml-migrate-parsetree" {= "1.8.0"}
+  "ocamlbuild" {= "0.14.0"}
+  "ocamlfind" {= "1.8.1"}
+  "ppx_derivers" {= "1.2.1"}
+  "ppx_tools_versioned" {= "5.4.0"}
+  "re" {= "1.9.0"}
+  "result" {= "1.5"}
+  "seq" {= "base"}
+  "topkg" {= "1.0.3"}
+  "tyxml" {= "4.4.0"}
+  "tyxml-ppx" {= "4.4.0"}
+  "tyxml-syntax" {= "4.4.0"}
+  "uchar" {= "0.0.2"}
+  "uutf" {= "1.0.2"}
 ]
 build: [
   ["dune" "subst"] {dev}

@@ -464,7 +464,7 @@ struct
           created_at,
           updated_at
         ) VALUES (
-          $1,
+          $1::uuid,
           $2,
           $3,
           $4,
@@ -497,7 +497,7 @@ struct
           confirmed = $7,
           created_at = $8,
           updated_at = $9
-        WHERE user_users.uuid = $1
+        WHERE user_users.uuid = $1::uuid
         |sql}
   ;;
 

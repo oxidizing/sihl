@@ -247,7 +247,7 @@ struct
           max_tries,
           status
         ) VALUES (
-          ?,
+          ?::uuid,
           ?,
           ?,
           ?,

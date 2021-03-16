@@ -247,7 +247,7 @@ struct
           created_at,
           updated_at
         FROM email_templates
-        WHERE email_templates.uuid = ?
+        WHERE email_templates.uuid = ?::uuid
         |sql}
     ;;
 
@@ -292,7 +292,7 @@ struct
           created_at,
           updated_at
         ) VALUES (
-          ?,
+          ?::uuid,
           ?,
           ?,
           ?,
@@ -319,7 +319,7 @@ struct
           content_html = $4,
           created_at = $5,
           updated_at = $6
-        WHERE email_templates.uuid = $1
+        WHERE email_templates.uuid = $1::uuid
         |sql}
     ;;
 
