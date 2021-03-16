@@ -45,28 +45,40 @@ jobs:
           key: v1-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam.locked') }}
           restore-keys: |
             v2-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-
+
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libmariadbclient-dev libpq-dev
-          opam depext conf-libev
-          opam pin add -y .
-          opam depext -y sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token
+
+      - name: Update opam repository
+        if: steps.cache-opam.outputs.cache-hit != 'true'
+        run: opam update
+
+      - name: Pin package
+        run: opam pin add . --yes --no-action
+
+      - name: Query and install external dependencies
+        run: opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --yes --with-doc --with-test
+
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |
-          opam install -y . --deps-only --with-doc --with-test --locked --unlock-base
-          opam install -y caqti-driver-postgresql caqti-driver-mariadb odoc alcotest-lwt
-      - name: Recover from an Opam broken state
-        if: steps.cache-opam.outputs.cache-hit == 'true'
+          OPAMSOLVERTIMEOUT=180 opam install . --deps-only --with-doc --with-test --locked --unlock-base
+          opam install ocamlformat --skip-updates
+
+      - name: Upgrade dependencies
         run: opam upgrade --fixup
+        if: steps.cache-opam.outputs.cache-hit == 'true'
+
       - name: Build
         run: make build
+
+      - name: Check formatting
+        run: make format
+
       - name: Build docs
         run: make doc
+
       - name: Run tests
         run: make test-all

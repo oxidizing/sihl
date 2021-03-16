@@ -1,9 +1,7 @@
 opam-version: "2.0"
 version: "0.3.0"
-synopsis:
-  "A module that provides services to store and retrieve data with key-value semantics"
-description:
-  "Depending on the backend the cache service can be used to improve performance or to persist arbitrary data."
+synopsis: "Cache service implementations for Sihl"
+description: "A key-value store with support for PostgreSQL and MariaDB."
 maintainer: ["josef@oxidizing.io"]
 authors: ["Josef Erben" "Aron Erben" "Miko Nieminen"]
 license: "MIT"
@@ -11,12 +9,10 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "2.7.1"}
-  "ocaml" {= "4.11.1"}
-  "ocaml-base-compiler" {= "4.11.1"}
+  "dune" {= "2.8.4"}
+  "ocaml" {= "4.08.1"}
 ]
 build: [
   ["dune" "subst"] {dev}
