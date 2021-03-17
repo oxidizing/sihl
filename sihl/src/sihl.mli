@@ -1,19 +1,20 @@
-(** This is the main module. Use {!App} app to create Sihl apps. *)
 module App : sig
   include module type of Core_app
 end
 
-(** Use {!Configuration} to read app configuration from environment variables or
-    .env files. Sihl services require a valid configuration at start-up time,
-    they won't start if the configuration they need is not available. *)
 module Configuration : sig
   include module type of Core_configuration
 end
 
-(** Use {!Web} to setup routers, handlers and middlewares to deal with HTTP
-    requests. *)
 module Web : sig
-  module Request = Opium.Request
+  module Request : sig
+    include module type of Opium.Request
+
+    (** [bearer_token request] returns the [Bearer] token in the [Authorization]
+        header. The header value has to be of form [Bearer <token>]. *)
+    val bearer_token : t -> string option
+  end
+
   module Response = Opium.Response
   module Body = Opium.Body
   module Router = Opium.Router
@@ -23,45 +24,17 @@ module Web : sig
     include module type of Web_http
   end
 
-  module Bearer_token : sig
-    val find : Rock.Request.t -> string
-    val find_opt : Rock.Request.t -> string option
-  end
-
   module Csrf : sig
-    exception Csrf_token_not_found
-
-    val find : Rock.Request.t -> string
+    val find : Rock.Request.t -> string option
   end
 
   module Flash : sig
-    exception Flash_not_found
-
     val find_alert : Rock.Request.t -> string option
     val set_alert : string option -> Rock.Response.t -> Rock.Response.t
     val find_notice : Rock.Request.t -> string option
     val set_notice : string option -> Rock.Response.t -> Rock.Response.t
     val find_custom : Rock.Request.t -> string option
     val set_custom : string option -> Rock.Response.t -> Rock.Response.t
-  end
-
-  module Form : sig
-    type data = (string * string list) list
-
-    val pp : Format.formatter -> data -> unit
-
-    exception Parsed_data_not_found
-
-    val find_all : Rock.Request.t -> data
-    val find : string -> Rock.Request.t -> string option
-
-    (** [consume req key] returns the value of the parsed body for the [key] and
-        a request with an updated context where the parsed value is missing. The
-        value is returned and removed from the context, it is consumed.
-
-        This is used by middlewares such as the CSRF middleware to transparently
-        remove the hidden CSRF token from the form data. *)
-    val consume : Rock.Request.t -> string -> Rock.Request.t * string option
   end
 
   module Htmx : sig
@@ -84,21 +57,8 @@ module Web : sig
   end
 
   module Id : sig
-    exception Id_not_found
-
-    (** [find req] returns a the id of the request [req]. If no id was assigned
-        {!val:Id_not_found} is raised. *)
-    val find : Rock.Request.t -> string
-
     (** [find_opt req] returns a the id of the request [req]. *)
-    val find_opt : Rock.Request.t -> string option
-  end
-
-  module Json : sig
-    exception Json_body_not_found
-
-    val find : Rock.Request.t -> Yojson.Safe.t
-    val find_opt : Rock.Request.t -> Yojson.Safe.t option
+    val find : Rock.Request.t -> string option
   end
 
   module Session : sig
@@ -135,42 +95,9 @@ module Web : sig
       -> Opium.Response.t
   end
 
-  module User : sig
-    val find : Rock.Request.t -> Contract_user.t
-    val find_opt : Rock.Request.t -> Contract_user.t option
-  end
-
   module Middleware : sig
-    val authorization_user : login_path_f:(unit -> string) -> Rock.Middleware.t
-      [@@ocaml.deprecated
-        "authorization_user will be moved to a dedicated authorization package \
-         sihl-authorization in the future."]
-
-    val authorization_admin
-      :  login_path_f:(unit -> string)
-      -> (Contract_user.t -> bool)
-      -> Rock.Middleware.t
-      [@@ocaml.deprecated
-        "authorization_admin will be moved to a dedicated authorization \
-         package sihl-authorization in the future."]
-
-    (** [bearer_token ?unauthenticated_handler ()] returns a middleware that
-        parses the [Bearer] token in the [Authorization] header. The header
-        value has to be of form [Bearer <token>].
-
-        If no [unauthenticated_handler] is provided a default handler is used
-        that returns [HTTP 401] with an empty body if no token is found. *)
-    val bearer_token
-      :  ?unauthenticated_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
-      -> unit
-      -> Rock.Middleware.t
-
-    (** [csrf ?not_allowed_handler ?cookie_key ?secret ()] returns a middleware
-        that enables CSRF protection for unsafe HTTP requests.
-
-        [form_data_name] is the name of the input element that is used to send
-        the CSRF token. The default is [csrf]. It is recommended to use a
-        [<hidden>] field in a [<form>].
+    (** [csrf ?not_allowed_handler ?cookie_key ?input_name ?secret ()] returns a
+        middleware that enables CSRF protection for unsafe HTTP requests.
 
         [not_allowed_handler] is used if an unsafe request does not pass the
         CSRF protection check. By default, [not_allowed_handler] returns an
@@ -183,6 +110,10 @@ module Web : sig
         only set this argument if you know what you are doing and aware of the
         consequences.
 
+        [input_name] is the name of the input element that is used to send the
+        CSRF token. By default, the value is [_csrf]. It is recommended to use a
+        [<hidden>] field in a [<form>].
+
         [secret] is the secret used to hash the CSRF cookie value with. By
         default, [SIHL_SECRET] is used.
 
@@ -191,7 +122,7 @@ module Web : sig
     val csrf
       :  ?not_allowed_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
       -> ?cookie_key:string
-      -> ?form_data_name:string
+      -> ?input_name:string
       -> ?secret:string
       -> unit
       -> Rock.Middleware.t
@@ -210,51 +141,51 @@ module Web : sig
         tuple (sender, recipient, send_function). Exceptions that are caught
         will be sent per email to [recipient] where [sender] is the sender of
         the email. Pass in the send function of the Sihl email service or
-        provide your own [send_function]. An email will only be sent if SIHL_ENV
-        is `production`.
+        provide your own [send_function].
 
         An optional custom reporter [reporter] can be defined. The middleware
-        passes the stringified exception as first argument to the reporter
+        passes the request and the stringified exception to the reporter
         callback. Use the reporter to implement custom error reporting. *)
     val error
       :  ?email_config:string * string * (Contract_email.t -> unit Lwt.t)
-      -> ?reporter:(string -> unit Lwt.t)
+      -> ?reporter:(Opium.Request.t -> string -> unit Lwt.t)
       -> ?error_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
       -> unit
       -> Rock.Middleware.t
 
-    val flash : ?cookie_key:string -> unit -> Rock.Middleware.t
-    val form : Rock.Middleware.t
+    (** [flash ?cookie_key ()] returns a middleware that is used to read and
+        store flash data. Flash data is session data that is valid between two
+        requests. A typical use case is displaying error messages after
+        submitting forms.
 
-    (** [id] is a middleware that reads the [X-Request-ID] headers and assigns
-        it to the request.
+        [cookie_key] is the cookie name. By default, the value is [_flash].
+
+        The flash data is stored in a separate flash cookie. The usual
+        limitations apply such as a maximum of 4KB. Note that the cookie is not
+        signed, don't put any data into the flash cookie that you have to trust. *)
+    val flash : ?cookie_key:string -> unit -> Rock.Middleware.t
+
+    (** [id ()] returns a middleware that reads the [X-Request-ID] headers and
+        assigns it to the request.
 
         If no [X-Request-ID] is present, a random id is generated which is
         assigned to the request. The random id is a 64 byte long base64 encoded
         string. There is no uniqueness guarantee among ids of pending requests.
         However, generating two identical ids in a short period of time is
         highly unlikely. *)
-    val id : Rock.Middleware.t
+    val id : unit -> Rock.Middleware.t
 
-    val json : Rock.Middleware.t
+    (** [static_file ()] returns a middleware that serves static files.
+
+        The directory that is served can be configured with [PUBLIC_DIR]. By
+        default, the value is [./public].
+
+        The path under which the file are accessible can be configured with
+        [PUBLIC_URI_PREFIX]. By default, the value is [/assets]. *)
     val static_file : unit -> Rock.Middleware.t
-
-    (** [user ?key find_user] returns a middleware that sets the user based on
-        the session cookie that was sent by the browser.
-
-        [key] is the user id that has been used to store a user id in the
-        session. Be default, the value is [user_id].
-
-        [find_user] is a function that returns a user given a user id. *)
-    val user
-      :  ?key:string
-      -> (string -> Contract_user.t option Lwt.t)
-      -> Rock.Middleware.t
   end
 end
 
-(** Use {!Database} to handle connection pooling, migrations and to query your
-    database. *)
 module Database : sig
   include Contract_database.Sig
 
@@ -274,14 +205,10 @@ module Database : sig
   module Migration = Database_migration
 end
 
-(** Use {!Log} to set up a logger for your Sihl app. This module can not be used
-    to actually log, use {!Logs} for that. *)
 module Log : sig
   include module type of Core_log
 end
 
-(** Use {!Cleaner} to clean persisted service state. This is useful for cleaning
-    the state before running tests. *)
 module Cleaner : sig
   include module type of Core_cleaner
 end

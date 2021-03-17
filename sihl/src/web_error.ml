@@ -48,7 +48,7 @@ let page request_id =
 ;;
 
 let site_error_handler req =
-  let request_id = Web_id.find req in
+  let request_id = Web_id.find req |> Option.value ~default:"-" in
   let site = page request_id in
   Opium.Response.of_plain_text site
   |> Opium.Response.set_content_type "text/html; charset=utf-8"
@@ -56,7 +56,7 @@ let site_error_handler req =
 ;;
 
 let json_error_handler req =
-  let request_id = Web_id.find req in
+  let request_id = Web_id.find req |> Option.value ~default:"-" in
   let msg =
     Format.sprintf
       "Something went wrong, our administrators have been notified."
@@ -73,7 +73,7 @@ let json_error_handler req =
 let exn_to_string exn req =
   let msg = Printexc.to_string exn
   and stack = Printexc.get_backtrace () in
-  let request_id = Web_id.find req in
+  let request_id = Web_id.find req |> Option.value ~default:"-" in
   let req_str = Format.asprintf "%a" Opium.Request.pp_hum req in
   Format.asprintf
     "Request id %s: %s\nError: %s\nStacktrace: %s"
@@ -89,7 +89,7 @@ let create_error_email (sender, recipient) error =
 
 let middleware
     ?email_config
-    ?(reporter = fun _ -> Lwt.return ())
+    ?(reporter = fun _ _ -> Lwt.return ())
     ?error_handler
     ()
   =
@@ -117,7 +117,7 @@ let middleware
         (* Use custom reporter to catch error, don't wait for it. *)
         let _ =
           Lwt.catch
-            (fun () -> reporter error)
+            (fun () -> reporter req error)
             (fun exn ->
               let msg = Printexc.to_string exn in
               Logs.err (fun m ->

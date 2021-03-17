@@ -4,7 +4,6 @@ open Lwt.Syntax
 let apply_middlewares handler ?not_allowed_handler =
   handler
   |> Rock.Middleware.apply (Sihl.Web.Middleware.csrf ?not_allowed_handler ())
-  |> Rock.Middleware.apply Sihl.Web.Middleware.form
 ;;
 
 let get_request_without_token_succeeds _ () =
@@ -21,7 +20,7 @@ let get_request_yields_token _ () =
   let req = Opium.Request.get "" in
   let token_ref = ref "" in
   let handler req =
-    token_ref := Sihl.Web.Csrf.find req;
+    token_ref := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
@@ -41,7 +40,7 @@ let two_get_requests_yield_different_token _ () =
   let token_ref1 = ref "" in
   let token_ref2 = ref "" in
   let handler tkn req =
-    tkn := Sihl.Web.Csrf.find req;
+    tkn := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler1 = apply_middlewares @@ handler token_ref1 in
@@ -73,7 +72,7 @@ let post_request_yields_token _ () =
   let post_req = Opium.Request.of_urlencoded ~body:[] "/foo" `POST in
   let token_ref = ref "" in
   let not_allowed_handler req =
-    token_ref := Sihl.Web.Csrf.find req;
+    token_ref := Sihl.Web.Csrf.find req |> Option.get;
     Alcotest.(check bool "Has CSRF token" true (String.length !token_ref > 0));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
@@ -95,7 +94,7 @@ let two_post_requests_yield_different_token _ () =
   let token_ref1 = ref "" in
   let token_ref2 = ref "" in
   let not_allowed_handler tkn req =
-    tkn := Sihl.Web.Csrf.find req;
+    tkn := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ~status:`Forbidden ""
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
@@ -150,14 +149,14 @@ let post_request_with_foreign_token_fails _ () =
   let req = Opium.Request.get "" in
   let token_ref = ref "" in
   let handler req =
-    token_ref := Sihl.Web.Csrf.find req;
+    token_ref := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
   let* _ = wrapped_handler req in
   (* New request with new cookie but using generated (foreign) token *)
   let post_req =
-    Opium.Request.of_urlencoded ~body:[ "csrf", [ !token_ref ] ] "/foo" `POST
+    Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref ] ] "/foo" `POST
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
@@ -172,7 +171,7 @@ let post_request_with_nonmatching_token_fails _ () =
   let req = Opium.Request.get "" in
   let token_ref = ref "" in
   let handler req =
-    token_ref := Sihl.Web.Csrf.find req;
+    token_ref := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
@@ -180,7 +179,7 @@ let post_request_with_nonmatching_token_fails _ () =
   let cookie = response |> Opium.Response.cookies |> List.hd in
   (* New request with same cookie but non-matching token in body *)
   let post_req =
-    Opium.Request.of_urlencoded ~body:[ "csrf", [ "garbage" ] ] "/foo" `POST
+    Opium.Request.of_urlencoded ~body:[ "_csrf", [ "garbage" ] ] "/foo" `POST
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
@@ -196,14 +195,14 @@ let post_request_with_nonmatching_cookie_fails _ () =
   let req = Opium.Request.get "" in
   let token_ref = ref "" in
   let handler req =
-    token_ref := Sihl.Web.Csrf.find req;
+    token_ref := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
   let* _ = wrapped_handler req in
   (* New request with same cookie but non-matching token in body *)
   let post_req =
-    Opium.Request.of_urlencoded ~body:[ "csrf", [ !token_ref ] ] "/foo" `POST
+    Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref ] ] "/foo" `POST
     |> Opium.Request.add_cookie
          ("__Host-csrf", "ohwZjbBUqb9LVi3BjAb8r1CNskrJQjW")
   in
@@ -225,7 +224,7 @@ let post_request_with_valid_token_succeeds _ () =
   let req = Opium.Request.get "" in
   let token_ref = ref "" in
   let handler req =
-    token_ref := Sihl.Web.Csrf.find req;
+    token_ref := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
@@ -233,7 +232,7 @@ let post_request_with_valid_token_succeeds _ () =
   let cookie = response |> Opium.Response.cookies |> List.hd in
   (* New request with same cookie and matching token in body *)
   let post_req =
-    Opium.Request.of_urlencoded ~body:[ "csrf", [ !token_ref ] ] "/foo" `POST
+    Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref ] ] "/foo" `POST
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
@@ -251,7 +250,7 @@ let two_post_requests_succeed _ () =
   let token_ref2 = ref "" in
   let token_ref3 = ref "" in
   let handler tkn req =
-    tkn := Sihl.Web.Csrf.find req;
+    tkn := Sihl.Web.Csrf.find req |> Option.get;
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref1 in
@@ -261,7 +260,7 @@ let two_post_requests_succeed _ () =
   let cookie = response |> Opium.Response.cookies |> List.hd in
   (* New request with same cookie and matching token in body *)
   let post_req =
-    Opium.Request.of_urlencoded ~body:[ "csrf", [ !token_ref1 ] ] "/foo" `POST
+    Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref1 ] ] "/foo" `POST
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref2 in
@@ -271,7 +270,7 @@ let two_post_requests_succeed _ () =
   let* response = wrapped_handler req in
   let cookie = response |> Opium.Response.cookies |> List.hd in
   let post_req =
-    Opium.Request.of_urlencoded ~body:[ "csrf", [ !token_ref2 ] ] "/foo" `POST
+    Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref2 ] ] "/foo" `POST
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref3 in
@@ -353,4 +352,12 @@ let suite =
           two_post_requests_succeed
       ] )
   ]
+;;
+
+let () =
+  (* When testing, CSRF check is skipped normally *)
+  Unix.putenv "CHECK_CSRF" "true";
+  Logs.set_level (Sihl.Log.get_log_level ());
+  Logs.set_reporter (Sihl.Log.cli_reporter ());
+  Lwt_main.run (Alcotest_lwt.run "csrf" suite)
 ;;

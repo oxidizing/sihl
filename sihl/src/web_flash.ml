@@ -72,28 +72,16 @@ module Flash = struct
   ;;
 end
 
-exception Flash_not_found
-
 module Env = struct
   let key : Flash.t Opium.Context.key =
     Opium.Context.Key.create ("flash", Flash.to_sexp)
   ;;
 end
 
-let find req =
-  (* Raising an exception is ok since we assume that before find can be called
-     the middleware has been passed *)
-  try Opium.Context.find_exn Env.key req.Opium.Request.env with
-  | _ ->
-    Logs.err (fun m -> m "No flash storage found");
-    Logs.info (fun m ->
-        m "Have you applied the flash middleware for this route?");
-    raise Flash_not_found
-;;
-
-let find_alert req = (find req).alert
-let find_notice req = (find req).notice
-let find_custom req = (find req).custom
+let find req = Opium.Context.find Env.key req.Opium.Request.env
+let find_alert req = Option.bind (find req) (fun flash -> flash.alert)
+let find_notice req = Option.bind (find req) (fun flash -> flash.notice)
+let find_custom req = Option.bind (find req) (fun flash -> flash.custom)
 
 let set_alert alert resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
