@@ -31,7 +31,7 @@ let set user req =
 let middleware read_token ?(key = "user_id") find_user =
   let open Lwt.Syntax in
   let filter handler req =
-    match Sihl.Web.Bearer_token.find_opt req with
+    match Sihl.Web.Request.bearer_token req with
     | Some token ->
       let* user_id = read_token token ~k:key in
       (match user_id with

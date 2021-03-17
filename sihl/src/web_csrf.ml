@@ -6,17 +6,8 @@ let key : string Opium.Context.key =
   Opium.Context.Key.create ("csrf token", Sexplib.Std.sexp_of_string)
 ;;
 
-exception Csrf_token_not_found
-
 (* Can be used to fetch token in view for forms *)
-let find req =
-  try Opium.Context.find_exn key req.Opium.Request.env with
-  | _ ->
-    Logs.err (fun m -> m "No CSRF token found");
-    Logs.info (fun m ->
-        m "Have you applied the CSRF middleware for this route?");
-    raise @@ Csrf_token_not_found
-;;
+let find req = Opium.Context.find key req.Opium.Request.env
 
 let set token req =
   let env = req.Opium.Request.env in
@@ -51,22 +42,22 @@ let verify ~with_secret ~hashed value =
 let middleware
     ?(not_allowed_handler = default_not_allowed_handler)
     ?(cookie_key = "__Host-csrf")
-    ?(form_data_name = "csrf")
+    ?(input_name = "_csrf")
     ?(secret = Core_configuration.read_secret ())
     ()
   =
   let filter handler req =
+    let open Lwt.Syntax in
     let check_csrf =
       Core_configuration.is_production ()
       || Option.value (Core_configuration.read_bool "CHECK_CSRF") ~default:false
     in
     if not check_csrf (* Set fake token since CSRF is disabled *)
-    then (
+    then
       (* Consume CSRF token so Sihl.Web.Form can be used properly *)
-      let req, _ = Web_form.consume req form_data_name in
-      handler (set "development" req))
-    else (
-      let req, token = Web_form.consume req form_data_name in
+      handler (set "development" req)
+    else
+      let* token = Opium.Request.urlencoded input_name req in
       (* Create a new token for each request to mitigate BREACH attack *)
       let new_token = Core_random.base64 80 in
       let req = set new_token req in
@@ -106,7 +97,7 @@ let middleware
                    received token '%s'"
                   stored_token
                   received_token);
-            construct_response not_allowed_handler)))
+            construct_response not_allowed_handler))
   in
   Rock.Middleware.create ~name:"csrf" ~filter
 ;;

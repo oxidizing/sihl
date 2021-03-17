@@ -334,14 +334,11 @@ In [route/site.ml]:
 
 {[
 let middlewares =
-  [ Sihl.Web.Middleware.id
+  [ Sihl.Web.Middleware.id ()
   ; Sihl.Web.Middleware.error ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
   ; Sihl.Web.Middleware.static_file ()
-  ; Sihl.Web.Middleware.session ()
-  ; Sihl.Web.Middleware.form
-  ; Sihl.Web.Middleware.csrf ()
   ; Sihl.Web.Middleware.flash ()
   ]
 ;;
@@ -355,10 +352,8 @@ In [route/api.ml]
 
 {[
 let middlewares =
-  [ Sihl.Web.Middleware.id
+  [ Sihl.Web.Middleware.id ()
   ; Sihl.Web.Middleware.error ()
-  ; Sihl.Web.Middleware.json
-  ; Sihl.Web.Middleware.bearer_token
   ]
 ;;
 

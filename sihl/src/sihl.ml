@@ -10,44 +10,35 @@ module Time = Core_time
 
 module Web = struct
   module Http = Web_http
-  module Request = Opium.Request
+
+  module Request = struct
+    include Opium.Request
+
+    let bearer_token req =
+      match Opium.Request.header "authorization" req with
+      | Some authorization ->
+        (try Some (Scanf.sscanf authorization "Bearer %s" (fun b -> b)) with
+        | _ -> None)
+      | None -> None
+    ;;
+  end
+
   module Response = Opium.Response
   module Body = Opium.Body
   module Router = Opium.Router
   module Route = Opium.Route
 
-  module Bearer_token = struct
-    let find = Web_bearer_token.find
-    let find_opt = Web_bearer_token.find_opt
-  end
-
   module Csrf = struct
-    exception Csrf_token_not_found = Web_csrf.Csrf_token_not_found
-
     let find = Web_csrf.find
   end
 
   module Flash = struct
-    exception Flash_not_found = Web_flash.Flash_not_found
-
     let find_alert = Web_flash.find_alert
     let set_alert = Web_flash.set_alert
     let find_notice = Web_flash.find_notice
     let set_notice = Web_flash.set_notice
     let find_custom = Web_flash.find_custom
     let set_custom = Web_flash.set_custom
-  end
-
-  module Form = struct
-    type data = Web_form.data
-
-    let pp = Web_form.pp
-
-    exception Parsed_data_not_found = Web_form.Parsed_data_not_found
-
-    let find_all = Web_form.find_all
-    let find = Web_form.find
-    let consume = Web_form.consume
   end
 
   module Htmx = struct
@@ -66,17 +57,7 @@ module Web = struct
   end
 
   module Id = struct
-    exception Id_not_found = Web_id.Id_not_found
-
     let find = Web_id.find
-    let find_opt = Web_id.find_opt
-  end
-
-  module Json = struct
-    exception Json_body_not_found = Web_json.Json_body_not_found
-
-    let find = Web_json.find
-    let find_opt = Web_json.find_opt
   end
 
   module Session = struct
@@ -84,26 +65,12 @@ module Web = struct
     let set = Web_session.set
   end
 
-  module User = struct
-    let find = Web_user.find
-    let find_opt = Web_user.find_opt
-  end
-
   module Middleware = struct
-    (* TODO [jerben] Move this to sihl-authorization or sihl-user *)
-    let authorization_user = Web_authorization.user
-
-    (* TODO [jerben] Move this to sihl-authorization or sihl-user *)
-    let authorization_admin = Web_authorization.admin
-    let bearer_token = Web_bearer_token.middleware
     let csrf = Web_csrf.middleware
     let error = Web_error.middleware
     let flash = Web_flash.middleware
-    let form = Web_form.middleware
     let id = Web_id.middleware
-    let json = Web_json.middleware
     let static_file = Web_static.middleware
-    let user = Web_user.middleware
   end
 end
 
