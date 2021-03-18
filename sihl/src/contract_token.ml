@@ -3,34 +3,6 @@ exception Exception of string
 let name = "token"
 
 module type Sig = sig
-  module Web : sig
-    module User : sig
-      exception User_not_found
-
-      (** [find req] returns the user that is associated with the bearer token.
-          If no user is found, {!User_not_found} is raised. *)
-      val find : Rock.Request.t -> Contract_user.t
-
-      (** [find_opt req] returns the user that is associated with the bearer
-          token. *)
-      val find_opt : Rock.Request.t -> Contract_user.t option
-    end
-
-    module Middleware : sig
-      (** [user ?key find_user] returns a middleware that sets the current user
-          based on the [Bearer Token] in the [Authorization] header.
-
-          [key] is the user id that has been used to store a user id in the
-          session. Be default, the value is [user_id].
-
-          [find_user] is a function that returns a user given a user id. *)
-      val user
-        :  ?key:string
-        -> (string -> Contract_user.t option Lwt.t)
-        -> Rock.Middleware.t
-    end
-  end
-
   (** [create ?expires_in ?secret data] returns a token that expires in
       [expires_in] with the associated data [data]. If no [expires_in] is set,
       the default is 7 days. An optional secret [secret] can be provided for the

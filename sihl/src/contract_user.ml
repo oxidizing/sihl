@@ -19,11 +19,43 @@ type t =
 
 exception Exception of string
 
-(* Signature *)
-
 let name = "user"
 
 module type Sig = sig
+  module Web : sig
+    (** [user_from_token ?key read_token request] returns the user that is
+        associated to the user id in the [Bearer] token of the [request].
+
+        [key] is the key in the token associated with the user id. By default,
+        the value is [user_id].
+
+        [read_token] is a function that returns the associated value of [key] in
+        a given token. *)
+    val user_from_token
+      :  ?key:string
+      -> (string -> k:string -> string option Lwt.t)
+      -> Rock.Request.t
+      -> t option Lwt.t
+
+    (** [user_from_session ?cookie_key ?secret ?key ?secret request] returns the
+        user that is associated to the user id in the session of the [request].
+
+        [cookie_key] is the name/key of the session cookie. By default, the
+        value is [_session].
+
+        [secret] is used to verify the signature of the session cookie. By
+        default, [SIHL_SECRET] is used.
+
+        [key] is the key in the session associated with the user id. By default,
+        the value is [user_id]. *)
+    val user_from_session
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> ?key:string
+      -> Rock.Request.t
+      -> t option Lwt.t
+  end
+
   val search
     :  ?sort:[ `Desc | `Asc ]
     -> ?filter:string

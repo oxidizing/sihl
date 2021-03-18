@@ -160,6 +160,95 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     Lwt.return ()
   ;;
 
+  module Web = struct
+    let fake_token = "faketoken"
+
+    let read_token user_id token ~k =
+      if String.equal k "user_id" && String.equal token fake_token
+      then Lwt.return @@ Some user_id
+      else Lwt.return None
+    ;;
+
+    let find_user id =
+      if String.equal id "1"
+      then
+        Lwt.return
+        @@ Some
+             Sihl.Contract.User.
+               { id = "1"
+               ; email = "foo@example.com"
+               ; username = None
+               ; password = "123123"
+               ; status = "active"
+               ; admin = false
+               ; confirmed = false
+               ; created_at = Ptime_clock.now ()
+               ; updated_at = Ptime_clock.now ()
+               }
+      else failwith "Invalid user id provided"
+    ;;
+
+    let user_from_token _ () =
+      let* () = Sihl.Cleaner.clean_all () in
+      let* user =
+        UserService.create
+          ~email:"foo@example.com"
+          ~username:None
+          ~password:"123123"
+          ~admin:false
+          ~confirmed:false
+        |> Lwt.map Result.get_ok
+      in
+      let read_token = read_token user.Sihl_user.id in
+      let token_header = Format.sprintf "Bearer %s" fake_token in
+      let req =
+        Opium.Request.get "/some/path/login"
+        |> Opium.Request.add_header ("authorization", token_header)
+      in
+      let handler req =
+        let* user = UserService.Web.user_from_token read_token req in
+        let email = Option.map (fun user -> user.Sihl_user.email) user in
+        Alcotest.(
+          check (option string) "has same email" (Some "foo@example.com") email);
+        Lwt.return @@ Opium.Response.of_plain_text ""
+      in
+      let* _ = handler req in
+      Lwt.return ()
+    ;;
+
+    let user_from_session _ () =
+      let* () = Sihl.Cleaner.clean_all () in
+      let* user =
+        UserService.create
+          ~email:"foo@example.com"
+          ~username:None
+          ~password:"123123"
+          ~admin:false
+          ~confirmed:false
+        |> Lwt.map Result.get_ok
+      in
+      let cookie =
+        Sihl.Web.Response.of_plain_text ""
+        |> Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ]
+        |> Sihl.Web.Response.cookie "_session"
+        |> Option.get
+      in
+      let req =
+        Opium.Request.get "/some/path/login"
+        |> Opium.Request.add_cookie cookie.Sihl.Web.Cooke.value
+      in
+      let handler req =
+        let* user = UserService.Web.user_from_session req in
+        let email = Option.map (fun user -> user.Sihl_user.email) user in
+        Alcotest.(
+          check (option string) "has same email" (Some "foo@example.com") email);
+        Lwt.return @@ Opium.Response.of_plain_text ""
+      in
+      let* _ = handler req in
+      Lwt.return ()
+    ;;
+  end
+
   let suite =
     [ ( "user service"
       , [ test_case "validate valid password" `Quick validate_valid_password
@@ -169,6 +258,10 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         ; test_case "update password" `Quick update_password
         ; test_case "update password fails" `Quick update_password_fails
         ; test_case "filter users by email" `Quick filter_users_by_email
+        ] )
+    ; ( "web"
+      , [ test_case "user from token" `Quick Web.user_from_token
+        ; test_case "user from session" `Quick Web.user_from_session
         ] )
     ]
   ;;
