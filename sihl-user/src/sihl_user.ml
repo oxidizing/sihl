@@ -213,6 +213,14 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
     Repo.register_cleaner ();
     Sihl.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
   ;;
+
+  module Web = struct
+    let user_from_session =
+      Web.user_from_session (fun user_id -> find_opt ~user_id)
+    ;;
+
+    let user_from_token = Web.user_from_token (fun user_id -> find_opt ~user_id)
+  end
 end
 
 module PostgreSql =
