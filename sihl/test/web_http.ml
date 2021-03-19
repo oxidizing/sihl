@@ -1,106 +1,7 @@
 open Lwt.Syntax
 open Alcotest_lwt
 
-let externalize_link _ () =
-  let actual = Sihl.Web.Http.externalize_path ~prefix:"prefix" "foo/bar" in
-  Alcotest.(check @@ string) "prefixes path" "prefix/foo/bar" actual;
-  let actual = Sihl.Web.Http.externalize_path ~prefix:"prefix" "foo/bar/" in
-  Alcotest.(check @@ string) "preserve trailing" "prefix/foo/bar/" actual;
-  let actual = Sihl.Web.Http.externalize_path ~prefix:"prefix" "/foo/bar/" in
-  Alcotest.(check @@ string) "no duplicate slash" "prefix/foo/bar/" actual;
-  Lwt.return ()
-;;
-
-let prefix_route _ () =
-  let route =
-    Sihl.Web.Http.get "/users" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text ""))
-  in
-  let _, prefixed_path, _ = Sihl.Web.Http.prefix "/admin" route in
-  Alcotest.(check string "prefix" "/admin/users" prefixed_path);
-  Lwt.return ()
-;;
-
-let prefix_route_trailing_slash_prefix _ () =
-  let route =
-    Sihl.Web.Http.get "/users" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text ""))
-  in
-  let _, prefixed_path, _ = Sihl.Web.Http.prefix "/admin/" route in
-  Alcotest.(check string "prefix" "/admin/users" prefixed_path);
-  Lwt.return ()
-;;
-
-let prefix_route_trailing_slash _ () =
-  let route =
-    Sihl.Web.Http.get "/users/" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text ""))
-  in
-  let _, prefixed_path, _ = Sihl.Web.Http.prefix "/admin" route in
-  Alcotest.(check string "prefix" "/admin/users/" prefixed_path);
-  Lwt.return ()
-;;
-
-let router_prefix _ () =
-  let open Sihl.Web.Http in
-  let route1 =
-    get "/users" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text "many users"))
-  in
-  let route2 =
-    get "/users/:id" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text "one user"))
-  in
-  let router = router ~scope:"/api" [ route1; route2 ] in
-  let routes = router_to_routes router in
-  let path1, path2 =
-    match routes with
-    | (_, path1, _) :: (_, path2, _) :: _ -> path1, path2
-    | _ -> failwith "Not two routes received"
-  in
-  Alcotest.(check string "path 1" "/api/users" path1);
-  Alcotest.(check string "path 2" "/api/users/:id" path2);
-  Lwt.return ()
-;;
-
-let router_middleware _ () =
-  let state = ref [] in
-  let middleware1 =
-    Rock.Middleware.create
-      ~filter:(fun handler req ->
-        state := List.concat [ !state; [ 1 ] ];
-        handler req)
-      ~name:"one"
-  in
-  let middleware2 =
-    Rock.Middleware.create
-      ~filter:(fun handler req ->
-        state := List.concat [ !state; [ 2 ] ];
-        handler req)
-      ~name:"two"
-  in
-  let route1 =
-    Sihl.Web.Http.get "/users" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text "many users"))
-  in
-  let route2 =
-    Sihl.Web.Http.get "/users/:id" (fun _ ->
-        Lwt.return (Opium.Response.of_plain_text "one user"))
-  in
-  let router =
-    Sihl.Web.Http.router
-      ~scope:"/api"
-      [ route1; route2 ]
-      ~middlewares:[ middleware1; middleware2 ]
-  in
-  let _, _, handler = Sihl.Web.Http.router_to_routes router |> List.hd in
-  let req = Opium.Request.make "/foo" `GET in
-  let* _ = handler req in
-  Alcotest.(check (list int) "correct middleware order" [ 1; 2 ] !state);
-  Lwt.return ()
-;;
-
-let match_first_route _ () =
+let combine_routers_matches_first_route _ () =
   let was_called1 = ref false in
   let was_called2 = ref false in
   let handler1 _ =
@@ -111,55 +12,165 @@ let match_first_route _ () =
     was_called2 := true;
     Lwt.return (Opium.Response.of_plain_text "ello 2")
   in
-  let route1 = Sihl.Web.Http.get "/some/path" handler1 in
-  let route2 = Sihl.Web.Http.get "/**" handler2 in
-  let router =
-    Sihl.Web.Http.router ~scope:"/scope" ~middlewares:[] [ route1; route2 ]
-  in
-  let _ = Sihl.Web.Http.register ~routers:[ router ] () in
-  let* () = Sihl.Web.Http.start () in
+  let route1 = Sihl.Web.get "/some/path" handler1 in
+  let route2 = Sihl.Web.get "/**" handler2 in
+  let router = Sihl.Web.choose ~scope:"/scope" [ route1; route2 ] in
+  let service = Sihl.Web.Http.register router in
+  let* () = Sihl.Container.Service.start service in
   let* _ =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string "http://localhost:3000/scope/some/path")
   in
   Alcotest.(check bool "was called" true !was_called1);
   Alcotest.(check bool "was not called" false !was_called2);
-  Sihl.Web.Http.stop ()
+  Sihl.Container.Service.stop service
+;;
+
+let combine_routers_calls_middlewares _ () =
+  let root_middleware_was_called = ref false in
+  let sub_middleware_was_called = ref false in
+  let index_was_called = ref false in
+  let foo_was_called = ref false in
+  let bar_was_called = ref false in
+  let reset_assert_state () =
+    root_middleware_was_called := false;
+    sub_middleware_was_called := false;
+    index_was_called := false;
+    foo_was_called := false;
+    bar_was_called := false
+  in
+  reset_assert_state ();
+  let middleware_root =
+    Rock.Middleware.create ~name:"root" ~filter:(fun hander req ->
+        root_middleware_was_called := true;
+        hander req)
+  in
+  let middleware_sub =
+    Rock.Middleware.create ~name:"sub" ~filter:(fun hander req ->
+        sub_middleware_was_called := true;
+        hander req)
+  in
+  let middleware_foo =
+    Rock.Middleware.create ~name:"foo" ~filter:(fun _ _ ->
+        Lwt.return @@ Sihl.Web.Response.of_plain_text "foo middleware")
+  in
+  let middleware_bar =
+    Rock.Middleware.create ~name:"bar" ~filter:(fun _ _ ->
+        Lwt.return @@ Sihl.Web.Response.of_plain_text "bar middleware")
+  in
+  let router =
+    Sihl.Web.(
+      choose
+        ~middlewares:[ middleware_root ]
+        ~scope:"/root"
+        [ choose
+            ~middlewares:[ middleware_sub ]
+            ~scope:"/sub"
+            [ get "/" (fun _ ->
+                  index_was_called := true;
+                  Lwt.return (Opium.Response.of_plain_text "/"))
+            ; get ~middlewares:[ middleware_foo ] "/foo" (fun _ ->
+                  foo_was_called := true;
+                  Lwt.return (Opium.Response.of_plain_text "/foo"))
+            ; get "/fooz" (fun _ ->
+                  Lwt.return (Opium.Response.of_plain_text "/fooz"))
+            ]
+        ; get "/bar" ~middlewares:[ middleware_bar ] (fun _ ->
+              bar_was_called := true;
+              Lwt.return (Opium.Response.of_plain_text "/bar"))
+        ])
+  in
+  let service = Sihl.Web.Http.register router in
+  let status_of_resp resp =
+    resp
+    |> Lwt.map fst
+    |> Lwt.map Cohttp.Response.status
+    |> Lwt.map Cohttp.Code.code_of_status
+  in
+  let* () = Sihl.Container.Service.start service in
+  reset_assert_state ();
+  let* status =
+    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root")
+    |> status_of_resp
+  in
+  Alcotest.(check int "/root not found" 404 status);
+  Alcotest.(
+    check bool "/root middleware not called" false !root_middleware_was_called);
+  reset_assert_state ();
+  let* status =
+    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/")
+    |> status_of_resp
+  in
+  Alcotest.(check int "/root/ not found" 404 status);
+  Alcotest.(
+    check bool "/root middleware not called" false !root_middleware_was_called);
+  reset_assert_state ();
+  let* status =
+    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/sub")
+    |> status_of_resp
+  in
+  Alcotest.(check int "/root/sub not found" 404 status);
+  reset_assert_state ();
+  let* status =
+    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/sub/")
+    |> status_of_resp
+  in
+  Alcotest.(check int "/root/sub/ found" 200 status);
+  Alcotest.(
+    check bool "root middleware called" true !root_middleware_was_called);
+  Alcotest.(check bool "sub middleware called" true !sub_middleware_was_called);
+  reset_assert_state ();
+  let* body =
+    Cohttp_lwt_unix.Client.get
+      (Uri.of_string "http://localhost:3000/root/sub/foo")
+    |> Lwt.map snd
+  in
+  let* body = Cohttp_lwt.Body.to_string body in
+  Alcotest.(check string "foo middleware called" "foo middleware" body);
+  Alcotest.(
+    check bool "root middleware called" true !root_middleware_was_called);
+  Alcotest.(check bool "sub middleware called" true !sub_middleware_was_called);
+  reset_assert_state ();
+  let* body =
+    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/bar")
+    |> Lwt.map snd
+  in
+  let* body = Cohttp_lwt.Body.to_string body in
+  Alcotest.(check string "bar middleware called" "bar middleware" body);
+  Alcotest.(
+    check bool "root middleware called" true !root_middleware_was_called);
+  Alcotest.(
+    check bool "sub middleware not called" false !sub_middleware_was_called);
+  Sihl.Container.Service.stop service
 ;;
 
 let global_middleware_before_router _ () =
-  let was_called = ref false in
-  let filter _ _ =
-    was_called := true;
-    Lwt.return @@ Opium.Response.of_plain_text "all good!"
-  in
+  let filter _ _ = Lwt.return @@ Opium.Response.of_plain_text "all good!" in
   let middleware = Rock.Middleware.create ~name:"test" ~filter in
-  let _ = Sihl.Web.Http.register ~middlewares:[ middleware ] () in
-  let* () = Sihl.Web.Http.start () in
-  let* resp, _ =
-    Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000")
+  let router = Sihl.Web.choose ~middlewares:[] ~scope:"/" [] in
+  let service = Sihl.Web.Http.register ~middlewares:[ middleware ] router in
+  let* () = Sihl.Container.Service.start service in
+  let* resp, body =
+    Cohttp_lwt_unix.Client.get
+      (Uri.of_string "http://localhost:3000/non/existing")
   in
   let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
-  Alcotest.(check int "matched scope without route" 200 status);
-  Alcotest.(check bool "middleware was called" true !was_called);
-  Sihl.Web.Http.stop ()
+  let* body = Cohttp_lwt.Body.to_string body in
+  Alcotest.(check int "matched without route" 200 status);
+  Alcotest.(check string "responds" "all good!" body);
+  Sihl.Container.Service.stop service
 ;;
 
 let suite =
   [ ( "http"
-    , [ test_case "match first route" `Quick match_first_route
-      ; test_case "prefix path" `Quick externalize_link
-      ; test_case "prefix route" `Quick prefix_route
-      ; test_case
-          "prefix route trailing slash prefix"
+    , [ test_case
+          "combine routers matches first route"
           `Quick
-          prefix_route_trailing_slash_prefix
+          combine_routers_matches_first_route
       ; test_case
-          "prefix route trailing slash"
+          "combine routers calls middlewares"
           `Quick
-          prefix_route_trailing_slash
-      ; test_case "router prefix" `Quick router_prefix
-      ; test_case "router middleware" `Quick router_middleware
+          combine_routers_calls_middlewares
       ; test_case
           "global middleware before router"
           `Quick
@@ -171,5 +182,5 @@ let suite =
 let () =
   Logs.set_level (Sihl.Log.get_log_level ());
   Logs.set_reporter (Sihl.Log.cli_reporter ());
-  Lwt_main.run (Alcotest_lwt.run "opium" suite)
+  Lwt_main.run (Alcotest_lwt.run "http" suite)
 ;;

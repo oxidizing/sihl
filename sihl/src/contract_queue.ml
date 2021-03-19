@@ -99,13 +99,8 @@ let create_job
 let name = "queue"
 
 module type Sig = sig
-  (** [router ?middlewares ?back scope] returns a router that can be passed to
-      the web server to serve the job queue dashboard.
-
-      [middlewares] is an optional list of middlewares that are appended to the
-      middlewares that the dashboard uses internally. Provide your own
-      authentication and authorization middlewares to make sure that only
-      privileged users can access the dashboard.
+  (** [router ?back scope] returns a router that can be passed to the web server
+      to serve the job queue dashboard.
 
       [back] is an optional URL which renders a back button on the dashboard.
       Use this to provide your admin user a way to easily exit the dashboard. By
@@ -120,11 +115,7 @@ module type Sig = sig
       <script> tag in the page body. HTMX is used to add dynamic features such
       as auto-refresh. The dashboard is perfectly usable without it. By default,
       HTMX is not used. *)
-  val router
-    :  ?middlewares:Rock.Middleware.t list
-    -> ?back:string
-    -> string
-    -> Contract_http.router
+  val router : ?back:string -> string -> Web.router
 
   (** [dispatch ?delay input job] queues [job] for later processing and returns
       [unit Lwt.t] once the job has been queued.

@@ -9,6 +9,6 @@ let middleware () =
       (Core_configuration.read_string "PUBLIC_URI_PREFIX")
       ~default:"/assets"
   in
-  let uri_prefix = Web_http.externalize_path internal_uri_prefix in
+  let uri_prefix = Web.externalize_path internal_uri_prefix in
   Opium.Middleware.static_unix ~local_path ~uri_prefix ()
 ;;

@@ -197,7 +197,7 @@ let page ?back body =
 
 let index ?back scope find_jobs =
   let open Lwt.Syntax in
-  Sihl.Web.Http.get "" (fun req ->
+  Sihl.Web.get "" (fun req ->
       let csrf = Sihl.Web.Csrf.find req |> Option.get in
       let* jobs = find_jobs () in
       Lwt.return
@@ -206,7 +206,7 @@ let index ?back scope find_jobs =
 
 let html_index scope find_jobs =
   let open Lwt.Syntax in
-  Sihl.Web.Http.get "/html/index" (fun req ->
+  Sihl.Web.get "/html/index" (fun req ->
       let csrf = Sihl.Web.Csrf.find req |> Option.get in
       let* jobs = find_jobs () in
       let html =
@@ -217,7 +217,7 @@ let html_index scope find_jobs =
 
 let cancel scope find_job cancel_job =
   let open Lwt.Syntax in
-  Sihl.Web.Http.post "/:id/cancel" (fun req ->
+  Sihl.Web.post "/:id/cancel" (fun req ->
       let id = Sihl.Web.Router.param req "id" in
       let* job = find_job id in
       let* _ = cancel_job job in
@@ -226,14 +226,14 @@ let cancel scope find_job cancel_job =
 
 let requeue scope find_job requeue_job =
   let open Lwt.Syntax in
-  Sihl.Web.Http.post "/:id/requeue" (fun req ->
+  Sihl.Web.post "/:id/requeue" (fun req ->
       let id = Sihl.Web.Router.param req "id" in
       let* job = find_job id in
       let* _ = requeue_job job in
       Lwt.return @@ Sihl.Web.Response.redirect_to scope)
 ;;
 
-let core_middlewares =
+let middlewares =
   [ Opium.Middleware.content_length
   ; Opium.Middleware.etag
   ; Sihl.Web.Middleware.csrf ()
@@ -241,17 +241,9 @@ let core_middlewares =
   ]
 ;;
 
-let router
-    search_jobs
-    find_job
-    cancel_job
-    requeue_job
-    ?(middlewares = [])
-    ?back
-    scope
-  =
-  Sihl.Web.Http.router
-    ~middlewares:(List.concat [ core_middlewares; middlewares ])
+let router search_jobs find_job cancel_job requeue_job ?back scope =
+  Sihl.Web.choose
+    ~middlewares
     ~scope
     [ index ?back scope search_jobs
     ; html_index scope search_jobs

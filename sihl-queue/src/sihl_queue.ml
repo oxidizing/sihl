@@ -267,9 +267,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     update updated
   ;;
 
-  let router ?middlewares ?back scope =
-    Admin_ui.router query find cancel requeue ?back ?middlewares scope
-  ;;
+  let router ?back scope = Admin_ui.router query find cancel requeue ?back scope
 end
 
 module InMemory = Make (Repo.InMemory)

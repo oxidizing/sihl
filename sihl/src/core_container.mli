@@ -44,6 +44,7 @@ module Service : sig
 
   val server : t -> bool
   val start : t -> unit Lwt.t
+  val stop : t -> unit Lwt.t
   val name : t -> string
 end
 
