@@ -9,6 +9,7 @@ module Schedule = Core_schedule
 module Time = Core_time
 
 module Web = struct
+  include Web
   module Http = Web_http
 
   module Request = struct

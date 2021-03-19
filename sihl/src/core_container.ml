@@ -49,6 +49,7 @@ module Service = struct
 
   let server t = t.server
   let start t = t.lifecycle.start ()
+  let stop t = t.lifecycle.stop ()
   let name t = t.lifecycle.name
 end
 

@@ -117,10 +117,7 @@ let services =
   ; Service.User.register ()
   ; Service.PasswordResetService.register ()
   ; Sihl.Schedule.register ()
-  ; Sihl.Web.Http.register ~routers:[
-            Routes.Api.router;
-            Routes.Site.router
-      ] ()
+  ; Sihl.Web.Http.register ~middlewares Routes.router
   ]
 ;;
 
@@ -233,34 +230,65 @@ Everything regarding web lives in {!Sihl.Web}.
 
 The routes are the HTTP entry points to your app. They describe what can be done in a declarative way.
 
-Routes can be created with {!module:Sihl.Web.Http}:
+Routes can be created with {!module:Sihl.Web}:
 
 {[
-let list_todos = Sihl.Web.Http.get "/" Handler.list
-let add_todos = Sihl.Web.Http.post "/add" Handler.add
-let order_pizza = Sihl.Web.Http.post "/order" Handler.order
+let list_todos = Sihl.Web.get "/" Handler.list
+let add_todos = Sihl.Web.post "/add" Handler.add
+let order_pizza = Sihl.Web.post "/order" Handler.order
 ]}
 
 A route takes a path and a handler, the HTTP method is given by the function.
 
-The routes live in the root directory [route/api.ml] or [route/site.ml]. A list of routes can be mounted under a path (called scope) with a middleware stack. The site routes for instance are mounted like:
+The routes live in the root directory [routes/routes.ml]. A list of routes can be mounted under a path (called scope) with a middleware stack. The site routes for instance are mounted like:
 
 {[
 let router =
-  Sihl.Web.Http.router
+  Sihl.Web.combine
     ~middlewares
-    ~scope:"/"
+    ~scope:"todos"
     [ list_todos; add_todos; order_pizza ]
 ;;
 ]}
 
-This creates a {!type:Sihl.Contract.Http.router}. Routers are passed to the web server when registering the service {!Sihl.Web.Http}. When you run the Sihl app, Sihl starts the HTTP server serving the registered routes.
+This creates a {!type:Sihl.Contract.Http.router}. Routers are passed to the web server when registering the service {!Sihl.Web.Http}. When you run the Sihl app, Sihl starts the HTTP server serving the registered route.
 
 {[
-let services = [
-   Sihl.Web.Http.register ~routers:[ Routes.Api.router; Routes.Site.router ] ()
-  ]
+let router =
+  Sihl.Web.choose
+    [Routes.api_router; Routes.site_router]
+;;
+
+let services = [ Sihl.Web.Http.register router ]
 ]}
+
+Routers can be composed arbitrarily.
+
+{[
+let router =
+  Sihl.Web.(
+    choose
+      ~middlewares:[ main ]
+      [ choose
+          ~middlewares:[ admin ]
+          ~path:"admin"
+          [ get "users" list_users
+          ; post "users" add_users
+          ; post "users/:id" update_user
+          ]
+      ; choose
+          ~path:"orders"
+          [ get "" list_orders
+          ; post "" add_order
+          ; post ":id" update_order
+          ; get ":id" show_order
+          ]
+      ])
+;;
+]}
+
+Note that the middlewares are only triggered for a request that matches a route. [GET /admin/users] passes the [main] and [admin] middleware, while [GET /admin/foo] does not.
+Middlewares that should be triggered for every request (including those that don't have a route) have to be passed directly to {!val:Sihl.Web.Http.register}. these middlewares are also called [global].
 
 {2 Requests}
 

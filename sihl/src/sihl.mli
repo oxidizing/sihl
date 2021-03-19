@@ -7,6 +7,98 @@ module Configuration : sig
 end
 
 module Web : sig
+  (** HTTP method *)
+  type meth = Web.meth =
+    | Get
+    | Head
+    | Options
+    | Post
+    | Put
+    | Patch
+    | Delete
+    | Any
+
+  (** A [handler] returns a response given a request. *)
+  type handler = Rock.Request.t -> Rock.Response.t Lwt.t
+
+  (** A [route] has an HTTP method, a path and a handler. *)
+  type route = meth * string * handler
+
+  (** A [router] has a scope, a list of routes and a list of middlewares. A
+      mounted router prefixes all routes and applies the middlewares to them. *)
+  type router = Web.router =
+    { scope : string
+    ; routes : route list
+    ; middlewares : Rock.Middleware.t list
+    }
+
+  (** [get path ?middlewares handler] returns a router with a single [GET] route
+      containing the [handler]. The scope of the router is [path]. *)
+  val get : string -> ?middlewares:Rock.Middleware.t list -> handler -> router
+
+  (** [head path ?middlewares handler] returns a router with a single [HEAD]
+      route containing the [handler]. The scope of the router is [path]. *)
+  val head : string -> ?middlewares:Rock.Middleware.t list -> handler -> router
+
+  (** [options path ?middlewares handler] returns a router with a single
+      [OPTIONS] route containing the [handler]. The scope of the router is
+      [path]. *)
+  val options
+    :  string
+    -> ?middlewares:Rock.Middleware.t list
+    -> handler
+    -> router
+
+  (** [post path ?middlewares handler] returns a router with a single [POST]
+      route containing the [handler]. The scope of the router is [path]. *)
+  val post : string -> ?middlewares:Rock.Middleware.t list -> handler -> router
+
+  (** [put path ?middlewares handler] returns a router with a single [PUT] route
+      containing the [handler]. The scope of the router is [path]. *)
+  val put : string -> ?middlewares:Rock.Middleware.t list -> handler -> router
+
+  (** [patch path ?middlewares handler] returns a router with a single [PATCH]
+      route containing the [handler]. The scope of the router is [path]. *)
+  val patch : string -> ?middlewares:Rock.Middleware.t list -> handler -> router
+
+  (** [delete path ?middlewares handler] returns a router with a single [DELETE]
+      route containing the [handler]. The scope of the router is [path]. *)
+  val delete
+    :  string
+    -> ?middlewares:Rock.Middleware.t list
+    -> handler
+    -> router
+
+  (** [any path ?middlewares handler] returns a router with a single route
+      containing the [handler]. The scope of the router is [path]. This route
+      matches any HTTP method. *)
+  val any : string -> ?middlewares:Rock.Middleware.t list -> handler -> router
+
+  (** [routes_of_router router] applies the middlewares, routes and the scope of
+      a [router] and returns a list of routes. *)
+  val routes_of_router : router -> route list
+
+  (** [choose ?scope ?middlewares routers] returns a router by combining a list
+      of [routers].
+
+      [scope] is the new scope under which all [routers] are mounted.
+
+      [middlewares] is an optional list of middlewares that are applied for all
+      [routers]. By default, this list is empty.
+
+      [routers] is the list of routers to combine. *)
+  val choose
+    :  ?scope:string
+    -> ?middlewares:Rock.Middleware.t list
+    -> router list
+    -> router
+
+  (** [externalize_path ?prefix path] returns a path with a [prefix] added.
+
+      If no [prefix] is provided, [PREFIX_PATH] is used. If [PREFIX_PATH] is not
+      provided, the returned path equals the provided path. *)
+  val externalize_path : ?prefix:string -> string -> string
+
   module Request : sig
     include module type of Opium.Request
 
@@ -22,7 +114,7 @@ module Web : sig
   module Route = Opium.Route
 
   module Http : sig
-    include module type of Web_http
+    include Contract_http.Sig
   end
 
   module Csrf : sig
