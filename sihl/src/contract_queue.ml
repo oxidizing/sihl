@@ -115,7 +115,11 @@ module type Sig = sig
       <script> tag in the page body. HTMX is used to add dynamic features such
       as auto-refresh. The dashboard is perfectly usable without it. By default,
       HTMX is not used. *)
-  val router : ?back:string -> string -> Web.router
+  val router
+    :  ?back:string
+    -> ?theme:[ `Custom of string | `Light | `Dark ]
+    -> string
+    -> Web.router
 
   (** [dispatch ?delay input job] queues [job] for later processing and returns
       [unit Lwt.t] once the job has been queued.
