@@ -38,8 +38,8 @@ module Web = struct
     let set_alert = Web_flash.set_alert
     let find_notice = Web_flash.find_notice
     let set_notice = Web_flash.set_notice
-    let find_custom = Web_flash.find_custom
-    let set_custom = Web_flash.set_custom
+    let find = Web_flash.find
+    let set = Web_flash.set
   end
 
   module Htmx = struct

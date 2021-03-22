@@ -26,16 +26,50 @@ module Web : sig
   end
 
   module Csrf : sig
+    (** [find request] returns the CSRF token of the current [request].
+
+        Make sure that the CSRF middleware is installed. *)
     val find : Rock.Request.t -> string option
   end
 
   module Flash : sig
+    (** [find_alert request] returns the alert stored in the flash storage of
+        the current [request].
+
+        Make sure that the flash middleware is installed.*)
     val find_alert : Rock.Request.t -> string option
+
+    (** [set_alert alert response] returns a response with an [alert] message
+        associated to it. Use [alert] to tell the user that something went
+        wrong.
+
+        Make sure that the flash middleware is installed.*)
     val set_alert : string option -> Rock.Response.t -> Rock.Response.t
+
+    (** [find_notice request] returns the notice stored in the flash storage of
+        the current [request].
+
+        Make sure that the flash middleware is installed.*)
     val find_notice : Rock.Request.t -> string option
+
+    (** [set_notice notice response] returns a [response] with a [notice]
+        message associated to it. Use [notice] to tell the user that something
+        happened (successfully).
+
+        Make sure that the flash middleware is installed.*)
     val set_notice : string option -> Rock.Response.t -> Rock.Response.t
-    val find_custom : Rock.Request.t -> string option
-    val set_custom : string option -> Rock.Response.t -> Rock.Response.t
+
+    (** [find key request] returns the string stored in the flash storage of the
+        current [request] associated with [key].
+
+        Make sure that the flash middleware is installed.*)
+    val find : string -> Rock.Request.t -> string option
+
+    (** [set flash response] returns a response with the [flash] stored. Use
+        this to store arbitrary key-value values in the flash store.
+
+        Make sure that the flash middleware is installed. *)
+    val set : (string * string) list -> Rock.Response.t -> Rock.Response.t
   end
 
   module Htmx : sig
@@ -58,7 +92,9 @@ module Web : sig
   end
 
   module Id : sig
-    (** [find_opt req] returns a the id of the request [req]. *)
+    (** [find_opt req] returns a the id of the request [req].
+
+        Make sure that the id middleware is installed. *)
     val find : Rock.Request.t -> string option
   end
 
