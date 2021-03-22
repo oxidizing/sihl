@@ -117,7 +117,7 @@ let set_and_read_flash_message _ () =
         Alcotest.(check (option string) "has no notice" None notice);
         let res = Opium.Response.of_plain_text "" in
         let res = Sihl.Web.Flash.set_alert (Some "nextfoo") res in
-        let res = Sihl.Web.Flash.set_custom (Some "hello") res in
+        let res = Sihl.Web.Flash.set [ "hello", "other" ] res in
         Lwt.return res)
       req
   in
@@ -130,9 +130,9 @@ let set_and_read_flash_message _ () =
       (Sihl.Web.Middleware.flash ())
       (fun req ->
         let alert = Sihl.Web.Flash.find_alert req in
-        let custom = Sihl.Web.Flash.find_custom req in
+        let custom = Sihl.Web.Flash.find "hello" req in
         Alcotest.(check (option string) "has alert" (Some "nextfoo") alert);
-        Alcotest.(check (option string) "has custom" (Some "hello") custom);
+        Alcotest.(check (option string) "has custom" (Some "other") custom);
         let res = Opium.Response.of_plain_text "" in
         Lwt.return res)
       req

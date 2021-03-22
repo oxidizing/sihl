@@ -3,6 +3,7 @@
 - Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
 - Take custom `unauthenticated_handler` for `Sihl.Web.Middleware.bearer_token` and enforce existence of `Bearer` token in `Authorization` header
 - Read `Request-ID-X` header if present instead of generating a random id for`Sihl.Web.Id`
+- Replace `Sihl.Web.Flash.find_custom` with `Sihl.Web.Flash.find` and `Sihl.Web.Flash.set_custom` with `Sihl.Web.Fash.set` to support key-value based semantics. If you need to store your custom string, simply store it under a key like `Sihl.Web.Flash.set [("custom", value)] resp` and retrieve it with `Sihl.Web.Flash.find "custom" request`
 
 ## [0.3.0] - 2021-03-12
 ### Fixed

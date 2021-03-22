@@ -3,85 +3,53 @@ let log_src = Logs.Src.create "sihl.middleware.flash"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module Flash = struct
+  open Sexplib.Conv
+
   type t =
     { alert : string option
     ; notice : string option
-    ; custom : string option
+    ; custom : (string * string) list
     }
+  [@@deriving yojson, sexp]
 
-  let empty = { alert = None; notice = None; custom = None }
+  let empty = { alert = None; notice = None; custom = [] }
 
   let is_empty (flash : t) : bool =
     match flash.alert, flash.notice, flash.custom with
-    | None, None, None -> true
+    | None, None, [] -> true
     | _ -> false
   ;;
 
   let equals f1 f2 =
     Option.equal String.equal f1.alert f2.alert
     && Option.equal String.equal f1.notice f2.notice
-    && Option.equal String.equal f1.custom f2.custom
-  ;;
-
-  let of_yojson (json : Yojson.Safe.t) : t option =
-    let open Yojson.Safe.Util in
-    try
-      let alert = json |> member "alert" |> to_string_option in
-      let notice = json |> member "notice" |> to_string_option in
-      let custom = json |> member "custom" |> to_string_option in
-      Some { alert; notice; custom }
-    with
-    | _ -> None
-  ;;
-
-  let to_yojson (flash : t) : Yojson.Safe.t =
-    let { alert; notice; custom } = flash in
-    let alert =
-      alert
-      |> Option.map (fun alert -> `String alert)
-      |> Option.value ~default:`Null
-    in
-    let notice =
-      notice
-      |> Option.map (fun notice -> `String notice)
-      |> Option.value ~default:`Null
-    in
-    let custom =
-      custom
-      |> Option.map (fun custom -> `String custom)
-      |> Option.value ~default:`Null
-    in
-    `Assoc [ "alert", alert; "notice", notice; "custom", custom ]
+    && CCList.equal (CCPair.equal String.equal String.equal) f1.custom f2.custom
   ;;
 
   let of_json (json : string) : t option =
-    try of_yojson (Yojson.Safe.from_string json) with
+    try Some (of_yojson (Yojson.Safe.from_string json) |> Result.get_ok) with
     | _ -> None
   ;;
 
   let to_json (flash : t) : string = flash |> to_yojson |> Yojson.Safe.to_string
-
-  let to_sexp (flash : t) : Sexplib0.Sexp.t =
-    let open Sexplib0.Sexp_conv in
-    let open Sexplib0.Sexp in
-    List
-      [ List [ Atom "alert"; sexp_of_option sexp_of_string flash.alert ]
-      ; List [ Atom "notice"; sexp_of_option sexp_of_string flash.notice ]
-      ; List [ Atom "custom"; sexp_of_option sexp_of_string flash.custom ]
-      ]
-  ;;
 end
 
 module Env = struct
   let key : Flash.t Opium.Context.key =
-    Opium.Context.Key.create ("flash", Flash.to_sexp)
+    Opium.Context.Key.create ("flash", Flash.sexp_of_t)
   ;;
 end
 
-let find req = Opium.Context.find Env.key req.Opium.Request.env
-let find_alert req = Option.bind (find req) (fun flash -> flash.alert)
-let find_notice req = Option.bind (find req) (fun flash -> flash.notice)
-let find_custom req = Option.bind (find req) (fun flash -> flash.custom)
+let find' req = Opium.Context.find Env.key req.Opium.Request.env
+let find_alert req = Option.bind (find' req) (fun flash -> flash.alert)
+let find_notice req = Option.bind (find' req) (fun flash -> flash.notice)
+
+let find key req =
+  Option.bind (find' req) (fun flash ->
+      flash.custom
+      |> List.find_opt (fun (k, _) -> String.equal key k)
+      |> Option.map snd)
+;;
 
 let set_alert alert resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
@@ -107,12 +75,12 @@ let set_notice notice resp =
   { resp with env }
 ;;
 
-let set_custom custom resp =
+let set values resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
   let flash =
     match flash with
-    | None -> Flash.{ empty with custom }
-    | Some flash -> Flash.{ flash with custom }
+    | None -> Flash.{ empty with custom = values }
+    | Some flash -> Flash.{ flash with custom = values }
   in
   let env = resp.Opium.Response.env in
   let env = Opium.Context.add Env.key flash env in
