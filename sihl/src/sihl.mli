@@ -44,7 +44,7 @@ module Web : sig
         wrong.
 
         Make sure that the flash middleware is installed.*)
-    val set_alert : string option -> Rock.Response.t -> Rock.Response.t
+    val set_alert : string -> Rock.Response.t -> Rock.Response.t
 
     (** [find_notice request] returns the notice stored in the flash storage of
         the current [request].
@@ -57,7 +57,7 @@ module Web : sig
         happened (successfully).
 
         Make sure that the flash middleware is installed.*)
-    val set_notice : string option -> Rock.Response.t -> Rock.Response.t
+    val set_notice : string -> Rock.Response.t -> Rock.Response.t
 
     (** [find key request] returns the string stored in the flash storage of the
         current [request] associated with [key].

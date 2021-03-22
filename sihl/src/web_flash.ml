@@ -12,14 +12,6 @@ module Flash = struct
     }
   [@@deriving yojson, sexp]
 
-  let empty = { alert = None; notice = None; custom = [] }
-
-  let is_empty (flash : t) : bool =
-    match flash.alert, flash.notice, flash.custom with
-    | None, None, [] -> true
-    | _ -> false
-  ;;
-
   let equals f1 f2 =
     Option.equal String.equal f1.alert f2.alert
     && Option.equal String.equal f1.notice f2.notice
@@ -55,8 +47,8 @@ let set_alert alert resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
   let flash =
     match flash with
-    | None -> Flash.{ empty with alert }
-    | Some flash -> Flash.{ flash with alert }
+    | None -> Flash.{ alert = Some alert; notice = None; custom = [] }
+    | Some flash -> Flash.{ flash with alert = Some alert }
   in
   let env = resp.Opium.Response.env in
   let env = Opium.Context.add Env.key flash env in
@@ -67,8 +59,8 @@ let set_notice notice resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
   let flash =
     match flash with
-    | None -> Flash.{ empty with notice }
-    | Some flash -> Flash.{ flash with notice }
+    | None -> Flash.{ alert = None; notice = Some notice; custom = [] }
+    | Some flash -> Flash.{ flash with notice = Some notice }
   in
   let env = resp.Opium.Response.env in
   let env = Opium.Context.add Env.key flash env in
@@ -79,7 +71,7 @@ let set values resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
   let flash =
     match flash with
-    | None -> Flash.{ empty with custom = values }
+    | None -> Flash.{ alert = None; notice = None; custom = values }
     | Some flash -> Flash.{ flash with custom = values }
   in
   let env = resp.Opium.Response.env in
@@ -87,9 +79,14 @@ let set values resp =
   { resp with env }
 ;;
 
+type decode_status =
+  | No_cookie_found
+  | Parse_error
+  | Found of Flash.t
+
 let decode_flash cookie_key req =
   match Opium.Request.cookie cookie_key req with
-  | None -> Flash.empty
+  | None -> No_cookie_found
   | Some cookie_value ->
     (match Flash.of_json cookie_value with
     | None ->
@@ -103,28 +100,34 @@ let decode_flash cookie_key req =
             "Maybe the cookie key '%s' collides with a cookie issued by \
              someone else. Try to change the cookie key."
             cookie_key);
-      Flash.empty
-    | Some flash -> flash)
+      Parse_error
+    | Some flash -> Found flash)
 ;;
 
-let persist_flash old_flash cookie_key resp =
+let persist_flash ?old_flash ?(delete_if_not_set = false) cookie_key resp =
   let flash = Opium.Context.find Env.key resp.Opium.Response.env in
   match flash with
+  (* No flash was set in handler *)
   | None ->
-    if Flash.is_empty old_flash
-    then (* Flash was not touched, don't set cookie *)
-      resp
-    else (* Remove flash cookie *)
-      Opium.Response.remove_cookie cookie_key resp
-  | Some flash ->
-    if Flash.equals old_flash flash
-    then (* Flash was not touched, don't set cookie *)
-      resp
-    else if Flash.is_empty flash
+    if delete_if_not_set
     then (* Remove flash cookie *)
       Opium.Response.remove_cookie cookie_key resp
-    else (
-      (* Flash was changed and is not empty, set cookie *)
+    else resp
+  (* Flash was set in handler *)
+  | Some flash ->
+    (match old_flash with
+    | Some old_flash ->
+      if Flash.equals old_flash flash
+      then (* Same flash value, don't set cookie *)
+        resp
+      else (
+        (* Flash was changed and is different than old flash, set cookie *)
+        let cookie_value = Flash.to_json flash in
+        let cookie = cookie_key, cookie_value in
+        let resp = Opium.Response.add_cookie_or_replace cookie resp in
+        resp)
+    | None ->
+      (* Flash was changed and old flash is empty, set cookie *)
       let cookie_value = Flash.to_json flash in
       let cookie = cookie_key, cookie_value in
       let resp = Opium.Response.add_cookie_or_replace cookie resp in
@@ -134,12 +137,20 @@ let persist_flash old_flash cookie_key resp =
 let middleware ?(cookie_key = "_flash") () =
   let open Lwt.Syntax in
   let filter handler req =
-    let flash = decode_flash cookie_key req in
-    let env = req.Opium.Request.env in
-    let env = Opium.Context.add Env.key flash env in
-    let req = { req with env } in
-    let* resp = handler req in
-    Lwt.return @@ persist_flash flash cookie_key resp
+    match decode_flash cookie_key req with
+    | No_cookie_found ->
+      let* resp = handler req in
+      Lwt.return @@ persist_flash cookie_key resp
+    | Parse_error ->
+      let* resp = handler req in
+      Lwt.return @@ persist_flash ~delete_if_not_set:true cookie_key resp
+    | Found flash ->
+      let env = req.Opium.Request.env in
+      let env = Opium.Context.add Env.key flash env in
+      let req = { req with env } in
+      let* resp = handler req in
+      Lwt.return
+      @@ persist_flash ~delete_if_not_set:true ~old_flash:flash cookie_key resp
   in
   Rock.Middleware.create ~name:"flash" ~filter
 ;;

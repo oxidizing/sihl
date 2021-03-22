@@ -29,16 +29,25 @@ let not_touching_flash_without_set_cookie_doesnt_set_cookie _ () =
   Lwt.return ()
 ;;
 
-let not_touching_flash_doesnt_set_cookie _ () =
-  let req = Opium.Request.get "/" |> Opium.Request.add_cookie ("_flash", "") in
+let not_touching_flash_removes_cookie _ () =
+  let req =
+    Opium.Request.get "/"
+    |> Opium.Request.add_cookie
+         ("_flash", {|{"alert":null,"notice":null,"custom":[]}|})
+  in
   let* res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
       req
   in
-  let cookie = Opium.Response.cookie "_flash" res in
-  Alcotest.(check bool "no cookie set" false (Option.is_some cookie));
+  let cookie = Opium.Response.cookie "_flash" res |> Option.get in
+  Alcotest.(
+    check
+      (pair string string)
+      "was removed"
+      ("_flash", "")
+      cookie.Opium.Cookie.value);
   Lwt.return ()
 ;;
 
@@ -49,8 +58,7 @@ let flash_is_cleared_after_request _ () =
       (Sihl.Web.Middleware.flash ())
       (fun _ ->
         let res =
-          Opium.Response.of_plain_text ""
-          |> Sihl.Web.Flash.set_alert (Some "foobar")
+          Opium.Response.of_plain_text "" |> Sihl.Web.Flash.set_alert "foobar"
         in
         Lwt.return res)
       req
@@ -98,7 +106,7 @@ let set_and_read_flash_message _ () =
         Alcotest.(check (option string) "has no alert" None alert);
         Alcotest.(check (option string) "has no notice" None notice);
         let res = Opium.Response.of_plain_text "" in
-        let res = Sihl.Web.Flash.set_alert (Some "foobar") res in
+        let res = Sihl.Web.Flash.set_alert "foobar" res in
         Lwt.return res)
       req
   in
@@ -116,7 +124,7 @@ let set_and_read_flash_message _ () =
         Alcotest.(check (option string) "has alert" (Some "foobar") alert);
         Alcotest.(check (option string) "has no notice" None notice);
         let res = Opium.Response.of_plain_text "" in
-        let res = Sihl.Web.Flash.set_alert (Some "nextfoo") res in
+        let res = Sihl.Web.Flash.set_alert "nextfoo" res in
         let res = Sihl.Web.Flash.set [ "hello", "other" ] res in
         Lwt.return res)
       req
@@ -152,8 +160,13 @@ let set_and_read_flash_message _ () =
         Lwt.return res)
       req
   in
-  let cookie = Opium.Response.cookie "_flash" resp in
-  Alcotest.(check bool "no cookie was set" true (Option.is_none cookie));
+  let cookie = Opium.Response.cookie "_flash" resp |> Option.get in
+  Alcotest.(
+    check
+      (pair string string)
+      "was removed"
+      ("_flash", "")
+      cookie.Opium.Cookie.value);
   Lwt.return ()
 ;;
 
@@ -164,9 +177,9 @@ let suite =
           `Quick
           not_touching_flash_without_set_cookie_doesnt_set_cookie
       ; test_case
-          "not touching flash doesn't change cookie"
+          "not touching flash removes cookie"
           `Quick
-          not_touching_flash_doesnt_set_cookie
+          not_touching_flash_removes_cookie
       ; test_case
           "flash is cleared after request"
           `Quick
