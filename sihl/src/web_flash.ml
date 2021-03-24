@@ -110,8 +110,13 @@ let persist_flash ?old_flash ?(delete_if_not_set = false) cookie_key resp =
   (* No flash was set in handler *)
   | None ->
     if delete_if_not_set
-    then (* Remove flash cookie *)
-      Opium.Response.remove_cookie cookie_key resp
+    then
+      (* Remove flash cookie *)
+      Opium.Response.add_cookie_or_replace
+        ~expires:(`Max_age Int64.zero)
+        ~scope:(Uri.of_string "/")
+        (cookie_key, "")
+        resp
     else resp
   (* Flash was set in handler *)
   | Some flash ->
@@ -124,7 +129,12 @@ let persist_flash ?old_flash ?(delete_if_not_set = false) cookie_key resp =
         (* Flash was changed and is different than old flash, set cookie *)
         let cookie_value = Flash.to_json flash in
         let cookie = cookie_key, cookie_value in
-        let resp = Opium.Response.add_cookie_or_replace cookie resp in
+        let resp =
+          Opium.Response.add_cookie_or_replace
+            ~scope:(Uri.of_string "/")
+            cookie
+            resp
+        in
         resp)
     | None ->
       (* Flash was changed and old flash is empty, set cookie *)

@@ -88,5 +88,9 @@ let set
   let session = session |> List.to_seq |> Map.of_seq in
   let cookie_value = Session.to_json session in
   let cookie = cookie_key, cookie_value in
-  Opium.Response.add_cookie_or_replace ~sign_with:signed_with cookie resp
+  Opium.Response.add_cookie_or_replace
+    ~scope:(Uri.of_string "/")
+    ~sign_with:signed_with
+    cookie
+    resp
 ;;
