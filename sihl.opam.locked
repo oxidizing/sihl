@@ -33,7 +33,7 @@ depends: [
   "conf-m4" {= "1"}
   "conf-pkg-config" {= "2"}
   "conf-zlib" {= "1"}
-  "conformist" {= "0.2.1"}
+  "conformist" {= "0.3.0"}
   "containers" {= "3.2"}
   "cppo" {= "1.6.7"}
   "cryptokit" {= "1.16.1"}

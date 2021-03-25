@@ -138,8 +138,13 @@ let read schema =
   | [] ->
     (match Conformist.decode schema data with
     | Ok value -> value
-    | Error msg ->
-      Logs.err (fun m -> m "%s" msg);
+    | Error (field, input, msg) ->
+      (match input with
+      | None ->
+        Logs.err (fun m -> m "Failed to read configuration '%s': %s" field msg)
+      | Some input ->
+        Logs.err (fun m ->
+            m "Failed to read configuration '%s' for '%s': %s" input field msg));
       raise (Exception "Invalid configuration provided"))
   | errors ->
     let errors =
