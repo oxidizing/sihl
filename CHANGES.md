@@ -1,5 +1,5 @@
 ## [0.4.0] - ?
-### Fixed
+### Changed
 - Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
 - `Sihl.Web.Csrf.find` returns `string option`, use `Option.get` if you are sure that the CSRF middleware has been applied
 - Take custom `unauthenticated_handler` for `Sihl.Web.Middleware.bearer_token` and enforce existence of `Bearer` token in `Authorization` header
@@ -7,6 +7,7 @@
 - Replace middlewares with helpers where they don't have to be middlewares such as bearer token (`Sihl.Web.Request.bearer_token`), htmx (`Sihl.Web.Htmx`) and session (`Sihl.Web.Session`)
 - Remove `form` middleware (`Sihl.Web.Middleware.form`), use `Sihl.Web.Request` directly to parse form requests
 - Replace `Sihl.Web.Flash.find_custom` with `Sihl.Web.Flash.find` and `Sihl.Web.Flash.set_custom` with `Sihl.Web.Fash.set` to support key-value based semantics. If you need to store your custom string, simply store it under a key like `Sihl.Web.Flash.set [("custom", value)] resp` and retrieve it with `Sihl.Web.Flash.find "custom" request`
+- Use `conformist` 0.4.0
 
 ### Added
 - Read `Request-ID-X` header if present instead of generating a random id for`Sihl.Web.Id`

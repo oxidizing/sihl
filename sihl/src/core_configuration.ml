@@ -134,18 +134,21 @@ let environment_variables () =
 let read schema =
   let data = environment_variables () in
   let data = List.map (fun (k, v) -> k, [ v ]) data in
-  match Conformist.validate schema data with
-  | [] ->
-    (match Conformist.decode schema data with
-    | Ok value -> value
-    | Error msg ->
-      Logs.err (fun m -> m "%s" msg);
-      raise (Exception "Invalid configuration provided"))
-  | errors ->
+  match Conformist.decode_and_validate schema data with
+  | Ok value -> value
+  | Error errors ->
     let errors =
       List.map
-        (fun (k, v) ->
-          Format.sprintf "Configuration '%s' has invalid value: %s" k v)
+        (fun (field, input, msg) ->
+          match input with
+          | None ->
+            Format.sprintf "Failed to read configuration '%s': %s" field msg
+          | Some input ->
+            Format.sprintf
+              "Failed to read configuration '%s' for '%s': %s"
+              input
+              field
+              msg)
         errors
     in
     List.iter (fun error -> Logs.err (fun m -> m "%s" error)) errors;
@@ -221,12 +224,21 @@ let read_bool key =
 let require schema =
   let vars = environment_variables () in
   let data = List.map (fun (k, v) -> k, [ v ]) vars in
-  match Conformist.validate schema data with
-  | [] -> ()
-  | errors ->
+  match Conformist.decode_and_validate schema data with
+  | Ok _ -> ()
+  | Error errors ->
     let errors =
       errors
-      |> List.map (fun (k, v) -> Format.sprintf "Key %s: %s" k v)
+      |> List.map (fun (field, input, msg) ->
+             match input with
+             | None ->
+               Format.sprintf "Failed to read configuration '%s': %s" field msg
+             | Some input ->
+               Format.sprintf
+                 "Failed to read configuration '%s' for '%s': %s"
+                 input
+                 field
+                 msg)
       |> List.cons
            "There were some errors while validating the provided configuration:"
       |> String.concat "\n"
