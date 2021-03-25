@@ -1,4 +1,3 @@
-open Lwt.Syntax
 module Database = Sihl.Database
 module Cleaner = Sihl.Cleaner
 module Migration = Sihl.Database.Migration
@@ -150,24 +149,10 @@ struct
     Sihl.Database.prepare_requests search_query filter_fragment "id" user
   ;;
 
-  let found_rows_request =
-    Caqti_request.find
-      ~oneshot:true
-      Caqti_type.unit
-      Caqti_type.int
-      "SELECT COUNT(*) FROM user_users"
-  ;;
-
   let search sort filter limit =
     Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let* result =
-          Sihl.Database.run_request connection requests sort filter limit
-        in
-        let* amount =
-          Connection.find found_rows_request () |> Lwt.map Result.get_ok
-        in
-        Lwt.return (result, amount))
+        Sihl.Database.run_request connection requests sort filter limit)
   ;;
 
   let get_request =
@@ -387,24 +372,10 @@ struct
     Sihl.Database.prepare_requests search_query filter_fragment "id" user
   ;;
 
-  let found_rows_request =
-    Caqti_request.find
-      ~oneshot:true
-      Caqti_type.unit
-      Caqti_type.int
-      "SELECT COUNT(*) FROM user_users"
-  ;;
-
   let search sort filter limit =
     Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let* result =
-          Sihl.Database.run_request connection requests sort filter limit
-        in
-        let* amount =
-          Connection.find found_rows_request () |> Lwt.map Result.get_ok
-        in
-        Lwt.return (result, amount))
+        Sihl.Database.run_request connection requests sort filter limit)
   ;;
 
   let get_request =
