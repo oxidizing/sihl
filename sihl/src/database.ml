@@ -10,6 +10,17 @@ let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
   ref None
 ;;
 
+let raise_error =
+  let open Caqti_error in
+  function
+  | Error `Unsupported ->
+    raise @@ Contract_database.Exception "Caqti error unsupported"
+  | (Error #t | Ok _) as x ->
+    (match x with
+    | Ok result -> result
+    | Error err -> raise @@ Contract_database.Exception (show err))
+;;
+
 let prepare_requests search_query filter_fragment sort_field output_type =
   let asc_request =
     let input_type = Caqti_type.int in
@@ -55,17 +66,25 @@ let prepare_requests search_query filter_fragment sort_field output_type =
 let run_request connection requests sort filter limit =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
   let r1, r2, r3, r4 = requests in
-  let result =
+  let* result =
     match sort, filter with
     | `Asc, None -> Connection.collect_list r1 limit
     | `Desc, None -> Connection.collect_list r2 limit
     | `Asc, Some filter -> Connection.collect_list r3 (filter, limit)
     | `Desc, Some filter -> Connection.collect_list r4 (filter, limit)
   in
-  result
-  |> Lwt.map (Result.map_error Caqti_error.show)
-  |> Lwt.map (Result.map_error failwith)
-  |> Lwt.map Result.get_ok
+  let* amount =
+    match sort, filter with
+    | `Asc, None ->
+      Connection.call ~f:Connection.Response.returned_count r1 limit
+    | `Desc, None ->
+      Connection.call ~f:Connection.Response.returned_count r2 limit
+    | `Asc, Some filter ->
+      Connection.call ~f:Connection.Response.returned_count r3 (filter, limit)
+    | `Desc, Some filter ->
+      Connection.call ~f:Connection.Response.returned_count r4 (filter, limit)
+  in
+  CCResult.both result amount |> raise_error |> Lwt.return
 ;;
 
 type config =
@@ -82,12 +101,6 @@ let schema =
     ; optional (int ~default:5 "DATABASE_POOL_SIZE")
     ]
     config
-;;
-
-let raise_error err =
-  match err with
-  | Error err -> raise (Contract_database.Exception (Caqti_error.show err))
-  | Ok result -> result
 ;;
 
 let print_pool_usage pool =

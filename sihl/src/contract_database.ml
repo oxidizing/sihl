@@ -27,7 +27,7 @@ module type Sig = sig
     -> [< `Asc | `Desc ]
     -> 'c option
     -> 'a
-    -> 'b list Lwt.t
+    -> ('b list * int) Lwt.t
 
   (** [raise_error err] raises a printable caqti error [err] .*)
   val raise_error : ('a, Caqti_error.t) Result.t -> 'a
