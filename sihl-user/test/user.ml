@@ -134,7 +134,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     Lwt.return ()
   ;;
 
-  let filter_users_by_email _ () =
+  let filter_users_by_email_returns_single_user _ () =
     let* () = Sihl.Cleaner.clean_all () in
     let* user1 =
       UserService.create_user
@@ -156,7 +156,34 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     in
     let* actual_users, meta = UserService.search ~filter:"%user1%" 10 in
     Alcotest.(check int "has correct meta" 3 meta);
-    Alcotest.(check (list alcotest) "has one user" actual_users [ user1 ]);
+    Alcotest.(check (list alcotest) "has one user" [ user1 ] actual_users);
+    Lwt.return ()
+  ;;
+
+  let filter_users_by_email_returns_all_users _ () =
+    let* () = Sihl.Cleaner.clean_all () in
+    let* user1 =
+      UserService.create_user
+        ~email:"user1@example.com"
+        ~password:"123123123"
+        ~username:None
+    in
+    let* user2 =
+      UserService.create_user
+        ~email:"user2@example.com"
+        ~password:"123123123"
+        ~username:None
+    in
+    let* user3 =
+      UserService.create_user
+        ~email:"user3@example.com"
+        ~password:"123123123"
+        ~username:None
+    in
+    let* actual_users, meta = UserService.search ~filter:"%user%" 10 in
+    Alcotest.(check int "has correct meta" 3 meta);
+    Alcotest.(
+      check (list alcotest) "has one user" [ user3; user2; user1 ] actual_users);
     Lwt.return ()
   ;;
 
@@ -257,7 +284,14 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         ; test_case "update details" `Quick update_details
         ; test_case "update password" `Quick update_password
         ; test_case "update password fails" `Quick update_password_fails
-        ; test_case "filter users by email" `Quick filter_users_by_email
+        ; test_case
+            "filter users by email returns single user"
+            `Quick
+            filter_users_by_email_returns_single_user
+        ; test_case
+            "filter users by email returns all users"
+            `Quick
+            filter_users_by_email_returns_all_users
         ] )
     ; ( "web"
       , [ test_case "user from token" `Quick Web.user_from_token
