@@ -146,7 +146,7 @@ module PostgreSql : Sig = struct
           created_at
         ) VALUES (
           $1,
-          $2
+          $2 AT TIME ZONE 'UTC'
         )
         |sql}
   ;;
@@ -211,9 +211,20 @@ module PostgreSql : Sig = struct
        |sql}
   ;;
 
+  let remove_timezone =
+    Sihl.Database.Migration.create_step
+      ~label:"remove timezone info from timestamps"
+      {sql|
+       ALTER TABLE token_blacklist
+        ALTER COLUMN created_at TYPE TIMESTAMP;
+       |sql}
+  ;;
+
   let migration =
     Sihl.Database.Migration.(
-      empty "tokens_blacklist" |> add_step create_jobs_table)
+      empty "tokens_blacklist"
+      |> add_step create_jobs_table
+      |> add_step remove_timezone)
   ;;
 
   let register_migration () = Migration.register_migration migration
