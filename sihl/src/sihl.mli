@@ -164,6 +164,262 @@ module Web : sig
     val set : (string * string) list -> Rock.Response.t -> Rock.Response.t
   end
 
+  (** This module allows you to build RESTful web pages quickly. *)
+  module Rest : sig
+    type action =
+      [ `Index
+      | `Create
+      | `New
+      | `Edit
+      | `Show
+      | `Update
+      | `Destroy
+      ]
+
+    (** [form] represents a validated and decoded form. One element consists of
+        [(name, input, error)].
+
+        [name] is the schema field name and the HTML input name.
+
+        [input] is the input of the form that was submitted, it might not be
+        present. Use it to restore form values after it was submitted and
+        validation or decoding failed.
+
+        [error] is the error message of the validation or decoding. *)
+    type form = (string * string option * string option) list
+
+    (** The [SERVICE] interface has to be implemented by a CRUD service that
+        drives the resource with its business logic. *)
+    module type SERVICE = sig
+      (** [t] is the type of the resource. *)
+      type t
+
+      (** [find id] returns [t] if it is found. *)
+      val find : string -> t option Lwt.t
+
+      (** [query ()] returns a list of [t]. *)
+      val query : unit -> t list Lwt.t
+
+      (** [insert t] inserts [t] and returns an error message that can be shown
+          to the user if it fails. *)
+      val insert : t -> (t, string) Result.t Lwt.t
+
+      (** [update id t] updates the t that is found using its [id] with [t] and
+          returns an error message that can be shown to the user if it fails.
+
+          This function is similar to {!insert} and it overwrites an existing
+          [t]. *)
+      val update : string -> t -> (t, string) result Lwt.t
+
+      (** [delete t] deletes [t] and returns an error message that can be shown
+          to the user if it fails. *)
+      val delete : t -> (unit, string) result Lwt.t
+    end
+
+    (** The [VIEW] interface needs to be implemented by a module that renders
+        HTML.*)
+    module type VIEW = sig
+      (** [t] is the type of the resource. *)
+      type t
+
+      (** [index request csrf resources] returns a list of [resource] instances
+          as HTML.
+
+          You can access the original [request] directly if needed.
+
+          The [csrf] token has to be included as hidden input element in the
+          form. *)
+      val index
+        :  Rock.Request.t
+        -> string
+        -> t list
+        -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
+
+      (** [new' request csrf form] returns a form to create new instances of the
+          resource as HTML.
+
+          You can access the original [request] directly if needed.
+
+          [csrf] token has to be included as hidden input element in the form.
+
+          [form] is the decoded and validated form from a previous request. It
+          contains input names, submitted values and error messages. This is
+          useful to display error messages on input elements or to populate the
+          form with invalid input from the failed [create] request, so the user
+          can fix it. *)
+      val new'
+        :  Rock.Request.t
+        -> string
+        -> form
+        -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
+
+      (** [show request resource] returns the resource instance as HTML. This is
+          the detail view of an instance of the resource. *)
+      val show
+        :  Rock.Request.t
+        -> t
+        -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
+
+      (** [edit request csrf form] returns a form to edit an instance of the
+          resource instance as HTML.
+
+          You can access the original [request] directly if needed.
+
+          [csrf] token has to be included as hidden input element in the form.
+
+          [form] is the decoded and validated form from a previous request. It
+          contains input names, submitted values and error messages. This is
+          useful to display error messages on input elements or to populate the
+          form with invalid input from the failed [create] request, so the user
+          can fix it. *)
+      val edit
+        :  Rock.Request.t
+        -> string
+        -> form
+        -> t
+        -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
+    end
+
+    (** A module of type [CONTROLLER] can be used to create a resource with
+        {!resource_of_controller}. Use a controller instead of a service and a
+        view if you need low level control. *)
+    module type CONTROLLER = sig
+      (** [t] is the type of the resource. *)
+      type t
+
+      (** [index name request] returns a list of all resource instances as a
+          response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users]. *)
+      val index : string -> Rock.Request.t -> Rock.Response.t Lwt.t
+
+      (** [new' ?key name request] returns a form to create instances of the
+          resource as a response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users].
+
+          The form data is stored in the flash storage under the [key]. By
+          default, the value is [_form]. *)
+      val new'
+        :  ?key:string
+        -> string
+        -> Rock.Request.t
+        -> Rock.Response.t Lwt.t
+
+      (** [create name schema request] handles the creation of new resource
+          instances and returns the creation result as a response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users]. *)
+      val create
+        :  string
+        -> ('a, 'b, t) Conformist.t
+        -> Rock.Request.t
+        -> Rock.Response.t Lwt.t
+
+      (** [show name request] returns a single resource instance as a response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users]. *)
+      val show : string -> Rock.Request.t -> Rock.Response.t Lwt.t
+
+      (** [edit ?key name request] returns a form to edit resource instances as
+          a response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users].
+
+          The form data is stored in the flash storage under the [key]. By
+          default, the value is [_form]. *)
+      val edit
+        :  ?key:string
+        -> string
+        -> Rock.Request.t
+        -> Rock.Response.t Lwt.t
+
+      (** [update name schema request] handles the update of a resource instance
+          and returns the update result as a response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users]. *)
+      val update
+        :  string
+        -> ('a, 'b, t) Conformist.t
+        -> Rock.Request.t
+        -> Rock.Response.t Lwt.t
+
+      (** [delete name request] handles the deletion of a resource instance and
+          returns the deletion result as a response.
+
+          [name] is the name of the resource in plural, for example [orders] or
+          [users]. *)
+      val delete' : string -> Rock.Request.t -> Rock.Response.t Lwt.t
+    end
+
+    (** [resource_of_service ?only name schema ~view service] returns a list of
+        routers that can be combined with {!choose} that represent a resource.
+
+        A resource [pizzas] creates following 7 routers:
+
+        {v
+        GET       /pizzas          `Index  Display a list of all pizzas
+        GET       /pizzas/new      `New    Return an HTML form for creating a new pizza
+        POST      /pizzas          `Create Create a new pizza
+        GET       /pizzas/:id      `Show   Display a specific pizza
+        GET       /pizzas/:id/edit `Edit   Return an HTML form for editing a pizza
+        PATCH/PUT /pizzas/:id      `Update Update a specific pizza
+        DELETE    /pizzas/:id      `Delete Delete a specific pizza
+        v}
+
+        [only] is an optional list of {!action}s. If only is set, routers are
+        created only for the actions listed.
+
+        [name] is the name of the resource. It is good practice to use plural as
+        the name is used to build the resource path of the URL.
+
+        [schema] is the conformist schema of the resource.
+
+        [view] is the view service of type {!VIEW} of the resource. The view
+        renders HTML.
+
+        [service] is the underlying CRUD service of type {!SERVICE} of the
+        resource. *)
+    val resource_of_service
+      :  ?only:action list
+      -> string
+      -> ('meta, 'ctor, 'resource) Conformist.t
+      -> view:(module VIEW with type t = 'resource)
+      -> (module SERVICE with type t = 'resource)
+      -> router list
+
+    (** [resource_of_controller ?only name schema controller] returns the same
+        list of routers as {!resource_of_service}. [resource_of_controller]
+        takes one module of type {!CONTROLLER} instead of a view and a service.
+
+        If you implement your own controller you have to do all the wiring
+        yourself, but you gain more control. *)
+    val resource_of_controller
+      :  ?only:action list
+      -> string
+      -> ('meta, 'ctor, 'resource) Conformist.t
+      -> (module CONTROLLER with type t = 'resource)
+      -> router list
+
+    (** [find_form name form] returns the [(value, error)] of a [form] input
+        element with the [name].
+
+        The [value] is the submitted value of the input element. The value is
+        set even if the submitted form failed to decode or validate. Use the
+        submitted values to populate the form that can be fixed and re-submitted
+        by the user
+
+        The [error] message comes from either the decoding, validation or CRUD
+        service. It can be shown to the user. *)
+    val find_form : string -> form -> string option * string option
+  end
+
   module Htmx : sig
     (** This module simplifies dealing with HTMX requests by adding type safe
         helpers to manipulate HTMX headers. Visit https://htmx.org/reference/

@@ -505,6 +505,132 @@ Logs.info (fun m -> m "This allows the program user to understand what is going 
 Logs.debug (fun m -> m "This is for programmers to understand what is going on.")
 ]}
 
+{2 REST}
+
+Sihl provides built-in support to quickly build RESTful web apps. This feature is inspired by {{:https://guides.rubyonrails.org/routing.html} Rails}.
+
+{3 Introduction}
+
+With {!Sihl.Web.Rest} you can make apps and services accessible through the web. A resource [pizzas] can have following HTTP routes. Each route is associated to an action.
+
+{v
+GET       /pizzas          `Index  Display a list of all pizzas
+GET       /pizzas/new      `New    Return an HTML form for creating a new pizza
+POST      /pizzas          `Create Create a new pizza
+GET       /pizzas/:id      `Show   Display a specific pizza
+GET       /pizzas/:id/edit `Edit   Return an HTML form for editing a pizza
+PATCH/PUT /pizzas/:id      `Update Update a specific pizza
+DELETE    /pizzas/:id      `Delete Delete a specific pizza
+v}
+
+{3 Model}
+
+A resource model is represented as a type and combinators that have some business logic. This is not specific to Sihl.
+
+{[
+type pizza =
+  { name : string
+  ; is_vegan : bool
+  ; price : int
+  ; created_at : Ptime.t
+  ; updated_at : Ptime.t
+  }
+]}
+
+{3 Schema}
+
+A schema connects the static world of OCaml types and the dynamic world of forms and urlencoded values. Sihl uses {{:https://github.com/oxidizing/conformist} Conformist} to decode and validate data.
+
+Attach your own validators to schema fields to validate form input elements with business logic.
+
+{[
+let create_ingredient name is_vegan price = ...
+
+let[@warning "-45"] pizza_schema
+    : (unit, string -> bool -> int -> pizza, pizza) Conformist.t
+  =
+  Conformist.(
+    make
+      Field.
+        [ string
+            ~validator:(fun name ->
+              if String.length name > 12
+              then Some "The name is too long, it has to be less than 12"
+              else if String.equal "" name
+              then Some "The name can not be empty"
+              else None)
+            "name"
+        ; bool "is_vegan"
+        ; int
+            ~validator:(fun price ->
+              if price >= 0 && price <= 10000
+              then None
+              else Some "Price has to be positive and less than 10'000")
+            "price"
+        ]
+      create_pizza)
+;;
+]}
+
+Opening the module [Conformist] shadows the operator [::] which is used to create lists by [cons]ing elements to an empty list. Conformist overwrites this operator which allows you to use the list syntax [[el1; el2; ...]] to create schemas. Depending on your setup, [dune] warns you that the thing you are creating is not really a list.
+
+This is on purpose and you can suppress the warning with [[@warning "-45"]].
+
+{3 CRUD Service}
+
+A CRUD service creates, reads, updates and deletes models. Implement the {!module-type:Sihl.Web.Rest.SERVICE} interface.
+
+{3 View}
+
+The last component is the view. A view is a module of type {!Sihl.Web.Rest.VIEW}. It receives CSRF tokens, the resource model, form data and a request and returns HTML.
+
+{3 Routers}
+
+The two basic building blocks to build resources are a [model] and a [schema].
+
+{4 Service}
+
+Create a resource by implementing {!Sihl.Web.Rest.SERVICE} and {!Sihl.Web.Rest.VIEW}.
+
+The [model], [schema], [service] and [view] are combined using {!Sihl.Web.Rest.resource}.
+
+{[
+let pizzas =
+  Sihl.Web.(
+    choose
+      ~middlewares:[ Middleware.csrf (); Middleware.flash () ]
+      (Rest.resource_of_service
+         ~only:[ `Index; `Show; `New; `Destroy ]
+         "pizzas"
+         Pizza.schema
+         (module Pizza : Rest.SERVICE with type t = Pizza.t)
+         (module View.Pizza : Rest.VIEW with type t = Pizza.t)))
+;;
+]}
+
+Don't forget to apply the CSRF and flash middlewares for the REST routes, this is a requirement. The [pizzas] router can be passed to the {!Sihl.Web.Http} service before starting the Sihl app.
+
+You have to assign the types [t] of your service and view to your resource model type.
+
+To specify which actions to support per resource, use the [only] argument. Routes of actions that are not listed return [404].
+
+{4 Controller}
+
+If you need more control over a resource, implement your own {!Sihl.Web.Rest.CONTROLLER}. This approach is quite low-level and you have to take care of all the wiring like setting flash messages, building resource paths and redirecting.
+
+{[
+let pizzas =
+  Sihl.Web.(
+    choose
+      ~middlewares:[ Middleware.csrf (); Middleware.flash () ]
+      (Rest.resource_of_controller
+         ~only:[ `Index; `Show; `New; `Destroy ]
+         "pizzas"
+         Pizza.schema
+         (module Pizza : Rest.CONTROLLER with type t = Pizza.t)))
+;;
+]}
+
 {1 Database}
 
 Most Sihl services have MariaDB and PostgreSQL backends, SQLite is planned as well. However, Sihl doesn't make any assumptions about the persistence layer so you are free to bring your own tools and libraries.
@@ -581,7 +707,7 @@ Arranging your state requires you to clean up first. You don't have direct acces
 {[
 let create_list_and_do _ () =
   let open Todo.Model in
-  let* () = Sihl_core.Cleaner.clean_all () in
+  let* () = Sihl.Cleaner.clean_all () in
   let* _ = Todo.create "do laundry" in
   let* _ = Todo.create "hoover" in
   let* todos = Todo.search 10 in
