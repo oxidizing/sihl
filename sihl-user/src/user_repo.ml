@@ -342,11 +342,22 @@ struct
          |sql}
     ;;
 
+    let remove_timezone =
+      Sihl.Database.Migration.create_step
+        ~label:"remove timezone info from timestamps"
+        {sql|
+         ALTER TABLE user_users
+          ALTER COLUMN created_at TYPE TIMESTAMP,
+          ALTER COLUMN updated_at TYPE TIMESTAMP;
+         |sql}
+    ;;
+
     let migration () =
       Migration.(
         empty "user"
         |> add_step create_users_table
-        |> add_step add_updated_at_column)
+        |> add_step add_updated_at_column
+        |> add_step remove_timezone)
     ;;
   end
 
@@ -471,8 +482,8 @@ struct
           $5,
           $6,
           $7,
-          $8,
-          $9
+          $8 AT TIME ZONE 'UTC',
+          $9 AT TIME ZONE 'UTC'
         )
         |sql}
   ;;
