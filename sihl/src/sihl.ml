@@ -43,6 +43,36 @@ module Web = struct
     let set = Web_flash.set
   end
 
+  module Rest = struct
+    type action =
+      [ `Index
+      | `Create
+      | `New
+      | `Edit
+      | `Show
+      | `Update
+      | `Destroy
+      ]
+
+    type form = (string * string option * string option) list
+
+    let resource_of_service = Web_rest.resource_of_service
+    let resource_of_controller = Web_rest.resource_of_controller
+    let find_form = Web_rest.Form.find
+
+    module type SERVICE = sig
+      include Web_rest.SERVICE
+    end
+
+    module type VIEW = sig
+      include Web_rest.VIEW
+    end
+
+    module type CONTROLLER = sig
+      include Web_rest.CONTROLLER
+    end
+  end
+
   module Htmx = struct
     let is_htmx = Web_htmx.is_htmx
     let current_url = Web_htmx.current_url

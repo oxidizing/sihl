@@ -1,3 +1,7 @@
+## [0.5.0] - 2021-03-30
+### Added
+- `Sihl.Web.Rest` provides helpers to quickly create HTML resources. This is useful to expose any service of type `Sihl.Web.Rest.SERVICE` through the Internet by making it part of a web app.
+
 ## [0.4.0] - 2021-03-27
 ### Changed
 - Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
