@@ -24,3 +24,7 @@ Contributions are what make the open source community such an amazing place to b
 8. Generate and publish the documentation (`make release-doc`)
 9. Create a release on Github by going to the tag list and clicking `Create release`
 10. Fill in the changes of this release by copying the section of `CHANGES.md`
+
+## Running tests
+
+Use `make test-all` to run all tests. You can set the test databases by setting `DATABASE_URL_TEST_MARIADB` and `DATABASE_URL_TEST_POSTGRESQL`.
