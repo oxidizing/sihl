@@ -10,18 +10,19 @@ let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
   ref None
 ;;
 
-let raise_error =
-  let open Caqti_error in
-  function
-  | Error `Unsupported ->
-    raise @@ Contract_database.Exception "Caqti error unsupported"
-  | (Error #t | Ok _) as x ->
-    (match x with
-    | Ok result -> result
-    | Error err -> raise @@ Contract_database.Exception (show err))
+let raise_error err =
+  match err with
+  | Error err -> raise @@ Contract_database.Exception (Caqti_error.show err)
+  | Ok result -> result
 ;;
 
-let prepare_requests search_query filter_fragment sort_field output_type =
+let prepare_requests
+    search_query
+    count_query
+    filter_fragment
+    sort_field
+    output_type
+  =
   let asc_request =
     let input_type = Caqti_type.int in
     let query =
@@ -60,12 +61,19 @@ let prepare_requests search_query filter_fragment sort_field output_type =
     in
     Caqti_request.collect input_type output_type query
   in
-  asc_request, desc_request, filter_asc_request, filter_desc_request
+  let count_request =
+    Caqti_request.find ~oneshot:true Caqti_type.unit Caqti_type.int count_query
+  in
+  ( asc_request
+  , desc_request
+  , filter_asc_request
+  , filter_desc_request
+  , count_request )
 ;;
 
 let run_request connection requests sort filter limit =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  let r1, r2, r3, r4 = requests in
+  let r1, r2, r3, r4, r5 = requests in
   let* result =
     match sort, filter with
     | `Asc, None -> Connection.collect_list r1 limit
@@ -73,17 +81,7 @@ let run_request connection requests sort filter limit =
     | `Asc, Some filter -> Connection.collect_list r3 (filter, limit)
     | `Desc, Some filter -> Connection.collect_list r4 (filter, limit)
   in
-  let* amount =
-    match sort, filter with
-    | `Asc, None ->
-      Connection.call ~f:Connection.Response.returned_count r1 limit
-    | `Desc, None ->
-      Connection.call ~f:Connection.Response.returned_count r2 limit
-    | `Asc, Some filter ->
-      Connection.call ~f:Connection.Response.returned_count r3 (filter, limit)
-    | `Desc, Some filter ->
-      Connection.call ~f:Connection.Response.returned_count r4 (filter, limit)
-  in
+  let* amount = Connection.find r5 () in
   CCResult.both result amount |> raise_error |> Lwt.return
 ;;
 

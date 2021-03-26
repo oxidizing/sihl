@@ -12,11 +12,13 @@ module type Sig = sig
     :  string
     -> string
     -> string
+    -> string
     -> 'a Caqti_type.t
     -> (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
        * (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
        * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
        * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+       * (unit, int, [< `Many | `One | `Zero > `One ]) Caqti_request.t
 
   val run_request
     :  (module Caqti_lwt.CONNECTION)
@@ -24,6 +26,7 @@ module type Sig = sig
        * ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
        * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
        * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
+       * (unit, int, [< `One ]) Caqti_request.t
     -> [< `Asc | `Desc ]
     -> 'c option
     -> 'a

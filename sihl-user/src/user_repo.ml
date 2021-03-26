@@ -145,8 +145,15 @@ struct
         FROM user_users |sql}
   ;;
 
+  let found_rows_query = {sql| SELECT COUNT(*) FROM user_users |sql}
+
   let requests =
-    Sihl.Database.prepare_requests search_query filter_fragment "id" user
+    Sihl.Database.prepare_requests
+      search_query
+      found_rows_query
+      filter_fragment
+      "id"
+      user
   ;;
 
   let search sort filter limit =
@@ -357,8 +364,15 @@ struct
         FROM user_users |sql}
   ;;
 
+  let found_rows_query = {sql| SELECT COUNT(*) FROM user_users |sql}
+
   let requests =
-    Sihl.Database.prepare_requests search_query filter_fragment "id" user
+    Sihl.Database.prepare_requests
+      search_query
+      found_rows_query
+      filter_fragment
+      "id"
+      user
   ;;
 
   let search sort filter limit =
