@@ -90,15 +90,15 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
           last_error,
           last_error_at
         ) VALUES (
-          UNHEX(REPLACE(?, '-', '')),
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
+          UNHEX(REPLACE($1, '-', '')),
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9
         )
         |sql}
   ;;
@@ -372,15 +372,15 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
           last_error,
           last_error_at
         ) VALUES (
-          ?::uuid,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
+          $1::uuid,
+          $2,
+          $3,
+          $4,
+          $5 AT TIME ZONE 'UTC',
+          $6,
+          $7,
+          $8,
+          $9 AT TIME ZONE 'UTC'
         )
         |sql}
   ;;
@@ -592,6 +592,16 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
          ALTER TABLE queue_jobs
            ADD COLUMN last_error TEXT NULL,
            ADD COLUMN last_error_at TIMESTAMP WITH TIME ZONE;
+         |sql}
+    ;;
+
+    let remove_timezone =
+      Sihl.Database.Migration.create_step
+        ~label:"remove timezone info from timestamps"
+        {sql|
+         ALTER TABLE queue_jobs
+          ALTER COLUMN next_run_at TYPE TIMESTAMP,
+          ALTER COLUMN last_error_at TYPE TIMESTAMP;
          |sql}
     ;;
 

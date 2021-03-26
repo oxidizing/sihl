@@ -292,12 +292,12 @@ struct
           created_at,
           updated_at
         ) VALUES (
-          ?::uuid,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
+          $1::uuid,
+          $2,
+          $3,
+          $4,
+          $5 AT TIME ZONE 'UTC',
+          $6 AT TIME ZONE 'UTC'
         )
         |sql}
     ;;
@@ -387,13 +387,24 @@ struct
          |sql}
     ;;
 
+    let remove_timezone =
+      Sihl.Database.Migration.create_step
+        ~label:"remove timezone info from timestamps"
+        {sql|
+         ALTER TABLE email_templates
+          ALTER COLUMN created_at TYPE TIMESTAMP,
+          ALTER COLUMN updated_at TYPE TIMESTAMP;
+         |sql}
+    ;;
+
     let migration () =
       Sihl.Database.Migration.(
         empty "email"
         |> add_step create_templates_table
         |> add_step rename_name_column
         |> add_step add_updated_at_column
-        |> add_step make_html_nullable)
+        |> add_step make_html_nullable
+        |> add_step remove_timezone)
     ;;
   end
 

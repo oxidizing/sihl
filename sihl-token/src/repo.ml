@@ -363,8 +363,8 @@ struct
           $2,
           $3,
           $4,
-          $5,
-          $6
+          $5 AT TIME ZONE 'UTC',
+          $6 AT TIME ZONE 'UTC'
         )
         |sql}
     ;;
@@ -424,8 +424,20 @@ struct
         |sql}
     ;;
 
+    let remove_timezone =
+      Sihl.Database.Migration.create_step
+        ~label:"remove timezone info from timestamps"
+        {sql|
+         ALTER TABLE token_tokens
+          ALTER COLUMN created_at TYPE TIMESTAMP;
+         |sql}
+    ;;
+
     let migration () =
-      Migration.(empty "tokens" |> add_step create_tokens_table)
+      Migration.(
+        empty "tokens"
+        |> add_step create_tokens_table
+        |> add_step remove_timezone)
     ;;
   end
 
