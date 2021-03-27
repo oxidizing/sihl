@@ -15,7 +15,7 @@ jobs:
         ports:
           - 5432:5432
       mariadb:
-        image: mariadb:10.1.41-bionic
+        image: mariadb:10.3
         env:
           MYSQL_USER: admin
           MYSQL_PASSWORD: password
