@@ -1,4 +1,4 @@
-## [0.4.0] - ?
+## [0.4.0] - 2021-03-27
 ### Changed
 - Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
 - `Sihl.Web.Csrf.find` returns `string option`, use `Option.get` if you are sure that the CSRF middleware has been applied
