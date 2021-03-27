@@ -15,7 +15,7 @@
   "remoteEnv": {
     "DATABASE_URL": "postgres://admin:password@postgres:5432/dev",
     "DATABASE_URL_TEST_MARIADB": "mariadb://admin:password@mariadb:5432/dev",
-    "DATABASE_URL_TEST_POSTGRES": "postgres://admin:password@postgres:5432/dev",
+    "DATABASE_URL_TEST_POSTGRESQL": "postgres://admin:password@postgres:5432/dev",
     "VERSION": "dev",
     "OPAM_SWITCH_PREFIX": "/home/opam/.opam/4.11",
     "CAML_LD_LIBRARY_PATH": "/home/opam/.opam/4.11/lib/stublibs:/home/opam/.opam/4.11/lib/ocaml/stublibs:/home/opam/.opam/4.11/lib/ocaml",
