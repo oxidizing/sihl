@@ -383,8 +383,8 @@ struct
           uuid = $1::uuid,
           token_data = $3,
           status = $4,
-          expires_at = $5,
-          created_at = $6
+          expires_at = $5 AT TIME ZONE 'UTC',
+          created_at = $6 AT TIME ZONE 'UTC'
         WHERE token_tokens.token_value = $2
         |sql}
     ;;

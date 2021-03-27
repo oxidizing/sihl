@@ -422,11 +422,11 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
           name = $2,
           input = $3,
           tries = $4,
-          next_run_at = $5,
+          next_run_at = $5 AT TIME ZONE 'UTC',
           max_tries = $6,
           status = $7,
           last_error = $8,
-          last_error_at = $9
+          last_error_at = $9 AT TIME ZONE 'UTC'
         WHERE
           queue_jobs.uuid = $1::uuid
         |sql}

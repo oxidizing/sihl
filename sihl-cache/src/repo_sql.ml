@@ -146,8 +146,18 @@ struct
          |sql}
     ;;
 
+    let remove_timezone =
+      Sihl.Database.Migration.create_step
+        ~label:"remove timezone info from timestamps"
+        {sql|
+         ALTER TABLE cache
+          ALTER COLUMN created_at TYPE TIMESTAMP
+         |sql}
+    ;;
+
     let migration () =
-      Sihl.Database.Migration.(empty "cache" |> add_step create_cache_table)
+      Sihl.Database.Migration.(
+        empty "cache" |> add_step create_cache_table |> add_step remove_timezone)
     ;;
   end
 

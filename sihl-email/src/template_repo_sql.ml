@@ -317,8 +317,8 @@ struct
           label = $2,
           content_text = $3,
           content_html = $4,
-          created_at = $5,
-          updated_at = $6
+          created_at = $5 AT TIME ZONE 'UTC',
+          updated_at = $6 AT TIME ZONE 'UTC'
         WHERE email_templates.uuid = $1::uuid
         |sql}
     ;;
