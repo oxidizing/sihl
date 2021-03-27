@@ -110,6 +110,17 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |> Lwt.map Sihl.Database.raise_error)
   ;;
 
+  (* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
+     populate, we have to do that manually. *)
+  let populatable job_instances =
+    job_instances
+    |> List.map (fun j ->
+           Sihl.Contract.Queue.
+             { j with
+               id = j.id |> Uuidm.of_string |> Option.get |> Uuidm.to_bytes
+             })
+  ;;
+
   let enqueue_all job_instances =
     Sihl.Database.transaction' (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -127,7 +138,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
             ; "last_error_at"
             ]
           job
-          (Caqti_lwt.Stream.of_list (List.rev job_instances))
+          (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
         |> Lwt.map Caqti_error.uncongested)
   ;;
 
