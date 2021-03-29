@@ -6,7 +6,15 @@ exception Exception of string
 
 type ('ctor, 'ty) schema = (string, 'ctor, 'ty) Conformist.t
 type data = (string * string) list
-type t = (string * string option * string * string option) list
+
+type config =
+  { name : string
+  ; description : string
+  ; type_ : string
+  ; default : string option
+  }
+
+type t = config list
 
 let make ?schema () =
   match schema with
@@ -14,10 +22,12 @@ let make ?schema () =
     Conformist.fold_left
       ~f:(fun res field ->
         let name = Conformist.Field.name field in
-        let description = Conformist.Field.meta field in
+        let description =
+          Option.value ~default:"-" (Conformist.Field.meta field)
+        in
         let type_ = Conformist.Field.type_ field in
         let default = Conformist.Field.encode_default field in
-        List.cons (name, description, type_, default) res)
+        List.cons { name; description; type_; default } res)
       ~init:[]
       schema
   | None -> []
@@ -225,36 +235,51 @@ let require schema = read schema |> ignore
 
 (* Displaying configurations *)
 
-let show_configurations configurations =
+let configuration_to_string (configurations : t) : string =
   configurations
-  |> List.map (fun (name, description, type_, default) ->
-         Format.sprintf
-           "%s, %s, %s, %s"
-           name
-           (Option.value ~default:"-" description)
-           type_
-           (Option.value ~default:"-" default))
-  |> String.concat "\n"
+  |> List.map (fun { name; description; type_; default } ->
+         match default with
+         | Some default ->
+           Format.sprintf
+             {|
+%s
+%s
+Type: %s
+Default: %s
+|}
+             name
+             description
+             type_
+             default
+         | None ->
+           Format.sprintf {|
+%s
+%s
+Type: %s
+Required
+|} name description type_)
+  |> String.concat ""
 ;;
 
-let show_cmd configurations =
+let print_cmd (configurations : t list) : Core_command.t =
   Core_command.make
-    ~name:"show-config"
-    ~description:"Print a list of required service configurations"
+    ~name:"config"
+    ~description:"Prints a list of configurations that are known to Sihl."
     (fun _ ->
-      let header = "Name, Description, Type, Default" in
-      let str =
-        configurations
-        |> List.filter (fun (_, configurations) ->
-               List.length configurations > 0)
-        |> List.map (fun (service_name, configurations) ->
-               String.concat
-                 "\n"
-                 [ ""; service_name; show_configurations configurations ])
-        |> List.cons header
-        |> String.concat "\n"
-      in
-      Lwt.return @@ print_endline str)
+      configurations
+      |> List.filter (fun configuration -> List.length configuration > 0)
+      |> List.concat
+      |> List.sort (fun c1 c2 ->
+             (* We want to show required configurations first. *)
+             match c1.default, c2.default with
+             | Some _, Some _ -> 0
+             | Some _, None -> 1
+             | None, Some _ -> -1
+             | None, None -> 0)
+      |> configuration_to_string
+      |> print_endline
+      |> Option.some
+      |> Lwt.return)
 ;;
 
-let commands configurations = [ show_cmd configurations ]
+let commands configurations = [ print_cmd configurations ]

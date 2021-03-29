@@ -323,11 +323,11 @@ struct
   let migrate_cmd =
     Core_command.make
       ~name:"migrate"
-      ~description:"Run all migrations"
+      ~description:"Runs all pending migrations."
       (fun _ ->
         let%lwt () = Database.start () in
         let%lwt () = start () in
-        run_all ())
+        run_all () |> Lwt.map Option.some)
   ;;
 
   let lifecycle =

@@ -34,7 +34,12 @@ let run_forever () =
 ;;
 
 let start_cmd services =
-  Core_command.make ~name:"start" ~description:"Start the Sihl app" (fun _ ->
+  Core_command.make
+    ~name:"server"
+    ~description:
+      "Starts the Sihl app including all registered services and the HTTP \
+       server."
+    (fun _ ->
       let normal_services =
         List.filter
           (fun service -> not (Core_container.Service.server service))
@@ -72,11 +77,7 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
   Logger.info (fun m -> m "Setting up...");
   Logger.debug (fun m -> m "Setup configurations");
   let configurations =
-    List.map
-      (fun service ->
-        ( Core_container.Service.name service
-        , Core_container.Service.configuration service ))
-      app.services
+    List.map Core_container.Service.configuration app.services
   in
   let () = Core_configuration.load () in
   let%lwt () = app.before_start () in
@@ -88,7 +89,12 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
   let start_sihl_cmd = start_cmd app.services in
   let commands =
     List.concat
-      [ [ start_sihl_cmd ]; configuration_commands; service_commands; commands ]
+      [ [ start_sihl_cmd ]
+      ; [ Core_random.random_cmd ]
+      ; configuration_commands
+      ; service_commands
+      ; commands
+      ]
   in
   (* Make sure that the secret is valid *)
   let _ = Core_configuration.read_secret () in

@@ -41,6 +41,7 @@ depends: [
   "cstruct-sexp" {= "5.2.0"}
   "domain-name" {= "0.3.0"}
   "dune" {= "2.8.5"}
+  "dune-build-info" {= "2.8.5"}
   "dune-configurator" {= "2.8.5"}
   "duration" {= "0.1.3"}
   "easy-format" {= "1.3.2"}

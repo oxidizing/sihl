@@ -94,8 +94,18 @@ let config url pool_size = { url; pool_size }
 let schema =
   let open Conformist in
   make
-    [ string ~meta:"The database connection url" "DATABASE_URL"
-    ; optional (int ~default:5 "DATABASE_POOL_SIZE")
+    [ string
+        ~meta:
+          "The database connection url. This is the only string that Sihl \
+           needs to connect to a database."
+        "DATABASE_URL"
+    ; optional
+        ~meta:
+          "The amount of connections in the database connection pool that Sihl \
+           manages. If the number is too high, the server might struggle. If \
+           the number is too low, your Sihl app performs badly. This can be \
+           configured using DATABASE_POOL_SIZE and the default is 5."
+        (int ~default:5 "DATABASE_POOL_SIZE")
     ]
     config
 ;;

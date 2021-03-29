@@ -178,17 +178,17 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
 
   let create_admin_cmd =
     Sihl.Command.make
-      ~name:"createadmin"
+      ~name:"user.admin"
       ~help:"<username> <email> <password>"
-      ~description:"Create an admin user"
+      ~description:"Creates a user with admin privileges."
       (fun args ->
         match args with
         | [ username; email; password ] ->
           let%lwt () = start () in
           create_admin ~email ~password ~username:(Some username)
           |> Lwt.map ignore
-        | _ ->
-          raise (Sihl.Command.Exception "Usage: <username> <email> <password>"))
+          |> Lwt.map Option.some
+        | _ -> Lwt.return @@ None)
   ;;
 
   let lifecycle =
