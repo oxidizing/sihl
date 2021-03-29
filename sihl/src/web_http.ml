@@ -32,7 +32,12 @@ let config port = { port }
 
 let schema =
   let open Conformist in
-  make [ optional (int ~default:3000 "PORT") ] config
+  make
+    [ optional
+        ~meta:"The port the HTTP server listens on."
+        (int ~default:3000 "PORT")
+    ]
+    config
 ;;
 
 let registered_router = ref None
@@ -63,15 +68,35 @@ let start_server () =
   Lwt.return ()
 ;;
 
-let start_cmd =
+let routes_cmd =
   Core_command.make
-    ~name:"start-http"
-    ~description:"Start the HTTP server"
-    (fun _ -> start_server ())
+    ~name:"routes"
+    ~description:"Prints all HTTP routes"
+    (fun _ ->
+      !registered_router
+      |> Option.map Web.routes_of_router
+      |> Option.value ~default:[]
+      |> List.map (fun (meth, path, _) ->
+             let meth =
+               Web.(
+                 match meth with
+                 | Get -> "GET"
+                 | Head -> "HEAD"
+                 | Options -> "OPTIONS"
+                 | Post -> "POST"
+                 | Put -> "PUT"
+                 | Patch -> "PATCH"
+                 | Delete -> "DELETE"
+                 | Any -> "ANY")
+             in
+             Format.sprintf "%s %s" meth path)
+      |> String.concat "\n"
+      |> print_endline
+      |> Option.some
+      |> Lwt.return)
 ;;
 
 (* Lifecycle *)
-
 let start () =
   (* Make sure that configuration is valid *)
   Core_configuration.require schema;
@@ -94,7 +119,7 @@ let register ?(middlewares = []) router =
   let configuration = Core_configuration.make ~schema () in
   Core_container.Service.create
     ~configuration
-    ~commands:[ start_cmd ]
+    ~commands:[ routes_cmd ]
     ~server:true
     lifecycle
 ;;

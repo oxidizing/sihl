@@ -40,7 +40,7 @@ module UserService = struct
 
   let ban =
     Sihl.Command.make ~name:"ban" ~description:"Ban a user" (fun _ ->
-        Lwt.return_unit)
+        Lwt.return @@ Some ())
   ;;
 
   let register () = Sihl.Container.Service.create ~commands:[ ban ] lifecycle
@@ -70,7 +70,7 @@ module OrderService = struct
 
   let order =
     Sihl.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
-        Lwt.return_unit)
+        Lwt.return @@ Some ())
   ;;
 
   let register () = Sihl.Container.Service.create ~commands:[ order ] lifecycle
