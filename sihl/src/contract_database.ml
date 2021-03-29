@@ -56,10 +56,10 @@ module type Sig = sig
     (* Deprecated in 0.6.0 *)
     [@@deprecated "Use run_search_request instead"]
 
-  (** [run_search_request connection prepared_request sort filter ~limit
-      ~offset] runs the [prepared_request] and returns a partial result of the
-      whole stored collection. The second element of the result tuple is the
-      total amount of items in the whole collection.
+  (** [run_search_request prepared_request sort filter ~limit ~offset] runs the
+      [prepared_request] and returns a partial result of the whole stored
+      collection. The second element of the result tuple is the total amount of
+      items in the whole collection.
 
       [prepared_request] is the returned prepared request by
       {!prepare_search_request}.
@@ -77,8 +77,7 @@ module type Sig = sig
 
       [offset] and [limit] can be used together to implement pagination. *)
   val run_search_request
-    :  (module Caqti_lwt.CONNECTION)
-    -> 'a prepared_search_request
+    :  'a prepared_search_request
     -> [ `Asc | `Desc ]
     -> string option
     -> limit:int

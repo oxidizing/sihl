@@ -4,6 +4,8 @@ open Tyxml
 
 type t = {{module}}.t
 
+let skip_index_fetch = false
+
 (* General *)
 
 let%html alert_message alert =
@@ -25,7 +27,9 @@ let%html page alert notice body =
   <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>{{module}}</title>
+    <title>{{module}}</title>
+    <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
     {{style}}
     <style>
       .alert {
@@ -47,10 +51,13 @@ let%html page alert notice body =
 \|\}
 ;;
 
-let%html delete_button ({{name}} : {{module}}.t) csrf =
+let%html delete_button ({{name}} : {{module}}.t) (query : Sihl.Web.Rest.query) csrf =
   {|
 <form action="\|\}
-    (Format.sprintf "/{{name}}s/%s" {{name}}.{{module}}.id)
+    (Format.sprintf
+      "/{{name}}s/%s%s"
+      {{name}}.{{module}}.id
+      (Sihl.Web.Rest.to_query_string query))
     {|" method="Post">
   <input type="hidden" name="_csrf" value="\|\}
     csrf
@@ -75,15 +82,16 @@ let form_comp form ({{name}} : {{module}}.t option) =
 
 (* Index *)
 
-let%html table_header = "<tr>
+let%html table_header = {|<tr style="white-space: nowrap;">
   <th>Id</th>
   {{table_header}}
   <th>Created at</th>
   <th>Updated at</th>
-</tr>"
+  <th>Actions</th>
+</tr>\|\}
 ;;
 
-let%html table_row csrf ({{name}} : {{module}}.t) =
+let%html table_row csrf query ({{name}} : {{module}}.t) =
   {|<tr><td><a href="\|\}
     (Format.sprintf "/{{name}}s/%s" {{name}}.{{module}}.id)
     {|">\|\}
@@ -95,25 +103,150 @@ let%html table_row csrf ({{name}} : {{module}}.t) =
     {|</td><td>\|\}
     [ Html.txt (Ptime.to_rfc3339 {{name}}.{{module}}.updated_at) ]
     {|</td><td>\|\}
-    [ delete_button {{name}} csrf ]
+    [ delete_button {{name}} query csrf ]
     [ edit_link {{name}}.{{module}}.id ]
     {|</td></tr>\|\}
 ;;
 
 let%html table table_header items =
-  {|<div><span>{{module}}s</span><table><tbody>\|\}
+  {|<div><h3>{{module}}s</h3><table><tbody>\|\}
     (List.cons table_header items)
     {|</tbody></table></div>\|\}
 ;;
 
+let%html search_box (query : Sihl.Web.Rest.query) =
+  {|
+<form action="/{{name}}s" method="Get">
+  <input type="text" name="filter" value="\|\}
+    (Option.value ~default:"" (Sihl.Web.Rest.query_filter query))
+    {|">
+  <input type="hidden" name="sort" value="\|\}
+    (Option.value ~default:"" (Sihl.Web.Rest.query_sort query))
+    {|">
+  <input type="hidden" name="limit" value="\|\}
+    (Option.value ~default:"" (Sihl.Web.Rest.query_limit query))
+    {|">
+  <input type="hidden" name="offset" value="\|\}
+    (Option.value ~default:"" (Sihl.Web.Rest.query_offset query))
+    {|">
+  <input type="submit" value="Search">
+</form>
+\|\}
+;;
+
+let navigate_page label (query : Sihl.Web.Rest.query option) =
+  match query with
+  | Some query ->
+    [ [%html
+        {|
+<form style="display: inline;" action="/{{name}}s" method="Get">
+  <input type="hidden" name="filter" value="\|\}
+          (Option.value ~default:"" (Sihl.Web.Rest.query_filter query))
+          {|">
+  <input type="hidden" name="sort" value="\|\}
+          (Option.value ~default:"" (Sihl.Web.Rest.query_sort query))
+          {|">
+  <input type="hidden" name="limit" value="\|\}
+          (Option.value ~default:"" (Sihl.Web.Rest.query_limit query))
+          {|">
+  <input type="hidden" name="offset" value="\|\}
+          (Option.value ~default:"" (Sihl.Web.Rest.query_offset query))
+          {|">
+  <input type="submit" value="\|\}
+          label
+          {|">
+</form>
+     \|\}]
+    ]
+  | None ->
+    [ [%html
+        {|
+<form style="display: inline;" action="/{{name}}s" method="Get">
+  <input type="submit" value="\|\}
+          label
+          {|" disabled>
+</form>
+\|\}]
+    ]
+;;
+
+let%html pagination (query : Sihl.Web.Rest.query) (total : int) =
+  "<div>"
+    (navigate_page "First" (Sihl.Web.Rest.first_page query))
+    (navigate_page "Previous" (Sihl.Web.Rest.previous_page query))
+    (navigate_page "Next" (Sihl.Web.Rest.next_page query total))
+    (navigate_page "Last" (Sihl.Web.Rest.last_page query total))
+    "</div>"
+;;
+
+let limit_option (limit : int option) (to_show : int) =
+  if Option.equal Int.equal limit (Some to_show)
+  then
+    [ [%html
+        "<option selected value="
+          (string_of_int to_show)
+          ">"
+          (Html.txt (string_of_int to_show))
+          "</option>"]
+    ]
+  else
+    [ [%html
+        "<option value="
+          (string_of_int to_show)
+          ">"
+          (Html.txt (string_of_int to_show))
+          "</option>"]
+    ]
+;;
+
+let%html total_items (total : int) =
+  {|<span>\|\} [ Html.txt (Format.sprintf "Total: %d" total) ] {|</span>\|\}
+;;
+
+let%html page_size (query : Sihl.Web.Rest.query) =
+  {|
+<form action="/{{name}}s" method="Get">
+  <input type="hidden" name="filter" value="\|\}
+    (query |> Sihl.Web.Rest.query_filter |> Option.value ~default:"")
+    {|">
+  <input type="hidden" name="sort" value="\|\}
+    (Option.value ~default:"" (Sihl.Web.Rest.query_sort query))
+    {|">
+  <label>Results per page:</label>
+  <select name="limit"> \|\}
+    (limit_option query.Sihl.Web.Rest.limit 25)
+    (limit_option query.Sihl.Web.Rest.limit 50)
+    (limit_option query.Sihl.Web.Rest.limit 100)
+    (limit_option query.Sihl.Web.Rest.limit 500)
+    {|
+  </select>
+  <input type="hidden" name="offset" value="\|\}
+    (Option.value ~default:"" (Sihl.Web.Rest.query_offset query))
+    {|">
+  <input type="submit" value="Set">
+</form>
+\|\}
+;;
+
 (* Views *)
 
-let index req csrf ({{name}}s : {{module}}.t list) =
+let index req csrf (result : {{module}}.t list * int) query =
+  let {{name}}s, total = result in
   let notice = Sihl.Web.Flash.find_notice req in
   let alert = Sihl.Web.Flash.find_alert req in
-  let items = List.map(table_row csrf) {{name}}s in
+  let items = List.map(table_row csrf query) {{name}}s in
   let table = table table_header items in
-  Lwt.return @@ page alert notice [ create_link; table ]
+  Lwt.return
+  @@ page
+       alert
+       notice
+       [ search_box query
+       ; create_link
+       ; table
+       ; total_items total
+       ; page_size query
+       ; pagination query total
+       ]
 ;;
 
 let new' req csrf (form : Sihl.Web.Rest.form) =
@@ -184,6 +317,7 @@ let unescape_template (t : string) : string =
 let table_header (schema : Gen_core.schema) : string =
   schema
   |> List.map fst
+  |> List.map String.capitalize_ascii
   |> List.map (Format.sprintf "<th>%s</th>")
   |> String.concat "\n"
 ;;
@@ -364,7 +498,7 @@ let form_elements schema =
     </div>
     %s
 |}
-           (fst field)
+           (String.capitalize_ascii (fst field))
            (form_input field)
            (alert field))
   |> String.concat "\n"

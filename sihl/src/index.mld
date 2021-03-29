@@ -787,15 +787,13 @@ To implement your own function with this signature, use {!Sihl.Database.prepare_
   ;;
 
   let search sort filter ~limit ~offset =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Sihl.Database.run_search_request
-          connection
-          request
-          sort
-          filter
-          ~limit
-          ~offset)
+      Sihl.Database.run_search_request
+        connection
+        request
+        sort
+        filter
+        ~limit
+        ~offset
   ;;
 ]}
 
@@ -904,6 +902,7 @@ routes
 server
 todo.add
 user.admin
+
 v}
 
 {2 Generators}
@@ -996,6 +995,12 @@ Command 'gen.html' ran successfully in 1.964ms
 
 [gen.html] generates a service, a model, a reposiory, simple CRUD tests and an HTML view. Note that you have to specify the service name and the database you are using. You need to do the steps listed manually in order to test the resource.
 Once your project compiles, run the tests and browse the root path of the resources to use the fully functional CRUD form.
+
+{%html:
+<p align="center">
+  <img style="display: block; margin: 0 auto;" src="https://github.com/oxidizing/sihl/blob/master/images/html_rest_index.png?raw=true" alt="HTML Rest Index"/>
+</p>
+%}
 
 {3 JSON Resource}
 
