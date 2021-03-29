@@ -15,7 +15,7 @@ let clean =
 ;;
 
 let find id = Repo.find id
-let query = Repo.find_all
+let search ?filter ?(sort = `Desc) ?(limit = 50) ?(offset = 0) () = Repo.search filter sort ~limit ~offset
 
 let insert ({{name}} : t) =
   let open Lwt.Syntax in
@@ -65,7 +65,13 @@ exception Exception of string
 
 val clean : unit -> unit Lwt.t
 val find : string -> t option Lwt.t
-val query : unit -> t list Lwt.t
+  val search
+    :  ?filter:string
+    -> ?sort:[ `Desc | `Asc ]
+    -> ?limit:int
+    -> ?offset:int
+    -> unit
+    -> (t list * int) Lwt.t
 val create : {{ctor_type}} -> (t, string) result Lwt.t
 val insert : t -> (t, string) result Lwt.t
 val update : string -> t -> (t, string) result Lwt.t
@@ -140,6 +146,6 @@ let generate (database : string) (name : string) (schema : Gen_core.schema)
       ];
     Gen_core.write_in_test
       name
-      Gen_service_test.[ test_file name schema; dune_file name ]);
+      Gen_model_test.[ test_file name schema; dune_file name ]);
   Gen_migration.write_migration_file database name schema
 ;;

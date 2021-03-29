@@ -54,11 +54,29 @@ module Web = struct
       | `Destroy
       ]
 
+    type query = Web_rest.Query.t =
+      { filter : string option
+      ; limit : int option
+      ; offset : int option
+      ; sort : [ `Desc | `Asc ] option
+      }
+
+    let of_request = Web_rest.Query.of_request
+    let to_query_string = Web_rest.Query.to_query_string
+    let next_page = Web_rest.Query.next_page
+    let previous_page = Web_rest.Query.previous_page
+    let last_page = Web_rest.Query.last_page
+    let first_page = Web_rest.Query.first_page
+    let query_filter q = q.filter
+    let query_sort q = q.sort |> Option.map Web_rest.Query.string_of_sort
+    let query_limit q = q.limit |> Option.map string_of_int
+    let query_offset q = q.offset |> Option.map string_of_int
+
     type form = (string * string option * string option) list
 
+    let find_form = Web_rest.Form.find
     let resource_of_service = Web_rest.resource_of_service
     let resource_of_controller = Web_rest.resource_of_controller
-    let find_form = Web_rest.Form.find
 
     module type SERVICE = sig
       include Web_rest.SERVICE

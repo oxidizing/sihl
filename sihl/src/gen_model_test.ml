@@ -38,7 +38,7 @@ let find_all _ () =
   let* () = {{module}}.clean () in
   let* created1 = {{module}}.create {{create_values}} |> Lwt.map Result.get_ok in
   let* created2 = {{module}}.create {{create_values}} |> Lwt.map Result.get_ok in
-  let* ({{name}}s : {{module}}.t list) = {{module}}.query () in
+  let* ({{name}}s : {{module}}.t list) = {{module}}.search () |> Lwt.map fst in
   Alcotest.(check (list testable_{{name}}) "has {{name}}s" [created2; created1] {{name}}s);
   Lwt.return ()
 ;;

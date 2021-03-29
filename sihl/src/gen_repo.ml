@@ -47,19 +47,30 @@ WHERE uuid = ?::uuid
         |sql}
 ;;
 
-let find_all_request =
-  Caqti_request.collect
-    Caqti_type.unit
-    {{caqti_type}}
-    {sql|
+let filter_fragment = {sql|
+WHERE {{filter_fragment}}
+|sql}
+
+let search_query =
+  {sql|
 SELECT
   uuid,
   {{fields}},
   created_at,
   updated_at
 FROM {{table_name}}
-ORDER BY id DESC
-        |sql}
+|sql}
+;;
+
+let count_query = {sql| SELECT COUNT(*) FROM {{table_name}} |sql}
+
+let search_request =
+  Sihl.Database.prepare_search_request
+    ~search_query
+    ~count_query
+    ~filter_fragment
+    ~sort_by_field:"id"
+    {{caqti_type}}
 ;;
 
 let delete_request =
@@ -129,11 +140,12 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
 ;;
 
-let find_all_request =
-  Caqti_request.collect
-    Caqti_type.unit
-    {{caqti_type}}
-    {sql|
+let filter_fragment = {sql|
+WHERE {{filter_fragment}}
+|sql}
+
+let search_query =
+  {sql|
 SELECT
   LOWER(CONCAT(
     SUBSTR(HEX(uuid), 1, 8), '-',
@@ -146,8 +158,18 @@ SELECT
   created_at,
   updated_at
 FROM {{table_name}}
-ORDER BY id DESC
-        |sql}
+|sql}
+;;
+
+let count_query = {sql| SELECT COUNT(*) FROM {{table_name}} |sql}
+
+let search_request =
+  Sihl.Database.prepare_search_request
+    ~search_query
+    ~count_query
+    ~filter_fragment
+    ~sort_by_field:"id"
+    {{caqti_type}}
 ;;
 
 let delete_request =
@@ -199,18 +221,23 @@ let find (id : string) : Entity.t option Lwt.t =
        {{name}}
 ;;
 
-let find_all () : Entity.t list Lwt.t =
+let search filter sort ~limit ~offset =
   let open Lwt.Syntax in
-  let* {{name}}s =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list find_all_request ())
+  let* result =
+    Sihl.Database.run_search_request
+      search_request
+      sort
+      filter
+      ~limit
+      ~offset
   in
-  Lwt.return
-  @@ List.map
-       ~f:(fun {{destructured_fields}} ->
-         Entity.{ id; {{created_value}} created_at; updated_at })
-       {{name}}s
+  let {{name}}s =
+    List.map
+      ~f:(fun {{destructured_fields}} ->
+        Entity.{ id; {{created_value}} created_at; updated_at })
+      (fst result)
+  in
+  Lwt.return @@ ({{name}}s, snd result)
 ;;
 
 let delete ({{name}} : Entity.t) : unit Lwt.t =
@@ -316,6 +343,15 @@ let parameters (schema : Gen_core.schema) =
   schema |> List.map (fun _ -> "?") |> String.concat ",\n  "
 ;;
 
+let filter_fragment (schema : Gen_core.schema) =
+  let open Gen_core in
+  schema
+  |> List.filter (fun (_, type_) -> type_ == String)
+  |> List.map fst
+  |> List.map @@ Format.sprintf "%s LIKE $1"
+  |> String.concat " OR "
+;;
+
 let file
     (database : Gen_core.database)
     (name : string)
@@ -325,6 +361,7 @@ let file
   let params =
     [ "name", name
     ; "table_name", Format.sprintf "%ss" name
+    ; "filter_fragment", filter_fragment schema
     ; "caqti_type", caqti_type schema
     ; "caqti_type_update", caqti_type_update schema
     ; "caqti_value", caqti_value name schema

@@ -94,28 +94,6 @@ let prepare_search_request
 
 let run_request _ _ _ _ _ = failwith "prepare_requests deprecated"
 
-let run_search_request
-    connection
-    (r : 'a prepared_search_request)
-    (sort : [ `Asc | `Desc ])
-    (filter : string option)
-    ~(limit : int)
-    ~(offset : int)
-  =
-  let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  let%lwt result =
-    match sort, filter with
-    | `Asc, None -> Connection.collect_list r.asc_request (limit, offset)
-    | `Desc, None -> Connection.collect_list r.desc_request (limit, offset)
-    | `Asc, Some filter ->
-      Connection.collect_list r.filter_asc_request (filter, limit, offset)
-    | `Desc, Some filter ->
-      Connection.collect_list r.filter_desc_request (filter, limit, offset)
-  in
-  let%lwt amount = Connection.find r.count_request () in
-  CCResult.both result amount |> raise_error |> Lwt.return
-;;
-
 type config =
   { url : string
   ; pool_size : int option
@@ -226,6 +204,29 @@ let transaction f =
 ;;
 
 let transaction' f = transaction f |> Lwt.map raise_error
+
+let run_search_request
+    (r : 'a prepared_search_request)
+    (sort : [ `Asc | `Desc ])
+    (filter : string option)
+    ~(limit : int)
+    ~(offset : int)
+  =
+  transaction' (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      let filter = Option.map (fun filter -> "%" ^ filter ^ "%") filter in
+      let%lwt result =
+        match sort, filter with
+        | `Asc, None -> Connection.collect_list r.asc_request (limit, offset)
+        | `Desc, None -> Connection.collect_list r.desc_request (limit, offset)
+        | `Asc, Some filter ->
+          Connection.collect_list r.filter_asc_request (filter, limit, offset)
+        | `Desc, Some filter ->
+          Connection.collect_list r.filter_desc_request (filter, limit, offset)
+      in
+      let%lwt amount = Connection.find r.count_request () in
+      CCResult.both result amount |> Lwt.return)
+;;
 
 let query f =
   let pool = fetch_pool () in

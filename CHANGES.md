@@ -1,6 +1,7 @@
 ## ?
 ### Added
 - Add CLI generators as built-in CLI commands `gen.service` (for generating CRUD services), `gen.view` (for generating CRUD views) and `gen.html` (for generating CRUD RESTful resources)
+- `Sihl.Web.Rest.{query, to_query_string, of_query_string, next_page, previous_page, last_page, first_page, query_filter, query_sort, query_limit, query_offset}`
 
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps
@@ -9,6 +10,7 @@
 - Replaced `Sihl.Database.prepare_requests` with `Sihl.Database.prepare_search_request`
 - Replaced `Sihl.Database.run_request` with `Sihl.Database.run_search_request`
 - Make search query type `'a Sihl.Database.prepared_search_query` abstract to reduce API clutter. The search queries are highly specific to the implementation and are not likely to be re-used independently from `run_search_request`.
+- Change `query` to fully fledged `search` in `Sihl.Rest.SERVICE` to support paginated, filtered and sorted views
 
 ### Added
 - The `search` function of the user service from `sihl-user` takes an optional argument `offset`. This allows you to implement offset based pagination.

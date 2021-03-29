@@ -158,15 +158,7 @@ struct
   ;;
 
   let search sort filter ~limit ~offset =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Sihl.Database.run_search_request
-          connection
-          request
-          sort
-          filter
-          ~limit
-          ~offset)
+    Sihl.Database.run_search_request request sort filter ~limit ~offset
   ;;
 
   let get_request =
@@ -394,15 +386,7 @@ struct
   ;;
 
   let search sort filter ~limit ~offset =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Sihl.Database.run_search_request
-          connection
-          request
-          sort
-          filter
-          ~limit
-          ~offset)
+    Sihl.Database.run_search_request request sort filter ~limit ~offset
   ;;
 
   let get_request =

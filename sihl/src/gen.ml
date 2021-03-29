@@ -54,18 +54,19 @@ Resource '%ss' created. To finalize the generation:
           [ Sihl.Web.Middleware.csrf ()
           ; Sihl.Web.Middleware.flash ()
           ]
-        (Rest.resource
-          "%ss"
-          %s.schema
-          (module %s : Rest.SERVICE with type t = %s.t)
-          (module View_%s : Rest.VIEW with type t = %s.t))
+        Sihl.Web.Rest.(
+          resource_of_service
+            "%ss"
+            %s.schema
+            ~view:(module View_%s : VIEW with type t = %s.t)
+            (module %s : SERVICE with type t = %s.t))
     ;;
 
 into your `routes/routes.ml` and mount it with the HTTP service. Don't forget to add '%s' and 'view_%s' to `routes/dune`.
 
 2.) Add the migration
 
-    Database.%s.all
+    Database.%s.migration
 
 to the list of migrations before running `sihl migrate`.
 
@@ -77,9 +78,9 @@ to the list of migrations before running `sihl migrate`.
     model_name
     model_name
     module_name
-    module_name
-    module_name
     model_name
+    module_name
+    module_name
     module_name
     model_name
     model_name

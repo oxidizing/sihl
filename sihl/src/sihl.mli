@@ -347,6 +347,70 @@ module Web : sig
       | `Destroy
       ]
 
+    (** A [query] describes the search terms of an [`Index] action and it
+        represents a partial view on a collection that is sorted and filtered. *)
+    type query = Web_rest.Query.t =
+      { filter : string option
+      ; limit : int option
+      ; offset : int option
+      ; sort : [ `Desc | `Asc ] option
+      }
+
+    (** [of_request request] returns the query by parsing the query string of
+        the [request].*)
+    val of_request : Request.t -> query
+
+    (** [to_query_string query] returns the query string representation of a
+        [query] that can be used safely in URIs. Note that the question mark [?]
+        is also part of it. *)
+    val to_query_string : query -> string
+
+    (** [next_page query total] returns a query that represents the result of
+        the next page given the [query] of the current page.
+
+        [total] is the total number of items in the collection.
+
+        [None] is returned if the current page is already the last page and
+        there is no next page. *)
+    val next_page : query -> int -> query option
+
+    (** [previous_page query] returns a query that represents the previous page
+        given the [query] of the current page.
+
+        [None] is returned if the current page is the first page and there is no
+        previous page. *)
+    val previous_page : query -> query option
+
+    (** [last_page query total] returns a query that represents the result of
+        the last page given the [query] of the current page.
+
+        [total] is the total number of items in the collection.
+
+        [None] is returned if the current page is already the last page.*)
+    val last_page : query -> int -> query option
+
+    (** [first_page query total] returns a query that represents the result of
+        the first page given the [query] of the current page.
+
+        [None] is returned if the current page is already the first page.*)
+    val first_page : query -> query option
+
+    (** [query_filter query] returns the string representation of the filter
+        keyword if it exists. *)
+    val query_filter : query -> string option
+
+    (** [query_sort query] returns the string representation of the sort keyword
+        if it exists. *)
+    val query_sort : query -> string option
+
+    (** [query_limit query] returns the string representation of the limit if it
+        exists. *)
+    val query_limit : query -> string option
+
+    (** [query_offset query] returns the string representation of the offset if
+        it exists. *)
+    val query_offset : query -> string option
+
     (** [form] represents a validated and decoded form. One element consists of
         [(name, input, error)].
 
@@ -359,6 +423,18 @@ module Web : sig
         [error] is the error message of the validation or decoding. *)
     type form = (string * string option * string option) list
 
+    (** [find_form name form] returns the [(value, error)] of a [form] input
+        element with the [name].
+
+        The [value] is the submitted value of the input element. The value is
+        set even if the submitted form failed to decode or validate. Use the
+        submitted values to populate the form that can be fixed and re-submitted
+        by the user.
+
+        The [error] message comes from either the decoding, validation or CRUD
+        service. It can be shown to the user. *)
+    val find_form : string -> form -> string option * string option
+
     (** The [SERVICE] interface has to be implemented by a CRUD service that
         drives the resource with its business logic. *)
     module type SERVICE = sig
@@ -368,8 +444,31 @@ module Web : sig
       (** [find id] returns [t] if it is found. *)
       val find : string -> t option Lwt.t
 
-      (** [query ()] returns a list of [t]. *)
-      val query : unit -> t list Lwt.t
+      (** [search ?filter ?sort ?limit ?offset ()] returns a subset of the whole
+          collection of [t]. The returned tuple consist of the resulting subset
+          and the total number of [t] stored.
+
+          [filter] is an optional keyword that is used to apply a filter. Only
+          items are shown where [t] contains [filter] in some form. The exact
+          implementation is open, but [filter] should be used as general search
+          keyword.
+
+          [sort] describes whether the result is sorted in descending or
+          ascending order. The field that is sorted by and the default value are
+          defined by the implementation for security reason.
+
+          [limit] is the number of [t] in the resulting subset. A sane default
+          is defined by the implementation.
+
+          [offset] is the number of [t] skipped before the resulting subset. A
+          sane default is defined by the implementation. *)
+      val search
+        :  ?filter:string
+        -> ?sort:[ `Desc | `Asc ]
+        -> ?limit:int
+        -> ?offset:int
+        -> unit
+        -> (t list * int) Lwt.t
 
       (** [insert t] inserts [t] and returns an error message that can be shown
           to the user if it fails. *)
@@ -393,6 +492,12 @@ module Web : sig
       (** [t] is the type of the resource. *)
       type t
 
+      (** [skip_index_fetch] can be set to [true] if you want to take care of
+          fetching the collection yourself. This is useful when the [search]
+          function of the service is not powerful enough and you need to
+          implement your own collection fetching. *)
+      val skip_index_fetch : bool
+
       (** [index request csrf resources] returns a list of [resource] instances
           as HTML.
 
@@ -403,7 +508,8 @@ module Web : sig
       val index
         :  Rock.Request.t
         -> string
-        -> t list
+        -> t list * int
+        -> query
         -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
 
       (** [new' request csrf form] returns a form to create new instances of the
@@ -577,18 +683,6 @@ module Web : sig
       -> ('meta, 'ctor, 'resource) Conformist.t
       -> (module CONTROLLER with type t = 'resource)
       -> router list
-
-    (** [find_form name form] returns the [(value, error)] of a [form] input
-        element with the [name].
-
-        The [value] is the submitted value of the input element. The value is
-        set even if the submitted form failed to decode or validate. Use the
-        submitted values to populate the form that can be fixed and re-submitted
-        by the user
-
-        The [error] message comes from either the decoding, validation or CRUD
-        service. It can be shown to the user. *)
-    val find_form : string -> form -> string option * string option
   end
 
   module Htmx : sig

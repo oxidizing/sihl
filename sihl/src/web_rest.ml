@@ -55,19 +55,134 @@ module type SERVICE = sig
   type t
 
   val find : string -> t option Lwt.t
-  val query : unit -> t list Lwt.t
+
+  val search
+    :  ?filter:string
+    -> ?sort:[ `Desc | `Asc ]
+    -> ?limit:int
+    -> ?offset:int
+    -> unit
+    -> (t list * int) Lwt.t
+
   val insert : t -> (t, string) Result.t Lwt.t
   val update : string -> t -> (t, string) result Lwt.t
   val delete : t -> (unit, string) result Lwt.t
 end
 
+module Query = struct
+  type sort =
+    [ `Desc
+    | `Asc
+    ]
+
+  type t =
+    { filter : string option
+    ; limit : int option
+    ; offset : int option
+    ; sort : sort option
+    }
+
+  let default_limit = 50
+
+  let sort_of_string (str : string) : sort option =
+    match str with
+    | "asc" -> Some `Asc
+    | "desc" -> Some `Desc
+    | _ -> None
+  ;;
+
+  let string_of_sort = function
+    | `Desc -> "desc"
+    | `Asc -> "asc"
+  ;;
+
+  let of_request req =
+    let ( let* ) = Option.bind in
+    let filter =
+      let* filter = Opium.Request.query "filter" req in
+      if String.equal "" filter then None else Some filter
+    in
+    let limit =
+      let* limit = Opium.Request.query "limit" req in
+      let* limit = if String.equal "" limit then None else Some limit in
+      int_of_string_opt limit
+    in
+    let offset =
+      let* offset = Opium.Request.query "offset" req in
+      let* offset = if String.equal "" offset then None else Some offset in
+      int_of_string_opt offset
+    in
+    let sort =
+      let* sort = Opium.Request.query "sort" req in
+      let* sort = if String.equal "" sort then None else Some sort in
+      sort_of_string sort
+    in
+    { filter; limit; offset; sort }
+  ;;
+
+  let to_query_string (query : t) : string =
+    Uri.empty
+    |> (fun uri ->
+         match query.filter with
+         | Some filter -> Uri.add_query_param uri ("filter", [ filter ])
+         | None -> uri)
+    |> (fun uri ->
+         match query.limit with
+         | Some limit ->
+           Uri.add_query_param uri ("limit", [ string_of_int limit ])
+         | None -> uri)
+    |> (fun uri ->
+         match query.offset with
+         | Some offset ->
+           Uri.add_query_param uri ("offset", [ string_of_int offset ])
+         | None -> uri)
+    |> (fun uri ->
+         match query.sort with
+         | Some sort -> Uri.add_query_param uri ("sort", [ string_of_sort sort ])
+         | None -> uri)
+    |> Uri.to_string
+  ;;
+
+  let next_page (query : t) (total : int) : t option =
+    let limit = Option.value ~default:default_limit query.limit in
+    let offset = Option.value ~default:0 query.offset in
+    if limit + offset <= total
+    then Some { query with offset = Some (limit + offset) }
+    else None
+  ;;
+
+  let previous_page (query : t) : t option =
+    let limit = Option.value ~default:default_limit query.limit in
+    let offset = Option.value ~default:0 query.offset in
+    if offset - limit >= 0
+    then Some { query with offset = Some (offset - limit) }
+    else None
+  ;;
+
+  let last_page (query : t) (total : int) : t option =
+    let limit = Option.value ~default:default_limit query.limit in
+    let offset = Option.value ~default:0 query.offset in
+    if offset < total - limit
+    then Some { query with offset = Some (total - 1) }
+    else None
+  ;;
+
+  let first_page (query : t) : t option =
+    let offset = Option.value ~default:0 query.offset in
+    if offset > 0 then Some { query with offset = Some 0 } else None
+  ;;
+end
+
 module type VIEW = sig
   type t
+
+  val skip_index_fetch : bool
 
   val index
     :  Rock.Request.t
     -> string
-    -> t list
+    -> t list * int
+    -> Query.t
     -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
 
   val new'
@@ -126,9 +241,15 @@ struct
   ;;
 
   let index name req =
+    let open Query in
     let csrf = fetch_csrf name req in
-    let%lwt things = Service.query () in
-    let%lwt html = View.index req csrf things in
+    let ({ filter; limit; offset; sort } as query) = of_request req in
+    let%lwt result =
+      if View.skip_index_fetch
+      then Lwt.return ([], 0)
+      else Service.search ?filter ?limit ?offset ?sort ()
+    in
+    let%lwt html = View.index req csrf result query in
     Lwt.return @@ Opium.Response.of_html html
   ;;
 
@@ -226,10 +347,14 @@ struct
 
   let delete' name req =
     let id = Opium.Router.param req "id" in
+    let query = Query.of_request req in
+    let target_uri =
+      Format.sprintf "/%s%s" name (Query.to_query_string query)
+    in
     let%lwt thing = Service.find id in
     match thing with
     | None ->
-      Opium.Response.redirect_to (Format.sprintf "/%s" name)
+      Opium.Response.redirect_to target_uri
       |> Web_flash.set_alert
            (Format.sprintf
               "%s with id '%s' not found"
@@ -240,7 +365,7 @@ struct
       let%lwt result = Service.delete thing in
       (match result with
       | Ok () ->
-        Opium.Response.redirect_to (Format.sprintf "/%s" name)
+        Opium.Response.redirect_to target_uri
         |> Web_flash.set_notice
              (Format.sprintf
                 "Successfully deleted %s '%s'"
@@ -248,7 +373,7 @@ struct
                 id)
         |> Lwt.return
       | Error msg ->
-        Opium.Response.redirect_to (Format.sprintf "/%s" name)
+        Opium.Response.redirect_to target_uri
         |> Web_flash.set_notice
              (Format.sprintf "Failed to delete %s: '%s'" (singularize name) msg)
         |> Lwt.return)
