@@ -622,7 +622,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |> add_step create_jobs_table
         |> add_step set_null_input_to_empty_string
         |> add_step set_input_not_null
-        |> add_step add_error_columns)
+        |> add_step add_error_columns
+        |> add_step remove_timezone)
     ;;
   end
 
