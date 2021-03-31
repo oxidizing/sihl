@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.4.0"
+version: "0.4.1"
 synopsis: "Queue service implementations for Sihl"
 description:
   "Modules for running tasks in the background on a persistent queue."

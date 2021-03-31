@@ -1,3 +1,7 @@
+## [0.4.1] - 2021-03-31
+### Fixed
+- Register timezone removal migration in `sihl-queue`. This makes it easy to change the timezone on the server without breaking applications.
+
 ## [0.4.0] - 2021-03-27
 ### Changed
 - Get rid of `Sihl.Web.Middleware.htmx`, `Sihl.Web.Htmx` can be used directly now
