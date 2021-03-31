@@ -221,31 +221,7 @@ let read_bool key =
   | None -> None
 ;;
 
-let require schema =
-  let vars = environment_variables () in
-  let data = List.map (fun (k, v) -> k, [ v ]) vars in
-  match Conformist.decode_and_validate schema data with
-  | Ok _ -> ()
-  | Error errors ->
-    let errors =
-      errors
-      |> List.map (fun (field, input, msg) ->
-             match input with
-             | None ->
-               Format.sprintf "Failed to read configuration '%s': %s" field msg
-             | Some input ->
-               Format.sprintf
-                 "Failed to read configuration '%s' for '%s': %s"
-                 input
-                 field
-                 msg)
-      |> List.cons
-           "There were some errors while validating the provided configuration:"
-      |> String.concat "\n"
-    in
-    Logs.err (fun m -> m "%s" errors);
-    raise (Exception "Configuration check failed")
-;;
+let require schema = read schema |> ignore
 
 (* Displaying configurations *)
 
