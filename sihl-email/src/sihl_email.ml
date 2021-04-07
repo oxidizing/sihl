@@ -64,18 +64,6 @@ let intercept sender email =
   else sender email
 ;;
 
-module type SmtpConfig = sig
-  val sender : unit -> string Lwt.t
-  val username : unit -> string Lwt.t
-  val password : unit -> string Lwt.t
-  val hostname : unit -> string Lwt.t
-  val port : unit -> int option Lwt.t
-  val start_tls : unit -> bool Lwt.t
-  val ca_path : unit -> string option Lwt.t
-  val ca_cert : unit -> string option Lwt.t
-  val console : unit -> bool option Lwt.t
-end
-
 type smtp_config =
   { sender : string
   ; username : string
@@ -127,6 +115,10 @@ let smtp_schema =
     smtp_config
 ;;
 
+module type SmtpConfig = sig
+  val fetch : unit -> smtp_config Lwt.t
+end
+
 module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
@@ -143,14 +135,15 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
       | Some html -> Letters.Html html
       | None -> Letters.Plain email.text
     in
-    let%lwt sender = Config.sender ()
-    and username = Config.username ()
-    and password = Config.password ()
-    and hostname = Config.hostname ()
-    and port = Config.port ()
-    and with_starttls = Config.start_tls ()
-    and ca_path = Config.ca_path ()
-    and ca_cert = Config.ca_cert () in
+    let%lwt config = Config.fetch () in
+    let sender = config.sender in
+    let username = config.username in
+    let password = config.password in
+    let hostname = config.hostname in
+    let port = config.port in
+    let with_starttls = config.start_tls in
+    let ca_path = config.ca_path in
+    let ca_cert = config.ca_cert in
     let config =
       Letters.Config.make ~username ~password ~hostname ~with_starttls
       |> Letters.Config.set_port port
@@ -172,7 +165,18 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
 
   let send email = intercept send' email
   let bulk_send _ = failwith "Bulk sending not implemented yet"
-  let start () = Lwt.return ()
+
+  let start () =
+    (* Make sure that configuration is valid *)
+    if Sihl.Configuration.is_production ()
+    then Sihl.Configuration.require smtp_schema
+    else ();
+    (* If mail is intercepted, don't punish user for not providing SMTP
+       credentials *)
+    if should_intercept () then () else Sihl.Configuration.require smtp_schema;
+    Lwt.return ()
+  ;;
+
   let stop () = Lwt.return ()
 
   let lifecycle =
@@ -186,23 +190,10 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
 end
 
 module EnvSmtpConfig = struct
-  let sender () = Lwt.return (Sihl.Configuration.read smtp_schema).sender
-  let username () = Lwt.return (Sihl.Configuration.read smtp_schema).username
-  let password () = Lwt.return (Sihl.Configuration.read smtp_schema).password
-  let hostname () = Lwt.return (Sihl.Configuration.read smtp_schema).hostname
-  let port () = Lwt.return (Sihl.Configuration.read smtp_schema).port
-  let start_tls () = Lwt.return (Sihl.Configuration.read smtp_schema).start_tls
-  let ca_path () = Lwt.return (Sihl.Configuration.read smtp_schema).ca_path
-  let ca_cert () = Lwt.return (Sihl.Configuration.read smtp_schema).ca_cert
-  let console () = Lwt.return (Sihl.Configuration.read smtp_schema).console
+  let fetch () = Lwt.return @@ Sihl.Configuration.read smtp_schema
 end
 
 module Smtp = MakeSmtp (EnvSmtpConfig)
-
-module type SendGridConfig = sig
-  val api_key : unit -> string Lwt.t
-  val console : unit -> bool option Lwt.t
-end
 
 type sendgrid_config =
   { api_key : string
@@ -219,6 +210,10 @@ let sendgrid_schema =
     ]
     sendgrid_config
 ;;
+
+module type SendGridConfig = sig
+  val fetch : unit -> sendgrid_config Lwt.t
+end
 
 module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
@@ -260,7 +255,8 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
 
   let send' email =
     let open Sihl.Contract.Email in
-    let%lwt token = Config.api_key () in
+    let%lwt config = Config.fetch () in
+    let token = config.api_key in
     let headers =
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token
@@ -298,7 +294,20 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
 
   let send email = intercept send' email
   let bulk_send _ = Lwt.return ()
-  let start () = Lwt.return ()
+
+  let start () =
+    (* Make sure that configuration is valid *)
+    if Sihl.Configuration.is_production ()
+    then Sihl.Configuration.require sendgrid_schema
+    else ();
+    (* If mail is intercepted, don't punish user for not providing SMTP
+       credentials *)
+    if should_intercept ()
+    then ()
+    else Sihl.Configuration.require sendgrid_schema;
+    Lwt.return ()
+  ;;
+
   let stop () = Lwt.return ()
 
   let lifecycle =
@@ -312,8 +321,7 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
 end
 
 module EnvSendGridConfig = struct
-  let api_key () = Lwt.return (Sihl.Configuration.read sendgrid_schema).api_key
-  let console () = Lwt.return (Sihl.Configuration.read sendgrid_schema).console
+  let fetch () = Lwt.return (Sihl.Configuration.read sendgrid_schema)
 end
 
 module SendGrid = MakeSendGrid (EnvSendGridConfig)
