@@ -262,7 +262,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
       in
       let req =
         Opium.Request.get "/some/path/login"
-        |> Opium.Request.add_cookie cookie.Sihl.Web.Cooke.value
+        |> Opium.Request.add_cookie cookie.Sihl.Web.Cookie.value
       in
       let handler req =
         let* user = UserService.Web.user_from_session req in

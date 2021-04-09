@@ -109,7 +109,7 @@ module Web : sig
 
   module Response = Opium.Response
   module Body = Opium.Body
-  module Cooke = Opium.Cookie
+  module Cookie = Opium.Cookie
   module Router = Opium.Router
   module Route = Opium.Route
 

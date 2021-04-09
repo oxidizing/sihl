@@ -25,7 +25,7 @@ module Web = struct
   end
 
   module Response = Opium.Response
-  module Cooke = Opium.Cookie
+  module Cookie = Opium.Cookie
   module Body = Opium.Body
   module Router = Opium.Router
   module Route = Opium.Route
