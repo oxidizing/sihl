@@ -761,27 +761,23 @@ Commands are handled with the module {!Sihl.Command}.
 Run [make sihl] if you used Spin to create the app, otherwise execute the Sihl app exectuable.
 
 {v
-2021-03-08T09:52:33-00:00 [INFO] [sihl.core.app]: Setup service configurations
-2021-03-08T09:52:33-00:00 [INFO] [sihl.core.configuration]: Env file found: /home/josef/src/app/.env
-2021-03-08T09:52:33-00:00 [INFO] [sihl.core.app]: Setup service commands
+2021-04-10T13:18:34-00:00 [INFO] [sihl.core.app]: Setting up...
+2021-04-10T13:18:34-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
 
-  ______    _   __       __
-.' ____ \  (_) [  |     [  |
-| (___ \_| __   | |--.   | |
- _.____`. [  |  | .-. |  | |
-| \____) | | |  | | | |  | |
- \______.'[___][___]|__][___]
+Sihl
 
- Run one of the following commands like "make sihl <command name>".
--------------------------------------------------------------------
- Command Name   | Usage                        | Description
--------------------------------------------------------------------
- start           -                              Start the Sihl app
- show-config     -                              Print a list of required service configurations
- migrate         -                              Run all migrations
- createadmin     <username> <email> <password>  Create an admin user
- start-http      -                              Start the HTTP server
--------------------------------------------------------------------
+Run one of the following commands with the argument "help" for more information.
+
+config
+gen.html
+gen.json
+gen.service
+gen.view
+migrate
+random
+routes
+server
+user.admin
 v}
 
 This is the list of built-in commands. Whenever you install a package and register Sihl services you get access to more commands.
@@ -794,15 +790,15 @@ Create a file in the directory [app/command] to create custom commands.
 let run =
 
   Sihl.Command.make
-    ~name:"add-todo"
-    ~help:"<todo description>"
+    ~name:"todo.add"
+    ~usage:"<todo description>"
     ~description:"Adds a new todo to the backlog"
     (fun args ->
       match args with
       | [ description ] ->
         let%lwt _ = Todo.create description in
-        Lwt.return ()
-      | _ -> raise (Sihl.Command.Exception "Usage: <todo description>"))
+        Lwt.return (Some ())
+      | _ -> Lwt.return None)
 ;;
 ]}
 
@@ -818,16 +814,24 @@ let () =
 Run [make sihl] to see your custom command added to the list of registered commands.
 
 {v
--------------------------------------------------------------------
- Command Name   | Usage                        | Description
--------------------------------------------------------------------
- start           -                              Start the Sihl app
- show-config     -                              Print a list of required service configurations
- migrate         -                              Run all migrations
- createadmin     <username> <email> <password>  Create an admin user
- start-http      -                              Start the HTTP server
- add-todo        <todo description>             Adds a new todo to the backlog
--------------------------------------------------------------------
+2021-04-10T13:18:34-00:00 [INFO] [sihl.core.app]: Setting up...
+2021-04-10T13:18:34-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
+
+Sihl
+
+Run one of the following commands with the argument "help" for more information.
+
+config
+gen.html
+gen.json
+gen.service
+gen.view
+migrate
+random
+routes
+server
+todo.add
+user.admin
 v}
 
 {2 Randomness}
