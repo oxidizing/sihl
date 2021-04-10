@@ -1,4 +1,4 @@
-## [0.5.0] - 2021-03-30
+## [0.5.0] - 2021-04-10
 ### Added
 - `Sihl.Web.Rest` provides helpers to quickly create HTML resources. This is useful to expose any service of type `Sihl.Web.Rest.SERVICE` through the Internet by making it part of a web app.
 
