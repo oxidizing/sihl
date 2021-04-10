@@ -45,17 +45,38 @@ doc: ## Generate odoc documentation
 	cp -f docs/odoc.css _build/default/_doc/_html/
 
 .PHONY: release-doc
+.ONESHELL:
 release-doc: ## Release odoc documentation
+	if [ -d "./.deploy_git" ]; then
+		echo "Removing .deploy_git folder..."
+		rm -rf ./.deploy_git
+		echo "Folder removed."
+	fi
+
+	git clone --depth 1 --branch=gh-pages git@github.com:oxidizing/sihl.git .deploy_git
+
+	cd .deploy_git
+
+	find . -path ./.git -prune -o -exec rm -rf {} \; 2> /dev/null
+
+	cd ../
+
 	make doc
-	rm -rf /tmp/sihl
-	mkdir -p /tmp/sihl/_html
-	mv -f _build/default/_doc/_html/* /tmp/sihl/_html
-	git checkout gh-pages
-	rm -r sihl*
-	mv -f /tmp/sihl/_html/* .
-	git commit -am "Update docs"
-	git push -f origin gh-pages
-	git checkout -f master
+
+	mv _build/default/_doc/_html/* .deploy_git
+
+	cd .deploy_git
+
+	git add .
+	git commit -am "Build documentation [skip ci]"
+	git push
+
+	cd ../
+	if [ -d "./.deploy_git" ]; then
+		echo "Removing .deploy_git folder..."
+		rm -rf ./.deploy_git
+		echo "Folder removed."
+	fi
 
 .PHONY: open-doc
 open-doc: ## Open generated odoc documentation
