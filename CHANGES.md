@@ -1,6 +1,8 @@
 ## ?
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps
+- Rework built-in commands (`start` is now `server`, commands are namespaced with `.`)
+- The command function in `Sihl.Command.make` returns `unit option Lwt.t` and Sihl takes care of printing the usage if `Lwt.return None` is returned
 
 ## [0.5.0] - 2021-04-10
 ### Added
