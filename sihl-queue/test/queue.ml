@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Lwt.Syntax
 
 let create_instance input delay now (job : 'a Sihl_queue.job) =
   let open Sihl_queue in
@@ -100,8 +99,8 @@ let should_run_job _ () =
 module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   let dispatched_job_gets_processed _ () =
     let has_ran_job = ref false in
-    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let job =
       Sihl_queue.create_job
         ~max_tries:3
@@ -112,18 +111,18 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         "foo"
     in
     let service = QueueService.register ~jobs:[ Sihl_queue.hide job ] () in
-    let* _ = Sihl.Container.start_services [ service ] in
-    let* () = QueueService.dispatch () job in
-    let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl.Container.stop_services [ service ] in
+    let%lwt _ = Sihl.Container.start_services [ service ] in
+    let%lwt () = QueueService.dispatch () job in
+    let%lwt () = Lwt_unix.sleep 2.0 in
+    let%lwt () = Sihl.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has processed job" true !has_ran_job) in
     Lwt.return ()
   ;;
 
   let all_dispatched_jobs_gets_processed _ () =
     let processed_inputs = ref [] in
-    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let job =
       Sihl_queue.create_job
         ~max_tries:3
@@ -136,10 +135,10 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         "foo"
     in
     let service = QueueService.register ~jobs:[ Sihl_queue.hide job ] () in
-    let* _ = Sihl.Container.start_services [ service ] in
-    let* () = QueueService.dispatch_all [ "three"; "two"; "one" ] job in
-    let* () = Lwt_unix.sleep 4.0 in
-    let* () = Sihl.Container.stop_services [ service ] in
+    let%lwt _ = Sihl.Container.start_services [ service ] in
+    let%lwt () = QueueService.dispatch_all [ "three"; "two"; "one" ] job in
+    let%lwt () = Lwt_unix.sleep 4.0 in
+    let%lwt () = Sihl.Container.stop_services [ service ] in
     let () =
       Alcotest.(
         check
@@ -154,8 +153,8 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   let two_dispatched_jobs_get_processed _ () =
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
-    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let job1 =
       Sihl_queue.create_job
         ~max_tries:3
@@ -179,11 +178,11 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         ~jobs:[ Sihl_queue.hide job1; Sihl_queue.hide job2 ]
         ()
     in
-    let* _ = Sihl.Container.start_services [ service ] in
-    let* () = QueueService.dispatch () job1 in
-    let* () = QueueService.dispatch () job2 in
-    let* () = Lwt_unix.sleep 4.0 in
-    let* () = Sihl.Container.stop_services [ service ] in
+    let%lwt _ = Sihl.Container.start_services [ service ] in
+    let%lwt () = QueueService.dispatch () job1 in
+    let%lwt () = QueueService.dispatch () job2 in
+    let%lwt () = Lwt_unix.sleep 4.0 in
+    let%lwt () = Sihl.Container.stop_services [ service ] in
     let () = Alcotest.(check bool "has processed job1" true !has_ran_job1) in
     let () = Alcotest.(check bool "has processed job2" true !has_ran_job1) in
     Lwt.return ()
@@ -191,8 +190,8 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
 
   let cleans_up_job_after_error _ () =
     let has_cleaned_up_job = ref false in
-    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let job =
       Sihl_queue.create_job
         ~max_tries:3
@@ -204,10 +203,10 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         "foo"
     in
     let service = QueueService.register ~jobs:[ Sihl_queue.hide job ] () in
-    let* _ = Sihl.Container.start_services [ service ] in
-    let* () = QueueService.dispatch () job in
-    let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl.Container.stop_services [ service ] in
+    let%lwt _ = Sihl.Container.start_services [ service ] in
+    let%lwt () = QueueService.dispatch () job in
+    let%lwt () = Lwt_unix.sleep 2.0 in
+    let%lwt () = Sihl.Container.stop_services [ service ] in
     let () =
       Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
     in
@@ -216,8 +215,8 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
 
   let cleans_up_job_after_exception _ () =
     let has_cleaned_up_job = ref false in
-    let* () = Sihl.Container.stop_services [ QueueService.register () ] in
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let job =
       Sihl_queue.create_job
         (fun _ -> failwith "didn't work")
@@ -229,10 +228,10 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         "foo"
     in
     let service = QueueService.register ~jobs:[ Sihl_queue.hide job ] () in
-    let* _ = Sihl.Container.start_services [ service ] in
-    let* () = QueueService.dispatch () job in
-    let* () = Lwt_unix.sleep 2.0 in
-    let* () = Sihl.Container.stop_services [ service ] in
+    let%lwt _ = Sihl.Container.start_services [ service ] in
+    let%lwt () = QueueService.dispatch () job in
+    let%lwt () = Lwt_unix.sleep 2.0 in
+    let%lwt () = Sihl.Container.stop_services [ service ] in
     let () =
       Alcotest.(check bool "has cleaned up job" true !has_cleaned_up_job)
     in

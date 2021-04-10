@@ -36,21 +36,19 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
   ;;
 
   let create ?secret:_ ?expires_in data =
-    let open Lwt.Syntax in
     let open Repo.Model in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
     let length =
       Option.value ~default:30 (Sihl.Configuration.read schema).token_length
     in
     let token = make id ?expires_in ~length data in
-    let* () = Repo.insert token in
+    let%lwt () = Repo.insert token in
     Repo.find_by_id id |> Lwt.map (fun token -> token.value)
   ;;
 
   let read ?secret:_ ?force token_value ~k =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find_opt token_value in
+    let%lwt token = Repo.find_opt token_value in
     match token with
     | None -> Lwt.return None
     | Some token ->
@@ -65,58 +63,51 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
   ;;
 
   let read_all ?secret:_ ?force token =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find token in
+    let%lwt token = Repo.find token in
     match is_valid_token token, force with
     | true, _ | false, Some () -> Lwt.return (Some token.data)
     | false, None -> Lwt.return None
   ;;
 
   let verify ?secret:_ token =
-    let open Lwt.Syntax in
-    let* token = Repo.find_opt token in
+    let%lwt token = Repo.find_opt token in
     match token with
     | Some _ -> Lwt.return true
     | None -> Lwt.return false
   ;;
 
   let deactivate token =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find token in
+    let%lwt token = Repo.find token in
     let updated = { token with status = Status.Inactive } in
     Repo.update updated
   ;;
 
   let activate token =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find token in
+    let%lwt token = Repo.find token in
     let updated = { token with status = Status.Active } in
     Repo.update updated
   ;;
 
   let is_active token =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find token in
+    let%lwt token = Repo.find token in
     match token.status with
     | Status.Active -> Lwt.return true
     | Status.Inactive -> Lwt.return false
   ;;
 
   let is_expired ?secret:_ token =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find token in
+    let%lwt token = Repo.find token in
     Lwt.return (Ptime.is_earlier token.expires_at ~than:(Ptime_clock.now ()))
   ;;
 
   let is_valid ?secret:_ token =
-    let open Lwt.Syntax in
     let open Repo.Model in
-    let* token = Repo.find_opt token in
+    let%lwt token = Repo.find_opt token in
     match token with
     | None -> Lwt.return false
     | Some token ->
@@ -184,7 +175,6 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
   let is_active token = Repo.has token |> Lwt.map not
 
   let read ?secret ?force token_value ~k =
-    let open Lwt.Syntax in
     let secret =
       Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
@@ -193,7 +183,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
       Lwt.return None
     | Ok token, None ->
-      let* is_active = is_active token_value in
+      let%lwt is_active = is_active token_value in
       if is_active
       then (
         match
@@ -229,7 +219,6 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
   ;;
 
   let read_all ?secret ?force token_value =
-    let open Lwt.Syntax in
     let secret =
       Option.value ~default:(Sihl.Configuration.read_secret ()) secret
     in
@@ -239,7 +228,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
       Lwt.return None
     | Ok token, Some () -> Lwt.return (Some (Jwto.get_payload token))
     | Ok token, None ->
-      let* is_active = is_active token_value in
+      let%lwt is_active = is_active token_value in
       if is_active
       then Lwt.return (Some (Jwto.get_payload token))
       else Lwt.return None
@@ -293,8 +282,7 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
   ;;
 
   let is_valid ?secret token =
-    let open Lwt.Syntax in
-    let* is_expired = is_expired ?secret token in
+    let%lwt is_expired = is_expired ?secret token in
     Lwt.return (not is_expired)
   ;;
 

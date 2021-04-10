@@ -9,8 +9,7 @@ module Make
     (TokenService : Sihl.Contract.Token.Sig) =
 struct
   let create_reset_token ~email =
-    let open Lwt.Syntax in
-    let* user = UserService.find_by_email_opt ~email in
+    let%lwt user = UserService.find_by_email_opt ~email in
     match user with
     | Some user ->
       let user_id = user.id in
@@ -22,13 +21,12 @@ struct
   ;;
 
   let reset_password ~token ~password ~password_confirmation =
-    let open Lwt.Syntax in
-    let* user_id = TokenService.read token ~k:"user_id" in
+    let%lwt user_id = TokenService.read token ~k:"user_id" in
     match user_id with
     | None -> Lwt.return @@ Error "Token invalid or not assigned to any user"
     | Some user_id ->
-      let* user = UserService.find ~user_id in
-      let* result =
+      let%lwt user = UserService.find ~user_id in
+      let%lwt result =
         UserService.set_password ~user ~password ~password_confirmation ()
       in
       Lwt.return @@ Result.map (fun _ -> ()) result

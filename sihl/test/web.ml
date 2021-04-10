@@ -1,4 +1,3 @@
-open Lwt.Syntax
 open Alcotest_lwt
 
 let choose_routers_without_path_builds_paths _ () =
@@ -125,7 +124,7 @@ let find_bearer_token _ () =
     Alcotest.(check (option string) "has token" (Some token_value) token);
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
-  let* _ = handler req in
+  let%lwt _ = handler req in
   Lwt.return ()
 ;;
 
@@ -141,7 +140,7 @@ let find_bearer_token_with_space _ () =
     Alcotest.(check (option string) "has token" (Some "tokenvalue123") token);
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
-  let* _ = handler req in
+  let%lwt _ = handler req in
   Lwt.return ()
 ;;
 

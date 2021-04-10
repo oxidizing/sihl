@@ -150,20 +150,19 @@ let persist_flash ?old_flash ?(delete_if_not_set = false) cookie_key resp =
 ;;
 
 let middleware ?(cookie_key = "_flash") () =
-  let open Lwt.Syntax in
   let filter handler req =
     match decode_flash cookie_key req with
     | No_cookie_found ->
-      let* resp = handler req in
+      let%lwt resp = handler req in
       Lwt.return @@ persist_flash cookie_key resp
     | Parse_error ->
-      let* resp = handler req in
+      let%lwt resp = handler req in
       Lwt.return @@ persist_flash ~delete_if_not_set:true cookie_key resp
     | Found flash ->
       let env = req.Opium.Request.env in
       let env = Opium.Context.add Env.key flash env in
       let req = { req with env } in
-      let* resp = handler req in
+      let%lwt resp = handler req in
       Lwt.return
       @@ persist_flash ~delete_if_not_set:true ~old_flash:flash cookie_key resp
   in

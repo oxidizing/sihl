@@ -131,7 +131,6 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   let send' (email : Sihl.Contract.Email.t) =
-    let open Lwt.Syntax in
     let recipients =
       List.concat
         [ [ Letters.To email.recipient ]
@@ -144,14 +143,14 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
       | Some html -> Letters.Html html
       | None -> Letters.Plain email.text
     in
-    let* sender = Config.sender ()
-    and* username = Config.username ()
-    and* password = Config.password ()
-    and* hostname = Config.hostname ()
-    and* port = Config.port ()
-    and* with_starttls = Config.start_tls ()
-    and* ca_path = Config.ca_path ()
-    and* ca_cert = Config.ca_cert () in
+    let%lwt sender = Config.sender ()
+    and username = Config.username ()
+    and password = Config.password ()
+    and hostname = Config.hostname ()
+    and port = Config.port ()
+    and with_starttls = Config.start_tls ()
+    and ca_path = Config.ca_path ()
+    and ca_cert = Config.ca_cert () in
     let config =
       Letters.Config.make ~username ~password ~hostname ~with_starttls
       |> Letters.Config.set_port port
@@ -260,9 +259,8 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
   ;;
 
   let send' email =
-    let open Lwt.Syntax in
     let open Sihl.Contract.Email in
-    let* token = Config.api_key () in
+    let%lwt token = Config.api_key () in
     let headers =
       Cohttp.Header.of_list
         [ "authorization", "Bearer " ^ token
@@ -276,7 +274,7 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
     (* TODO support html content *)
     (* let html_content = Sihl.Email.text_content email in *)
     let req_body = body ~recipient ~subject ~sender ~content:text_content in
-    let* resp, resp_body =
+    let%lwt resp, resp_body =
       Cohttp_lwt_unix.Client.post
         ~body:(Cohttp_lwt.Body.of_string req_body)
         ~headers
@@ -288,7 +286,7 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
       Logs.info (fun m -> m "Successfully sent email using sendgrid");
       Lwt.return ()
     | _ ->
-      let* body = Cohttp_lwt.Body.to_string resp_body in
+      let%lwt body = Cohttp_lwt.Body.to_string resp_body in
       Logs.err (fun m ->
           m
             "Sending email using sendgrid failed with http status %i and body \

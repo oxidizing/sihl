@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create "sihl.core.app"
 
 module Logger = (val Logs.src_log log_src : Logs.LOG)
@@ -25,10 +23,10 @@ let after_stop after_stop app = { app with after_stop }
 
 (* TODO [jerben] 0. store ref to current app and start ctx 1. loop forever (in
    Lwt_main.run) 2. when command finishes, exit loop 3. when SIGINT comes, exit
-   loop 4. call stop app let stop app ctx = let* () = app.before_stop ctx in
-   print_endline "CORE: Stop services"; let* () = Core_container.stop_services
-   ctx app.services in print_endline "CORE: Services stopped"; app.after_stop
-   ctx *)
+   loop 4. call stop app let stop app ctx = let%lwt () = app.before_stop ctx in
+   print_endline "CORE: Stop services"; let%lwt () =
+   Core_container.stop_services ctx app.services in print_endline "CORE:
+   Services stopped"; app.after_stop ctx *)
 
 let run_forever () =
   let p, _ = Lwt.wait () in
@@ -47,8 +45,8 @@ let start_cmd services =
       in
       match server_services with
       | [ server ] ->
-        let* _ = Core_container.start_services normal_services in
-        let* () = Core_container.Service.start server in
+        let%lwt _ = Core_container.start_services normal_services in
+        let%lwt () = Core_container.Service.start server in
         run_forever ()
       | [] ->
         Logger.err (fun m ->
@@ -81,7 +79,7 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
       app.services
   in
   let () = Core_configuration.load () in
-  let* () = app.before_start () in
+  let%lwt () = app.before_start () in
   let configuration_commands = Core_configuration.commands configurations in
   Logger.debug (fun m -> m "Setup service commands");
   let service_commands =

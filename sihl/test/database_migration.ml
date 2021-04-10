@@ -26,13 +26,12 @@ let clean_state () =
 
 module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
   let run_migrations _ () =
-    let open Lwt.Syntax in
-    let* () = clean_state () in
+    let%lwt () = clean_state () in
     (* Use test migration state table to not interfere with other tests *)
     Sihl.Configuration.store
       [ "MIGRATION_STATE_TABLE", "test_core_migration_state" ];
-    let* () = MigrationService.lifecycle.stop () in
-    let* () = MigrationService.lifecycle.start () in
+    let%lwt () = MigrationService.lifecycle.stop () in
+    let%lwt () = MigrationService.lifecycle.start () in
     let migration : Sihl.Database.Migration.t =
       ( "professions"
       , [ Sihl.Database.Migration.create_step
@@ -40,8 +39,8 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
             "CREATE TABLE professions (salary INT);"
         ] )
     in
-    let* () = MigrationService.execute [ migration ] in
-    let* _ =
+    let%lwt () = MigrationService.execute [ migration ] in
+    let%lwt _ =
       (* If this doesn't fail, test is ok *)
       Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
           Connection.find_opt
@@ -56,14 +55,13 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
   ;;
 
   let pending_migrations _ () =
-    let open Lwt.Syntax in
-    let* () = clean_state () in
+    let%lwt () = clean_state () in
     (* Use test migration state table to not interfere with other tests *)
     Sihl.Configuration.store
       [ "MIGRATION_STATE_TABLE", "test_core_migration_state" ];
-    let* () = MigrationService.lifecycle.stop () in
-    let* () = MigrationService.lifecycle.start () in
-    let* status = MigrationService.pending_migrations () in
+    let%lwt () = MigrationService.lifecycle.stop () in
+    let%lwt () = MigrationService.lifecycle.start () in
+    let%lwt status = MigrationService.pending_migrations () in
     Alcotest.(check (list (pair string int)) "no pending migrations" [] status);
     let migration1 : Sihl.Database.Migration.t =
       ( "professions"
@@ -73,14 +71,14 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
         ] )
     in
     MigrationService.register_migrations [ migration1 ];
-    let* status = MigrationService.pending_migrations () in
+    let%lwt status = MigrationService.pending_migrations () in
     Alcotest.(
       check
         (list (pair string int))
         "one pending migration"
         [ "professions", 1 ]
         status);
-    let* () = MigrationService.run_all () in
+    let%lwt () = MigrationService.run_all () in
     let migration2 : Sihl.Database.Migration.t =
       ( "orders"
       , [ Sihl.Database.Migration.create_step
@@ -89,15 +87,15 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
         ] )
     in
     MigrationService.register_migrations [ migration2 ];
-    let* status = MigrationService.pending_migrations () in
+    let%lwt status = MigrationService.pending_migrations () in
     Alcotest.(
       check
         (list (pair string int))
         "one pending migration"
         [ "orders", 1 ]
         status);
-    let* () = MigrationService.run_all () in
-    let* status = MigrationService.pending_migrations () in
+    let%lwt () = MigrationService.run_all () in
+    let%lwt status = MigrationService.pending_migrations () in
     Alcotest.(check (list (pair string int)) "desired state reached" [] status);
     Lwt.return ()
   ;;

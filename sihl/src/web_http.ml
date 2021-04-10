@@ -40,7 +40,6 @@ let registered_middlewares = ref []
 let started_server = ref None
 
 let start_server () =
-  let open Lwt.Syntax in
   Logs.debug (fun m -> m "Starting HTTP server");
   let port_nr =
     Option.value (Core_configuration.read schema).port ~default:33000
@@ -59,7 +58,7 @@ let start_server () =
   let builders = routers_to_opium_builders [ router ] in
   let app = List.fold_left (fun app builder -> builder app) app builders in
   (* We don't want to block here, the returned Lwt.t will never resolve *)
-  let* server = Opium.App.start app in
+  let%lwt server = Opium.App.start app in
   started_server := Some server;
   Lwt.return ()
 ;;

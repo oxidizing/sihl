@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let log_src = Logs.Src.create "sihl.core.container"
 let () = Printexc.record_backtrace true
 
@@ -116,11 +114,11 @@ let start_services services =
     | lifecycle :: lifecycles ->
       Logs.debug (fun m -> m "Starting service: %s" lifecycle.name);
       let f = lifecycle.start in
-      let* () = f () in
+      let%lwt () = f () in
       loop lifecycles
     | [] -> Lwt.return ()
   in
-  let* () = loop lifecycles in
+  let%lwt () = loop lifecycles in
   Logs.info (fun m -> m "All services started.");
   Lwt.return lifecycles
 ;;
@@ -136,11 +134,11 @@ let stop_services services =
     | lifecycle :: lifecycles ->
       Logs.debug (fun m -> m "Stopping service: %s" lifecycle.name);
       let f = lifecycle.stop in
-      let* () = f () in
+      let%lwt () = f () in
       loop lifecycles
     | [] -> Lwt.return ()
   in
-  let* () = loop lifecycles in
+  let%lwt () = loop lifecycles in
   Logs.info (fun m -> m "Stopped, Good Bye!");
   Lwt.return ()
 ;;

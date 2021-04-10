@@ -1,13 +1,12 @@
 open Alcotest_lwt
-open Lwt.Syntax
 
 module Make
     (EmailService : Sihl.Contract.Email.Sig)
     (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
 struct
   let create_template _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* template =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt template =
       EmailTemplateService.create ~label:"foo" ~html:"some html" "some text"
     in
     Alcotest.(check string "name" "foo" template.label);
@@ -17,12 +16,12 @@ struct
   ;;
 
   let update_template _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* created =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt created =
       EmailTemplateService.create ~label:"foo" ~html:"some html" "some text"
     in
     let updated = Sihl_email.Template.set_label "newname" created in
-    let* template = EmailTemplateService.update updated in
+    let%lwt template = EmailTemplateService.update updated in
     Alcotest.(check string "label" "newname" template.label);
     Lwt.return ()
   ;;
@@ -36,7 +35,7 @@ struct
         ~html:"some html"
         "some text"
     in
-    let* () = EmailService.send email in
+    let%lwt () = EmailService.send email in
     let sent_email = EmailService.inbox () |> List.hd in
     Alcotest.(
       check string "has recipient" "recipient@example.com" sent_email.recipient);
@@ -48,7 +47,7 @@ struct
   ;;
 
   let send_inline_templated_email _ () =
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let raw_email =
       Sihl.Contract.Email.create
         ~recipient:"recipient@example.com"
@@ -57,12 +56,12 @@ struct
         ~html:"<html>hello {name}, you have signed in {number} of times!</html>"
         "hello {name}, you have signed in {number} of times!"
     in
-    let* email =
+    let%lwt email =
       Sihl_email.Template.email_of_template
         raw_email
         [ "name", "walter"; "number", "8" ]
     in
-    let* () = EmailService.send email in
+    let%lwt () = EmailService.send email in
     let sent_email = EmailService.inbox () |> List.hd in
     let html_rendered =
       "<html>hello walter, you have signed in 8 of times!</html>"
@@ -75,7 +74,7 @@ struct
   ;;
 
   let send_templated_email _ () =
-    let* () = Sihl.Cleaner.clean_all () in
+    let%lwt () = Sihl.Cleaner.clean_all () in
     let raw_email =
       Sihl_email.create
         ~sender:"sender@example.com"
@@ -83,19 +82,19 @@ struct
         ~subject:"test"
         ""
     in
-    let* template =
+    let%lwt template =
       EmailTemplateService.create
         ~label:"some template"
         ~html:"<html>hello {name}, you have signed in {number} of times!</html>"
         "hello {name}, you have signed in {number} of times!"
     in
-    let* email =
+    let%lwt email =
       Sihl_email.Template.email_of_template
         ~template
         raw_email
         [ "name", "walter"; "number", "8" ]
     in
-    let* () = EmailService.send email in
+    let%lwt () = EmailService.send email in
     let sent_email = EmailService.inbox () |> List.hd in
     let html_rendered =
       "<html>hello walter, you have signed in 8 of times!</html>"

@@ -12,15 +12,14 @@ struct
   let get_by_label label = Repo.get_by_label label
 
   let create ?html ~label text =
-    let open Lwt.Syntax in
     let open Sihl.Contract.Email_template in
     let now = Ptime_clock.now () in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
     let template =
       { id; label; html; text; created_at = now; updated_at = now }
     in
-    let* () = Repo.insert template in
-    let* created = Repo.get id in
+    let%lwt () = Repo.insert template in
+    let%lwt created = Repo.get id in
     match created with
     | None ->
       Logs.err (fun m ->
@@ -33,10 +32,9 @@ struct
   ;;
 
   let update template =
-    let open Lwt.Syntax in
-    let* () = Repo.update template in
+    let%lwt () = Repo.update template in
     let id = template.id in
-    let* created = Repo.get id in
+    let%lwt created = Repo.get id in
     match created with
     | None ->
       Logs.err (fun m ->

@@ -126,28 +126,25 @@ struct
   ;;
 
   let index name req =
-    let open Lwt.Syntax in
     let csrf = fetch_csrf name req in
-    let* things = Service.query () in
-    let* html = View.index req csrf things in
+    let%lwt things = Service.query () in
+    let%lwt html = View.index req csrf things in
     Lwt.return @@ Opium.Response.of_html html
   ;;
 
   let new' ?key name req =
-    let open Lwt.Syntax in
     let csrf = fetch_csrf name req in
     let form = Form.find_form ?key req in
-    let* html = View.new' req csrf form in
+    let%lwt html = View.new' req csrf form in
     Lwt.return @@ Opium.Response.of_html html
   ;;
 
   let create name schema req =
-    let open Lwt.Syntax in
-    let* urlencoded = Opium.Request.to_urlencoded req in
+    let%lwt urlencoded = Opium.Request.to_urlencoded req in
     let thing = Conformist.decode_and_validate schema urlencoded in
     match thing with
     | Ok thing ->
-      let* thing = Service.insert thing in
+      let%lwt thing = Service.insert thing in
       (match thing with
       | Ok _ ->
         Opium.Response.redirect_to (Format.sprintf "/%s" name)
@@ -167,12 +164,11 @@ struct
   ;;
 
   let show name req =
-    let open Lwt.Syntax in
     let id = Opium.Router.param req "id" in
-    let* thing = Service.find id in
+    let%lwt thing = Service.find id in
     match thing with
     | Some thing ->
-      let* html = View.show req thing in
+      let%lwt html = View.show req thing in
       Lwt.return @@ Opium.Response.of_html html
     | None ->
       Opium.Response.redirect_to (Format.sprintf "/%s" name)
@@ -185,14 +181,13 @@ struct
   ;;
 
   let edit ?key name req =
-    let open Lwt.Syntax in
     let id = Opium.Router.param req "id" in
-    let* thing = Service.find id in
+    let%lwt thing = Service.find id in
     match thing with
     | Some thing ->
       let csrf = fetch_csrf name req in
       let form = Form.find_form ?key req in
-      let* html = View.edit req csrf form thing in
+      let%lwt html = View.edit req csrf form thing in
       Lwt.return @@ Opium.Response.of_html html
     | None ->
       Opium.Response.redirect_to (Format.sprintf "/%s" name)
@@ -205,13 +200,12 @@ struct
   ;;
 
   let update name schema req =
-    let open Lwt.Syntax in
-    let* urlencoded = Opium.Request.to_urlencoded req in
+    let%lwt urlencoded = Opium.Request.to_urlencoded req in
     let thing = Conformist.decode_and_validate schema urlencoded in
     let id = Opium.Router.param req "id" in
     match thing with
     | Ok thing ->
-      let* updated = Service.update id thing in
+      let%lwt updated = Service.update id thing in
       (match updated with
       | Ok _ ->
         Opium.Response.redirect_to (Format.sprintf "/%s/%s" name id)
@@ -231,9 +225,8 @@ struct
   ;;
 
   let delete' name req =
-    let open Lwt.Syntax in
     let id = Opium.Router.param req "id" in
-    let* thing = Service.find id in
+    let%lwt thing = Service.find id in
     match thing with
     | None ->
       Opium.Response.redirect_to (Format.sprintf "/%s" name)
@@ -244,7 +237,7 @@ struct
               id)
       |> Lwt.return
     | Some thing ->
-      let* result = Service.delete thing in
+      let%lwt result = Service.delete thing in
       (match result with
       | Ok () ->
         Opium.Response.redirect_to (Format.sprintf "/%s" name)

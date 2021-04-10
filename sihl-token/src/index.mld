@@ -52,7 +52,7 @@ The token middleware {!val:Sihl.Contract.Token.Sig.Web.Middleware.user} fetches 
 
 {[
 let index req =
-  let open Lwt.Syntax in
+
   match Service.Token.Web.User.find_opt req with
   | None -> Lwt.return @@ Sihl.Web.Response.redirect_to "/login"
   | Some user -> Lwt.return @@ Sihl.Web.Response.of_html (View.Welcome.index user)

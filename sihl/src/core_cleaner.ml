@@ -9,13 +9,12 @@ let register_cleaners cleaners =
 ;;
 
 let clean_all () =
-  let open Lwt.Syntax in
   let cleaners = !registered_cleaners in
   let rec clean_repos cleaners =
     match cleaners with
     | [] -> Lwt.return ()
     | cleaner :: cleaners ->
-      let* () = cleaner () in
+      let%lwt () = cleaner () in
       clean_repos cleaners
   in
   clean_repos cleaners

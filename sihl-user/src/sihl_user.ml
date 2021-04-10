@@ -8,8 +8,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   let find_opt ~user_id = Repo.get ~id:user_id
 
   let find ~user_id =
-    let open Lwt.Syntax in
-    let* m_user = find_opt ~user_id in
+    let%lwt m_user = find_opt ~user_id in
     match m_user with
     | Some user -> Lwt.return user
     | None ->
@@ -27,8 +26,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let find_by_email ~email =
-    let open Lwt.Syntax in
-    let* user = find_by_email_opt ~email in
+    let%lwt user = find_by_email_opt ~email in
     match user with
     | Some user -> Lwt.return user
     | None ->
@@ -46,7 +44,6 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       ~new_password_confirmation
       ()
     =
-    let open Lwt.Syntax in
     match
       validate_change_password
         user
@@ -64,15 +61,14 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
               m "Can not update password of user %s: %s" user.email msg);
           raise (Sihl.Contract.User.Exception msg)
       in
-      let* () = Repo.update ~user:updated_user in
+      let%lwt () = Repo.update ~user:updated_user in
       Lwt.return @@ Ok updated_user
     | Error msg -> Lwt.return @@ Error msg
   ;;
 
   let update_details ~user ~email ~username =
-    let open Lwt.Syntax in
     let updated_user = set_user_details user ~email ~username in
-    let* () = Repo.update ~user:updated_user in
+    let%lwt () = Repo.update ~user:updated_user in
     find ~user_id:user.id
   ;;
 
@@ -83,8 +79,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       ~password_confirmation
       ()
     =
-    let open Lwt.Syntax in
-    let* result =
+    let%lwt result =
       validate_new_password ~password ~password_confirmation ~password_policy
       |> Lwt.return
     in
@@ -99,23 +94,21 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
               m "USER: Can not set password of user %s: %s" user.email msg);
           raise (Sihl.Contract.User.Exception msg)
       in
-      let* () = Repo.update ~user:updated_user in
+      let%lwt () = Repo.update ~user:updated_user in
       Lwt_result.return updated_user
   ;;
 
   let create ~email ~password ~username ~admin ~confirmed =
-    let open Lwt.Syntax in
     let user = make ~email ~password ~username ~admin ~confirmed in
     match user with
     | Ok user ->
-      let* () = Repo.insert ~user in
+      let%lwt () = Repo.insert ~user in
       Lwt.return (Ok user)
     | Error msg -> raise (Sihl.Contract.User.Exception msg)
   ;;
 
   let create_user ~email ~password ~username =
-    let open Lwt.Syntax in
-    let* user =
+    let%lwt user =
       create ~email ~password ~username ~admin:false ~confirmed:false
     in
     let user =
@@ -127,9 +120,8 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let create_admin ~email ~password ~username =
-    let open Lwt.Syntax in
-    let* user = Repo.get_by_email ~email in
-    let* () =
+    let%lwt user = Repo.get_by_email ~email in
+    let%lwt () =
       match user with
       | Some _ ->
         Logs.err (fun m ->
@@ -137,7 +129,9 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
         raise (Sihl.Contract.User.Exception "Email already taken")
       | None -> Lwt.return ()
     in
-    let* user = create ~email ~password ~username ~admin:true ~confirmed:true in
+    let%lwt user =
+      create ~email ~password ~username ~admin:true ~confirmed:true
+    in
     let user =
       match user with
       | Ok user -> user
@@ -156,23 +150,21 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       ~password_confirmation
       ()
     =
-    let open Lwt.Syntax in
     let open Sihl.Contract.User in
     match
       validate_new_password ~password ~password_confirmation ~password_policy
     with
     | Error msg -> Lwt_result.fail @@ InvalidPasswordProvided msg
     | Ok () ->
-      let* user = find_by_email_opt ~email in
+      let%lwt user = find_by_email_opt ~email in
       (match user with
       | None -> create_user ~username ~email ~password |> Lwt.map Result.ok
       | Some _ -> Lwt_result.fail AlreadyRegistered)
   ;;
 
   let login ~email ~password =
-    let open Lwt.Syntax in
     let open Sihl.Contract.User in
-    let* user = find_by_email_opt ~email in
+    let%lwt user = find_by_email_opt ~email in
     match user with
     | None -> Lwt_result.fail DoesNotExist
     | Some user ->
@@ -185,7 +177,6 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   let stop () = Lwt.return ()
 
   let create_admin_cmd =
-    let open Lwt.Syntax in
     Sihl.Command.make
       ~name:"createadmin"
       ~help:"<username> <email> <password>"
@@ -193,7 +184,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       (fun args ->
         match args with
         | [ username; email; password ] ->
-          let* () = start () in
+          let%lwt () = start () in
           create_admin ~email ~password ~username:(Some username)
           |> Lwt.map ignore
         | _ ->

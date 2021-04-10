@@ -1,4 +1,6 @@
 (executables
  (names mariadb postgresql jwt_inmemory jwt_mariadb jwt_postgresql)
  (libraries sihl sihl-token alcotest-lwt caqti-driver-mariadb
-   caqti-driver-postgresql))
+   caqti-driver-postgresql)
+ (preprocess
+  (pps lwt_ppx)))

@@ -67,7 +67,6 @@ let print_all commands =
 ;;
 
 let run commands args =
-  let open Lwt.Syntax in
   let args =
     match args with
     | Some args -> args
@@ -87,7 +86,7 @@ let run commands args =
     let start = Mtime_clock.now () in
     Lwt.catch
       (fun () ->
-        let* () = command.fn rest_args in
+        let%lwt () = command.fn rest_args in
         let stop = Mtime_clock.now () in
         let span = Mtime.span start stop in
         print_endline

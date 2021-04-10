@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Lwt.Syntax
 
 let assert_delete_cookie cookie =
   Alcotest.(
@@ -18,7 +17,7 @@ let assert_delete_cookie cookie =
 
 let not_touching_flash_without_set_cookie_doesnt_set_cookie _ () =
   let req = Opium.Request.get "/" in
-  let* res =
+  let%lwt res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
@@ -35,7 +34,7 @@ let not_touching_flash_removes_cookie _ () =
     |> Opium.Request.add_cookie
          ("_flash", {|{"alert":null,"notice":null,"custom":[]}|})
   in
-  let* res =
+  let%lwt res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
@@ -53,7 +52,7 @@ let not_touching_flash_removes_cookie _ () =
 
 let flash_is_cleared_after_request _ () =
   let req = Opium.Request.get "/" in
-  let* res =
+  let%lwt res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun _ ->
@@ -68,7 +67,7 @@ let flash_is_cleared_after_request _ () =
   let cookie_value = cookie.Opium.Cookie.value in
   let req = Opium.Request.get "" in
   let req = Opium.Request.add_cookie cookie_value req in
-  let* res =
+  let%lwt res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
@@ -82,7 +81,7 @@ let flash_is_cleared_after_request _ () =
   let cookie_value = cookie.Opium.Cookie.value in
   let req = Opium.Request.get "/" in
   let req = Opium.Request.add_cookie cookie_value req in
-  let* _ =
+  let%lwt _ =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
@@ -97,7 +96,7 @@ let flash_is_cleared_after_request _ () =
 
 let set_and_read_flash_message _ () =
   let req = Opium.Request.get "/" in
-  let* res =
+  let%lwt res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
@@ -115,7 +114,7 @@ let set_and_read_flash_message _ () =
   let cookie_value = cookie.Opium.Cookie.value in
   let req = Opium.Request.get "" in
   let req = Opium.Request.add_cookie cookie_value req in
-  let* res =
+  let%lwt res =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
@@ -133,7 +132,7 @@ let set_and_read_flash_message _ () =
   let cookie = Opium.Response.cookie "_flash" res |> Option.get in
   let cookie_value = cookie.Opium.Cookie.value in
   let req = Opium.Request.get "" |> Opium.Request.add_cookie cookie_value in
-  let* response =
+  let%lwt response =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
@@ -150,7 +149,7 @@ let set_and_read_flash_message _ () =
   assert_delete_cookie cookie;
   let cookie_value = cookie.Opium.Cookie.value in
   let req = Opium.Request.get "" |> Opium.Request.add_cookie cookie_value in
-  let* resp =
+  let%lwt resp =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->

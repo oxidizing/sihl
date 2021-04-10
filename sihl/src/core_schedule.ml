@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 type scheduled_time = Every of Core_time.duration [@@deriving eq, show]
 
 type t =
@@ -39,7 +37,7 @@ let schedule schedule =
     let duration = run_in schedule ~now in
     Logs.debug (fun m ->
         m "Running schedule %s in %f seconds" schedule.label duration);
-    let* () =
+    let%lwt () =
       Lwt.catch
         (fun () -> scheduled_function ())
         (fun exn ->
@@ -50,7 +48,7 @@ let schedule schedule =
                 (Printexc.to_string exn));
           Lwt.return ())
     in
-    let* () = Lwt_unix.sleep duration in
+    let%lwt () = Lwt_unix.sleep duration in
     if !should_stop
     then (
       let () = Logs.debug (fun m -> m "Stop schedule %s" schedule.label) in

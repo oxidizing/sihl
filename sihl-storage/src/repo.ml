@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
@@ -282,7 +280,7 @@ struct
 
   let register_cleaner () =
     let cleaner () =
-      let* () = clean_handles () in
+      let%lwt () = clean_handles () in
       clean_blobs ()
     in
     Sihl.Cleaner.register_cleaner cleaner

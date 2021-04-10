@@ -36,6 +36,7 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   (ssl (>= 0.5.9))
   (uuidm (>= 0.9.7))
   (lwt_ssl (>= 1.1.3))
+  (lwt_ppx (>= 2.0.1))
   (caqti (>= 1.2.1))
   (safepass (>= 3.0))
   (jwto (>= 0.3.0))

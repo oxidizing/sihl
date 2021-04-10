@@ -1,4 +1,3 @@
-open Lwt.Syntax
 open Alcotest_lwt
 
 let combine_routers_matches_first_route _ () =
@@ -16,8 +15,8 @@ let combine_routers_matches_first_route _ () =
   let route2 = Sihl.Web.get "/**" handler2 in
   let router = Sihl.Web.choose ~scope:"/scope" [ route1; route2 ] in
   let service = Sihl.Web.Http.register router in
-  let* () = Sihl.Container.Service.start service in
-  let* _ =
+  let%lwt () = Sihl.Container.Service.start service in
+  let%lwt _ =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string "http://localhost:3000/scope/some/path")
   in
@@ -87,9 +86,9 @@ let combine_routers_calls_middlewares _ () =
     |> Lwt.map Cohttp.Response.status
     |> Lwt.map Cohttp.Code.code_of_status
   in
-  let* () = Sihl.Container.Service.start service in
+  let%lwt () = Sihl.Container.Service.start service in
   reset_assert_state ();
-  let* status =
+  let%lwt status =
     Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root")
     |> status_of_resp
   in
@@ -97,7 +96,7 @@ let combine_routers_calls_middlewares _ () =
   Alcotest.(
     check bool "/root middleware not called" false !root_middleware_was_called);
   reset_assert_state ();
-  let* status =
+  let%lwt status =
     Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/")
     |> status_of_resp
   in
@@ -105,13 +104,13 @@ let combine_routers_calls_middlewares _ () =
   Alcotest.(
     check bool "/root middleware not called" false !root_middleware_was_called);
   reset_assert_state ();
-  let* status =
+  let%lwt status =
     Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/sub")
     |> status_of_resp
   in
   Alcotest.(check int "/root/sub not found" 404 status);
   reset_assert_state ();
-  let* status =
+  let%lwt status =
     Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/sub/")
     |> status_of_resp
   in
@@ -120,22 +119,22 @@ let combine_routers_calls_middlewares _ () =
     check bool "root middleware called" true !root_middleware_was_called);
   Alcotest.(check bool "sub middleware called" true !sub_middleware_was_called);
   reset_assert_state ();
-  let* body =
+  let%lwt body =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string "http://localhost:3000/root/sub/foo")
     |> Lwt.map snd
   in
-  let* body = Cohttp_lwt.Body.to_string body in
+  let%lwt body = Cohttp_lwt.Body.to_string body in
   Alcotest.(check string "foo middleware called" "foo middleware" body);
   Alcotest.(
     check bool "root middleware called" true !root_middleware_was_called);
   Alcotest.(check bool "sub middleware called" true !sub_middleware_was_called);
   reset_assert_state ();
-  let* body =
+  let%lwt body =
     Cohttp_lwt_unix.Client.get (Uri.of_string "http://localhost:3000/root/bar")
     |> Lwt.map snd
   in
-  let* body = Cohttp_lwt.Body.to_string body in
+  let%lwt body = Cohttp_lwt.Body.to_string body in
   Alcotest.(check string "bar middleware called" "bar middleware" body);
   Alcotest.(
     check bool "root middleware called" true !root_middleware_was_called);
@@ -149,13 +148,13 @@ let global_middleware_before_router _ () =
   let middleware = Rock.Middleware.create ~name:"test" ~filter in
   let router = Sihl.Web.choose ~middlewares:[] ~scope:"/" [] in
   let service = Sihl.Web.Http.register ~middlewares:[ middleware ] router in
-  let* () = Sihl.Container.Service.start service in
-  let* resp, body =
+  let%lwt () = Sihl.Container.Service.start service in
+  let%lwt resp, body =
     Cohttp_lwt_unix.Client.get
       (Uri.of_string "http://localhost:3000/non/existing")
   in
   let status = resp |> Cohttp.Response.status |> Cohttp.Code.code_of_status in
-  let* body = Cohttp_lwt.Body.to_string body in
+  let%lwt body = Cohttp_lwt.Body.to_string body in
   Alcotest.(check int "matched without route" 200 status);
   Alcotest.(check string "responds" "all good!" body);
   Sihl.Container.Service.stop service
