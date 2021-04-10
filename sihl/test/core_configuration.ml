@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let read_empty_value _ () =
   Sihl.Configuration.store [];
   Alcotest.(
@@ -124,16 +122,16 @@ let read_env_file_non_existing _ () =
 ;;
 
 let read_env_file switch () =
-  let* cur = Lwt_unix.getcwd () in
+  let%lwt cur = Lwt_unix.getcwd () in
   let marker = cur ^ "/.git" in
   let filename = cur ^ "/.env.test" in
   Lwt_switch.add_hook (Some switch) (fun () ->
-      let* () = Lwt_unix.unlink filename in
+      let%lwt () = Lwt_unix.unlink filename in
       Lwt_unix.rmdir marker);
   let keys = [ "NAME"; "OCCUPATION"; "AGE" ] in
   let values = [ "church"; "mathematician"; "92" ] in
-  let* () = Lwt_unix.mkdir marker 0o666 in
-  let* () =
+  let%lwt () = Lwt_unix.mkdir marker 0o666 in
+  let%lwt () =
     Lwt_io.with_file ~mode:Lwt_io.Output filename (fun ch ->
         let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
         Lwt_list.iter_s (Lwt_io.write_line ch) envs)

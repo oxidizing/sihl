@@ -62,9 +62,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let run_job (input : string) (job : job') (job_instance : instance)
       : (unit, string) Result.t Lwt.t
     =
-    let open Lwt.Syntax in
     let job_instance_id = job_instance.id in
-    let* result =
+    let%lwt result =
       Lwt.catch
         (fun () -> job.handle input)
         (fun exn ->
@@ -87,7 +86,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
             msg);
       Lwt.catch
         (fun () ->
-          let* () = job.failed msg job_instance in
+          let%lwt () = job.failed msg job_instance in
           Lwt.return @@ Error msg)
         (fun exn ->
           let exn_string = Printexc.to_string exn in
@@ -107,12 +106,11 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let update ~job_instance = Repo.update job_instance
 
   let work_job (job : job') (job_instance : instance) =
-    let open Lwt.Syntax in
     let now = Ptime_clock.now () in
     if should_run job_instance now
     then (
       let input_string = job_instance.input in
-      let* job_run_status = run_job input_string job job_instance in
+      let%lwt job_run_status = run_job input_string job job_instance in
       let job_instance =
         job_instance |> incr_tries |> update_next_run_at job.retry_delay
       in
@@ -141,8 +139,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   ;;
 
   let work_queue ~jobs =
-    let open Lwt.Syntax in
-    let* pending_job_instances = Repo.find_workable () in
+    let%lwt pending_job_instances = Repo.find_workable () in
     let n_job_instances = List.length pending_job_instances in
     if n_job_instances > 0
     then (
@@ -163,7 +160,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
           | None -> loop job_instances jobs
           | Some job -> work_job job job_instance)
       in
-      let* () = loop pending_job_instances jobs in
+      let%lwt () = loop pending_job_instances jobs in
       Logs.debug (fun m -> m "Finish working queue");
       Lwt.return ())
     else Lwt.return ()
@@ -234,8 +231,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let query () : instance list Lwt.t = Repo.query ()
 
   let find id : instance Lwt.t =
-    let open Lwt.Syntax in
-    let* job = Repo.find id in
+    let%lwt job = Repo.find id in
     match job with
     | Some job -> Lwt.return job
     | None ->
@@ -243,9 +239,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   ;;
 
   let update (job : instance) : instance Lwt.t =
-    let open Lwt.Syntax in
-    let* () = Repo.update job in
-    let* updated = Repo.find job.id in
+    let%lwt () = Repo.update job in
+    let%lwt updated = Repo.find job.id in
     match updated with
     | Some job -> Lwt.return job
     | None ->

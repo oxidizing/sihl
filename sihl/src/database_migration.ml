@@ -36,8 +36,7 @@ struct
   let has ~namespace = Repo.get (table ()) ~namespace |> Lwt.map Option.is_some
 
   let get ~namespace =
-    let open Lwt.Syntax in
-    let* state = Repo.get (table ()) ~namespace in
+    let%lwt state = Repo.get (table ()) ~namespace in
     Lwt.return
     @@
     match state with
@@ -51,26 +50,23 @@ struct
   let upsert state = Repo.upsert (table ()) state
 
   let mark_dirty ~namespace =
-    let open Lwt.Syntax in
-    let* state = get ~namespace in
+    let%lwt state = get ~namespace in
     let dirty_state = Repo.Migration.mark_dirty state in
-    let* () = upsert dirty_state in
+    let%lwt () = upsert dirty_state in
     Lwt.return dirty_state
   ;;
 
   let mark_clean ~namespace =
-    let open Lwt.Syntax in
-    let* state = get ~namespace in
+    let%lwt state = get ~namespace in
     let clean_state = Repo.Migration.mark_clean state in
-    let* () = upsert clean_state in
+    let%lwt () = upsert clean_state in
     Lwt.return clean_state
   ;;
 
   let increment ~namespace =
-    let open Lwt.Syntax in
-    let* state = get ~namespace in
+    let%lwt state = get ~namespace in
     let updated_state = Repo.Migration.increment state in
-    let* () = upsert updated_state in
+    let%lwt () = upsert updated_state in
     Lwt.return updated_state
   ;;
 
@@ -93,10 +89,9 @@ struct
   ;;
 
   let with_disabled_fk_check f =
-    let open Lwt.Syntax in
     Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let* () =
+        let%lwt () =
           Connection.exec set_fk_check_request false
           |> Lwt.map Database.raise_error
         in
@@ -108,7 +103,6 @@ struct
   ;;
 
   let execute_steps migration =
-    let open Lwt.Syntax in
     let namespace, steps = migration in
     let rec run steps =
       match steps with
@@ -121,12 +115,12 @@ struct
           in
           Connection.exec req () |> Lwt.map Database.raise_error
         in
-        let* () = Database.query query in
+        let%lwt () = Database.query query in
         Logs.debug (fun m -> m "Ran %s" label);
-        let* _ = increment ~namespace in
+        let%lwt _ = increment ~namespace in
         run steps
       | { label; statement; check_fk = false } :: steps ->
-        let* () =
+        let%lwt () =
           with_disabled_fk_check (fun connection ->
               Logs.debug (fun m -> m "Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
@@ -138,7 +132,7 @@ struct
               query connection)
         in
         Logs.debug (fun m -> m "Ran %s" label);
-        let* _ = increment ~namespace in
+        let%lwt _ = increment ~namespace in
         run steps
     in
     let () =
@@ -150,14 +144,13 @@ struct
   ;;
 
   let execute_migration migration =
-    let open Lwt.Syntax in
     let namespace, _ = migration in
-    let* () = setup () in
-    let* has_state = has ~namespace in
-    let* state =
+    let%lwt () = setup () in
+    let%lwt has_state = has ~namespace in
+    let%lwt state =
       if has_state
-      then
-        let* state = get ~namespace in
+      then (
+        let%lwt state = get ~namespace in
         if Repo.Migration.dirty state
         then (
           Logs.err (fun m ->
@@ -169,11 +162,11 @@ struct
                 "Set the column 'dirty' from 1/true to 0/false after you have \
                  fixed the database state.");
           raise Contract_migration.Dirty_migration)
-        else mark_dirty ~namespace
+        else mark_dirty ~namespace)
       else (
         Logs.debug (fun m -> m "Setting up table for %s" namespace);
         let state = Repo.Migration.create ~namespace in
-        let* () = upsert state in
+        let%lwt () = upsert state in
         Lwt.return state)
     in
     let migration_to_apply = Repo.Migration.steps_to_apply migration state in
@@ -186,7 +179,7 @@ struct
             (List.length (snd migration_to_apply))
             namespace)
     else Logs.info (fun m -> m "No migrations to execute for '%s'" namespace);
-    let* () =
+    let%lwt () =
       Lwt.catch
         (fun () -> execute_steps migration_to_apply)
         (fun exn ->
@@ -195,12 +188,11 @@ struct
               m "Error while running migration '%a': %s" pp migration err);
           raise (Contract_migration.Exception err))
     in
-    let* _ = mark_clean ~namespace in
+    let%lwt _ = mark_clean ~namespace in
     Lwt.return ()
   ;;
 
   let execute migrations =
-    let open Lwt.Syntax in
     let n = List.length migrations in
     if n > 0
     then
@@ -210,7 +202,7 @@ struct
       match migrations with
       | [] -> Lwt.return ()
       | migration :: migrations ->
-        let* () = execute_migration migration in
+        let%lwt () = execute_migration migration in
         run migrations
     in
     run migrations
@@ -222,8 +214,7 @@ struct
   ;;
 
   let migrations_status () =
-    let open Lwt.Syntax in
-    let* migrations_states = Repo.get_all (table ()) in
+    let%lwt migrations_states = Repo.get_all (table ()) in
     let migration_states_namespaces =
       migrations_states
       |> List.map (fun migration_state ->
@@ -266,8 +257,7 @@ struct
   ;;
 
   let pending_migrations () =
-    let open Lwt.Syntax in
-    let* unapplied = migrations_status () in
+    let%lwt unapplied = migrations_status () in
     let rec find_pending result = function
       | (namespace, Some n) :: xs ->
         if n > 0
@@ -282,8 +272,7 @@ struct
   ;;
 
   let check_migrations_status () =
-    let open Lwt.Syntax in
-    let* unapplied = migrations_status () in
+    let%lwt unapplied = migrations_status () in
     List.iter
       (fun (namespace, count) ->
         match count with
@@ -322,9 +311,8 @@ struct
   ;;
 
   let start () =
-    let open Lwt.Syntax in
     Core_configuration.require schema;
-    let* () = setup () in
+    let%lwt () = setup () in
     if Core_configuration.is_test ()
     then Lwt.return ()
     else check_migrations_status ()
@@ -333,13 +321,12 @@ struct
   let stop () = Lwt.return ()
 
   let migrate_cmd =
-    let open Lwt.Syntax in
     Core_command.make
       ~name:"migrate"
       ~description:"Run all migrations"
       (fun _ ->
-        let* () = Database.start () in
-        let* () = start () in
+        let%lwt () = Database.start () in
+        let%lwt () = start () in
         run_all ())
   ;;
 

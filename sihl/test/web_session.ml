@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Lwt.Syntax
 
 let no_cookie_set_without_session _ () =
   let req =
@@ -11,7 +10,7 @@ let no_cookie_set_without_session _ () =
     (* We don't set any session values *)
     Opium.Response.of_plain_text "" |> Lwt.return
   in
-  let* response = handler req in
+  let%lwt response = handler req in
   Alcotest.(
     check int "no cookies set" 0 (List.length (Opium.Response.cookies response)));
   Lwt.return ()
@@ -28,7 +27,7 @@ let unsigned_session_cookie _ () =
     Alcotest.(check (option string) "no session" None value);
     Opium.Response.of_plain_text "" |> Lwt.return
   in
-  let* _ = handler req in
+  let%lwt _ = handler req in
   Lwt.return ()
 ;;
 
@@ -44,7 +43,7 @@ let invalid_session_cookie_signature _ () =
     Alcotest.(check (option string) "no session" None value);
     Opium.Response.of_plain_text "" |> Lwt.return
   in
-  let* _ = handler req in
+  let%lwt _ = handler req in
   Lwt.return ()
 ;;
 
@@ -60,7 +59,7 @@ let invalid_session_cookie_value _ () =
     Alcotest.(check (option string) "no session" None value);
     Opium.Response.of_plain_text "" |> Lwt.return
   in
-  let* _ = handler req in
+  let%lwt _ = handler req in
   Lwt.return ()
 ;;
 
@@ -70,7 +69,7 @@ let cookie_set _ () =
     let resp = Opium.Response.of_plain_text "" in
     Lwt.return @@ Sihl.Web.Session.set [ "foo", "bar" ] resp
   in
-  let* response = handler req in
+  let%lwt response = handler req in
   let cookie = Opium.Response.cookies response |> List.hd in
   let cookie_value = cookie.Opium.Cookie.value in
   Alcotest.(
@@ -88,7 +87,7 @@ let session_persisted_across_requests _ () =
     let resp = Opium.Response.of_plain_text "" in
     Lwt.return @@ Sihl.Web.Session.set [ "foo", "bar" ] resp
   in
-  let* response = handler req in
+  let%lwt response = handler req in
   let cookies = Opium.Response.cookies response in
   Alcotest.(
     check int "responds with exactly one cookie" 1 (List.length cookies));
@@ -113,7 +112,7 @@ let session_persisted_across_requests _ () =
     in
     Lwt.return resp
   in
-  let* response = handler req in
+  let%lwt response = handler req in
   let cookies = Opium.Response.cookies response in
   Alcotest.(
     check int "responds with exactly one cookie" 1 (List.length cookies));
@@ -143,7 +142,7 @@ let session_persisted_across_requests _ () =
         (Sihl.Web.Session.find "fooz" req));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
-  let* _ = handler req in
+  let%lwt _ = handler req in
   Lwt.return ()
 ;;
 

@@ -1,4 +1,3 @@
-open Lwt.Syntax
 open Alcotest_lwt
 
 let equal u1 u2 =
@@ -40,8 +39,8 @@ let validate_invalid_password _ () =
 
 module Make (UserService : Sihl.Contract.User.Sig) = struct
   let json_serialization _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* user =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user =
       UserService.create_user
         ~email:"foobar@example.com"
         ~password:"123123123"
@@ -57,14 +56,14 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   ;;
 
   let update_details _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* user =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user =
       UserService.create_user
         ~email:"foobar@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* updated_user =
+    let%lwt updated_user =
       UserService.update_details
         ~user
         ~email:"new@example.com"
@@ -79,14 +78,14 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   ;;
 
   let update_password _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* user =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user =
       UserService.create_user
         ~email:"foobar@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* _ =
+    let%lwt _ =
       UserService.update_password
         ~user
         ~old_password:"123123123"
@@ -95,7 +94,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         ()
       |> Lwt.map Result.get_ok
     in
-    let* user =
+    let%lwt user =
       UserService.login ~email:"foobar@example.com" ~password:"12345678"
       |> Lwt.map Result.get_ok
     in
@@ -110,14 +109,14 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   ;;
 
   let update_password_fails _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* user =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user =
       UserService.create_user
         ~email:"foobar@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* change_result =
+    let%lwt change_result =
       UserService.update_password
         ~user
         ~old_password:"wrong_old_password"
@@ -135,52 +134,52 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   ;;
 
   let filter_users_by_email_returns_single_user _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* user1 =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user1 =
       UserService.create_user
         ~email:"user1@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* _ =
+    let%lwt _ =
       UserService.create_user
         ~email:"user2@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* _ =
+    let%lwt _ =
       UserService.create_user
         ~email:"user3@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* actual_users, meta = UserService.search ~filter:"%user1%" 10 in
+    let%lwt actual_users, meta = UserService.search ~filter:"%user1%" 10 in
     Alcotest.(check int "has correct meta" 3 meta);
     Alcotest.(check (list alcotest) "has one user" [ user1 ] actual_users);
     Lwt.return ()
   ;;
 
   let filter_users_by_email_returns_all_users _ () =
-    let* () = Sihl.Cleaner.clean_all () in
-    let* user1 =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user1 =
       UserService.create_user
         ~email:"user1@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* user2 =
+    let%lwt user2 =
       UserService.create_user
         ~email:"user2@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* user3 =
+    let%lwt user3 =
       UserService.create_user
         ~email:"user3@example.com"
         ~password:"123123123"
         ~username:None
     in
-    let* actual_users, meta = UserService.search ~filter:"%user%" 10 in
+    let%lwt actual_users, meta = UserService.search ~filter:"%user%" 10 in
     Alcotest.(check int "has correct meta" 3 meta);
     Alcotest.(
       check (list alcotest) "has one user" [ user3; user2; user1 ] actual_users);
@@ -216,8 +215,8 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     ;;
 
     let user_from_token _ () =
-      let* () = Sihl.Cleaner.clean_all () in
-      let* user =
+      let%lwt () = Sihl.Cleaner.clean_all () in
+      let%lwt user =
         UserService.create
           ~email:"foo@example.com"
           ~username:None
@@ -233,19 +232,19 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         |> Opium.Request.add_header ("authorization", token_header)
       in
       let handler req =
-        let* user = UserService.Web.user_from_token read_token req in
+        let%lwt user = UserService.Web.user_from_token read_token req in
         let email = Option.map (fun user -> user.Sihl_user.email) user in
         Alcotest.(
           check (option string) "has same email" (Some "foo@example.com") email);
         Lwt.return @@ Opium.Response.of_plain_text ""
       in
-      let* _ = handler req in
+      let%lwt _ = handler req in
       Lwt.return ()
     ;;
 
     let user_from_session _ () =
-      let* () = Sihl.Cleaner.clean_all () in
-      let* user =
+      let%lwt () = Sihl.Cleaner.clean_all () in
+      let%lwt user =
         UserService.create
           ~email:"foo@example.com"
           ~username:None
@@ -265,13 +264,13 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         |> Opium.Request.add_cookie cookie.Sihl.Web.Cookie.value
       in
       let handler req =
-        let* user = UserService.Web.user_from_session req in
+        let%lwt user = UserService.Web.user_from_session req in
         let email = Option.map (fun user -> user.Sihl_user.email) user in
         Alcotest.(
           check (option string) "has same email" (Some "foo@example.com") email);
         Lwt.return @@ Opium.Response.of_plain_text ""
       in
-      let* _ = handler req in
+      let%lwt _ = handler req in
       Lwt.return ()
     ;;
   end

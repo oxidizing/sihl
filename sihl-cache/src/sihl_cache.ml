@@ -6,16 +6,13 @@ module MakeSql (Repo : Repo_sql.Sig) : Sihl.Contract.Cache.Sig = struct
   let find = Repo.find
 
   let set (k, v) =
-    let open Lwt.Syntax in
     match v with
     | Some v ->
-      let* old_v = find k in
-      (match old_v with
+      (match%lwt find k with
       | Some _ -> Repo.update (k, v)
       | None -> Repo.insert (k, v))
     | None ->
-      let* old_v = find k in
-      (match old_v with
+      (match%lwt find k with
       | Some _ -> Repo.delete k
       | None ->
         (* nothing to do *)

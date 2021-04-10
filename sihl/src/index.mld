@@ -298,11 +298,11 @@ This is done using a handler, which has the signature [val handler : Rock.Reques
 
 {[
 let list req =
-  let open Lwt.Syntax in
+
   let csrf = Sihl.Web.Csrf.find req in
   let notice = Sihl.Web.Flash.find_notice req in
   let alert = Sihl.Web.Flash.find_alert req in
-  let* todos, _ = Todo.search 100 in
+  let%lwt todos, _ = Todo.search 100 in
   Lwt.return @@ Opium.Response.of_html (Template.page csrf todos alert notice)
 ;;
 ]}
@@ -707,10 +707,10 @@ Arranging your state requires you to clean up first. You don't have direct acces
 {[
 let create_list_and_do _ () =
   let open Todo.Model in
-  let* () = Sihl.Cleaner.clean_all () in
-  let* _ = Todo.create "do laundry" in
-  let* _ = Todo.create "hoover" in
-  let* todos = Todo.search 10 in
+  let%lwt () = Sihl.Cleaner.clean_all () in
+  let%lwt _ = Todo.create "do laundry" in
+  let%lwt _ = Todo.create "hoover" in
+  let%lwt todos = Todo.search 10 in
   let t1, t2 =
     match todos with
     | [ t1; t2 ], n ->
@@ -720,8 +720,8 @@ let create_list_and_do _ () =
   in
   Alcotest.(check string "has description" "hoover" t1.description);
   Alcotest.(check string "has description" "do laundry" t2.description);
-  let* () = Todo.do_ t1 in
-  let* t1 = Todo.find t1.id in
+  let%lwt () = Todo.do_ t1 in
+  let%lwt t1 = Todo.find t1.id in
   Alcotest.(check bool "is done" true (Todo.is_done t1));
   Lwt.return ()
 ;;
@@ -792,7 +792,7 @@ Create a file in the directory [app/command] to create custom commands.
 
 {[
 let run =
-  let open Lwt.Syntax in
+
   Sihl.Command.make
     ~name:"add-todo"
     ~help:"<todo description>"
@@ -800,7 +800,7 @@ let run =
     (fun args ->
       match args with
       | [ description ] ->
-        let* _ = Todo.create description in
+        let%lwt _ = Todo.create description in
         Lwt.return ()
       | _ -> raise (Sihl.Command.Exception "Usage: <todo description>"))
 ;;
@@ -901,14 +901,13 @@ We want to distinguish various invalid user inputs. The user might provide an ol
 
 Sihl is built on top of the {{:https://ocsigen.org/tuto/6.4/manual/lwt} Lwt} library, which is similar to Promises in other languages. From the web module to the migration service, everything uses [Lwt] so it is crucial to understand the basic API and usage.
 
-OCaml 4.08.1 has got a syntax that is similar to async/await in other languages. Let's have a look at following example:
+Sihl uses [lwt_ppx] which makes it easy to deal with [Lwt.t] and it gives you better error messages.
 
 {[
 let add req =
-  let open Lwt.Syntax in
   match Sihl.Web.Form.find_all req with
   | [ ("description", [ description ]) ] ->
-    let* _ = Todo.create description in
+    let%lwt _ = Todo.create description in
     let resp = Opium.Response.redirect_to "/" in
     let resp = Sihl.Web.Flash.set_notice (Some "Successfully updated") resp in
     Lwt.return resp
@@ -919,7 +918,7 @@ let add req =
 ;;
 ]}
 
-[Todo.create] creates a todo with a description and it returns [unit Lwt.t] on success. In order to keep the code simple, open [Lwt.Syntax] locally which will give you access to [let*]. If you use [let*], you have to return ['a Lwt.t], so the last expression has to have an [Lwt].
+[Todo.create] creates a todo with a description and it returns [unit Lwt.t] on success. In order to keep the code simple, use [let%lwt]. If you use [let%lwt], you have to return ['a Lwt.t], so the last expression has to have an [Lwt].
 
 {2 Build system}
 

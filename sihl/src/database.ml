@@ -1,5 +1,4 @@
 include Contract_database
-open Lwt.Syntax
 
 let log_src = Logs.Src.create "sihl.service.database"
 
@@ -74,14 +73,14 @@ let prepare_requests
 let run_request connection requests sort filter limit =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
   let r1, r2, r3, r4, r5 = requests in
-  let* result =
+  let%lwt result =
     match sort, filter with
     | `Asc, None -> Connection.collect_list r1 limit
     | `Desc, None -> Connection.collect_list r2 limit
     | `Asc, Some filter -> Connection.collect_list r3 (filter, limit)
     | `Desc, Some filter -> Connection.collect_list r4 (filter, limit)
   in
-  let* amount = Connection.find r5 () in
+  let%lwt amount = Connection.find r5 () in
   CCResult.both result amount |> raise_error |> Lwt.return
 ;;
 
@@ -135,12 +134,12 @@ let fetch_pool () =
 let transaction f =
   let pool = fetch_pool () in
   print_pool_usage pool;
-  let* result =
+  let%lwt result =
     Caqti_lwt.Pool.use
       (fun connection ->
         Logs.debug (fun m -> m "Fetched connection from pool");
         let (module Connection : Caqti_lwt.CONNECTION) = connection in
-        let* start_result = Connection.start () in
+        let%lwt start_result = Connection.start () in
         match start_result with
         | Error msg ->
           Logs.debug (fun m ->
@@ -150,8 +149,8 @@ let transaction f =
           Logs.debug (fun m -> m "Started transaction");
           Lwt.catch
             (fun () ->
-              let* result = f connection in
-              let* commit_result = Connection.commit () in
+              let%lwt result = f connection in
+              let%lwt commit_result = Connection.commit () in
               match commit_result with
               | Ok () ->
                 Logs.debug (fun m -> m "Successfully committed transaction");
@@ -162,7 +161,7 @@ let transaction f =
                 Lwt.fail
                 @@ Contract_database.Exception "Failed to commit transaction")
             (fun e ->
-              let* rollback_result = Connection.rollback () in
+              let%lwt rollback_result = Connection.rollback () in
               match rollback_result with
               | Ok () ->
                 Logs.debug (fun m -> m "Successfully rolled back transaction");
@@ -189,7 +188,7 @@ let transaction' f = transaction f |> Lwt.map raise_error
 let query f =
   let pool = fetch_pool () in
   print_pool_usage pool;
-  let* result =
+  let%lwt result =
     Caqti_lwt.Pool.use
       (fun connection -> f connection |> Lwt.map Result.ok)
       pool

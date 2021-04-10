@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let database_running = ref false
 
 module Database = struct
@@ -83,7 +81,7 @@ let run_user_command _ () =
   user_service_running := false;
   order_service_running := false;
   let set_config _ = Lwt.return @@ Unix.putenv "CREATE_ADMIN" "admin" in
-  let* () =
+  let%lwt () =
     Sihl.App.empty
     |> Sihl.App.with_services [ UserService.register () ]
     |> Sihl.App.before_start set_config
@@ -103,7 +101,7 @@ let run_order_command _ () =
   let set_config _ =
     Lwt.return @@ Unix.putenv "ORDER_NOTIFICATION_URL" "https://"
   in
-  let* () =
+  let%lwt () =
     Sihl.App.empty
     |> Sihl.App.with_services [ OrderService.register () ]
     |> Sihl.App.before_start set_config

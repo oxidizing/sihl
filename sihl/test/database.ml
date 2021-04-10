@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let check_pool _ () =
   let _ = Sihl.Database.fetch_pool () in
   Lwt.return ()
@@ -55,11 +53,11 @@ let get_usernames connection =
 ;;
 
 let query _ () =
-  let* usernames =
+  let%lwt usernames =
     Sihl.Database.query (fun connection ->
-        let* () = drop_table_if_exists connection in
-        let* () = create_table_if_not_exists connection in
-        let* () = insert_username connection "foobar pool" in
+        let%lwt () = drop_table_if_exists connection in
+        let%lwt () = create_table_if_not_exists connection in
+        let%lwt () = insert_username connection "foobar pool" in
         get_usernames connection)
   in
   let username = List.hd usernames in
@@ -68,12 +66,12 @@ let query _ () =
 ;;
 
 let query_with_transaction _ () =
-  let* usernames =
+  let%lwt usernames =
     Sihl.Database.query (fun connection ->
-        let* () = drop_table_if_exists connection in
-        let* () = create_table_if_not_exists connection in
+        let%lwt () = drop_table_if_exists connection in
+        let%lwt () = create_table_if_not_exists connection in
         Sihl.Database.transaction (fun connection ->
-            let* () = insert_username connection "foobar trx" in
+            let%lwt () = insert_username connection "foobar trx" in
             get_usernames connection))
   in
   let username = List.find (String.equal "foobar trx") usernames in
@@ -82,15 +80,15 @@ let query_with_transaction _ () =
 ;;
 
 let transaction_rolls_back _ () =
-  let* usernames =
+  let%lwt usernames =
     Sihl.Database.query (fun connection ->
-        let* () = drop_table_if_exists connection in
-        let* () = create_table_if_not_exists connection in
-        let* () =
+        let%lwt () = drop_table_if_exists connection in
+        let%lwt () = create_table_if_not_exists connection in
+        let%lwt () =
           Lwt.catch
             (fun () ->
               Sihl.Database.transaction (fun connection ->
-                  let* () = insert_username connection "foobar trx" in
+                  let%lwt () = insert_username connection "foobar trx" in
                   failwith "Oh no, something went wrong during the transaction!"))
             (fun _ -> Lwt.return ())
         in
@@ -117,10 +115,10 @@ let query_does_not_exhaust_pool _ () =
     match n with
     | 0 -> Lwt.return ()
     | n ->
-      let* () = Sihl.Database.query failing_query in
+      let%lwt () = Sihl.Database.query failing_query in
       loop (n - 1)
   in
-  let* () = loop 100 in
+  let%lwt () = loop 100 in
   Alcotest.(check bool "doesn't exhaust pool" true true);
   Lwt.return ()
 ;;
@@ -130,10 +128,10 @@ let transaction_does_not_exhaust_pool _ () =
     match n with
     | 0 -> Lwt.return ()
     | n ->
-      let* () = Sihl.Database.transaction failing_query in
+      let%lwt () = Sihl.Database.transaction failing_query in
       loop (n - 1)
   in
-  let* () = loop 100 in
+  let%lwt () = loop 100 in
   Alcotest.(check bool "doesn't exhaust pool" true true);
   Lwt.return ()
 ;;

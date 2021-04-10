@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Lwt.Syntax
 
 let generate_random_id _ () =
   let middleware = Sihl.Web.Middleware.id () in
@@ -11,7 +10,7 @@ let generate_random_id _ () =
     Alcotest.(check bool "non empty string" true (String.length id > 0));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
-  let* _ = Rock.Middleware.apply middleware handler req in
+  let%lwt _ = Rock.Middleware.apply middleware handler req in
   let id_second = ref "" in
   let handler req =
     let id = Sihl.Web.Id.find req |> Option.get in
@@ -19,7 +18,7 @@ let generate_random_id _ () =
     Alcotest.(check bool "non empty string" true (String.length id > 0));
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
-  let* _ = Rock.Middleware.apply middleware handler req in
+  let%lwt _ = Rock.Middleware.apply middleware handler req in
   Alcotest.(
     check bool "different ids" false (String.equal !id_first !id_second));
   Lwt.return ()
@@ -36,7 +35,7 @@ let use_provided_id _ () =
     Alcotest.(check string "is provided id" "randomid123" id);
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
-  let* _ = Rock.Middleware.apply middleware handler req in
+  let%lwt _ = Rock.Middleware.apply middleware handler req in
   Lwt.return ()
 ;;
 

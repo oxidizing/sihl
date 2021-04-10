@@ -1,5 +1,4 @@
 open Alcotest_lwt
-open Lwt.Syntax
 
 let apply_middlewares handler ?not_allowed_handler =
   handler
@@ -10,7 +9,7 @@ let get_request_without_token_succeeds _ () =
   let req = Opium.Request.get "" in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler req in
+  let%lwt response = wrapped_handler req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
   Lwt.return ()
@@ -24,7 +23,7 @@ let get_request_yields_token _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler req in
+  let%lwt response = wrapped_handler req in
   (* New hashed token set in cookie *)
   let csrf_cookie =
     Opium.Response.cookie "__Host-csrf" response |> Option.get
@@ -44,7 +43,7 @@ let two_get_requests_yield_different_token _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler1 = apply_middlewares @@ handler token_ref1 in
-  let* response = wrapped_handler1 req in
+  let%lwt response = wrapped_handler1 req in
   let cookie = response |> Opium.Response.cookies |> List.hd in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
@@ -54,7 +53,7 @@ let two_get_requests_yield_different_token _ () =
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let wrapped_handler2 = apply_middlewares @@ handler token_ref2 in
-  let* _ = wrapped_handler2 get_req in
+  let%lwt _ = wrapped_handler2 get_req in
   Alcotest.(
     check bool "First Has CSRF token" true (String.length !token_ref1 > 0));
   Alcotest.(
@@ -78,7 +77,7 @@ let post_request_yields_token _ () =
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler ~not_allowed_handler in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   (* New hashed token set in cookie *)
   let csrf_cookie =
     Opium.Response.cookie "__Host-csrf" response |> Option.get
@@ -103,7 +102,7 @@ let two_post_requests_yield_different_token _ () =
       handler
       ~not_allowed_handler:(not_allowed_handler token_ref1)
   in
-  let* response = wrapped_handler1 req in
+  let%lwt response = wrapped_handler1 req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 403" 403 status);
   (* Do GET with session to get token *)
@@ -113,7 +112,7 @@ let two_post_requests_yield_different_token _ () =
       handler
       ~not_allowed_handler:(not_allowed_handler token_ref2)
   in
-  let* response = wrapped_handler2 post_req in
+  let%lwt response = wrapped_handler2 post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 403" 403 status);
   Alcotest.(
@@ -137,7 +136,7 @@ let post_request_without_token_fails _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 403" 403 status);
   Alcotest.(check bool "Is disallowed" false !allowed);
@@ -153,14 +152,14 @@ let post_request_with_foreign_token_fails _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
-  let* _ = wrapped_handler req in
+  let%lwt _ = wrapped_handler req in
   (* New request with new cookie but using generated (foreign) token *)
   let post_req =
     Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref ] ] "/foo" `POST
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 403" 403 status);
   Lwt.return ()
@@ -175,7 +174,7 @@ let post_request_with_nonmatching_token_fails _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler req in
+  let%lwt response = wrapped_handler req in
   let cookie = response |> Opium.Response.cookies |> List.hd in
   (* New request with same cookie but non-matching token in body *)
   let post_req =
@@ -184,7 +183,7 @@ let post_request_with_nonmatching_token_fails _ () =
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 403" 403 status);
   Lwt.return ()
@@ -199,7 +198,7 @@ let post_request_with_nonmatching_cookie_fails _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
-  let* _ = wrapped_handler req in
+  let%lwt _ = wrapped_handler req in
   (* New request with same cookie but non-matching token in body *)
   let post_req =
     Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref ] ] "/foo" `POST
@@ -213,7 +212,7 @@ let post_request_with_nonmatching_cookie_fails _ () =
     Lwt.return @@ Opium.Response.of_plain_text "" ~status:`Forbidden
   in
   let wrapped_handler = apply_middlewares handler ~not_allowed_handler in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 403" 403 status);
   Lwt.return ()
@@ -228,7 +227,7 @@ let post_request_with_valid_token_succeeds _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler req in
+  let%lwt response = wrapped_handler req in
   let cookie = response |> Opium.Response.cookies |> List.hd in
   (* New request with same cookie and matching token in body *)
   let post_req =
@@ -237,7 +236,7 @@ let post_request_with_valid_token_succeeds _ () =
   in
   let handler _ = Lwt.return @@ Opium.Response.of_plain_text "" in
   let wrapped_handler = apply_middlewares handler in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
   Lwt.return ()
@@ -254,7 +253,7 @@ let two_post_requests_succeed _ () =
     Lwt.return @@ Opium.Response.of_plain_text ""
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref1 in
-  let* response = wrapped_handler req in
+  let%lwt response = wrapped_handler req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
   let cookie = response |> Opium.Response.cookies |> List.hd in
@@ -264,17 +263,17 @@ let two_post_requests_succeed _ () =
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref2 in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
-  let* response = wrapped_handler req in
+  let%lwt response = wrapped_handler req in
   let cookie = response |> Opium.Response.cookies |> List.hd in
   let post_req =
     Opium.Request.of_urlencoded ~body:[ "_csrf", [ !token_ref2 ] ] "/foo" `POST
     |> Opium.Request.add_cookie cookie.Opium.Cookie.value
   in
   let wrapped_handler = apply_middlewares @@ handler token_ref3 in
-  let* response = wrapped_handler post_req in
+  let%lwt response = wrapped_handler post_req in
   let status = Opium.Response.status response |> Opium.Status.to_code in
   Alcotest.(check int "Has status 200" 200 status);
   Alcotest.(

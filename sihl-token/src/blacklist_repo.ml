@@ -72,8 +72,7 @@ module MariaDb : Sig = struct
   ;;
 
   let has token =
-    let open Lwt.Syntax in
-    let* token = find_opt token in
+    let%lwt token = find_opt token in
     Lwt.return @@ Option.is_some token
   ;;
 
@@ -178,8 +177,7 @@ module PostgreSql : Sig = struct
   ;;
 
   let has token =
-    let open Lwt.Syntax in
-    let* token = find_opt token in
+    let%lwt token = find_opt token in
     Lwt.return @@ Option.is_some token
   ;;
 

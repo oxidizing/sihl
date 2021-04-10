@@ -47,7 +47,6 @@ let middleware
     ()
   =
   let filter handler req =
-    let open Lwt.Syntax in
     let check_csrf =
       Core_configuration.is_production ()
       || Option.value (Core_configuration.read_bool "CHECK_CSRF") ~default:false
@@ -56,8 +55,8 @@ let middleware
     then
       (* Consume CSRF token so Sihl.Web.Form can be used properly *)
       handler (set "development" req)
-    else
-      let* token = Opium.Request.urlencoded input_name req in
+    else (
+      let%lwt token = Opium.Request.urlencoded input_name req in
       (* Create a new token for each request to mitigate BREACH attack *)
       let new_token = Core_random.base64 80 in
       let req = set new_token req in
@@ -97,7 +96,7 @@ let middleware
                    received token '%s'"
                   stored_token
                   received_token);
-            construct_response not_allowed_handler))
+            construct_response not_allowed_handler)))
   in
   Rock.Middleware.create ~name:"csrf" ~filter
 ;;

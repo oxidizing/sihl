@@ -1,4 +1,6 @@
 (library
  (name sihl_user)
  (public_name sihl-user)
- (libraries sihl))
+ (libraries sihl)
+ (preprocess
+  (pps lwt_ppx)))

@@ -1,5 +1,3 @@
-open Lwt.Syntax
-
 let get_log_level () =
   match Sys.getenv_opt "LOG_LEVEL" with
   | Some "debug" -> Some Logs.Debug
@@ -37,14 +35,14 @@ let lwt_file_reporter () =
         | Logs.Error -> logs_dir ^ "/error.log"
         | _ -> logs_dir ^ "/app.log"
       in
-      let* log =
+      let%lwt log =
         Lwt_io.open_file
           ~flags:[ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND ]
           ~perm:0o777
           ~mode:Lwt_io.Output
           name
       in
-      let* () =
+      let%lwt () =
         match level with
         | Logs.Error -> Lwt_io.write log (err_flush ())
         | _ -> Lwt_io.write log (app_flush ())

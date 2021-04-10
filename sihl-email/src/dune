@@ -1,7 +1,9 @@
 (library
  (name sihl_email)
  (public_name sihl-email)
- (libraries sihl cohttp cohttp-lwt-unix letters))
+ (libraries sihl cohttp cohttp-lwt-unix letters)
+ (preprocess
+  (pps ppx_deriving_yojson lwt_ppx)))
 
 (documentation
  (package sihl-email))

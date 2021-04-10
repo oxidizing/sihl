@@ -8,8 +8,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
   let find_opt ~id = Repo.get_file ~id
 
   let find ~id =
-    let open Lwt.Syntax in
-    let* file = Repo.get_file ~id in
+    let%lwt file = Repo.get_file ~id in
     match file with
     | None ->
       raise (Sihl.Contract.Storage.Exception ("File not found with id " ^ id))
@@ -17,17 +16,15 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
   ;;
 
   let delete ~id =
-    let open Lwt.Syntax in
-    let* file = find ~id in
+    let%lwt file = find ~id in
     let blob_id = file.Sihl.Contract.Storage.blob in
-    let* () = Repo.delete_file ~id:file.file.id in
+    let%lwt () = Repo.delete_file ~id:file.file.id in
     Repo.delete_blob ~id:blob_id
   ;;
 
   let upload_base64 file ~base64 =
-    let open Lwt.Syntax in
     let blob_id = Uuidm.v `V4 |> Uuidm.to_string in
-    let* blob =
+    let%lwt blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
         Logs.err (fun m ->
@@ -35,16 +32,15 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
         raise (Sihl.Contract.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
-    let* () = Repo.insert_blob ~id:blob_id ~blob in
+    let%lwt () = Repo.insert_blob ~id:blob_id ~blob in
     let stored_file = Sihl.Contract.Storage.{ file; blob = blob_id } in
-    let* () = Repo.insert_file ~file:stored_file in
+    let%lwt () = Repo.insert_file ~file:stored_file in
     Lwt.return stored_file
   ;;
 
   let update_base64 file ~base64 =
-    let open Lwt.Syntax in
     let blob_id = file.Sihl.Contract.Storage.blob in
-    let* blob =
+    let%lwt blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->
         Logs.err (fun m ->
@@ -52,15 +48,14 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
         raise (Sihl.Contract.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
-    let* () = Repo.update_blob ~id:blob_id ~blob in
-    let* () = Repo.update_file ~file in
+    let%lwt () = Repo.update_blob ~id:blob_id ~blob in
+    let%lwt () = Repo.update_file ~file in
     Lwt.return file
   ;;
 
   let download_data_base64_opt file =
-    let open Lwt.Syntax in
     let blob_id = file.Sihl.Contract.Storage.blob in
-    let* blob = Repo.get_blob ~id:blob_id in
+    let%lwt blob = Repo.get_blob ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
@@ -71,9 +66,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
   ;;
 
   let download_data_base64 file =
-    let open Lwt.Syntax in
     let blob_id = file.Sihl.Contract.Storage.blob in
-    let* blob = Repo.get_blob ~id:blob_id in
+    let%lwt blob = Repo.get_blob ~id:blob_id in
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->

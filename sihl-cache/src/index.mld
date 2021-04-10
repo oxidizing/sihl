@@ -31,10 +31,10 @@ Run pending migrations with [make sihl migrate].
 The API is documented in {!Sihl.Contract.Cache.Sig}.
 
 {[
-  let open Lwt.Syntax in
+  
   (* Associated user_id with a value *)
-  let* () = Service.Cache.set ("user_id", Some "56") in
-  let* user_id = Service.Cache.find "user_id" in
+  let%lwt () = Service.Cache.set ("user_id", Some "56") in
+  let%lwt user_id = Service.Cache.find "user_id" in
   let () =
     match user_id with
     | Some user_id -> print_endline @@ "Found user " ^ user_id
