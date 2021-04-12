@@ -1,4 +1,7 @@
 ## ?
+### Added
+- Add CLI generators as built-in CLI commands `gen.service` (for generating CRUD services), `gen.view` (for generating CRUD views) and `gen.html` (for generating CRUD RESTful resources)
+
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps
 - Rework built-in commands (`start` is now `server`, commands are namespaced with `.`)
