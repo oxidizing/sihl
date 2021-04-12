@@ -188,7 +188,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
           create_admin ~email ~password ~username:(Some username)
           |> Lwt.map ignore
           |> Lwt.map Option.some
-        | _ -> Lwt.return @@ None)
+        | _ -> Lwt.return None)
   ;;
 
   let lifecycle =

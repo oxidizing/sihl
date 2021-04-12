@@ -32,7 +32,7 @@ depends: [
   "conf-libssl" {= "3"}
   "conf-pkg-config" {= "2"}
   "conf-zlib" {= "1"}
-  "conformist" {= "0.4.0"}
+  "conformist" {= "0.5.0"}
   "containers" {= "3.3"}
   "cppo" {= "1.6.7"}
   "cryptokit" {= "1.16.1"}

@@ -94,6 +94,7 @@ let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app 
       ; configuration_commands
       ; service_commands
       ; commands
+      ; Gen.commands
       ]
   in
   (* Make sure that the secret is valid *)

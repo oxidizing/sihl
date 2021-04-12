@@ -631,6 +631,7 @@ let pizzas =
 ;;
 ]}
 
+
 {1 Database}
 
 Most Sihl services have MariaDB and PostgreSQL backends, SQLite is planned as well. However, Sihl doesn't make any assumptions about the persistence layer so you are free to bring your own tools and libraries.
@@ -833,6 +834,101 @@ server
 todo.add
 user.admin
 v}
+
+{2 Generators}
+
+Sihl has built-in generators [gen.service], [gen.view] and [gen.html]. Similar to Rails they help you generating resources, services, repositories and HTML views. Unlike Rails, Sihl doesn't have an abstraction layer for data access (such as an ORM). You should be familiar with SQL.
+
+The generators create files and folders before printing instructions for manual steps to finalize the generation. [gen.html] can create a fully functional CRUD web interface from a schema.
+
+Generators are CLI commands just like [migrate], run the generator commands without any arguments to display help text describing its usage.
+
+{3 Service}
+
+{v
+$ make sihl gen.service mariadb order order_number:int premium:bool price:int location:string delivery_date:datetime
+2021-04-12T16:20:46-00:00 [INFO] [sihl.core.app]: Setting up...
+2021-04-12T16:20:46-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
+Wrote file 'sihl-demo/app/context/order/order.ml'
+Wrote file 'sihl-demo/app/context/order/order.mli'
+Wrote file 'sihl-demo/app/context/order/model.ml'
+Wrote file 'sihl-demo/app/context/order/repo.ml'
+Wrote file 'sihl-demo/app/context/order/dune'
+Wrote file 'sihl-demo/test/order/test.ml'
+Wrote file 'sihl-demo/test/order/dune'
+Wrote file 'sihl-demo/database/order.ml'
+Command 'gen.service' ran successfully in 1.614ms
+v}
+
+[gen.service] generates a service, a model, a reposiory, migrations, and some simple CRUD tests. Note that you have to specify the service name and the database you are using. You can run the tests right after generation.
+
+The created model type contains an [id] of UUID V4 as [string], [created_at] as [Ptime.t] and [updated_at] as [Ptime.t].
+
+{3 View}
+
+{v
+$ make sihl gen.view order order_number:int premium:bool price:int location:string delivery_date:datetime
+2021-04-12T16:25:48-00:00 [INFO] [sihl.core.app]: Setting up...
+2021-04-12T16:25:48-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
+Wrote file 'sihl-demo/web/view/order/dune'
+Wrote file 'sihl-demo/web/view/order/view_order.ml'
+Command 'gen.view' ran successfully in 1.527ms
+v}
+
+[gen.view] generates an HTML view for a resource. Note that you don't have to specify a database.
+
+{3 HTML Resource}
+
+{[
+$ make sihl gen.html mariadb order order_number:int premium:bool price:int location:string delivery_date:datetime
+2021-04-13T07:19:08-00:00 [INFO] [sihl.core.app]: Setting up...
+2021-04-13T07:19:08-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
+Wrote file 'sihl-demo/app/context/order/order.ml'
+Wrote file 'sihl-demo/app/context/order/order.mli'
+Wrote file 'sihl-demo/app/context/order/model.ml'
+Wrote file 'sihl-demo/app/context/order/repo.ml'
+Wrote file 'sihl-demo/app/context/order/dune'
+Wrote file 'sihl-demo/test/order/test.ml'
+Wrote file 'sihl-demo/test/order/dune'
+Wrote file 'sihl-demo/database/order.ml'
+Wrote file 'sihl-demo/web/view/order/dune'
+Wrote file 'sihl-demo/web/view/order/view_order.ml'
+
+Resource 'orders' created.
+
+Copy this route
+
+    let order =
+      Sihl.Web.choose
+        ~middlewares:
+          [ Sihl.Web.Middleware.csrf ()
+          ; Sihl.Web.Middleware.flash ()
+          ]
+        (Rest.resource
+          "orders"
+          Order.schema
+          (module Order : Rest.SERVICE with type t = Order.t)
+          (module View_order : Rest.VIEW with type t = Order.t))
+    ;;
+
+into your `routes/routes.ml` and mount it with the HTTP service. Don't forget to add 'order' and 'view_order' to routes/dune.
+
+Add the migration
+
+    Database.Order.all
+
+to the list of migrations before running `sihl migrate`.
+You should also run `make format` to apply your styling rules.
+
+Command 'gen.html' ran successfully in 1.964ms
+]}
+
+[gen.html] generates a service, a model, a reposiory, simple CRUD tests and an HTML view. Note that you have to specify the service name and the database you are using. You need to do the steps listed manually in order to test the resource.
+Once your project compiles, run the tests and browse the root path of the resources to use the fully functional CRUD form.
+
+{3 JSON Resource}
+
+This is not yet implemented. Please {{:https://github.com/oxidizing/sihl/issues} open an issue} if you need this feature.
 
 {2 Randomness}
 
