@@ -9,9 +9,10 @@ module type Sig = sig
   val lifecycles : Sihl.Container.lifecycle list
 
   val search
-    :  [< `Desc | `Asc ]
+    :  [ `Desc | `Asc ]
     -> string option
-    -> int
+    -> limit:int
+    -> offset:int
     -> (Model.t list * int) Lwt.t
 
   val get : id:string -> Model.t option Lwt.t
@@ -145,21 +146,27 @@ struct
         FROM user_users |sql}
   ;;
 
-  let found_rows_query = {sql| SELECT COUNT(*) FROM user_users |sql}
+  let count_query = {sql| SELECT COUNT(*) FROM user_users |sql}
 
-  let requests =
-    Sihl.Database.prepare_requests
-      search_query
-      found_rows_query
-      filter_fragment
-      "id"
+  let request =
+    Sihl.Database.prepare_search_request
+      ~search_query
+      ~count_query
+      ~filter_fragment
+      ~sort_by_field:"id"
       user
   ;;
 
-  let search sort filter limit =
+  let search sort filter ~limit ~offset =
     Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Sihl.Database.run_request connection requests sort filter limit)
+        Sihl.Database.run_search_request
+          connection
+          request
+          sort
+          filter
+          ~limit
+          ~offset)
   ;;
 
   let get_request =
@@ -375,21 +382,27 @@ struct
         FROM user_users |sql}
   ;;
 
-  let found_rows_query = {sql| SELECT COUNT(*) FROM user_users |sql}
+  let count_query = {sql| SELECT COUNT(*) FROM user_users |sql}
 
-  let requests =
-    Sihl.Database.prepare_requests
-      search_query
-      found_rows_query
-      filter_fragment
-      "id"
+  let request =
+    Sihl.Database.prepare_search_request
+      ~search_query
+      ~count_query
+      ~filter_fragment
+      ~sort_by_field:"id"
       user
   ;;
 
-  let search sort filter limit =
+  let search sort filter ~limit ~offset =
     Sihl.Database.query (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Sihl.Database.run_request connection requests sort filter limit)
+        Sihl.Database.run_search_request
+          connection
+          request
+          sort
+          filter
+          ~limit
+          ~offset)
   ;;
 
   let get_request =

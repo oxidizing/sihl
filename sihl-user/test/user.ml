@@ -153,7 +153,9 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         ~password:"123123123"
         ~username:None
     in
-    let%lwt actual_users, meta = UserService.search ~filter:"%user1%" 10 in
+    let%lwt actual_users, meta =
+      UserService.search ~filter:"%user1%" ~limit:10 ()
+    in
     Alcotest.(check int "has correct meta" 3 meta);
     Alcotest.(check (list alcotest) "has one user" [ user1 ] actual_users);
     Lwt.return ()
@@ -179,10 +181,52 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         ~password:"123123123"
         ~username:None
     in
-    let%lwt actual_users, meta = UserService.search ~filter:"%user%" 10 in
+    let%lwt actual_users, meta =
+      UserService.search ~filter:"%user%" ~limit:10 ()
+    in
     Alcotest.(check int "has correct meta" 3 meta);
     Alcotest.(
-      check (list alcotest) "has one user" [ user3; user2; user1 ] actual_users);
+      check (list alcotest) "has all users" [ user3; user2; user1 ] actual_users);
+    let%lwt actual_users, meta =
+      UserService.search ~filter:"%user%" ~limit:10 ~offset:2 ()
+    in
+    Alcotest.(check int "has correct meta" 3 meta);
+    Alcotest.(check (list alcotest) "has one user" [ user1 ] actual_users);
+    Lwt.return ()
+  ;;
+
+  let sort_users _ () =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt user1 =
+      UserService.create_user
+        ~email:"user1@example.com"
+        ~password:"123123123"
+        ~username:None
+    in
+    let%lwt user2 =
+      UserService.create_user
+        ~email:"user2@example.com"
+        ~password:"123123123"
+        ~username:None
+    in
+    let%lwt user3 =
+      UserService.create_user
+        ~email:"user3@example.com"
+        ~password:"123123123"
+        ~username:None
+    in
+    let%lwt actual_users, meta =
+      UserService.search ~sort:`Desc ~filter:"%user%" ~limit:10 ()
+    in
+    Alcotest.(check int "has correct meta" 3 meta);
+    Alcotest.(
+      check (list alcotest) "has all users" [ user3; user2; user1 ] actual_users);
+    let%lwt actual_users, meta =
+      UserService.search ~sort:`Asc ~filter:"%user%" ~limit:10 ()
+    in
+    Alcotest.(check int "has correct meta" 3 meta);
+    Alcotest.(
+      check (list alcotest) "has all users" [ user1; user2; user3 ] actual_users);
     Lwt.return ()
   ;;
 
@@ -291,6 +335,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
             "filter users by email returns all users"
             `Quick
             filter_users_by_email_returns_all_users
+        ; test_case "sort users" `Quick sort_users
         ] )
     ; ( "web"
       , [ test_case "user from token" `Quick Web.user_from_token

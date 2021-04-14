@@ -829,13 +829,6 @@ end
 module Database : sig
   include Contract_database.Sig
 
-  type config =
-    { url : string
-    ; pool_size : int option
-    }
-
-  val config : string -> int option -> config
-  val schema : (string, string -> int option -> config, config) Conformist.t
   val used_database : unit -> Contract_database.database_type option
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t

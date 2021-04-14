@@ -3,6 +3,12 @@
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps
 - Rework built-in commands (`start` is now `server`, commands are namespaced with `.`)
 - The command function in `Sihl.Command.make` returns `unit option Lwt.t` and Sihl takes care of printing the usage if `Lwt.return None` is returned
+- Replaced `Sihl.Database.prepare_requests` with `Sihl.Database.prepare_search_request`
+- Replaced `Sihl.Database.run_request` with `Sihl.Database.run_search_request`
+- Make search query type `'a Sihl.Database.prepared_search_query` abstract to reduce API clutter. The search queries are highly specific to the implementation and are not likely to be re-used independently from `run_search_request`.
+
+### Added
+- The `search` function of the user service from `sihl-user` takes an optional argument `offset`. This allows you to implement offset based pagination.
 
 ## [0.5.0] - 2021-04-10
 ### Added
