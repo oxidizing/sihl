@@ -59,7 +59,9 @@ module type Sig = sig
   val search
     :  ?sort:[ `Desc | `Asc ]
     -> ?filter:string
-    -> int
+    -> ?limit:int
+    -> ?offset:int
+    -> unit
     -> (t list * int) Lwt.t
 
   val find_opt : user_id:string -> t option Lwt.t

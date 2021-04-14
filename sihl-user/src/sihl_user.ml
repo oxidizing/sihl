@@ -34,7 +34,9 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       raise (Sihl.Contract.User.Exception "User not found")
   ;;
 
-  let search ?(sort = `Desc) ?filter limit = Repo.search sort filter limit
+  let search ?(sort = `Desc) ?filter ?(limit = 50) ?(offset = 0) () =
+    Repo.search sort filter ~limit ~offset
+  ;;
 
   let update_password
       ?(password_policy = default_password_policy)

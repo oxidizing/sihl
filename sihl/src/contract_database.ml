@@ -8,29 +8,82 @@ let name = "database"
 exception Exception of string
 
 module type Sig = sig
-  val prepare_requests
-    :  string
-    -> string
-    -> string
-    -> string
+  (** ['a prepared_search_request] is a prepared SQL statement that can be used
+      to sort, filter and paginate (= search) a collection. *)
+  type 'a prepared_search_request
+
+  val prepare_requests : string -> string -> string -> string
+    (* Deprecated in 0.6.0 *)
+    [@@deprecated "Use prepare_search_request instead"]
+
+  (** [prepare_search_request ~search_query ~count_query ~filter_fragment
+      ?sort_by_field type] returns a prepared SQL statement
+      ['a prepared_search_request] by assembling the SQL query from the provided
+      fragments.
+
+      [search_query] is the [SELECT ... FROM table] part of the query.
+
+      [count_query] is a query that is executed by Sihl after the search in
+      order to obtain the total number of items in the table. For example
+      [SELECT COUNT(\*\) FROM table].
+
+      [filter_fragment] is the fragment that is appended to [search_query] for
+      filtering. Usually you want ot [OR] fields that are often searched for.
+      For example
+      [WHERE table.field1 LIKE $1 OR table.field2 $1 OR table.field3 LIKE $1].
+
+      [sort_by_field] is an optional field name that is used for sorting. By
+      default, the field "id" is used. Note that in order to prepare the
+      requests, the sort field has to be known beforehand. If you want to
+      dynamically set the field, you need to write your own query at runtime.
+
+      [type] is the caqti type of an item of the collection. *)
+  val prepare_search_request
+    :  search_query:string
+    -> count_query:string
+    -> filter_fragment:string
+    -> ?sort_by_field:string
     -> 'a Caqti_type.t
-    -> (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (string * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-       * (unit, int, [< `Many | `One | `Zero > `One ]) Caqti_request.t
+    -> 'a prepared_search_request
 
   val run_request
     :  (module Caqti_lwt.CONNECTION)
-    -> ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * ('a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * ('c * 'a, 'b, [< `Many | `One | `Zero ]) Caqti_request.t
-       * (unit, int, [< `One ]) Caqti_request.t
+    -> 'a prepared_search_request
     -> [< `Asc | `Desc ]
     -> 'c option
     -> 'a
     -> ('b list * int) Lwt.t
+    (* Deprecated in 0.6.0 *)
+    [@@deprecated "Use run_search_request instead"]
+
+  (** [run_search_request connection prepared_request sort filter ~limit
+      ~offset] runs the [prepared_request] and returns a partial result of the
+      whole stored collection. The second element of the result tuple is the
+      total amount of items in the whole collection.
+
+      [prepared_request] is the returned prepared request by
+      {!prepare_search_request}.
+
+      [sort] is the sort order. The field that is sorted by was set by
+      {!prepare_search_request}.
+
+      [filter] is an optional keyword that is used to filter the collection. If
+      no filter is provided, the collection is not filtered.
+
+      [offset] is the number of items that the returned partial result is offset
+      by.
+
+      [limit] is the number of items of the returned partial result.
+
+      [offset] and [limit] can be used together to implement pagination. *)
+  val run_search_request
+    :  (module Caqti_lwt.CONNECTION)
+    -> 'a prepared_search_request
+    -> [ `Asc | `Desc ]
+    -> string option
+    -> limit:int
+    -> offset:int
+    -> ('a list * int) Lwt.t
 
   (** [raise_error err] raises a printable caqti error [err] .*)
   val raise_error : ('a, Caqti_error.t) Result.t -> 'a

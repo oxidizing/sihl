@@ -732,6 +732,79 @@ If you have complex pre-conditions, you should move the service calls to the [da
 
 {1 Digging Deeper}
 
+{2 Pagination & Search}
+
+Displaying things and collections of things is a common thing in web development. Often we don't want to display all the items that are stored, but present the user a nice interface to search collections.
+
+Sihl services usually follow a convention where they expose a function
+
+{[
+val search:
+  ?sort:[ `Asc | `Desc ] ->
+  ?filter:string ->
+  ?limit:int ->
+  ?offset:int ->
+  unit ->
+  (t list * int) Lwt.t
+]}
+
+that can be used to fetch, sort and filter a partial view on the whole collection of [t].
+
+To implement your own function with this signature, use {!Sihl.Database.prepare_search_request} and {!Sihl.Database.run_search_request}:
+
+{[
+  let filter_fragment =
+    {sql|
+        WHERE user_users.email LIKE $1
+          OR user_users.username LIKE $1
+          OR user_users.status LIKE $1 |sql}
+  ;;
+
+  let search_query =
+    {sql|
+        SELECT
+          uuid,
+          email,
+          username,
+          password,
+          status,
+          admin,
+          confirmed,
+          created_at,
+          updated_at
+        FROM user_users |sql}
+  ;;
+
+  (* We need to escape this SQL query because
+     it breaks syntax highlghting of the documentation *)
+  let count_query = {sql| SELECT COUNT(\*\) FROM user_users |sql}
+
+  let request =
+    Sihl.Database.prepare_search_request
+      ~search_query
+      ~count_query
+      ~filter_fragment
+      ~sort_by_field:"id"
+      user
+  ;;
+
+  let search sort filter ~limit ~offset =
+    Sihl.Database.query (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        Sihl.Database.run_search_request
+          connection
+          request
+          sort
+          filter
+          ~limit
+          ~offset)
+  ;;
+]}
+
+Note that if you need features like sorting on multiple columns or complex filters, you have to take care of safely building your SQL queries at runtime. The approach shown above is safe from SQL injection, fast (due to prepared statements) and simple to use.
+
+Using offset-based pagination comes with {{:https://uxdesign.cc/why-facebook-says-cursor-pagination-is-the-greatest-d6b98d86b6c0}some drawbacks} that you should be aware of.
+
 {2 Compiling assets}
 
 This feature is still to be implemented. For now, store your source assets in [resources].

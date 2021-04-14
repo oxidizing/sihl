@@ -15,72 +15,104 @@ let raise_error err =
   | Ok result -> result
 ;;
 
-let prepare_requests
-    search_query
-    count_query
-    filter_fragment
-    sort_field
+type 'a prepared_search_request =
+  { asc_request : (int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  ; desc_request : (int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  ; filter_asc_request :
+      (string * int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  ; filter_desc_request :
+      (string * int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  ; count_request : (unit, int, [ `One ]) Caqti_request.t
+  }
+
+let prepare_requests _ _ _ = failwith "prepare_requests deprecated"
+
+let prepare_search_request
+    ~search_query
+    ~count_query
+    ~filter_fragment
+    ?(sort_by_field = "id")
     output_type
+    : 'a prepared_search_request
   =
   let asc_request =
-    let input_type = Caqti_type.int in
+    let input_type = Caqti_type.(tup2 int int) in
     let query =
-      Printf.sprintf "%s ORDER BY %s ASC %s" search_query sort_field "LIMIT $1"
+      Printf.sprintf
+        "%s ORDER BY %s ASC %s"
+        search_query
+        sort_by_field
+        "LIMIT $1 OFFSET $2"
     in
     Caqti_request.collect input_type output_type query
   in
   let desc_request =
-    let input_type = Caqti_type.int in
+    let input_type = Caqti_type.(tup2 int int) in
     let query =
-      Printf.sprintf "%s ORDER BY %s DESC %s" search_query sort_field "LIMIT $1"
+      Printf.sprintf
+        "%s ORDER BY %s DESC %s"
+        search_query
+        sort_by_field
+        "LIMIT $1 OFFSET $2"
     in
     Caqti_request.collect input_type output_type query
   in
   let filter_asc_request =
-    let input_type = Caqti_type.(tup2 string int) in
+    let input_type = Caqti_type.(tup3 string int int) in
     let query =
       Printf.sprintf
         "%s %s ORDER BY %s ASC %s"
         search_query
         filter_fragment
-        sort_field
-        "LIMIT $2"
+        sort_by_field
+        "LIMIT $2 OFFSET $3"
     in
     Caqti_request.collect input_type output_type query
   in
   let filter_desc_request =
-    let input_type = Caqti_type.(tup2 string int) in
+    let input_type = Caqti_type.(tup3 string int int) in
     let query =
       Printf.sprintf
         "%s %s ORDER BY %s DESC %s"
         search_query
         filter_fragment
-        sort_field
-        "LIMIT $2"
+        sort_by_field
+        "LIMIT $2 OFFSET $3"
     in
     Caqti_request.collect input_type output_type query
   in
   let count_request =
     Caqti_request.find ~oneshot:true Caqti_type.unit Caqti_type.int count_query
   in
-  ( asc_request
-  , desc_request
-  , filter_asc_request
-  , filter_desc_request
-  , count_request )
+  { asc_request
+  ; desc_request
+  ; filter_asc_request
+  ; filter_desc_request
+  ; count_request
+  }
 ;;
 
-let run_request connection requests sort filter limit =
+let run_request _ _ _ _ _ = failwith "prepare_requests deprecated"
+
+let run_search_request
+    connection
+    (r : 'a prepared_search_request)
+    (sort : [ `Asc | `Desc ])
+    (filter : string option)
+    ~(limit : int)
+    ~(offset : int)
+  =
   let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-  let r1, r2, r3, r4, r5 = requests in
   let%lwt result =
     match sort, filter with
-    | `Asc, None -> Connection.collect_list r1 limit
-    | `Desc, None -> Connection.collect_list r2 limit
-    | `Asc, Some filter -> Connection.collect_list r3 (filter, limit)
-    | `Desc, Some filter -> Connection.collect_list r4 (filter, limit)
+    | `Asc, None -> Connection.collect_list r.asc_request (limit, offset)
+    | `Desc, None -> Connection.collect_list r.desc_request (limit, offset)
+    | `Asc, Some filter ->
+      Connection.collect_list r.filter_asc_request (filter, limit, offset)
+    | `Desc, Some filter ->
+      Connection.collect_list r.filter_desc_request (filter, limit, offset)
   in
-  let%lwt amount = Connection.find r5 () in
+  let%lwt amount = Connection.find r.count_request () in
   CCResult.both result amount |> raise_error |> Lwt.return
 ;;
 
