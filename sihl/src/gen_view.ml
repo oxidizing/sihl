@@ -116,7 +116,7 @@ let index req csrf ({{name}}s : {{module}}.t list) =
   Lwt.return @@ page alert notice [ create_link; table ]
 ;;
 
-let new' req csrf (form : Sihl.Web.Rest.Form.t) =
+let new' req csrf (form : Sihl.Web.Rest.form) =
   let notice = Sihl.Web.Flash.find_notice req in
   let alert = Sihl.Web.Flash.find_alert req in
   let form =
@@ -145,7 +145,7 @@ let show req ({{name}} : {{module}}.t) =
   Lwt.return @@ page alert notice [ body ]
 ;;
 
-let edit req csrf (form : Sihl.Web.Rest.Form.t) ({{name}} : {{module}}.t) =
+let edit req csrf (form : Sihl.Web.Rest.form) ({{name}} : {{module}}.t) =
   let notice = Sihl.Web.Flash.find_notice req in
   let alert = Sihl.Web.Flash.find_alert req in
   let form =
@@ -230,7 +230,7 @@ let form_values schema =
   |> List.map fst
   |> List.map (fun name ->
          Format.sprintf
-           "let old_%s, %s_error = Sihl.Web.Rest.Form.find \"%s\" form in"
+           "let old_%s, %s_error = Sihl.Web.Rest.find_form \"%s\" form in"
            name
            name
            name)
