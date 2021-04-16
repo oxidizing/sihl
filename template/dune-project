@@ -1,0 +1,34 @@
+(lang dune 2.0)
+
+(name app)
+
+(documentation "https://yourname.github.io/app/")
+
+(source
+ (github yourname/app))
+
+(license MIT)
+
+(authors
+  "Your name")
+
+(maintainers
+  "Your name")
+
+(generate_opam_files true)
+
+(package
+ (name app)
+ (synopsis "A short, but powerful statement about your project")
+ (description "\
+A short, but powerful statement about your project
+")
+ (depends
+  (ocaml (>= 4.08.0))
+  dune
+  (sihl (= 0.5.0))
+  (tyxml-ppx (>= 4.4.0))
+  (caqti-driver-postgresql
+   (>= 1.2.1))
+  (alcotest-lwt :with-test)
+  (odoc :with-doc)))

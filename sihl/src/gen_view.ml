@@ -171,7 +171,7 @@ let edit req csrf (form : Sihl.Web.Rest.form) ({{name}} : {{module}}.t) =
 let dune_template =
   {|(library
  (name view_{{name}})
- (libraries tyxml rest sihl service {{name}})
+ (libraries tyxml sihl service {{name}})
  (preprocess
   (pps tyxml-ppx)))
 |}

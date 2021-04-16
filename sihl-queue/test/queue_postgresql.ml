@@ -1,5 +1,5 @@
 let services =
-  [ Sihl.Schedule.register ()
+  [ Sihl.Schedule.register []
   ; Sihl.Database.register ()
   ; Sihl.Database.Migration.PostgreSql.register ()
   ; Sihl_queue.PostgreSql.register ()

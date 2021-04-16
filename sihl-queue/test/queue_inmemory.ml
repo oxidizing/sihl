@@ -1,4 +1,4 @@
-let services = [ Sihl.Schedule.register (); Sihl_queue.InMemory.register () ]
+let services = [ Sihl.Schedule.register []; Sihl_queue.InMemory.register () ]
 
 module Test = Queue.Make (Sihl_queue.InMemory)
 

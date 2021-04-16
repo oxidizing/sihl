@@ -1,16 +1,18 @@
 let service =
   Core_command.make
-    ~name:"gen.service"
+    ~name:"gen.model"
     ~help:
       "<database> <service name> <name>:<type> <name>:<type> <name>:<type> ... \n\
        Supported types are: int | float | bool | string | datetime \n\
        Supported databases are: mariadb | postgresql"
-    ~description:"Generates a service, tests and migrations."
+    ~description:
+      "Generates a model consisting of a service, an entityt, a repository, \
+       tests and migrations."
     (function
-      | database :: service_name :: schema ->
+      | database :: model_name :: schema ->
         (match Gen_core.schema_of_string schema with
         | Ok schema ->
-          Gen_service.generate database service_name schema;
+          Gen_model.generate database model_name schema;
           Lwt.return @@ Some ()
         | Error msg ->
           print_endline msg;
@@ -22,7 +24,7 @@ let view =
   Core_command.make
     ~name:"gen.view"
     ~help:
-      "<service name> <name>:<type> <name>:<type> <name>:<type> ... \n\
+      "<model name> <name>:<type> <name>:<type> <name>:<type> ... \n\
        Supported types are: int, float, bool, string, datetime"
     ~description:
       "Generates an HTML view that contains a form to create and update a \
@@ -39,7 +41,7 @@ let view =
       | [] -> Lwt.return None)
 ;;
 
-let html_help service_name module_name =
+let html_help model_name module_name =
   Format.sprintf
     {|
 Resource '%ss' created. To finalize the generation:
@@ -71,18 +73,18 @@ to the list of migrations before running `sihl migrate`.
 
 4.) Visit http://localhost:3000/%ss
 |}
-    service_name
-    service_name
-    service_name
+    model_name
+    model_name
+    model_name
     module_name
     module_name
     module_name
-    service_name
+    model_name
     module_name
-    service_name
-    service_name
+    model_name
+    model_name
     module_name
-    service_name
+    model_name
 ;;
 
 let html =
@@ -97,13 +99,13 @@ let html =
        an HTML resource. This generator is a combination of gen.service and \
        gen.view."
     (function
-      | database :: service_name :: schema ->
+      | database :: model_name :: schema ->
         (match Gen_core.schema_of_string schema with
         | Ok schema ->
-          let module_name = String.capitalize_ascii service_name in
-          Gen_service.generate database service_name schema;
-          Gen_view.generate service_name schema;
-          print_endline @@ html_help service_name module_name;
+          let module_name = String.capitalize_ascii model_name in
+          Gen_model.generate database model_name schema;
+          Gen_view.generate model_name schema;
+          print_endline @@ html_help model_name module_name;
           Lwt.return @@ Some ()
         | Error msg ->
           print_endline msg;

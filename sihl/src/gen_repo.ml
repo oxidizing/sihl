@@ -169,7 +169,7 @@ let clean () =
       Connection.exec clean_request ())
 ;;
 
-let insert ({{name}} : Model.t) =
+let insert ({{name}} : Entity.t) =
   Sihl.Database.query' (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.exec
@@ -177,7 +177,7 @@ let insert ({{name}} : Model.t) =
         {{caqti_value}})
 ;;
 
-let update ({{name}} : Model.t) =
+let update ({{name}} : Entity.t) =
   Sihl.Database.query' (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.exec
@@ -185,7 +185,7 @@ let update ({{name}} : Model.t) =
         {{caqti_value_update}})
 ;;
 
-let find (id : string) : Model.t option Lwt.t =
+let find (id : string) : Entity.t option Lwt.t =
   let open Lwt.Syntax in
   let* {{name}} =
     Sihl.Database.query' (fun connection ->
@@ -195,11 +195,11 @@ let find (id : string) : Model.t option Lwt.t =
   Lwt.return
   @@ Option.map
        (fun {{destructured_fields}} ->
-         Model.{ id; {{created_value}} created_at; updated_at })
+         Entity.{ id; {{created_value}} created_at; updated_at })
        {{name}}
 ;;
 
-let find_all () : Model.t list Lwt.t =
+let find_all () : Entity.t list Lwt.t =
   let open Lwt.Syntax in
   let* {{name}}s =
     Sihl.Database.query' (fun connection ->
@@ -209,14 +209,14 @@ let find_all () : Model.t list Lwt.t =
   Lwt.return
   @@ List.map
        ~f:(fun {{destructured_fields}} ->
-         Model.{ id; {{created_value}} created_at; updated_at })
+         Entity.{ id; {{created_value}} created_at; updated_at })
        {{name}}s
 ;;
 
-let delete ({{name}} : Model.t) : unit Lwt.t =
+let delete ({{name}} : Entity.t) : unit Lwt.t =
   Sihl.Database.query' (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec delete_request {{name}}.Model.id)
+      Connection.exec delete_request {{name}}.Entity.id)
 ;;
 |}
 ;;
@@ -257,11 +257,11 @@ let caqti_type_update (schema : Gen_core.schema) =
 let caqti_value name (schema : Gen_core.schema) =
   let rec loop = function
     | [ el1; el2 ] ->
-      let el1 = Format.sprintf "%s.Model.%s" name el1 in
-      let el2 = Format.sprintf "%s.Model.%s" name el2 in
+      let el1 = Format.sprintf "%s.Entity.%s" name el1 in
+      let el2 = Format.sprintf "%s.Entity.%s" name el2 in
       Format.sprintf "(%s, %s)" el1 el2
     | el1 :: rest ->
-      let el1 = Format.sprintf "%s.Model.%s" name el1 in
+      let el1 = Format.sprintf "%s.Entity.%s" name el1 in
       Format.sprintf "(%s, %s)" el1 (loop rest)
     | [] -> failwith "Empty schema provided"
   in
@@ -275,11 +275,11 @@ let caqti_value name (schema : Gen_core.schema) =
 let caqti_value_update name (schema : Gen_core.schema) =
   let rec loop = function
     | [ el1; el2 ] ->
-      let el1 = Format.sprintf "%s.Model.%s" name el1 in
-      let el2 = Format.sprintf "%s.Model.%s" name el2 in
+      let el1 = Format.sprintf "%s.Entity.%s" name el1 in
+      let el2 = Format.sprintf "%s.Entity.%s" name el2 in
       Format.sprintf "(%s, %s)" el1 el2
     | el1 :: rest ->
-      let el1 = Format.sprintf "%s.Model.%s" name el1 in
+      let el1 = Format.sprintf "%s.Entity.%s" name el1 in
       Format.sprintf "(%s, %s)" el1 (loop rest)
     | [] -> failwith "Empty schema provided"
   in
@@ -330,7 +330,7 @@ let file
     ; "caqti_value", caqti_value name schema
     ; "caqti_value_update", caqti_value_update name schema
     ; "destructured_fields", destructured_fields schema
-    ; "created_value", Gen_model.created_value schema
+    ; "created_value", Gen_entity.created_value schema
     ; "fields", fields schema
     ; "update_fields", update_fields schema
     ; "parameters", parameters schema

@@ -192,8 +192,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     let schedule =
       Sihl.Schedule.create
         Sihl.Schedule.every_second
-        ~f:scheduled_function
-        ~label:"job_queue"
+        scheduled_function
+        "job_queue"
     in
     stop_schedule := Some (Sihl.Schedule.schedule schedule);
     Lwt.return ()

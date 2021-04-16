@@ -110,13 +110,12 @@ let write_files_and_create_dir path files =
   List.iter (fun file -> write_file file path) files
 ;;
 
-let write_in_context (context : string) (files : file list) : unit =
+let write_in_domain (context : string) (files : file list) : unit =
   let root = Core_configuration.root_path () |> Option.get in
-  let context_path = Format.sprintf "%s/app/context/%s" root context in
-  match Bos.OS.Dir.exists (Fpath.of_string context_path |> Result.get_ok) with
-  | Ok true ->
-    failwith (Format.sprintf "Context '%s' exists already" context_path)
-  | Ok false | Error _ -> write_files_and_create_dir context_path files
+  let model_path = Format.sprintf "%s/app/domain/%s" root context in
+  match Bos.OS.Dir.exists (Fpath.of_string model_path |> Result.get_ok) with
+  | Ok true -> failwith (Format.sprintf "Model '%s' exists already" model_path)
+  | Ok false | Error _ -> write_files_and_create_dir model_path files
 ;;
 
 let write_in_test (name : string) (files : file list) : unit =
@@ -152,7 +151,7 @@ let database_of_string = function
   | database ->
     failwith
       (Format.sprintf
-         "Invalid database provided '%s', only 'mariadb' and 'postgresq' \
+         "Invalid database provided '%s', only 'mariadb' and 'postgresql' \
           supported"
          database)
 ;;

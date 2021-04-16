@@ -1,5 +1,5 @@
 let services =
-  [ Sihl.Schedule.register ()
+  [ Sihl.Schedule.register []
   ; Sihl.Database.register ()
   ; Sihl.Database.Migration.MariaDb.register ()
   ; Sihl_queue.MariaDb.register ()
