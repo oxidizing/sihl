@@ -1,0 +1,5 @@
+(library
+ (name view)
+ (libraries tyxml sihl service)
+ (preprocess
+  (pps tyxml-ppx)))

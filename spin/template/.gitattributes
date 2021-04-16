@@ -1,0 +1,12 @@
+# Tell github that .ml and .mli files are OCaml
+*.ml linguist-language=OCaml
+*.mli linguist-language=OCaml
+# Disable syntax detection for .spin
+.spin linguist-language=Text
+
+# Declare shell files to have LF endings on checkout
+# On Windows, the default git setting for `core.autocrlf`
+# means that when checking out code, LF endings get converted
+# to CRLF. This causes problems for shell scripts, as bash
+# gets choked up on the extra `\r` character.
+* text eol=lf

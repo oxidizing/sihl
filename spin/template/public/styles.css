@@ -1,0 +1,10 @@
+.container {
+    margin-top: 50px;
+}
+
+.hello {
+    font-size: 40px;
+    color: grey;
+    font-weight: 600;
+    text-align: center;
+}

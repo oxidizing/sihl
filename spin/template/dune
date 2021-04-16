@@ -1,0 +1,4 @@
+(env
+ (dev
+  (flags
+   (:standard -open StdLabels -w +A-48-42-44 -warn-error +A-3))))
