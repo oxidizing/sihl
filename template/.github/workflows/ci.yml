@@ -1,0 +1,69 @@
+name: CI
+
+on: [push, pull_request]
+
+
+jobs:
+  build:
+    name: Build and test
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        ocaml-version:
+          - 4.11.1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Retrieve opam cache
+        uses: actions/cache@v2
+        if: runner.os != 'Windows'
+        id: cache-opam
+        with:
+          path: ~/.opam
+          key: v1-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-${{ hashFiles('app.opam.locked') }}
+          restore-keys: |
+            v1-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      - name: Update opam repository
+        if: steps.cache-opam.outputs.cache-hit != 'true'
+        run: opam update
+
+      - name: Pin package
+        run: opam pin add app.dev . --no-action
+
+      - name: Query and install external dependencies
+        run: opam depext app --yes --with-doc --with-test
+
+      - name: Install dependencies
+        if: steps.cache-opam.outputs.cache-hit != 'true'
+        run: |
+          opam install . --deps-only --with-doc --with-test --locked --unlock-base
+          opam install ocamlformat --skip-updates
+
+      - name: Upgrade dependencies
+        run: opam upgrade --fixup
+        if: steps.cache-opam.outputs.cache-hit == 'true'
+
+      - name: Build
+        run: make build
+
+      - name: Check formatting
+        run: make format
+
+      - name: Run tests
+        run: make test
+

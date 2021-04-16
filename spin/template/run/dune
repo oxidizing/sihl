@@ -1,3 +1,0 @@
-(executable
- (name run)
- (libraries sihl service routes database command {%- if database == 'PostgreSql' %} caqti-driver-postgresql{%- else %} caqti-driver-mariadb{%- endif %}))

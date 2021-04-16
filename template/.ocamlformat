@@ -1,0 +1,4 @@
+profile = janestreet
+parse-docstrings = true
+wrap-comments = true
+margin = 80

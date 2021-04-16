@@ -54,7 +54,7 @@ The default Sihl application structure is intended to provide a great starting p
 {v
 ├── app
 │   ├── command
-│   ├── context
+│   ├── domain
 │   ├── schedule
 ├── database
 ├── logs
@@ -178,23 +178,21 @@ The [view] directory contains HTML and JSON views that render response bodies.
 {5 The Command Directory}
 The [command] directory contains custom CLI commands that can be executed alongside the built-in commands. Next to HTTP, this is the other way to interact with your app.
 
-{5 The Context Directory}
-The [context] contains your application logic. You are free to structure your code however you like. It is not possible to depend on any of the [web] modules in here.
+{5 The Domain Directory}
+The [domain] contains your application logic as models. You are free to structure your code however you like. It is not possible to depend on any of the [web] modules in here.
 
-The term context comes from {{:https://martinfowler.com/bliki/BoundedContext.html} Bounded Context}.
+We suggest that an approach that is inspired by {{:https://martinfowler.com/tags/domain%20driven%20design.html} Domain-Driven-Design}. You start with a service, a [entity.ml] and a [repository.ml] for every model. The service is named after the model. Let's say the model is called [app/domain/shopping], then your service is [app/domain/shopping/shopping.ml].
+Once you identify other models, you can extract them. As an example you could extract a model [app/domain/customer]. Grow your app in terms of models and be mindful about the dependencies between them.
 
-We suggest that an approach that is inspired by {{:https://martinfowler.com/tags/domain%20driven%20design.html} Domain-Driven-Design}. You start with a service, a [model.ml] and a [repository.ml] for every context. The service is named after the context. Let's say the context is called [app/context/shopping], then your service is [app/context/shopping/shopping.ml].
-Once you identify other contexts, you can extract them. As an example you could extract a context [app/context/customer]. Grow your app in terms of contexts and be mindful about the dependencies between them.
+The [entity.ml] file contains types and pure business logic. You are not allowed to do I/O like network requests here. Try to have as much as of your application as possible in entities, as they are easy to test and understand.
 
-The [model.ml] file contains types and pure business logic. You are not allowed to do I/O like network requests here. Try to have as much as of your application as possible in models, as they are easy to test and understand.
+The [repository.ml] file contains database queries and helpers. You can have your database types which might differ from the business types defined in [entity.ml].
 
-The [repository.ml] file contains database queries and helpers. You can have your database types which might differ from the business types defined in [model.ml].
-
-The service file contains code that glues pure business logic in [model.ml] to the impure [repository.ml]. The service exposes a public API that other contexts and services can use. It is not allowed to use repositories of other services directly.
+The service file contains code that glues pure business logic in [entity.ml] to the impure [repository.ml]. The service exposes a public API that other domains and services can use. It is not allowed to use repositories of other services directly.
 
 Sihl provides you with the surrounding infrastructure services like session handling, user management, job queues and many more.
 
-The app in [app/context] should not depend on infrastructure services. A well designed app will run with other web frameworks after minimal adjustments.
+The app in [app/domain] should not depend on infrastructure services if possible. A well designed app will run with other web frameworks after minimal adjustments.
 
 {5 The Schedule Directory}
 The [schedule] directory contains schedules (or crons jobs) that run periodically.
@@ -845,7 +843,7 @@ Run one of the following commands with the argument "help" for more information.
 config
 gen.html
 gen.json
-gen.service
+gen.model
 gen.view
 migrate
 random
@@ -898,7 +896,7 @@ Run one of the following commands with the argument "help" for more information.
 config
 gen.html
 gen.json
-gen.service
+gen.model
 gen.view
 migrate
 random
@@ -910,7 +908,7 @@ v}
 
 {2 Generators}
 
-Sihl has built-in generators [gen.service], [gen.view] and [gen.html]. Similar to Rails they help you generating resources, services, repositories and HTML views. Unlike Rails, Sihl doesn't have an abstraction layer for data access (such as an ORM). You should be familiar with SQL.
+Sihl has built-in generators [gen.model], [gen.view] and [gen.html]. Similar to Rails they help you generating resources, services, repositories and HTML views. Unlike Rails, Sihl doesn't have an abstraction layer for data access (such as an ORM). You should be familiar with SQL.
 
 The generators create files and folders before printing instructions for manual steps to finalize the generation. [gen.html] can create a fully functional CRUD web interface from a schema.
 
@@ -919,21 +917,21 @@ Generators are CLI commands just like [migrate], run the generator commands with
 {3 Service}
 
 {v
-$ make sihl gen.service mariadb order order_number:int premium:bool price:int location:string delivery_date:datetime
+$ make sihl gen.model mariadb order order_number:int premium:bool price:int location:string delivery_date:datetime
 2021-04-12T16:20:46-00:00 [INFO] [sihl.core.app]: Setting up...
 2021-04-12T16:20:46-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
-Wrote file 'sihl-demo/app/context/order/order.ml'
-Wrote file 'sihl-demo/app/context/order/order.mli'
-Wrote file 'sihl-demo/app/context/order/model.ml'
-Wrote file 'sihl-demo/app/context/order/repo.ml'
-Wrote file 'sihl-demo/app/context/order/dune'
+Wrote file 'sihl-demo/app/domain/order/order.ml'
+Wrote file 'sihl-demo/app/domain/order/order.mli'
+Wrote file 'sihl-demo/app/domain/order/entity.ml'
+Wrote file 'sihl-demo/app/domain/order/repo.ml'
+Wrote file 'sihl-demo/app/domain/order/dune'
 Wrote file 'sihl-demo/test/order/test.ml'
 Wrote file 'sihl-demo/test/order/dune'
 Wrote file 'sihl-demo/database/order.ml'
-Command 'gen.service' ran successfully in 1.614ms
+Command 'gen.model' ran successfully in 1.614ms
 v}
 
-[gen.service] generates a service, a model, a reposiory, migrations, and some simple CRUD tests. Note that you have to specify the service name and the database you are using. You can run the tests right after generation.
+[gen.model] generates a model consisting of a service, an entity, a reposiory, migrations, and some simple CRUD tests. Note that you have to specify the model name and the database you are using. You can run the tests right after generation.
 
 The created model type contains an [id] of UUID V4 as [string], [created_at] as [Ptime.t] and [updated_at] as [Ptime.t].
 
@@ -956,11 +954,11 @@ v}
 $ make sihl gen.html mariadb order order_number:int premium:bool price:int location:string delivery_date:datetime
 2021-04-13T07:19:08-00:00 [INFO] [sihl.core.app]: Setting up...
 2021-04-13T07:19:08-00:00 [INFO] [sihl.core.configuration]: SIHL_ENV: development
-Wrote file 'sihl-demo/app/context/order/order.ml'
-Wrote file 'sihl-demo/app/context/order/order.mli'
-Wrote file 'sihl-demo/app/context/order/model.ml'
-Wrote file 'sihl-demo/app/context/order/repo.ml'
-Wrote file 'sihl-demo/app/context/order/dune'
+Wrote file 'sihl-demo/app/domain/order/order.ml'
+Wrote file 'sihl-demo/app/domain/order/order.mli'
+Wrote file 'sihl-demo/app/domain/order/entity.ml'
+Wrote file 'sihl-demo/app/domain/order/repo.ml'
+Wrote file 'sihl-demo/app/domain/order/dune'
 Wrote file 'sihl-demo/test/order/test.ml'
 Wrote file 'sihl-demo/test/order/dune'
 Wrote file 'sihl-demo/database/order.ml'

@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := all
 
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+ARGS := $(subst :,\:,$(ARGS))
 $(eval $(ARGS):;@:)
 
 .PHONY: all

@@ -18,7 +18,7 @@ let run_in schedule ~now:_ =
 ;;
 
 let scheduled_function schedule = schedule.fn
-let create scheduled_time ~f ~label = { label; scheduled_time; fn = f }
+let create scheduled_time f label = { label; scheduled_time; fn = f }
 let every_second = Every Core_time.OneSecond
 let every_hour = Every Core_time.OneHour
 let log_src = Logs.Src.create "sihl.service.schedule"
@@ -67,7 +67,7 @@ let start ctx =
 let stop _ = Lwt.return ()
 let lifecycle = Core_container.create_lifecycle "schedule" ~start ~stop
 
-let register ?(schedules = []) () =
+let register schedules =
   registered_schedules := schedules;
   Core_container.Service.create lifecycle
 ;;
