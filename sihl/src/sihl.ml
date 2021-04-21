@@ -102,6 +102,7 @@ module Web = struct
     let error = Web_error.middleware
     let flash = Web_flash.middleware
     let id = Web_id.middleware
+    let migration = Web_migration.middleware
     let trailing_slash = Web_trailing_slash.middleware
     let static_file = Web_static.middleware
   end

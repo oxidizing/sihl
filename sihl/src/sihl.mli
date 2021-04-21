@@ -731,6 +731,16 @@ module Web : sig
         highly unlikely. *)
     val id : unit -> Rock.Middleware.t
 
+    (** [migration fetch_pending_migrations] returns a middleware that shows a
+        warning page in case there are pending migrations. The middleware shows
+        a generic internal error page if [SIHL_ENV] is [production] to not leak
+        information.
+
+        [fetch_pending_migrations] is a function that returns a list of pending
+        migrations. Use the [pending_migration] function of the migration
+        service. If the returned list is empty, there are no pending migrations.*)
+    val migration : (unit -> (string * int) list Lwt.t) -> Rock.Middleware.t
+
     (** [trailing_slash ()] returns a middleware that removes all trailing
         slashes [/] from the request URI path. Apply it globally (before the
         router) to make sure that a path [/foo/bar/] matches the route
