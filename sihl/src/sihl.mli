@@ -731,6 +731,14 @@ module Web : sig
         highly unlikely. *)
     val id : unit -> Rock.Middleware.t
 
+    (** [trailing_slash ()] returns a middleware that removes all trailing
+        slashes [/] from the request URI path. Apply it globally (before the
+        router) to make sure that a path [/foo/bar/] matches the route
+        [/foo/bar].
+
+        Multiple trailing slashes are removed. *)
+    val trailing_slash : unit -> Rock.Middleware.t
+
     (** [static_file ()] returns a middleware that serves static files.
 
         The directory that is served can be configured with [PUBLIC_DIR]. By
