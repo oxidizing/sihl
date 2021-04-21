@@ -187,11 +187,7 @@ struct
         |sql}
   ;;
 
-  let get ~id =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id |> Lwt.map Database.raise_error)
-  ;;
+  let get ~id = Database.find_opt get_request id
 
   let get_by_email_request =
     Caqti_request.find_opt
@@ -219,12 +215,7 @@ struct
         |sql}
   ;;
 
-  let get_by_email ~email =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email
-        |> Lwt.map Database.raise_error)
-  ;;
+  let get_by_email ~email = Database.find_opt get_by_email_request email
 
   let insert_request =
     Caqti_request.exec
@@ -254,11 +245,7 @@ struct
         |sql}
   ;;
 
-  let insert ~user =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request user |> Lwt.map Database.raise_error)
-  ;;
+  let insert ~user = Database.exec insert_request user
 
   let update_request =
     Caqti_request.exec
@@ -278,18 +265,9 @@ struct
         |sql}
   ;;
 
-  let update ~user =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request user |> Lwt.map Database.raise_error)
-  ;;
-
+  let update ~user = Database.exec update_request user
   let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE user_users;"
-
-  let clean () =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Database.raise_error)
-  ;;
+  let clean () = Database.exec clean_request ()
 
   let register_migration () =
     MigrationService.register_migration (Migration.migration ())
@@ -409,11 +387,7 @@ struct
         |sql}
   ;;
 
-  let get ~id =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_request id |> Lwt.map Database.raise_error)
-  ;;
+  let get ~id = Database.find_opt get_request id
 
   let get_by_email_request =
     Caqti_request.find_opt
@@ -435,12 +409,7 @@ struct
         |sql}
   ;;
 
-  let get_by_email ~email =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_by_email_request email
-        |> Lwt.map Database.raise_error)
-  ;;
+  let get_by_email ~email = Database.find_opt get_by_email_request email
 
   let insert_request =
     Caqti_request.exec
@@ -470,11 +439,7 @@ struct
         |sql}
   ;;
 
-  let insert ~user =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request user |> Lwt.map Database.raise_error)
-  ;;
+  let insert ~user = Database.exec insert_request user
 
   let update_request =
     Caqti_request.exec
@@ -494,20 +459,13 @@ struct
         |sql}
   ;;
 
-  let update ~user =
-    Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request user |> Lwt.map Database.raise_error)
-  ;;
+  let update ~user = Database.exec update_request user
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE user_users CASCADE;"
   ;;
 
-  let clean () =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Database.raise_error)
-  ;;
+  let clean () = Database.exec clean_request ()
 
   let register_migration () =
     MigrationService.register_migration (Migration.migration ())

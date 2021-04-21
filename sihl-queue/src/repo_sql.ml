@@ -103,12 +103,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let enqueue job_instance =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec enqueue_request job_instance
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let enqueue job_instance = Sihl.Database.exec enqueue_request job_instance
 
   (* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
      populate, we have to do that manually. *)
@@ -161,12 +156,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let update job_instance =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request job_instance
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let update job_instance = Sihl.Database.exec update_request job_instance
 
   let find_workable_request =
     Caqti_request.collect
@@ -198,12 +188,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find_workable () =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list find_workable_request ()
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let find_workable () = Sihl.Database.collect find_workable_request ()
 
   let query =
     Caqti_request.collect
@@ -232,11 +217,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let query () =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list query ())
-  ;;
+  let query () = Sihl.Database.collect query ()
 
   let find_request =
     Caqti_request.find_opt
@@ -264,11 +245,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find id =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt find_request id)
-  ;;
+  let find id = Sihl.Database.find_opt find_request id
 
   let delete_request =
     Caqti_request.exec
@@ -280,20 +257,14 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
   ;;
 
   let delete (job : Sihl.Contract.Queue.instance) =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_request job.id)
+    Sihl.Database.exec delete_request job.id
   ;;
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
   ;;
 
-  let clean () =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let clean () = Sihl.Database.exec clean_request ()
 
   module Migration = struct
     let fix_collation =
@@ -396,12 +367,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let enqueue job_instance =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec enqueue_request job_instance
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let enqueue job_instance = Sihl.Database.exec enqueue_request job_instance
 
   let enqueue_all job_instances =
     Sihl.Database.transaction' (fun connection ->
@@ -443,12 +409,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let update job_instance =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_request job_instance
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let update job_instance = Sihl.Database.exec update_request job_instance
 
   let find_workable_request =
     Caqti_request.collect
@@ -474,12 +435,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find_workable () =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list find_workable_request ()
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let find_workable () = Sihl.Database.collect find_workable_request ()
 
   let query =
     Caqti_request.collect
@@ -501,11 +457,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let query () =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.collect_list query ())
-  ;;
+  let query () = Sihl.Database.collect query ()
 
   let find_request =
     Caqti_request.find_opt
@@ -527,11 +479,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find id =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt find_request id)
-  ;;
+  let find id = Sihl.Database.find_opt find_request id
 
   let delete_request =
     Caqti_request.exec
@@ -543,20 +491,14 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
   ;;
 
   let delete (job : Sihl.Contract.Queue.instance) =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_request job.id)
+    Sihl.Database.exec delete_request job.id
   ;;
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
   ;;
 
-  let clean () =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let clean () = Sihl.Database.exec clean_request ()
 
   module Migration = struct
     let create_jobs_table =

@@ -22,10 +22,7 @@ let find_request =
         |sql}
 ;;
 
-let find key =
-  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.find_opt find_request key |> Lwt.map Sihl.Database.raise_error)
-;;
+let find key = Sihl.Database.find_opt find_request key
 
 let insert_request =
   Caqti_request.exec
@@ -41,11 +38,7 @@ let insert_request =
         |sql}
 ;;
 
-let insert key_value =
-  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec insert_request key_value
-      |> Lwt.map Sihl.Database.raise_error)
-;;
+let insert key_value = Sihl.Database.exec insert_request key_value
 
 let update_request =
   Caqti_request.exec
@@ -57,11 +50,7 @@ let update_request =
         |sql}
 ;;
 
-let update key_value =
-  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec update_request key_value
-      |> Lwt.map Sihl.Database.raise_error)
-;;
+let update key_value = Sihl.Database.exec update_request key_value
 
 let delete_request =
   Caqti_request.exec
@@ -72,17 +61,9 @@ let delete_request =
       |sql}
 ;;
 
-let delete key =
-  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec delete_request key |> Lwt.map Sihl.Database.raise_error)
-;;
-
+let delete key = Sihl.Database.exec delete_request key
 let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE cache;"
-
-let clean () =
-  Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-;;
+let clean () = Sihl.Database.exec clean_request ()
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct
