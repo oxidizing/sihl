@@ -11,6 +11,7 @@ module Site = struct
   let middlewares =
     [ Opium.Middleware.content_length
     ; Opium.Middleware.etag
+    ; Sihl.Web.Middleware.migration Service.Migration.pending_migrations
     ; Sihl.Web.Middleware.csrf ()
     ; Sihl.Web.Middleware.flash ()
     ]
