@@ -1,4 +1,4 @@
-type database_type =
+type database =
   | MariaDb
   | PostgreSql
 
@@ -92,6 +92,41 @@ module type Sig = sig
   val fetch_pool
     :  unit
     -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
+
+  (** [find_opt request input] runs a caqti [request] in the connection pool
+      where [input] is the input of the caqti request and returns one row or
+      [None]. Returns [None] if no rows are found.
+
+      Note that the caqti request is only allowed to return one or zero rows,
+      not many. *)
+  val find_opt
+    :  ('a, 'b, [< `One | `Zero ]) Caqti_request.t
+    -> 'a
+    -> 'b option Lwt.t
+
+  (** [find request input] runs a caqti [request] on the connection pool where
+      [input] is the input of the caqti request and returns one row. Raises an
+      exception if no row was found.
+
+      Note that the caqti request is only allowed to return one or zero rows,
+      not many. *)
+  val find : ('a, 'b, [< `One ]) Caqti_request.t -> 'a -> 'b Lwt.t
+
+  (** [collect request input] runs a caqti [request] on the connection pool
+      where [input] is the input of the caqti request and retuns a list of rows.
+
+      Note that the caqti request is allowed to return one, zero or many rows. *)
+  val collect
+    :  ('a, 'b, [< `One | `Zero | `Many ]) Caqti_request.t
+    -> 'a
+    -> 'b list Lwt.t
+
+  (** [exec request input] runs a caqti [request] on the connection pool.
+
+      Note that the caqti request is not allowed to return any rows.
+
+      Use {!exec} to run mutations. *)
+  val exec : ('b, unit, [< `Zero ]) Caqti_request.t -> 'b -> unit Lwt.t
 
   (** [query f] runs the query [f] on the connection pool and returns the
       result. If the query fails the Lwt.t fails as well. *)

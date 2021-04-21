@@ -101,10 +101,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find value =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find find_request value |> Lwt.map Database.raise_error)
-    ;;
+    let find value = Database.find find_request value
 
     let find_request_opt =
       Caqti_request.find_opt
@@ -129,11 +126,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find_opt value =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_request_opt value
-          |> Lwt.map Database.raise_error)
-    ;;
+    let find_opt value = Database.find_opt find_request_opt value
 
     let find_by_id_request =
       Caqti_request.find
@@ -158,10 +151,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find_by_id id =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find find_by_id_request id |> Lwt.map Database.raise_error)
-    ;;
+    let find_by_id id = Database.find find_by_id_request id
 
     let insert_request =
       Caqti_request.exec
@@ -185,10 +175,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let insert token =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request token |> Lwt.map Database.raise_error)
-    ;;
+    let insert token = Database.exec insert_request token
 
     let update_request =
       Caqti_request.exec
@@ -204,19 +191,13 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let update token =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request token |> Lwt.map Database.raise_error)
-    ;;
+    let update token = Database.exec update_request token
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
     ;;
 
-    let clean () =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Database.raise_error)
-    ;;
+    let clean () = Database.exec clean_request ()
   end
 
   module Migration = struct
@@ -297,10 +278,7 @@ struct
         |sql}
     ;;
 
-    let find value =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find find_request value |> Lwt.map Database.raise_error)
-    ;;
+    let find value = Database.find find_request value
 
     let find_request_opt =
       Caqti_request.find_opt
@@ -319,11 +297,7 @@ struct
         |sql}
     ;;
 
-    let find_opt value =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt find_request_opt value
-          |> Lwt.map Database.raise_error)
-    ;;
+    let find_opt value = Database.find_opt find_request_opt value
 
     let find_by_id_request =
       Caqti_request.find
@@ -342,10 +316,7 @@ struct
         |sql}
     ;;
 
-    let find_by_id id =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find find_by_id_request id |> Lwt.map Database.raise_error)
-    ;;
+    let find_by_id id = Database.find find_by_id_request id
 
     let insert_request =
       Caqti_request.exec
@@ -369,10 +340,7 @@ struct
         |sql}
     ;;
 
-    let insert token =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request token |> Lwt.map Database.raise_error)
-    ;;
+    let insert token = Database.exec insert_request token
 
     let update_request =
       Caqti_request.exec
@@ -389,19 +357,13 @@ struct
         |sql}
     ;;
 
-    let update token =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request token |> Lwt.map Database.raise_error)
-    ;;
+    let update token = Database.exec update_request token
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens CASCADE;"
     ;;
 
-    let clean () =
-      Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Database.raise_error)
-    ;;
+    let clean () = Database.exec clean_request ()
   end
 
   module Migration = struct

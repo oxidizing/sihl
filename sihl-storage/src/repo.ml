@@ -52,11 +52,7 @@ struct
          |sql}
   ;;
 
-  let insert_file ~file =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_request file |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let insert_file ~file = Sihl.Database.exec insert_request file
 
   let update_file_request =
     Caqti_request.exec
@@ -72,12 +68,7 @@ struct
          |sql}
   ;;
 
-  let update_file ~file =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_file_request file
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let update_file ~file = Sihl.Database.exec update_file_request file
 
   let get_file_request =
     Caqti_request.find_opt
@@ -107,12 +98,7 @@ struct
          |sql}
   ;;
 
-  let get_file ~id =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_file_request id
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let get_file ~id = Sihl.Database.find_opt get_file_request id
 
   let delete_file_request =
     Caqti_request.exec
@@ -123,12 +109,7 @@ struct
          |sql}
   ;;
 
-  let delete_file ~id =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_file_request id
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let delete_file ~id = Sihl.Database.exec delete_file_request id
 
   let get_blob_request =
     Caqti_request.find_opt
@@ -142,12 +123,7 @@ struct
          |sql}
   ;;
 
-  let get_blob ~id =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt get_blob_request id
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let get_blob ~id = Sihl.Database.find_opt get_blob_request id
 
   let insert_blob_request =
     Caqti_request.exec
@@ -163,12 +139,7 @@ struct
          |sql}
   ;;
 
-  let insert_blob ~id ~blob =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec insert_blob_request (id, blob)
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let insert_blob ~id ~blob = Sihl.Database.exec insert_blob_request (id, blob)
 
   let update_blob_request =
     Caqti_request.exec
@@ -181,12 +152,7 @@ struct
          |sql}
   ;;
 
-  let update_blob ~id ~blob =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec update_blob_request (id, blob)
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let update_blob ~id ~blob = Sihl.Database.exec update_blob_request (id, blob)
 
   let delete_blob_request =
     Caqti_request.exec
@@ -198,32 +164,19 @@ struct
          |sql}
   ;;
 
-  let delete_blob ~id =
-    Sihl.Database.query (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.exec delete_blob_request id
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let delete_blob ~id = Sihl.Database.exec delete_blob_request id
 
   let clean_handles_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE storage_handles;"
   ;;
 
-  let clean_handles () =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_handles_request ()
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let clean_handles () = Sihl.Database.exec clean_handles_request ()
 
   let clean_blobs_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE storage_blobs;"
   ;;
 
-  let clean_blobs () =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_blobs_request ()
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let clean_blobs () = Sihl.Database.exec clean_blobs_request ()
 
   let fix_collation =
     Sihl.Database.Migration.create_step

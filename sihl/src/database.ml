@@ -246,6 +246,30 @@ let query f =
 
 let query' f = query f |> Lwt.map raise_error
 
+let find_opt request input =
+  query' (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.find_opt request input)
+;;
+
+let find request input =
+  query' (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.find request input)
+;;
+
+let collect request input =
+  query' (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.collect_list request input)
+;;
+
+let exec request input =
+  query' (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.exec request input)
+;;
+
 let used_database () =
   let host =
     (Core_configuration.read schema).url |> Uri.of_string |> Uri.host
@@ -253,7 +277,8 @@ let used_database () =
   match host with
   | Some "mariadb" -> Some Contract_database.MariaDb
   | Some "mysql" -> Some Contract_database.MariaDb
-  | Some "postgresql" -> Some Contract_database.PostgreSql
+  | Some "postgresql" | Some "postgres" | Some "pg" ->
+    Some Contract_database.PostgreSql
   | Some not_supported ->
     Logs.warn (fun m -> m "Unsupported database %s found" not_supported);
     None

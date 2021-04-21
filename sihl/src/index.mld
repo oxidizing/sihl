@@ -61,8 +61,7 @@ The default Sihl application structure is intended to provide a great starting p
 ├── public
 ├── resources
 ├── routes
-│   └── site.ml
-│   └── api.ml
+│   └── routes.ml
 ├── run
 │   └── run.ml
 ├── service
@@ -92,11 +91,11 @@ The [public] directory is served by the HTTP server of Sihl. It is the target di
 The [resource] directory contains the source code of the static assets that are served from the [public] directory. Put the source code of your any JavaScript projects here for instance.
 
 {4 The Routes Directory}
-The [routes] directory contains all of the route definitions for your application. By default, two route files are included with Sihl: [site.ml] and [api.ml].
+The [routes] directory contains all of the route definitions for your application. By default, two routers are created: One for [site]s and one for JSON [API]s.
 
-The [site.ml] file contains routes that are using sessions, CSRF protection and flash messages. If your application doesn't have a JSON API then it is likely that all of your routes will be here.
+The [site] router is using sessions, CSRF protection and flash messages. If your application doesn't have a JSON API then it is likely that all of your routes will be here.
 
-The [api.ml] file contains routes that are intended to be stateless, and are using tokens and request limiting.
+The [api] router contains routes that are intended to be stateless, and are using tokens and request limiting.
 
 {4 The Run Directory}
 The [run] directory is the main entry point of the executable that is your Sihl app. The [run.ml] file knows all other modules and it is the single place where you wire up your app.
@@ -641,7 +640,7 @@ The {!Sihl.Database} module provides functions for querying the database, runnin
 
 The database service creates and manages a connection pool. Configure the pool size with [DATABASE_POOL_SIZE], the default is [10]. Connection pools are used to decrease latency by keeping datbase connections open.
 
-The main two functions to run queries on the connection pool are {!val:Sihl.Database.query} and {!val:Sihl.Database.transaction}.
+The main functions to run queries on the connection pool are {!val:Sihl.Database.find}, {!val:Sihl.Database.find_opt}, {!val:Sihl.Database.exec}, {!val:Sihl.Database.collect}. Use these to run caqti requests directly on the connection pool.
 
 {[
 let find_request =
@@ -656,23 +655,44 @@ let find_request =
         |sql}
 ;;
 
+let find key = Sihl.Database.find_opt find_request key
+;;
+
+]}
+
+If you need to run multiple caqti requests on the same connection, use {!val:Sihl.Database.query}.
+
+{[
+let request1 = (* ... *)
+let request2 = (* ... *)
+;;
+
 let find key =
   Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.find_opt find_request key |> Lwt.map Sihl.Database.raise_error)
-;;
-
-(* or *)
-
-let find key =
-  Sihl.Database.query' (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.find_opt find_request key)
-;;
-
+      let%lwt result1 = Connection.find_opt request1 key |> Lwt.map Sihl.Database.raise_error in
+      let%lwt result2 = Connection.find_opt request2 key |> Lwt.map Sihl.Database.raise_error
+      Lwt.return (result1, result2))
 ]}
 
 {3 Transactions}
 
 Use {!Sihl.Database.transaction} and {!Sihl.Database.transaction'} to run queries in a database transaction.
+
+{[
+let query_with_transaction _ () =
+  let%lwt usernames =
+    Sihl.Database.query (fun connection ->
+        let%lwt () = drop_table_if_exists connection in
+        let%lwt () = create_table_if_not_exists connection in
+        Sihl.Database.transaction (fun connection ->
+            let%lwt () = insert_username connection "foobar trx" in
+            get_usernames connection))
+  in
+  let username = List.find (String.equal "foobar trx") usernames in
+  Alcotest.(check string "has username" "foobar trx" username);
+  Lwt.return ()
+;;
+]}
 
 {2 Migrations}
 

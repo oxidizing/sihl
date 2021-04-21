@@ -941,7 +941,14 @@ end
 module Database : sig
   include Contract_database.Sig
 
-  val used_database : unit -> Contract_database.database_type option
+  type database =
+    | MariaDb
+    | PostgreSql
+
+  (** [used_database ()] returns the database that is defined in [DATABASE_URL],
+      [None] if an unsupported database is used. *)
+  val used_database : unit -> database option
+
   val start : unit -> unit Lwt.t
   val stop : unit -> unit Lwt.t
   val lifecycle : Container.lifecycle

@@ -3,6 +3,7 @@
 - Add CLI generators as built-in CLI commands `gen.service` (for generating CRUD services), `gen.view` (for generating CRUD views) and `gen.html` (for generating CRUD RESTful resources)
 - `Sihl.Web.Rest.{query, to_query_string, of_query_string, next_page, previous_page, last_page, first_page, query_filter, query_sort, query_limit, query_offset}`
 - Add ParcelJS based asset pipeline to template project in `template`
+- Database helpers to conveniently run exactly one caqti request `Sihl.Database.find`, `Sihl.Database.find_opt`, `Sihl.Database.exec` and `Sihl.Database.collect`
 
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps

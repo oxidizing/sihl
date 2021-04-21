@@ -55,11 +55,7 @@ struct
         |sql}
     ;;
 
-    let get id =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_request id
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let get id = Sihl.Database.find_opt get_request id
 
     let get_by_label_request =
       Caqti_request.find_opt
@@ -84,11 +80,7 @@ struct
         |sql}
     ;;
 
-    let get_by_label label =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_by_label_request label
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let get_by_label label = Sihl.Database.find_opt get_by_label_request label
 
     let insert_request =
       Caqti_request.exec
@@ -112,11 +104,7 @@ struct
         |sql}
     ;;
 
-    let insert template =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request template
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let insert template = Sihl.Database.exec insert_request template
 
     let update_request =
       Caqti_request.exec
@@ -133,11 +121,7 @@ struct
         |sql}
     ;;
 
-    let update template =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request template
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let update template = Sihl.Database.exec update_request template
 
     let clean_request =
       Caqti_request.exec
@@ -147,10 +131,7 @@ struct
          |sql}
     ;;
 
-    let clean () =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let clean () = Sihl.Database.exec clean_request ()
   end
 
   module Migration = struct
@@ -251,11 +232,7 @@ struct
         |sql}
     ;;
 
-    let get id =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_request id
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let get id = Sihl.Database.find_opt get_request id
 
     let get_by_label_request =
       Caqti_request.find_opt
@@ -274,11 +251,7 @@ struct
         |sql}
     ;;
 
-    let get_by_label label =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt get_by_label_request label
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let get_by_label label = Sihl.Database.find_opt get_by_label_request label
 
     let insert_request =
       Caqti_request.exec
@@ -302,11 +275,7 @@ struct
         |sql}
     ;;
 
-    let insert template =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec insert_request template
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let insert template = Sihl.Database.exec insert_request template
 
     let update_request =
       Caqti_request.exec
@@ -323,11 +292,7 @@ struct
         |sql}
     ;;
 
-    let update template =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec update_request template
-          |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let update template = Sihl.Database.exec update_request template
 
     let clean_request =
       Caqti_request.exec
@@ -335,10 +300,7 @@ struct
         "TRUNCATE TABLE email_templates CASCADE;"
     ;;
 
-    let clean () =
-      Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-    ;;
+    let clean () = Sihl.Database.exec clean_request ()
   end
 
   module Migration = struct

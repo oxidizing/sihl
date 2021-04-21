@@ -186,34 +186,20 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''))
 let queries =
   {|
 
-let clean () =
-  Sihl.Database.query' (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.exec clean_request ())
+let clean () = Sihl.Database.exec clean_request ()
 ;;
 
 let insert ({{name}} : Entity.t) =
-  Sihl.Database.query' (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec
-        insert_request
-        {{caqti_value}})
+  Sihl.Database.exec insert_request {{caqti_value}}
 ;;
 
 let update ({{name}} : Entity.t) =
-  Sihl.Database.query' (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec
-        update_request
-        {{caqti_value_update}})
+  Sihl.Database.exec update_request {{caqti_value_update}}
 ;;
 
 let find (id : string) : Entity.t option Lwt.t =
   let open Lwt.Syntax in
-  let* {{name}} =
-    Sihl.Database.query' (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.find_opt find_request id)
-  in
+  let* {{name}} = Sihl.Database.find_opt find_request id in
   Lwt.return
   @@ Option.map
        (fun {{destructured_fields}} ->
@@ -228,8 +214,8 @@ let search filter sort ~limit ~offset =
       search_request
       sort
       filter
-      ~limit
-      ~offset
+     ~limit
+     ~offset
   in
   let {{name}}s =
     List.map
@@ -241,9 +227,7 @@ let search filter sort ~limit ~offset =
 ;;
 
 let delete ({{name}} : Entity.t) : unit Lwt.t =
-  Sihl.Database.query' (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec delete_request {{name}}.Entity.id)
+  Sihl.Database.exec delete_request {{name}}.Entity.id
 ;;
 |}
 ;;

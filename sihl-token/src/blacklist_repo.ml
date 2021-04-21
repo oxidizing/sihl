@@ -47,9 +47,7 @@ module MariaDb : Sig = struct
 
   let insert token =
     let now = Ptime_clock.now () in
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec insert_request (token, now)
-        |> Lwt.map Sihl.Database.raise_error)
+    Sihl.Database.exec insert_request (token, now)
   ;;
 
   let find_request_opt =
@@ -65,11 +63,7 @@ module MariaDb : Sig = struct
         |sql}
   ;;
 
-  let find_opt token =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt find_request_opt token
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let find_opt token = Sihl.Database.find_opt find_request_opt token
 
   let has token =
     let%lwt token = find_opt token in
@@ -85,11 +79,7 @@ module MariaDb : Sig = struct
         |sql}
   ;;
 
-  let delete token =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec delete_request token
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let delete token = Sihl.Database.exec delete_request token
 
   let fix_collation =
     Sihl.Database.Migration.create_step
@@ -123,11 +113,7 @@ module MariaDb : Sig = struct
     Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
   ;;
 
-  let clean () =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-  ;;
-
+  let clean () = Sihl.Database.exec clean_request ()
   let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end
 
@@ -152,9 +138,7 @@ module PostgreSql : Sig = struct
 
   let insert token =
     let now = Ptime_clock.now () in
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec insert_request (token, now)
-        |> Lwt.map Sihl.Database.raise_error)
+    Sihl.Database.exec insert_request (token, now)
   ;;
 
   let find_request_opt =
@@ -170,11 +154,7 @@ module PostgreSql : Sig = struct
         |sql}
   ;;
 
-  let find_opt token =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.find_opt find_request_opt token
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let find_opt token = Sihl.Database.find_opt find_request_opt token
 
   let has token =
     let%lwt token = find_opt token in
@@ -190,11 +170,7 @@ module PostgreSql : Sig = struct
         |sql}
   ;;
 
-  let delete token =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec delete_request token
-        |> Lwt.map Sihl.Database.raise_error)
-  ;;
+  let delete token = Sihl.Database.exec delete_request token
 
   let create_jobs_table =
     Sihl.Database.Migration.create_step
@@ -231,10 +207,6 @@ module PostgreSql : Sig = struct
     Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
   ;;
 
-  let clean () =
-    Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec clean_request () |> Lwt.map Sihl.Database.raise_error)
-  ;;
-
+  let clean () = Sihl.Database.exec clean_request ()
   let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end

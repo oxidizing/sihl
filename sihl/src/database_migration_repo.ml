@@ -47,9 +47,7 @@ let get_request table =
 ;;
 
 let get table ~namespace =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.find_opt (get_request table) namespace
-      |> Lwt.map Database.raise_error)
+  Database.find_opt (get_request table) namespace
   |> Lwt.map (Option.map Migration.of_tuple)
 ;;
 
@@ -69,9 +67,7 @@ let get_all_request table =
 ;;
 
 let get_all table =
-  Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      Connection.collect_list (get_all_request table) ()
-      |> Lwt.map Database.raise_error)
+  Database.collect (get_all_request table) ()
   |> Lwt.map (List.map Migration.of_tuple)
 ;;
 
@@ -93,12 +89,7 @@ module MariaDb : Sig = struct
          table)
   ;;
 
-  let create_table_if_not_exists table =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec (create_request table) ()
-        |> Lwt.map Database.raise_error)
-  ;;
-
+  let create_table_if_not_exists table = Database.exec (create_request table) ()
   let get = get
   let get_all = get_all
 
@@ -123,9 +114,7 @@ module MariaDb : Sig = struct
   ;;
 
   let upsert table state =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec (upsert_request table) (Migration.to_tuple state)
-        |> Lwt.map Database.raise_error)
+    Database.exec (upsert_request table) (Migration.to_tuple state)
   ;;
 end
 
@@ -146,12 +135,7 @@ module PostgreSql : Sig = struct
          table)
   ;;
 
-  let create_table_if_not_exists table =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec (create_request table) ()
-        |> Lwt.map Database.raise_error)
-  ;;
-
+  let create_table_if_not_exists table = Database.exec (create_request table) ()
   let get = get
   let get_all = get_all
 
@@ -176,8 +160,6 @@ module PostgreSql : Sig = struct
   ;;
 
   let upsert table state =
-    Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-        Connection.exec (upsert_request table) (Migration.to_tuple state)
-        |> Lwt.map Database.raise_error)
+    Database.exec (upsert_request table) (Migration.to_tuple state)
   ;;
 end
