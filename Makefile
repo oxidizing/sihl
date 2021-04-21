@@ -96,6 +96,7 @@ test: build	## Run unit tests with dune and then all sihl tests
 	SIHL_ENV=test ./_build/default/sihl/test/web.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_flash.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_id.exe
+	SIHL_ENV=test ./_build/default/sihl/test/web_trailing_slash.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_session.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_csrf.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_http.exe
