@@ -1,0 +1,14 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "My awesome app",
+  "scripts": {
+    "build": "parcel build resources/* --dist-dir public",
+    "watch": "parcel watch resources/* --dist-dir public"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel": "^2.0.0-beta.2"
+  }
+}

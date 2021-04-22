@@ -13,3 +13,10 @@ _build/
 
 # Local OPAM switch
 _opam/
+
+# NPM
+node_modules
+
+# Assets
+public/*
+.parcel-cache
