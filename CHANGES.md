@@ -1,6 +1,7 @@
 ## ?
 ### Added
 - Add CLI generators as built-in CLI commands `gen.service` (for generating CRUD services), `gen.view` (for generating CRUD views) and `gen.html` (for generating CRUD RESTful resources)
+- Add `Sihl.Contract.User.Web.user_to_token` and `Sihl.Contract.User.Web.user_to_session` to help with the login flow
 
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps

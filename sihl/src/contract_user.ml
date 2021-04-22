@@ -34,10 +34,27 @@ module type Sig = sig
     val user_from_token
       :  ?key:string
       -> (string -> k:string -> string option Lwt.t)
-      -> Rock.Request.t
+      -> Opium.Request.t
       -> t option Lwt.t
 
-    (** [user_from_session ?cookie_key ?secret ?key ?secret request] returns the
+    (** [user_to_token ?key create_token user response] returns a response with
+        a [Bearer] token set to the [Authorization] header that has the [user]
+        associated to it. This is typically part of the login workflow. Any
+        previously set [Authorization] header is overwritten. This is typically
+        part of the login workflow.
+
+        [create_token] is a function that associates data to a string.
+        [sihl-token] can be used here. *)
+    val user_to_token
+      :  ?key:string
+      -> ((string * string) list -> string Lwt.t)
+      -> t
+      -> Opium.Response.t
+      -> Opium.Response.t Lwt.t
+
+    (** [user_from_session ?cookie_key ?secret ?key ?secret request] returns a
+        user that was associated to the session of the current [request].
+
         user that is associated to the user id in the session of the [request].
 
         [cookie_key] is the name/key of the session cookie. By default, the
@@ -52,8 +69,28 @@ module type Sig = sig
       :  ?cookie_key:string
       -> ?secret:string
       -> ?key:string
-      -> Rock.Request.t
+      -> Opium.Request.t
       -> t option Lwt.t
+
+    (** [user_to_session ?cookie_key ?secret ?key user response] returns a
+        response with a [user] associated to the session. Any previously set
+        session is overwritten. This is typically part of the login workflow.
+
+        [cookie_key] is the name/key of the session cookie. By default, the
+        value is [_session].
+
+        [secret] is used to verify the signature of the session cookie. By
+        default, [SIHL_SECRET] is used.
+
+        [key] is the key in the session associated with the user id. By default,
+        the value is [user_id]. *)
+    val user_to_session
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> ?key:string
+      -> t
+      -> Opium.Response.t
+      -> Opium.Response.t Lwt.t
   end
 
   val search
