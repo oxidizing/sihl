@@ -5,6 +5,7 @@ Clone this template to get a minimal Sihl project.
 ## Prerequisites
 
 - [opam](https://opam.ocaml.org/doc/Install.html)
+- [nodejs](https://nodejs.org/en/download/)
 
 ## Using MariaDB
 
@@ -24,8 +25,10 @@ If the compilation of the dependencies failed, you can leave the created switch 
 
 Run `make sihl`, if you see a list of commands Sihl is installed and ready!
 
+Install the asset pipeline by running `npm install`.
+
 ## Development
 
-For hot-reloading use `make dev`, this restarts Sihl after you change a file.
+For hot-reloading use `make dev`, this restarts Sihl after you change a file. In a separate process you can run `make assets_watch` to watch the `resource` directory for changes and to compile assets into the `public` directory.
 
 Use `make test` to run the tests.

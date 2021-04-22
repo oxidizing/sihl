@@ -803,7 +803,11 @@ Using offset-based pagination comes with {{:https://uxdesign.cc/why-facebook-say
 
 {2 Compiling assets}
 
-This feature is still to be implemented. For now, store your source assets in [resources].
+The project template has a asset pipeline set up that watches files in the [resource] directory and compiles assets into the [public] directory. Run [make assets] to compile the assets once and [make assets_watch] for watch for file changes.
+
+{{:https://parceljs.org/} ParcelJS} is used to have a zero configuration experience when dealing with all sorts of assets types.
+
+By default, Sihl serves static files from the [public] directory.
 
 {2 File Storage}
 

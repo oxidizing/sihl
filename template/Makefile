@@ -24,8 +24,16 @@ switch: create_switch deps ## Create an opam switch and install development depe
 lock: ## Generate a lock file
 	opam lock -y .
 
+.PHONY: assets
+assets: ## Build assets from resources into public
+	npm run build
+
+.PHONY: assets_watch
+assets_watch: ## Build assets from resources into public and watching for changes
+	npm run watch
+
 .PHONY: build
-build: ## Build the project, including non installable libraries and executables
+build: assets
 	opam exec -- dune build --root .
 
 .PHONY: install
@@ -74,7 +82,7 @@ dev:    ## Run the Sihl app, watch files and restart on change
 		PID=$$!
 	fi
 	echo
-	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|logs|Makefile)" -qq
+	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|logs|Makefile|.git|node_modules)" -qq
 	[[ $$(jobs -pr) = "" ]] || kill $$(jobs -pr)
 	echo
 	done
