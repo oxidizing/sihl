@@ -10,7 +10,7 @@ all:
 
 .PHONY: deps
 deps: ## Install development dependencies
-	opam install -y dune-release merlin ocamlformat utop
+	opam install -y dune-release merlin ocamlformat.0.18.0 utop
 	OPAMSOLVERTIMEOUT=240 opam install --deps-only --with-test --with-doc -y .
 
 .PHONY: create_switch

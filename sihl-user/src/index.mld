@@ -1,0 +1,38 @@
+{0 Sihl User}
+
+[sihl-user] takes care of user management, login, registration and forgot password workflows.
+
+{1 Backends}
+
+[sihl-user] ships with 3 backend implementations.
+
+{ul
+{- {!Sihl_user.PostgreSql}}
+{- {!Sihl_user.MariaDb}}
+}
+
+{1 Installation}
+
+{2 Backend}
+
+First, choose a backend in [service/service.ml]:
+
+{[
+module User = Sihl_user.PostgreSql
+]}
+
+{2 Registration}
+
+Register the service in [run/run.ml]:
+
+{[
+let services = [ Service.User.register () ]
+]}
+
+{2 Migrations}
+
+Run [make sihl migrate] to run pending migrations.
+
+{2 Usage}
+
+The service API is documented in {!Sihl.Contract.User.Sig}.

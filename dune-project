@@ -38,19 +38,18 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   (uuidm (>= 0.9.7))
   (lwt_ssl (>= 1.1.3))
   (lwt_ppx (>= 2.0.1))
-  (caqti (>= 1.2.1))
+  (caqti (>= 1.5.0))
+  (caqti-lwt (>= 1.3.0))
   (safepass (>= 3.0))
   (jwto (>= 0.3.0))
   (uuidm (>= 0.9.7))
   (ppx_fields_conv (>= v0.13.0))
   (ppx_sexp_conv (>= v0.13.0))
   (opium (>= 0.20.0))
-  (caqti (>= 1.2.1))
-  (caqti-lwt (>= 1.2.0))
   (cohttp-lwt-unix (and (>= 2.5.4) :with-test))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))
 
 (package
  (name sihl-user)
@@ -61,9 +60,9 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   (ocaml (>= 4.08.0))
   (sihl (= :version))
   (sihl-token (and (= :version) :with-test))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))
 
 (package
  (name sihl-cache)
@@ -73,9 +72,9 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))
 
 (package
  (name sihl-token)
@@ -85,9 +84,9 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))
 
 (package
  (name sihl-storage)
@@ -97,9 +96,9 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   dune
   (ocaml (>= 4.08.0))
   (sihl (= :version))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))
 
 (package
  (name sihl-email)
@@ -111,9 +110,9 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   (letters (>= 0.2.1))
   (sihl (= :version))
   (cohttp-lwt-unix (>= 2.5.4))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))
 
 (package
  (name sihl-queue)
@@ -124,6 +123,6 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   (ocaml (>= 4.08.0))
   (sihl (= :version))
   (tyxml-ppx (>= 4.4.0))
-  (alcotest-lwt (and (>= 1.3.0) :with-test))
-  (caqti-driver-postgresql (and (>= 1.2.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.2.0) :with-test))))
+  (alcotest-lwt (and (>= 1.4.0) :with-test))
+  (caqti-driver-postgresql (and (>= 1.5.1) :with-test))
+  (caqti-driver-mariadb (and (>= 1.5.1) :with-test))))

@@ -15,11 +15,17 @@ module type Sig = sig
     -> offset:int
     -> (Model.t list * int) Lwt.t
 
-  val get : id:string -> Model.t option Lwt.t
-  val get_by_email : email:string -> Model.t option Lwt.t
-  val insert : user:Model.t -> unit Lwt.t
-  val update : user:Model.t -> unit Lwt.t
+  val get : string -> Model.t option Lwt.t
+  val get_by_email : string -> Model.t option Lwt.t
+  val insert : Model.t -> unit Lwt.t
+  val update : Model.t -> unit Lwt.t
 end
+
+let status =
+  let encode m = m |> Model.status_to_string |> Result.ok in
+  let decode = Model.status_of_string in
+  Caqti_type.(custom ~encode ~decode string)
+;;
 
 let user =
   let open Sihl.Contract.User in
@@ -28,21 +34,29 @@ let user =
       ( m.id
       , ( m.email
         , ( m.username
-          , ( m.password
-            , (m.status, (m.admin, (m.confirmed, (m.created_at, m.updated_at))))
-            ) ) ) )
+          , ( m.name
+            , ( m.given_name
+              , ( m.password
+                , ( m.status
+                  , (m.admin, (m.confirmed, (m.created_at, m.updated_at))) ) )
+              ) ) ) ) )
   in
   let decode
       ( id
       , ( email
         , ( username
-          , (password, (status, (admin, (confirmed, (created_at, updated_at)))))
-          ) ) )
+          , ( name
+            , ( given_name
+              , ( password
+                , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
+            ) ) ) )
     =
     Ok
       { id
       ; email
       ; username
+      ; name
+      ; given_name
       ; password
       ; status
       ; admin
@@ -62,8 +76,12 @@ let user =
             (tup2
                (option string)
                (tup2
-                  string
-                  (tup2 string (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))
+                  (option string)
+                  (tup2
+                     (option string)
+                     (tup2
+                        string
+                        (tup2 status (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
@@ -109,12 +127,23 @@ struct
          |sql}
     ;;
 
+    let add_name_columns =
+      Sihl.Database.Migration.create_step
+        ~label:"add name columns"
+        {sql|
+         ALTER TABLE user_users
+         ADD COLUMN name VARCHAR(128) NULL,
+         ADD COLUMN given_name VARCHAR(128) NULL;
+         |sql}
+    ;;
+
     let migration () =
       Migration.(
         empty "user"
         |> add_step fix_collation
         |> add_step create_users_table
-        |> add_step add_updated_at_column)
+        |> add_step add_updated_at_column
+        |> add_step add_name_columns)
     ;;
   end
 
@@ -122,6 +151,8 @@ struct
     {sql|
         WHERE user_users.email LIKE $1
           OR user_users.username LIKE $1
+          OR user_users.name LIKE $1
+          OR user_users.given_name LIKE $1
           OR user_users.status LIKE $1 |sql}
   ;;
 
@@ -137,6 +168,8 @@ struct
            )),
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -176,6 +209,8 @@ struct
            )),
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -187,7 +222,7 @@ struct
         |sql}
   ;;
 
-  let get ~id = Database.find_opt get_request id
+  let get id = Database.find_opt get_request id
 
   let get_by_email_request =
     Caqti_request.find_opt
@@ -204,6 +239,8 @@ struct
            )),
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -211,11 +248,11 @@ struct
           created_at,
           updated_at
         FROM user_users
-        WHERE user_users.email = ?
+        WHERE user_users.email LIKE ?
         |sql}
   ;;
 
-  let get_by_email ~email = Database.find_opt get_by_email_request email
+  let get_by_email email = Database.find_opt get_by_email_request email
 
   let insert_request =
     Caqti_request.exec
@@ -225,6 +262,8 @@ struct
           uuid,
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -233,19 +272,21 @@ struct
           updated_at
         ) VALUES (
           UNHEX(REPLACE($1, '-', '')),
-          $2,
+          LOWER($2),
           $3,
           $4,
           $5,
           $6,
           $7,
           $8,
-          $9
+          $9,
+          $10,
+          $11
         )
         |sql}
   ;;
 
-  let insert ~user = Database.exec insert_request user
+  let insert user = Database.exec insert_request user
 
   let update_request =
     Caqti_request.exec
@@ -253,19 +294,21 @@ struct
       {sql|
         UPDATE user_users
         SET
-          email = $2,
+          email = LOWER($2),
           username = $3,
-          password = $4,
-          status = $5,
-          admin = $6,
-          confirmed = $7,
-          created_at = $8,
-          updated_at = $9
+          name = $4,
+          given_name = $5,
+          password = $6,
+          status = $7,
+          admin = $8,
+          confirmed = $9,
+          created_at = $10,
+          updated_at = $11
         WHERE user_users.uuid = UNHEX(REPLACE($1, '-', ''))
         |sql}
   ;;
 
-  let update ~user = Database.exec update_request user
+  let update user = Database.exec update_request user
   let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE user_users;"
   let clean () = Database.exec clean_request ()
 
@@ -321,12 +364,23 @@ struct
          |sql}
     ;;
 
+    let add_name_columns =
+      Sihl.Database.Migration.create_step
+        ~label:"add name columns"
+        {sql|
+         ALTER TABLE user_users
+         ADD COLUMN name VARCHAR(128) NULL,
+         ADD COLUMN given_name VARCHAR(128) NULL;
+         |sql}
+    ;;
+
     let migration () =
       Migration.(
         empty "user"
         |> add_step create_users_table
         |> add_step add_updated_at_column
-        |> add_step remove_timezone)
+        |> add_step remove_timezone
+        |> add_step add_name_columns)
     ;;
   end
 
@@ -334,6 +388,8 @@ struct
     {sql|
         WHERE user_users.email LIKE $1
           OR user_users.username LIKE $1
+          OR user_users.name LIKE $1
+          OR user_users.given_name LIKE $1
           OR user_users.status LIKE $1 |sql}
   ;;
 
@@ -343,6 +399,8 @@ struct
           uuid,
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -376,6 +434,8 @@ struct
           uuid as id,
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -387,7 +447,7 @@ struct
         |sql}
   ;;
 
-  let get ~id = Database.find_opt get_request id
+  let get id = Database.find_opt get_request id
 
   let get_by_email_request =
     Caqti_request.find_opt
@@ -398,6 +458,8 @@ struct
           uuid as id,
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -405,11 +467,11 @@ struct
           created_at,
           updated_at
         FROM user_users
-        WHERE user_users.email = ?
+        WHERE LOWER(user_users.email) = LOWER(?)
         |sql}
   ;;
 
-  let get_by_email ~email = Database.find_opt get_by_email_request email
+  let get_by_email email = Database.find_opt get_by_email_request email
 
   let insert_request =
     Caqti_request.exec
@@ -419,6 +481,8 @@ struct
           uuid,
           email,
           username,
+          name,
+          given_name,
           password,
           status,
           admin,
@@ -427,19 +491,21 @@ struct
           updated_at
         ) VALUES (
           $1::uuid,
-          $2,
+          LOWER($2),
           $3,
           $4,
           $5,
           $6,
           $7,
-          $8 AT TIME ZONE 'UTC',
-          $9 AT TIME ZONE 'UTC'
+          $8,
+          $9,
+          $10 AT TIME ZONE 'UTC',
+          $11 AT TIME ZONE 'UTC'
         )
         |sql}
   ;;
 
-  let insert ~user = Database.exec insert_request user
+  let insert user = Database.exec insert_request user
 
   let update_request =
     Caqti_request.exec
@@ -447,19 +513,21 @@ struct
       {sql|
         UPDATE user_users
         SET
-          email = $2,
+          email = LOWER($2),
           username = $3,
-          password = $4,
-          status = $5,
-          admin = $6,
-          confirmed = $7,
-          created_at = $8,
-          updated_at = $9
+          name = $4,
+          given_name = $5,
+          password = $6,
+          status = $7,
+          admin = $8,
+          confirmed = $9,
+          created_at = $10,
+          updated_at = $11
         WHERE user_users.uuid = $1::uuid
         |sql}
   ;;
 
-  let update ~user = Database.exec update_request user
+  let update user = Database.exec update_request user
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE user_users CASCADE;"
