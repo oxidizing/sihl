@@ -4,3 +4,6 @@
  (libraries sihl)
  (preprocess
   (pps lwt_ppx)))
+
+(documentation
+ (package sihl-user))

@@ -7,10 +7,7 @@ struct
   let reset_password_suceeds _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt _ =
-      UserService.create_user
-        ~email:"foo@example.com"
-        ~password:"123456789"
-        ~username:None
+      UserService.create_user "foo@example.com" ~password:"123456789"
     in
     let%lwt token =
       PasswordResetService.create_reset_token ~email:"foo@example.com"
@@ -25,7 +22,7 @@ struct
       |> Lwt.map Result.get_ok
     in
     let%lwt _ =
-      UserService.login ~email:"foo@example.com" ~password:"newpassword"
+      UserService.login "foo@example.com" ~password:"newpassword"
       |> Lwt.map Result.get_ok
     in
     Lwt.return ()

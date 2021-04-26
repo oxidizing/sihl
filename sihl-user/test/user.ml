@@ -41,13 +41,10 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   let json_serialization _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user =
-      UserService.create_user
-        ~email:"foobar@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user ~password:"123123123" "foobar@example.com"
     in
     let user_after =
-      user |> Sihl_user.to_yojson |> Sihl_user.of_yojson |> Option.get
+      user |> Sihl_user.to_yojson |> Sihl_user.of_yojson |> Result.get_ok
     in
     let user = Format.asprintf "%a" Sihl_user.pp user in
     let user_after = Format.asprintf "%a" Sihl_user.pp user_after in
@@ -58,16 +55,10 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   let update_details _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user =
-      UserService.create_user
-        ~email:"foobar@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user ~password:"123123123" "foobar@example.com"
     in
     let%lwt updated_user =
-      UserService.update_details
-        ~user
-        ~email:"new@example.com"
-        ~username:(Some "foo")
+      UserService.update user ~email:"new@example.com" ~username:"foo"
     in
     let actual_email = updated_user.email in
     let actual_username = updated_user.username in
@@ -80,22 +71,18 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   let update_password _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user =
-      UserService.create_user
-        ~email:"foobar@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user ~password:"123123123" "foobar@example.com"
     in
     let%lwt _ =
       UserService.update_password
-        ~user
+        user
         ~old_password:"123123123"
         ~new_password:"12345678"
         ~new_password_confirmation:"12345678"
-        ()
       |> Lwt.map Result.get_ok
     in
     let%lwt user =
-      UserService.login ~email:"foobar@example.com" ~password:"12345678"
+      UserService.login "foobar@example.com" ~password:"12345678"
       |> Lwt.map Result.get_ok
     in
     let actual_email = user.email in
@@ -111,18 +98,14 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   let update_password_fails _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user =
-      UserService.create_user
-        ~email:"foobar@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user ~password:"123123123" "foobar@example.com"
     in
     let%lwt change_result =
       UserService.update_password
-        ~user
+        user
         ~old_password:"wrong_old_password"
         ~new_password:"12345678"
         ~new_password_confirmation:"12345678"
-        ()
     in
     Alcotest.(
       check
@@ -133,25 +116,30 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     Lwt.return ()
   ;;
 
+  let find_by_email_is_case_insensitive _ () =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt _ =
+      UserService.create_user "user1@example.com" ~password:"123123123"
+    in
+    let%lwt _ =
+      UserService.create_user "user2@example.com" ~password:"123123123"
+    in
+    let%lwt user = UserService.find_by_email_opt "User1@Example.com" in
+    match user with
+    | Some _ -> Lwt.return ()
+    | None -> Alcotest.fail "expected to find user with email"
+  ;;
+
   let filter_users_by_email_returns_single_user _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user1 =
-      UserService.create_user
-        ~email:"user1@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user1@example.com" ~password:"123123123"
     in
     let%lwt _ =
-      UserService.create_user
-        ~email:"user2@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user2@example.com" ~password:"123123123"
     in
     let%lwt _ =
-      UserService.create_user
-        ~email:"user3@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user3@example.com" ~password:"123123123"
     in
     let%lwt actual_users, meta =
       UserService.search ~filter:"%user1%" ~limit:10 ()
@@ -164,22 +152,13 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   let filter_users_by_email_returns_all_users _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user1 =
-      UserService.create_user
-        ~email:"user1@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user1@example.com" ~password:"123123123"
     in
     let%lwt user2 =
-      UserService.create_user
-        ~email:"user2@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user2@example.com" ~password:"123123123"
     in
     let%lwt user3 =
-      UserService.create_user
-        ~email:"user3@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user3@example.com" ~password:"123123123"
     in
     let%lwt actual_users, meta =
       UserService.search ~filter:"%user%" ~limit:10 ()
@@ -198,22 +177,13 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   let sort_users _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
     let%lwt user1 =
-      UserService.create_user
-        ~email:"user1@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user1@example.com" ~password:"123123123"
     in
     let%lwt user2 =
-      UserService.create_user
-        ~email:"user2@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user2@example.com" ~password:"123123123"
     in
     let%lwt user3 =
-      UserService.create_user
-        ~email:"user3@example.com"
-        ~password:"123123123"
-        ~username:None
+      UserService.create_user "user3@example.com" ~password:"123123123"
     in
     let%lwt actual_users, meta =
       UserService.search ~sort:`Desc ~filter:"%user%" ~limit:10 ()
@@ -248,8 +218,10 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
                { id = "1"
                ; email = "foo@example.com"
                ; username = None
+               ; name = None
+               ; given_name = None
                ; password = "123123"
-               ; status = "active"
+               ; status = Active
                ; admin = false
                ; confirmed = false
                ; created_at = Ptime_clock.now ()
@@ -261,13 +233,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     let user_from_token _ () =
       let%lwt () = Sihl.Cleaner.clean_all () in
       let%lwt user =
-        UserService.create
-          ~email:"foo@example.com"
-          ~username:None
-          ~password:"123123"
-          ~admin:false
-          ~confirmed:false
-        |> Lwt.map Result.get_ok
+        UserService.create_user "foo@example.com" ~password:"123123"
       in
       let read_token = read_token user.Sihl_user.id in
       let token_header = Format.sprintf "Bearer %s" fake_token in
@@ -289,13 +255,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     let user_from_session _ () =
       let%lwt () = Sihl.Cleaner.clean_all () in
       let%lwt user =
-        UserService.create
-          ~email:"foo@example.com"
-          ~username:None
-          ~password:"123123"
-          ~admin:false
-          ~confirmed:false
-        |> Lwt.map Result.get_ok
+        UserService.create_user "foo@example.com" ~password:"123123"
       in
       let cookie =
         Sihl.Web.Response.of_plain_text ""
@@ -327,6 +287,10 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
         ; test_case "update details" `Quick update_details
         ; test_case "update password" `Quick update_password
         ; test_case "update password fails" `Quick update_password_fails
+        ; test_case
+            "find by email is case insensitive"
+            `Quick
+            find_by_email_is_case_insensitive
         ; test_case
             "filter users by email returns single user"
             `Quick

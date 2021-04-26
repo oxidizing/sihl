@@ -9,12 +9,6 @@ let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
   ref None
 ;;
 
-let raise_error err =
-  match err with
-  | Error err -> raise @@ Contract_database.Exception (Caqti_error.show err)
-  | Ok result -> result
-;;
-
 type 'a prepared_search_request =
   { asc_request : (int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
   ; desc_request : (int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
@@ -151,6 +145,12 @@ let fetch_pool () =
       raise (Contract_database.Exception ("Failed to create pool " ^ msg)))
 ;;
 
+let raise_error err =
+  match err with
+  | Error err -> raise @@ Contract_database.Exception (Caqti_error.show err)
+  | Ok result -> result
+;;
+
 let transaction f =
   let pool = fetch_pool () in
   print_pool_usage pool;
@@ -233,7 +233,9 @@ let query f =
   print_pool_usage pool;
   let%lwt result =
     Caqti_lwt.Pool.use
-      (fun connection -> f connection |> Lwt.map Result.ok)
+      (fun connection ->
+        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+        f connection |> Lwt.map Result.ok)
       pool
   in
   match result with
