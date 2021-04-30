@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.5.0"
+version: "0.6.0~rc1"
 synopsis: "Email service implementations for Sihl"
 description: "Modules for sending emails using Lwt and SMTP or Sendgrid."
 maintainer: ["josef@oxidizing.io"]
@@ -66,9 +66,9 @@ depends: [
   "menhir" {= "20210310"}
   "menhirLib" {= "20210310"}
   "menhirSdk" {= "20210310"}
-  "mirage-crypto" {= "0.9.1"}
-  "mirage-crypto-pk" {= "0.9.1"}
-  "mirage-crypto-rng" {= "0.9.1"}
+  "mirage-crypto" {= "0.9.2"}
+  "mirage-crypto-pk" {= "0.9.2"}
+  "mirage-crypto-rng" {= "0.9.2"}
   "mirage-no-solo5" {= "1"}
   "mirage-no-xen" {= "1"}
   "mmap" {= "1.1.0"}

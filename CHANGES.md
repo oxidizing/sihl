@@ -1,4 +1,4 @@
-## ?
+## [0.6.0] - 2021-05-30
 ### Added
 - Add CLI generators as built-in CLI commands `gen.service` (for generating CRUD services), `gen.view` (for generating CRUD views) and `gen.html` (for generating CRUD RESTful resources)
 - `Sihl.Web.Rest.{query, to_query_string, of_query_string, next_page, previous_page, last_page, first_page, query_filter, query_sort, query_limit, query_offset}`
