@@ -4,6 +4,8 @@
 - `Sihl.Web.Rest.{query, to_query_string, of_query_string, next_page, previous_page, last_page, first_page, query_filter, query_sort, query_limit, query_offset}`
 - Add ParcelJS based asset pipeline to template project in `template`
 - Database helpers to conveniently run exactly one caqti request `Sihl.Database.find`, `Sihl.Database.find_opt`, `Sihl.Database.exec` and `Sihl.Database.collect`
+- The `search` function of the user service from `sihl-user` takes an optional argument `offset`. This allows you to implement offset based pagination.
+
 
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps
@@ -13,9 +15,6 @@
 - Replaced `Sihl.Database.run_request` with `Sihl.Database.run_search_request`
 - Make search query type `'a Sihl.Database.prepared_search_query` abstract to reduce API clutter. The search queries are highly specific to the implementation and are not likely to be re-used independently from `run_search_request`.
 - Change `query` to fully fledged `search` in `Sihl.Rest.SERVICE` to support paginated, filtered and sorted views
-
-### Added
-- The `search` function of the user service from `sihl-user` takes an optional argument `offset`. This allows you to implement offset based pagination.
 
 ## [0.5.0] - 2021-04-10
 ### Added

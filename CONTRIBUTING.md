@@ -21,9 +21,9 @@ Contributions are what make the open source community such an amazing place to b
 5. Commit and push any changes with the message `Update 0.3.0`
 6. Set the version as annotated git tag (`git tag -a 0.3.0`)
 7. Push the annotated tag (`git push origin 0.3.0`)
-8. Create the PR to the opam repository (`opam publish`)
-9. Generate and publish the documentation (`make release-doc`)
-10. Create a release on Github by going to the tag list and clicking `Create release`
+8. Create a release on Github by going to the tag list and clicking `Create release`
+9. Create the PR to the opam repository (`opam publish`)
+10. Generate and publish the documentation (`make release-doc`)
 11. Fill in the changes of this release by copying the section of `CHANGES.md`
 
 ## Running tests
