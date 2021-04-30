@@ -17,9 +17,9 @@ module type Sig = sig
     [@@deprecated "Use prepare_search_request instead"]
 
   (** [prepare_search_request ~search_query ~count_query ~filter_fragment
-      ?sort_by_field type] returns a prepared SQL statement
-      ['a prepared_search_request] by assembling the SQL query from the provided
-      fragments.
+      ?sort_by_field type]
+      returns a prepared SQL statement ['a prepared_search_request] by
+      assembling the SQL query from the provided fragments.
 
       [search_query] is the [SELECT ... FROM table] part of the query.
 
