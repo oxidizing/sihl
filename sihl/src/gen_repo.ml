@@ -54,6 +54,7 @@ WHERE {{filter_fragment}}
 let search_query =
   {sql|
 SELECT
+  COUNT(*) OVER() as total,
   uuid,
   {{fields}},
   created_at,
@@ -62,12 +63,9 @@ FROM {{table_name}}
 |sql}
 ;;
 
-let count_query = {sql| SELECT COUNT(*) FROM {{table_name}} |sql}
-
 let search_request =
   Sihl.Database.prepare_search_request
     ~search_query
-    ~count_query
     ~filter_fragment
     ~sort_by_field:"id"
     {{caqti_type}}
@@ -147,6 +145,7 @@ WHERE {{filter_fragment}}
 let search_query =
   {sql|
 SELECT
+  COUNT(*) OVER() as total,
   LOWER(CONCAT(
     SUBSTR(HEX(uuid), 1, 8), '-',
     SUBSTR(HEX(uuid), 9, 4), '-',

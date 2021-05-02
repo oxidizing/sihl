@@ -37,11 +37,18 @@ module type Sig = sig
       requests, the sort field has to be known beforehand. If you want to
       dynamically set the field, you need to write your own query at runtime.
 
+      [format_filter] is a function applied to the filter keyword before it is
+      passed to the database. By default, a keyword "keyword" is formatted to
+      "%skeyword%s". This might not be what you want performance-wise. If you
+      need full control, pass in the identity function and format the keyword
+      yourself.
+
       [type] is the caqti type of an item of the collection. *)
   val prepare_search_request
     :  search_query:string
     -> filter_fragment:string
     -> ?sort_by_field:string
+    -> ?format_filter:(string -> string)
     -> 'a Caqti_type.t
     -> 'a prepared_search_request
 

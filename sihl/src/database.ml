@@ -18,14 +18,17 @@ type 'a prepared_search_request =
       (string * int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
   ; filter_desc_request :
       (string * int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  ; format_filter : string -> string
   }
 
 let prepare_requests _ _ _ = failwith "prepare_requests deprecated"
+let default_format_filter keyword = "%" ^ keyword ^ "%"
 
 let prepare_search_request
     ~search_query
     ~filter_fragment
     ?(sort_by_field = "id")
+    ?(format_filter = default_format_filter)
     output_type
     : 'a prepared_search_request
   =
@@ -76,7 +79,12 @@ let prepare_search_request
     in
     Caqti_request.collect input_type output_type query
   in
-  { asc_request; desc_request; filter_asc_request; filter_desc_request }
+  { asc_request
+  ; desc_request
+  ; filter_asc_request
+  ; filter_desc_request
+  ; format_filter
+  }
 ;;
 
 let run_request _ _ _ _ _ = failwith "prepare_requests deprecated"
@@ -207,15 +215,18 @@ let run_search_request
   =
   transaction' (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let filter = Option.map (fun filter -> "%" ^ filter ^ "%") filter in
       let%lwt result =
         match sort, filter with
         | `Asc, None -> Connection.collect_list r.asc_request (limit, offset)
         | `Desc, None -> Connection.collect_list r.desc_request (limit, offset)
         | `Asc, Some filter ->
-          Connection.collect_list r.filter_asc_request (filter, limit, offset)
+          Connection.collect_list
+            r.filter_asc_request
+            (r.format_filter filter, limit, offset)
         | `Desc, Some filter ->
-          Connection.collect_list r.filter_desc_request (filter, limit, offset)
+          Connection.collect_list
+            r.filter_desc_request
+            (r.format_filter filter, limit, offset)
       in
       let things = Result.map (List.map snd) result in
       let total =
