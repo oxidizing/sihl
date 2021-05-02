@@ -10,25 +10,26 @@ let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
 ;;
 
 type 'a prepared_search_request =
-  { asc_request : (int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-  ; desc_request : (int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  { asc_request :
+      (int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+  ; desc_request :
+      (int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
   ; filter_asc_request :
-      (string * int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
+      (string * int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
   ; filter_desc_request :
-      (string * int * int, 'a, [ `Many | `One | `Zero ]) Caqti_request.t
-  ; count_request : (unit, int, [ `One ]) Caqti_request.t
+      (string * int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
   }
 
 let prepare_requests _ _ _ = failwith "prepare_requests deprecated"
 
 let prepare_search_request
     ~search_query
-    ~count_query
     ~filter_fragment
     ?(sort_by_field = "id")
     output_type
     : 'a prepared_search_request
   =
+  let output_type = Caqti_type.(tup2 int output_type) in
   let asc_request =
     let input_type = Caqti_type.(tup2 int int) in
     let query =
@@ -75,15 +76,7 @@ let prepare_search_request
     in
     Caqti_request.collect input_type output_type query
   in
-  let count_request =
-    Caqti_request.find ~oneshot:true Caqti_type.unit Caqti_type.int count_query
-  in
-  { asc_request
-  ; desc_request
-  ; filter_asc_request
-  ; filter_desc_request
-  ; count_request
-  }
+  { asc_request; desc_request; filter_asc_request; filter_desc_request }
 ;;
 
 let run_request _ _ _ _ _ = failwith "prepare_requests deprecated"
@@ -224,8 +217,14 @@ let run_search_request
         | `Desc, Some filter ->
           Connection.collect_list r.filter_desc_request (filter, limit, offset)
       in
-      let%lwt amount = Connection.find r.count_request () in
-      CCResult.both result amount |> Lwt.return)
+      let things = Result.map (List.map snd) result in
+      let total =
+        Result.map
+          (fun e ->
+            e |> List.map fst |> CCList.head_opt |> Option.value ~default:0)
+          result
+      in
+      CCResult.both things total |> Lwt.return)
 ;;
 
 let query f =

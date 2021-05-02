@@ -132,26 +132,26 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
 
   let filter_users_by_email_returns_single_user _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
-    let%lwt user1 =
-      UserService.create_user "user1@example.com" ~password:"123123123"
+    let%lwt _ =
+      UserService.create_user "foo@example.com" ~password:"123123123"
+    in
+    let%lwt user =
+      UserService.create_user "fooz@example.com" ~password:"123123123"
     in
     let%lwt _ =
-      UserService.create_user "user2@example.com" ~password:"123123123"
-    in
-    let%lwt _ =
-      UserService.create_user "user3@example.com" ~password:"123123123"
+      UserService.create_user "bar@example.com" ~password:"123123123"
     in
     let%lwt actual_users, meta =
-      UserService.search ~filter:"%user1%" ~limit:10 ()
+      UserService.search ~filter:"%foo%" ~limit:1 ()
     in
-    Alcotest.(check int "has correct meta" 3 meta);
-    Alcotest.(check (list alcotest) "has one user" [ user1 ] actual_users);
+    Alcotest.(check int "search matches 2 users" 2 meta);
+    Alcotest.(check (list alcotest) "has one user" [ user ] actual_users);
     Lwt.return ()
   ;;
 
   let filter_users_by_email_returns_all_users _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
-    let%lwt user1 =
+    let%lwt _ =
       UserService.create_user "user1@example.com" ~password:"123123123"
     in
     let%lwt user2 =
@@ -160,17 +160,20 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
     let%lwt user3 =
       UserService.create_user "user3@example.com" ~password:"123123123"
     in
+    let%lwt _ =
+      UserService.create_user "foobar@example.com" ~password:"123123123"
+    in
     let%lwt actual_users, meta =
-      UserService.search ~filter:"%user%" ~limit:10 ()
+      UserService.search ~filter:"%user%" ~limit:2 ()
     in
     Alcotest.(check int "has correct meta" 3 meta);
     Alcotest.(
-      check (list alcotest) "has all users" [ user3; user2; user1 ] actual_users);
+      check (list alcotest) "has all users" [ user3; user2 ] actual_users);
     let%lwt actual_users, meta =
-      UserService.search ~filter:"%user%" ~limit:10 ~offset:2 ()
+      UserService.search ~filter:"%user%" ~limit:1 ~offset:1 ()
     in
     Alcotest.(check int "has correct meta" 3 meta);
-    Alcotest.(check (list alcotest) "has one user" [ user1 ] actual_users);
+    Alcotest.(check (list alcotest) "has one user" [ user2 ] actual_users);
     Lwt.return ()
   ;;
 

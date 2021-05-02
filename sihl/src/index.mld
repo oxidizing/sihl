@@ -778,9 +778,12 @@ To implement your own function with this signature, use {!Sihl.Database.prepare_
           OR user_users.status LIKE $1 |sql}
   ;;
 
+  (* We need to escape this SQL query because
+     it breaks syntax highlghting of the documentation *)
   let search_query =
     {sql|
         SELECT
+          COUNT(\*\) OVER() as total,
           uuid,
           email,
           username,
@@ -793,14 +796,9 @@ To implement your own function with this signature, use {!Sihl.Database.prepare_
         FROM user_users |sql}
   ;;
 
-  (* We need to escape this SQL query because
-     it breaks syntax highlghting of the documentation *)
-  let count_query = {sql| SELECT COUNT(\*\) FROM user_users |sql}
-
   let request =
     Sihl.Database.prepare_search_request
       ~search_query
-      ~count_query
       ~filter_fragment
       ~sort_by_field:"id"
       user
@@ -816,6 +814,8 @@ To implement your own function with this signature, use {!Sihl.Database.prepare_
         ~offset
   ;;
 ]}
+
+The first column of the [search_query] needs to be the total number of rows after applying the filter. The total number is higher than the limit, if there are a lot of rows.
 
 Note that if you need features like sorting on multiple columns or complex filters, you have to take care of safely building your SQL queries at runtime. The approach shown above is safe from SQL injection, fast (due to prepared statements) and simple to use.
 

@@ -159,6 +159,7 @@ struct
   let search_query =
     {sql|
         SELECT
+          COUNT(*) OVER() as total,
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
            SUBSTR(HEX(uuid), 9, 4), '-',
@@ -179,12 +180,9 @@ struct
         FROM user_users |sql}
   ;;
 
-  let count_query = {sql| SELECT COUNT(*) FROM user_users |sql}
-
   let request =
     Sihl.Database.prepare_search_request
       ~search_query
-      ~count_query
       ~filter_fragment
       ~sort_by_field:"id"
       user
@@ -396,6 +394,7 @@ struct
   let search_query =
     {sql|
         SELECT
+          COUNT(*) OVER() as total,
           uuid,
           email,
           username,
@@ -410,12 +409,9 @@ struct
         FROM user_users |sql}
   ;;
 
-  let count_query = {sql| SELECT COUNT(*) FROM user_users |sql}
-
   let request =
     Sihl.Database.prepare_search_request
       ~search_query
-      ~count_query
       ~filter_fragment
       ~sort_by_field:"id"
       user
