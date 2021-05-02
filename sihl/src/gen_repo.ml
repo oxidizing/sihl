@@ -160,12 +160,9 @@ FROM {{table_name}}
 |sql}
 ;;
 
-let count_query = {sql| SELECT COUNT(*) FROM {{table_name}} |sql}
-
 let search_request =
   Sihl.Database.prepare_search_request
     ~search_query
-    ~count_query
     ~filter_fragment
     ~sort_by_field:"id"
     {{caqti_type}}
