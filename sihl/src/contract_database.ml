@@ -40,7 +40,6 @@ module type Sig = sig
       [type] is the caqti type of an item of the collection. *)
   val prepare_search_request
     :  search_query:string
-    -> count_query:string
     -> filter_fragment:string
     -> ?sort_by_field:string
     -> 'a Caqti_type.t
