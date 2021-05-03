@@ -12,6 +12,7 @@ all:
 deps: ## Install development dependencies
 	opam install -y dune-release merlin ocamlformat utop ocaml-lsp-server
 	opam install --deps-only --with-test --with-doc -y .
+	npm install
 
 .PHONY: create_switch
 create_switch:
@@ -78,7 +79,7 @@ dev:    ## Run the Sihl app, watch files and restart on change
 	dune build
 	if [ $$? -eq 0 ]
 	then
-		SIHL_ENV=development ./_build/default/run/run.exe start &
+		SIHL_ENV=development ./_build/default/run/run.exe server &
 		PID=$$!
 	fi
 	echo

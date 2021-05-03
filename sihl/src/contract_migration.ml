@@ -37,7 +37,7 @@ module type Sig = sig
       database schema is up-to-date. *)
   val pending_migrations : unit -> (string * int) list Lwt.t
 
-  val register : ?migrations:t list -> unit -> Core_container.Service.t
+  val register : t list -> Core_container.Service.t
 
   include Core_container.Service.Sig
 end

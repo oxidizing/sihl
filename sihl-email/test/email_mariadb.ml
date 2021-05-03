@@ -1,5 +1,5 @@
 let services =
-  [ Sihl.Database.Migration.MariaDb.register ()
+  [ Sihl.Database.Migration.MariaDb.register []
   ; Sihl_email.Template.MariaDb.register ()
   ; Sihl_email.Smtp.register ()
   ]

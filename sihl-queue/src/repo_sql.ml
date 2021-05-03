@@ -112,7 +112,10 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
     |> List.map (fun j ->
            Sihl.Contract.Queue.
              { j with
-               id = j.id |> Uuidm.of_string |> Option.get |> Uuidm.to_bytes
+               id =
+                 (match j.id |> Uuidm.of_string with
+                 | Some uuid -> Uuidm.to_bytes uuid
+                 | None -> failwith "Invalid uuid provided")
              })
   ;;
 

@@ -2,7 +2,7 @@
 let services =
   [ Sihl.Database.register ()
   ; Sihl.Schedule.register [ Schedule.hello ]
-  ; Service.Migration.(register ~migrations:Database.Migration.all ())
+  ; Service.Migration.(register [])
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]
 ;;

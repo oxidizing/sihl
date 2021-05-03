@@ -338,7 +338,7 @@ struct
       ~stop
   ;;
 
-  let register ?(migrations = []) () =
+  let register migrations =
     register_migrations migrations;
     Core_container.Service.create ~commands:[ migrate_cmd ] lifecycle
   ;;

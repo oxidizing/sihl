@@ -1,6 +1,6 @@
 let services =
   [ Sihl.Database.register ()
-  ; Sihl.Database.Migration.PostgreSql.register ()
+  ; Sihl.Database.Migration.MariaDb.register []
   ; Sihl_cache.PostgreSql.register ()
   ]
 ;;

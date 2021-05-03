@@ -10,7 +10,7 @@ let () =
     (let%lwt _ =
        Sihl.Container.start_services
          [ Sihl.Database.register ()
-         ; Sihl.Database.Migration.PostgreSql.register ()
+         ; Sihl.Database.Migration.PostgreSql.register []
          ]
      in
      Alcotest_lwt.run "postgresql" Test.suite)

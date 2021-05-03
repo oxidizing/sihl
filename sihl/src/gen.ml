@@ -68,7 +68,7 @@ into your `routes/routes.ml` and mount it with the HTTP service. Don't forget to
 
     Database.%s.migration
 
-to the list of migrations before running `sihl migrate`.
+to the list of migrations in `run/run.ml` before running `sihl migrate`.
 
 3.) You should also run `make format` to apply your styling rules.
 
