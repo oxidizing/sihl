@@ -23,27 +23,19 @@ It is also recommended that you know OCaml's standard library and {{:https://git
 {2 Installation}
 
 Sihl is distributed through OPAM, so go ahead and {{:https://opam.ocaml.org/doc/Install.html} install OPAM}.
-The easiest way to get started is to use {{:https://github.com/tmattio/spin} Spin} to generate a Sihl app.
-
-With OPAM, Spin can be installed easily with
-
-{v opam install spin v}
+The easiest way to get started is to use the {{:https://github.com/oxidizing/sihl/tree/master/template} template} that is always up-to-date.
 
 {2 App Generation}
 
 Run
 
-{v spin new https://github.com/oxidizing/spin-sihl.git app v}
+{v git clone git@github.com:oxidizing/sihl.git v}
 
-where [app] is the directory where you want to create your app in.
-After providing Spin with the answers, you have to wait for the dependencies to be compiled. This takes a while.
+and
 
-{%html: <p align="center">
-  <a href="https://github.com/oxidizing/sihl">
-    <img src="https://raw.githubusercontent.com/oxidizing/sihl/master/images/sihl-demo.svg" alt="Spin template for project generation.">
-  </a>
-</p>
-%}
+{v cp -r sihl/template app v}
+
+where [app] is the directory of your app.
 
 {2 Directory Structure}
 
