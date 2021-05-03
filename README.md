@@ -42,39 +42,9 @@ Sihl is a batteries-included web framework built on top of [Opium](https://githu
 
 ## Getting Started
 
-The easiest way to get started is by using [Spin](https://github.com/tmattio/spin). If you want to jump into code, have a look at the [demo project](https://github.com/oxidizing/sihl-demo).
+Checkout the [getting started](https://oxidizing.github.io/sihl/sihl/index.html#getting-started) section of the documentation.
 
-### Prerequisites
-
-* Basic understanding of OCaml 
-* Installation of [opam](https://opam.ocaml.org/doc/Install.html)
-
-To initialize opam:
-```sh
-opam init
-```
-
-To install Spin, following the [instructions here](https://github.com/tmattio/spin). You can install it using opam: 
-```sh
-opam install spin
-```
-
-### Create a project
-
-Generate a start project:
-```sh
-spin new https://github.com/oxidizing/spin-sihl.git app
-```
-
-<p align="center">
-  <a href="https://github.com/oxidizing/sihl">
-    <img src="images/sihl-demo.svg" alt="Spin template for project generation.">
-  </a>
-</p>
-
-Visit `http://localhost:3000/`, you should see a welcome text.
-
-Check out the [demo project](https://github.com/oxidizing/sihl-demo). 
+If you want to jump into code have a look at the [demo project](https://github.com/oxidizing/sihl-demo). 
 
 ## Background
 
