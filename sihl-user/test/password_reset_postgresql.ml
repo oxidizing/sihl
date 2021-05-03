@@ -4,7 +4,7 @@ module PasswordResetService =
   Sihl_user.Password_reset.MakePostgreSql (TokenService)
 
 let services =
-  [ Sihl.Database.Migration.PostgreSql.register ()
+  [ Sihl.Database.Migration.MariaDb.register []
   ; TokenService.register ()
   ; Sihl_user.PostgreSql.register ()
   ; PasswordResetService.register ()

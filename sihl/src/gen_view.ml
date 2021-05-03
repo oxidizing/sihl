@@ -234,7 +234,7 @@ let index req csrf (result : {{module}}.t list * int) query =
   let {{name}}s, total = result in
   let notice = Sihl.Web.Flash.find_notice req in
   let alert = Sihl.Web.Flash.find_alert req in
-  let items = List.map(table_row csrf query) {{name}}s in
+  let items = List.map ~f:(table_row csrf query) {{name}}s in
   let table = table table_header items in
   Lwt.return
   @@ page
@@ -510,7 +510,7 @@ let show name module_name (schema : Gen_core.schema) =
   |> List.map (fun field ->
          Format.sprintf
            {|"<div><span>%s: </span><span>" %s "</span></div>"|}
-           name
+           (fst field)
            (stringify name module_name field))
   |> String.concat "\n"
   |> fun fields ->

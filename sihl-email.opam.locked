@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.6.0~rc1"
+version: "1.0.0~rc1"
 synopsis: "Email service implementations for Sihl"
 description: "Modules for sending emails using Lwt and SMTP or Sendgrid."
 maintainer: ["josef@oxidizing.io"]
@@ -38,8 +38,8 @@ depends: [
   "conf-pkg-config" {= "2"}
   "cppo" {= "1.6.7"}
   "csexp" {= "1.5.1"}
-  "cstruct" {= "5.2.0"}
-  "cstruct-sexp" {= "5.2.0"}
+  "cstruct" {= "6.0.0"}
+  "cstruct-sexp" {= "6.0.0"}
   "domain-name" {= "0.3.0"}
   "dune" {= "2.8.5"}
   "dune-configurator" {= "2.8.5"}
@@ -77,18 +77,17 @@ depends: [
   "num" {= "1.4"}
   "ocaml" {= "4.11.2"}
   "ocaml-compiler-libs" {= "v0.12.3"}
-  "ocaml-migrate-parsetree" {= "1.8.0"}
+  "ocaml-migrate-parsetree" {= "2.1.0"}
   "ocaml-syntax-shims" {= "1.0.0"}
   "ocamlbuild" {= "0.14.0"}
   "ocamlfind" {= "1.9.1"}
   "ocplib-endian" {= "1.1"}
   "parsexp" {= "v0.14.0"}
   "pecu" {= "0.5"}
-  "ppx_cstruct" {= "5.2.0"}
+  "ppx_cstruct" {= "6.0.0"}
   "ppx_derivers" {= "1.2.1"}
-  "ppx_sexp_conv" {= "v0.14.1"}
-  "ppx_tools_versioned" {= "5.4.0"}
-  "ppxlib" {= "0.15.0"}
+  "ppx_sexp_conv" {= "v0.14.3"}
+  "ppxlib" {= "0.22.0"}
   "ptime" {= "0.8.5"}
   "re" {= "1.9.0"}
   "result" {= "1.5"}

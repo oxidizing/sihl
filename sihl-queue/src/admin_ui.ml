@@ -363,7 +363,11 @@ let page ?back ?theme body =
 
 let index ?back ?theme scope find_jobs =
   Sihl.Web.get "" (fun req ->
-      let csrf = Sihl.Web.Csrf.find req |> Option.get in
+      let csrf =
+        match Sihl.Web.Csrf.find req with
+        | Some csrf -> csrf
+        | None -> failwith "No CSRF token found"
+      in
       let%lwt jobs = find_jobs () in
       Lwt.return
       @@ Sihl.Web.Response.of_html (page ?back ?theme [ table scope csrf jobs ]))
@@ -371,7 +375,11 @@ let index ?back ?theme scope find_jobs =
 
 let html_index scope find_jobs =
   Sihl.Web.get "/html/index" (fun req ->
-      let csrf = Sihl.Web.Csrf.find req |> Option.get in
+      let csrf =
+        match Sihl.Web.Csrf.find req with
+        | Some csrf -> csrf
+        | None -> failwith "No CSRF token found"
+      in
       let%lwt jobs = find_jobs () in
       let html =
         Format.asprintf "%a" Tyxml.Html._pp_elt (table scope csrf jobs)

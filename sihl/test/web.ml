@@ -12,7 +12,7 @@ let choose_routers_without_path_builds_paths _ () =
   let paths =
     router |> Sihl.Web.routes_of_router |> List.map (fun (_, path, _) -> path)
   in
-  Alcotest.(check (list string) "builds paths" [ "/"; "/foo"; "/bar" ] paths);
+  Alcotest.(check (list string) "builds paths" [ ""; "/foo"; "/bar" ] paths);
   Lwt.return ()
 ;;
 
@@ -31,7 +31,7 @@ let choose_routers_with_empty_scope_builds_paths _ () =
     router |> Sihl.Web.routes_of_router |> List.map (fun (_, path, _) -> path)
   in
   Alcotest.(
-    check (list string) "builds paths" [ "/"; "/"; "/foo"; "/bar" ] paths);
+    check (list string) "builds paths" [ ""; "/"; "/foo"; "/bar" ] paths);
   Lwt.return ()
 ;;
 
@@ -56,7 +56,7 @@ let choose_routers_builds_paths _ () =
   let router =
     Sihl.Web.(
       choose
-        ~scope:"root"
+        ~scope:"/root"
         [ get "" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
         ; get "/" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
         ; get "foo" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
@@ -79,7 +79,7 @@ let choose_nested_routers_builds_paths _ () =
   let router =
     Sihl.Web.(
       choose
-        ~scope:"root"
+        ~scope:"/root"
         [ choose
             ~scope:"sub"
             [ get "" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")

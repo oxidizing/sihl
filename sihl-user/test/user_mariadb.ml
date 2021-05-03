@@ -1,5 +1,5 @@
 let services =
-  [ Sihl.Database.Migration.MariaDb.register (); Sihl_user.MariaDb.register () ]
+  [ Sihl.Database.Migration.MariaDb.register []; Sihl_user.MariaDb.register () ]
 ;;
 
 module Test = User.Make (Sihl_user.MariaDb)

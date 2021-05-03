@@ -39,6 +39,7 @@ let prefix prefix ((meth, path, handler) : route) =
       | Some _, Some '/' -> Printf.sprintf "%s%s" prefix path
       | None, Some '/' -> Printf.sprintf "%s%s" prefix path
       | Some "/", None -> Printf.sprintf "%s%s" prefix path
+      | None, None -> Printf.sprintf "%s%s" prefix path
       | _, _ -> Printf.sprintf "%s/%s" prefix path
     in
     let path = CCString.replace ~sub:"//" ~by:"/" path in
@@ -99,12 +100,7 @@ let routes_of_router ({ scope; routes; middlewares } : router) : route list =
   |> List.map (apply_middleware_stack middlewares)
 ;;
 
-let choose ?(scope = "/") ?(middlewares = []) (routers : router list) : router =
-  let scope =
-    match CCString.chop_prefix ~pre:"/" scope with
-    | Some prefix -> "/" ^ prefix
-    | None -> "/" ^ scope
-  in
+let choose ?(scope = "") ?(middlewares = []) (routers : router list) : router =
   let routes = routers |> List.map routes_of_router |> List.concat in
   { scope; routes; middlewares }
 ;;

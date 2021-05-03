@@ -19,13 +19,13 @@ Run `dune build` to update `app.opam`.
 
 ## Getting started
 
-Create a local switch with `make switch`.
+Create a local switch with `make switch`. If you get an error message asking whether you want to clean up the created switch, just say no with `n`.
 
-If the compilation of the dependencies failed, you can leave the created switch and run `make deps` to install the dependencies into the created switch later on.
+Run `make deps` to install the dependencies into the created switch.
+
+Run `make build` to build the project.
 
 Run `make sihl`, if you see a list of commands Sihl is installed and ready!
-
-Install the asset pipeline by running `npm install`.
 
 ## Development
 

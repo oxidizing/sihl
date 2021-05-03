@@ -21,7 +21,9 @@ let duration_to_span duration =
     | OneMonth -> 60. *. 60. *. 24. *. 30.
     | OneYear -> 60. *. 60. *. 24. *. 365.
   in
-  Option.get (Ptime.of_float_s duration_s) |> Ptime.to_span
+  match Ptime.of_float_s duration_s with
+  | Some ptime -> Ptime.to_span ptime
+  | None -> failwith "Invalid ptime provided"
 ;;
 
 let date_from_now now duration =

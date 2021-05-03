@@ -1,11 +1,22 @@
-## [0.6.0] - 2021-05-30
+## [1.0.0] - 2021-05-03
+### Changed
+- The `search_query` for `Sihl.Database.prepare_search_request` has to return the total amount of rows for that query without limit. On PostgreSQL and MariaDB this can be done with `COUNT(*) OVER() as total`. No `count_query`is needed anymore.
+
+#### User service
+- Add optional `given_name` and `name`
+- Deprecate `update_details` in favor of `update`
+- Consistent use of named arguments in service API
+
+### Added
+- Optional argument `format_filter` for formatting the search keyword when filtering in `Sihl.Database.prepare_search_request`
+
+## [0.6.0] - 2021-04-30
 ### Added
 - Add CLI generators as built-in CLI commands `gen.service` (for generating CRUD services), `gen.view` (for generating CRUD views) and `gen.html` (for generating CRUD RESTful resources)
 - `Sihl.Web.Rest.{query, to_query_string, of_query_string, next_page, previous_page, last_page, first_page, query_filter, query_sort, query_limit, query_offset}`
 - Add ParcelJS based asset pipeline to template project in `template`
 - Database helpers to conveniently run exactly one caqti request `Sihl.Database.find`, `Sihl.Database.find_opt`, `Sihl.Database.exec` and `Sihl.Database.collect`
 - The `search` function of the user service from `sihl-user` takes an optional argument `offset`. This allows you to implement offset based pagination.
-
 
 ### Changed
 - Replace the usaged of `Lwt.Syntax` with `lwt_ppx` for nicer error messages in your Sihl apps

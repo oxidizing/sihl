@@ -2,7 +2,7 @@ module TokenService = Sihl_token.JwtMariaDb
 module PasswordResetService = Sihl_user.Password_reset.MakeMariaDb (TokenService)
 
 let services =
-  [ Sihl.Database.Migration.MariaDb.register ()
+  [ Sihl.Database.Migration.MariaDb.register []
   ; TokenService.register ()
   ; Sihl_user.MariaDb.register ()
   ; PasswordResetService.register ()

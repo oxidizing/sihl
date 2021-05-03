@@ -10,7 +10,7 @@ let () =
     (let%lwt _ =
        Sihl.Container.start_services
          [ Sihl.Database.register ()
-         ; Sihl.Database.Migration.MariaDb.register ()
+         ; Sihl.Database.Migration.MariaDb.register []
          ]
      in
      Alcotest_lwt.run "mariadb" Test.suite)
