@@ -10,16 +10,17 @@ module Form = struct
 
   let set
       ?(key = "_form")
-      (t : Conformist.error list)
+      (errors : Conformist.error list)
       (urlencoded : (string * string list) list)
       resp
     =
     let t =
       List.map
         (fun (k, v) ->
-          t
+          errors
           |> List.find_opt (fun (field, _, _) -> String.equal field k)
-          |> Option.map (fun (field, input, value) -> field, input, Some value)
+          |> Option.map (fun (field, input, value) ->
+                 field, CCList.head_opt input, Some value)
           |> Option.value ~default:(k, CCList.head_opt v, None))
         urlencoded
     in

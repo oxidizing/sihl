@@ -27,7 +27,9 @@ let make ?schema () =
         in
         let type_ = Conformist.Field.type_ field in
         let default = Conformist.Field.encode_default field in
-        List.cons { name; description; type_; default } res)
+        List.cons
+          { name; description; type_; default = CCList.head_opt default }
+          res)
       ~init:[]
       schema
   | None -> []
@@ -150,7 +152,7 @@ let read schema =
     let errors =
       List.map
         (fun (field, input, msg) ->
-          match input with
+          match CCList.head_opt input with
           | None ->
             Format.sprintf "Failed to read configuration '%s': %s" field msg
           | Some input ->
