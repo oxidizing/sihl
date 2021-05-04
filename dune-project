@@ -30,6 +30,7 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
   (tsort (>= 2.0.0))
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
+  (bos (>= 0.2.0))
   (sexplib (>= v0.13.0))
   (yojson (>= 1.7.0))
   (ppx_deriving_yojson (>= 3.5.2))
