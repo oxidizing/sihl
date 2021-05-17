@@ -102,6 +102,10 @@ Thanks to OCaml Sihl is ...
 
 The API documentation for the latest version can be found here: https://oxidizing.github.io/sihl
 
+## Ecosystem
+
+- https://github.com/uzh/ask
+
 ## Roadmap
 
 Our main goal is to stabilize the service APIs, so updating Sihl in the future becomes easier. We would like to attract contributions for service contributions, once the framework reaches some level of maturity.
