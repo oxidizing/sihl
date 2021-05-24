@@ -146,6 +146,6 @@ let generate (database : string) (name : string) (schema : Gen_core.schema)
       ];
     Gen_core.write_in_test
       name
-      Gen_model_test.[ test_file name schema; dune_file name ]);
+      Gen_model_test.[ test_file name schema; dune_file database name ]);
   Gen_migration.write_migration_file database name schema
 ;;

@@ -69,11 +69,20 @@ let () =
 |}
 ;;
 
-let dune_file_template =
-  {|(test
- (name test)
- (libraries sihl service database alcotest alcotest-lwt
-   caqti-driver-postgresql {{name}}))
+let dune_file_template database =
+  let open Gen_core in
+  match database with
+  | PostgreSql ->
+    {|(test
+        (name test_{{name}})
+        (libraries sihl service database alcotest alcotest-lwt
+          caqti-driver-postgresql {{name}}))
+|}
+  | MariaDb ->
+    {|(test
+        (name test_{{name}})
+        (libraries sihl service database alcotest alcotest-lwt
+          caqti-driver-mariadb {{name}}))
 |}
 ;;
 
@@ -94,7 +103,7 @@ let test_file (name : string) (schema : Gen_core.schema) =
   Gen_core.{ name = "test.ml"; template; params }
 ;;
 
-let dune_file (name : string) =
+let dune_file (database : Gen_core.database) (name : string) =
   let params = [ "name", name ] in
-  Gen_core.{ name = "dune"; template = dune_file_template; params }
+  Gen_core.{ name = "dune"; template = dune_file_template database; params }
 ;;
