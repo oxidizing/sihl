@@ -74,13 +74,13 @@ let dune_file_template database =
   match database with
   | PostgreSql ->
     {|(test
-        (name test_{{name}})
+        (name {{name}})
         (libraries sihl service database alcotest alcotest-lwt
           caqti-driver-postgresql {{name}}))
 |}
   | MariaDb ->
     {|(test
-        (name test_{{name}})
+        (name {{name}})
         (libraries sihl service database alcotest alcotest-lwt
           caqti-driver-mariadb {{name}}))
 |}
