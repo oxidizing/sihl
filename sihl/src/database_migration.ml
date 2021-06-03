@@ -320,14 +320,27 @@ struct
 
   let stop () = Lwt.return ()
 
-  let migrate_cmd =
+  let migrate_all_up_cmd =
     Core_command.make
-      ~name:"migrate"
-      ~description:"Run all migrations"
+      ~name:"migrate.all"
+      ~description:"Runs all up migrations"
       (fun _ ->
         let%lwt () = Database.start () in
         let%lwt () = start () in
         run_all ())
+  ;;
+
+  let migrate_up_cmd =
+    Core_command.make
+      ~name:"migrate.up"
+      ~help:"<amount of migrations>"
+      ~description:"Runs n up migrations"
+      (function
+        | [ n ] ->
+          let%lwt () = Database.start () in
+          let%lwt () = start () in
+          run_all ()
+        | _ -> Lwt.return None)
   ;;
 
   let lifecycle =
@@ -340,7 +353,7 @@ struct
 
   let register ?(migrations = []) () =
     register_migrations migrations;
-    Core_container.Service.create ~commands:[ migrate_cmd ] lifecycle
+    Core_container.Service.create ~commands:[ migrate_all_up_cmd ] lifecycle
   ;;
 end
 
