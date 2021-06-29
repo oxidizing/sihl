@@ -1,0 +1,37 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or the definition README at
+// https://github.com/microsoft/vscode-dev-containers/tree/master/containers/python-3 or the
+// devcontainer docu https://code.visualstudio.com/docs/remote/containers#_devcontainerjson-reference
+{
+  "name": "Sihl Template",
+  "dockerComposeFile": "./docker-compose.yml",
+  "service": "dev",
+  "runServices": [
+    "dev",
+    "postgres",
+    // "mariadb" // uncomment to use mariadb
+    // "adminer" // uncomment if adminer should run to see the database
+  ],
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  // Use 'settings' to set *default* container specific settings.json values on container create.
+  // You can edit these settings after create using File > Preferences > Settings > Remote.
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/zsh",
+    "editor.formatOnSave": true,
+    "files.associations": {
+      "*.ml": "ocaml",
+      "*.mli": "ocaml"
+    },
+    "ocaml.sandbox": {
+      "kind": "global"
+    }
+  },
+  // Add the IDs of extensions you want installed when the container is created in the array below.
+  "extensions": [
+    "donjayamanne.githistory",
+    "eamodio.gitlens",
+    "exiasr.hadolint",
+    "irongeek.vscode-env",
+    "ocamllabs.ocaml-platform"
+  ]
+}
