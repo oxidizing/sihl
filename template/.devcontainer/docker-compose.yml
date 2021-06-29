@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # default user is "opam"
+      - ..:/workspace:cached
+      - node_modules:/workspace/node_modules:cached
+      - opam:/home/opam/.opam:cached
+      - build:/workspace/_build:cached
+      - ${HOME}${USERPROFILE}/.ssh:/home/opam/.ssh
+      - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
+      - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
+    environment:
+      - DATABASE_URL=postgres://admin:password@postgres:5432/dev
+      - DATABASE_POOL_SIZE=10
+      - OPAMSOLVERTIMEOUT=180
+      - SIHL_SECRET=secret
+      - VERSION=dev
+    depends_on:
+      - mariadb
+      - postgres
+    ports: [3000:3000]
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+  postgres:
+    image: postgres:12.2
+    ports: [5432:5432]
+    environment:
+      TZ: Europe/Zurich
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  mariadb:
+    image: mariadb:10.3
+    command: --max_allowed_packet=629145600
+    ports: [3306:3306]
+    environment:
+      TZ: Europe/Zurich
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: dev
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
+
+  adminer:
+    image: adminer:4.7.6-standalone
+    restart: always
+    ports: [8080:8080]
+    depends_on:
+      - mariadb
+      - postgres
+
+volumes:
+  opam:
+  node_modules:
+  build:

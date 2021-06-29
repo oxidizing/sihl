@@ -24,3 +24,6 @@ public/*
 # environment setup
 .env
 .env.test
+
+# vscode devcontainer data
+.devcontainer/data/
