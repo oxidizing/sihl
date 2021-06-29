@@ -19,6 +19,8 @@ Run `dune build` to update `app.opam`.
 
 ## Getting started
 
+Save `.env.sample` and `.env.test.sample` without the `.sample` ending and make your customizations.
+
 Create a local switch with `make switch`. If you get an error message asking whether you want to clean up the created switch, just say no with `n`.
 
 Run `make deps` to install the dependencies into the created switch.
