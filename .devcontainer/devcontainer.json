@@ -2,7 +2,7 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/master/containers/python-3 or the
 // devcontainer docu https://code.visualstudio.com/docs/remote/containers#_devcontainerjson-reference
 {
-  "name": "sihl",
+  "name": "Sihl",
   "dockerComposeFile": "./docker-compose.yml",
   "service": "dev",
   "runServices": [
@@ -12,17 +12,6 @@
     // "adminer" // uncomment if adminer should run to see the database
   ],
   "workspaceFolder": "/workspace",
-  "remoteEnv": {
-    "DATABASE_URL": "postgres://admin:password@postgres:5432/dev",
-    "DATABASE_URL_TEST_MARIADB": "mariadb://admin:password@mariadb:3306/dev",
-    "DATABASE_URL_TEST_POSTGRESQL": "postgres://admin:password@postgres:5432/dev",
-    "VERSION": "dev",
-    "OPAM_SWITCH_PREFIX": "/home/opam/.opam/4.11",
-    "CAML_LD_LIBRARY_PATH": "/home/opam/.opam/4.11/lib/stublibs:/home/opam/.opam/4.11/lib/ocaml/stublibs:/home/opam/.opam/4.11/lib/ocaml",
-    "OCAML_TOPLEVEL_PATH": "/home/opam/.opam/4.11/lib/toplevel",
-    "MANPATH": ":/home/opam/.opam/4.11/man",
-    "PATH": "/home/opam/.opam/4.11/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-  },
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
@@ -31,7 +20,7 @@
     "editor.formatOnSave": true,
     "files.associations": {
       "*.ml": "ocaml",
-      "*.mli": "ocaml",
+      "*.mli": "ocaml"
     },
     "ocaml.sandbox": {
       "kind": "global"
@@ -41,8 +30,8 @@
   "extensions": [
     "donjayamanne.githistory",
     "eamodio.gitlens",
-    "hackwaly.ocaml-debugger",
+    "exiasr.hadolint",
     "irongeek.vscode-env",
-    "ocamllabs.ocaml-platform",
-  ],
+    "ocamllabs.ocaml-platform"
+  ]
 }
