@@ -20,3 +20,7 @@ node_modules
 # Assets
 public/*
 .parcel-cache
+
+# environment setup
+.env
+.env.test
