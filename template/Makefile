@@ -65,10 +65,10 @@ doc: ## Generate odoc documentation
 format: ## Format the codebase with ocamlformat
 	opam exec -- dune build --root . --auto-promote @fmt
 
-.PHONE dev:
+.PHONY: dev
 .SILENT:
 .ONESHELL:
-dev:    ## Run the Sihl app, watch files and restart on change
+dev::    ## Run the Sihl app, watch files and restart on change
 	sigint_handler()
 	{
 	[[ $$(jobs -pr) = "" ]] || kill $$(jobs -pr)
@@ -100,4 +100,3 @@ db: ## Starts the database using docker-compose
 .PHONY: db_down
 db_down: ## Removes the database using docker-compose
 	docker-compose -f docker/docker-compose.dev.yml down
-
