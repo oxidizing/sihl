@@ -4,7 +4,10 @@ let middleware () =
     let uri =
       uri
       |> Uri.path
-      |> CCString.rdrop_while (Char.equal '/')
+      |> (fun path ->
+           if Uri.equal ("/" |> Uri.of_string) uri
+           then path (* don't drop root *)
+           else path |> CCString.rdrop_while (Char.equal '/'))
       |> Uri.with_path uri
     in
     let req = Opium.Request.{ req with target = Uri.to_string uri } in
