@@ -392,11 +392,7 @@ module Queued
     else Job.dispatch_all emails
   ;;
 
-  let start () =
-    QueueService.register_jobs [ Sihl.Contract.Queue.hide Job.job ]
-    |> Lwt.map ignore
-  ;;
-
+  let start () = QueueService.register_jobs [ Sihl.Contract.Queue.hide Job.job ]
   let stop () = Lwt.return ()
 
   let lifecycle =

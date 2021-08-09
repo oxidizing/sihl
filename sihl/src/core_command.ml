@@ -8,10 +8,13 @@ type t =
   { name : string
   ; usage : string option
   ; description : string
+  ; dependencies : Core_lifecycle.lifecycle list
   ; fn : string list -> unit option Lwt.t
   }
 
-let make ~name ?help ~description fn = { name; usage = help; description; fn }
+let make ~name ?help ~description ?(dependencies = []) fn =
+  { name; usage = help; description; dependencies; fn }
+;;
 
 let find_command_by_args commands args =
   let ( let* ) = Option.bind in
@@ -79,6 +82,11 @@ let run commands args =
       let start = Mtime_clock.now () in
       Lwt.catch
         (fun () ->
+          let%lwt _ =
+            Lwt_list.iter_s (fun (lifecycle : Core_lifecycle.lifecycle) ->
+                lifecycle.start ())
+            @@ Core_lifecycle.top_sort_lifecycles command.dependencies
+          in
           let%lwt result = command.fn rest_args in
           match result with
           | Some () ->

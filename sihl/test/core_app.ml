@@ -39,8 +39,11 @@ module UserService = struct
   ;;
 
   let ban =
-    Sihl.Command.make ~name:"ban" ~description:"Ban a user" (fun _ ->
-        Lwt.return @@ Some ())
+    Sihl.Command.make
+      ~name:"ban"
+      ~description:"Ban a user"
+      ~dependencies:[ lifecycle ]
+      (fun _ -> Lwt.return @@ Some ())
   ;;
 
   let register () = Sihl.Container.Service.create ~commands:[ ban ] lifecycle
@@ -69,11 +72,74 @@ module OrderService = struct
   ;;
 
   let order =
-    Sihl.Command.make ~name:"order" ~description:"Dispatch an order" (fun _ ->
-        Lwt.return @@ Some ())
+    Sihl.Command.make
+      ~name:"order"
+      ~description:"Dispatch an order"
+      ~dependencies:[ lifecycle ]
+      (fun _ -> Lwt.return @@ Some ())
   ;;
 
   let register () = Sihl.Container.Service.create ~commands:[ order ] lifecycle
+end
+
+let email1_service_running = ref false
+
+module Email1Service = struct
+  let start ctx =
+    print_endline "Starting email1 service";
+    email1_service_running := true;
+    Lwt.return ctx
+  ;;
+
+  let stop _ =
+    email1_service_running := false;
+    Lwt.return ()
+  ;;
+
+  let lifecycle =
+    Sihl.Container.create_lifecycle
+      "email service"
+      ~implementation_name:"email1"
+      ~start
+      ~stop
+      ~dependencies:(fun () -> [ Database.lifecycle ])
+  ;;
+
+  let register () = Sihl.Container.Service.create lifecycle
+end
+
+let email2_service_running = ref false
+
+module Email2Service = struct
+  let start ctx =
+    print_endline "Starting email2 service";
+    email2_service_running := true;
+    Lwt.return ctx
+  ;;
+
+  let stop _ =
+    email2_service_running := false;
+    Lwt.return ()
+  ;;
+
+  let lifecycle =
+    Sihl.Container.create_lifecycle
+      "email service"
+      ~implementation_name:"email2"
+      ~start
+      ~stop
+      ~dependencies:(fun () -> [ Email1Service.lifecycle; Database.lifecycle ])
+  ;;
+
+  let send =
+    Sihl.Command.make
+      ~name:"send"
+      ~description:"Send an email"
+      ~dependencies:[ lifecycle ]
+      (fun _ -> Lwt.return @@ Some ())
+  ;;
+
+  let register () = Sihl.Container.Service.create ~commands:[ send ] lifecycle
 end
 
 let run_user_command _ () =
@@ -114,11 +180,28 @@ let run_order_command _ () =
   Lwt.return ()
 ;;
 
+let start_email_services _ () =
+  database_running := false;
+  email1_service_running := false;
+  email2_service_running := false;
+  let%lwt () =
+    Sihl.App.empty
+    |> Sihl.App.with_services
+         [ Email2Service.register (); Email1Service.register () ]
+    |> Sihl.App.run' ~args:[ "send" ] ~log_reporter:Logs.nop_reporter
+  in
+  Alcotest.(check bool "database is running" !database_running true);
+  Alcotest.(check bool "email1 is running" !email1_service_running true);
+  Alcotest.(check bool "email2 is running" !email2_service_running true);
+  Lwt.return ()
+;;
+
 let suite =
   Alcotest_lwt.
     [ ( "app"
       , [ test_case "run user command" `Quick run_user_command
         ; test_case "run order command" `Quick run_order_command
+        ; test_case "start email services" `Quick start_email_services
         ] )
     ]
 ;;
