@@ -199,7 +199,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Lwt.return ()
   ;;
 
-  let start () = start_queue () |> Lwt.map ignore
+  let start () = start_queue ()
 
   let stop () =
     registered_jobs := [];

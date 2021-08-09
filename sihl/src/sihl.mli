@@ -25,6 +25,7 @@ module Command : sig
     { name : string
     ; usage : string option
     ; description : string
+    ; dependencies : Core_container.lifecycle list
     ; fn : string list -> unit option Lwt.t
     }
 
@@ -32,6 +33,7 @@ module Command : sig
     :  name:string
     -> ?help:string
     -> description:string
+    -> ?dependencies:Core_container.lifecycle list
     -> (string list -> unit option Lwt.t)
     -> t
 
@@ -874,7 +876,9 @@ module Container : sig
       Every service has a lifecycle, meaning it can be started and stopped. **)
 
   type lifecycle = Core_container.lifecycle =
-    { name : string
+    { type_name : string
+    ; implementation_name : string
+    ; id : int
     ; dependencies : unit -> lifecycle list
     ; start : unit -> unit Lwt.t
     ; stop : unit -> unit Lwt.t
@@ -884,6 +888,7 @@ module Container : sig
     :  ?dependencies:(unit -> lifecycle list)
     -> ?start:(unit -> unit Lwt.t)
     -> ?stop:(unit -> unit Lwt.t)
+    -> ?implementation_name:string
     -> string
     -> lifecycle
 
@@ -935,7 +940,6 @@ module Container : sig
 
   val collect_all_lifecycles : lifecycle list -> lifecycle Map.t
   val top_sort_lifecycles : lifecycle list -> lifecycle list
-  val unpack : string -> ?default:'a -> 'a option ref -> 'a
 end
 
 module Database : sig

@@ -1,11 +1,11 @@
 let services =
   [ Sihl.Database.register ()
-  ; Sihl.Database.Migration.MariaDb.register []
+  ; Sihl.Database.Migration.PostgreSql.register []
   ; Sihl_cache.PostgreSql.register ()
   ]
 ;;
 
-module Test = Cache.Make (Sihl_cache.MariaDb)
+module Test = Cache.Make (Sihl_cache.PostgreSql)
 
 let () =
   Sihl.Configuration.read_string "DATABASE_URL_TEST_POSTGRESQL"

@@ -93,7 +93,10 @@ sihl: all ## Run the produced executable of the included Sihl app
 
 .PHONY: test
 test: build	## Run unit tests with dune and then all sihl tests
-	SIHL_ENV=test opam exec -- dune test
+	SIHL_ENV=test ./_build/default/sihl/test/core_app.exe
+	SIHL_ENV=test ./_build/default/sihl/test/core_configuration.exe
+	SIHL_ENV=test ./_build/default/sihl/test/core_container.exe
+	SIHL_ENV=test ./_build/default/sihl/test/core_utils.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_flash.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_id.exe

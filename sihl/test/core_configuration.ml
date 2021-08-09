@@ -123,14 +123,10 @@ let read_env_file_non_existing _ () =
 
 let read_env_file switch () =
   let%lwt cur = Lwt_unix.getcwd () in
-  let marker = cur ^ "/.git" in
   let filename = cur ^ "/.env.test" in
-  Lwt_switch.add_hook (Some switch) (fun () ->
-      let%lwt () = Lwt_unix.unlink filename in
-      Lwt_unix.rmdir marker);
+  Lwt_switch.add_hook (Some switch) (fun () -> Lwt_unix.unlink filename);
   let keys = [ "NAME"; "OCCUPATION"; "AGE" ] in
   let values = [ "church"; "mathematician"; "92" ] in
-  let%lwt () = Lwt_unix.mkdir marker 0o666 in
   let%lwt () =
     Lwt_io.with_file ~mode:Lwt_io.Output filename (fun ch ->
         let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
@@ -139,14 +135,14 @@ let read_env_file switch () =
   let data = Sihl.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in
   Alcotest.(
-    check (list string) "Returns keys" (List.rev keys) (List.map fst data));
+    check (slist string compare) "Returns keys" keys (List.map fst data));
   Alcotest.(
-    check (list string) "Returns values" (List.rev values) (List.map snd data));
+    check (slist string compare) "Returns values" values (List.map snd data));
   Lwt.return ()
 ;;
 
 module Test1 : sig
-  val test : 'a -> unit -> unit Lwt.t
+  val require_succeeds : 'a -> unit -> unit Lwt.t
 end = struct
   type t =
     { hey : int
@@ -160,7 +156,7 @@ end = struct
     make [ int "hey"; optional (bool ~default:true "is") ] t
   ;;
 
-  let test _ () =
+  let require_succeeds _ () =
     let data = [ "hey", "123" ] in
     Sihl.Configuration.store data;
     Sihl.Configuration.require schema;
@@ -169,7 +165,7 @@ end = struct
 end
 
 module Test2 : sig
-  val test : 'a -> unit -> unit Lwt.t
+  val require_fails : 'a -> unit -> unit Lwt.t
 end = struct
   type t = { ho : int }
 
@@ -180,10 +176,10 @@ end = struct
     make [ int "ho" ] t
   ;;
 
-  let test _ () =
+  let require_fails _ () =
     let data = [ "ho", "value" ] in
     Sihl.Configuration.store data;
-    let exc = Sihl.Configuration.Exception "Configuration check failed" in
+    let exc = Sihl.Configuration.Exception "Invalid configuration provided" in
     Alcotest.(
       check_raises "raises" exc (fun () -> Sihl.Configuration.require schema));
     Lwt.return ()
@@ -203,8 +199,8 @@ let suite =
             `Quick
             read_env_file_non_existing
         ; test_case "read env file" `Quick read_env_file
-        ; test_case "require succeeds" `Quick Test1.test
-        ; test_case "require fails" `Quick Test2.test
+        ; test_case "require succeeds" `Quick Test1.require_succeeds
+        ; test_case "require fails" `Quick Test2.require_fails
         ] )
     ]
 ;;
