@@ -12,10 +12,12 @@ all:
 deps: ## Install development dependencies
 	opam install -y dune-release merlin ocamlformat.0.18.0 utop
 	OPAMSOLVERTIMEOUT=240 opam install --deps-only --with-test --with-doc -y .
+	eval $(opam env)
 
 .PHONY: create_switch
 create_switch:
-	opam switch create . --no-install
+	opam switch create . --no-install --locked
+	eval $(opam env)
 
 .PHONY: switch
 switch: create_switch deps ## Create an opam switch and install development dependencies
