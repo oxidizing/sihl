@@ -85,8 +85,10 @@ let render data text html =
   let text = render_value data text in
   let html = Option.map (render_value data) html in
   text, html
-  [@@deprecated "Use Sihl_email.Template.render_email_with_data() instead"]
 ;;
+
+(* TODO Deprecate in later version *)
+(* [@@deprecated "Use Sihl_email.Template.render_email_with_data() instead"] *)
 
 let email_of_template ?template (email : Contract_email.t) data =
   let text, html =
@@ -98,8 +100,10 @@ let email_of_template ?template (email : Contract_email.t) data =
   |> Contract_email.set_text text
   |> Contract_email.set_html html
   |> Lwt.return
-  [@@deprecated "Use Sihl_email.Template.render_email() instead"]
 ;;
+
+(* TODO Deprecate in later version *)
+(* [@@deprecated "Use Sihl_email.Template.render_email() instead"] *)
 
 let create_email_of_template
     ?(cc = [])
