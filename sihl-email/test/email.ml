@@ -56,7 +56,7 @@ struct
         ~html:"<html>hello {name}, you have signed in {number} of times!</html>"
         "hello {name}, you have signed in {number} of times!"
     in
-    let%lwt email =
+    let email =
       Sihl_email.Template.email_of_template
         raw_email
         [ "name", "walter"; "number", "8" ]
@@ -88,7 +88,7 @@ struct
         ~html:"<html>hello {name}, you have signed in {number} of times!</html>"
         "hello {name}, you have signed in {number} of times!"
     in
-    let%lwt email =
+    let email =
       Sihl_email.Template.email_of_template
         ~template
         raw_email
