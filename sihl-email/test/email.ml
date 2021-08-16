@@ -75,13 +75,6 @@ struct
 
   let send_templated_email _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
-    let raw_email =
-      Sihl_email.create
-        ~sender:"sender@example.com"
-        ~recipient:"recipient@example.com"
-        ~subject:"test"
-        ""
-    in
     let%lwt template =
       EmailTemplateService.create
         ~label:"some template"
@@ -89,9 +82,11 @@ struct
         "hello {name}, you have signed in {number} of times!"
     in
     let email =
-      Sihl_email.Template.email_of_template
-        ~template
-        raw_email
+      Sihl_email.Template.create_email_of_template
+        ~sender:"sender@example.com"
+        ~recipient:"recipient@example.com"
+        ~subject:"test"
+        template
         [ "name", "walter"; "number", "8" ]
     in
     let%lwt () = EmailService.send email in
