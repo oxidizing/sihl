@@ -85,6 +85,7 @@ let render data text html =
   let text = render_value data text in
   let html = Option.map (render_value data) html in
   text, html
+  [@@deprecated "Use Sihl_email.Template.render_email_with_data() instead"]
 ;;
 
 let email_of_template ?template (email : Contract_email.t) data =
@@ -113,4 +114,9 @@ let create_email_of_template
   let email = Contract_email.create ~cc ~bcc ~sender ~recipient ~subject "" in
   let text, html = render data template.text template.html in
   email |> Contract_email.set_text text |> Contract_email.set_html html
+;;
+
+let render_email_with_data data (email : Contract_email.t) =
+  let text, html = render data email.text email.html in
+  { email with text; html }
 ;;

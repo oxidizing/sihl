@@ -57,9 +57,9 @@ struct
         "hello {name}, you have signed in {number} of times!"
     in
     let email =
-      Sihl_email.Template.email_of_template
-        raw_email
+      Sihl_email.Template.render_email_with_data
         [ "name", "walter"; "number", "8" ]
+        raw_email
     in
     let%lwt () = EmailService.send email in
     let sent_email = EmailService.inbox () |> List.hd in
