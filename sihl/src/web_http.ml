@@ -46,6 +46,7 @@ let schema =
 
 let registered_router = ref None
 let registered_middlewares = ref []
+let registered_not_found_handler = ref None
 let started_server = ref None
 
 let start_server () =
@@ -53,7 +54,16 @@ let start_server () =
   let port_nr =
     Option.value (Core_configuration.read schema).port ~default:33000
   in
-  let app = Opium.App.(empty |> port port_nr |> cmd_name "Sihl App") in
+  let app =
+    Opium.App.(
+      empty
+      |> port port_nr
+      |> cmd_name "Sihl App"
+      |> fun app ->
+      match !registered_not_found_handler with
+      | Some not_found_handler -> app |> not_found not_found_handler
+      | None -> app)
+  in
   let middlewares = List.map Opium.App.middleware !registered_middlewares in
   (* Registered middlewares need to be mounted before routing happens, so that
      every single request goes through them, not only requests that match
@@ -120,9 +130,10 @@ let stop () =
 
 let lifecycle = Core_container.create_lifecycle "http" ~start ~stop
 
-let register ?(middlewares = []) router =
+let register ?not_found_handler ?(middlewares = []) router =
   registered_router := Some router;
   registered_middlewares := middlewares;
+  registered_not_found_handler := not_found_handler;
   let configuration = Core_configuration.make ~schema () in
   Core_container.Service.create
     ~configuration
