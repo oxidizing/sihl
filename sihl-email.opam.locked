@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "1.0.0~rc2"
+version: "1.0.0~rc3"
 synopsis: "Email service implementations for Sihl"
 description: "Modules for sending emails using Lwt and SMTP or Sendgrid."
 maintainer: ["josef@oxidizing.io"]
@@ -75,8 +75,9 @@ depends: [
   "mrmime" {= "0.3.2"}
   "mtime" {= "1.2.0"}
   "num" {= "1.4"}
-  "ocaml" {= "4.11.2"}
+  "ocaml" {= "4.12.0"}
   "ocaml-compiler-libs" {= "v0.12.3"}
+  "ocaml-config" {= "2"}
   "ocaml-migrate-parsetree" {= "2.1.0"}
   "ocaml-syntax-shims" {= "1.0.0"}
   "ocamlbuild" {= "0.14.0"}

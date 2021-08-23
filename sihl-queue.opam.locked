@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "1.0.0~rc2"
+version: "1.0.0~rc3"
 synopsis: "Queue service implementations for Sihl"
 description:
   "Modules for running tasks in the background on a persistent queue."
@@ -15,8 +15,9 @@ depends: [
   "cmdliner" {= "1.0.4"}
   "dune" {= "2.8.5"}
   "markup" {= "1.0.0-1"}
-  "ocaml" {= "4.11.2"}
+  "ocaml" {= "4.12.0"}
   "ocaml-compiler-libs" {= "v0.12.3"}
+  "ocaml-config" {= "2"}
   "ocaml-migrate-parsetree" {= "2.1.0"}
   "ocamlbuild" {= "0.14.0"}
   "ocamlfind" {= "1.9.1"}

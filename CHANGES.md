@@ -1,4 +1,6 @@
 ## [1.0.0] - 2021-05-03
+### Fixed
+- It is now possible to register multiple instances of the same service type simultaneously
 ### Changed
 - The `search_query` for `Sihl.Database.prepare_search_request` has to return the total amount of rows for that query without limit. On PostgreSQL and MariaDB this can be done with `COUNT(*) OVER() as total`. No `count_query`is needed anymore.
 
