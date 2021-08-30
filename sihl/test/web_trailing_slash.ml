@@ -42,13 +42,30 @@ let remove_trailing_slash_on_root _ () =
   Lwt.return ()
 ;;
 
+let remove_trailing_slash_on_root_with_prefix _ () =
+  Unix.putenv "PREFIX_PATH" "path";
+  let middleware = Sihl.Web.Middleware.trailing_slash () in
+  let req = Opium.Request.get "/path////" in
+  let handler req =
+    Alcotest.(
+      check string "does not remove trailing slash" "/path" req.Opium.Request.target);
+    Lwt.return @@ Opium.Response.of_plain_text "/"
+  in
+  let%lwt _ = Rock.Middleware.apply middleware handler req in
+  Lwt.return ()
+;;
+
 let suite =
   [ ( "trailing slash"
     , [ test_case "remove trailing slash" `Quick remove_trailing_slash
       ; test_case
           "remove trailing slash on root"
           `Quick
-          remove_trailing_slash_on_root
+          remove_trailing_slash_on_root;
+      test_case
+        "remove trailing slash on root with prefix"
+        `Quick
+        remove_trailing_slash_on_root_with_prefix
       ] )
   ]
 ;;
