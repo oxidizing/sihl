@@ -100,10 +100,7 @@ In order to only allow authenticated users to use the dashboard you can add your
 let router_admin_queue =
   Service.Queue.router
     ~back:"/"
-    ~middlewares:
-      [ Sihl.Web.Middleware.user (fun user_id -> Service.User.find_opt ~user_id)
-      ; Middleware.Authn.middleware "/login"
-      ]
+    ~prefix:"/path"
     "/admin/queue"
 ]}
 

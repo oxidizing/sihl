@@ -36,7 +36,8 @@ let requeue scope csrf id =
 |}]
 ;;
 
-let status scope csrf (job : Sihl.Contract.Queue.instance) =
+let status ?prefix scope csrf (job : Sihl.Contract.Queue.instance) =
+  let scope = Format.asprintf "%s%s" scope (Option.value ~default:"" prefix) in
   let now = Ptime_clock.now () in
   match job.status with
   | Sihl.Contract.Queue.Succeeded ->
@@ -90,7 +91,7 @@ let pre_style =
 |}
 ;;
 
-let row scope csrf (job : Sihl.Contract.Queue.instance) =
+let row ?prefix scope csrf (job : Sihl.Contract.Queue.instance) =
   let last_error_at =
     job.last_error_at
     |> Option.map Ptime.to_rfc3339
@@ -152,13 +153,13 @@ let row scope csrf (job : Sihl.Contract.Queue.instance) =
       {|
       </td>
       <td class="sihl-admin-ui-table-body-cell sihl-admin-ui-queue-table-body-cell">|}
-      [ status scope csrf job ]
+      [ status ?prefix scope csrf job ]
       {|</td>
 </tr>
 |}]
 ;;
 
-let table scope csrf (jobs : Sihl.Contract.Queue.instance list) =
+let table ?prefix scope csrf (jobs : Sihl.Contract.Queue.instance list) =
   let path = Format.sprintf "%s/html/index" scope in
   [%html
     {|
@@ -178,7 +179,7 @@ let table scope csrf (jobs : Sihl.Contract.Queue.instance list) =
   </thead>
    <tbody class="sihl-admin-ui-table-body sihl-admin-ui-queue-table-body">
    |}
-      (List.map (row scope csrf) jobs)
+      (List.map (row ?prefix scope csrf) jobs)
       {|
    </tbody>
 </table>
@@ -361,7 +362,7 @@ let page ?back ?theme body =
       |}]
 ;;
 
-let index ?back ?theme scope find_jobs =
+let index ?prefix ?back ?theme scope find_jobs =
   Sihl.Web.get "" (fun req ->
       let csrf =
         match Sihl.Web.Csrf.find req with
@@ -370,7 +371,8 @@ let index ?back ?theme scope find_jobs =
       in
       let%lwt jobs = find_jobs () in
       Lwt.return
-      @@ Sihl.Web.Response.of_html (page ?back ?theme [ table scope csrf jobs ]))
+      @@ Sihl.Web.Response.of_html
+           (page ?back ?theme [ table ?prefix scope csrf jobs ]))
 ;;
 
 let html_index scope find_jobs =
@@ -411,11 +413,20 @@ let middlewares =
   ]
 ;;
 
-let router search_jobs find_job cancel_job requeue_job ?back ?theme scope =
+let router
+    search_jobs
+    find_job
+    cancel_job
+    requeue_job
+    ?back
+    ?theme
+    ?prefix
+    scope
+  =
   Sihl.Web.choose
     ~middlewares
     ~scope
-    [ index ?back ?theme scope search_jobs
+    [ index ?prefix ?back ?theme scope search_jobs
     ; html_index scope search_jobs
     ; cancel scope find_job cancel_job
     ; requeue scope find_job requeue_job

@@ -48,7 +48,11 @@ let remove_trailing_slash_on_root_with_prefix _ () =
   let req = Opium.Request.get "/path////" in
   let handler req =
     Alcotest.(
-      check string "does not remove trailing slash" "/path" req.Opium.Request.target);
+      check
+        string
+        "does not remove trailing slash"
+        "/path"
+        req.Opium.Request.target);
     Lwt.return @@ Opium.Response.of_plain_text "/"
   in
   let%lwt _ = Rock.Middleware.apply middleware handler req in
@@ -61,11 +65,11 @@ let suite =
       ; test_case
           "remove trailing slash on root"
           `Quick
-          remove_trailing_slash_on_root;
-      test_case
-        "remove trailing slash on root with prefix"
-        `Quick
-        remove_trailing_slash_on_root_with_prefix
+          remove_trailing_slash_on_root
+      ; test_case
+          "remove trailing slash on root with prefix"
+          `Quick
+          remove_trailing_slash_on_root_with_prefix
       ] )
   ]
 ;;
