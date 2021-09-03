@@ -229,6 +229,8 @@ let read_int key =
 
 let read_bool key =
   match read_string key with
+  | Some "1" -> Some true
+  | Some "0" -> Some false
   | Some value -> bool_of_string_opt value
   | None -> None
 ;;
