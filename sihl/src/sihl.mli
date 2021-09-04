@@ -291,10 +291,13 @@ module Web : sig
   end
 
   module Csrf : sig
-    (** [find request] returns the CSRF token of the current [request].
-
-        Make sure that the CSRF middleware is installed. *)
+    (** [find request] returns the CSRF token of the current [request]. Make
+        sure that the CSRF middleware is installed. *)
     val find : Rock.Request.t -> string option
+
+    (** [find_exn request] returns the CSRF token of the current [request]. If
+        the CSRF middleware is not installed, an exception is raised. *)
+    val find_exn : Rock.Request.t -> string
   end
 
   module Flash : sig

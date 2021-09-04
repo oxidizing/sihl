@@ -32,6 +32,7 @@ module Web = struct
 
   module Csrf = struct
     let find = Web_csrf.find
+    let find_exn = Web_csrf.find_exn
   end
 
   module Flash = struct
