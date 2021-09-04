@@ -182,7 +182,7 @@ let load () =
         m
           "SIHL_ENV not found. Set it to one of the following values: \
            development, production, test");
-    raise @@ Exception "SIHL_ENV not found"
+    failwith "SIHL_ENV not found"
   | Some env -> Logs.info (fun m -> m "SIHL_ENV: %s" env)
 ;;
 
@@ -212,11 +212,11 @@ let read_secret () =
     then secret
     else (
       Logs.err (fun m -> m "SIHL_SECRET has to be longer than 10");
-      raise @@ Exception "Insecure secret provided")
+      failwith "Insecure secret provided")
   | false, Some secret -> secret
   | true, None ->
     Logs.err (fun m -> m "Set SIHL_SECRET before deploying Sihl to production");
-    raise @@ Exception "No secret provided"
+    failwith "No secret provided"
   (* In testing and local dev we don't have to use real security *)
   | false, None -> "secret"
 ;;
