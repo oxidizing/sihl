@@ -394,6 +394,8 @@ Add {!Sihl.Web.Middleware.csrf} to your list of middlewares. This middleware is 
 let middlewares = [ Sihl.Web.Middleware.csrf () ]
 ]}
 
+Adding {!Sihl.Web.Middleware.csrf} to global middlewares is not recommended. Global middlewares are injected and run before any other middlewares, which is sometimes not desirable for CSRF protection. Additionally, there might be some routes where CSRF protection is unnecessary and sometimes a hinderance (for non-state changing POST requests for example).
+
 {3 Usage}
 
 Every form that uses [POST] needs to have a CSRF token associated to it. Use a hidden field [<input type="hidden" name="csrf" value=.../>] in all your forms.
