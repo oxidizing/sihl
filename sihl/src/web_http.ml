@@ -71,7 +71,7 @@ let start_server () =
   let app = List.fold_left (fun app builder -> builder app) app middlewares in
   let router =
     match !registered_router with
-    | None -> raise @@ Exception "No router registered"
+    | None -> failwith "No router registered"
     | Some router -> router
   in
   let builders = routers_to_opium_builders [ router ] in

@@ -234,8 +234,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     let%lwt job = Repo.find id in
     match job with
     | Some job -> Lwt.return job
-    | None ->
-      raise @@ Exception (Format.asprintf "Failed to find with id %s" id)
+    | None -> failwith (Format.asprintf "Failed to find with id %s" id)
   ;;
 
   let update (job : instance) : instance Lwt.t =
@@ -244,8 +243,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     match updated with
     | Some job -> Lwt.return job
     | None ->
-      raise
-      @@ Exception (Format.asprintf "Failed to update job %a" pp_instance job)
+      failwith (Format.asprintf "Failed to update job %a" pp_instance job)
   ;;
 
   let requeue (job : instance) : instance Lwt.t =

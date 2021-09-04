@@ -237,7 +237,7 @@ struct
     | None ->
       Logs.err (fun m ->
           m "CSRF middleware not installed for resource '%s'" name);
-      raise @@ Exception "CSRF middleware not installed"
+      failwith "CSRF middleware not installed"
     | Some token -> token
   ;;
 

@@ -7,8 +7,7 @@ exception Exception of string
 let clean =
   if Sihl.Configuration.is_production ()
   then
-    raise
-    @@ Exception
+    failwith
          "Could not clean repository in production, this is most likely not what \
           you want."
   else Repo.clean

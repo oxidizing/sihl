@@ -27,6 +27,6 @@ let random_cmd =
         | Some n ->
           print_endline @@ base64 n;
           Lwt.return @@ Some ()
-        | None -> raise @@ Exception "Invalid number of bytes provided")
+        | None -> failwith "Invalid number of bytes provided")
       | _ -> Lwt.return None)
 ;;
