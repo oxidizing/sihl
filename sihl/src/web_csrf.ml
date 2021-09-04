@@ -2,12 +2,21 @@ let log_src = Logs.Src.create "sihl.middleware.csrf"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
+exception Exception of string
+
 let key : string Opium.Context.key =
   Opium.Context.Key.create ("csrf token", Sexplib.Std.sexp_of_string)
 ;;
 
 (* Can be used to fetch token in view for forms *)
 let find req = Opium.Context.find key req.Opium.Request.env
+
+let find_exn req =
+  match Opium.Context.find key req.Opium.Request.env with
+  | Some csrf -> csrf
+  | None ->
+    failwith "CSRF token was fetched but CSRF middleware is not installed"
+;;
 
 let set token req =
   let env = req.Opium.Request.env in
