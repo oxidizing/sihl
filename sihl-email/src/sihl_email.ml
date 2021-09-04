@@ -108,8 +108,8 @@ let smtp_schema =
     ; string "SMTP_HOST"
     ; optional (int ~default:587 "SMTP_PORT")
     ; bool "SMTP_START_TLS"
-    ; optional (string ~default:"/etc/ssl/certs" "SMTP_CA_PATH")
-    ; optional (string ~default:"" "SMTP_CA_CERT")
+    ; optional (string "SMTP_CA_PATH")
+    ; optional (string "SMTP_CA_CERT")
     ; optional (bool ~default:false "EMAIL_CONSOLE")
     ]
     smtp_config
@@ -354,7 +354,13 @@ module Queued
           |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
-    let handle email = Email.send email |> Lwt.map Result.ok
+    let handle email =
+      Lwt.catch
+        (fun () -> Email.send email |> Lwt.map Result.ok)
+        (fun exn ->
+          let exn_string = Printexc.to_string exn in
+          Lwt.return @@ Error exn_string)
+    ;;
 
     let job =
       Sihl.Contract.Queue.create_job
