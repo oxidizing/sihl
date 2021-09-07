@@ -164,7 +164,11 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
   ;;
 
   let send email = intercept send' email
-  let bulk_send _ = failwith "Bulk sending not implemented yet"
+
+  let bulk_send _ =
+    failwith
+      "Bulk sending with the SMTP backend not supported, please use sihl-queue"
+  ;;
 
   let start () =
     (* Make sure that configuration is valid *)
@@ -293,7 +297,12 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
   ;;
 
   let send email = intercept send' email
-  let bulk_send _ = Lwt.return ()
+
+  let bulk_send _ =
+    failwith
+      "bulk_send() with the Sendgrid backend is not supported, please use \
+       sihl-queue"
+  ;;
 
   let start () =
     (* Make sure that configuration is valid *)
@@ -376,28 +385,8 @@ module Queued
     let dispatch_all emails = QueueService.dispatch_all emails job
   end
 
-  let send email =
-    (* skip queue when running tests *)
-    if not (Sihl.Configuration.is_production ())
-    then (
-      Logs.debug (fun m -> m "Skipping queue for email sending");
-      Email.send email)
-    else Job.dispatch email
-  ;;
-
-  let bulk_send emails =
-    if not (Sihl.Configuration.is_production ())
-    then (
-      Logs.debug (fun m -> m "Skipping queue for email sending");
-      let rec loop emails =
-        match emails with
-        | email :: emails -> Lwt.bind (Email.send email) (fun () -> loop emails)
-        | [] -> Lwt.return ()
-      in
-      loop emails)
-    else Job.dispatch_all emails
-  ;;
-
+  let send email = Job.dispatch email
+  let bulk_send emails = Job.dispatch_all emails
   let start () = QueueService.register_jobs [ Sihl.Contract.Queue.hide Job.job ]
   let stop () = Lwt.return ()
 

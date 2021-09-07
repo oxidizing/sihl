@@ -39,24 +39,69 @@ let incr_tries job_instance =
 ;;
 
 module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
+  type config = { force_async : bool option }
+
+  let config force_async = { force_async }
+
+  let schema =
+    let open Conformist in
+    make
+      [ optional
+          (bool
+             ~meta:"If set to true, the queue is used even in development."
+             ~default:false
+             "QUEUE_FORCE_ASYNC")
+      ]
+      config
+  ;;
+
   let registered_jobs : job' list ref = ref []
   let stop_schedule : (unit -> unit) option ref = ref None
 
   let dispatch ?delay input (job : 'a job) =
     let open Sihl.Contract.Queue in
-    let name = job.name in
-    Logs.debug (fun m -> m "Dispatching job %s" name);
-    let now = Ptime_clock.now () in
-    let job_instance = create_instance input delay now job in
-    Repo.enqueue job_instance
+    let config = Sihl.Configuration.read schema in
+    let force_async = Option.value ~default:false config.force_async in
+    if Sihl.Configuration.is_production () || force_async
+    then (
+      let name = job.name in
+      Logs.debug (fun m -> m "Dispatching job %s" name);
+      let now = Ptime_clock.now () in
+      let job_instance = create_instance input delay now job in
+      Repo.enqueue job_instance)
+    else (
+      Logs.info (fun m -> m "Skipping queue in development environment");
+      match%lwt job.handle input with
+      | Ok () -> Lwt.return ()
+      | Error msg ->
+        Logs.err (fun m -> m "Error while processing job '%s': %s" name msg);
+        Lwt.return ())
   ;;
 
   let dispatch_all ?delay inputs job =
-    let now = Ptime_clock.now () in
-    let job_instances =
-      List.map (fun input -> create_instance input delay now job) inputs
-    in
-    Repo.enqueue_all job_instances
+    let config = Sihl.Configuration.read schema in
+    let force_async = Option.value ~default:false config.force_async in
+    if Sihl.Configuration.is_production () || force_async
+    then (
+      let now = Ptime_clock.now () in
+      let job_instances =
+        List.map (fun input -> create_instance input delay now job) inputs
+      in
+      Repo.enqueue_all job_instances)
+    else (
+      Logs.info (fun m -> m "Skipping queue in development environment");
+      let rec loop inputs =
+        match inputs with
+        | input :: inputs ->
+          Lwt.bind (job.handle input) (function
+              | Ok () -> loop inputs
+              | Error msg ->
+                Logs.err (fun m ->
+                    m "Error while processing job '%s': %s" job.name msg);
+                loop inputs)
+        | [] -> Lwt.return ()
+      in
+      loop inputs)
   ;;
 
   let run_job (input : string) (job : job') (job_instance : instance)
@@ -199,7 +244,10 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Lwt.return ()
   ;;
 
-  let start () = start_queue ()
+  let start () =
+    Sihl.Configuration.require schema;
+    start_queue ()
+  ;;
 
   let stop () =
     registered_jobs := [];
@@ -225,7 +273,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Repo.register_migration ();
     Repo.register_cleaner ();
     registered_jobs := List.concat [ !registered_jobs; jobs ];
-    Sihl.Container.Service.create lifecycle
+    let configuration = Sihl.Configuration.make ~schema () in
+    Sihl.Container.Service.create ~configuration lifecycle
   ;;
 
   let query () : instance list Lwt.t = Repo.query ()
