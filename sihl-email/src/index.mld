@@ -42,7 +42,9 @@ let services = [ Service.Email.register () ]
 
 {2 Configuration}
 
-Run [make sihl] to get a list of required configurations.
+Run [make sihl config] to get a list of required configurations.
+
+You can use [EMAIL_BYPASS_INTERCEPT] to actually use a configured SMTP server in a development setting (without having to set SIHl_ENV to production).
 
 {2 Usage}
 
