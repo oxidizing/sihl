@@ -229,10 +229,9 @@ let read_int key =
 
 let read_bool key =
   match read_string key with
-  | Some "1" -> Some true
-  | Some "0" -> Some false
-  | Some value -> bool_of_string_opt value
-  | None -> None
+  | Some "1" | Some "true" | Some "True" -> Some true
+  | Some "0" | Some "false" | Some "False" -> Some false
+  | _ -> None
 ;;
 
 let require schema = read schema |> ignore
