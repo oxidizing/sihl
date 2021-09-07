@@ -336,7 +336,7 @@ let page ?back ?theme body =
            <link href="|}
         url
         {|" rel="stylesheet">
-           <title>Hello world!</title>
+           <title>Queue Dashboard</title>
          </head>
            <body>|}
         body
@@ -352,7 +352,7 @@ let page ?back ?theme body =
          <head>
            <meta charset="UTF-8"/>
            <meta name="viewport" content="width=device-width, initial-scale=1">
-           <title>Hello world!</title>
+           <title>Queue Dashboard</title>
          </head>
            <body>|}
         body
