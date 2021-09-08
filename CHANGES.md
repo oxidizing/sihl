@@ -1,6 +1,13 @@
-## [1.0.0] - 2021-05-03
+## [1.0.0] - 2021-09-08
 ### Fixed
 - It is now possible to register multiple instances of the same service type simultaneously
+- Rename page title of queue dashboard
+- Document `EMAIL_BYPASS_INTERCEPT` and `QUEUE_FORCE_ASYNC`
+- Accept `true`, `True` and `1` for truthy boolean env vars
+- Document global middlewares
+- Fix issue where the default smtp certs path is an empty string
+- Fix trailing slash middleware to work with `PREFIX_PATH`
+
 ### Changed
 - The `search_query` for `Sihl.Database.prepare_search_request` has to return the total amount of rows for that query without limit. On PostgreSQL and MariaDB this can be done with `COUNT(*) OVER() as total`. No `count_query`is needed anymore.
 

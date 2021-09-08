@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "1.0.0~rc3"
+version: "1.0.0"
 synopsis: "Storage service implementations for Sihl"
 description:
   "Modules for storing large binary blobs using either PostgreSQL or MariaDB."
@@ -12,9 +12,8 @@ bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "2.8.5"}
-  "ocaml" {= "4.12.0"}
-  "ocaml-config" {= "2"}
+  "dune" {= "2.9.0"}
+  "ocaml" {= "4.11.2"}
 ]
 build: [
   ["dune" "subst"] {dev}
