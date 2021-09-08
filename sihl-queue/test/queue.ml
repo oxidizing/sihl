@@ -41,6 +41,7 @@ let incr_tries job_instance =
 ;;
 
 let should_run_job _ () =
+  Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
   let now = Ptime_clock.now () in
   let job =
     Sihl_queue.create_job
@@ -98,6 +99,7 @@ let should_run_job _ () =
 
 module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   let dispatched_job_gets_processed _ () =
+    Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
     let has_ran_job = ref false in
     let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
     let%lwt () = Sihl.Cleaner.clean_all () in
@@ -120,6 +122,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   ;;
 
   let all_dispatched_jobs_gets_processed _ () =
+    Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
     let processed_inputs = ref [] in
     let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
     let%lwt () = Sihl.Cleaner.clean_all () in
@@ -151,6 +154,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   ;;
 
   let two_dispatched_jobs_get_processed _ () =
+    Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
     let has_ran_job1 = ref false in
     let has_ran_job2 = ref false in
     let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
@@ -189,6 +193,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   ;;
 
   let cleans_up_job_after_error _ () =
+    Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
     let has_cleaned_up_job = ref false in
     let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
     let%lwt () = Sihl.Cleaner.clean_all () in
@@ -214,6 +219,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
   ;;
 
   let cleans_up_job_after_exception _ () =
+    Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
     let has_cleaned_up_job = ref false in
     let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
     let%lwt () = Sihl.Cleaner.clean_all () in
