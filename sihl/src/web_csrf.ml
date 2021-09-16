@@ -65,7 +65,14 @@ let middleware
       (* Consume CSRF token so Sihl.Web.Form can be used properly *)
       handler (set "development" req)
     else (
-      let%lwt token = Opium.Request.urlencoded input_name req in
+      (* CSRF token might come from a multipart form *)
+      let%lwt multipart_token = Opium.Request.to_multipart_form_data req in
+      let%lwt token =
+        Option.bind multipart_token @@ List.assoc_opt input_name
+        |> function
+        | None -> Opium.Request.urlencoded input_name req
+        | tk -> Lwt.return tk
+      in
       (* Create a new token for each request to mitigate BREACH attack *)
       let new_token = Core_random.base64 80 in
       let req = set new_token req in
