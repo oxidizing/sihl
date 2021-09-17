@@ -1,3 +1,7 @@
+## [1.0.1] - 2021-09-17
+### Added
+- Support `multipart/form-data` in CSRF middleware
+
 ## [1.0.0] - 2021-09-08
 ### Fixed
 - It is now possible to register multiple instances of the same service type simultaneously
