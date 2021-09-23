@@ -5,15 +5,15 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 module MakeSql (Repo : Repo_sql.Sig) : Sihl.Contract.Cache.Sig = struct
   let find = Repo.find
 
-  let set (k, v) =
+  let set ?ctx (k, v) =
     match v with
     | Some v ->
       (match%lwt find k with
-      | Some _ -> Repo.update (k, v)
-      | None -> Repo.insert (k, v))
+      | Some _ -> Repo.update ?ctx (k, v)
+      | None -> Repo.insert ?ctx (k, v))
     | None ->
       (match%lwt find k with
-      | Some _ -> Repo.delete k
+      | Some _ -> Repo.delete ?ctx k
       | None ->
         (* nothing to do *)
         Lwt.return ())

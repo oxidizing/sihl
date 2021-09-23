@@ -1,12 +1,12 @@
-let user_from_token find_user ?(key = "user_id") read_token req
+let user_from_token find_user ?ctx ?(key = "user_id") read_token req
     : Sihl.Contract.User.t option Lwt.t
   =
   match Sihl.Web.Request.bearer_token req with
   | Some token ->
-    let%lwt user_id = read_token token ~k:key in
+    let%lwt user_id = read_token ?ctx token ~k:key in
     (match user_id with
     | None -> Lwt.return None
-    | Some user_id -> find_user user_id)
+    | Some user_id -> find_user ?ctx user_id)
   | None -> Lwt.return None
 ;;
 

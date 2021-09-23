@@ -62,7 +62,7 @@ val schema : (unit, {{ctor_type}} -> t, t) Conformist.t
 
 exception Exception of string
 
-val clean : unit -> unit Lwt.t
+val clean : ?ctx:(string * string) list -> unit -> unit Lwt.t
 val find : string -> t option Lwt.t
   val search
     :  ?filter:string

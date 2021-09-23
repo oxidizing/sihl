@@ -1,14 +1,38 @@
 module type Sig = sig
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val insert_file : file:Sihl.Contract.Storage.stored -> unit Lwt.t
-  val insert_blob : id:string -> blob:string -> unit Lwt.t
-  val get_file : id:string -> Sihl.Contract.Storage.stored option Lwt.t
-  val get_blob : id:string -> string option Lwt.t
-  val update_file : file:Sihl.Contract.Storage.stored -> unit Lwt.t
-  val update_blob : id:string -> blob:string -> unit Lwt.t
-  val delete_file : id:string -> unit Lwt.t
-  val delete_blob : id:string -> unit Lwt.t
+
+  val insert_file
+    :  ?ctx:(string * string) list
+    -> file:Sihl.Contract.Storage.stored
+    -> unit Lwt.t
+
+  val insert_blob
+    :  ?ctx:(string * string) list
+    -> id:string
+    -> blob:string
+    -> unit Lwt.t
+
+  val get_file
+    :  ?ctx:(string * string) list
+    -> id:string
+    -> Sihl.Contract.Storage.stored option Lwt.t
+
+  val get_blob : ?ctx:(string * string) list -> id:string -> string option Lwt.t
+
+  val update_file
+    :  ?ctx:(string * string) list
+    -> file:Sihl.Contract.Storage.stored
+    -> unit Lwt.t
+
+  val update_blob
+    :  ?ctx:(string * string) list
+    -> id:string
+    -> blob:string
+    -> unit Lwt.t
+
+  val delete_file : ?ctx:(string * string) list -> id:string -> unit Lwt.t
+  val delete_blob : ?ctx:(string * string) list -> id:string -> unit Lwt.t
 end
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
@@ -52,7 +76,7 @@ struct
          |sql}
   ;;
 
-  let insert_file ~file = Sihl.Database.exec insert_request file
+  let insert_file ?ctx ~file = Sihl.Database.exec ?ctx insert_request file
 
   let update_file_request =
     Caqti_request.exec
@@ -68,7 +92,7 @@ struct
          |sql}
   ;;
 
-  let update_file ~file = Sihl.Database.exec update_file_request file
+  let update_file ?ctx ~file = Sihl.Database.exec ?ctx update_file_request file
 
   let get_file_request =
     Caqti_request.find_opt
@@ -98,7 +122,7 @@ struct
          |sql}
   ;;
 
-  let get_file ~id = Sihl.Database.find_opt get_file_request id
+  let get_file ?ctx ~id = Sihl.Database.find_opt ?ctx get_file_request id
 
   let delete_file_request =
     Caqti_request.exec
@@ -109,7 +133,7 @@ struct
          |sql}
   ;;
 
-  let delete_file ~id = Sihl.Database.exec delete_file_request id
+  let delete_file ?ctx ~id = Sihl.Database.exec ?ctx delete_file_request id
 
   let get_blob_request =
     Caqti_request.find_opt
@@ -123,7 +147,7 @@ struct
          |sql}
   ;;
 
-  let get_blob ~id = Sihl.Database.find_opt get_blob_request id
+  let get_blob ?ctx ~id = Sihl.Database.find_opt ?ctx get_blob_request id
 
   let insert_blob_request =
     Caqti_request.exec
@@ -139,7 +163,9 @@ struct
          |sql}
   ;;
 
-  let insert_blob ~id ~blob = Sihl.Database.exec insert_blob_request (id, blob)
+  let insert_blob ?ctx ~id ~blob =
+    Sihl.Database.exec ?ctx insert_blob_request (id, blob)
+  ;;
 
   let update_blob_request =
     Caqti_request.exec
@@ -152,7 +178,9 @@ struct
          |sql}
   ;;
 
-  let update_blob ~id ~blob = Sihl.Database.exec update_blob_request (id, blob)
+  let update_blob ?ctx ~id ~blob =
+    Sihl.Database.exec ?ctx update_blob_request (id, blob)
+  ;;
 
   let delete_blob_request =
     Caqti_request.exec
@@ -164,19 +192,19 @@ struct
          |sql}
   ;;
 
-  let delete_blob ~id = Sihl.Database.exec delete_blob_request id
+  let delete_blob ?ctx ~id = Sihl.Database.exec ?ctx delete_blob_request id
 
   let clean_handles_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE storage_handles;"
   ;;
 
-  let clean_handles () = Sihl.Database.exec clean_handles_request ()
+  let clean_handles ?ctx () = Sihl.Database.exec ?ctx clean_handles_request ()
 
   let clean_blobs_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE storage_blobs;"
   ;;
 
-  let clean_blobs () = Sihl.Database.exec clean_blobs_request ()
+  let clean_blobs ?ctx () = Sihl.Database.exec ?ctx clean_blobs_request ()
 
   let fix_collation =
     Sihl.Database.Migration.create_step
@@ -232,9 +260,9 @@ struct
   let register_migration () = MigrationService.register_migration (migration ())
 
   let register_cleaner () =
-    let cleaner () =
-      let%lwt () = clean_handles () in
-      clean_blobs ()
+    let cleaner ?ctx () =
+      let%lwt () = clean_handles ?ctx () in
+      clean_blobs ?ctx ()
     in
     Sihl.Cleaner.register_cleaner cleaner
   ;;

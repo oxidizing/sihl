@@ -103,7 +103,9 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let enqueue job_instance = Sihl.Database.exec enqueue_request job_instance
+  let enqueue ?ctx job_instance =
+    Sihl.Database.exec ?ctx enqueue_request job_instance
+  ;;
 
   (* MariaDB expects uuid to be bytes, since we can't unhex when using caqti's
      populate, we have to do that manually. *)
@@ -119,8 +121,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
              })
   ;;
 
-  let enqueue_all job_instances =
-    Sihl.Database.transaction' (fun connection ->
+  let enqueue_all ?ctx job_instances =
+    Sihl.Database.transaction' ?ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.populate
           ~table:"queue_jobs"
@@ -159,7 +161,9 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let update job_instance = Sihl.Database.exec update_request job_instance
+  let update ?ctx job_instance =
+    Sihl.Database.exec ?ctx update_request job_instance
+  ;;
 
   let find_workable_request =
     Caqti_request.collect
@@ -191,7 +195,9 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find_workable () = Sihl.Database.collect find_workable_request ()
+  let find_workable ?ctx () =
+    Sihl.Database.collect ?ctx find_workable_request ()
+  ;;
 
   let query =
     Caqti_request.collect
@@ -220,7 +226,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let query () = Sihl.Database.collect query ()
+  let query ?ctx () = Sihl.Database.collect ?ctx query ()
 
   let find_request =
     Caqti_request.find_opt
@@ -248,7 +254,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find id = Sihl.Database.find_opt find_request id
+  let find ?ctx id = Sihl.Database.find_opt ?ctx find_request id
 
   let delete_request =
     Caqti_request.exec
@@ -259,15 +265,15 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let delete (job : Sihl.Contract.Queue.instance) =
-    Sihl.Database.exec delete_request job.id
+  let delete ?ctx (job : Sihl.Contract.Queue.instance) =
+    Sihl.Database.exec ?ctx delete_request job.id
   ;;
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
   ;;
 
-  let clean () = Sihl.Database.exec clean_request ()
+  let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
 
   module Migration = struct
     let fix_collation =
@@ -370,10 +376,12 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let enqueue job_instance = Sihl.Database.exec enqueue_request job_instance
+  let enqueue ?ctx job_instance =
+    Sihl.Database.exec ?ctx enqueue_request job_instance
+  ;;
 
-  let enqueue_all job_instances =
-    Sihl.Database.transaction' (fun connection ->
+  let enqueue_all ?ctx job_instances =
+    Sihl.Database.transaction' ?ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         Connection.populate
           ~table:"queue_jobs"
@@ -412,7 +420,9 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let update job_instance = Sihl.Database.exec update_request job_instance
+  let update ?ctx job_instance =
+    Sihl.Database.exec ?ctx update_request job_instance
+  ;;
 
   let find_workable_request =
     Caqti_request.collect
@@ -438,7 +448,9 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find_workable () = Sihl.Database.collect find_workable_request ()
+  let find_workable ?ctx () =
+    Sihl.Database.collect ?ctx find_workable_request ()
+  ;;
 
   let query =
     Caqti_request.collect
@@ -460,7 +472,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let query () = Sihl.Database.collect query ()
+  let query ?ctx () = Sihl.Database.collect ?ctx query ()
 
   let find_request =
     Caqti_request.find_opt
@@ -482,7 +494,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let find id = Sihl.Database.find_opt find_request id
+  let find ?ctx id = Sihl.Database.find_opt ?ctx find_request id
 
   let delete_request =
     Caqti_request.exec
@@ -493,15 +505,15 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
   ;;
 
-  let delete (job : Sihl.Contract.Queue.instance) =
-    Sihl.Database.exec delete_request job.id
+  let delete ?ctx (job : Sihl.Contract.Queue.instance) =
+    Sihl.Database.exec ?ctx delete_request job.id
   ;;
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE queue_jobs;"
   ;;
 
-  let clean () = Sihl.Database.exec clean_request ()
+  let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
 
   module Migration = struct
     let create_jobs_table =

@@ -62,8 +62,8 @@ module type Sig = sig
     (* Deprecated in 0.6.0 *)
     [@@deprecated "Use run_search_request instead"]
 
-  (** [run_search_request prepared_request sort filter ~limit ~offset] runs the
-      [prepared_request] and returns a partial result of the whole stored
+  (** [run_search_request ?ctx prepared_request sort filter ~limit ~offset] runs
+      the [prepared_request] and returns a partial result of the whole stored
       collection. The second element of the result tuple is the total amount of
       items in the whole collection.
 
@@ -81,9 +81,14 @@ module type Sig = sig
 
       [limit] is the number of items of the returned partial result.
 
-      [offset] and [limit] can be used together to implement pagination. *)
+      [offset] and [limit] can be used together to implement pagination.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
   val run_search_request
-    :  'a prepared_search_request
+    :  ?ctx:(string * string) list
+    -> 'a prepared_search_request
     -> [ `Asc | `Desc ]
     -> string option
     -> limit:int
@@ -93,70 +98,139 @@ module type Sig = sig
   (** [raise_error err] raises a printable caqti error [err] .*)
   val raise_error : ('a, Caqti_error.t) Result.t -> 'a
 
-  (** [fetch_pool ()] returns the connection pool that was set up. If there was
-      no connection pool set up, setting it up now. *)
+  (** [fetch_pool ?ctx ()] returns the connection pool referenced in [ctx] or
+      the default connection pool if no connection pool is referenced.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
   val fetch_pool
-    :  unit
+    :  ?ctx:(string * string) list
+    -> unit
     -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
 
-  (** [find_opt request input] runs a caqti [request] in the connection pool
-      where [input] is the input of the caqti request and returns one row or
-      [None]. Returns [None] if no rows are found.
+  (** [add_pool ~pool_size name database_url] creates a connection pool with a
+      unique [name]. Creation fails if a pool with the same name was already
+      created to avoid overwriting connection pools accidentally. The connection
+      to the database is established.
+
+      The pool can be referenced with its [name]. The service context can
+      contain the pool name under the key `pool` to force the usage of a certain
+      pool.
+
+      A [pool_size] can be provided to define the number of connections that
+      should be kept open. The default is 10. *)
+  val add_pool : ?pool_size:int -> string -> string -> unit
+
+  (** [find_opt ?ctx request input] runs a caqti [request] where [input] is the
+      input of the caqti request and returns one row or [None]. Returns [None]
+      if no rows are found.
 
       Note that the caqti request is only allowed to return one or zero rows,
-      not many. *)
+      not many.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
+
   val find_opt
-    :  ('a, 'b, [< `One | `Zero ]) Caqti_request.t
+    :  ?ctx:(string * string) list
+    -> ('a, 'b, [< `One | `Zero ]) Caqti_request.t
     -> 'a
     -> 'b option Lwt.t
 
-  (** [find request input] runs a caqti [request] on the connection pool where
-      [input] is the input of the caqti request and returns one row. Raises an
-      exception if no row was found.
+  (** [find ?ctx request input] runs a caqti [request] where [input] is the
+      input of the caqti request and returns one row. Raises an exception if no
+      row was found.
 
       Note that the caqti request is only allowed to return one or zero rows,
-      not many. *)
-  val find : ('a, 'b, [< `One ]) Caqti_request.t -> 'a -> 'b Lwt.t
+      not many.
 
-  (** [collect request input] runs a caqti [request] on the connection pool
-      where [input] is the input of the caqti request and retuns a list of rows.
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
+  val find
+    :  ?ctx:(string * string) list
+    -> ('a, 'b, [< `One ]) Caqti_request.t
+    -> 'a
+    -> 'b Lwt.t
 
-      Note that the caqti request is allowed to return one, zero or many rows. *)
+  (** [collect ?ctx request input] runs a caqti [request] where [input] is the
+      input of the caqti request and retuns a list of rows.
+
+      Note that the caqti request is allowed to return one, zero or many rows.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
   val collect
-    :  ('a, 'b, [< `One | `Zero | `Many ]) Caqti_request.t
+    :  ?ctx:(string * string) list
+    -> ('a, 'b, [< `One | `Zero | `Many ]) Caqti_request.t
     -> 'a
     -> 'b list Lwt.t
 
-  (** [exec request input] runs a caqti [request] on the connection pool.
+  (** [exec ?ctx request input] runs a caqti [request].
 
       Note that the caqti request is not allowed to return any rows.
 
-      Use {!exec} to run mutations. *)
-  val exec : ('b, unit, [< `Zero ]) Caqti_request.t -> 'b -> unit Lwt.t
+      Use {!exec} to run mutations.
 
-  (** [query f] runs the query [f] on the connection pool and returns the
-      result. If the query fails the Lwt.t fails as well. *)
-  val query : (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
+  val exec
+    :  ?ctx:(string * string) list
+    -> ('b, unit, [< `Zero ]) Caqti_request.t
+    -> 'b
+    -> unit Lwt.t
 
-  (** [query' f] runs the query [f] on the connection pool and returns the
-      result. Use [query'] instead of {!query} as a shorthand when you have a
-      single caqti request to execute. *)
-  val query'
-    :  (Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t)
+  (** [query ?ctx f] runs the query [f] and returns the result. If the query
+      fails the Lwt.t fails as well.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
+  val query
+    :  ?ctx:(string * string) list
+    -> (Caqti_lwt.connection -> 'a Lwt.t)
     -> 'a Lwt.t
 
-  (** [transaction f] runs the query [f] on the connection pool in a transaction
-      and returns the result. If the query fails the Lwt.t fails as well and the
-      transaction gets rolled back. If the database driver doesn't support
-      transactions, [transaction] gracefully becomes {!query}. *)
-  val transaction : (Caqti_lwt.connection -> 'a Lwt.t) -> 'a Lwt.t
+  (** [query' ?ctx f] runs the query [f] and returns the result. Use [query']
+      instead of {!query} as a shorthand when you have a single caqti request to
+      execute.
 
-  (** [transaction' f] runs the query [f] on the connection pool in a
-      transaction and returns the result. If the query fails the Lwt.t fails as
-      well and the transaction gets rolled back. If the database driver doesn't
-      support transactions, [transaction'] gracefully becomes {!query'}. *)
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
+  val query'
+    :  ?ctx:(string * string) list
+    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t)
+    -> 'a Lwt.t
+
+  (** [transaction ?ctx f] runs the query [f] in a transaction and returns the
+      result. If the query fails the Lwt.t fails as well and the transaction
+      gets rolled back. If the database driver doesn't support transactions,
+      [transaction] gracefully becomes {!query}.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
+  val transaction
+    :  ?ctx:(string * string) list
+    -> (Caqti_lwt.connection -> 'a Lwt.t)
+    -> 'a Lwt.t
+
+  (** [transaction' ?ctx f] runs the query [f] in a transaction and returns the
+      result. If the query fails the Lwt.t fails as well and the transaction
+      gets rolled back. If the database driver doesn't support transactions,
+      [transaction'] gracefully becomes {!query'}.
+
+      An optional [ctx] can be provided. The tuple [("pool", "pool_name")]
+      selects the pool ["pool_name"]. Make sure to initialize the pool with
+      {!add_pool} beforehand. *)
   val transaction'
-    :  (Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t)
+    :  ?ctx:(string * string) list
+    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t)
     -> 'a Lwt.t
 
   val register : unit -> Core_container.Service.t

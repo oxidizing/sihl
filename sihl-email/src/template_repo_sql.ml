@@ -2,10 +2,26 @@ module type Sig = sig
   val lifecycles : Sihl.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val get : string -> Sihl.Contract.Email_template.t option Lwt.t
-  val get_by_label : string -> Sihl.Contract.Email_template.t option Lwt.t
-  val insert : Sihl.Contract.Email_template.t -> unit Lwt.t
-  val update : Sihl.Contract.Email_template.t -> unit Lwt.t
+
+  val get
+    :  ?ctx:(string * string) list
+    -> string
+    -> Sihl.Contract.Email_template.t option Lwt.t
+
+  val get_by_label
+    :  ?ctx:(string * string) list
+    -> string
+    -> Sihl.Contract.Email_template.t option Lwt.t
+
+  val insert
+    :  ?ctx:(string * string) list
+    -> Sihl.Contract.Email_template.t
+    -> unit Lwt.t
+
+  val update
+    :  ?ctx:(string * string) list
+    -> Sihl.Contract.Email_template.t
+    -> unit Lwt.t
 end
 
 let template =
@@ -55,7 +71,7 @@ struct
         |sql}
     ;;
 
-    let get id = Sihl.Database.find_opt get_request id
+    let get ?ctx id = Sihl.Database.find_opt ?ctx get_request id
 
     let get_by_label_request =
       Caqti_request.find_opt
@@ -80,7 +96,9 @@ struct
         |sql}
     ;;
 
-    let get_by_label label = Sihl.Database.find_opt get_by_label_request label
+    let get_by_label ?ctx label =
+      Sihl.Database.find_opt ?ctx get_by_label_request label
+    ;;
 
     let insert_request =
       Caqti_request.exec
@@ -104,7 +122,7 @@ struct
         |sql}
     ;;
 
-    let insert template = Sihl.Database.exec insert_request template
+    let insert ?ctx template = Sihl.Database.exec ?ctx insert_request template
 
     let update_request =
       Caqti_request.exec
@@ -121,7 +139,7 @@ struct
         |sql}
     ;;
 
-    let update template = Sihl.Database.exec update_request template
+    let update ?ctx template = Sihl.Database.exec ?ctx update_request template
 
     let clean_request =
       Caqti_request.exec
@@ -131,7 +149,7 @@ struct
          |sql}
     ;;
 
-    let clean () = Sihl.Database.exec clean_request ()
+    let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
   end
 
   module Migration = struct
@@ -232,7 +250,7 @@ struct
         |sql}
     ;;
 
-    let get id = Sihl.Database.find_opt get_request id
+    let get ?ctx id = Sihl.Database.find_opt ?ctx get_request id
 
     let get_by_label_request =
       Caqti_request.find_opt
@@ -251,7 +269,9 @@ struct
         |sql}
     ;;
 
-    let get_by_label label = Sihl.Database.find_opt get_by_label_request label
+    let get_by_label ?ctx label =
+      Sihl.Database.find_opt ?ctx get_by_label_request label
+    ;;
 
     let insert_request =
       Caqti_request.exec
@@ -275,7 +295,7 @@ struct
         |sql}
     ;;
 
-    let insert template = Sihl.Database.exec insert_request template
+    let insert ?ctx template = Sihl.Database.exec ?ctx insert_request template
 
     let update_request =
       Caqti_request.exec
@@ -292,7 +312,7 @@ struct
         |sql}
     ;;
 
-    let update template = Sihl.Database.exec update_request template
+    let update ?ctx template = Sihl.Database.exec ?ctx update_request template
 
     let clean_request =
       Caqti_request.exec
@@ -300,7 +320,7 @@ struct
         "TRUNCATE TABLE email_templates CASCADE;"
     ;;
 
-    let clean () = Sihl.Database.exec clean_request ()
+    let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
   end
 
   module Migration = struct

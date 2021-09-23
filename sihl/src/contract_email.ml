@@ -22,14 +22,14 @@ module type Sig = sig
       mailbox. A subsequent call on `inbox ()` will return an empty list. *)
   val clear_inbox : unit -> unit
 
-  (** [send email] sends the email [email]. The returned Lwt.t fulfills if the
-      underlying email transport acknowledges sending. In case of SMTP, this
+  (** [send ?ctx email] sends the email [email]. The returned Lwt.t fulfills if
+      the underlying email transport acknowledges sending. In case of SMTP, this
       might take a while. *)
-  val send : t -> unit Lwt.t
+  val send : ?ctx:(string * string) list -> t -> unit Lwt.t
 
-  (** [bulk_send emails] Sends the list of emails [emails]. If sending of one of
-      them fails, the returned Lwt.t fails. *)
-  val bulk_send : t list -> unit Lwt.t
+  (** [bulk_send ?ctx emails] Sends the list of emails [emails]. If sending of
+      one of them fails, the returned Lwt.t fails. *)
+  val bulk_send : ?ctx:(string * string) list -> t list -> unit Lwt.t
 
   val register : unit -> Core_container.Service.t
 

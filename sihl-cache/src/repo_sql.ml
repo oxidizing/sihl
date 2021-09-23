@@ -2,10 +2,10 @@ module type Sig = sig
   val lifecycles : Sihl.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val find : string -> string option Lwt.t
-  val insert : string * string -> unit Lwt.t
-  val update : string * string -> unit Lwt.t
-  val delete : string -> unit Lwt.t
+  val find : ?ctx:(string * string) list -> string -> string option Lwt.t
+  val insert : ?ctx:(string * string) list -> string * string -> unit Lwt.t
+  val update : ?ctx:(string * string) list -> string * string -> unit Lwt.t
+  val delete : ?ctx:(string * string) list -> string -> unit Lwt.t
 end
 
 (* Common functions that are shared by SQL implementations *)
@@ -22,7 +22,7 @@ let find_request =
         |sql}
 ;;
 
-let find key = Sihl.Database.find_opt find_request key
+let find ?ctx key = Sihl.Database.find_opt ?ctx find_request key
 
 let insert_request =
   Caqti_request.exec
@@ -38,7 +38,7 @@ let insert_request =
         |sql}
 ;;
 
-let insert key_value = Sihl.Database.exec insert_request key_value
+let insert ?ctx key_value = Sihl.Database.exec ?ctx insert_request key_value
 
 let update_request =
   Caqti_request.exec
@@ -50,7 +50,7 @@ let update_request =
         |sql}
 ;;
 
-let update key_value = Sihl.Database.exec update_request key_value
+let update ?ctx key_value = Sihl.Database.exec ?ctx update_request key_value
 
 let delete_request =
   Caqti_request.exec
@@ -61,9 +61,9 @@ let delete_request =
       |sql}
 ;;
 
-let delete key = Sihl.Database.exec delete_request key
+let delete ?ctx key = Sihl.Database.exec ?ctx delete_request key
 let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE cache;"
-let clean () = Sihl.Database.exec clean_request ()
+let clean ?ctx () = Sihl.Database.exec clean_request ?ctx ()
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
 struct

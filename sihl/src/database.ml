@@ -4,9 +4,16 @@ let log_src = Logs.Src.create "sihl.service.database"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let pool_ref : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
+let main_pool_ref
+    : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
   =
   ref None
+;;
+
+let pools
+    : (string, (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t) Hashtbl.t
+  =
+  Hashtbl.create 100
 ;;
 
 type 'a prepared_search_request =
@@ -92,9 +99,13 @@ let run_request _ _ _ _ _ = failwith "prepare_requests deprecated"
 type config =
   { url : string
   ; pool_size : int option
+  ; skip_default_pool_creation : bool option
+  ; choose_pool : string option
   }
 
-let config url pool_size = { url; pool_size }
+let config url pool_size skip_default_pool_creation choose_pool =
+  { url; pool_size; skip_default_pool_creation; choose_pool }
+;;
 
 let schema =
   let open Conformist in
@@ -111,6 +122,20 @@ let schema =
            the number is too low, your Sihl app performs badly. This can be \
            configured using DATABASE_POOL_SIZE and the default is 5."
         (int ~default:5 "DATABASE_POOL_SIZE")
+    ; optional
+        ~meta:
+          "By default, Sihl assumes one database connection pool to connect to \
+           one default application database. This value can be set to [true] \
+           to skip the creation of the default connection pool, which is \
+           configured using env variables. This is useful if an application \
+           uses multiple databases. By default, the value is [false]."
+        (bool ~default:false "DATABASE_SKIP_DEFAULT_POOL_CREATION")
+    ; optional
+        ~meta:
+          "The database connection pool name that should be used by default. \
+           The main pool is used if no value is set. This value can be \
+           overriden by using the pool name in the service context."
+        (string "DATABASE_CHOOSE_POOL")
     ]
     config
 ;;
@@ -123,12 +148,22 @@ let print_pool_usage pool =
   Logs.debug (fun m -> m "Pool usage: %i/%i" n_connections max_connections)
 ;;
 
-let fetch_pool () =
-  match !pool_ref with
-  | Some pool ->
+let fetch_pool ?(ctx = []) () =
+  let chosen_pool_name_ctx = CCList.assoc_opt ~eq:String.equal "pool" ctx in
+  let chosen_pool_name_env = (Core_configuration.read schema).choose_pool in
+  let chosen_pool_name =
+    match chosen_pool_name_ctx, chosen_pool_name_env with
+    | Some chosen_pool_name, _ -> Some chosen_pool_name
+    | None, Some chosen_pool_name -> Some chosen_pool_name
+    | None, None -> None
+  in
+  let chosen_pool = Option.bind chosen_pool_name (Hashtbl.find_opt pools) in
+  match chosen_pool, !main_pool_ref with
+  | Some pool, _ -> pool
+  | None, Some pool ->
     Logs.debug (fun m -> m "Skipping pool creation, re-using existing pool");
     pool
-  | None ->
+  | None, None ->
     let pool_size =
       Option.value (Core_configuration.read schema).pool_size ~default:10
     in
@@ -138,12 +173,32 @@ let fetch_pool () =
     |> Caqti_lwt.connect_pool ~max_size:pool_size
     |> (function
     | Ok pool ->
-      pool_ref := Some pool;
+      main_pool_ref := Some pool;
       pool
     | Error err ->
       let msg = "Failed to connect to DB pool" in
       Logs.err (fun m -> m "%s %s" msg (Caqti_error.show err));
-      raise (Contract_database.Exception ("Failed to create pool " ^ msg)))
+      raise (Contract_database.Exception ("Failed to create pool: " ^ msg)))
+;;
+
+let add_pool ?(pool_size = 10) name database_url =
+  database_url
+  |> Uri.of_string
+  |> Caqti_lwt.connect_pool ~max_size:pool_size
+  |> function
+  | Ok pool ->
+    if Option.is_some (Hashtbl.find_opt pools name)
+    then (
+      let msg =
+        Format.sprintf "Connection pool with name '%s' exists already" name
+      in
+      Logs.err (fun m -> m "%s" msg);
+      raise (Contract_database.Exception ("Failed to create pool: " ^ msg)))
+    else Hashtbl.add pools name pool
+  | Error err ->
+    let msg = "Failed to connect to DB pool" in
+    Logs.err (fun m -> m "%s %s" msg (Caqti_error.show err));
+    raise (Contract_database.Exception ("Failed to create pool: " ^ msg))
 ;;
 
 let raise_error err =
@@ -152,8 +207,8 @@ let raise_error err =
   | Ok result -> result
 ;;
 
-let transaction f =
-  let pool = fetch_pool () in
+let transaction ?ctx f =
+  let pool = fetch_pool ?ctx () in
   print_pool_usage pool;
   let%lwt result =
     Caqti_lwt.Pool.use
@@ -164,7 +219,7 @@ let transaction f =
         match start_result with
         | Error msg ->
           Logs.debug (fun m ->
-              m "Failed to start transaction %s" (Caqti_error.show msg));
+              m "Failed to start transaction: %s" (Caqti_error.show msg));
           Lwt.return @@ Error msg
         | Ok () ->
           Logs.debug (fun m -> m "Started transaction");
@@ -178,7 +233,9 @@ let transaction f =
                 Lwt.return @@ Ok result
               | Error error ->
                 Logs.err (fun m ->
-                    m "Failed to commit transaction %s" (Caqti_error.show error));
+                    m
+                      "Failed to commit transaction: %s"
+                      (Caqti_error.show error));
                 Lwt.fail
                 @@ Contract_database.Exception "Failed to commit transaction")
             (fun e ->
@@ -190,7 +247,7 @@ let transaction f =
               | Error error ->
                 Logs.err (fun m ->
                     m
-                      "Failed to rollback transaction %s"
+                      "Failed to rollback transaction: %s"
                       (Caqti_error.show error));
                 Lwt.fail
                 @@ Contract_database.Exception "Failed to rollback transaction"))
@@ -204,16 +261,17 @@ let transaction f =
     Lwt.fail (Contract_database.Exception msg)
 ;;
 
-let transaction' f = transaction f |> Lwt.map raise_error
+let transaction' ?ctx f = transaction ?ctx f |> Lwt.map raise_error
 
 let run_search_request
+    ?ctx
     (r : 'a prepared_search_request)
     (sort : [ `Asc | `Desc ])
     (filter : string option)
     ~(limit : int)
     ~(offset : int)
   =
-  transaction' (fun connection ->
+  transaction' ?ctx (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let%lwt result =
         match sort, filter with
@@ -238,8 +296,8 @@ let run_search_request
       CCResult.both things total |> Lwt.return)
 ;;
 
-let query f =
-  let pool = fetch_pool () in
+let query ?ctx f =
+  let pool = fetch_pool ?ctx () in
   print_pool_usage pool;
   let%lwt result =
     Caqti_lwt.Pool.use
@@ -256,28 +314,28 @@ let query f =
     Lwt.fail (Contract_database.Exception msg)
 ;;
 
-let query' f = query f |> Lwt.map raise_error
+let query' ?ctx f = query ?ctx f |> Lwt.map raise_error
 
-let find_opt request input =
-  query' (fun connection ->
+let find_opt ?ctx request input =
+  query' ?ctx (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.find_opt request input)
 ;;
 
-let find request input =
-  query' (fun connection ->
+let find ?ctx request input =
+  query' ?ctx (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.find request input)
 ;;
 
-let collect request input =
-  query' (fun connection ->
+let collect ?ctx request input =
+  query' ?ctx (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.collect_list request input)
 ;;
 
-let exec request input =
-  query' (fun connection ->
+let exec ?ctx request input =
+  query' ?ctx (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.exec request input)
 ;;
@@ -300,11 +358,17 @@ let used_database () =
 (* Service lifecycle *)
 
 let start () =
-  (* Make sure that configuration is valid *)
-  Core_configuration.require schema;
-  (* Make sure that database is online when starting service. *)
-  let _ = fetch_pool () in
-  Lwt.return ()
+  let skip_default_pool_creation =
+    Option.value
+      (Core_configuration.read schema).skip_default_pool_creation
+      ~default:false
+  in
+  if skip_default_pool_creation
+  then Lwt.return ()
+  else (
+    (* Make sure the default database is online when starting service. *)
+    let _ = fetch_pool () in
+    Lwt.return ())
 ;;
 
 let stop () = Lwt.return ()

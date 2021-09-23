@@ -121,8 +121,8 @@ module type Sig = sig
     -> string
     -> Web.router
 
-  (** [dispatch ?delay input job] queues [job] for later processing and returns
-      [unit Lwt.t] once the job has been queued.
+  (** [dispatch ?ctx ?delay input job] queues [job] for later processing and
+      returns [unit Lwt.t] once the job has been queued.
 
       An optional [delay] determines the amount of time from now (when dispatch
       is called) up until the job can be run. If no delay is specified, the job
@@ -130,12 +130,17 @@ module type Sig = sig
 
       [input] is the input of the [handle] function which is used for job
       processing. *)
-  val dispatch : ?delay:Ptime.span -> 'a -> 'a job -> unit Lwt.t
+  val dispatch
+    :  ?ctx:(string * string) list
+    -> ?delay:Ptime.span
+    -> 'a
+    -> 'a job
+    -> unit Lwt.t
 
-  (** [dispatch_all ?delay inputs jobs] queues all [jobs] for later processing
-      and returns [unit Lwt.t] once all the jobs has been queued. The jobs are
-      put onto the queue in reverse order. The first job in the list of [jobs]
-      is put onto the queue last, which means it gets processed first.
+  (** [dispatch_all ?ctx ?delay inputs jobs] queues all [jobs] for later
+      processing and returns [unit Lwt.t] once all the jobs has been queued. The
+      jobs are put onto the queue in reverse order. The first job in the list of
+      [jobs] is put onto the queue last, which means it gets processed first.
 
       If the queue backend supports transactions, [dispatch_all] guarantees that
       either none or all jobs are queued.
@@ -146,7 +151,12 @@ module type Sig = sig
 
       [inputs] is the input of the [handle] function. It is a list of ['a], one
       for each ['a job] instance. *)
-  val dispatch_all : ?delay:Ptime.span -> 'a list -> 'a job -> unit Lwt.t
+  val dispatch_all
+    :  ?ctx:(string * string) list
+    -> ?delay:Ptime.span
+    -> 'a list
+    -> 'a job
+    -> unit Lwt.t
 
   (** [register_jobs jobs] registers jobs that can be dispatched later on.
 

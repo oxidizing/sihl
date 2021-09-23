@@ -8,18 +8,18 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module Make (Repo : Template_repo_sql.Sig) : Sihl.Contract.Email_template.Sig =
 struct
-  let get id = Repo.get id
-  let get_by_label label = Repo.get_by_label label
+  let get = Repo.get
+  let get_by_label = Repo.get_by_label
 
-  let create ?html ~label text =
+  let create ?ctx ?html ~label text =
     let open Sihl.Contract.Email_template in
     let now = Ptime_clock.now () in
     let id = Uuidm.create `V4 |> Uuidm.to_string in
     let template =
       { id; label; html; text; created_at = now; updated_at = now }
     in
-    let%lwt () = Repo.insert template in
-    let%lwt created = Repo.get id in
+    let%lwt () = Repo.insert ?ctx template in
+    let%lwt created = Repo.get ?ctx id in
     match created with
     | None ->
       Logs.err (fun m ->
@@ -31,10 +31,10 @@ struct
     | Some created -> Lwt.return created
   ;;
 
-  let update template =
-    let%lwt () = Repo.update template in
+  let update ?ctx template =
+    let%lwt () = Repo.update ?ctx template in
     let id = template.id in
-    let%lwt created = Repo.get id in
+    let%lwt created = Repo.get ?ctx id in
     match created with
     | None ->
       Logs.err (fun m ->

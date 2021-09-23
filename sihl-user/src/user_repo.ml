@@ -9,16 +9,22 @@ module type Sig = sig
   val lifecycles : Sihl.Container.lifecycle list
 
   val search
-    :  [ `Desc | `Asc ]
+    :  ?ctx:(string * string) list
+    -> [ `Desc | `Asc ]
     -> string option
     -> limit:int
     -> offset:int
     -> (Model.t list * int) Lwt.t
 
-  val get : string -> Model.t option Lwt.t
-  val get_by_email : string -> Model.t option Lwt.t
-  val insert : Model.t -> unit Lwt.t
-  val update : Model.t -> unit Lwt.t
+  val get : ?ctx:(string * string) list -> string -> Model.t option Lwt.t
+
+  val get_by_email
+    :  ?ctx:(string * string) list
+    -> string
+    -> Model.t option Lwt.t
+
+  val insert : ?ctx:(string * string) list -> Model.t -> unit Lwt.t
+  val update : ?ctx:(string * string) list -> Model.t -> unit Lwt.t
 end
 
 let status =
@@ -188,8 +194,8 @@ struct
       user
   ;;
 
-  let search sort filter ~limit ~offset =
-    Sihl.Database.run_search_request request sort filter ~limit ~offset
+  let search ?ctx sort filter ~limit ~offset =
+    Sihl.Database.run_search_request ?ctx request sort filter ~limit ~offset
   ;;
 
   let get_request =
@@ -220,7 +226,7 @@ struct
         |sql}
   ;;
 
-  let get id = Database.find_opt get_request id
+  let get ?ctx id = Database.find_opt ?ctx get_request id
 
   let get_by_email_request =
     Caqti_request.find_opt
@@ -250,7 +256,9 @@ struct
         |sql}
   ;;
 
-  let get_by_email email = Database.find_opt get_by_email_request email
+  let get_by_email ?ctx email =
+    Database.find_opt ?ctx get_by_email_request email
+  ;;
 
   let insert_request =
     Caqti_request.exec
@@ -284,7 +292,7 @@ struct
         |sql}
   ;;
 
-  let insert user = Database.exec insert_request user
+  let insert ?ctx user = Database.exec ?ctx insert_request user
 
   let update_request =
     Caqti_request.exec
@@ -306,9 +314,9 @@ struct
         |sql}
   ;;
 
-  let update user = Database.exec update_request user
+  let update ?ctx user = Database.exec ?ctx update_request user
   let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE user_users;"
-  let clean () = Database.exec clean_request ()
+  let clean ?ctx () = Database.exec ?ctx clean_request ()
 
   let register_migration () =
     MigrationService.register_migration (Migration.migration ())
@@ -417,8 +425,8 @@ struct
       user
   ;;
 
-  let search sort filter ~limit ~offset =
-    Sihl.Database.run_search_request request sort filter ~limit ~offset
+  let search ?ctx sort filter ~limit ~offset =
+    Sihl.Database.run_search_request ?ctx request sort filter ~limit ~offset
   ;;
 
   let get_request =
@@ -443,7 +451,7 @@ struct
         |sql}
   ;;
 
-  let get id = Database.find_opt get_request id
+  let get ?ctx id = Database.find_opt ?ctx get_request id
 
   let get_by_email_request =
     Caqti_request.find_opt
@@ -467,7 +475,9 @@ struct
         |sql}
   ;;
 
-  let get_by_email email = Database.find_opt get_by_email_request email
+  let get_by_email ?ctx email =
+    Database.find_opt ?ctx get_by_email_request email
+  ;;
 
   let insert_request =
     Caqti_request.exec
@@ -501,7 +511,7 @@ struct
         |sql}
   ;;
 
-  let insert user = Database.exec insert_request user
+  let insert ?ctx user = Database.exec ?ctx insert_request user
 
   let update_request =
     Caqti_request.exec
@@ -523,13 +533,13 @@ struct
         |sql}
   ;;
 
-  let update user = Database.exec update_request user
+  let update ?ctx user = Database.exec ?ctx update_request user
 
   let clean_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE user_users CASCADE;"
   ;;
 
-  let clean () = Database.exec clean_request ()
+  let clean ?ctx () = Database.exec ?ctx clean_request ()
 
   let register_migration () =
     MigrationService.register_migration (Migration.migration ())

@@ -182,7 +182,7 @@ WHERE uuid = UNHEX(REPLACE(?, '-', ''))
 let queries =
   {|
 
-let clean () = Sihl.Database.exec clean_request ()
+let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
 ;;
 
 let insert ({{name}} : Entity.t) =

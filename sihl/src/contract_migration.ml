@@ -21,21 +21,27 @@ module type Sig = sig
       the migration service so it can be executed with `run_all`. *)
   val register_migrations : t list -> unit
 
-  (** [execute migrations] runs all migrations [migrations]. *)
-  val execute : t list -> unit Lwt.t
+  (** [execute ?ctx migrations] runs all migrations [migrations] on the
+      connection pool. *)
+  val execute : ?ctx:(string * string) list -> t list -> unit Lwt.t
 
-  (** [run_all ()] runs all migrations that have been registered. *)
-  val run_all : unit -> unit Lwt.t
+  (** [run_all ?ctx ()] runs all migrations that have been registered on the
+      connection pool. *)
+  val run_all : ?ctx:(string * string) list -> unit -> unit Lwt.t
 
-  (** [pending_migrations ()] returns a list of migrations that need to be
-      executed in order to have all migrations applied. The returned migration
-      is a tuple [(namespace, number)] where [namespace] is the namespace of the
-      migration and [number] is the number of pending migrations that need to be
-      applied in order to achieve the desired schema version.
+  (** [pending_migrations ?ctx ()] returns a list of migrations that need to be
+      executed in order to have all migrations applied on the connection pool.
+      The returned migration is a tuple [(namespace, number)] where [namespace]
+      is the namespace of the migration and [number] is the number of pending
+      migrations that need to be applied in order to achieve the desired schema
+      version.
 
       An empty list means that there are no pending migrations and that the
       database schema is up-to-date. *)
-  val pending_migrations : unit -> (string * int) list Lwt.t
+  val pending_migrations
+    :  ?ctx:(string * string) list
+    -> unit
+    -> (string * int) list Lwt.t
 
   val register : t list -> Core_container.Service.t
 

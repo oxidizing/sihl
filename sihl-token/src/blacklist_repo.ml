@@ -1,8 +1,8 @@
 module type Sig = sig
   val lifecycles : Sihl.Container.lifecycle list
-  val insert : string -> unit Lwt.t
-  val has : string -> bool Lwt.t
-  val delete : string -> unit Lwt.t
+  val insert : ?ctx:(string * string) list -> string -> unit Lwt.t
+  val has : ?ctx:(string * string) list -> string -> bool Lwt.t
+  val delete : ?ctx:(string * string) list -> string -> unit Lwt.t
   val register_cleaner : unit -> unit
   val register_migration : unit -> unit
 end
@@ -11,16 +11,17 @@ module InMemory : Sig = struct
   let lifecycles = []
   let store = Hashtbl.create 100
 
-  let insert token =
+  let insert ?ctx:_ token =
     Hashtbl.add store token ();
     Lwt.return ()
   ;;
 
-  let has token = Lwt.return @@ Hashtbl.mem store token
-  let delete token = Lwt.return @@ Hashtbl.remove store token
+  let has ?ctx:_ token = Lwt.return @@ Hashtbl.mem store token
+  let delete ?ctx:_ token = Lwt.return @@ Hashtbl.remove store token
 
   let register_cleaner () =
-    Sihl.Cleaner.register_cleaner (fun () -> Lwt.return (Hashtbl.clear store))
+    Sihl.Cleaner.register_cleaner (fun ?ctx:_ () ->
+        Lwt.return (Hashtbl.clear store))
   ;;
 
   let register_migration () = ()
@@ -45,9 +46,9 @@ module MariaDb : Sig = struct
         |sql}
   ;;
 
-  let insert token =
+  let insert ?ctx token =
     let now = Ptime_clock.now () in
-    Sihl.Database.exec insert_request (token, now)
+    Sihl.Database.exec ?ctx insert_request (token, now)
   ;;
 
   let find_request_opt =
@@ -63,10 +64,10 @@ module MariaDb : Sig = struct
         |sql}
   ;;
 
-  let find_opt token = Sihl.Database.find_opt find_request_opt token
+  let find_opt ?ctx token = Sihl.Database.find_opt ?ctx find_request_opt token
 
-  let has token =
-    let%lwt token = find_opt token in
+  let has ?ctx token =
+    let%lwt token = find_opt ?ctx token in
     Lwt.return @@ Option.is_some token
   ;;
 
@@ -79,7 +80,7 @@ module MariaDb : Sig = struct
         |sql}
   ;;
 
-  let delete token = Sihl.Database.exec delete_request token
+  let delete ?ctx token = Sihl.Database.exec ?ctx delete_request token
 
   let fix_collation =
     Sihl.Database.Migration.create_step
@@ -113,7 +114,7 @@ module MariaDb : Sig = struct
     Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
   ;;
 
-  let clean () = Sihl.Database.exec clean_request ()
+  let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
   let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end
 
@@ -136,9 +137,9 @@ module PostgreSql : Sig = struct
         |sql}
   ;;
 
-  let insert token =
+  let insert ?ctx token =
     let now = Ptime_clock.now () in
-    Sihl.Database.exec insert_request (token, now)
+    Sihl.Database.exec ?ctx insert_request (token, now)
   ;;
 
   let find_request_opt =
@@ -154,10 +155,10 @@ module PostgreSql : Sig = struct
         |sql}
   ;;
 
-  let find_opt token = Sihl.Database.find_opt find_request_opt token
+  let find_opt ?ctx token = Sihl.Database.find_opt ?ctx find_request_opt token
 
-  let has token =
-    let%lwt token = find_opt token in
+  let has ?ctx token =
+    let%lwt token = find_opt ?ctx token in
     Lwt.return @@ Option.is_some token
   ;;
 
@@ -170,7 +171,7 @@ module PostgreSql : Sig = struct
         |sql}
   ;;
 
-  let delete token = Sihl.Database.exec delete_request token
+  let delete ?ctx token = Sihl.Database.exec ?ctx delete_request token
 
   let create_jobs_table =
     Sihl.Database.Migration.create_step
@@ -207,6 +208,6 @@ module PostgreSql : Sig = struct
     Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
   ;;
 
-  let clean () = Sihl.Database.exec clean_request ()
+  let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
   let register_cleaner () = Sihl.Cleaner.register_cleaner clean
 end

@@ -21,7 +21,7 @@ module Make (StorageService : Sihl.Contract.Storage.Sig) = struct
         }
     in
     let%lwt _ = StorageService.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ=" in
-    let%lwt uploaded_file = StorageService.find ~id:file_id in
+    let%lwt uploaded_file = StorageService.find ~ctx:[] ~id:file_id in
     let actual_file = uploaded_file.Sihl.Contract.Storage.file in
     Alcotest.(check alco_file "has same file" file actual_file);
     let%lwt actual_blob = StorageService.download_data_base64 uploaded_file in

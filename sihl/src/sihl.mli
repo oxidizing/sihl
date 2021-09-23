@@ -956,7 +956,9 @@ module Database : sig
       [None] if an unsupported database is used. *)
   val used_database : unit -> database option
 
+  (** [start ()] starts the datbase service. *)
   val start : unit -> unit Lwt.t
+
   val stop : unit -> unit Lwt.t
   val lifecycle : Container.lifecycle
   val register : unit -> Container.Service.t
