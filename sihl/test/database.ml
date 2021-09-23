@@ -136,6 +136,30 @@ let transaction_does_not_exhaust_pool _ () =
   Lwt.return ()
 ;;
 
+let choose_database_pool _ () =
+  let default_pool = Sihl.Database.fetch_pool () in
+  (* make sure there is no default database pool *)
+  let%lwt () = Caqti_lwt.Pool.drain default_pool in
+  let database_url =
+    Option.value
+      ~default:"not found"
+      (Sihl.Configuration.read_string "DATABASE_URL")
+  in
+  let () = Sihl.Database.add_pool "foo" database_url in
+  let () = Sihl.Database.add_pool "bar" database_url in
+  let ctx = [ "pool", "foo" ] in
+  let%lwt usernames =
+    Sihl.Database.query ~ctx (fun connection ->
+        let%lwt () = drop_table_if_exists connection in
+        let%lwt () = create_table_if_not_exists connection in
+        let%lwt () = insert_username connection "some username" in
+        get_usernames connection)
+  in
+  let username = List.hd usernames in
+  Alcotest.(check string "has username" "some username" username);
+  Lwt.return ()
+;;
+
 let suite =
   Alcotest_lwt.
     [ ( "database"
@@ -151,6 +175,7 @@ let suite =
             "failing function doesn't exhaust pool in transaction"
             `Quick
             transaction_does_not_exhaust_pool
+        ; test_case "choose database pool" `Quick choose_database_pool
         ] )
     ]
 ;;

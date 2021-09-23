@@ -206,7 +206,7 @@ module Make (UserService : Sihl.Contract.User.Sig) = struct
   module Web = struct
     let fake_token = "faketoken"
 
-    let read_token user_id token ~k =
+    let read_token user_id ?ctx:_ token ~k =
       if String.equal k "user_id" && String.equal token fake_token
       then Lwt.return @@ Some user_id
       else Lwt.return None

@@ -163,9 +163,9 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
     | Error msg -> raise (Sihl.Contract.Email.Exception msg)
   ;;
 
-  let send email = intercept send' email
+  let send ?ctx:_ email = intercept send' email
 
-  let bulk_send _ =
+  let bulk_send ?ctx:_ _ =
     failwith
       "Bulk sending with the SMTP backend not supported, please use sihl-queue"
   ;;
@@ -296,9 +296,9 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
       raise (Sihl.Contract.Email.Exception "Failed to send email")
   ;;
 
-  let send email = intercept send' email
+  let send ?ctx:_ email = intercept send' email
 
-  let bulk_send _ =
+  let bulk_send ?ctx:_ _ =
     failwith
       "bulk_send() with the Sendgrid backend is not supported, please use \
        sihl-queue"
@@ -385,8 +385,8 @@ module Queued
     let dispatch_all emails = QueueService.dispatch_all emails job
   end
 
-  let send email = Job.dispatch email
-  let bulk_send emails = Job.dispatch_all emails
+  let send ?ctx:_ email = Job.dispatch email
+  let bulk_send ?ctx:_ emails = Job.dispatch_all emails
   let start () = QueueService.register_jobs [ Sihl.Contract.Queue.hide Job.job ]
   let stop () = Lwt.return ()
 

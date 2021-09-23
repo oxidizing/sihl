@@ -28,15 +28,17 @@ struct
       (Core_configuration.read schema).migration_state_table
   ;;
 
-  let setup () =
+  let setup ?ctx () =
     Logs.debug (fun m -> m "Setting up table if not exists");
-    Repo.create_table_if_not_exists (table ())
+    Repo.create_table_if_not_exists ?ctx (table ())
   ;;
 
-  let has ~namespace = Repo.get (table ()) ~namespace |> Lwt.map Option.is_some
+  let has ?ctx ~namespace =
+    Repo.get ?ctx (table ()) ~namespace |> Lwt.map Option.is_some
+  ;;
 
-  let get ~namespace =
-    let%lwt state = Repo.get (table ()) ~namespace in
+  let get ?ctx ~namespace =
+    let%lwt state = Repo.get ?ctx (table ()) ~namespace in
     Lwt.return
     @@
     match state with
@@ -47,26 +49,26 @@ struct
            (Printf.sprintf "Could not get migration state for %s" namespace))
   ;;
 
-  let upsert state = Repo.upsert (table ()) state
+  let upsert ?ctx state = Repo.upsert ?ctx (table ()) state
 
-  let mark_dirty ~namespace =
-    let%lwt state = get ~namespace in
+  let mark_dirty ?ctx ~namespace =
+    let%lwt state = get ?ctx ~namespace in
     let dirty_state = Repo.Migration.mark_dirty state in
-    let%lwt () = upsert dirty_state in
+    let%lwt () = upsert ?ctx dirty_state in
     Lwt.return dirty_state
   ;;
 
-  let mark_clean ~namespace =
-    let%lwt state = get ~namespace in
+  let mark_clean ?ctx ~namespace =
+    let%lwt state = get ?ctx ~namespace in
     let clean_state = Repo.Migration.mark_clean state in
-    let%lwt () = upsert clean_state in
+    let%lwt () = upsert ?ctx clean_state in
     Lwt.return clean_state
   ;;
 
-  let increment ~namespace =
-    let%lwt state = get ~namespace in
+  let increment ?ctx ~namespace =
+    let%lwt state = get ?ctx ~namespace in
     let updated_state = Repo.Migration.increment state in
-    let%lwt () = upsert updated_state in
+    let%lwt () = upsert ?ctx updated_state in
     Lwt.return updated_state
   ;;
 
@@ -88,8 +90,8 @@ struct
     Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
   ;;
 
-  let with_disabled_fk_check f =
-    Database.query (fun connection ->
+  let with_disabled_fk_check ?ctx f =
+    Database.query ?ctx (fun connection ->
         let module Connection = (val connection : Caqti_lwt.CONNECTION) in
         let%lwt () =
           Connection.exec set_fk_check_request false
@@ -102,7 +104,7 @@ struct
             |> Lwt.map Database.raise_error))
   ;;
 
-  let execute_steps migration =
+  let execute_steps ?ctx migration =
     let namespace, steps = migration in
     let rec run steps =
       match steps with
@@ -113,26 +115,26 @@ struct
           let req =
             Caqti_request.exec ~oneshot:true Caqti_type.unit statement
           in
-          Connection.exec req () |> Lwt.map Database.raise_error
+          Database.exec ?ctx req ()
         in
-        let%lwt () = Database.query query in
+        let%lwt () = Database.query ?ctx query in
         Logs.debug (fun m -> m "Ran %s" label);
-        let%lwt _ = increment ~namespace in
+        let%lwt _ = increment ?ctx ~namespace in
         run steps
       | { label; statement; check_fk = false } :: steps ->
         let%lwt () =
-          with_disabled_fk_check (fun connection ->
+          with_disabled_fk_check ?ctx (fun connection ->
               Logs.debug (fun m -> m "Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
                 let req =
                   Caqti_request.exec ~oneshot:true Caqti_type.unit statement
                 in
-                Connection.exec req () |> Lwt.map Database.raise_error
+                Database.exec ?ctx req ()
               in
               query connection)
         in
         Logs.debug (fun m -> m "Ran %s" label);
-        let%lwt _ = increment ~namespace in
+        let%lwt _ = increment ?ctx ~namespace in
         run steps
     in
     let () =
@@ -143,14 +145,14 @@ struct
     run steps
   ;;
 
-  let execute_migration migration =
+  let execute_migration ?ctx migration =
     let namespace, _ = migration in
-    let%lwt () = setup () in
-    let%lwt has_state = has ~namespace in
+    let%lwt () = setup ?ctx () in
+    let%lwt has_state = has ?ctx ~namespace in
     let%lwt state =
       if has_state
       then (
-        let%lwt state = get ~namespace in
+        let%lwt state = get ?ctx ~namespace in
         if Repo.Migration.dirty state
         then (
           Logs.err (fun m ->
@@ -162,11 +164,11 @@ struct
                 "Set the column 'dirty' from 1/true to 0/false after you have \
                  fixed the database state.");
           raise Contract_migration.Dirty_migration)
-        else mark_dirty ~namespace)
+        else mark_dirty ?ctx ~namespace)
       else (
         Logs.debug (fun m -> m "Setting up table for %s" namespace);
         let state = Repo.Migration.create ~namespace in
-        let%lwt () = upsert state in
+        let%lwt () = upsert ?ctx state in
         Lwt.return state)
     in
     let migration_to_apply = Repo.Migration.steps_to_apply migration state in
@@ -181,18 +183,18 @@ struct
     else Logs.info (fun m -> m "No migrations to execute for '%s'" namespace);
     let%lwt () =
       Lwt.catch
-        (fun () -> execute_steps migration_to_apply)
+        (fun () -> execute_steps ?ctx migration_to_apply)
         (fun exn ->
           let err = Printexc.to_string exn in
           Logs.err (fun m ->
               m "Error while running migration '%a': %s" pp migration err);
           raise (Contract_migration.Exception err))
     in
-    let%lwt _ = mark_clean ~namespace in
+    let%lwt _ = mark_clean ?ctx ~namespace in
     Lwt.return ()
   ;;
 
-  let execute migrations =
+  let execute ?ctx migrations =
     let n = List.length migrations in
     if n > 0
     then
@@ -202,19 +204,19 @@ struct
       match migrations with
       | [] -> Lwt.return ()
       | migration :: migrations ->
-        let%lwt () = execute_migration migration in
+        let%lwt () = execute_migration ?ctx migration in
         run migrations
     in
     run migrations
   ;;
 
-  let run_all () =
+  let run_all ?ctx () =
     let steps = !registered_migrations |> Map.to_seq |> List.of_seq in
-    execute steps
+    execute ?ctx steps
   ;;
 
-  let migrations_status () =
-    let%lwt migrations_states = Repo.get_all (table ()) in
+  let migrations_status ?ctx () =
+    let%lwt migrations_states = Repo.get_all ?ctx (table ()) in
     let migration_states_namespaces =
       migrations_states
       |> List.map (fun migration_state ->
@@ -256,8 +258,8 @@ struct
          namespaces_to_check
   ;;
 
-  let pending_migrations () =
-    let%lwt unapplied = migrations_status () in
+  let pending_migrations ?ctx () =
+    let%lwt unapplied = migrations_status ?ctx () in
     let rec find_pending result = function
       | (namespace, Some n) :: xs ->
         if n > 0
@@ -271,8 +273,8 @@ struct
     Lwt.return @@ find_pending [] unapplied
   ;;
 
-  let check_migrations_status () =
-    let%lwt unapplied = migrations_status () in
+  let check_migrations_status ?ctx () =
+    let%lwt unapplied = migrations_status ?ctx () in
     List.iter
       (fun (namespace, count) ->
         match count with

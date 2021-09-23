@@ -5,7 +5,7 @@ let state = ref Map.empty
 let ordered_ids = ref []
 
 let register_cleaner () =
-  let cleaner _ =
+  let cleaner ?ctx:_ _ =
     state := Map.empty;
     ordered_ids := [];
     Lwt.return ()
@@ -15,7 +15,7 @@ let register_cleaner () =
 
 let register_migration () = ()
 
-let enqueue job_instance =
+let enqueue ?ctx:_ job_instance =
   let open Sihl.Contract.Queue in
   let id = job_instance.id in
   ordered_ids := List.cons id !ordered_ids;
@@ -23,21 +23,21 @@ let enqueue job_instance =
   Lwt.return ()
 ;;
 
-let enqueue_all job_instances =
+let enqueue_all ?ctx:_ job_instances =
   job_instances
   |> List.fold_left
        (fun res job -> Lwt.bind res (fun _ -> enqueue job))
        (Lwt.return ())
 ;;
 
-let update job_instance =
+let update ?ctx:_ job_instance =
   let open Sihl.Contract.Queue in
   let id = job_instance.id in
   state := Map.add id job_instance !state;
   Lwt.return ()
 ;;
 
-let find_workable () =
+let find_workable ?ctx:_ () =
   let all_job_instances =
     List.map (fun id -> Map.find_opt id !state) !ordered_ids
   in
@@ -54,13 +54,13 @@ let find_workable () =
   Lwt.return @@ filter_pending all_job_instances []
 ;;
 
-let query () =
+let query ?ctx:_ () =
   Lwt.return @@ List.map (fun id -> Map.find id !state) !ordered_ids
 ;;
 
-let find id = Lwt.return @@ Map.find_opt id !state
+let find ?ctx:_ id = Lwt.return @@ Map.find_opt id !state
 
-let delete (job : Sihl.Contract.Queue.instance) =
+let delete ?ctx:_ (job : Sihl.Contract.Queue.instance) =
   state := Map.remove job.id !state;
   Lwt.return ()
 ;;

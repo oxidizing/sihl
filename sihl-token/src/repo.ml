@@ -63,11 +63,11 @@ module type Sig = sig
   val lifecycles : Sihl.Container.lifecycle list
   val register_migration : unit -> unit
   val register_cleaner : unit -> unit
-  val find : string -> Model.t Lwt.t
-  val find_opt : string -> Model.t option Lwt.t
-  val find_by_id : string -> Model.t Lwt.t
-  val insert : Model.t -> unit Lwt.t
-  val update : Model.t -> unit Lwt.t
+  val find : ?ctx:(string * string) list -> string -> Model.t Lwt.t
+  val find_opt : ?ctx:(string * string) list -> string -> Model.t option Lwt.t
+  val find_by_id : ?ctx:(string * string) list -> string -> Model.t Lwt.t
+  val insert : ?ctx:(string * string) list -> Model.t -> unit Lwt.t
+  val update : ?ctx:(string * string) list -> Model.t -> unit Lwt.t
 
   module Model = Model
 end
@@ -101,7 +101,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find value = Database.find find_request value
+    let find ?ctx value = Database.find ?ctx find_request value
 
     let find_request_opt =
       Caqti_request.find_opt
@@ -126,7 +126,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find_opt value = Database.find_opt find_request_opt value
+    let find_opt ?ctx value = Database.find_opt ?ctx find_request_opt value
 
     let find_by_id_request =
       Caqti_request.find
@@ -151,7 +151,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let find_by_id id = Database.find find_by_id_request id
+    let find_by_id ?ctx id = Database.find ?ctx find_by_id_request id
 
     let insert_request =
       Caqti_request.exec
@@ -175,7 +175,7 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let insert token = Database.exec insert_request token
+    let insert ?ctx token = Database.exec ?ctx insert_request token
 
     let update_request =
       Caqti_request.exec
@@ -191,13 +191,13 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
         |sql}
     ;;
 
-    let update token = Database.exec update_request token
+    let update ?ctx token = Database.exec ?ctx update_request token
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
     ;;
 
-    let clean () = Database.exec clean_request ()
+    let clean ?ctx () = Database.exec ?ctx clean_request ()
   end
 
   module Migration = struct
@@ -278,7 +278,7 @@ struct
         |sql}
     ;;
 
-    let find value = Database.find find_request value
+    let find ?ctx value = Database.find ?ctx find_request value
 
     let find_request_opt =
       Caqti_request.find_opt
@@ -297,7 +297,7 @@ struct
         |sql}
     ;;
 
-    let find_opt value = Database.find_opt find_request_opt value
+    let find_opt ?ctx value = Database.find_opt ?ctx find_request_opt value
 
     let find_by_id_request =
       Caqti_request.find
@@ -316,7 +316,7 @@ struct
         |sql}
     ;;
 
-    let find_by_id id = Database.find find_by_id_request id
+    let find_by_id ?ctx id = Database.find ?ctx find_by_id_request id
 
     let insert_request =
       Caqti_request.exec
@@ -340,7 +340,7 @@ struct
         |sql}
     ;;
 
-    let insert token = Database.exec insert_request token
+    let insert ?ctx token = Database.exec ?ctx insert_request token
 
     let update_request =
       Caqti_request.exec
@@ -357,13 +357,13 @@ struct
         |sql}
     ;;
 
-    let update token = Database.exec update_request token
+    let update ?ctx token = Database.exec ?ctx update_request token
 
     let clean_request =
       Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens CASCADE;"
     ;;
 
-    let clean () = Database.exec clean_request ()
+    let clean ?ctx () = Database.exec ?ctx clean_request ()
   end
 
   module Migration = struct

@@ -10,10 +10,25 @@ type t =
 let name = "email.template"
 
 module type Sig = sig
-  val get : string -> t option Lwt.t
-  val get_by_label : string -> t option Lwt.t
-  val create : ?html:string -> label:string -> string -> t Lwt.t
-  val update : t -> t Lwt.t
+  (** [get ?ctx id] returns the email template by [id]. *)
+  val get : ?ctx:(string * string) list -> string -> t option Lwt.t
+
+  (** [get_by_label ?ctx label] returns the email template by [label]. *)
+  val get_by_label : ?ctx:(string * string) list -> string -> t option Lwt.t
+
+  (** [create ?ctx ?html label text] creates an email template with [text] as
+      text emal content and a [label]. An optional [html] content can be
+      provided that will be displayed in email clients that support HTML. *)
+  val create
+    :  ?ctx:(string * string) list
+    -> ?html:string
+    -> label:string
+    -> string
+    -> t Lwt.t
+
+  (** [update ?ctx template] updates the email [template]. *)
+  val update : ?ctx:(string * string) list -> t -> t Lwt.t
+
   val register : unit -> Core_container.Service.t
 
   include Core_container.Service.Sig

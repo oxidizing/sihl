@@ -23,10 +23,24 @@ end
 module type Sig = sig
   module Migration = Migration
 
-  val create_table_if_not_exists : string -> unit Lwt.t
-  val get : string -> namespace:string -> Migration.t option Lwt.t
-  val get_all : string -> Migration.t list Lwt.t
-  val upsert : string -> Migration.t -> unit Lwt.t
+  val create_table_if_not_exists
+    :  ?ctx:(string * string) list
+    -> string
+    -> unit Lwt.t
+
+  val get
+    :  ?ctx:(string * string) list
+    -> string
+    -> namespace:string
+    -> Migration.t option Lwt.t
+
+  val get_all : ?ctx:(string * string) list -> string -> Migration.t list Lwt.t
+
+  val upsert
+    :  ?ctx:(string * string) list
+    -> string
+    -> Migration.t
+    -> unit Lwt.t
 end
 
 (* Common functions *)
@@ -46,8 +60,8 @@ let get_request table =
        table)
 ;;
 
-let get table ~namespace =
-  Database.find_opt (get_request table) namespace
+let get ?ctx table ~namespace =
+  Database.find_opt ?ctx (get_request table) namespace
   |> Lwt.map (Option.map Migration.of_tuple)
 ;;
 
@@ -66,8 +80,8 @@ let get_all_request table =
        table)
 ;;
 
-let get_all table =
-  Database.collect (get_all_request table) ()
+let get_all ?ctx table =
+  Database.collect ?ctx (get_all_request table) ()
   |> Lwt.map (List.map Migration.of_tuple)
 ;;
 
@@ -89,7 +103,10 @@ module MariaDb : Sig = struct
          table)
   ;;
 
-  let create_table_if_not_exists table = Database.exec (create_request table) ()
+  let create_table_if_not_exists ?ctx table =
+    Database.exec ?ctx (create_request table) ()
+  ;;
+
   let get = get
   let get_all = get_all
 
@@ -113,8 +130,8 @@ module MariaDb : Sig = struct
          table)
   ;;
 
-  let upsert table state =
-    Database.exec (upsert_request table) (Migration.to_tuple state)
+  let upsert ?ctx table state =
+    Database.exec ?ctx (upsert_request table) (Migration.to_tuple state)
   ;;
 end
 
@@ -135,7 +152,10 @@ module PostgreSql : Sig = struct
          table)
   ;;
 
-  let create_table_if_not_exists table = Database.exec (create_request table) ()
+  let create_table_if_not_exists ?ctx table =
+    Database.exec ?ctx (create_request table) ()
+  ;;
+
   let get = get
   let get_all = get_all
 
@@ -159,7 +179,7 @@ module PostgreSql : Sig = struct
          table)
   ;;
 
-  let upsert table state =
-    Database.exec (upsert_request table) (Migration.to_tuple state)
+  let upsert ?ctx table state =
+    Database.exec ?ctx (upsert_request table) (Migration.to_tuple state)
   ;;
 end

@@ -62,7 +62,7 @@ let name = "user"
 
 module type Sig = sig
   module Web : sig
-    (** [user_from_token ?key read_token request] returns the user that is
+    (** [user_from_token ?ctx ?key read_token request] returns the user that is
         associated to the user id in the [Bearer] token of the [request].
 
         [key] is the key in the token associated with the user id. By default,
@@ -71,8 +71,12 @@ module type Sig = sig
         [read_token] is a function that returns the associated value of [key] in
         a given token. *)
     val user_from_token
-      :  ?key:string
-      -> (string -> k:string -> string option Lwt.t)
+      :  ?ctx:(string * string) list
+      -> ?key:string
+      -> (?ctx:(string * string) list
+          -> string
+          -> k:string
+          -> string option Lwt.t)
       -> Rock.Request.t
       -> t option Lwt.t
 
@@ -95,8 +99,8 @@ module type Sig = sig
       -> t option Lwt.t
   end
 
-  (** [search ?sort ?filter ?limit ?offset ()] returns a list of users that is a
-      partial view on all stored users.
+  (** [search ?ctx ?sort ?filter ?limit ?offset ()] returns a list of users that
+      is a partial view on all stored users.
 
       [sort] is the default sorting order of the created date. By default, this
       value is [`Desc].
@@ -108,29 +112,33 @@ module type Sig = sig
 
       [offset] is the pagination offset of the partial view. *)
   val search
-    :  ?sort:[ `Desc | `Asc ]
+    :  ?ctx:(string * string) list
+    -> ?sort:[ `Desc | `Asc ]
     -> ?filter:string
     -> ?limit:int
     -> ?offset:int
     -> unit
     -> (t list * int) Lwt.t
 
-  (** [find_opt id] returns a user with [id]. *)
-  val find_opt : string -> t option Lwt.t
+  (** [find_opt ?ctx id] returns a user with [id]. *)
+  val find_opt : ?ctx:(string * string) list -> string -> t option Lwt.t
 
-  (** [find id] returns a user with [id], [None] otherwise. *)
-  val find : string -> t Lwt.t
+  (** [find ?ctx id] returns a user with [id], [None] otherwise. *)
+  val find : ?ctx:(string * string) list -> string -> t Lwt.t
 
-  (** [find_by_email email] returns a [User.t] if there is a user with email
-      address [email]. The lookup is case-insensitive. Raises an [{!Exception}]
-      otherwise. *)
-  val find_by_email : string -> t Lwt.t
+  (** [find_by_email ?ctx email] returns a [User.t] if there is a user with
+      email address [email]. The lookup is case-insensitive. Raises an
+      [{!Exception}] otherwise. *)
+  val find_by_email : ?ctx:(string * string) list -> string -> t Lwt.t
 
-  (** [find_by_email_opt email] returns a [User.t] if there is a user with email
-      address [email]. *)
-  val find_by_email_opt : string -> t option Lwt.t
+  (** [find_by_email_opt ?ctx email] returns a [User.t] if there is a user with
+      email address [email]. *)
+  val find_by_email_opt
+    :  ?ctx:(string * string) list
+    -> string
+    -> t option Lwt.t
 
-  (** [update_password ?password_policy user ~old_password ~new_password
+  (** [update_password ?ctx ?password_policy user ~old_password ~new_password
       ~new_password_confirmation]
       updates the password of a [user] to [new_password] and returns the user.
       The [old_password] is the current password that the user has to enter.
@@ -140,17 +148,19 @@ module type Sig = sig
       some password policy. By default, the policy is that a password has to be
       at least 8 characters long. *)
   val update_password
-    :  ?password_policy:(string -> (unit, string) Result.t)
+    :  ?ctx:(string * string) list
+    -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
     -> old_password:string
     -> new_password:string
     -> new_password_confirmation:string
     -> (t, string) Result.t Lwt.t
 
-  (** [update ?email ?username ?name ?given_name ?status user] stores the
+  (** [update ?ctx?email ?username ?name ?given_name ?status user] stores the
       updated [user] and returns it. *)
   val update
-    :  ?email:string
+    :  ?ctx:(string * string) list
+    -> ?email:string
     -> ?username:string
     -> ?name:string
     -> ?given_name:string
@@ -165,9 +175,9 @@ module type Sig = sig
     -> t Lwt.t
     [@@deprecated "Use update() instead"]
 
-  (** [set_password ?policy user ~password ~password_confirmation] overrides the
-      current password of a [user] and returns that user. [password] has to
-      equal [password_confirmation].
+  (** [set_password ?ctx ?policy user ~password ~password_confirmation]
+      overrides the current password of a [user] and returns that user.
+      [password] has to equal [password_confirmation].
 
       [password_policy] is a function that validates the [new_password] based on
       some password policy. By default, the policy is that a password has to be
@@ -177,34 +187,37 @@ module type Sig = sig
       expose this function to users but only admins. If you want the user to
       update their own password use {!update_password} instead. *)
   val set_password
-    :  ?password_policy:(string -> (unit, string) Result.t)
+    :  ?ctx:(string * string) list
+    -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
     -> password:string
     -> password_confirmation:string
     -> (t, string) Result.t Lwt.t
 
-  (** [create_user ?username ?name ?given_name email password] returns a
+  (** [create_user ?ctx ?username ?name ?given_name email password] returns a
       non-admin user. Note that using [create_user] skips the registration
       workflow and should only be used with care.*)
   val create_user
-    :  ?username:string
+    :  ?ctx:(string * string) list
+    -> ?username:string
     -> ?name:string
     -> ?given_name:string
     -> password:string
     -> string
     -> t Lwt.t
 
-  (** [create_admin ?username ?name ?given_name email password] returns an admin
-      user. *)
+  (** [create_admin ?ctx ?username ?name ?given_name email password] returns an
+      admin user. *)
   val create_admin
-    :  ?username:string
+    :  ?ctx:(string * string) list
+    -> ?username:string
     -> ?name:string
     -> ?given_name:string
     -> password:string
     -> string
     -> t Lwt.t
 
-  (** [register_user ?password_policy ?username ?name ?given_name email password
+  (** [register_user ?ctx ?password_policy ?username ?name ?given_name email password
       password_confirmation]
       creates a new user if the password is valid and if the email address was
       not already registered.
@@ -212,7 +225,8 @@ module type Sig = sig
       Provide [password_policy] to check whether the password fulfills certain
       criteria. *)
   val register_user
-    :  ?password_policy:(string -> (unit, string) result)
+    :  ?ctx:(string * string) list
+    -> ?password_policy:(string -> (unit, string) result)
     -> ?username:string
     -> ?name:string
     -> ?given_name:string
@@ -224,10 +238,11 @@ module type Sig = sig
        Result.t
        Lwt.t
 
-  (** [login email ~password] returns the user associated with [email] if
+  (** [login ?ctx email ~password] returns the user associated with [email] if
       [password] matches the current password. *)
   val login
-    :  string
+    :  ?ctx:(string * string) list
+    -> string
     -> password:string
     -> (t, [ `Does_not_exist | `Incorrect_password ]) Result.t Lwt.t
 

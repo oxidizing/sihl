@@ -120,7 +120,7 @@ Run the executable to run the Sihl app, which will start the registered services
 {4 The Service Directory}
 The [service] directory contains Sihl services that you can use in your application.
 
-Many of Sihl's features are provided as services.
+Most of of Sihl's features are provided as services.
 
 Services can have dependencies on each other. For instance, the {!module:Sihl.Database.Migration} service depends on the {!module:Sihl.Database} service, since a database connection is requied to run migrations.
 
@@ -142,6 +142,9 @@ module TransactionalEmail = Sihl_email.Smtp
 ]}
 
 In [service.ml], you also build your own services with module functors. This concept gives Sihl its modularity, which allows you to easily create your own services.
+
+Services can be passed an optional service context [ctx]. The service context is of type [(string * string) list]. By default, the context is empty.
+It allows you to pass read-only settings to services that are valid for just one service call. It is up to the service implemenation to use the context, different service implementations might read different parts of the context.
 
 {[
 module Token = Sihl_token.JwtPostgreSql
@@ -634,6 +637,10 @@ The {!Sihl.Database} module provides functions for querying the database, runnin
 
 The database service creates and manages a connection pool. Configure the pool size with [DATABASE_POOL_SIZE], the default is [10]. Connection pools are used to decrease latency by keeping datbase connections open.
 
+Provide a [DATABASE_SKIP_DEFAULT_POOL_CREATION] if you want to manage database pools yourself. This is useful if you need multiple databases. The default assumption of Sihl is to have one application database.
+
+Use [DATABASE_CHOOSE_POOL] to use a specific named pool that was created using {!Sihl.Database.add_pool} to run commands.
+
 The main functions to run queries on the connection pool are {!val:Sihl.Database.find}, {!val:Sihl.Database.find_opt}, {!val:Sihl.Database.exec}, {!val:Sihl.Database.collect}. Use these to run caqti requests directly on the connection pool.
 
 {[
@@ -667,6 +674,12 @@ let find key =
       let%lwt result2 = Connection.find_opt request2 key |> Lwt.map Sihl.Database.raise_error
       Lwt.return (result1, result2))
 ]}
+
+{3 Context}
+
+The database implementations accept a pool identifier in the [pool] key of the context. You can choose which database pool should be used for each call.
+
+Make sure to initialize the pools using {!Sihl.Database.add_pool} before you reference them.
 
 {3 Transactions}
 
