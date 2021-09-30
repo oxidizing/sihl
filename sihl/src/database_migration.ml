@@ -315,7 +315,12 @@ struct
   let start () =
     Core_configuration.require schema;
     let%lwt () = setup () in
-    if Core_configuration.is_test ()
+    let skip_default_pool_creation =
+      Option.value
+        ~default:false
+        (Core_configuration.read_bool "DATABASE_SKIP_DEFAULT_POOL_CREATION")
+    in
+    if Core_configuration.is_test () || skip_default_pool_creation
     then Lwt.return ()
     else check_migrations_status ()
   ;;
