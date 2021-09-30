@@ -215,7 +215,12 @@ struct
     execute ?ctx steps
   ;;
 
-  let migrations_status ?ctx () =
+  let migrations_status ?ctx ?migrations () =
+    let migrations_to_check =
+      match migrations with
+      | Some migrations -> migrations |> List.to_seq |> Map.of_seq
+      | None -> !registered_migrations
+    in
     let%lwt migrations_states = Repo.get_all ?ctx (table ()) in
     let migration_states_namespaces =
       migrations_states
@@ -223,7 +228,7 @@ struct
              migration_state.Database_migration_repo.Migration.namespace)
     in
     let registered_migrations_namespaces =
-      Map.to_seq !registered_migrations |> List.of_seq |> List.map fst
+      Map.to_seq migrations_to_check |> List.of_seq |> List.map fst
     in
     let namespaces_to_check =
       List.concat
@@ -233,7 +238,7 @@ struct
     Lwt.return
     @@ List.map
          (fun namespace ->
-           let migrations = Map.find_opt namespace !registered_migrations in
+           let migrations = Map.find_opt namespace migrations_to_check in
            let migration_state =
              List.find_opt
                (fun migration_state ->
@@ -273,8 +278,8 @@ struct
     Lwt.return @@ find_pending [] unapplied
   ;;
 
-  let check_migrations_status ?ctx () =
-    let%lwt unapplied = migrations_status ?ctx () in
+  let check_migrations_status ?ctx ?migrations () =
+    let%lwt unapplied = migrations_status ?ctx ?migrations () in
     List.iter
       (fun (namespace, count) ->
         match count with

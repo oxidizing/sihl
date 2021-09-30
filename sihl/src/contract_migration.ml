@@ -29,6 +29,31 @@ module type Sig = sig
       connection pool. *)
   val run_all : ?ctx:(string * string) list -> unit -> unit Lwt.t
 
+  (** [migration_status ?ctx ?migrations ()] returns a list of migration
+      namespaces and the number of their unapplied migrations.
+
+      By default, the migrations are checked that have been registered when
+      registering the migration service. Custom [migrations] can be provided to
+      override this behaviour. *)
+  val migrations_status
+    :  ?ctx:(string * string) list
+    -> ?migrations:t list
+    -> unit
+    -> (string * int option) list Lwt.t
+
+  (** [check_migration_status ?ctx ?migrations ()] returns a list of migration
+      namespaces and the number of their unapplied migrations.
+
+      It does the same thing as {!migration_status} and additionally interprets
+      whether there are too many, not enough or just the right number of
+      migrations applied. If there are too many or not enough migrations
+      applied, a descriptive warning message is logged. *)
+  val check_migrations_status
+    :  ?ctx:(string * string) list
+    -> ?migrations:t list
+    -> unit
+    -> unit Lwt.t
+
   (** [pending_migrations ?ctx ()] returns a list of migrations that need to be
       executed in order to have all migrations applied on the connection pool.
       The returned migration is a tuple [(namespace, number)] where [namespace]
