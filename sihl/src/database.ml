@@ -164,6 +164,14 @@ let fetch_pool ?(ctx = []) () =
     Logs.debug (fun m -> m "Skipping pool creation, re-using existing pool");
     pool
   | None, None ->
+    if Option.value
+         (Core_configuration.read schema).skip_default_pool_creation
+         ~default:false
+    then
+      Logs.warn (fun m ->
+          m
+            "DATABASE_SKIP_DEFAULT_POOL_CREATION was set to true, but no pool \
+             was defined for querying.");
     let pool_size =
       Option.value (Core_configuration.read schema).pool_size ~default:10
     in
