@@ -29,7 +29,7 @@ module type Sig = sig
       connection pool. *)
   val run_all : ?ctx:(string * string) list -> unit -> unit Lwt.t
 
-  (** [migration_status ?ctx ?migrations ()] returns a list of migration
+  (** [migrations_status ?ctx ?migrations ()] returns a list of migration
       namespaces and the number of their unapplied migrations.
 
       By default, the migrations are checked that have been registered when
