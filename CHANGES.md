@@ -1,3 +1,7 @@
+## [2.0.0] - 2021-10-04
+### Changed
+- Added the concept of a service context `ctx` which can be used for configuration that is valid for one function call only.
+
 ## [1.0.1] - 2021-09-17
 ### Added
 - Support `multipart/form-data` in CSRF middleware
