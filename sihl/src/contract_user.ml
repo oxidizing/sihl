@@ -80,8 +80,9 @@ module type Sig = sig
       -> Rock.Request.t
       -> t option Lwt.t
 
-    (** [user_from_session ?cookie_key ?secret ?key ?secret request] returns the
-        user that is associated to the user id in the session of the [request].
+    (** [user_from_session ?ctx ?cookie_key ?secret ?key ?secret request]
+        returns the user that is associated to the user id in the session of the
+        [request].
 
         [cookie_key] is the name/key of the session cookie. By default, the
         value is [_session].
@@ -92,7 +93,8 @@ module type Sig = sig
         [key] is the key in the session associated with the user id. By default,
         the value is [user_id]. *)
     val user_from_session
-      :  ?cookie_key:string
+      :  ?ctx:(string * string) list
+      -> ?cookie_key:string
       -> ?secret:string
       -> ?key:string
       -> Rock.Request.t
