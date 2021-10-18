@@ -61,7 +61,7 @@ jobs:
       - name: Query and install external dependencies
         run: |
           sudo apt-get update -y
-          opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --yes
+          opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --with-test --yes
 
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
