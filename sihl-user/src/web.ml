@@ -10,10 +10,10 @@ let user_from_token find_user ?ctx ?(key = "user_id") read_token req
   | None -> Lwt.return None
 ;;
 
-let user_from_session find_user ?cookie_key ?secret ?(key = "user_id") req
+let user_from_session find_user ?ctx ?cookie_key ?secret ?(key = "user_id") req
     : Sihl.Contract.User.t option Lwt.t
   =
   match Sihl.Web.Session.find ?cookie_key ?secret key req with
-  | Some user_id -> find_user user_id
+  | Some user_id -> find_user ?ctx user_id
   | None -> Lwt.return None
 ;;
