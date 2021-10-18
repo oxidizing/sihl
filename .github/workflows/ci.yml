@@ -61,14 +61,14 @@ jobs:
       - name: Query and install external dependencies
         run: |
           sudo apt-get update -y
-          opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --yes --with-doc --with-test
+          opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --yes
 
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |
           OPAMSOLVERTIMEOUT=300 opam install . --deps-only --with-doc --with-test --locked --unlock-base
           sudo apt-get update -y
-          opam install ocamlformat --skip-updates
+          opam install ocamlformat alcotest odoc --skip-updates
 
       - name: Upgrade dependencies
         run: opam upgrade --fixup
