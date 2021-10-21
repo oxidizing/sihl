@@ -31,6 +31,8 @@ module Web = struct
   module Route = Opium.Route
 
   module Csrf = struct
+    module Crypto = Web_csrf.Crypto
+
     let find = Web_csrf.find
     let find_exn = Web_csrf.find_exn
   end
@@ -114,6 +116,9 @@ module Web = struct
   module Session = struct
     let find = Web_session.find
     let set = Web_session.set
+    let set_value = Web_session.set_value
+    let update_or_set_value = Web_session.update_or_set_value
+    let get_all = Web_session.get_all
   end
 
   module Middleware = struct
@@ -146,4 +151,8 @@ module Contract = struct
   module Storage = Contract_storage
   module Token = Contract_token
   module User = Contract_user
+end
+
+module Test = struct
+  module Session = Session
 end

@@ -146,6 +146,111 @@ let session_persisted_across_requests _ () =
   Lwt.return ()
 ;;
 
+let fetch_all_kv_pairs _ () =
+  let open Sihl.Web in
+  let session = [ "foo", "bar"; "baz", "qux"; "foo", "quux" ] in
+  let req = Request.get "" |> Sihl.Test.Session.set_value_req session in
+  let handler req =
+    let all = req |> Session.get_all |> Option.get in
+    Alcotest.(
+      check
+        (list (pair string string))
+        "session unchanged, duplicates removed"
+        (CCList.tail_opt session |> Option.get)
+        all);
+    Response.of_plain_text "" |> Lwt.return
+  in
+  let%lwt _ = handler req in
+  Lwt.return ()
+;;
+
+let update_value _ () =
+  let open Sihl.Web in
+  let target1 = "baz", "qux" in
+  let target2 = "waldo", "grault" in
+  let con = "able" in
+  let session = [ "foo", "bar"; target1; "foo", "quux" ] in
+  let req = Request.get "" in
+  let handler _ =
+    Response.of_plain_text ""
+    |> Session.set session
+    |> Session.update_or_set_value ~key:(fst target1) (function
+           | None -> Alcotest.fail "value should be found"
+           | Some v -> Some (con ^ v))
+    |> Session.update_or_set_value ~key:(fst target2) (function
+           | None -> Some (snd target2)
+           | Some _ -> Alcotest.fail "value should not be found")
+    |> Lwt.return
+  in
+  let%lwt response = handler req in
+  Alcotest.(
+    check
+      (list @@ pair string string)
+      "values updated in session"
+      [ CCPair.map_snd (( ^ ) con) target1
+      ; CCList.last_opt session |> Option.get
+      ; target2
+      ]
+      (Sihl.Test.Session.get_all_resp response |> Option.get));
+  Lwt.return ()
+;;
+
+let delete_value _ () =
+  let open Sihl.Web in
+  let target1 = "baz", "qux" in
+  let target2 = "waldo", "grault" in
+  let session = [ "foo", "bar"; target1; "foo", "quux" ] in
+  let req = Request.get "" in
+  let handler _ =
+    let open CCResult in
+    Response.of_plain_text ""
+    |> Session.set session
+    |> Session.update_or_set_value ~key:(fst target1) (function
+           | None -> Alcotest.fail "value should be found"
+           | Some _ -> None)
+    |> Session.update_or_set_value ~key:(fst target2) (function
+           | None -> None
+           | Some _ -> Alcotest.fail "value should not be found")
+    |> Lwt.return
+  in
+  let%lwt response = handler req in
+  Alcotest.(
+    check
+      (list @@ pair string string)
+      "session remains same"
+      [ CCList.last_opt session |> Option.get ]
+      (Sihl.Test.Session.get_all_resp response |> Option.get));
+  Lwt.return ()
+;;
+
+let set_value _ () =
+  let open Sihl.Web in
+  let target1 = "baz", "qux" in
+  let target2 = "waldo" in
+  let updated = "grault" in
+  let session = [ "foo", "bar"; target1; "foo", "quux" ] in
+  let req = Request.get "" in
+  let handler _ =
+    let open CCResult in
+    Response.of_plain_text ""
+    |> Session.set session
+    |> Session.set_value ~key:(fst target1) updated
+    |> Session.set_value ~key:target2 updated
+    |> Lwt.return
+  in
+  let%lwt response = handler req in
+  Alcotest.(
+    check
+      (list @@ pair string string)
+      "values set in session"
+      [ CCPair.map_snd (CCFun.const updated) target1
+      ; CCList.last_opt session |> Option.get
+      ; target2, updated
+      ]
+      (Sihl.Test.Session.get_all_resp response |> Option.get));
+  Lwt.return ()
+;;
+
 let suite =
   [ ( "session"
     , [ test_case
@@ -166,6 +271,16 @@ let suite =
           "session persisted across requests"
           `Quick
           session_persisted_across_requests
+      ; test_case "fetch all values in session" `Quick fetch_all_kv_pairs
+      ; test_case
+          "update existing and non-existing value in session"
+          `Quick
+          update_value
+      ; test_case
+          "delete existing and non-existing value in session"
+          `Quick
+          delete_value
+      ; test_case "set value in session" `Quick set_value
       ] )
   ]
 ;;

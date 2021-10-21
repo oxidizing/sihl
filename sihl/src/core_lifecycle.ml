@@ -5,7 +5,7 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 exception Exception
 
-(* TODO [aerben rename to t *)
+(* TODO [aerben] rename to t *)
 type lifecycle =
   { type_name : string
   ; implementation_name : string
