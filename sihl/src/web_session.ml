@@ -1,70 +1,37 @@
 let log_src = Logs.Src.create "sihl.middleware.session"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
-module Map = Map.Make (String)
 
-module Session = struct
-  type t = string Map.t
-
-  let empty = Map.empty
-
-  let of_yojson yojson =
-    let open Yojson.Safe.Util in
-    let session_list =
-      try
-        Some (yojson |> to_assoc |> List.map (fun (k, v) -> k, to_string v))
-      with
-      | _ -> None
-    in
-    session_list |> Option.map List.to_seq |> Option.map Map.of_seq
-  ;;
-
-  let to_yojson session =
-    `Assoc
-      (session
-      |> Map.to_seq
-      |> List.of_seq
-      |> List.map (fun (k, v) -> k, `String v))
-  ;;
-
-  let of_json json =
-    try of_yojson (Yojson.Safe.from_string json) with
-    | _ -> None
-  ;;
-
-  let to_json session = session |> to_yojson |> Yojson.Safe.to_string
-
-  let to_sexp session =
-    let open Sexplib0.Sexp_conv in
-    let open Sexplib0.Sexp in
-    let data =
-      session
-      |> Map.to_seq
-      |> List.of_seq
-      |> sexp_of_list (sexp_of_pair sexp_of_string sexp_of_string)
-    in
-    List [ List [ Atom "data"; data ] ]
-  ;;
-end
-
-let decode_session cookie_key signed_with req =
-  match Opium.Request.cookie ~signed_with cookie_key req with
-  | None -> None
+let decode_session cookie_key cookie_value =
+  match cookie_value with
+  | None -> Ok None
   | Some cookie_value ->
     (match Session.of_json cookie_value with
     | None ->
-      Logs.err (fun m ->
-          m
-            "Failed to parse value found in session cookie '%s': '%s'"
-            cookie_key
-            cookie_value);
+      let err_msg =
+        Format.asprintf
+          "Failed to parse value found in session cookie '%s': '%s'"
+          cookie_key
+          cookie_value
+      in
+      Logs.err (fun m -> m "%s" err_msg);
       Logs.info (fun m ->
           m
             "Maybe the cookie key '%s' collides with a cookie issued by \
              someone else. Try to change the cookie key."
             cookie_key);
-      None
-    | Some session -> Some session)
+      Error err_msg
+    | Some session -> Ok (Some session))
+;;
+
+let decode_session_req cookie_key signed_with req =
+  Opium.Request.cookie ~signed_with cookie_key req |> decode_session cookie_key
+;;
+
+let decode_session_resp cookie_key signed_with resp =
+  Option.map (fun c -> snd c.Opium.Cookie.value)
+  @@ Opium.Response.cookie ~signed_with cookie_key resp
+  |> decode_session cookie_key
 ;;
 
 let find
@@ -74,8 +41,23 @@ let find
     req
   =
   let signed_with = Opium.Cookie.Signer.make secret in
-  let session = decode_session cookie_key signed_with req in
-  Option.bind session (Map.find_opt key)
+  let session =
+    decode_session_req cookie_key signed_with req |> CCResult.get_or_failwith
+  in
+  Option.bind session (Session.StrMap.find_opt key)
+;;
+
+let get_all
+    ?(cookie_key = "_session")
+    ?(secret = Core_configuration.read_secret ())
+    req
+  =
+  let open CCOpt.Infix in
+  let signed_with = Opium.Cookie.Signer.make secret in
+  decode_session_req cookie_key signed_with req
+  |> CCResult.get_or_failwith
+  >|= Session.StrMap.to_seq
+  >|= List.of_seq
 ;;
 
 let set
@@ -85,7 +67,7 @@ let set
     resp
   =
   let signed_with = Opium.Cookie.Signer.make secret in
-  let session = session |> List.to_seq |> Map.of_seq in
+  let session = session |> List.to_seq |> Session.StrMap.of_seq in
   let cookie_value = Session.to_json session in
   let cookie = cookie_key, cookie_value in
   Opium.Response.add_cookie_or_replace
@@ -93,4 +75,39 @@ let set
     ~sign_with:signed_with
     cookie
     resp
+;;
+
+let update_or_set_value
+    ?(cookie_key = "_session")
+    ?(secret = Core_configuration.read_secret ())
+    ~key
+    f
+    resp
+  =
+  let signed_with = Opium.Cookie.Signer.make secret in
+  let updated_session =
+    match
+      decode_session_resp cookie_key signed_with resp
+      |> CCResult.get_or_failwith
+    with
+    | Some m -> Session.StrMap.update key f m
+    | None -> Session.StrMap.empty |> Session.StrMap.update key f
+  in
+  let cookie_value = Session.to_json updated_session in
+  let cookie = cookie_key, cookie_value in
+  Opium.Response.add_cookie_or_replace
+    ~scope:(Uri.of_string "/")
+    ~sign_with:signed_with
+    cookie
+    resp
+;;
+
+let set_value
+    ?(cookie_key = "_session")
+    ?(secret = Core_configuration.read_secret ())
+    ~key
+    value
+    resp
+  =
+  update_or_set_value ~cookie_key ~secret ~key (CCFun.const @@ Some value) resp
 ;;

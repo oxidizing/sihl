@@ -298,6 +298,14 @@ module Web : sig
     (** [find_exn request] returns the CSRF token of the current [request]. If
         the CSRF middleware is not installed, an exception is raised. *)
     val find_exn : Rock.Request.t -> string
+
+    module Crypto : sig
+      (** [token_length] is the amount of bytes used in the unencrypted CSRF
+          tokens. *)
+      val token_length : int
+
+      include module type of Web_csrf.Crypto
+    end
   end
 
   module Flash : sig
@@ -477,7 +485,7 @@ module Web : sig
 
       (** [insert t] inserts [t] and returns an error message that can be shown
           to the user if it fails. *)
-      val insert : t -> (t, string) Result.t Lwt.t
+      val insert : t -> (t, string) result Lwt.t
 
       (** [update id t] updates the t that is found using its [id] with [t] and
           returns an error message that can be shown to the user if it fails.
@@ -732,13 +740,28 @@ module Web : sig
       -> Opium.Request.t
       -> string option
 
+    (** [get_all ?cookie_key ?secret request] returns all values in the current
+        session of the [request].
+
+        [cookie_key] is the name of the session cookie. By default, the value is
+        [_session].
+
+        [secret] is the secret used to sign the session cookie. By default,
+        [SIHL_SECRET] is used. *)
+
+    val get_all
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> Opium.Request.t
+      -> (string * string) list option
+
     (** [set ?cookie_key ?secret data response] returns a response that has
         [data] associated to the current session by setting the session cookie
         of the response. [set] replaces the current session.
 
         [cookie_key] is the name of the session cookie. By default, the value is
-        [_session]. If there is a session cookie already present it gets
-        replaced.
+        [_session]. If there is a session cookie already present with that name
+        it gets replaced.
 
         [secret] is the secret used to sign the session cookie. By default,
         [SIHL_SECRET] is used. *)
@@ -748,35 +771,79 @@ module Web : sig
       -> (string * string) list
       -> Opium.Response.t
       -> Opium.Response.t
+
+    (** [set_value ?cookie_key ?secret key value response] returns a response
+        with an updated session where [key] is associated with [value]. If [key]
+        has no binding in the session, a new binding is added. Other bindings
+        are not affected.
+
+        [cookie_key] is the name of the session cookie. By default, the value is
+        [_session].
+
+        If no session with name [cookie_key] is found, an error message is
+        returned.
+
+        [secret] is the secret used to sign the session cookie. By default,
+        [SIHL_SECRET] is used. *)
+    val set_value
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> key:string
+      -> string
+      -> Opium.Response.t
+      -> Opium.Response.t
+
+    (** [update_or_set_value ?cookie_key ?secret key f response] returns a
+        response with an updated session where a value associated with [key] is
+        added, removed or updated by passing in the value to [f]. If [key] has
+        no binding in the session, the input to [f] is [None]. If a binding [a]
+        is found for [key], the input to [f] is [Some a]. If [f] returns [None],
+        the binding for [key] is removed. Other bindings are not affected.
+
+        [cookie_key] is the name of the session cookie. By default, the value is
+        [_session]. If there is no session cookie present, a new one is set and
+        [f None] is added to the session.
+
+        [secret] is the secret used to sign the session cookie. By default,
+        [SIHL_SECRET] is used. *)
+    val update_or_set_value
+      :  ?cookie_key:string
+      -> ?secret:string
+      -> key:string
+      -> (string option -> string option)
+      -> Response.t
+      -> Response.t
   end
 
   module Middleware : sig
-    (** [csrf ?not_allowed_handler ?cookie_key ?input_name ?secret ()] returns a
+    (** [csrf ?not_allowed_handler ?key ?input_name ?secret ()] returns a
         middleware that enables CSRF protection for unsafe HTTP requests.
 
         [not_allowed_handler] is used if an unsafe request does not pass the
         CSRF protection check. By default, [not_allowed_handler] returns an
         empty response with status 403.
 
-        [cookie_key] is the key in the cookie under which a CSRF token will be
-        stored. By default, [cookie_key] has a [__Host] prefix to increase
-        cookie security. One important consequence of this prefix is, that the
-        cookie cannot be sent across unencrypted (HTTP) connections. You should
-        only set this argument if you know what you are doing and aware of the
-        consequences.
+        [key] is the key in the session cookie under which a CSRF token will be
+        stored.
+
+        Internally, the CSRF protection is implemented as a Double Submit Cookie
+        approach. [session_key] is the name of the session cookie the CSRF token
+        should be stored in. By default, the value is [_session]. If you want
+        the CSRF cookie to use a [__Host] prefix, you have to adjust the session
+        cookie key.
 
         [input_name] is the name of the input element that is used to send the
         CSRF token. By default, the value is [_csrf]. It is recommended to use a
         [<hidden>] field in a [<form>].
 
-        [secret] is the secret used to hash the CSRF cookie value with. By
+        [secret] is the secret used to encrypt the CSRF cookie value with. By
         default, [SIHL_SECRET] is used.
 
-        Internally, the CSRF protection is implemented as the Double Submit
-        Cookie approach. *)
+        For security purposes, AES is used for encryption. *)
     val csrf
       :  ?not_allowed_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
-      -> ?cookie_key:string
+      -> ?key:string
+      -> ?session_key:string
       -> ?input_name:string
       -> ?secret:string
       -> unit
@@ -982,4 +1049,11 @@ module Random : sig
       cases you want to use {!base64} to get a string that can be used safely in
       most web contexts.*)
   val bytes : int -> string
+end
+
+(** This module contains various test utilities and can be used to test more
+    extensively. This module does not guarantee stability and is subject to
+    change. *)
+module Test : sig
+  module Session = Session
 end
