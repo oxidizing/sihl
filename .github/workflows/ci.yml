@@ -66,8 +66,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-opam.outputs.cache-hit != 'true'
         run: |
-          OPAMSOLVERTIMEOUT=300 opam install . --deps-only --with-doc --with-test --locked --unlock-base
-          sudo apt-get update -y
+          make switch
           opam install ocamlformat alcotest odoc --skip-updates
 
       - name: Upgrade dependencies
