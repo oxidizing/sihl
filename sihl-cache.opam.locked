@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "2.0.0"
+version: "2.0.1"
 synopsis: "Cache service implementations for Sihl"
 description: "A key-value store with support for PostgreSQL and MariaDB."
 maintainer: ["josef@oxidizing.io"]
@@ -11,7 +11,7 @@ bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "2.9.0"}
+  "dune" {= "2.9.1"}
   "ocaml" {= "4.11.2"}
 ]
 build: [
