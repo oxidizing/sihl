@@ -119,9 +119,19 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       find ?ctx user.id |> Lwt.map Result.ok
   ;;
 
-  let create ?ctx ~email ~password ~username ~name ~given_name ~admin confirmed =
+  let create
+      ?ctx
+      ?id
+      ~email
+      ~password
+      ~username
+      ~name
+      ~given_name
+      ~admin
+      confirmed
+    =
     let user =
-      make ~email ~password ~username ~name ~given_name ~admin ~confirmed
+      make ?id ~email ~password ~username ~name ~given_name ~admin confirmed
     in
     match user with
     | Ok user ->
@@ -131,10 +141,11 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
     | Error msg -> raise (Sihl.Contract.User.Exception msg)
   ;;
 
-  let create_user ?ctx ?username ?name ?given_name ~password email =
+  let create_user ?ctx ?id ?username ?name ?given_name ~password email =
     let%lwt user =
       create
         ?ctx
+        ?id
         ~password
         ~username
         ~name
@@ -148,7 +159,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
     | Error msg -> raise (Sihl.Contract.User.Exception msg)
   ;;
 
-  let create_admin ?ctx ?username ?name ?given_name ~password email =
+  let create_admin ?ctx ?id ?username ?name ?given_name ~password email =
     let%lwt user = Repo.get_by_email ?ctx email in
     let%lwt () =
       match user with
@@ -159,7 +170,16 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       | None -> Lwt.return ()
     in
     let%lwt user =
-      create ?ctx ~password ~username ~name ~given_name ~admin:true ~email true
+      create
+        ?ctx
+        ?id
+        ~password
+        ~username
+        ~name
+        ~given_name
+        ~admin:true
+        ~email
+        true
     in
     match user with
     | Ok user -> Lwt.return user
@@ -170,6 +190,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
 
   let register_user
       ?ctx
+      ?id
       ?(password_policy = default_password_policy)
       ?username
       ?name
@@ -186,7 +207,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       let%lwt user = find_by_email_opt ?ctx email in
       (match user with
       | None ->
-        create_user ?ctx ?username ?name ?given_name ~password email
+        create_user ?ctx ?id ?username ?name ?given_name ~password email
         |> Lwt.map Result.ok
       | Some _ -> Lwt_result.fail `Already_registered)
   ;;

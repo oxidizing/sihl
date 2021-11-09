@@ -26,6 +26,7 @@ module type Sig = sig
   (** Upload base64 string as data content for [file]. *)
   val upload_base64
     :  ?ctx:(string * string) list
+    -> ?id:string
     -> file
     -> string
     -> stored Lwt.t

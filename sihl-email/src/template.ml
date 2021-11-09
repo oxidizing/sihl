@@ -11,10 +11,10 @@ struct
   let get = Repo.get
   let get_by_label = Repo.get_by_label
 
-  let create ?ctx ?html ~label text =
+  let create ?ctx ?id ?html ~label text =
     let open Sihl.Contract.Email_template in
     let now = Ptime_clock.now () in
-    let id = Uuidm.create `V4 |> Uuidm.to_string in
+    let id = Option.value id ~default:(Uuidm.create `V4 |> Uuidm.to_string) in
     let template =
       { id; label; html; text; created_at = now; updated_at = now }
     in
