@@ -16,11 +16,12 @@ module type Sig = sig
   (** [get_by_label ?ctx label] returns the email template by [label]. *)
   val get_by_label : ?ctx:(string * string) list -> string -> t option Lwt.t
 
-  (** [create ?ctx ?html label text] creates an email template with [text] as
-      text emal content and a [label]. An optional [html] content can be
+  (** [create ?ctx ?id ?html label text] creates an email template with [text]
+      as text emal content and a [label]. An optional [html] content can be
       provided that will be displayed in email clients that support HTML. *)
   val create
     :  ?ctx:(string * string) list
+    -> ?id:string
     -> ?html:string
     -> label:string
     -> string

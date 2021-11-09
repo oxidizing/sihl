@@ -22,8 +22,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
     Repo.delete_blob ?ctx blob_id
   ;;
 
-  let upload_base64 ?ctx file base64 =
-    let blob_id = Uuidm.v `V4 |> Uuidm.to_string in
+  let upload_base64 ?ctx ?id file base64 =
+    let blob_id = Option.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string) in
     let%lwt blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->

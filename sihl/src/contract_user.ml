@@ -196,11 +196,12 @@ module type Sig = sig
     -> password_confirmation:string
     -> (t, string) Result.t Lwt.t
 
-  (** [create_user ?ctx ?username ?name ?given_name email password] returns a
-      non-admin user. Note that using [create_user] skips the registration
+  (** [create_user ?ctx ?id ?username ?name ?given_name email password] returns
+      a non-admin user. Note that using [create_user] skips the registration
       workflow and should only be used with care.*)
   val create_user
     :  ?ctx:(string * string) list
+    -> ?id:string
     -> ?username:string
     -> ?name:string
     -> ?given_name:string
@@ -208,10 +209,11 @@ module type Sig = sig
     -> string
     -> t Lwt.t
 
-  (** [create_admin ?ctx ?username ?name ?given_name email password] returns an
-      admin user. *)
+  (** [create_admin ?ctx ?id ?username ?name ?given_name email password] returns
+      an admin user. *)
   val create_admin
     :  ?ctx:(string * string) list
+    -> ?id:string
     -> ?username:string
     -> ?name:string
     -> ?given_name:string
@@ -219,7 +221,7 @@ module type Sig = sig
     -> string
     -> t Lwt.t
 
-  (** [register_user ?ctx ?password_policy ?username ?name ?given_name email password
+  (** [register_user ?ctx ?id ?password_policy ?username ?name ?given_name email password
       password_confirmation]
       creates a new user if the password is valid and if the email address was
       not already registered.
@@ -228,6 +230,7 @@ module type Sig = sig
       criteria. *)
   val register_user
     :  ?ctx:(string * string) list
+    -> ?id:string
     -> ?password_policy:(string -> (unit, string) result)
     -> ?username:string
     -> ?name:string
@@ -358,12 +361,12 @@ let validate_change_password
   | _, Error msg -> Error msg
 ;;
 
-let make ~email ~password ~name ~given_name ~username ~admin ~confirmed =
+let make ?id ~email ~password ~name ~given_name ~username ~admin confirmed =
   let hash = password |> Hashing.hash in
   let now = Ptime_clock.now () in
   Result.map
     (fun hash ->
-      { id = Uuidm.v `V4 |> Uuidm.to_string
+      { id = Option.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string)
       ; email
       ; password = hash
       ; username
