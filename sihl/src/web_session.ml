@@ -52,7 +52,7 @@ let get_all
     ?(secret = Core_configuration.read_secret ())
     req
   =
-  let open CCOpt.Infix in
+  let open CCOption.Infix in
   let signed_with = Opium.Cookie.Signer.make secret in
   decode_session_req cookie_key signed_with req
   |> CCResult.get_or_failwith

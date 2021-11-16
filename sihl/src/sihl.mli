@@ -300,10 +300,6 @@ module Web : sig
     val find_exn : Rock.Request.t -> string
 
     module Crypto : sig
-      (** [token_length] is the amount of bytes used in the unencrypted CSRF
-          tokens. *)
-      val token_length : int
-
       include module type of Web_csrf.Crypto
     end
   end
