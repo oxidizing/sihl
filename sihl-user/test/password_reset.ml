@@ -10,7 +10,7 @@ struct
       UserService.create_user "foo@example.com" ~password:"123456789"
     in
     let%lwt token =
-      PasswordResetService.create_reset_token ~ctx:[] ~email:"foo@example.com"
+      PasswordResetService.create_reset_token ~ctx:[] "foo@example.com"
       |> Lwt.map (Option.to_result ~none:"User with email not found")
       |> Lwt.map Result.get_ok
     in
@@ -18,8 +18,8 @@ struct
       PasswordResetService.reset_password
         ~ctx:[]
         ~token
-        ~password:"newpassword"
-        ~password_confirmation:"newpassword"
+        "newpassword"
+        "newpassword"
       |> Lwt.map Result.get_ok
     in
     let%lwt _ =

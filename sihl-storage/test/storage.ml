@@ -20,8 +20,8 @@ module Make (StorageService : Sihl.Contract.Storage.Sig) = struct
         ; mime = "application/pdf"
         }
     in
-    let%lwt _ = StorageService.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ=" in
-    let%lwt uploaded_file = StorageService.find ~ctx:[] ~id:file_id in
+    let%lwt _ = StorageService.upload_base64 file "ZmlsZWNvbnRlbnQ=" in
+    let%lwt uploaded_file = StorageService.find ~ctx:[] file_id in
     let actual_file = uploaded_file.Sihl.Contract.Storage.file in
     Alcotest.(check alco_file "has same file" file actual_file);
     let%lwt actual_blob = StorageService.download_data_base64 uploaded_file in
@@ -41,13 +41,13 @@ module Make (StorageService : Sihl.Contract.Storage.Sig) = struct
         }
     in
     let%lwt stored_file =
-      StorageService.upload_base64 file ~base64:"ZmlsZWNvbnRlbnQ="
+      StorageService.upload_base64 file "ZmlsZWNvbnRlbnQ="
     in
     let updated_file =
       Sihl_storage.set_filename_stored "assessment.pdf" stored_file
     in
     let%lwt actual_file =
-      StorageService.update_base64 updated_file ~base64:"bmV3Y29udGVudA=="
+      StorageService.update_base64 updated_file "bmV3Y29udGVudA=="
     in
     Alcotest.(
       check

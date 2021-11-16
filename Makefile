@@ -9,14 +9,15 @@ all:
 	opam exec -- dune build --root . @install
 
 .PHONY: deps
-deps: ## Install development dependencies
-	opam install -y dune-release merlin ocamlformat.0.18.0 utop
-	OPAMSOLVERTIMEOUT=240 opam install --deps-only --with-test --with-doc -y .
+deps:
+	opam install -y dune-release merlin ocamlformat utop
+	opam install -y alcotest-lwt caqti-driver-postgresql caqti-driver-mariadb
+	opam install . -y --deps-only
 	eval $(opam env)
 
 .PHONY: create_switch
 create_switch:
-	opam switch create . --no-install --locked
+	opam switch create . 4.12.0 --no-install --locked
 	eval $(opam env)
 
 .PHONY: switch
@@ -42,51 +43,8 @@ install: all ## Install the packages on the system
 clean: ## Clean build artifacts and other generated files
 	opam exec -- dune clean --root .
 
-.PHONY: doc
-doc: ## Generate odoc documentation
-	opam exec -- dune build --root . @doc
-	cp -f docs/odoc.css _build/default/_doc/_html/
-
-.PHONY: release-doc
-.ONESHELL:
-release-doc: ## Release odoc documentation
-	if [ -d "./.deploy_git" ]; then
-		echo "Removing .deploy_git folder..."
-		rm -rf ./.deploy_git
-		echo "Folder removed."
-	fi
-
-	git clone --depth 1 --branch=gh-pages git@github.com:oxidizing/sihl.git .deploy_git
-
-	cd .deploy_git
-
-	find . -path ./.git -prune -o -exec rm -rf {} \; 2> /dev/null
-
-	cd ../
-
-	make doc
-
-	mv _build/default/_doc/_html/* .deploy_git
-
-	cd .deploy_git
-
-	git add .
-	git commit -am "Build documentation [skip ci]"
-	git push
-
-	cd ../
-	if [ -d "./.deploy_git" ]; then
-		echo "Removing .deploy_git folder..."
-		rm -rf ./.deploy_git
-		echo "Folder removed."
-	fi
-
-.PHONY: open-doc
-open-doc: ## Open generated odoc documentation
-	xdg-open _build/default/_doc/_html/index.html
-
 .PHONY: format
-format: ## Format the codebase with ocamlformat
+format: build ## Format the codebase with ocamlformat
 	opam exec -- dune build --root . --auto-promote @fmt
 
 .PHONY: sihl

@@ -24,11 +24,11 @@ Sihl is a batteries-included web framework. Thanks to the modular architecture, 
 ")
  (depends
   dune
-  (ocaml (>= 4.08.0))
+  (ocaml (>= 4.12.0))
   (conformist (>= 0.6.0))
   (dune-build-info (>= 2.8.4))
   (tsort (>= 2.0.0))
-  (containers (>= 2.7))
+  (containers (>= 3.6.1))
   (logs (>= 0.7.0))
   (fmt (>= 0.8.8))
   (bos (>= 0.2.0))
