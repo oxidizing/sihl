@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "2.0.1"
+version: "3.0.0"
 synopsis: "Queue service implementations for Sihl"
 description:
   "Modules for running tasks in the background on a persistent queue."
@@ -10,14 +10,18 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "cmdliner" {= "1.0.4"}
   "dune" {= "2.9.1"}
   "markup" {= "1.0.2"}
   "ocaml" {= "4.12.0"}
+  "ocaml-base-compiler" {= "4.12.0"}
   "ocaml-compiler-libs" {= "v0.12.4"}
+  "ocaml-config" {= "2"}
   "ocaml-migrate-parsetree" {= "2.2.0"}
+  "ocaml-options-vanilla" {= "1"}
   "ocamlbuild" {= "0.14.0"}
   "ocamlfind" {= "1.9.1"}
   "ppx_derivers" {= "1.2.1"}

@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "2.0.1"
+version: "3.0.0"
 synopsis: "Token service implementations for Sihl"
 description:
   "Modules for token handling with support for JWT blacklisting and server-side stored tokens using PostgreSQL and MariaDB."
@@ -10,10 +10,14 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "dune" {= "2.9.1"}
   "ocaml" {= "4.12.0"}
+  "ocaml-base-compiler" {= "4.12.0"}
+  "ocaml-config" {= "2"}
+  "ocaml-options-vanilla" {= "1"}
 ]
 build: [
   ["dune" "subst"] {dev}
