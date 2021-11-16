@@ -52,7 +52,7 @@ let decode_session resp =
 
 let get_all_resp resp =
   let session = decode_session resp in
-  session |> CCOpt.map (fun s -> s |> StrMap.to_seq |> List.of_seq)
+  session |> CCOption.map (fun s -> s |> StrMap.to_seq |> List.of_seq)
 ;;
 
 let find_resp key resp =

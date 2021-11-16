@@ -202,7 +202,6 @@ let delete_value _ () =
   let session = [ "foo", "bar"; target1; "foo", "quux" ] in
   let req = Request.get "" in
   let handler _ =
-    let open CCResult in
     Response.of_plain_text ""
     |> Session.set session
     |> Session.update_or_set_value ~key:(fst target1) (function
@@ -231,7 +230,6 @@ let set_value _ () =
   let session = [ "foo", "bar"; target1; "foo", "quux" ] in
   let req = Request.get "" in
   let handler _ =
-    let open CCResult in
     Response.of_plain_text ""
     |> Session.set session
     |> Session.set_value ~key:(fst target1) updated

@@ -35,6 +35,8 @@ let set token req =
 module Crypto = struct
   let () = Nocrypto_entropy_unix.initialize ()
   let block_size = 16
+
+  (** [token_length] is the amount of bytes used in the unencrypted CSRF tokens. *)
   let token_length = 4 * block_size
 
   module Secret : sig
@@ -97,7 +99,7 @@ module Crypto = struct
       t
       |> Base64.decode ~alphabet:Base64.uri_safe_alphabet
       |> CCResult.to_opt
-      |> CCOpt.map Cstruct.of_string
+      |> CCOption.map Cstruct.of_string
     ;;
 
     let to_struct = CCFun.id
@@ -203,7 +205,7 @@ let middleware
       handler (set "development" req)
     else
       let (* CSRF token might come from a multipart form *)
-      open CCOpt.Infix in
+      open CCOption.Infix in
       let%lwt multipart = Opium.Request.to_multipart_form_data req in
       let%lwt received_encrypted_token =
         multipart
@@ -211,7 +213,7 @@ let middleware
         |> (function
              | None -> Opium.Request.urlencoded input_name req
              | tkn -> Lwt.return tkn)
-        |> Lwt.map (CCOpt.flat_map Encrypted_token.of_uri_safe_string)
+        |> Lwt.map (CCOption.flat_map Encrypted_token.of_uri_safe_string)
       in
       let stored_encrypted_token =
         Web_session.find key req >>= Encrypted_token.of_uri_safe_string
