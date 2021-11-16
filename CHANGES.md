@@ -1,3 +1,13 @@
+## [3.0.0] - 2021-11-16
+### Fixed
+- CSRF tokens are now valid per session, not per request. This allows the user to open a form, use various parts of the website in another tab and then come back to the form and submit it.
+
+### Changed
+- Enforce OCaml 4.12.0, which doesn't allow named arguments after optional arguments
+
+### Added
+- Provide optional `?id` parameter whenever an entity is created, to override the generated it
+
 ## [2.0.1] - 2021-10-22
 ### Added
 - Expose service context on `user_from_session`
