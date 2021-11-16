@@ -28,59 +28,25 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-        ocaml-version:
-          - 4.11.1
-          - 4.10.1
-          - 4.09.1
-          - 4.08.1
+        ocaml-compiler:
+          - 4.12.x
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Retrieve opam cache
-        uses: actions/cache@v2
-        if: runner.os != 'Windows'
-        id: cache-opam
-        with:
-          path: ~/.opam
-          key: v1-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam.locked') }}
-          restore-keys: |
-            v2-${{ runner.os }}-opam-${{ matrix.ocaml-version }}-
-
       - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1
+        uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-version: ${{ matrix.ocaml-version }}
-
-      - name: Update opam repository
-        if: steps.cache-opam.outputs.cache-hit != 'true'
-        run: opam update
-
-      - name: Pin package
-        run: opam pin add . --yes --no-action
-
-      - name: Query and install external dependencies
-        run: |
-          sudo apt-get update -y
-          opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --with-test --yes
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          dune-cache: true
 
       - name: Install dependencies
-        if: steps.cache-opam.outputs.cache-hit != 'true'
-        run: |
-          make switch
-          opam install ocamlformat alcotest odoc --skip-updates
-          opam install containers.3.5
-      - name: Upgrade dependencies
-        run: opam upgrade --fixup
-        if: steps.cache-opam.outputs.cache-hit == 'true'
+        run: make deps
 
       - name: Build
         run: make build
 
       - name: Check formatting
         run: make format
-
-      - name: Build docs
-        run: make doc
 
       - name: Run tests
         run: make test-all

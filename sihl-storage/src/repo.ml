@@ -4,35 +4,35 @@ module type Sig = sig
 
   val insert_file
     :  ?ctx:(string * string) list
-    -> file:Sihl.Contract.Storage.stored
+    -> Sihl.Contract.Storage.stored
     -> unit Lwt.t
 
   val insert_blob
     :  ?ctx:(string * string) list
     -> id:string
-    -> blob:string
+    -> string
     -> unit Lwt.t
 
   val get_file
     :  ?ctx:(string * string) list
-    -> id:string
+    -> string
     -> Sihl.Contract.Storage.stored option Lwt.t
 
-  val get_blob : ?ctx:(string * string) list -> id:string -> string option Lwt.t
+  val get_blob : ?ctx:(string * string) list -> string -> string option Lwt.t
 
   val update_file
     :  ?ctx:(string * string) list
-    -> file:Sihl.Contract.Storage.stored
+    -> Sihl.Contract.Storage.stored
     -> unit Lwt.t
 
   val update_blob
     :  ?ctx:(string * string) list
     -> id:string
-    -> blob:string
+    -> string
     -> unit Lwt.t
 
-  val delete_file : ?ctx:(string * string) list -> id:string -> unit Lwt.t
-  val delete_blob : ?ctx:(string * string) list -> id:string -> unit Lwt.t
+  val delete_file : ?ctx:(string * string) list -> string -> unit Lwt.t
+  val delete_blob : ?ctx:(string * string) list -> string -> unit Lwt.t
 end
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
@@ -76,7 +76,7 @@ struct
          |sql}
   ;;
 
-  let insert_file ?ctx ~file = Sihl.Database.exec ?ctx insert_request file
+  let insert_file ?ctx file = Sihl.Database.exec ?ctx insert_request file
 
   let update_file_request =
     Caqti_request.exec
@@ -92,7 +92,7 @@ struct
          |sql}
   ;;
 
-  let update_file ?ctx ~file = Sihl.Database.exec ?ctx update_file_request file
+  let update_file ?ctx file = Sihl.Database.exec ?ctx update_file_request file
 
   let get_file_request =
     Caqti_request.find_opt
@@ -122,7 +122,7 @@ struct
          |sql}
   ;;
 
-  let get_file ?ctx ~id = Sihl.Database.find_opt ?ctx get_file_request id
+  let get_file ?ctx id = Sihl.Database.find_opt ?ctx get_file_request id
 
   let delete_file_request =
     Caqti_request.exec
@@ -133,7 +133,7 @@ struct
          |sql}
   ;;
 
-  let delete_file ?ctx ~id = Sihl.Database.exec ?ctx delete_file_request id
+  let delete_file ?ctx id = Sihl.Database.exec ?ctx delete_file_request id
 
   let get_blob_request =
     Caqti_request.find_opt
@@ -147,7 +147,7 @@ struct
          |sql}
   ;;
 
-  let get_blob ?ctx ~id = Sihl.Database.find_opt ?ctx get_blob_request id
+  let get_blob ?ctx id = Sihl.Database.find_opt ?ctx get_blob_request id
 
   let insert_blob_request =
     Caqti_request.exec
@@ -163,7 +163,7 @@ struct
          |sql}
   ;;
 
-  let insert_blob ?ctx ~id ~blob =
+  let insert_blob ?ctx ~id blob =
     Sihl.Database.exec ?ctx insert_blob_request (id, blob)
   ;;
 
@@ -178,7 +178,7 @@ struct
          |sql}
   ;;
 
-  let update_blob ?ctx ~id ~blob =
+  let update_blob ?ctx ~id blob =
     Sihl.Database.exec ?ctx update_blob_request (id, blob)
   ;;
 
@@ -192,7 +192,7 @@ struct
          |sql}
   ;;
 
-  let delete_blob ?ctx ~id = Sihl.Database.exec ?ctx delete_blob_request id
+  let delete_blob ?ctx id = Sihl.Database.exec ?ctx delete_blob_request id
 
   let clean_handles_request =
     Caqti_request.exec Caqti_type.unit "TRUNCATE storage_handles;"

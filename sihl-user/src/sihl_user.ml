@@ -119,8 +119,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       find ?ctx user.id |> Lwt.map Result.ok
   ;;
 
-  let create ?ctx ~email ~password ~username ~name ~given_name ~admin ~confirmed
-    =
+  let create ?ctx ~email ~password ~username ~name ~given_name ~admin confirmed =
     let user =
       make ~email ~password ~username ~name ~given_name ~admin ~confirmed
     in
@@ -141,8 +140,8 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
         ~name
         ~given_name
         ~admin:false
-        ~confirmed:false
         ~email
+        false
     in
     match user with
     | Ok user -> Lwt.return user
@@ -160,15 +159,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       | None -> Lwt.return ()
     in
     let%lwt user =
-      create
-        ?ctx
-        ~password
-        ~username
-        ~name
-        ~given_name
-        ~admin:true
-        ~confirmed:true
-        ~email
+      create ?ctx ~password ~username ~name ~given_name ~admin:true ~email true
     in
     match user with
     | Ok user -> Lwt.return user

@@ -33,11 +33,11 @@ struct
     Repo.create_table_if_not_exists ?ctx (table ())
   ;;
 
-  let has ?ctx ~namespace =
+  let has ?ctx namespace =
     Repo.get ?ctx (table ()) ~namespace |> Lwt.map Option.is_some
   ;;
 
-  let get ?ctx ~namespace =
+  let get ?ctx namespace =
     let%lwt state = Repo.get ?ctx (table ()) ~namespace in
     Lwt.return
     @@
@@ -51,22 +51,22 @@ struct
 
   let upsert ?ctx state = Repo.upsert ?ctx (table ()) state
 
-  let mark_dirty ?ctx ~namespace =
-    let%lwt state = get ?ctx ~namespace in
+  let mark_dirty ?ctx namespace =
+    let%lwt state = get ?ctx namespace in
     let dirty_state = Repo.Migration.mark_dirty state in
     let%lwt () = upsert ?ctx dirty_state in
     Lwt.return dirty_state
   ;;
 
-  let mark_clean ?ctx ~namespace =
-    let%lwt state = get ?ctx ~namespace in
+  let mark_clean ?ctx namespace =
+    let%lwt state = get ?ctx namespace in
     let clean_state = Repo.Migration.mark_clean state in
     let%lwt () = upsert ?ctx clean_state in
     Lwt.return clean_state
   ;;
 
-  let increment ?ctx ~namespace =
-    let%lwt state = get ?ctx ~namespace in
+  let increment ?ctx namespace =
+    let%lwt state = get ?ctx namespace in
     let updated_state = Repo.Migration.increment state in
     let%lwt () = upsert ?ctx updated_state in
     Lwt.return updated_state
@@ -119,7 +119,7 @@ struct
         in
         let%lwt () = Database.query ?ctx query in
         Logs.debug (fun m -> m "Ran %s" label);
-        let%lwt _ = increment ?ctx ~namespace in
+        let%lwt _ = increment ?ctx namespace in
         run steps
       | { label; statement; check_fk = false } :: steps ->
         let%lwt () =
@@ -134,7 +134,7 @@ struct
               query connection)
         in
         Logs.debug (fun m -> m "Ran %s" label);
-        let%lwt _ = increment ?ctx ~namespace in
+        let%lwt _ = increment ?ctx namespace in
         run steps
     in
     let () =
@@ -148,11 +148,11 @@ struct
   let execute_migration ?ctx migration =
     let namespace, _ = migration in
     let%lwt () = setup ?ctx () in
-    let%lwt has_state = has ?ctx ~namespace in
+    let%lwt has_state = has ?ctx namespace in
     let%lwt state =
       if has_state
       then (
-        let%lwt state = get ?ctx ~namespace in
+        let%lwt state = get ?ctx namespace in
         if Repo.Migration.dirty state
         then (
           Logs.err (fun m ->
@@ -164,7 +164,7 @@ struct
                 "Set the column 'dirty' from 1/true to 0/false after you have \
                  fixed the database state.");
           raise Contract_migration.Dirty_migration)
-        else mark_dirty ?ctx ~namespace)
+        else mark_dirty ?ctx namespace)
       else (
         Logs.debug (fun m -> m "Setting up table for %s" namespace);
         let state = Repo.Migration.create ~namespace in
@@ -190,7 +190,7 @@ struct
               m "Error while running migration '%a': %s" pp migration err);
           raise (Contract_migration.Exception err))
     in
-    let%lwt _ = mark_clean ?ctx ~namespace in
+    let%lwt _ = mark_clean ?ctx namespace in
     Lwt.return ()
   ;;
 

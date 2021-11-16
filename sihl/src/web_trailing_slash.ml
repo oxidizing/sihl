@@ -2,7 +2,7 @@ let middleware () =
   let filter handler req =
     let root_uri =
       Core_configuration.read_string "PREFIX_PATH"
-      |> CCOpt.value ~default:""
+      |> CCOption.value ~default:""
       |> Format.asprintf "%s/"
       |> Uri.of_string
     in
