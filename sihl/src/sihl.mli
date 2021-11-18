@@ -180,6 +180,20 @@ module Configuration : sig
 end
 
 module Web : sig
+  module Request : sig
+    include module type of Opium.Request
+
+    (** [bearer_token request] returns the [Bearer] token in the [Authorization]
+        header. The header value has to be of form [Bearer <token>]. *)
+    val bearer_token : t -> string option
+  end
+
+  module Response = Opium.Response
+  module Body = Opium.Body
+  module Cookie = Opium.Cookie
+  module Router = Opium.Router
+  module Route = Opium.Route
+
   (** HTTP method *)
   type meth = Web.meth =
     | Get
@@ -192,7 +206,7 @@ module Web : sig
     | Any
 
   (** A [handler] returns a response given a request. *)
-  type handler = Rock.Request.t -> Rock.Response.t Lwt.t
+  type handler = Request.t -> Response.t Lwt.t
 
   (** A [route] has an HTTP method, a path and a handler. *)
   type route = meth * string * handler
@@ -272,20 +286,6 @@ module Web : sig
       provided, the returned path equals the provided path. *)
   val externalize_path : ?prefix:string -> string -> string
 
-  module Request : sig
-    include module type of Opium.Request
-
-    (** [bearer_token request] returns the [Bearer] token in the [Authorization]
-        header. The header value has to be of form [Bearer <token>]. *)
-    val bearer_token : t -> string option
-  end
-
-  module Response = Opium.Response
-  module Body = Opium.Body
-  module Cookie = Opium.Cookie
-  module Router = Opium.Router
-  module Route = Opium.Route
-
   module Http : sig
     include Contract_http.Sig
   end
@@ -293,11 +293,11 @@ module Web : sig
   module Csrf : sig
     (** [find request] returns the CSRF token of the current [request]. Make
         sure that the CSRF middleware is installed. *)
-    val find : Rock.Request.t -> string option
+    val find : Request.t -> string option
 
     (** [find_exn request] returns the CSRF token of the current [request]. If
         the CSRF middleware is not installed, an exception is raised. *)
-    val find_exn : Rock.Request.t -> string
+    val find_exn : Request.t -> string
 
     module Crypto : sig
       include module type of Web_csrf.Crypto
@@ -309,39 +309,39 @@ module Web : sig
         the current [request].
 
         Make sure that the flash middleware is installed.*)
-    val find_alert : Rock.Request.t -> string option
+    val find_alert : Request.t -> string option
 
     (** [set_alert alert response] returns a response with an [alert] message
         associated to it. Use [alert] to tell the user that something went
         wrong.
 
         Make sure that the flash middleware is installed.*)
-    val set_alert : string -> Rock.Response.t -> Rock.Response.t
+    val set_alert : string -> Response.t -> Response.t
 
     (** [find_notice request] returns the notice stored in the flash storage of
         the current [request].
 
         Make sure that the flash middleware is installed.*)
-    val find_notice : Rock.Request.t -> string option
+    val find_notice : Request.t -> string option
 
     (** [set_notice notice response] returns a [response] with a [notice]
         message associated to it. Use [notice] to tell the user that something
         happened (successfully).
 
         Make sure that the flash middleware is installed.*)
-    val set_notice : string -> Rock.Response.t -> Rock.Response.t
+    val set_notice : string -> Response.t -> Response.t
 
     (** [find key request] returns the string stored in the flash storage of the
         current [request] associated with [key].
 
         Make sure that the flash middleware is installed.*)
-    val find : string -> Rock.Request.t -> string option
+    val find : string -> Request.t -> string option
 
     (** [set flash response] returns a response with the [flash] stored. Use
         this to store arbitrary key-value values in the flash store.
 
         Make sure that the flash middleware is installed. *)
-    val set : (string * string) list -> Rock.Response.t -> Rock.Response.t
+    val set : (string * string) list -> Response.t -> Response.t
   end
 
   (** This module allows you to build RESTful web pages quickly. *)
@@ -515,7 +515,7 @@ module Web : sig
           The [csrf] token has to be included as hidden input element in the
           form. *)
       val index
-        :  Rock.Request.t
+        :  Request.t
         -> string
         -> t list * int
         -> query
@@ -534,17 +534,14 @@ module Web : sig
           form with invalid input from the failed [create] request, so the user
           can fix it. *)
       val new'
-        :  Rock.Request.t
+        :  Request.t
         -> string
         -> form
         -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
 
       (** [show request resource] returns the resource instance as HTML. This is
           the detail view of an instance of the resource. *)
-      val show
-        :  Rock.Request.t
-        -> t
-        -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
+      val show : Request.t -> t -> [> Html_types.html ] Tyxml.Html.elt Lwt.t
 
       (** [edit request csrf form] returns a form to edit an instance of the
           resource instance as HTML.
@@ -559,7 +556,7 @@ module Web : sig
           form with invalid input from the failed [create] request, so the user
           can fix it. *)
       val edit
-        :  Rock.Request.t
+        :  Request.t
         -> string
         -> form
         -> t
@@ -578,7 +575,7 @@ module Web : sig
 
           [name] is the name of the resource in plural, for example [orders] or
           [users]. *)
-      val index : string -> Rock.Request.t -> Rock.Response.t Lwt.t
+      val index : string -> Request.t -> Response.t Lwt.t
 
       (** [new' ?key name request] returns a form to create instances of the
           resource as a response.
@@ -588,11 +585,7 @@ module Web : sig
 
           The form data is stored in the flash storage under the [key]. By
           default, the value is [_form]. *)
-      val new'
-        :  ?key:string
-        -> string
-        -> Rock.Request.t
-        -> Rock.Response.t Lwt.t
+      val new' : ?key:string -> string -> Request.t -> Response.t Lwt.t
 
       (** [create name schema request] handles the creation of new resource
           instances and returns the creation result as a response.
@@ -602,14 +595,14 @@ module Web : sig
       val create
         :  string
         -> ('a, 'b, t) Conformist.t
-        -> Rock.Request.t
-        -> Rock.Response.t Lwt.t
+        -> Request.t
+        -> Response.t Lwt.t
 
       (** [show name request] returns a single resource instance as a response.
 
           [name] is the name of the resource in plural, for example [orders] or
           [users]. *)
-      val show : string -> Rock.Request.t -> Rock.Response.t Lwt.t
+      val show : string -> Request.t -> Response.t Lwt.t
 
       (** [edit ?key name request] returns a form to edit resource instances as
           a response.
@@ -619,11 +612,7 @@ module Web : sig
 
           The form data is stored in the flash storage under the [key]. By
           default, the value is [_form]. *)
-      val edit
-        :  ?key:string
-        -> string
-        -> Rock.Request.t
-        -> Rock.Response.t Lwt.t
+      val edit : ?key:string -> string -> Request.t -> Response.t Lwt.t
 
       (** [update name schema request] handles the update of a resource instance
           and returns the update result as a response.
@@ -633,15 +622,15 @@ module Web : sig
       val update
         :  string
         -> ('a, 'b, t) Conformist.t
-        -> Rock.Request.t
-        -> Rock.Response.t Lwt.t
+        -> Request.t
+        -> Response.t Lwt.t
 
       (** [delete name request] handles the deletion of a resource instance and
           returns the deletion result as a response.
 
           [name] is the name of the resource in plural, for example [orders] or
           [users]. *)
-      val delete' : string -> Rock.Request.t -> Rock.Response.t Lwt.t
+      val delete' : string -> Request.t -> Response.t Lwt.t
     end
 
     (** [resource_of_service ?only name schema ~view service] returns a list of
@@ -699,25 +688,25 @@ module Web : sig
         helpers to manipulate HTMX headers. Visit https://htmx.org/reference/
         for the HTMX documentation. *)
 
-    val is_htmx : Rock.Request.t -> bool
-    val current_url : Rock.Request.t -> string option
-    val prompt : Rock.Request.t -> string option
-    val target : Rock.Request.t -> string option
-    val trigger_name : Rock.Request.t -> string option
-    val trigger_req : Rock.Request.t -> string option
-    val set_push : string -> Rock.Response.t -> Rock.Response.t
-    val set_redirect : string -> Rock.Response.t -> Rock.Response.t
-    val set_refresh : string -> Rock.Response.t -> Rock.Response.t
-    val set_trigger : string -> Rock.Response.t -> Rock.Response.t
-    val set_trigger_after_settle : string -> Rock.Response.t -> Rock.Response.t
-    val set_trigger_after_swap : string -> Rock.Response.t -> Rock.Response.t
+    val is_htmx : Request.t -> bool
+    val current_url : Request.t -> string option
+    val prompt : Request.t -> string option
+    val target : Request.t -> string option
+    val trigger_name : Request.t -> string option
+    val trigger_req : Request.t -> string option
+    val set_push : string -> Response.t -> Response.t
+    val set_redirect : string -> Response.t -> Response.t
+    val set_refresh : string -> Response.t -> Response.t
+    val set_trigger : string -> Response.t -> Response.t
+    val set_trigger_after_settle : string -> Response.t -> Response.t
+    val set_trigger_after_swap : string -> Response.t -> Response.t
   end
 
   module Id : sig
     (** [find_opt req] returns a the id of the request [req].
 
         Make sure that the id middleware is installed. *)
-    val find : Rock.Request.t -> string option
+    val find : Request.t -> string option
   end
 
   module Session : sig
@@ -733,7 +722,7 @@ module Web : sig
       :  ?cookie_key:string
       -> ?secret:string
       -> string
-      -> Opium.Request.t
+      -> Request.t
       -> string option
 
     (** [get_all ?cookie_key ?secret request] returns all values in the current
@@ -748,7 +737,7 @@ module Web : sig
     val get_all
       :  ?cookie_key:string
       -> ?secret:string
-      -> Opium.Request.t
+      -> Request.t
       -> (string * string) list option
 
     (** [set ?cookie_key ?secret data response] returns a response that has
@@ -765,11 +754,12 @@ module Web : sig
       :  ?cookie_key:string
       -> ?secret:string
       -> (string * string) list
-      -> Opium.Response.t
-      -> Opium.Response.t
+      -> Response.t
+      -> Response.t
 
-    (** [set_value ?cookie_key ?secret key value response] returns a response
-        with an updated session where [key] is associated with [value]. If [key]
+    (** [set_value ?cookie_key ?secret key value request response] transfers the
+        session from [request] to a new response, updates the session where
+        [key] is associated with [value] and returns a new response. If [key]
         has no binding in the session, a new binding is added. Other bindings
         are not affected.
 
@@ -786,15 +776,17 @@ module Web : sig
       -> ?secret:string
       -> key:string
       -> string
-      -> Opium.Response.t
-      -> Opium.Response.t
+      -> Request.t
+      -> Response.t
+      -> Response.t
 
-    (** [update_or_set_value ?cookie_key ?secret key f response] returns a
-        response with an updated session where a value associated with [key] is
-        added, removed or updated by passing in the value to [f]. If [key] has
-        no binding in the session, the input to [f] is [None]. If a binding [a]
-        is found for [key], the input to [f] is [Some a]. If [f] returns [None],
-        the binding for [key] is removed. Other bindings are not affected.
+    (** [update_or_set_value ?cookie_key ?secret key f request response]
+        transfers the session from [request] to a new response, updates the
+        session where a value associated with [key] is added, removed or updated
+        by passing in the value to [f]. If [key] has no binding in the session,
+        the input to [f] is [None]. If a binding [a] is found for [key], the
+        input to [f] is [Some a]. If [f] returns [None], the binding for [key]
+        is removed. Other bindings are not affected.
 
         [cookie_key] is the name of the session cookie. By default, the value is
         [_session]. If there is no session cookie present, a new one is set and
@@ -807,6 +799,7 @@ module Web : sig
       -> ?secret:string
       -> key:string
       -> (string option -> string option)
+      -> Request.t
       -> Response.t
       -> Response.t
   end
@@ -837,7 +830,7 @@ module Web : sig
 
         For security purposes, AES is used for encryption. *)
     val csrf
-      :  ?not_allowed_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
+      :  ?not_allowed_handler:(Request.t -> Response.t Lwt.t)
       -> ?key:string
       -> ?session_key:string
       -> ?input_name:string
@@ -866,8 +859,8 @@ module Web : sig
         callback. Use the reporter to implement custom error reporting. *)
     val error
       :  ?email_config:string * string * (Contract_email.t -> unit Lwt.t)
-      -> ?reporter:(Opium.Request.t -> string -> unit Lwt.t)
-      -> ?error_handler:(Rock.Request.t -> Rock.Response.t Lwt.t)
+      -> ?reporter:(Request.t -> string -> unit Lwt.t)
+      -> ?error_handler:(Request.t -> Response.t Lwt.t)
       -> unit
       -> Rock.Middleware.t
 

@@ -430,23 +430,20 @@ let two_post_requests_succeed _ () =
     |> Request.add_cookie cookie.Cookie.value
   in
   let wrapped_handler = apply_middlewares @@ handler token2 in
-  let session_key, session_val = "test_key", "test_val" in
-  let%lwt response =
-    wrapped_handler post_req
-    |> Lwt.map
-       @@ fun resp -> resp |> Session.set_value ~key:session_key session_val
-  in
-  let session = Sihl.Test.Session.find_resp session_key response in
+  let%lwt response = wrapped_handler post_req in
   let status2 = Response.status response |> Opium.Status.to_code in
   let%lwt response = wrapped_handler req in
   let cookie = response |> Response.cookies |> List.hd in
+  let session_key, session_val = "test_key", "test_val" in
   let post_req =
     Request.of_urlencoded ~body:[ csrf_name, [ !token2 ] ] route `POST
     |> Request.add_cookie cookie.Cookie.value
+    |> Sihl.Test.Session.set_value_req [ session_key, session_val ]
   in
   let wrapped_handler = apply_middlewares @@ handler token3 in
   let%lwt response = wrapped_handler post_req in
   let status3 = Response.status response |> Opium.Status.to_code in
+  let session = Sihl.Test.Session.find_resp session_key response in
   let open Alcotest in
   check string "Session is not overwritten" session_val session;
   CCList.iter (check int "Has status 200" 200) [ status1; status2; status3 ];

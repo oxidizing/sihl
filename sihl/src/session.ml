@@ -64,7 +64,15 @@ let set_value_req session req =
   let signed_with =
     Opium.Cookie.Signer.make (Core_configuration.read_secret ())
   in
+  let req_session =
+    CCOption.bind (Opium.Request.cookie ~signed_with "_session" req) of_json
+  in
   let session = session |> List.to_seq |> StrMap.of_seq in
+  let session =
+    match req_session with
+    | None -> session
+    | Some s -> StrMap.union (fun _ _ rp -> Some rp) s session
+  in
   let cookie_value = to_json session in
   let cookie = "_session", cookie_value in
   Opium.Request.add_cookie ~sign_with:signed_with cookie req

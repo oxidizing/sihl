@@ -29,8 +29,8 @@ let decode_session_req cookie_key signed_with req =
 ;;
 
 let decode_session_resp cookie_key signed_with resp =
-  Option.map (fun c -> snd c.Opium.Cookie.value)
-  @@ Opium.Response.cookie ~signed_with cookie_key resp
+  Opium.Response.cookie ~signed_with cookie_key resp
+  |> Option.map (fun c -> snd c.Opium.Cookie.value)
   |> decode_session cookie_key
 ;;
 
@@ -82,16 +82,23 @@ let update_or_set_value
     ?(secret = Core_configuration.read_secret ())
     ~key
     f
+    req
     resp
   =
   let signed_with = Opium.Cookie.Signer.make secret in
+  let mreq =
+    decode_session_req cookie_key signed_with req |> CCResult.get_or_failwith
+  in
+  let mresp =
+    decode_session_resp cookie_key signed_with resp |> CCResult.get_or_failwith
+  in
   let updated_session =
-    match
-      decode_session_resp cookie_key signed_with resp
-      |> CCResult.get_or_failwith
-    with
-    | Some m -> Session.StrMap.update key f m
-    | None -> Session.StrMap.empty |> Session.StrMap.update key f
+    match mreq, mresp with
+    | None, None -> Session.StrMap.empty |> Session.StrMap.update key f
+    | None, Some m | Some m, None -> Session.StrMap.update key f m
+    | Some mreq, Some mresp ->
+      Session.StrMap.union (fun _ _ rp -> Some rp) mreq mresp
+      |> Session.StrMap.update key f
   in
   let cookie_value = Session.to_json updated_session in
   let cookie = cookie_key, cookie_value in
@@ -102,12 +109,20 @@ let update_or_set_value
     resp
 ;;
 
+(* TODO improve API, don't take req maybe *)
 let set_value
     ?(cookie_key = "_session")
     ?(secret = Core_configuration.read_secret ())
     ~key
     value
+    req
     resp
   =
-  update_or_set_value ~cookie_key ~secret ~key (CCFun.const @@ Some value) resp
+  update_or_set_value
+    ~cookie_key
+    ~secret
+    ~key
+    (CCFun.const @@ Some value)
+    req
+    resp
 ;;
