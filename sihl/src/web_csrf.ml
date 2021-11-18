@@ -245,7 +245,13 @@ let middleware
            (* Try to add csrf to session, if it does not exist, make a new
               session *)
            (* Token expires when session expires *)
-           Web_session.set_value ~cookie_key:session_key ~secret ~key tkn resp
+           Web_session.set_value
+             ~cookie_key:session_key
+             ~secret
+             ~key
+             tkn
+             req
+             resp
       in
       let is_safe =
         match req.Opium.Request.meth with

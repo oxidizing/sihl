@@ -174,12 +174,18 @@ let update_value _ () =
   let handler _ =
     Response.of_plain_text ""
     |> Session.set session
-    |> Session.update_or_set_value ~key:(fst target1) (function
+    |> Session.update_or_set_value
+         ~key:(fst target1)
+         (function
            | None -> Alcotest.fail "value should be found"
            | Some v -> Some (con ^ v))
-    |> Session.update_or_set_value ~key:(fst target2) (function
+         req
+    |> Session.update_or_set_value
+         ~key:(fst target2)
+         (function
            | None -> Some (snd target2)
            | Some _ -> Alcotest.fail "value should not be found")
+         req
     |> Lwt.return
   in
   let%lwt response = handler req in
@@ -204,12 +210,18 @@ let delete_value _ () =
   let handler _ =
     Response.of_plain_text ""
     |> Session.set session
-    |> Session.update_or_set_value ~key:(fst target1) (function
+    |> Session.update_or_set_value
+         ~key:(fst target1)
+         (function
            | None -> Alcotest.fail "value should be found"
            | Some _ -> None)
-    |> Session.update_or_set_value ~key:(fst target2) (function
+         req
+    |> Session.update_or_set_value
+         ~key:(fst target2)
+         (function
            | None -> None
            | Some _ -> Alcotest.fail "value should not be found")
+         req
     |> Lwt.return
   in
   let%lwt response = handler req in
@@ -232,8 +244,8 @@ let set_value _ () =
   let handler _ =
     Response.of_plain_text ""
     |> Session.set session
-    |> Session.set_value ~key:(fst target1) updated
-    |> Session.set_value ~key:target2 updated
+    |> Session.set_value ~key:(fst target1) updated req
+    |> Session.set_value ~key:target2 updated req
     |> Lwt.return
   in
   let%lwt response = handler req in
