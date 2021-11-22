@@ -115,7 +115,7 @@ struct
           let req =
             Caqti_request.exec ~oneshot:true Caqti_type.unit statement
           in
-          Database.exec ?ctx req ()
+          Connection.exec req () |> Lwt.map Database.raise_error
         in
         let%lwt () = Database.query ?ctx query in
         Logs.debug (fun m -> m "Ran %s" label);
@@ -129,7 +129,7 @@ struct
                 let req =
                   Caqti_request.exec ~oneshot:true Caqti_type.unit statement
                 in
-                Database.exec ?ctx req ()
+                Connection.exec req () |> Lwt.map Database.raise_error
               in
               query connection)
         in

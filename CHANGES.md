@@ -1,3 +1,8 @@
+## [3.0.1] - 2021-11-23
+### Fixed
+- Fixed a bug in the CSRF middleware where the current session cookie was overriden with an empty session
+- Fixed an issue where `Sihl.Database.Migration.execute_steps` ignored the provided database pool in `?ctx` and instead creating its own pool
+
 ## [3.0.0] - 2021-11-16
 ### Fixed
 - CSRF tokens are now valid per session, not per request. This allows the user to open a form, use various parts of the website in another tab and then come back to the form and submit it.
