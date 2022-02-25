@@ -96,6 +96,8 @@ val pp_instance : Format.formatter -> instance -> unit
     worker as soon as possible. *)
 val should_run : instance -> Ptime.t -> bool
 
+val log_src : Logs.src
+
 module InMemory : sig
   (** The in-memory queue is not a persistent queue. If the process goes down,
       all jobs are lost. It doesn't support locking and the queue is unbounded,
