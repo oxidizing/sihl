@@ -35,6 +35,7 @@ module Web = struct
 
     let find = Web_csrf.find
     let find_exn = Web_csrf.find_exn
+    let log_src = Web_csrf.log_src
   end
 
   module Flash = struct
@@ -44,6 +45,7 @@ module Web = struct
     let set_notice = Web_flash.set_notice
     let find = Web_flash.find
     let set = Web_flash.set
+    let log_src = Web_flash.log_src
   end
 
   module Rest = struct
@@ -107,6 +109,7 @@ module Web = struct
     let set_trigger = Web_htmx.set_trigger
     let set_trigger_after_settle = Web_htmx.set_trigger_after_settle
     let set_trigger_after_swap = Web_htmx.set_trigger_after_swap
+    let log_src = Web_csrf.log_src
   end
 
   module Id = struct
@@ -119,14 +122,17 @@ module Web = struct
     let set_value = Web_session.set_value
     let update_or_set_value = Web_session.update_or_set_value
     let get_all = Web_session.get_all
+    let log_src = Web_session.log_src
   end
 
   module Middleware = struct
     let csrf = Web_csrf.middleware
     let error = Web_error.middleware
+    let error_log_src = Web_error.log_src
     let flash = Web_flash.middleware
     let id = Web_id.middleware
     let migration = Web_migration.middleware
+    let migration_log_src = Web_migration.log_src
     let trailing_slash = Web_trailing_slash.middleware
     let static_file = Web_static.middleware
   end

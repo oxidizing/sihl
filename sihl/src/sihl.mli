@@ -40,6 +40,7 @@ module Command : sig
   val print_all : t list -> unit
   val print_help : t -> unit
   val run : t list -> string list option -> unit Lwt.t
+  val log_src : Logs.src
 end
 
 module Configuration : sig
@@ -177,6 +178,8 @@ module Configuration : sig
   (** [is_production ()] returns true if [SIHL_ENV] is [production]. This is
       usually the case when Sihl is running in a production setting. *)
   val is_production : unit -> bool
+
+  val log_src : Logs.src
 end
 
 module Web : sig
@@ -299,6 +302,8 @@ module Web : sig
         the CSRF middleware is not installed, an exception is raised. *)
     val find_exn : Request.t -> string
 
+    val log_src : Logs.src
+
     module Crypto : sig
       include module type of Web_csrf.Crypto
     end
@@ -342,6 +347,8 @@ module Web : sig
 
         Make sure that the flash middleware is installed. *)
     val set : (string * string) list -> Response.t -> Response.t
+
+    val log_src : Logs.src
   end
 
   (** This module allows you to build RESTful web pages quickly. *)
@@ -700,6 +707,7 @@ module Web : sig
     val set_trigger : string -> Response.t -> Response.t
     val set_trigger_after_settle : string -> Response.t -> Response.t
     val set_trigger_after_swap : string -> Response.t -> Response.t
+    val log_src : Logs.src
   end
 
   module Id : sig
@@ -802,6 +810,8 @@ module Web : sig
       -> Request.t
       -> Response.t
       -> Response.t
+
+    val log_src : Logs.src
   end
 
   module Middleware : sig
@@ -864,6 +874,8 @@ module Web : sig
       -> unit
       -> Rock.Middleware.t
 
+    val error_log_src : Logs.src
+
     (** [flash ?cookie_key ()] returns a middleware that is used to read and
         store flash data. Flash data is session data that is valid between two
         requests. A typical use case is displaying error messages after
@@ -895,6 +907,8 @@ module Web : sig
         migrations. Use the [pending_migration] function of the migration
         service. If the returned list is empty, there are no pending migrations.*)
     val migration : (unit -> (string * int) list Lwt.t) -> Rock.Middleware.t
+
+    val migration_log_src : Logs.src
 
     (** [trailing_slash ()] returns a middleware that removes all trailing
         slashes [/] from the request URI path. Apply it globally (before the
@@ -999,6 +1013,7 @@ module Container : sig
 
   val collect_all_lifecycles : lifecycle list -> lifecycle Map.t
   val top_sort_lifecycles : lifecycle list -> lifecycle list
+  val log_src : Logs.src
 end
 
 module Database : sig
@@ -1018,6 +1033,7 @@ module Database : sig
   val stop : unit -> unit Lwt.t
   val lifecycle : Container.lifecycle
   val register : unit -> Container.Service.t
+  val log_src : Logs.src
 
   module Migration = Database_migration
 end

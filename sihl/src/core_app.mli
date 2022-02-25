@@ -41,3 +41,5 @@ val run'
   -> ?args:string list
   -> t
   -> unit Lwt.t
+
+val log_src : Logs.src

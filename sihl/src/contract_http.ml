@@ -10,5 +10,7 @@ module type Sig = sig
     -> Web.router
     -> Core_container.Service.t
 
+  val log_src : Logs.src
+
   include Core_container.Service.Sig
 end

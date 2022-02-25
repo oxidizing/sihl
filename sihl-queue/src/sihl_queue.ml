@@ -218,7 +218,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
 
   let start_queue () =
     Logs.debug (fun m -> m "Start job queue");
-    (* This function run every second, the request context gets created here
+    (* This function runs every second, the request context gets created here
        with each tick *)
     let scheduled_function () =
       let jobs = !registered_jobs in

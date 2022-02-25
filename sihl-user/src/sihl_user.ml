@@ -265,6 +265,8 @@ module PostgreSql =
 module MariaDb = Make (User_repo.MakeMariaDb (Sihl.Database.Migration.MariaDb))
 
 module Password_reset = struct
+  let log_src = Password_reset.log_src
+
   module MakePostgreSql (TokenService : Sihl.Contract.Token.Sig) =
     Password_reset.Make (PostgreSql) (TokenService)
 
