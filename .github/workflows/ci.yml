@@ -39,6 +39,9 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
 
+      - name: Install system dependencies
+        run: sudo apt-get update -y && sudo apt-get install -y libmariadbclient-dev
+
       - name: Install dependencies
         run: make deps
 
