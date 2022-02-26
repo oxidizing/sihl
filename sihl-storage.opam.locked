@@ -13,7 +13,7 @@ depends: [
   "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "2.9.1"}
+  "dune" {= "3.0.2"}
   "ocaml" {= "4.12.0"}
   "ocaml-base-compiler" {= "4.12.0"}
   "ocaml-config" {= "2"}
