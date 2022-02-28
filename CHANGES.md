@@ -1,3 +1,7 @@
+## [3.0.2] - 2022-02-28
+### Added
+- Expos all log sources
+
 ## [3.0.1] - 2021-11-23
 ### Fixed
 - Fixed a bug in the CSRF middleware where the current session cookie was overriden with an empty session
