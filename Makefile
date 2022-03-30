@@ -11,7 +11,7 @@ all:
 .PHONY: deps
 deps:
 	opam install -y dune-release merlin ocamlformat utop
-	opam install -y alcotest-lwt caqti-driver-postgresql caqti-driver-mariadb
+	opam install -y alcotest-lwt caqti-driver-postgresql.1.7.0 caqti-driver-mariadb.1.7.0
 	opam install . -y --deps-only --locked
 	eval $(opam env)
 
