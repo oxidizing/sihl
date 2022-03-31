@@ -246,7 +246,7 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
        }
     ]
   }
-|}
+      |}
       recipient
       subject
       sender

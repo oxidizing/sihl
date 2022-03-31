@@ -141,10 +141,7 @@ struct
 
     let clean_request =
       let open Caqti_request.Infix in
-      Caqti_type.(unit ->. unit)
-        {sql|
-        TRUNCATE TABLE email_templates
-      |sql}
+      "TRUNCATE TABLE email_templates" |> Caqti_type.(unit ->. unit)
     ;;
 
     let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
@@ -180,7 +177,7 @@ struct
         ~label:"rename name column"
         {sql|
           ALTER TABLE email_templates
-          CHANGE COLUMN `name` label VARCHAR(128) NOT NULL
+            CHANGE COLUMN `name` label VARCHAR(128) NOT NULL
         |sql}
     ;;
 
@@ -189,7 +186,7 @@ struct
         ~label:"add updated_at column"
         {sql|
           ALTER TABLE email_templates
-          ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         |sql}
     ;;
 
@@ -198,7 +195,7 @@ struct
         ~label:"make html nullable"
         {sql|
           ALTER TABLE email_templates
-          MODIFY content_html TEXT NULL
+            MODIFY content_html TEXT NULL
         |sql}
     ;;
 
@@ -242,7 +239,7 @@ struct
           created_at,
           updated_at
         FROM email_templates
-        WHERE email_templates.uuid = ?::uuid
+        WHERE email_templates.uuid = $1::uuid
       |sql}
       |> Caqti_type.string ->? template
     ;;
@@ -342,7 +339,7 @@ struct
         ~label:"rename name column"
         {sql|
           ALTER TABLE email_templates
-          RENAME COLUMN name TO label
+            RENAME COLUMN name TO label
         |sql}
     ;;
 
@@ -351,7 +348,7 @@ struct
         ~label:"add updated_at column"
         {sql|
           ALTER TABLE email_templates
-          ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         |sql}
     ;;
 
@@ -360,7 +357,7 @@ struct
         ~label:"make html nullable"
         {sql|
           ALTER TABLE email_templates
-          ALTER COLUMN content_html DROP NOT NULL
+            ALTER COLUMN content_html DROP NOT NULL
         |sql}
     ;;
 
@@ -369,8 +366,8 @@ struct
         ~label:"remove timezone info from timestamps"
         {sql|
           ALTER TABLE email_templates
-          ALTER COLUMN created_at TYPE TIMESTAMP,
-          ALTER COLUMN updated_at TYPE TIMESTAMP
+            ALTER COLUMN created_at TYPE TIMESTAMP,
+            ALTER COLUMN updated_at TYPE TIMESTAMP
         |sql}
     ;;
 

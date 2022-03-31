@@ -47,7 +47,7 @@ let create_args (schema : Gen_core.schema) =
 ;;
 
 let created_value (schema : Gen_core.schema) =
-  schema |> List.map fst |> List.map (Format.sprintf "%s;") |> String.concat " "
+  schema |> List.map fst |> List.map (Format.sprintf "%s") |> String.concat " "
 ;;
 
 let conformist_fields (schema : Gen_core.schema) =
@@ -57,7 +57,7 @@ let conformist_fields (schema : Gen_core.schema) =
            {|%s "%s"|}
            (Gen_core.conformist_type_of_gen_type type_)
            name)
-  |> String.concat "; "
+  |> String.concat " "
 ;;
 
 let file (schema : Gen_core.schema) =

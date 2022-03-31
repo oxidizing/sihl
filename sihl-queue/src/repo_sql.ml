@@ -486,7 +486,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         last_error,
         last_error_at
       FROM queue_jobs
-      WHERE uuid = ?::uuid
+      WHERE uuid = $1::uuid
     |sql}
     |> Caqti_type.string ->? job
   ;;
@@ -497,7 +497,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
     let open Caqti_request.Infix in
     {sql|
       DELETE FROM job_queues
-      WHERE uuid = ?::uuid
+      WHERE uuid = $1::uuid
     |sql}
     |> Caqti_type.(string ->. unit)
   ;;
