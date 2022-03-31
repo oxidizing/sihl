@@ -79,10 +79,8 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
 
   module Sql = struct
     let find_request =
-      Caqti_request.find
-        Caqti_type.string
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -98,16 +96,15 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
           created_at
         FROM token_tokens
         WHERE token_tokens.token_value = ?
-        |sql}
+      |sql}
+      |> Caqti_type.string ->! Model.t
     ;;
 
     let find ?ctx value = Database.find ?ctx find_request value
 
     let find_request_opt =
-      Caqti_request.find_opt
-        Caqti_type.string
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -123,16 +120,15 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
           created_at
         FROM token_tokens
         WHERE token_tokens.token_value = ?
-        |sql}
+      |sql}
+      |> Caqti_type.string ->? Model.t
     ;;
 
     let find_opt ?ctx value = Database.find_opt ?ctx find_request_opt value
 
     let find_by_id_request =
-      Caqti_request.find
-        Caqti_type.string
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -148,15 +144,15 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
           created_at
         FROM token_tokens
         WHERE token_tokens.uuid = UNHEX(REPLACE(?, '-', ''))
-        |sql}
+      |sql}
+      |> Caqti_type.string ->! Model.t
     ;;
 
     let find_by_id ?ctx id = Database.find ?ctx find_by_id_request id
 
     let insert_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         INSERT INTO token_tokens (
           uuid,
           token_value,
@@ -172,15 +168,15 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
           $5,
           $6
         )
-        |sql}
+      |sql}
+      |> Model.t ->. Caqti_type.unit
     ;;
 
     let insert ?ctx token = Database.exec ?ctx insert_request token
 
     let update_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         UPDATE token_tokens
         SET
           token_data = $3,
@@ -188,13 +184,15 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
           expires_at = $5,
           created_at = $6
         WHERE token_tokens.token_value = $2
-        |sql}
+      |sql}
+      |> Model.t ->. Caqti_type.unit
     ;;
 
     let update ?ctx token = Database.exec ?ctx update_request token
 
     let clean_request =
-      Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens;"
+      let open Caqti_request.Infix in
+      "TRUNCATE token_tokens" |> Caqti_type.(unit ->. unit)
     ;;
 
     let clean ?ctx () = Database.exec ?ctx clean_request ()
@@ -211,26 +209,26 @@ module MariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig = struct
       Migration.create_step
         ~label:"create tokens table"
         {sql|
-        CREATE TABLE IF NOT EXISTS token_tokens (
-         id BIGINT UNSIGNED AUTO_INCREMENT,
-         uuid BINARY(16) NOT NULL,
-         token_value VARCHAR(128) NOT NULL,
-         token_data VARCHAR(1024),
-         token_kind VARCHAR(128) NOT NULL,
-         status VARCHAR(128) NOT NULL,
-         expires_at TIMESTAMP NOT NULL,
-         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-         PRIMARY KEY (id),
-         CONSTRAINT unqiue_uuid UNIQUE KEY (uuid),
-         CONSTRAINT unique_value UNIQUE KEY (token_value)
-         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          CREATE TABLE IF NOT EXISTS token_tokens (
+            id BIGINT UNSIGNED AUTO_INCREMENT,
+            uuid BINARY(16) NOT NULL,
+            token_value VARCHAR(128) NOT NULL,
+            token_data VARCHAR(1024),
+            token_kind VARCHAR(128) NOT NULL,
+            status VARCHAR(128) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          CONSTRAINT unqiue_uuid UNIQUE KEY (uuid),
+          CONSTRAINT unique_value UNIQUE KEY (token_value)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         |sql}
     ;;
 
     let remove_token_kind_column =
       Migration.create_step
         ~label:"remove token kind column"
-        "ALTER TABLE token_tokens DROP COLUMN token_kind;"
+        "ALTER TABLE token_tokens DROP COLUMN token_kind"
     ;;
 
     let migration () =
@@ -262,10 +260,8 @@ struct
 
   module Sql = struct
     let find_request =
-      Caqti_request.find
-        Caqti_type.string
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           uuid,
           token_value,
@@ -275,16 +271,15 @@ struct
           created_at
         FROM token_tokens
         WHERE token_tokens.token_value = ?::text
-        |sql}
+      |sql}
+      |> Caqti_type.string ->! Model.t
     ;;
 
     let find ?ctx value = Database.find ?ctx find_request value
 
     let find_request_opt =
-      Caqti_request.find_opt
-        Caqti_type.string
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           uuid,
           token_value,
@@ -294,16 +289,15 @@ struct
           created_at
         FROM token_tokens
         WHERE token_tokens.token_value = ?::text
-        |sql}
+      |sql}
+      |> Caqti_type.string ->? Model.t
     ;;
 
     let find_opt ?ctx value = Database.find_opt ?ctx find_request_opt value
 
     let find_by_id_request =
-      Caqti_request.find
-        Caqti_type.string
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           uuid,
           token_value,
@@ -313,15 +307,15 @@ struct
           created_at
         FROM token_tokens
         WHERE token_tokens.uuid = ?::uuid
-        |sql}
+      |sql}
+      |> Caqti_type.string ->! Model.t
     ;;
 
     let find_by_id ?ctx id = Database.find ?ctx find_by_id_request id
 
     let insert_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         INSERT INTO token_tokens (
           uuid,
           token_value,
@@ -337,15 +331,15 @@ struct
           $5 AT TIME ZONE 'UTC',
           $6 AT TIME ZONE 'UTC'
         )
-        |sql}
+      |sql}
+      |> Model.t ->. Caqti_type.unit
     ;;
 
     let insert ?ctx token = Database.exec ?ctx insert_request token
 
     let update_request =
-      Caqti_request.exec
-        Model.t
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         UPDATE token_tokens
         SET
           uuid = $1::uuid,
@@ -354,13 +348,15 @@ struct
           expires_at = $5 AT TIME ZONE 'UTC',
           created_at = $6 AT TIME ZONE 'UTC'
         WHERE token_tokens.token_value = $2
-        |sql}
+      |sql}
+      |> Model.t ->. Caqti_type.unit
     ;;
 
     let update ?ctx token = Database.exec ?ctx update_request token
 
     let clean_request =
-      Caqti_request.exec Caqti_type.unit "TRUNCATE token_tokens CASCADE;"
+      let open Caqti_request.Infix in
+      "TRUNCATE token_tokens CASCADE" |> Caqti_type.(unit ->. unit)
     ;;
 
     let clean ?ctx () = Database.exec ?ctx clean_request ()
@@ -371,18 +367,18 @@ struct
       Migration.create_step
         ~label:"create tokens table"
         {sql|
-        CREATE TABLE IF NOT EXISTS token_tokens (
-         id serial,
-         uuid uuid NOT NULL,
-         token_value VARCHAR(128) NOT NULL,
-         token_data VARCHAR(1024),
-         status VARCHAR(128) NOT NULL,
-         expires_at TIMESTAMP NOT NULL,
-         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-         PRIMARY KEY (id),
-         UNIQUE (uuid),
-         UNIQUE (token_value)
-         );
+          CREATE TABLE IF NOT EXISTS token_tokens (
+            id serial,
+            uuid uuid NOT NULL,
+            token_value VARCHAR(128) NOT NULL,
+            token_data VARCHAR(1024),
+            status VARCHAR(128) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          UNIQUE (uuid),
+          UNIQUE (token_value)
+          );
         |sql}
     ;;
 
@@ -390,9 +386,9 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"remove timezone info from timestamps"
         {sql|
-         ALTER TABLE token_tokens
+          ALTER TABLE token_tokens
           ALTER COLUMN created_at TYPE TIMESTAMP;
-         |sql}
+        |sql}
     ;;
 
     let migration () =

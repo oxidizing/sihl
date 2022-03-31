@@ -49,10 +49,8 @@ struct
     module Model = Sihl.Contract.Email_template
 
     let get_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -68,16 +66,15 @@ struct
           updated_at
         FROM email_templates
         WHERE email_templates.uuid = UNHEX(REPLACE(?, '-', ''))
-        |sql}
+      |sql}
+      |> Caqti_type.(string ->? template)
     ;;
 
     let get ?ctx id = Sihl.Database.find_opt ?ctx get_request id
 
     let get_by_label_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           LOWER(CONCAT(
            SUBSTR(HEX(uuid), 1, 8), '-',
@@ -93,7 +90,8 @@ struct
           updated_at
         FROM email_templates
         WHERE email_templates.label = ?
-        |sql}
+      |sql}
+      |> Caqti_type.(string ->? template)
     ;;
 
     let get_by_label ?ctx label =
@@ -101,9 +99,8 @@ struct
     ;;
 
     let insert_request =
-      Caqti_request.exec
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         INSERT INTO email_templates (
           uuid,
           label,
@@ -119,15 +116,15 @@ struct
           ?,
           ?
         )
-        |sql}
+      |sql}
+      |> template ->. Caqti_type.unit
     ;;
 
     let insert ?ctx template = Sihl.Database.exec ?ctx insert_request template
 
     let update_request =
-      Caqti_request.exec
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         UPDATE email_templates
         SET
           label = $2,
@@ -136,17 +133,18 @@ struct
           created_at = $5,
           updated_at = $6
         WHERE email_templates.uuid = UNHEX(REPLACE($1, '-', ''))
-        |sql}
+      |sql}
+      |> template ->. Caqti_type.unit
     ;;
 
     let update ?ctx template = Sihl.Database.exec ?ctx update_request template
 
     let clean_request =
-      Caqti_request.exec
-        Caqti_type.unit
+      let open Caqti_request.Infix in
+      Caqti_type.(unit ->. unit)
         {sql|
-        TRUNCATE TABLE email_templates;
-         |sql}
+        TRUNCATE TABLE email_templates
+      |sql}
     ;;
 
     let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
@@ -163,45 +161,45 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create templates table"
         {sql|
-         CREATE TABLE IF NOT EXISTS email_templates (
-           id BIGINT UNSIGNED AUTO_INCREMENT,
-           uuid BINARY(16) NOT NULL,
-           name VARCHAR(128) NOT NULL,
-           content_text TEXT NOT NULL,
-           content_html TEXT NOT NULL,
-           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-           PRIMARY KEY (id),
-           CONSTRAINT unique_uuid UNIQUE KEY (uuid),
-           CONSTRAINT unique_name UNIQUE KEY (name)
-         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-         |sql}
+          CREATE TABLE IF NOT EXISTS email_templates (
+            id BIGINT UNSIGNED AUTO_INCREMENT,
+            uuid BINARY(16) NOT NULL,
+            name VARCHAR(128) NOT NULL,
+            content_text TEXT NOT NULL,
+            content_html TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT unique_uuid UNIQUE KEY (uuid),
+            CONSTRAINT unique_name UNIQUE KEY (name)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        |sql}
     ;;
 
     let rename_name_column =
       Sihl.Database.Migration.create_step
         ~label:"rename name column"
         {sql|
-         ALTER TABLE email_templates
-         CHANGE COLUMN `name` label VARCHAR(128) NOT NULL;
-         |sql}
+          ALTER TABLE email_templates
+          CHANGE COLUMN `name` label VARCHAR(128) NOT NULL
+        |sql}
     ;;
 
     let add_updated_at_column =
       Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
-         ALTER TABLE email_templates
-         ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
-         |sql}
+          ALTER TABLE email_templates
+          ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        |sql}
     ;;
 
     let make_html_nullable =
       Sihl.Database.Migration.create_step
         ~label:"make html nullable"
         {sql|
-         ALTER TABLE email_templates
-         MODIFY content_html TEXT NULL;
-         |sql}
+          ALTER TABLE email_templates
+          MODIFY content_html TEXT NULL
+        |sql}
     ;;
 
     let migration () =
@@ -234,10 +232,8 @@ struct
     module Model = Sihl.Contract.Email_template
 
     let get_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           uuid,
           label,
@@ -247,16 +243,15 @@ struct
           updated_at
         FROM email_templates
         WHERE email_templates.uuid = ?::uuid
-        |sql}
+      |sql}
+      |> Caqti_type.string ->? template
     ;;
 
     let get ?ctx id = Sihl.Database.find_opt ?ctx get_request id
 
     let get_by_label_request =
-      Caqti_request.find_opt
-        Caqti_type.string
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         SELECT
           uuid,
           label,
@@ -266,7 +261,8 @@ struct
           updated_at
         FROM email_templates
         WHERE email_templates.label = ?
-        |sql}
+      |sql}
+      |> Caqti_type.string ->? template
     ;;
 
     let get_by_label ?ctx label =
@@ -274,9 +270,8 @@ struct
     ;;
 
     let insert_request =
-      Caqti_request.exec
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         INSERT INTO email_templates (
           uuid,
           label,
@@ -292,15 +287,15 @@ struct
           $5 AT TIME ZONE 'UTC',
           $6 AT TIME ZONE 'UTC'
         )
-        |sql}
+      |sql}
+      |> template ->. Caqti_type.unit
     ;;
 
     let insert ?ctx template = Sihl.Database.exec ?ctx insert_request template
 
     let update_request =
-      Caqti_request.exec
-        template
-        {sql|
+      let open Caqti_request.Infix in
+      {sql|
         UPDATE email_templates
         SET
           label = $2,
@@ -309,15 +304,15 @@ struct
           created_at = $5 AT TIME ZONE 'UTC',
           updated_at = $6 AT TIME ZONE 'UTC'
         WHERE email_templates.uuid = $1::uuid
-        |sql}
+      |sql}
+      |> template ->. Caqti_type.unit
     ;;
 
     let update ?ctx template = Sihl.Database.exec ?ctx update_request template
 
     let clean_request =
-      Caqti_request.exec
-        Caqti_type.unit
-        "TRUNCATE TABLE email_templates CASCADE;"
+      let open Caqti_request.Infix in
+      "TRUNCATE TABLE email_templates CASCADE" |> Caqti_type.(unit ->. unit)
     ;;
 
     let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
@@ -328,55 +323,55 @@ struct
       Sihl.Database.Migration.create_step
         ~label:"create templates table"
         {sql|
-         CREATE TABLE IF NOT EXISTS email_templates (
-           id SERIAL,
-           uuid UUID NOT NULL,
-           name VARCHAR(128) NOT NULL,
-           content_text TEXT NOT NULL,
-           content_html TEXT NOT NULL,
-           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-           PRIMARY KEY (id),
-           UNIQUE (uuid),
-           UNIQUE (name)
-         );
-         |sql}
+          CREATE TABLE IF NOT EXISTS email_templates (
+            id SERIAL,
+            uuid UUID NOT NULL,
+            name VARCHAR(128) NOT NULL,
+            content_text TEXT NOT NULL,
+            content_html TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (id),
+            UNIQUE (uuid),
+            UNIQUE (name)
+          )
+        |sql}
     ;;
 
     let rename_name_column =
       Sihl.Database.Migration.create_step
         ~label:"rename name column"
         {sql|
-         ALTER TABLE email_templates
-         RENAME COLUMN name TO label;
-         |sql}
+          ALTER TABLE email_templates
+          RENAME COLUMN name TO label
+        |sql}
     ;;
 
     let add_updated_at_column =
       Sihl.Database.Migration.create_step
         ~label:"add updated_at column"
         {sql|
-         ALTER TABLE email_templates
-         ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-         |sql}
+          ALTER TABLE email_templates
+          ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        |sql}
     ;;
 
     let make_html_nullable =
       Sihl.Database.Migration.create_step
         ~label:"make html nullable"
         {sql|
-         ALTER TABLE email_templates
-         ALTER COLUMN content_html DROP NOT NULL;
-         |sql}
+          ALTER TABLE email_templates
+          ALTER COLUMN content_html DROP NOT NULL
+        |sql}
     ;;
 
     let remove_timezone =
       Sihl.Database.Migration.create_step
         ~label:"remove timezone info from timestamps"
         {sql|
-         ALTER TABLE email_templates
+          ALTER TABLE email_templates
           ALTER COLUMN created_at TYPE TIMESTAMP,
-          ALTER COLUMN updated_at TYPE TIMESTAMP;
-         |sql}
+          ALTER COLUMN updated_at TYPE TIMESTAMP
+        |sql}
     ;;
 
     let migration () =

@@ -39,6 +39,7 @@ let prepare_search_request
     output_type
     : 'a prepared_search_request
   =
+  let open Caqti_request.Infix in
   let output_type = Caqti_type.(tup2 int output_type) in
   let asc_request =
     let input_type = Caqti_type.(tup2 int int) in
@@ -49,7 +50,7 @@ let prepare_search_request
         sort_by_field
         "LIMIT $1 OFFSET $2"
     in
-    Caqti_request.collect input_type output_type query
+    query |> input_type ->* output_type
   in
   let desc_request =
     let input_type = Caqti_type.(tup2 int int) in
@@ -60,7 +61,7 @@ let prepare_search_request
         sort_by_field
         "LIMIT $1 OFFSET $2"
     in
-    Caqti_request.collect input_type output_type query
+    query |> input_type ->* output_type
   in
   let filter_asc_request =
     let input_type = Caqti_type.(tup3 string int int) in
@@ -72,7 +73,7 @@ let prepare_search_request
         sort_by_field
         "LIMIT $2 OFFSET $3"
     in
-    Caqti_request.collect input_type output_type query
+    query |> input_type ->* output_type
   in
   let filter_desc_request =
     let input_type = Caqti_type.(tup3 string int int) in
@@ -84,7 +85,7 @@ let prepare_search_request
         sort_by_field
         "LIMIT $2 OFFSET $3"
     in
-    Caqti_request.collect input_type output_type query
+    query |> input_type ->* output_type
   in
   { asc_request
   ; desc_request

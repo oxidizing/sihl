@@ -45,19 +45,18 @@ end
 
 (* Common functions *)
 let get_request table =
-  Caqti_request.find_opt
-    Caqti_type.string
-    Caqti_type.(tup3 string int bool)
-    (Format.sprintf
-       {sql|
+  let open Caqti_request.Infix in
+  Format.sprintf
+    {sql|
        SELECT
          namespace,
          version,
          dirty
        FROM %s
-       WHERE namespace = ?;
-       |sql}
-       table)
+       WHERE namespace = ?
+    |sql}
+    table
+  |> Caqti_type.(string ->? tup3 string int bool)
 ;;
 
 let get ?ctx table ~namespace =
@@ -66,18 +65,17 @@ let get ?ctx table ~namespace =
 ;;
 
 let get_all_request table =
-  Caqti_request.collect
-    Caqti_type.unit
-    Caqti_type.(tup3 string int bool)
-    (Format.sprintf
-       {sql|
+  let open Caqti_request.Infix in
+  Format.sprintf
+    {sql|
        SELECT
          namespace,
          version,
          dirty
-       FROM %s;
-       |sql}
-       table)
+       FROM %s
+    |sql}
+    table
+  |> Caqti_type.(unit ->* tup3 string int bool)
 ;;
 
 let get_all ?ctx table =
@@ -89,18 +87,18 @@ module MariaDb : Sig = struct
   module Migration = Migration
 
   let create_request table =
-    Caqti_request.exec
-      Caqti_type.unit
-      (Format.sprintf
-         {sql|
+    let open Caqti_request.Infix in
+    Format.sprintf
+      {sql|
        CREATE TABLE IF NOT EXISTS %s (
          namespace VARCHAR(128) NOT NULL,
          version INTEGER,
          dirty BOOL NOT NULL,
        PRIMARY KEY (namespace)
-       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       |sql}
-         table)
+      table
+    |> Caqti_type.(unit ->. unit)
   ;;
 
   let create_table_if_not_exists ?ctx table =
@@ -111,10 +109,9 @@ module MariaDb : Sig = struct
   let get_all = get_all
 
   let upsert_request table =
-    Caqti_request.exec
-      Caqti_type.(tup3 string int bool)
-      (Format.sprintf
-         {sql|
+    let open Caqti_request.Infix in
+    Format.sprintf
+      {sql|
        INSERT INTO %s (
          namespace,
          version,
@@ -126,8 +123,9 @@ module MariaDb : Sig = struct
        ) ON DUPLICATE KEY UPDATE
          version = VALUES(version),
          dirty = VALUES(dirty)
-       |sql}
-         table)
+      |sql}
+      table
+    |> Caqti_type.(tup3 string int bool ->. unit)
   ;;
 
   let upsert ?ctx table state =
@@ -139,17 +137,17 @@ module PostgreSql : Sig = struct
   module Migration = Migration
 
   let create_request table =
-    Caqti_request.exec
-      Caqti_type.unit
-      (Format.sprintf
-         {sql|
+    let open Caqti_request.Infix in
+    Format.sprintf
+      {sql|
        CREATE TABLE IF NOT EXISTS %s (
          namespace VARCHAR(128) NOT NULL PRIMARY KEY,
          version INTEGER,
          dirty BOOL NOT NULL
-       );
-       |sql}
-         table)
+       )
+      |sql}
+      table
+    |> Caqti_type.(unit ->. unit)
   ;;
 
   let create_table_if_not_exists ?ctx table =
@@ -160,10 +158,9 @@ module PostgreSql : Sig = struct
   let get_all = get_all
 
   let upsert_request table =
-    Caqti_request.exec
-      Caqti_type.(tup3 string int bool)
-      (Format.sprintf
-         {sql|
+    let open Caqti_request.Infix in
+    Format.sprintf
+      {sql|
        INSERT INTO %s (
          namespace,
          version,
@@ -175,8 +172,9 @@ module PostgreSql : Sig = struct
        ) ON CONFLICT (namespace)
        DO UPDATE SET version = EXCLUDED.version,
          dirty = EXCLUDED.dirty
-       |sql}
-         table)
+      |sql}
+      table
+    |> Caqti_type.(tup3 string int bool ->. unit)
   ;;
 
   let upsert ?ctx table state =

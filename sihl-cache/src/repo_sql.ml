@@ -11,58 +11,62 @@ end
 (* Common functions that are shared by SQL implementations *)
 
 let find_request =
-  Caqti_request.find_opt
-    Caqti_type.string
-    Caqti_type.string
-    {sql|
-        SELECT
-          cache_value
-        FROM cache
-        WHERE cache.cache_key = ?
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      cache_value
+    FROM cache
+    WHERE cache.cache_key = ?
+  |sql}
+  |> Caqti_type.(string ->? string)
 ;;
 
 let find ?ctx key = Sihl.Database.find_opt ?ctx find_request key
 
 let insert_request =
-  Caqti_request.exec
-    Caqti_type.(tup2 string string)
-    {sql|
-        INSERT INTO cache (
-          cache_key,
-          cache_value
-        ) VALUES (
-          ?,
-          ?
-        )
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    INSERT INTO cache (
+      cache_key,
+      cache_value
+    ) VALUES (
+      ?,
+      ?
+    )
+  |sql}
+  |> Caqti_type.(tup2 string string ->. unit)
 ;;
 
 let insert ?ctx key_value = Sihl.Database.exec ?ctx insert_request key_value
 
 let update_request =
-  Caqti_request.exec
-    Caqti_type.(tup2 string string)
-    {sql|
-        UPDATE cache SET
-          cache_value = $2
-        WHERE cache_key = $1
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE cache SET
+      cache_value = $2
+    WHERE cache_key = $1
+  |sql}
+  |> Caqti_type.(tup2 string string ->. unit)
 ;;
 
 let update ?ctx key_value = Sihl.Database.exec ?ctx update_request key_value
 
 let delete_request =
-  Caqti_request.exec
-    Caqti_type.string
-    {sql|
-      DELETE FROM cache 
-      WHERE cache.cache_key = ?
-      |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM cache
+    WHERE cache.cache_key = ?
+  |sql}
+  |> Caqti_type.(string ->. unit)
 ;;
 
 let delete ?ctx key = Sihl.Database.exec ?ctx delete_request key
-let clean_request = Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE cache;"
+
+let clean_request =
+  let open Caqti_request.Infix in
+  "TRUNCATE TABLE cache" |> Caqti_type.(unit ->. unit)
+;;
+
 let clean ?ctx () = Sihl.Database.exec clean_request ?ctx ()
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
