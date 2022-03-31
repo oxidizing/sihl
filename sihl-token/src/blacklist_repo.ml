@@ -190,7 +190,7 @@ module PostgreSql : Sig = struct
       ~label:"remove timezone info from timestamps"
       {sql|
         ALTER TABLE token_blacklist
-        ALTER COLUMN created_at TYPE TIMESTAMP
+          ALTER COLUMN created_at TYPE TIMESTAMP
       |sql}
   ;;
 

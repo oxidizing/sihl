@@ -270,7 +270,7 @@ struct
           expires_at,
           created_at
         FROM token_tokens
-        WHERE token_tokens.token_value = ?::text
+        WHERE token_tokens.token_value = $1::text
       |sql}
       |> Caqti_type.string ->! Model.t
     ;;
@@ -288,7 +288,7 @@ struct
           expires_at,
           created_at
         FROM token_tokens
-        WHERE token_tokens.token_value = ?::text
+        WHERE token_tokens.token_value = $1::text
       |sql}
       |> Caqti_type.string ->? Model.t
     ;;
@@ -306,7 +306,7 @@ struct
           expires_at,
           created_at
         FROM token_tokens
-        WHERE token_tokens.uuid = ?::uuid
+        WHERE token_tokens.uuid = $1::uuid
       |sql}
       |> Caqti_type.string ->! Model.t
     ;;
@@ -378,7 +378,7 @@ struct
           PRIMARY KEY (id),
           UNIQUE (uuid),
           UNIQUE (token_value)
-          );
+          )
         |sql}
     ;;
 
@@ -387,7 +387,7 @@ struct
         ~label:"remove timezone info from timestamps"
         {sql|
           ALTER TABLE token_tokens
-          ALTER COLUMN created_at TYPE TIMESTAMP;
+            ALTER COLUMN created_at TYPE TIMESTAMP
         |sql}
     ;;
 

@@ -90,12 +90,12 @@ module MariaDb : Sig = struct
     let open Caqti_request.Infix in
     Format.sprintf
       {sql|
-       CREATE TABLE IF NOT EXISTS %s (
-         namespace VARCHAR(128) NOT NULL,
-         version INTEGER,
-         dirty BOOL NOT NULL,
-       PRIMARY KEY (namespace)
-       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        CREATE TABLE IF NOT EXISTS %s (
+          namespace VARCHAR(128) NOT NULL,
+          version INTEGER,
+          dirty BOOL NOT NULL,
+        PRIMARY KEY (namespace)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       |sql}
       table
     |> Caqti_type.(unit ->. unit)
@@ -112,17 +112,17 @@ module MariaDb : Sig = struct
     let open Caqti_request.Infix in
     Format.sprintf
       {sql|
-       INSERT INTO %s (
-         namespace,
-         version,
-         dirty
-       ) VALUES (
-         ?,
-         ?,
-         ?
-       ) ON DUPLICATE KEY UPDATE
-         version = VALUES(version),
-         dirty = VALUES(dirty)
+        INSERT INTO %s (
+          namespace,
+          version,
+          dirty
+        ) VALUES (
+          ?,
+          ?,
+          ?
+        ) ON DUPLICATE KEY UPDATE
+          version = VALUES(version),
+          dirty = VALUES(dirty)
       |sql}
       table
     |> Caqti_type.(tup3 string int bool ->. unit)
@@ -140,11 +140,11 @@ module PostgreSql : Sig = struct
     let open Caqti_request.Infix in
     Format.sprintf
       {sql|
-       CREATE TABLE IF NOT EXISTS %s (
-         namespace VARCHAR(128) NOT NULL PRIMARY KEY,
-         version INTEGER,
-         dirty BOOL NOT NULL
-       )
+        CREATE TABLE IF NOT EXISTS %s (
+          namespace VARCHAR(128) NOT NULL PRIMARY KEY,
+          version INTEGER,
+          dirty BOOL NOT NULL
+        )
       |sql}
       table
     |> Caqti_type.(unit ->. unit)
@@ -161,17 +161,17 @@ module PostgreSql : Sig = struct
     let open Caqti_request.Infix in
     Format.sprintf
       {sql|
-       INSERT INTO %s (
-         namespace,
-         version,
-         dirty
-       ) VALUES (
-         ?,
-         ?,
-         ?
-       ) ON CONFLICT (namespace)
-       DO UPDATE SET version = EXCLUDED.version,
-         dirty = EXCLUDED.dirty
+        INSERT INTO %s (
+          namespace,
+          version,
+          dirty
+        ) VALUES (
+          ?,
+          ?,
+          ?
+        ) ON CONFLICT (namespace)
+        DO UPDATE SET version = EXCLUDED.version,
+          dirty = EXCLUDED.dirty
       |sql}
       table
     |> Caqti_type.(tup3 string int bool ->. unit)

@@ -210,43 +210,43 @@ struct
     Sihl.Database.Migration.create_step
       ~label:"fix collation"
       {sql|
-         SET collation_server = 'utf8mb4_unicode_ci';
-         |sql}
+        SET collation_server = 'utf8mb4_unicode_ci'
+      |sql}
   ;;
 
   let create_blobs_table =
     Sihl.Database.Migration.create_step
       ~label:"create blobs table"
       {sql|
-         CREATE TABLE IF NOT EXISTS storage_blobs (
-         id BIGINT UNSIGNED AUTO_INCREMENT,
-         uuid BINARY(16) NOT NULL,
-         asset_data MEDIUMBLOB NOT NULL,
-         created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-         updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-         PRIMARY KEY (id),
-         CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-         |sql}
+        CREATE TABLE IF NOT EXISTS storage_blobs (
+          id BIGINT UNSIGNED AUTO_INCREMENT,
+          uuid BINARY(16) NOT NULL,
+          asset_data MEDIUMBLOB NOT NULL,
+          created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      |sql}
   ;;
 
   let create_handles_table =
     Sihl.Database.Migration.create_step
       ~label:"create handles table"
       {sql|
-         CREATE TABLE IF NOT EXISTS storage_handles (
-         id BIGINT UNSIGNED AUTO_INCREMENT,
-         uuid BINARY(16) NOT NULL,
-         filename VARCHAR(255) NOT NULL,
-         filesize BIGINT UNSIGNED,
-         mime VARCHAR(128) NOT NULL,
-         asset_blob BINARY(16) NOT NULL,
-         created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-         updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-         PRIMARY KEY (id),
-         CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-         |sql}
+        CREATE TABLE IF NOT EXISTS storage_handles (
+          id BIGINT UNSIGNED AUTO_INCREMENT,
+          uuid BINARY(16) NOT NULL,
+          filename VARCHAR(255) NOT NULL,
+          filesize BIGINT UNSIGNED,
+          mime VARCHAR(128) NOT NULL,
+          asset_blob BINARY(16) NOT NULL,
+          created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      |sql}
   ;;
 
   let migration () =

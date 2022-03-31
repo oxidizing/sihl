@@ -13,7 +13,7 @@ let insert_request =
       created_at,
       updated_at
     ) VALUES (
-      ?::uuid,
+      $1::uuid,
       {{parameters}},
       ? AT TIME ZONE 'UTC',
       ? AT TIME ZONE 'UTC'
@@ -40,7 +40,7 @@ let find_request =
       created_at,
       updated_at
     FROM {{table_name}}
-    WHERE uuid = ?::uuid
+    WHERE uuid = $1::uuid
   |sql} |> Caqti_type.string ->? {{caqti_type}}
 ;;
 
@@ -72,7 +72,7 @@ let delete_request =
   let open Caqti_request.Infix in
   {sql|
     DELETE FROM {{table_name}}
-    WHERE uuid = ?::uuid
+    WHERE uuid = $1::uuid
   |sql} |> Caqti_type.(string ->. unit)
 ;;
 
@@ -137,20 +137,20 @@ let filter_fragment = {sql|
 
 let search_query =
   {sql|
-SELECT
-  COUNT(*) OVER() as total,
-  LOWER(CONCAT(
-    SUBSTR(HEX(uuid), 1, 8), '-',
-    SUBSTR(HEX(uuid), 9, 4), '-',
-    SUBSTR(HEX(uuid), 13, 4), '-',
-    SUBSTR(HEX(uuid), 17, 4), '-',
-    SUBSTR(HEX(uuid), 21)
-  )),
-  {{fields}},
-  created_at,
-  updated_at
-FROM {{table_name}}
-|sql}
+    SELECT
+      COUNT(*) OVER() as total,
+      LOWER(CONCAT(
+        SUBSTR(HEX(uuid), 1, 8), '-',
+        SUBSTR(HEX(uuid), 9, 4), '-',
+        SUBSTR(HEX(uuid), 13, 4), '-',
+        SUBSTR(HEX(uuid), 17, 4), '-',
+        SUBSTR(HEX(uuid), 21)
+      )),
+      {{fields}},
+      created_at,
+      updated_at
+    FROM {{table_name}}
+  |sql}
 ;;
 
 let search_request =

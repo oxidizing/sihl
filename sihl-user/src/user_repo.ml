@@ -129,7 +129,7 @@ struct
         ~label:"add updated_at column"
         {sql|
           ALTER TABLE user_users
-          ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         |sql}
     ;;
 
@@ -138,8 +138,8 @@ struct
         ~label:"add name columns"
         {sql|
           ALTER TABLE user_users
-          ADD COLUMN name VARCHAR(128) NULL,
-          ADD COLUMN given_name VARCHAR(128) NULL
+            ADD COLUMN name VARCHAR(128) NULL,
+            ADD COLUMN given_name VARCHAR(128) NULL
         |sql}
     ;;
 
@@ -361,7 +361,7 @@ struct
         ~label:"add updated_at column"
         {sql|
           ALTER TABLE user_users
-          ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         |sql}
     ;;
 
@@ -370,8 +370,8 @@ struct
         ~label:"remove timezone info from timestamps"
         {sql|
           ALTER TABLE user_users
-          ALTER COLUMN created_at TYPE TIMESTAMP,
-          ALTER COLUMN updated_at TYPE TIMESTAMP
+            ALTER COLUMN created_at TYPE TIMESTAMP,
+            ALTER COLUMN updated_at TYPE TIMESTAMP
         |sql}
     ;;
 
@@ -380,8 +380,8 @@ struct
         ~label:"add name columns"
         {sql|
           ALTER TABLE user_users
-          ADD COLUMN name VARCHAR(128) NULL,
-          ADD COLUMN given_name VARCHAR(128) NULL
+            ADD COLUMN name VARCHAR(128) NULL,
+            ADD COLUMN given_name VARCHAR(128) NULL
         |sql}
     ;;
 
@@ -452,7 +452,7 @@ struct
         created_at,
         updated_at
       FROM user_users
-      WHERE user_users.uuid = ?::uuid
+      WHERE user_users.uuid = $1::uuid
     |sql}
     |> Caqti_type.string ->? user
   ;;
