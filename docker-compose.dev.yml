@@ -12,7 +12,7 @@ services:
       - 5432:5432
 
   mariadb:
-    image: mariadb:10.3
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     environment:
       MYSQL_USER: admin
@@ -23,7 +23,7 @@ services:
       - 3306:3306
 
   adminer:
-    image: adminer:4.7.6-standalone
+    image: adminer:4-standalone
     restart: always
     ports:
       - 8080:8080

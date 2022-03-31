@@ -25,12 +25,12 @@ services:
     depends_on:
       - mariadb
       - postgres
-    ports: [3000:3000]
+    ports: [ 3008:3000 ]
     command: /bin/sh -c "while sleep 1000; do :; done"
 
   postgres:
     image: postgres:12.2
-    ports: [5432:5432]
+    ports: [ 5432:5432 ]
     environment:
       TZ: Europe/Zurich
       POSTGRES_USER: admin
@@ -40,9 +40,9 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
 
   mariadb:
-    image: mariadb:10.3
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
-    ports: [3306:3306]
+    ports: [ 3308:3306 ]
     environment:
       TZ: Europe/Zurich
       MYSQL_USER: admin
@@ -53,9 +53,9 @@ services:
       - ./data/mariadb:/var/lib/mysql
 
   adminer:
-    image: adminer:4.7.6-standalone
+    image: adminer:4-standalone
     restart: always
-    ports: [8080:8080]
+    ports: [ 8080:8080 ]
     depends_on:
       - mariadb
       - postgres
