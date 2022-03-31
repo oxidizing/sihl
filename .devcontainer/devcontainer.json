@@ -16,22 +16,30 @@
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "settings": {
-    "terminal.integrated.shell.linux": "/bin/zsh",
+    "terminal.integrated.profiles.linux": {
+      "zsh": {
+        "path": "/bin/zsh"
+      }
+    },
+    "terminal.integrated.defaultProfile.linux": "zsh",
     "editor.formatOnSave": true,
     "files.associations": {
       "*.ml": "ocaml",
       "*.mli": "ocaml"
     },
     "ocaml.sandbox": {
-      "kind": "global"
+      "kind": "global",
     }
   },
   // Add the IDs of extensions you want installed when the container is created in the array below.
   "extensions": [
+    // general useful extensions
     "donjayamanne.githistory",
     "eamodio.gitlens",
+    "editorconfig.editorconfig",
     "exiasr.hadolint",
-    "irongeek.vscode-env",
+    "ms-azuretools.vscode-docker",
+    // project extensions
     "ocamllabs.ocaml-platform"
   ]
 }

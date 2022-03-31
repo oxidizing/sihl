@@ -1,4 +1,4 @@
-FROM node:14 AS node_base
+FROM node:16 AS node_base
 FROM hadolint/hadolint:latest-alpine AS hadolint
 FROM ocaml/opam:debian-ocaml-4.12
 
@@ -12,13 +12,14 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /opt/yarn-v*/bin/yarn /usr/local/bin/yarn \
   && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
 # copy hadolint
-COPY --from=hadolint /bin/hadolint /bin/hadolint
+COPY --from=hadolint /hadolint/hadolint /bin/hadolint
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND noninteractive
 ENV SIHL_ENV development
 
-RUN apt-get update -q && apt-get install -yqq \
+RUN apt-get update -q \
+  && apt-get install -yqq --no-install-recommends \
   default-jre \
   # emacs-nox for emacs, but sihl cannot be installed without
   emacs-nox \
@@ -54,7 +55,7 @@ RUN apt-get update -q && apt-get install -yqq \
 
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
 RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
-  bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
+  && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
@@ -62,4 +63,5 @@ USER opam
 
 # install oh-my-zsh
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -q -O - | zsh \
-  && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
+  && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
+  && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc
