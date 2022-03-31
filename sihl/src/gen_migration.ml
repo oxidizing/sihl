@@ -3,16 +3,16 @@ let template_mariadb =
   Sihl.Database.Migration.create_step
     ~label:"create {{name}}s table"
     {sql|
-CREATE TABLE IF NOT EXISTS {{name}}s (
-  id BIGINT UNSIGNED AUTO_INCREMENT,
-  uuid BINARY(16) NOT NULL,
-  {{schema}},
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  CONSTRAINT unique_uuid UNIQUE KEY (uuid)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-|sql}
+      CREATE TABLE IF NOT EXISTS {{name}}s (
+        id BIGINT UNSIGNED AUTO_INCREMENT,
+        uuid BINARY(16) NOT NULL,
+        {{schema}},
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      CONSTRAINT unique_uuid UNIQUE KEY (uuid)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    |sql}
 ;;
 
 let migration =
@@ -29,16 +29,16 @@ let template_postgresql =
   Sihl.Database.Migration.create_step
     ~label:"create {{name}}s table"
     {sql|
-CREATE TABLE IF NOT EXISTS {{name}}s (
-  id serial,
-  uuid UUID NOT NULL,
-  {{schema}},
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE (uuid)
-);
-|sql}
+      CREATE TABLE IF NOT EXISTS {{name}}s (
+        id serial,
+        uuid UUID NOT NULL,
+        {{schema}},
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE (uuid)
+      )
+    |sql}
 ;;
 
 let migration =
