@@ -14,9 +14,7 @@ let insert_request =
       updated_at
     ) VALUES (
       $1::uuid,
-      {{parameters}},
-      ? AT TIME ZONE 'UTC',
-      ? AT TIME ZONE 'UTC'
+      {{non_linear_parameters}}
     )
   |sql} |> {{caqti_type}} ->. Caqti_type.unit
 ;;
@@ -95,9 +93,7 @@ let insert_request =
       updated_at
     ) VALUES (
       UNHEX(REPLACE(?, '-', '')),
-      {{parameters}},
-      ?,
-      ?
+      {{linear_parameters}}
     )
   |sql} |> {{caqti_type}} ->. Caqti_type.unit
 ;;
@@ -304,14 +300,28 @@ let fields (schema : Gen_core.schema) =
 
 let update_fields (schema : Gen_core.schema) =
   schema
-  |> List.mapi (fun idx (name, _) ->
-         (* We start with $2 because $1 is the id which is never updated. *)
-         Format.sprintf "%s = $%d" name (idx + 2))
-  |> String.concat ", \n  "
+  (* We start with $2 because $1 is the id which is never updated. *)
+  |> List.mapi (fun idx (name, _) -> idx + 2 |> Format.asprintf "%s = $%d" name)
+  |> String.concat ",\n"
 ;;
 
-let parameters (schema : Gen_core.schema) =
-  schema |> List.map (fun _ -> "?") |> String.concat ",\n  "
+let linear_parameters (schema : Gen_core.schema) =
+  (* add two additional question marks for created and updated *)
+  (schema |> List.map (fun _ -> "?")) @ [ "?"; "?" ] |> String.concat ",\n"
+;;
+
+let non_linear_parameters (schema : Gen_core.schema) =
+  let created_updated =
+    let n_params = List.length schema in
+    (* calculate position of created and updated, add plus one for the id *)
+    [ n_params + 2; n_params + 3 ]
+    |> List.map (Format.asprintf "$%i AT TIME ZONE 'UTC'")
+  in
+  (schema
+  (* We start with $2 because $1 is the id *)
+  |> List.mapi (fun idx _ -> idx + 2 |> Format.asprintf "$%d"))
+  @ created_updated
+  |> String.concat ",\n"
 ;;
 
 let filter_fragment (schema : Gen_core.schema) =
@@ -341,7 +351,8 @@ let file
     ; "created_value", Gen_entity.created_value schema
     ; "fields", fields schema
     ; "update_fields", update_fields schema
-    ; "parameters", parameters schema
+    ; "linear_parameters", linear_parameters schema
+    ; "non_linear_parameters", non_linear_parameters schema
     ]
   in
   let template =
