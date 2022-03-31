@@ -13,11 +13,9 @@ depends: [
   "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "3.0.2"}
-  "ocaml" {= "4.12.0"}
-  "ocaml-base-compiler" {= "4.12.0"}
-  "ocaml-config" {= "2"}
-  "ocaml-options-vanilla" {= "1"}
+  "dune" {= "3.0.3"}
+  "ocaml" {= "4.12.1"}
+  "ocaml-base-compiler" {= "4.12.1"}
 ]
 build: [
   ["dune" "subst"] {dev}
@@ -35,3 +33,7 @@ build: [
 ]
 dev-repo: "git+https://github.com/oxidizing/sihl.git"
 name: "sihl-storage"
+pin-depends: [
+  "ocaml-base-compiler.4.12.1"
+  "https://github.com/ocaml/ocaml/archive/4.12.1.tar.gz"
+]

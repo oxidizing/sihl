@@ -13,18 +13,16 @@ depends: [
   "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "cmdliner" {= "1.1.0"}
-  "dune" {= "3.0.2"}
-  "markup" {= "1.0.2"}
-  "ocaml" {= "4.12.0"}
-  "ocaml-base-compiler" {= "4.12.0"}
+  "cmdliner" {= "1.0.4"}
+  "dune" {= "3.0.3"}
+  "markup" {= "1.0.3"}
+  "ocaml" {= "4.12.1"}
+  "ocaml-base-compiler" {= "4.12.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
-  "ocaml-config" {= "2"}
-  "ocaml-options-vanilla" {= "1"}
   "ocamlbuild" {= "0.14.1"}
   "ocamlfind" {= "1.9.3"}
   "ppx_derivers" {= "1.2.1"}
-  "ppxlib" {= "0.24.0"}
+  "ppxlib" {= "0.25.0"}
   "re" {= "1.10.3"}
   "seq" {= "base"}
   "sexplib0" {= "v0.14.0"}
@@ -52,3 +50,7 @@ build: [
 ]
 dev-repo: "git+https://github.com/oxidizing/sihl.git"
 name: "sihl-queue"
+pin-depends: [
+  "ocaml-base-compiler.4.12.1"
+  "https://github.com/ocaml/ocaml/archive/4.12.1.tar.gz"
+]
