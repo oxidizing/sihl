@@ -57,110 +57,108 @@ struct
   ;;
 
   let insert_request =
-    Caqti_request.exec
-      stored_file
-      {sql|
-         INSERT INTO storage_handles (
-         uuid,
-         filename,
-         filesize,
-         mime,
-         asset_blob
-         ) VALUES (
-         UNHEX(REPLACE(?, '-', '')),
-         ?,
-         ?,
-         ?,
-         UNHEX(REPLACE(?, '-', ''))
-         )
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO storage_handles (
+        uuid,
+        filename,
+        filesize,
+        mime,
+        asset_blob
+      ) VALUES (
+        UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
+        ?,
+        UNHEX(REPLACE(?, '-', ''))
+      )
+    |sql}
+    |> stored_file ->. Caqti_type.unit
   ;;
 
   let insert_file ?ctx file = Sihl.Database.exec ?ctx insert_request file
 
   let update_file_request =
-    Caqti_request.exec
-      stored_file
-      {sql|
-         UPDATE storage_handles SET
-         filename = $2,
-         filesize = $3,
-         mime = $4,
-         asset_blob = UNHEX(REPLACE($5, '-', ''))
-         WHERE
-         storage_handles.uuid = UNHEX(REPLACE($1, '-', ''))
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE storage_handles SET
+        filename = $2,
+        filesize = $3,
+        mime = $4,
+        asset_blob = UNHEX(REPLACE($5, '-', ''))
+      WHERE
+        storage_handles.uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> stored_file ->. Caqti_type.unit
   ;;
 
   let update_file ?ctx file = Sihl.Database.exec ?ctx update_file_request file
 
   let get_file_request =
-    Caqti_request.find_opt
-      Caqti_type.string
-      stored_file
-      {sql|
-         SELECT
-           LOWER(CONCAT(
-           SUBSTR(HEX(uuid), 1, 8), '-',
-           SUBSTR(HEX(uuid), 9, 4), '-',
-           SUBSTR(HEX(uuid), 13, 4), '-',
-           SUBSTR(HEX(uuid), 17, 4), '-',
-           SUBSTR(HEX(uuid), 21)
-           )),
-         filename,
-         filesize,
-         mime,
-         LOWER(CONCAT(
-           SUBSTR(HEX(asset_blob), 1, 8), '-',
-           SUBSTR(HEX(asset_blob), 9, 4), '-',
-           SUBSTR(HEX(asset_blob), 13, 4), '-',
-           SUBSTR(HEX(asset_blob), 17, 4), '-',
-           SUBSTR(HEX(asset_blob), 21)
-           ))
-         FROM storage_handles
-         WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+        SUBSTR(HEX(uuid), 1, 8), '-',
+        SUBSTR(HEX(uuid), 9, 4), '-',
+        SUBSTR(HEX(uuid), 13, 4), '-',
+        SUBSTR(HEX(uuid), 17, 4), '-',
+        SUBSTR(HEX(uuid), 21)
+        )),
+      filename,
+      filesize,
+      mime,
+      LOWER(CONCAT(
+        SUBSTR(HEX(asset_blob), 1, 8), '-',
+        SUBSTR(HEX(asset_blob), 9, 4), '-',
+        SUBSTR(HEX(asset_blob), 13, 4), '-',
+        SUBSTR(HEX(asset_blob), 17, 4), '-',
+        SUBSTR(HEX(asset_blob), 21)
+        ))
+      FROM storage_handles
+      WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.string ->? stored_file
   ;;
 
   let get_file ?ctx id = Sihl.Database.find_opt ?ctx get_file_request id
 
   let delete_file_request =
-    Caqti_request.exec
-      Caqti_type.string
-      {sql|
-         DELETE FROM storage_handles
-         WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM storage_handles
+      WHERE storage_handles.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
   ;;
 
   let delete_file ?ctx id = Sihl.Database.exec ?ctx delete_file_request id
 
   let get_blob_request =
-    Caqti_request.find_opt
-      Caqti_type.string
-      Caqti_type.string
-      {sql|
-         SELECT
-         asset_data
-         FROM storage_blobs
-         WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        asset_data
+      FROM storage_blobs
+      WHERE storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->? string)
   ;;
 
   let get_blob ?ctx id = Sihl.Database.find_opt ?ctx get_blob_request id
 
   let insert_blob_request =
-    Caqti_request.exec
-      Caqti_type.(tup2 string string)
-      {sql|
-         INSERT INTO storage_blobs (
-         uuid,
-         asset_data
-         ) VALUES (
-         UNHEX(REPLACE(?, '-', '')),
-         ?
-         )
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO storage_blobs (
+        uuid,
+        asset_data
+      ) VALUES (
+        UNHEX(REPLACE(?, '-', '')),
+        ?
+      )
+    |sql}
+    |> Caqti_type.(tup2 string string ->. unit)
   ;;
 
   let insert_blob ?ctx ~id blob =
@@ -168,14 +166,14 @@ struct
   ;;
 
   let update_blob_request =
-    Caqti_request.exec
-      Caqti_type.(tup2 string string)
-      {sql|
-         UPDATE storage_blobs SET
-         asset_data = $2
-         WHERE
-         storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE storage_blobs SET
+        asset_data = $2
+      WHERE
+        storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Caqti_type.(tup2 string string ->. unit)
   ;;
 
   let update_blob ?ctx ~id blob =
@@ -183,25 +181,27 @@ struct
   ;;
 
   let delete_blob_request =
-    Caqti_request.exec
-      Caqti_type.string
-      {sql|
-         DELETE FROM storage_blobs
-         WHERE
-         storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
-         |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM storage_blobs
+      WHERE
+        storage_blobs.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
   ;;
 
   let delete_blob ?ctx id = Sihl.Database.exec ?ctx delete_blob_request id
 
   let clean_handles_request =
-    Caqti_request.exec Caqti_type.unit "TRUNCATE storage_handles;"
+    let open Caqti_request.Infix in
+    "TRUNCATE storage_handles" |> Caqti_type.(unit ->. unit)
   ;;
 
   let clean_handles ?ctx () = Sihl.Database.exec ?ctx clean_handles_request ()
 
   let clean_blobs_request =
-    Caqti_request.exec Caqti_type.unit "TRUNCATE storage_blobs;"
+    let open Caqti_request.Infix in
+    "TRUNCATE storage_blobs" |> Caqti_type.(unit ->. unit)
   ;;
 
   let clean_blobs ?ctx () = Sihl.Database.exec ?ctx clean_blobs_request ()

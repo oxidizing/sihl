@@ -87,7 +87,8 @@ struct
   let register_migrations migrations = List.iter register_migration migrations
 
   let set_fk_check_request =
-    Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
+    let open Caqti_request.Infix in
+    "SET FOREIGN_KEY_CHECKS = ?" |> Caqti_type.(bool ->. unit)
   ;;
 
   let with_disabled_fk_check ?ctx f =
@@ -105,6 +106,7 @@ struct
   ;;
 
   let execute_steps ?ctx migration =
+    let open Caqti_request.Infix in
     let namespace, steps = migration in
     let rec run steps =
       match steps with
@@ -112,9 +114,7 @@ struct
       | Contract_migration.{ label; statement; check_fk = true } :: steps ->
         Logs.debug (fun m -> m "Running %s" label);
         let query (module Connection : Caqti_lwt.CONNECTION) =
-          let req =
-            Caqti_request.exec ~oneshot:true Caqti_type.unit statement
-          in
+          let req = statement |> Caqti_type.(unit ->. unit) ~oneshot:true in
           Connection.exec req () |> Lwt.map Database.raise_error
         in
         let%lwt () = Database.query ?ctx query in
@@ -127,7 +127,7 @@ struct
               Logs.debug (fun m -> m "Running %s without fk checks" label);
               let query (module Connection : Caqti_lwt.CONNECTION) =
                 let req =
-                  Caqti_request.exec ~oneshot:true Caqti_type.unit statement
+                  statement |> Caqti_type.(unit ->. unit) ~oneshot:true
                 in
                 Connection.exec req () |> Lwt.map Database.raise_error
               in

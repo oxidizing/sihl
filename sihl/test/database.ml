@@ -4,7 +4,8 @@ let check_pool _ () =
 ;;
 
 let drop_table_request =
-  Caqti_request.exec Caqti_type.unit "DROP TABLE IF EXISTS testing_user"
+  let open Caqti_request.Infix in
+  "DROP TABLE IF EXISTS testing_user" |> Caqti_type.(unit ->. unit)
 ;;
 
 let drop_table_if_exists connection =
@@ -13,13 +14,13 @@ let drop_table_if_exists connection =
 ;;
 
 let create_table_request =
-  Caqti_request.exec
-    Caqti_type.unit
-    {sql|
-       CREATE TABLE IF NOT EXISTS testing_user (
-         username varchar(45) NOT NULL
-       )
-       |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    CREATE TABLE IF NOT EXISTS testing_user (
+      username varchar(45) NOT NULL
+    )
+  |sql}
+  |> Caqti_type.(unit ->. unit)
 ;;
 
 let create_table_if_not_exists connection =
@@ -28,9 +29,9 @@ let create_table_if_not_exists connection =
 ;;
 
 let insert_username_request =
-  Caqti_request.exec
-    Caqti_type.string
-    "INSERT INTO testing_user(username) VALUES (?)"
+  let open Caqti_request.Infix in
+  "INSERT INTO testing_user(username) VALUES (?)"
+  |> Caqti_type.(string ->. unit)
 ;;
 
 let insert_username connection username =
@@ -40,10 +41,8 @@ let insert_username connection username =
 ;;
 
 let get_usernames_request =
-  Caqti_request.collect
-    Caqti_type.unit
-    Caqti_type.string
-    "SELECT username FROM testing_user"
+  let open Caqti_request.Infix in
+  "SELECT username FROM testing_user" |> Caqti_type.(unit ->* string)
 ;;
 
 let get_usernames connection =
@@ -99,7 +98,10 @@ let transaction_rolls_back _ () =
   Lwt.return ()
 ;;
 
-let invalid_request = Caqti_request.exec Caqti_type.unit "invalid query"
+let invalid_request =
+  let open Caqti_request.Infix in
+  "invalid query" |> Caqti_type.(unit ->. unit)
+;;
 
 let failing_query connection =
   Lwt.catch

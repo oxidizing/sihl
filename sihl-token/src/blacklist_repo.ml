@@ -33,17 +33,17 @@ module MariaDb : Sig = struct
   let lifecycles = [ Sihl.Database.lifecycle; Migration.lifecycle ]
 
   let insert_request =
-    Caqti_request.exec
-      Caqti_type.(tup2 string ptime)
-      {sql|
-        INSERT INTO token_blacklist (
-          token_value,
-          created_at
-        ) VALUES (
-          $1,
-          $2
-        )
-        |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO token_blacklist (
+        token_value,
+        created_at
+      ) VALUES (
+        $1,
+        $2
+      )
+    |sql}
+    |> Caqti_type.(tup2 string ptime ->. unit)
   ;;
 
   let insert ?ctx token =
@@ -52,16 +52,15 @@ module MariaDb : Sig = struct
   ;;
 
   let find_request_opt =
-    Caqti_request.find_opt
-      Caqti_type.string
-      Caqti_type.(tup2 string ptime)
-      {sql|
-        SELECT
-          token_value,
-          created_at
-        FROM token_blacklist
-        WHERE token_blacklist.token_value = ?
-        |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        token_value,
+        created_at
+      FROM token_blacklist
+      WHERE token_blacklist.token_value = ?
+    |sql}
+    |> Caqti_type.(string ->? tup2 string ptime)
   ;;
 
   let find_opt ?ctx token = Sihl.Database.find_opt ?ctx find_request_opt token
@@ -72,12 +71,12 @@ module MariaDb : Sig = struct
   ;;
 
   let delete_request =
-    Caqti_request.exec
-      Caqti_type.string
-      {sql|
-        DELETE FROM token_blacklist
-        WHERE token_blacklist.token_value = ?
-        |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM token_blacklist
+      WHERE token_blacklist.token_value = ?
+    |sql}
+    |> Caqti_type.(string ->. unit)
   ;;
 
   let delete ?ctx token = Sihl.Database.exec ?ctx delete_request token
@@ -85,20 +84,20 @@ module MariaDb : Sig = struct
   let fix_collation =
     Sihl.Database.Migration.create_step
       ~label:"fix collation"
-      "SET collation_server = 'utf8mb4_unicode_ci';"
+      "SET collation_server = 'utf8mb4_unicode_ci'"
   ;;
 
   let create_jobs_table =
     Sihl.Database.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
-       CREATE TABLE IF NOT EXISTS token_blacklist (
-         id BIGINT UNSIGNED AUTO_INCREMENT,
-         token_value VARCHAR(2000) NOT NULL,
-         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-         PRIMARY KEY (id)
-       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-       |sql}
+        CREATE TABLE IF NOT EXISTS token_blacklist (
+          id BIGINT UNSIGNED AUTO_INCREMENT,
+          token_value VARCHAR(2000) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      |sql}
   ;;
 
   let migration =
@@ -111,7 +110,8 @@ module MariaDb : Sig = struct
   let register_migration () = Migration.register_migration migration
 
   let clean_request =
-    Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
+    let open Caqti_request.Infix in
+    "TRUNCATE token_blacklist" |> Caqti_type.(unit ->. unit)
   ;;
 
   let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
@@ -124,17 +124,17 @@ module PostgreSql : Sig = struct
   let lifecycles = [ Sihl.Database.lifecycle; Migration.lifecycle ]
 
   let insert_request =
-    Caqti_request.exec
-      Caqti_type.(tup2 string ptime)
-      {sql|
-        INSERT INTO token_blacklist (
-          token_value,
-          created_at
-        ) VALUES (
-          $1,
-          $2 AT TIME ZONE 'UTC'
-        )
-        |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO token_blacklist (
+        token_value,
+        created_at
+      ) VALUES (
+        $1,
+        $2 AT TIME ZONE 'UTC'
+      )
+    |sql}
+    |> Caqti_type.(tup2 string ptime ->. unit)
   ;;
 
   let insert ?ctx token =
@@ -143,16 +143,15 @@ module PostgreSql : Sig = struct
   ;;
 
   let find_request_opt =
-    Caqti_request.find_opt
-      Caqti_type.string
-      Caqti_type.(tup2 string ptime)
-      {sql|
-       SELECT
-          token_value,
-          created_at
-        FROM token_blacklist
-        WHERE token_blacklist.token_value = ?
-        |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        token_value,
+        created_at
+      FROM token_blacklist
+      WHERE token_blacklist.token_value = ?
+    |sql}
+    |> Caqti_type.(string ->? tup2 string ptime)
   ;;
 
   let find_opt ?ctx token = Sihl.Database.find_opt ?ctx find_request_opt token
@@ -163,12 +162,12 @@ module PostgreSql : Sig = struct
   ;;
 
   let delete_request =
-    Caqti_request.exec
-      Caqti_type.string
-      {sql|
-        DELETE FROM token_blacklist
-        WHERE token_blacklist.token_value = ?
-        |sql}
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM token_blacklist
+      WHERE token_blacklist.token_value = ?
+    |sql}
+    |> Caqti_type.(string ->. unit)
   ;;
 
   let delete ?ctx token = Sihl.Database.exec ?ctx delete_request token
@@ -177,22 +176,22 @@ module PostgreSql : Sig = struct
     Sihl.Database.Migration.create_step
       ~label:"create token blacklist table"
       {sql|
-       CREATE TABLE IF NOT EXISTS token_blacklist (
-         id serial,
-         token_value VARCHAR(2000) NOT NULL,
-         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-         PRIMARY KEY (id)
-       );
-       |sql}
+        CREATE TABLE IF NOT EXISTS token_blacklist (
+          id serial,
+          token_value VARCHAR(2000) NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id)
+        )
+      |sql}
   ;;
 
   let remove_timezone =
     Sihl.Database.Migration.create_step
       ~label:"remove timezone info from timestamps"
       {sql|
-       ALTER TABLE token_blacklist
-        ALTER COLUMN created_at TYPE TIMESTAMP;
-       |sql}
+        ALTER TABLE token_blacklist
+        ALTER COLUMN created_at TYPE TIMESTAMP
+      |sql}
   ;;
 
   let migration =
@@ -205,7 +204,8 @@ module PostgreSql : Sig = struct
   let register_migration () = Migration.register_migration migration
 
   let clean_request =
-    Caqti_request.exec Caqti_type.unit "TRUNCATE token_blacklist;"
+    let open Caqti_request.Infix in
+    "TRUNCATE token_blacklist" |> Caqti_type.(unit ->. unit)
   ;;
 
   let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()

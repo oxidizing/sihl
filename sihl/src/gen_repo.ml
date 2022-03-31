@@ -1,66 +1,63 @@
 let requests_postgresql =
   {|let clean_request =
-  Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE {{table_name}} CASCADE;"
+    let open Caqti_request.Infix in
+     "TRUNCATE TABLE {{table_name}} CASCADE" |> Caqti_type.(unit ->. unit)
 ;;
 
 let insert_request =
-  Caqti_request.exec
-    {{caqti_type}}
-    {sql|
-INSERT INTO {{table_name}} (
-  uuid,
-  {{fields}},
-  created_at,
-  updated_at
-) VALUES (
-  ?::uuid,
-  {{parameters}},
-  ? AT TIME ZONE 'UTC',
-  ? AT TIME ZONE 'UTC'
-)
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    INSERT INTO {{table_name}} (
+      uuid,
+      {{fields}},
+      created_at,
+      updated_at
+    ) VALUES (
+      ?::uuid,
+      {{parameters}},
+      ? AT TIME ZONE 'UTC',
+      ? AT TIME ZONE 'UTC'
+    )
+  |sql} |> {{caqti_type}} ->. Caqti_type.unit
 ;;
 
 let update_request =
-  Caqti_request.exec
-    {{caqti_type_update}}
-    {sql|
-UPDATE {{table_name}} SET
-  {{update_fields}},
-  updated_at = NOW() AT TIME ZONE 'UTC'
-WHERE uuid = $1::uuid;
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE {{table_name}} SET
+      {{update_fields}},
+      updated_at = NOW() AT TIME ZONE 'UTC'
+    WHERE uuid = $1::uuid
+  |sql} |> {{caqti_type_update}} ->. Caqti_type.unit
 ;;
 
 let find_request =
-  Caqti_request.find_opt
-    Caqti_type.string
-    {{caqti_type}}
-    {sql|
-SELECT
-  uuid,
-  {{fields}},
-  created_at,
-  updated_at
-FROM {{table_name}}
-WHERE uuid = ?::uuid
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      uuid,
+      {{fields}},
+      created_at,
+      updated_at
+    FROM {{table_name}}
+    WHERE uuid = ?::uuid
+  |sql} |> Caqti_type.string ->? {{caqti_type}}
 ;;
 
 let filter_fragment = {sql|
-WHERE {{filter_fragment}}
+  WHERE {{filter_fragment}}
 |sql}
 
 let search_query =
   {sql|
-SELECT
-  COUNT(*) OVER() as total,
-  uuid,
-  {{fields}},
-  created_at,
-  updated_at
-FROM {{table_name}}
-|sql}
+    SELECT
+      COUNT(*) OVER() as total,
+      uuid,
+      {{fields}},
+      created_at,
+      updated_at
+    FROM {{table_name}}
+  |sql}
 ;;
 
 let search_request =
@@ -72,12 +69,11 @@ let search_request =
 ;;
 
 let delete_request =
-  Caqti_request.exec
-    Caqti_type.string
-    {sql|
-DELETE FROM {{table_name}}
-WHERE uuid = ?::uuid
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM {{table_name}}
+    WHERE uuid = ?::uuid
+  |sql} |> Caqti_type.(string ->. unit)
 ;;
 
 |}
@@ -85,61 +81,58 @@ WHERE uuid = ?::uuid
 
 let requests_mariadb =
   {|let clean_request =
-  Caqti_request.exec Caqti_type.unit "TRUNCATE TABLE {{table_name}};"
+    let open Caqti_request.Infix in
+    "TRUNCATE TABLE {{table_name}}" |> Caqti_type.(unit ->. unit)
 ;;
 
 let insert_request =
-  Caqti_request.exec
-    {{caqti_type}}
-    {sql|
-INSERT INTO {{table_name}} (
-  uuid,
-  {{fields}},
-  created_at,
-  updated_at
-) VALUES (
-  UNHEX(REPLACE(?, '-', '')),
-  {{parameters}},
-  ?,
-  ?
-)
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    INSERT INTO {{table_name}} (
+      uuid,
+      {{fields}},
+      created_at,
+      updated_at
+    ) VALUES (
+      UNHEX(REPLACE(?, '-', '')),
+      {{parameters}},
+      ?,
+      ?
+    )
+  |sql} |> {{caqti_type}} ->. Caqti_type.unit
 ;;
 
 let update_request =
-  Caqti_request.exec
-    {{caqti_type_update}}
-    {sql|
-UPDATE {{table_name}} SET
-  {{update_fields}},
-  updated_at = NOW()
-WHERE uuid = UNHEX(REPLACE($1, '-', ''));
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE {{table_name}} SET
+      {{update_fields}},
+      updated_at = NOW()
+    WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql} |> {{caqti_type_update}} ->. Caqti_type.unit
 ;;
 
 let find_request =
-  Caqti_request.find_opt
-    Caqti_type.string
-    {{caqti_type}}
-    {sql|
-SELECT
-  LOWER(CONCAT(
-    SUBSTR(HEX(uuid), 1, 8), '-',
-    SUBSTR(HEX(uuid), 9, 4), '-',
-    SUBSTR(HEX(uuid), 13, 4), '-',
-    SUBSTR(HEX(uuid), 17, 4), '-',
-    SUBSTR(HEX(uuid), 21)
-  )),
-  {{fields}},
-  created_at,
-  updated_at
-FROM {{table_name}}
-WHERE uuid = UNHEX(REPLACE(?, '-', ''))
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      LOWER(CONCAT(
+        SUBSTR(HEX(uuid), 1, 8), '-',
+        SUBSTR(HEX(uuid), 9, 4), '-',
+        SUBSTR(HEX(uuid), 13, 4), '-',
+        SUBSTR(HEX(uuid), 17, 4), '-',
+        SUBSTR(HEX(uuid), 21)
+      )),
+      {{fields}},
+      created_at,
+      updated_at
+    FROM {{table_name}}
+    WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql} |> Caqti_type.string ->? {{caqti_type}}
 ;;
 
 let filter_fragment = {sql|
-WHERE {{filter_fragment}}
+  WHERE {{filter_fragment}}
 |sql}
 
 let search_query =
@@ -169,13 +162,11 @@ let search_request =
 ;;
 
 let delete_request =
-  Caqti_request.exec
-    Caqti_type.string
-    {sql|
-DELETE FROM {{table_name}}
-WHERE uuid = UNHEX(REPLACE(?, '-', ''))
-        |sql}
-;;
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM {{table_name}}
+    WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql} |> Caqti_type.(string ->. unit)
 |}
 ;;
 

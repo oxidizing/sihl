@@ -4,28 +4,26 @@ let clean_state () =
   (* Clean database state, all tests create either of these tables *)
   Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
       let open Lwt_result.Syntax in
+      let open Caqti_request.Infix in
       let* () =
-        Connection.exec
-          (Caqti_request.exec
-             Caqti_type.unit
-             "DROP TABLE IF EXISTS test_core_migration_state;")
-          ()
+        "DROP TABLE IF EXISTS test_core_migration_state"
+        |> Caqti_type.(unit ->. unit)
+        |> CCFun.flip Connection.exec ()
       in
       let* () =
-        Connection.exec
-          (Caqti_request.exec
-             Caqti_type.unit
-             "DROP TABLE IF EXISTS professions;")
-          ()
+        "DROP TABLE IF EXISTS professions"
+        |> Caqti_type.(unit ->. unit)
+        |> CCFun.flip Connection.exec ()
       in
-      Connection.exec
-        (Caqti_request.exec Caqti_type.unit "DROP TABLE IF EXISTS orders;")
-        ())
+      "DROP TABLE IF EXISTS orders"
+      |> Caqti_type.(unit ->. unit)
+      |> CCFun.flip Connection.exec ())
   |> Lwt.map Sihl.Database.raise_error
 ;;
 
 module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
   let run_migrations _ () =
+    let open Caqti_request.Infix in
     let%lwt () = clean_state () in
     (* Use test migration state table to not interfere with other tests *)
     Sihl.Configuration.store
@@ -36,19 +34,16 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
       ( "professions"
       , [ Sihl.Database.Migration.create_step
             ~label:"create table"
-            "CREATE TABLE professions (salary INT);"
+            "CREATE TABLE professions (salary INT)"
         ] )
     in
     let%lwt () = MigrationService.execute [ migration ] in
     let%lwt _ =
       (* If this doesn't fail, test is ok *)
       Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          Connection.find_opt
-            (Caqti_request.find_opt
-               Caqti_type.unit
-               Caqti_type.int
-               "SELECT salary FROM professions;")
-            ())
+          "SELECT salary FROM professions"
+          |> Caqti_type.(unit ->? int)
+          |> CCFun.flip Connection.find_opt ())
       |> Lwt.map Sihl.Database.raise_error
     in
     Lwt.return ()
@@ -67,7 +62,7 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
       ( "professions"
       , [ Sihl.Database.Migration.create_step
             ~label:"create professions table"
-            "CREATE TABLE professions (salary INT);"
+            "CREATE TABLE professions (salary INT)"
         ] )
     in
     MigrationService.register_migrations [ migration1 ];
@@ -83,7 +78,7 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
       ( "orders"
       , [ Sihl.Database.Migration.create_step
             ~label:"create orders table"
-            "CREATE TABLE orders (amount INT);"
+            "CREATE TABLE orders (amount INT)"
         ] )
     in
     MigrationService.register_migrations [ migration2 ];

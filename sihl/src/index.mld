@@ -645,15 +645,13 @@ The main functions to run queries on the connection pool are {!val:Sihl.Database
 
 {[
 let find_request =
-  Caqti_request.find_opt
-    Caqti_type.string
-    Caqti_type.string
-    {sql|
-        SELECT
-          cache_value
-        FROM cache
-        WHERE cache.cache_key = ?
-        |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      cache_value
+    FROM cache
+    WHERE cache.cache_key = ?
+  |sql} |> Caqti_type.(string ->? string)
 ;;
 
 let find key = Sihl.Database.find_opt find_request key
