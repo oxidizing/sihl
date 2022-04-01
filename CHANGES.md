@@ -1,3 +1,7 @@
+## [3.0.3] - 2022-04-01
+### Updated
+- Update SQL queries to use caqti infix notation
+
 ## [3.0.2] - 2022-02-28
 ### Added
 - Expos all log sources

@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "3.0.2"
+version: "3.0.3"
 synopsis: "Cache service implementations for Sihl"
 description: "A key-value store with support for PostgreSQL and MariaDB."
 maintainer: ["josef@oxidizing.io"]

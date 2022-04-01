@@ -4,7 +4,7 @@
 
 (name sihl)
 
-(version 3.0.2)
+(version 3.0.3)
 
 (authors "Josef Erben" "Aron Erben" "Miko Nieminen")
 
