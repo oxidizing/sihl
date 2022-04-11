@@ -12,7 +12,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /opt/yarn-v*/bin/yarn /usr/local/bin/yarn \
   && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
 # copy hadolint
-COPY --from=hadolint /hadolint/hadolint /bin/hadolint
+COPY --from=hadolint /bin/hadolint /bin/hadolint
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND noninteractive

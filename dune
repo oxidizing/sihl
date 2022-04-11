@@ -1,1 +1,1 @@
-(data_only_dirs node_modules .devcontainer)
+(data_only_dirs node_modules .devcontainer .git)

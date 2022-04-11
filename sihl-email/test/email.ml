@@ -1,5 +1,11 @@
 open Alcotest_lwt
 
+let template_testable =
+  Alcotest.testable Sihl.Contract.Email_template.pp (fun a b ->
+      let open Sihl.Contract.Email_template in
+      CCString.equal a.id b.id)
+;;
+
 module Make
     (EmailService : Sihl.Contract.Email.Sig)
     (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
@@ -10,6 +16,23 @@ struct
       EmailTemplateService.create ~label:"foo" ~html:"some html" "some text"
     in
     Alcotest.(check string "name" "foo" template.label);
+    Alcotest.(check (option string) "label" None template.language);
+    Alcotest.(check string "has text" "some text" template.text);
+    Alcotest.(check (option string) "has html" (Some "some html") template.html);
+    Lwt.return ()
+  ;;
+
+  let create_template_with_language _ () =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt template =
+      EmailTemplateService.create
+        ~label:"foo"
+        ~language:"EN"
+        ~html:"some html"
+        "some text"
+    in
+    Alcotest.(check string "label" "foo" template.label);
+    Alcotest.(check (option string) "language" (Some "EN") template.language);
     Alcotest.(check string "has text" "some text" template.text);
     Alcotest.(check (option string) "has html" (Some "some html") template.html);
     Lwt.return ()
@@ -23,6 +46,25 @@ struct
     let updated = Sihl_email.Template.set_label "newname" created in
     let%lwt template = EmailTemplateService.update updated in
     Alcotest.(check string "label" "newname" template.label);
+    Lwt.return ()
+  ;;
+
+  let get_template_by_label_and_language _ () =
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let%lwt expected =
+      EmailTemplateService.create
+        ~label:"foo"
+        ~language:"EN"
+        ~html:"some html"
+        "some text"
+    in
+    let%lwt existing = EmailTemplateService.get_by_label ~language:"EN" "foo" in
+    let%lwt not_existing =
+      EmailTemplateService.get_by_label ~language:"DE" "foo"
+    in
+    Alcotest.(
+      check (option template_testable) "template" (Some expected) existing);
+    Alcotest.(check (option template_testable) "template" None not_existing);
     Lwt.return ()
   ;;
 
@@ -104,7 +146,12 @@ struct
   let suite =
     [ ( "email"
       , [ test_case "create email template" `Quick create_template
+        ; test_case "create email template with language" `Quick create_template
         ; test_case "update email template" `Quick update_template
+        ; test_case
+            "get email template by label and language"
+            `Quick
+            get_template_by_label_and_language
         ; test_case "send simple email" `Quick send_simple_email
         ; test_case
             "send inline templated email"

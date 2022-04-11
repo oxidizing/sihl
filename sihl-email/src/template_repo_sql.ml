@@ -10,6 +10,7 @@ module type Sig = sig
 
   val get_by_label
     :  ?ctx:(string * string) list
+    -> ?language:string
     -> string
     -> Sihl.Contract.Email_template.t option Lwt.t
 
@@ -27,10 +28,14 @@ end
 let template =
   let open Sihl.Contract.Email_template in
   let encode m =
-    Ok (m.id, (m.label, (m.text, (m.html, (m.created_at, m.updated_at)))))
+    Ok
+      ( m.id
+      , (m.label, (m.language, (m.text, (m.html, (m.created_at, m.updated_at)))))
+      )
   in
-  let decode (id, (label, (text, (html, (created_at, updated_at))))) =
-    Ok { id; label; text; html; created_at; updated_at }
+  let decode (id, (label, (language, (text, (html, (created_at, updated_at))))))
+    =
+    Ok { id; label; language; text; html; created_at; updated_at }
   in
   Caqti_type.(
     custom
@@ -38,7 +43,11 @@ let template =
       ~decode
       (tup2
          string
-         (tup2 string (tup2 string (tup2 (option string) (tup2 ptime ptime))))))
+         (tup2
+            string
+            (tup2
+               (option string)
+               (tup2 string (tup2 (option string) (tup2 ptime ptime)))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
@@ -60,6 +69,7 @@ struct
            SUBSTR(HEX(uuid), 21)
            )),
           label,
+          language,
           content_text,
           content_html,
           created_at,
@@ -72,7 +82,7 @@ struct
 
     let get ?ctx id = Sihl.Database.find_opt ?ctx get_request id
 
-    let get_by_label_request =
+    let get_by_label_request ?(with_language = false) ctype =
       let open Caqti_request.Infix in
       {sql|
         SELECT
@@ -84,6 +94,7 @@ struct
            SUBSTR(HEX(uuid), 21)
            )),
           label,
+          language,
           content_text,
           content_html,
           created_at,
@@ -91,11 +102,29 @@ struct
         FROM email_templates
         WHERE email_templates.label = ?
       |sql}
-      |> Caqti_type.(string ->? template)
+      |> (fun sql ->
+           if with_language
+           then
+             {sql| AND email_templates.language = ? |sql}
+             |> Format.asprintf "%s\n%s" sql
+           else sql)
+      |> ctype ->? template
     ;;
 
-    let get_by_label ?ctx label =
-      Sihl.Database.find_opt ?ctx get_by_label_request label
+    let get_by_label ?ctx ?language label =
+      match language with
+      | None ->
+        Sihl.Database.find_opt
+          ?ctx
+          (get_by_label_request Caqti_type.string)
+          label
+      | Some language ->
+        Sihl.Database.find_opt
+          ?ctx
+          (get_by_label_request
+             ~with_language:true
+             Caqti_type.(tup2 string string))
+          (label, language)
     ;;
 
     let insert_request =
@@ -104,12 +133,14 @@ struct
         INSERT INTO email_templates (
           uuid,
           label,
+          language,
           content_text,
           content_html,
           created_at,
           updated_at
         ) VALUES (
           UNHEX(REPLACE(?, '-', '')),
+          ?,
           ?,
           ?,
           ?,
@@ -128,10 +159,11 @@ struct
         UPDATE email_templates
         SET
           label = $2,
-          content_text = $3,
-          content_html = $4,
-          created_at = $5,
-          updated_at = $6
+          language = $3,
+          content_text = $4,
+          content_html = $5,
+          created_at = $6,
+          updated_at = $7
         WHERE email_templates.uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
       |> template ->. Caqti_type.unit
@@ -199,6 +231,34 @@ struct
         |sql}
     ;;
 
+    let add_language_column =
+      Sihl.Database.Migration.create_step
+        ~label:"add language column"
+        {sql|
+          ALTER TABLE email_templates
+            ADD COLUMN language VARCHAR(128) NULL
+              AFTER `label`
+        |sql}
+    ;;
+
+    let remove_unique_label_constraint =
+      Sihl.Database.Migration.create_step
+        ~label:"remove unique label constraint"
+        {sql|
+          ALTER TABLE email_templates
+            DROP CONSTRAINT unique_name
+        |sql}
+    ;;
+
+    let make_label_language_combination_unique =
+      Sihl.Database.Migration.create_step
+        ~label:"make label language combination unique"
+        {sql|
+          ALTER TABLE email_templates
+            ADD CONSTRAINT unique_label_language UNIQUE(label, language)
+        |sql}
+    ;;
+
     let migration () =
       Sihl.Database.Migration.(
         empty "email"
@@ -206,7 +266,10 @@ struct
         |> add_step create_templates_table
         |> add_step rename_name_column
         |> add_step add_updated_at_column
-        |> add_step make_html_nullable)
+        |> add_step make_html_nullable
+        |> add_step add_language_column
+        |> add_step remove_unique_label_constraint
+        |> add_step make_label_language_combination_unique)
     ;;
   end
 
@@ -234,6 +297,7 @@ struct
         SELECT
           uuid,
           label,
+          language,
           content_text,
           content_html,
           created_at,
@@ -246,12 +310,13 @@ struct
 
     let get ?ctx id = Sihl.Database.find_opt ?ctx get_request id
 
-    let get_by_label_request =
+    let get_by_label_request ?(with_language = false) ctype =
       let open Caqti_request.Infix in
       {sql|
         SELECT
           uuid,
           label,
+          language,
           content_text,
           content_html,
           created_at,
@@ -259,11 +324,29 @@ struct
         FROM email_templates
         WHERE email_templates.label = ?
       |sql}
-      |> Caqti_type.string ->? template
+      |> (fun sql ->
+           if with_language
+           then
+             {sql| AND email_templates.language = ? |sql}
+             |> Format.asprintf "%s\n%s" sql
+           else sql)
+      |> ctype ->? template
     ;;
 
-    let get_by_label ?ctx label =
-      Sihl.Database.find_opt ?ctx get_by_label_request label
+    let get_by_label ?ctx ?language label =
+      match language with
+      | None ->
+        Sihl.Database.find_opt
+          ?ctx
+          (get_by_label_request Caqti_type.string)
+          label
+      | Some language ->
+        Sihl.Database.find_opt
+          ?ctx
+          (get_by_label_request
+             ~with_language:true
+             Caqti_type.(tup2 string string))
+          (label, language)
     ;;
 
     let insert_request =
@@ -272,6 +355,7 @@ struct
         INSERT INTO email_templates (
           uuid,
           label,
+          language,
           content_text,
           content_html,
           created_at,
@@ -281,8 +365,9 @@ struct
           $2,
           $3,
           $4,
-          $5 AT TIME ZONE 'UTC',
-          $6 AT TIME ZONE 'UTC'
+          $5,
+          $6 AT TIME ZONE 'UTC',
+          $7 AT TIME ZONE 'UTC'
         )
       |sql}
       |> template ->. Caqti_type.unit
@@ -296,10 +381,11 @@ struct
         UPDATE email_templates
         SET
           label = $2,
-          content_text = $3,
-          content_html = $4,
-          created_at = $5 AT TIME ZONE 'UTC',
-          updated_at = $6 AT TIME ZONE 'UTC'
+          language = $3,
+          content_text = $4,
+          content_html = $5,
+          created_at = $6 AT TIME ZONE 'UTC',
+          updated_at = $7 AT TIME ZONE 'UTC'
         WHERE email_templates.uuid = $1::uuid
       |sql}
       |> template ->. Caqti_type.unit
@@ -371,6 +457,33 @@ struct
         |sql}
     ;;
 
+    let add_language_column =
+      Sihl.Database.Migration.create_step
+        ~label:"add language column"
+        {sql|
+          ALTER TABLE email_templates
+            ADD COLUMN language VARCHAR(128) NULL
+        |sql}
+    ;;
+
+    let remove_unique_label_constraint =
+      Sihl.Database.Migration.create_step
+        ~label:"remove unique label constraint"
+        {sql|
+          ALTER TABLE email_templates
+            DROP CONSTRAINT email_templates_name_key
+        |sql}
+    ;;
+
+    let make_label_language_combination_unique =
+      Sihl.Database.Migration.create_step
+        ~label:"make label language combination unique"
+        {sql|
+          ALTER TABLE email_templates
+            ADD CONSTRAINT email_templates_label_language_key UNIQUE(label, language)
+        |sql}
+    ;;
+
     let migration () =
       Sihl.Database.Migration.(
         empty "email"
@@ -378,7 +491,10 @@ struct
         |> add_step rename_name_column
         |> add_step add_updated_at_column
         |> add_step make_html_nullable
-        |> add_step remove_timezone)
+        |> add_step remove_timezone
+        |> add_step add_language_column
+        |> add_step remove_unique_label_constraint
+        |> add_step make_label_language_combination_unique)
     ;;
   end
 
