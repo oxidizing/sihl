@@ -16,10 +16,17 @@ deps:
 lock: ## Generate a lock file
 	opam lock -y .
 
+.PHONY: build
+build: ## Build the project, including non installable libraries and executables
+	opam exec -- dune build --root .
+
 .PHONY: format
-format: ## Format the codebase with ocamlformat
+format: ## Format the codebase with ocamlformat & dune
 	opam exec -- dune build --root . --auto-promote @fmt
-	dune fmt
+
+.PHONY: test
+test: build	## Run unit tests with dune and then all sihl tests
+	todo
 
 .PHONY: db
 db: ## Starts the database using docker-compose

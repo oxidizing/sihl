@@ -4,7 +4,6 @@ on: [push, pull_request]
 jobs:
   build:
     name: Build and test
-    runs-on: ${{ matrix.os }}
     services:
       postgres:
         image: postgres:12.2
@@ -27,9 +26,12 @@ jobs:
       fail-fast: false
       matrix:
         os:
+          - macos-latest
           - ubuntu-latest
+          - windows-latest
         ocaml-compiler:
           - 4.12.x
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -38,9 +40,6 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
-
-      - name: Install system dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libmariadbclient-dev
 
       - name: Install dependencies
         run: make deps
@@ -52,23 +51,4 @@ jobs:
         run: make format
 
       - name: Run tests
-        run: make test-all
-
-      - name: Pin current Sihl
-        run: opam pin add sihl .
-
-      - name: Generate PostgreSQL model
-        run: |
-          cd template
-          ROOT_PATH=. LOGS_DIR=. make sihl gen.model postgresql employee title:string is_premium:bool age:int shipped_at:datetime
-          DATABASE_URL=postgres://admin:password@127.0.0.1:5432/dev ENV_FILES_PATH=. ROOT_PATH=. LOGS_DIR=. make test
-
-      - name: Generate MariaDB model
-        run: |
-          cd template
-          rm -r app/domain/employee database/employee.ml test/employee
-          ROOT_PATH=. LOGS_DIR=. make sihl gen.model mariadb employee title:string is_premium:bool age:int shipped_at:datetime
-          echo "module Migration = Sihl.Database.Migration.MariaDb" > service/service.ml
-          echo "(executable (name run) (libraries sihl service routes database schedule command caqti-driver-mariadb))" > run/dune
-          opam install caqti-driver-mariadb
-          DATABASE_URL=mariadb://admin:password@127.0.0.1:3306/dev ENV_FILES_PATH=. ROOT_PATH=. LOGS_DIR=. make test
+        run: make test
