@@ -1,0 +1,4 @@
+(library
+ (name migration)
+ (public_name sihl.migration)
+ (libraries lwt sihl.model))

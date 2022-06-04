@@ -1,6 +1,0 @@
-(executables
- (names mariadb postgresql)
- (libraries sihl sihl-cache alcotest-lwt caqti-driver-mariadb
-   caqti-driver-postgresql)
- (preprocess
-  (pps lwt_ppx)))

@@ -1,7 +1,0 @@
-(executables
- (names password_reset_mariadb password_reset_postgresql user_mariadb
-   user_postgresql)
- (libraries sihl sihl-user sihl-token alcotest-lwt caqti-driver-mariadb
-   caqti-driver-postgresql)
- (preprocess
-  (pps lwt_ppx)))

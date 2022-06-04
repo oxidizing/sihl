@@ -1,0 +1,19 @@
+(library
+ (name sihl)
+ (public_name sihl)
+ (libraries
+  dream
+  ptime
+  caqti
+  caqti-driver-postgresql
+  containers
+  tyxml
+  cmdliner
+  sihl.command
+  yojson
+  fieldslib)
+ (preprocess
+  (pps lwt_ppx ppx_fields_conv ppx_deriving_yojson)))
+
+(documentation
+ (package sihl))

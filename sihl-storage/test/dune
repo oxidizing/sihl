@@ -1,5 +1,0 @@
-(executables
- (names storage_mariadb)
- (libraries sihl sihl-storage alcotest-lwt caqti-driver-mariadb)
- (preprocess
-  (pps lwt_ppx)))
