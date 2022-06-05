@@ -46,5 +46,5 @@ jobs:
         run: make format
       - name: Run tests
         run: make test
-      - name: lint opam
+      - name: Lint opam
         uses: ocaml/setup-ocaml/lint-opam@v2

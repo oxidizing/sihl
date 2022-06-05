@@ -157,7 +157,7 @@ let validate_schema (schema : 'a schema) : 'a schema =
   else
     failwith
     @@ Format.sprintf
-         "you did not list all fields of the model %s in the schema"
+         "you did not list all fields of the model '%s' in the schema"
          schema.name
 ;;
 
@@ -198,7 +198,7 @@ let validate_field (field : any_field * Yojson.Safe.t)
     then
       Some
         ( n
-        , [ { message = "field %s is too long"
+        , [ { message = "%(field) is too long"
             ; code = Some "too long"
             ; params = [ "field", n ]
             }
