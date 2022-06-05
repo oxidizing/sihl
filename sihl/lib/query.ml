@@ -4,6 +4,8 @@ type 'a t =
   | `Select of 'a Model.schema
   ]
 
+(* TODO Consider having model records without ID, and pass around (int, model)
+   if there is an id *)
 let insert (type a) (schema : a Model.schema) (model : a) : a t =
   `Insert (schema, model)
 ;;

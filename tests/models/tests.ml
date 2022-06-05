@@ -32,7 +32,7 @@ let%test "validate customer model field" =
   | ( [ "A customer from Zurich can not have tier Standard" ]
     , [ ( "street"
         , [ Sihl.Model.
-              { message = "%(field) is too long"
+              { message = "%s is too long"
               ; code = Some "too long"
               ; params = [ ("field", "street") ]
               }

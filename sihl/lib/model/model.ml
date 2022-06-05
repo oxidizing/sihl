@@ -199,7 +199,7 @@ let validate_field (field : any_field * Yojson.Safe.t)
     then
       Some
         ( n (* TODO look into ocaml-gettext, we might be able to use %s *)
-        , [ { message = "%(field) is too long"
+        , [ { message = "%s is too long"
             ; code = Some "too long"
             ; params = [ "field", n ]
             }
