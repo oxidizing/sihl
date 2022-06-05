@@ -26,9 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
           - ubuntu-latest
-          - windows-latest
         ocaml-compiler:
           - 4.12.x
     runs-on: ${{ matrix.os }}
@@ -48,3 +46,5 @@ jobs:
         run: make format
       - name: Run tests
         run: make test
+      - name: lint opam
+        uses: ocaml/setup-ocaml/lint-opam@v2
