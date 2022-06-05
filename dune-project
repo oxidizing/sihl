@@ -42,6 +42,9 @@
 
 (package
  (name sihl_auth)
+ (synopsis "Todo")
+ (description
+  "Todo")
  (depends
   ocaml
   dune
