@@ -18,6 +18,7 @@ type limit_offset =
 type filter =
   | Filter of
       { op : op
+      ; join : string list
       ; field_name : string
       ; value : string
       }

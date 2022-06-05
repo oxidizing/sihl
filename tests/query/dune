@@ -1,6 +1,11 @@
 (library
  (name test_query)
- (libraries sihl test_models test_config caqti-driver-postgresql caqti-driver-mariadb)
+ (libraries
+  sihl
+  test_models
+  test_config
+  caqti-driver-postgresql
+  caqti-driver-mariadb)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test ppx_assert lwt_ppx)))

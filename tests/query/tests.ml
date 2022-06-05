@@ -1,6 +1,7 @@
 (* open Test_models *)
 
-module Run () = struct
+module Db () = struct
+  (* TODO uncomment once we implemented the functions without Obj.magic () *)
   (* let%test "insert and query model" = *)
   (*   let customer : Customer.t = *)
   (*     Customer.make *)
