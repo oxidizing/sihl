@@ -27,7 +27,7 @@ let schema =
     [ int ~primary_key:true Fields.id
     ; foreign_key "user" Fields.user_id
     ; enum tier_of_yojson tier_to_yojson Fields.tier
-    ; string ~max_length:255 Fields.street
+    ; string ~max_length:70 Fields.street
     ; enum city_of_yojson city_to_yojson Fields.city
     ; timestamp ~default:Now Fields.created_at
     ; timestamp ~default:Now ~update:true Fields.updated_at

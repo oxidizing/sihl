@@ -189,7 +189,7 @@ open Sexplib0.Sexp_conv
 type validation_error =
   { message : string
   ; code : string option
-  ; params : string * string list
+  ; params : (string * string) list
   }
 [@@deriving sexp]
 
@@ -198,6 +198,17 @@ let validate_field (field : any_field * Yojson.Safe.t)
   =
   match field with
   | AnyField (_, (_, Integer _)), `Int _ -> None
+  | AnyField (n, (_, String { max_length; _ })), `String v ->
+    if String.length v > Option.value ~default:255 max_length
+    then
+      Some
+        ( n
+        , [ { message = "field %s is too long"
+            ; code = Some "too long"
+            ; params = [ "field", n ]
+            }
+          ] )
+    else None
   | _ -> None
 ;;
 

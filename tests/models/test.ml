@@ -15,7 +15,7 @@ let%test_unit "validate customer model" =
     ~expect:([], [])
 ;;
 
-let%test "validate customer model field" =
+let%test_unit "validate customer model field" =
   let customer : Customer.t =
     Customer.
       { id = 1
@@ -29,7 +29,16 @@ let%test "validate customer model field" =
       ; updated_at = Ptime_clock.now ()
       }
   in
-  match Sihl.Model.validate Customer.t customer with
-  | [], [] -> true
-  | _ -> false
+  [%test_result: Sihl.Model.model_validation]
+    (Sihl.Model.validate Customer.t customer)
+    ~expect:
+      ( []
+      , [ ( "street"
+          , [ Sihl.Model.
+                { message = "field %s is too long"
+                ; code = Some "too long"
+                ; params = [ "field", "street" ]
+                }
+            ] )
+        ] )
 ;;
