@@ -191,6 +191,7 @@ type validation_error =
 let validate_field (field : any_field * Yojson.Safe.t)
     : (string * validation_error list) option
   =
+  (* TODO finish field validation *)
   match field with
   | AnyField (_, (_, Integer _)), `Int _ -> None
   | AnyField (n, (_, String { max_length; _ })), `String v ->
