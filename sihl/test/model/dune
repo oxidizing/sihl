@@ -1,5 +1,5 @@
 (library
- (name test_models)
+ (name test_model)
  (libraries sihl)
  (inline_tests)
  (preprocess

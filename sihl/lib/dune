@@ -12,7 +12,12 @@
   yojson
   fieldslib)
  (preprocess
-  (pps lwt_ppx ppx_fields_conv ppx_deriving_yojson)))
+  (pps
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_deriving.show
+   ppx_deriving.eq)))
 
 (documentation
  (package sihl))

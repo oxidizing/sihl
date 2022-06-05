@@ -146,6 +146,9 @@ type 'a schema =
   ; validate : 'a -> string list
   }
 
+let equal_schema _ _ _ = true
+let pp_schema _ _ _ = ()
+
 let validate_schema (schema : 'a schema) : 'a schema =
   let schema_names = List.map field_name schema.fields in
   let field_names = schema.field_names in

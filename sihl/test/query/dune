@@ -2,7 +2,7 @@
  (name test_query)
  (libraries
   sihl
-  test_models
+  test_model
   test_config
   caqti-driver-postgresql
   caqti-driver-mariadb)

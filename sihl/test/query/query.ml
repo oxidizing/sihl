@@ -1,4 +1,4 @@
-(* open Test_models *)
+open Test_model
 
 module Db () = struct
   (* TODO uncomment once we implemented the functions without Obj.magic () *)
@@ -26,3 +26,23 @@ module Db () = struct
   (*         && Option.is_some customer_queried.id)) *)
   (* ;; *)
 end
+
+let%test_unit "query" =
+  let open Sihl.Query in
+  let _ =
+    all Customer.t
+    |> and_where Customer.Fields.street eq "some street"
+    |> or_
+         [ and_where
+             ~join:[ "user" ]
+             Sihl.User.Fields.email
+             like
+             "%@example.org"
+         ; and_where ~join:[ "user" ] Sihl.User.Fields.email like "%@gmail.com"
+         ]
+    |> order_by [ asc "created_at"; desc "updated_at" ]
+    |> limit 50
+    |> offset 10
+  in
+  ()
+;;
