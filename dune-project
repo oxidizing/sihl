@@ -37,6 +37,7 @@
   reason
   ppx_fields_conv
   ppx_deriving_yojson
+  caqti-lwt
   fieldslib
   dune-build-info))
 

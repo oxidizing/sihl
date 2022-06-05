@@ -29,7 +29,7 @@ format: ## Format the codebase with ocamlformat & dune
 
 .PHONY: test
 test: build	## Run unit tests with dune and then all sihl tests
-	todo
+	opam exec -- dune build --root . @runtest
 
 .PHONY: db
 db: ## Starts the database using docker-compose
