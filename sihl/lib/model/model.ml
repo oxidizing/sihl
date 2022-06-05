@@ -237,7 +237,8 @@ let validate (type a) (schema : a schema) (model : a) : model_validation =
     (match field_data schema actual_fields with
     | Ok fields ->
       let field_errors =
-        List.map validate_field fields
+        fields
+        |> List.map validate_field
         |> List.map CCOption.to_list
         |> List.concat
       in
