@@ -1,4 +1,4 @@
-let%test_unit "validate customer model" =
+let%test "validate customer model" =
   let customer : Customer.t =
     Customer.
       { id = 1
@@ -10,17 +10,17 @@ let%test_unit "validate customer model" =
       ; updated_at = Ptime_clock.now ()
       }
   in
-  [%test_result: Sihl.Model.model_validation]
-    (Sihl.Model.validate Customer.t customer)
-    ~expect:([], [])
+  match Sihl.Model.validate Customer.t customer with
+  | [], [] -> true
+  | _ -> false
 ;;
 
-let%test_unit "validate customer model field" =
+let%test "validate customer model field" =
   let customer : Customer.t =
     Customer.
       { id = 1
       ; user_id = 1
-      ; tier = Premium
+      ; tier = Standard
       ; street =
           "A veryveryveryveryveryveryveryveryveryveryveryveryveryvery long \
            street name"
@@ -29,16 +29,15 @@ let%test_unit "validate customer model field" =
       ; updated_at = Ptime_clock.now ()
       }
   in
-  [%test_result: Sihl.Model.model_validation]
-    (Sihl.Model.validate Customer.t customer)
-    ~expect:
-      ( []
-      , [ ( "street"
-          , [ Sihl.Model.
-                { message = "field %s is too long"
-                ; code = Some "too long"
-                ; params = [ "field", "street" ]
-                }
-            ] )
-        ] )
+  match Sihl.Model.validate Customer.t customer with
+  | ( [ "A customer from Zurich can not have tier Standard" ]
+    , [ ( "street"
+        , [ Sihl.Model.
+              { message = "field %s is too long"
+              ; code = Some "too long"
+              ; params = [ ("field", "street") ]
+              }
+          ] )
+      ] ) -> true
+  | _ -> false
 ;;

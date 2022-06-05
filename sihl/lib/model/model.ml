@@ -20,8 +20,6 @@ type database =
 
 let list_of_model = Obj.magic
 
-module type MODEL = sig end
-
 type 'a t = { model : unit }
 
 type ('perm, 'record, 'field) record_field =
@@ -184,14 +182,11 @@ let create
   validate_schema schema
 ;;
 
-open Sexplib0.Sexp_conv
-
 type validation_error =
   { message : string
   ; code : string option
   ; params : (string * string) list
   }
-[@@deriving sexp]
 
 let validate_field (field : any_field * Yojson.Safe.t)
     : (string * validation_error list) option
@@ -233,13 +228,6 @@ let field_data (schema : 'a schema) (fields : (string * Yojson.Safe.t) list)
 ;;
 
 type model_validation = string list * (string * validation_error list) list
-[@@deriving sexp]
-
-let compare_model_validation e1 e2 =
-  String.compare
-    (sexp_of_model_validation e1 |> Sexplib0.Sexp.to_string)
-    (sexp_of_model_validation e2 |> Sexplib0.Sexp.to_string)
-;;
 
 let validate (type a) (schema : a schema) (model : a) : model_validation =
   let model_errors = schema.validate model in

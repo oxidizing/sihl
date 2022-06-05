@@ -40,8 +40,8 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
-      # - name: Install dependencies
-      #   run: make deps
+      - name: Install dependencies
+        run: make deps
       - name: Build
         run: make build
       - name: Check formatting
