@@ -8,8 +8,8 @@ $(eval $(ARGS):;@:)
 deps:
 	opam switch create . 4.12.0 --no-install --locked
 	eval $(opam env)
-	opam install -y dune-release ocaml-lsp-server ocamlformat ocamlformat-rpc utop
-	opam install -y mariadb caqti-driver-postgresql caqti-driver-mariadb
+	opam install -y odoc dune-release ocaml-lsp-server ocamlformat ocamlformat-rpc utop
+	opam install -y mariadb caqti-driver-postgresql caqti-driver-mariadb ppx_expect
 	opam install . -y --deps-only --locked
 
 .PHONY: lock

@@ -62,13 +62,13 @@ type t =
 
 let schema =
   Model.
-    [ field Fields.id @@ int ~primary_key:true ()
-    ; field Fields.role @@ enum role_of_yojson role_to_yojson
-    ; field Fields.email @@ email ()
-    ; field Fields.full_name @@ string ()
-    ; field Fields.short_name @@ string ~max_length:80 ()
-    ; field Fields.created_at @@ timestamp ~default:Now ()
-    ; field Fields.updated_at @@ timestamp ~default:Now ~update:true ()
+    [ int ~primary_key:true Fields.id
+    ; enum role_of_yojson role_to_yojson Fields.role
+    ; email Fields.email
+    ; string Fields.full_name
+    ; string ~max_length:80 Fields.short_name
+    ; timestamp ~default:Now Fields.created_at
+    ; timestamp ~default:Now ~update:true Fields.updated_at
     ]
 ;;
 

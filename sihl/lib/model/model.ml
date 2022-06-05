@@ -1,7 +1,7 @@
 module Ptime = struct
   include Ptime
 
-  let to_yojson ptime = Yojson.Safe.from_string (Ptime.to_rfc3339 ptime)
+  let to_yojson ptime = `String (Ptime.to_rfc3339 ptime)
 
   let of_yojson json =
     try
@@ -27,7 +27,7 @@ type 'a t = { model : unit }
 type ('perm, 'record, 'field) record_field =
   ('perm, 'record, 'field) Fieldslib.Field.t_with_perm
 
-type 'a valiator = 'a -> (unit, string) Result.t
+type 'a validator = 'a -> (unit, string) Result.t
 
 type timestamp_default =
   | Fn of (unit -> Ptime.t)
@@ -46,6 +46,7 @@ type _ type_field =
       ; update : bool
       }
       -> Ptime.t type_field
+  | Foreign_key : { model_name : string } -> int type_field
   | Enum :
       ((Yojson.Safe.t -> ('a, string) Result.t) * ('a -> Yojson.Safe.t))
       -> 'a type_field
@@ -58,6 +59,8 @@ type field_meta =
 type 'a field = field_meta * 'a type_field
 type any_field = AnyField : string * 'a field -> any_field
 
+let field_name (AnyField (name, _)) = name
+
 (* let foo field = *)
 (*   match (field : any_field) with *)
 (*   | AnyField (name, field) -> *)
@@ -66,17 +69,26 @@ type any_field = AnyField : string * 'a field -> any_field
 (*     | Email -> ()) *)
 (* ;; *)
 
-let field
-    (type a)
-    (record_field : ('perm, 'record, a) record_field)
-    (field : a field)
+let foreign_key
+    ?(primary_key = false)
+    ?(nullable = false)
+    (model_name : string)
+    (record_field : ('perm, 'record, 'a) record_field)
   =
+  let field = { primary_key; nullable }, Foreign_key { model_name } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
 
-let int ?default ?(primary_key = false) ?(nullable = false) () =
-  { primary_key; nullable }, Integer { default }
+let int
+    ?default
+    ?(primary_key = false)
+    ?(nullable = false)
+    (record_field : ('perm, 'record, 'a) record_field)
+  =
+  let field = { primary_key; nullable }, Integer { default } in
+  let name = Fieldslib.Field.name record_field in
+  AnyField (name, field)
 ;;
 
 let enum
@@ -85,16 +97,34 @@ let enum
     ?(nullable = false)
     (of_yojson : Yojson.Safe.t -> (a, string) Result.t)
     (to_yojson : a -> Yojson.Safe.t)
+    (record_field : ('perm, 'record, 'a) record_field)
   =
-  { primary_key; nullable }, Enum (of_yojson, to_yojson)
+  let field = { primary_key; nullable }, Enum (of_yojson, to_yojson) in
+  let name = Fieldslib.Field.name record_field in
+  AnyField (name, field)
 ;;
 
-let email ?default ?(primary_key = false) ?(nullable = false) () =
-  { primary_key; nullable }, Email { default }
+let email
+    ?default
+    ?(primary_key = false)
+    ?(nullable = false)
+    (record_field : ('perm, 'record, 'a) record_field)
+  =
+  let field = { primary_key; nullable }, Email { default } in
+  let name = Fieldslib.Field.name record_field in
+  AnyField (name, field)
 ;;
 
-let string ?default ?max_length ?(primary_key = false) ?(nullable = false) () =
-  { primary_key; nullable }, String { max_length; default }
+let string
+    ?default
+    ?max_length
+    ?(primary_key = false)
+    ?(nullable = false)
+    (record_field : ('perm, 'record, 'a) record_field)
+  =
+  let field = { primary_key; nullable }, String { max_length; default } in
+  let name = Fieldslib.Field.name record_field in
+  AnyField (name, field)
 ;;
 
 let timestamp
@@ -102,9 +132,11 @@ let timestamp
     ?(nullable = false)
     ?default
     ?(update = false)
-    ()
+    (record_field : ('perm, 'record, 'a) record_field)
   =
-  { primary_key; nullable }, Timestamp { default; update }
+  let field = { primary_key; nullable }, Timestamp { default; update } in
+  let name = Fieldslib.Field.name record_field in
+  AnyField (name, field)
 ;;
 
 type 'a schema =
@@ -112,8 +144,24 @@ type 'a schema =
   ; of_yojson : Yojson.Safe.t -> ('a, string) Result.t
   ; name : string
   ; fields : any_field list
+  ; field_names : string list
   ; validate : 'a -> string list
   }
+
+let validate_schema (schema : 'a schema) : 'a schema =
+  let schema_names = List.map field_name schema.fields in
+  let field_names = schema.field_names in
+  if CCList.equal
+       String.equal
+       (CCList.sort compare schema_names)
+       (CCList.sort compare field_names)
+  then schema
+  else
+    failwith
+    @@ Format.sprintf
+         "you did not list all fields of the model %s in the schema"
+         schema.name
+;;
 
 let create
     ~validate
@@ -122,7 +170,88 @@ let create
     (name : string)
     (fields : string list)
     (schema : any_field list)
+    : 'a schema
   =
-  fields |> ignore;
-  { name; fields = schema; to_yojson; of_yojson; validate }
+  let schema =
+    { name
+    ; fields = schema
+    ; field_names = fields
+    ; to_yojson
+    ; of_yojson
+    ; validate
+    }
+  in
+  validate_schema schema
+;;
+
+open Sexplib0.Sexp_conv
+
+type validation_error =
+  { message : string
+  ; code : string option
+  ; params : string * string list
+  }
+[@@deriving sexp]
+
+let validate_field (field : any_field * Yojson.Safe.t)
+    : (string * validation_error list) option
+  =
+  match field with
+  | AnyField (_, (_, Integer _)), `Int _ -> None
+  | _ -> None
+;;
+
+let field_data (schema : 'a schema) (fields : (string * Yojson.Safe.t) list)
+    : ((any_field * Yojson.Safe.t) list, string) Result.t
+  =
+  let rec loop s_fields a_fields result =
+    match s_fields, a_fields with
+    | s :: _, [] -> Error (Format.sprintf "field %s not found" @@ field_name s)
+    | s :: s_fields, a_fields ->
+      let actual =
+        List.find_opt (CCFun.compose fst @@ String.equal @@ field_name s) fields
+      in
+      (match actual with
+      | Some (_, v) ->
+        let a_fields = CCList.tail_opt a_fields |> Option.value ~default:[] in
+        loop s_fields a_fields ((s, v) :: result)
+      | None -> Error (Format.sprintf "field %s not found" @@ field_name s))
+    | [], _ -> Ok result
+  in
+  loop schema.fields fields []
+;;
+
+type model_validation = string list * (string * validation_error list) list
+[@@deriving sexp]
+
+let compare_model_validation e1 e2 =
+  String.compare
+    (sexp_of_model_validation e1 |> Sexplib0.Sexp.to_string)
+    (sexp_of_model_validation e2 |> Sexplib0.Sexp.to_string)
+;;
+
+let validate (type a) (schema : a schema) (model : a) : model_validation =
+  let model_errors = schema.validate model in
+  match schema.to_yojson model with
+  | `Assoc actual_fields ->
+    (match field_data schema actual_fields with
+    | Ok fields ->
+      let field_errors =
+        List.map validate_field fields
+        |> List.map CCOption.to_list
+        |> List.concat
+      in
+      model_errors, field_errors
+    | Error msg -> [ msg ], [])
+  | _ -> [ "provided data is not a record" ], []
+;;
+
+let pp (type a) (schema : a schema) (formatter : Format.formatter) (model : a)
+    : unit
+  =
+  model |> schema.to_yojson |> Yojson.Safe.pp formatter
+;;
+
+let eq (type a) (schema : a schema) (a : a) (b : a) : bool =
+  Yojson.Safe.equal (schema.to_yojson a) (schema.to_yojson b)
 ;;

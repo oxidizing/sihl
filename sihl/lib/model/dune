@@ -1,4 +1,5 @@
 (library
  (name model)
- (libraries ptime yojson fieldslib)
- (public_name sihl.model))
+ (public_name sihl.model)
+ (libraries ptime yojson fieldslib containers)
+ (preprocess (pps ppx_sexp_conv ppx_compare)))
