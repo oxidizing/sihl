@@ -12,7 +12,7 @@ switch:
 .PHONY: deps
 deps:
 	opam install -y odoc dune-release ocaml-lsp-server ocamlformat ocamlformat-rpc utop
-	opam install -y mariadb caqti-driver-postgresql caqti-driver-mariadb ppx_expect
+	opam install -y ppx_expect
 	opam install . -y --deps-only --locked
 
 .PHONY: lock
