@@ -2,4 +2,10 @@
  (name test_models)
  (libraries sihl)
  (inline_tests)
- (preprocess (pps ppx_inline_test ppx_assert lwt_ppx ppx_fields_conv ppx_deriving_yojson)))
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving_yojson)))

@@ -197,7 +197,7 @@ let validate_field (field : any_field * Yojson.Safe.t)
     if String.length v > Option.value ~default:255 max_length
     then
       Some
-        ( n
+        ( n (* TODO look into ocaml-gettext, we might be able to use %s *)
         , [ { message = "%(field) is too long"
             ; code = Some "too long"
             ; params = [ "field", n ]
