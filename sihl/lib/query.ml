@@ -103,3 +103,8 @@ let find (type a) (conn : Caqti_lwt.connection) (query : select) : a Lwt.t =
   query |> ignore;
   Obj.magic ()
 ;;
+
+let table (name : string) =
+  name |> ignore;
+  Obj.magic ()
+;;

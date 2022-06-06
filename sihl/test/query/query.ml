@@ -34,7 +34,7 @@ let%test_unit "query" =
     |> and_where Customer.Fields.street eq "some street"
     |> or_
          [ and_where
-             ~join:[ "user" ]
+             ~join:[ table "user" ]
              Sihl.User.Fields.email
              like
              "%@example.org"

@@ -31,6 +31,11 @@ format: ## Format the codebase with ocamlformat & dune
 test: build	## Run unit tests with dune and then all sihl tests
 	opam exec -- dune build --root . @runtest
 
+.PHONY: opam
+opam: build	## Fix opam files
+	opam lint
+	opam exec -- opam-dune-lint
+
 .PHONY: db
 db: ## Starts the database using docker-compose
 	docker-compose -f docker-compose.dev.yml up -d
