@@ -30,6 +30,7 @@
   (ocaml (>= 4.12.0))
   dream
   containers
+  containers-data
   omigrate
   minicli
   lwt_ppx

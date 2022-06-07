@@ -1,4 +1,13 @@
 (library
  (name migration)
  (public_name sihl.migration)
- (libraries lwt sihl.model))
+ (libraries lwt sihl.model sihl.test containers-data)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson)))

@@ -9,6 +9,9 @@
   tyxml
   cmdliner
   sihl.command
+  sihl.config
+  sihl.test
+  sihl.model
   yojson
   fieldslib)
  (preprocess

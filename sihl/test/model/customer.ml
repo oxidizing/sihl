@@ -12,8 +12,7 @@ type tier =
 [@@deriving yojson]
 
 type t =
-  { id : int option
-  ; user_id : int
+  { user_id : int
   ; tier : tier
   ; street : string
   ; city : city
@@ -24,8 +23,7 @@ type t =
 
 let schema =
   Sihl.Model.
-    [ int ~primary_key:true Fields.id
-    ; foreign_key "user" Fields.user_id
+    [ foreign_key "user" Fields.user_id
     ; enum tier_of_yojson tier_to_yojson Fields.tier
     ; string ~max_length:30 Fields.street
     ; enum city_of_yojson city_to_yojson Fields.city

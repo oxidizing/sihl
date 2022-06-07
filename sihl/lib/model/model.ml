@@ -20,8 +20,6 @@ type database =
 
 let list_of_model = Obj.magic
 
-type 'a t = { model : unit }
-
 type ('perm, 'record, 'field) record_field =
   ('perm, 'record, 'field) Fieldslib.Field.t_with_perm
 
@@ -33,6 +31,7 @@ type timestamp_default =
 
 type _ type_field =
   | Integer : { default : int option } -> int type_field
+  | Boolean : { default : bool } -> bool type_field
   | Email : { default : string option } -> string type_field
   | String :
       { max_length : int option
@@ -57,7 +56,54 @@ type field_meta =
 type 'a field = field_meta * 'a type_field
 type any_field = AnyField : string * 'a field -> any_field
 
+type 'a t =
+  { to_yojson : 'a -> Yojson.Safe.t
+  ; of_yojson : Yojson.Safe.t -> ('a, string) Result.t
+  ; name : string
+  ; fields : any_field list
+  ; field_names : string list
+  ; validate : 'a -> string list
+  }
+
+type generic =
+  { name : string
+  ; fields : any_field list
+  }
+
+type validation_error =
+  { message : string
+  ; code : string option
+  ; params : (string * string) list
+  }
+
+type model_validation = string list * (string * validation_error list) list
+
+let models : (string, generic) Hashtbl.t = Hashtbl.create 100
 let field_name (AnyField (name, _)) = name
+
+let is_foreign_key = function
+  | AnyField (_, (_, Foreign_key _)) -> true
+  | _ -> false
+;;
+
+(* TODO implement using of_list and only once we need model plotting *)
+(* let graph () : (generic, unit) CCGraph.t = *)
+(*   let graph_tbl : (generic, generic) Hashtbl.t = Hashtbl.create 0 in *)
+(*   models *)
+(*   |> Hashtbl.iter (fun _ model -> *)
+(*          model.fields *)
+(*          |> List.filter is_foreign_key *)
+(*          |> List.iter (function *)
+(*                 | AnyField (name, (_, Foreign_key _)) -> *)
+(*                   Hashtbl.add graph_tbl model @@ Hashtbl.find models name *)
+(*                 | _ -> ())); *)
+(*   let graph : (generic, generic list) Hashtbl.t = Hashtbl.create 100 in *)
+(*   graph *)
+(*   |> Hashtbl.to_seq_keys *)
+(* |> Seq.iter (fun k -> Hashtbl.find_all graph_tbl k |> Hashtbl.add graph
+   k); *)
+(*   CCGraph.of_hashtbl graph *)
+(* ;; *)
 
 (* let foo field = *)
 (*   match (field : any_field) with *)
@@ -71,7 +117,7 @@ let foreign_key
     ?(primary_key = false)
     ?(nullable = false)
     (model_name : string)
-    (record_field : ('perm, 'record, 'a) record_field)
+    (record_field : ('perm, 'record, int) record_field)
   =
   let field = { primary_key; nullable }, Foreign_key { model_name } in
   let name = Fieldslib.Field.name record_field in
@@ -82,9 +128,20 @@ let int
     ?default
     ?(primary_key = false)
     ?(nullable = false)
-    (record_field : ('perm, 'record, 'a) record_field)
+    (record_field : ('perm, 'record, int) record_field)
   =
   let field = { primary_key; nullable }, Integer { default } in
+  let name = Fieldslib.Field.name record_field in
+  AnyField (name, field)
+;;
+
+let bool
+    ?(default = false)
+    ?(primary_key = false)
+    ?(nullable = false)
+    (record_field : ('perm, 'record, bool) record_field)
+  =
+  let field = { primary_key; nullable }, Boolean { default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
@@ -137,19 +194,10 @@ let timestamp
   AnyField (name, field)
 ;;
 
-type 'a schema =
-  { to_yojson : 'a -> Yojson.Safe.t
-  ; of_yojson : Yojson.Safe.t -> ('a, string) Result.t
-  ; name : string
-  ; fields : any_field list
-  ; field_names : string list
-  ; validate : 'a -> string list
-  }
+let generic (t : 'a t) : generic = { name = t.name; fields = t.fields }
+let equal _ _ _ = true
 
-let equal_schema _ _ _ = true
-let pp_schema _ _ _ = ()
-
-let validate_schema (schema : 'a schema) : 'a schema =
+let validate_model (schema : 'a t) : 'a t =
   let schema_names = List.map field_name schema.fields in
   let field_names = schema.field_names in
   if CCList.equal
@@ -165,15 +213,15 @@ let validate_schema (schema : 'a schema) : 'a schema =
 ;;
 
 let create
-    ~validate
+    ?(validate = fun _ -> [])
     to_yojson
     of_yojson
     (name : string)
     (fields : string list)
     (schema : any_field list)
-    : 'a schema
+    : 'a t
   =
-  let schema =
+  let model =
     { name
     ; fields = schema
     ; field_names = fields
@@ -181,15 +229,13 @@ let create
     ; of_yojson
     ; validate
     }
+    |> validate_model
   in
-  validate_schema schema
+  if Hashtbl.mem models name
+  then failwith @@ Format.sprintf "a model '%s' was already defined" name
+  else Hashtbl.add models name (generic model);
+  model
 ;;
-
-type validation_error =
-  { message : string
-  ; code : string option
-  ; params : (string * string) list
-  }
 
 let validate_field (field : any_field * Yojson.Safe.t)
     : (string * validation_error list) option
@@ -211,7 +257,7 @@ let validate_field (field : any_field * Yojson.Safe.t)
   | _ -> None
 ;;
 
-let field_data (schema : 'a schema) (fields : (string * Yojson.Safe.t) list)
+let field_data (schema : 'a t) (fields : (string * Yojson.Safe.t) list)
     : ((any_field * Yojson.Safe.t) list, string) Result.t
   =
   let rec loop s_fields a_fields result =
@@ -231,9 +277,7 @@ let field_data (schema : 'a schema) (fields : (string * Yojson.Safe.t) list)
   loop schema.fields fields []
 ;;
 
-type model_validation = string list * (string * validation_error list) list
-
-let validate (type a) (schema : a schema) (model : a) : model_validation =
+let validate (type a) (schema : a t) (model : a) : model_validation =
   let model_errors = schema.validate model in
   match schema.to_yojson model with
   | `Assoc actual_fields ->
@@ -250,12 +294,11 @@ let validate (type a) (schema : a schema) (model : a) : model_validation =
   | _ -> [ "provided data is not a record" ], []
 ;;
 
-let pp (type a) (schema : a schema) (formatter : Format.formatter) (model : a)
-    : unit
+let pp (type a) (schema : a t) (formatter : Format.formatter) (model : a) : unit
   =
   model |> schema.to_yojson |> Yojson.Safe.pp formatter
 ;;
 
-let eq (type a) (schema : a schema) (a : a) (b : a) : bool =
+let eq (type a) (schema : a t) (a : a) (b : a) : bool =
   Yojson.Safe.equal (schema.to_yojson a) (schema.to_yojson b)
 ;;

@@ -1,0 +1,4 @@
+(library
+ (name test)
+ (public_name sihl.test)
+ (libraries sexplib0 caqti-lwt sihl.config))

@@ -1,0 +1,4 @@
+(library
+ (name config)
+ (public_name sihl.config)
+ (libraries uri))

@@ -6,4 +6,4 @@ end
 
 let () = Sihl.Config.configure (module Config)
 
-include Query.Db ()
+include Tests.All ()
