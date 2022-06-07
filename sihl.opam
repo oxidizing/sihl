@@ -13,8 +13,10 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "ppx_inline_test" {>= "v0.15.0" & with-test}
-  "ppx_assert" {>= "v0.15.0" & with-test}
+  "uri" {>= "4.2.0"}
+  "sexplib0" {>= "v0.15.0"}
+  "ppx_inline_test" {>= "v0.15.0"}
+  "ppx_assert" {>= "v0.15.0"}
   "caqti-driver-postgresql" {>= "1.8.0" & with-test}
   "caqti-driver-mariadb" {>= "1.8.0" & with-test}
   "yojson" {>= "1.7.0"}
