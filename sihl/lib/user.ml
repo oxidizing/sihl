@@ -35,9 +35,9 @@ let mariadb_migrations_up =
 let mariadb_migrations_down = [ "DROP TABLE IF EXISTS user_users;" ]
 
 let migrations = function
-  | Model.Postgresql -> postgresql_migrations_up, postgresql_migrations_down
-  | Model.Mariadb -> mariadb_migrations_up, mariadb_migrations_down
-  | Model.Sqlite -> failwith "sqlite is not supported yet"
+  | Config.Postgresql -> postgresql_migrations_up, postgresql_migrations_down
+  | Config.Mariadb -> mariadb_migrations_up, mariadb_migrations_down
+  | Config.Sqlite -> failwith "sqlite is not supported yet"
 ;;
 
 let authentication_required = Obj.magic

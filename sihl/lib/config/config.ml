@@ -1,5 +1,8 @@
 let env_string _ = "todo"
 let env_bool _ = true
+let log_src = Logs.Src.create "sihl.config"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module type CONFIG = sig
   val database_url : string
@@ -16,6 +19,29 @@ let get_config () =
 let database_url () =
   let module Config = (val get_config () : CONFIG) in
   Uri.of_string Config.database_url
+;;
+
+type database =
+  | Postgresql
+  | Mariadb
+  | Sqlite
+
+let database () : database =
+  match Uri.host @@ database_url () with
+  | Some "postgresql" | Some "postgres" -> Postgresql
+  | Some "mariadb" -> Mariadb
+  | Some "mysql" ->
+    Logs.warn (fun m ->
+        m "database MySQL not supported, falling back to MariaDB");
+    Mariadb
+  | Some "sqlite" -> Sqlite
+  | Some other ->
+    failwith
+    @@ Format.sprintf
+         "database host '%s' not supported, use postgresql://, mariadb:// or \
+          sqlite:// instead"
+         other
+  | None -> failwith "no database configured"
 ;;
 
 let configure (module Config : CONFIG) = config := Some (module Config)

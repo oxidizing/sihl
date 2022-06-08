@@ -10,7 +10,7 @@ type t =
 let schema =
   Sihl.Model.
     [ int ~primary_key:true Fields.id
-    ; foreign_key "customer" Fields.customer_id
+    ; foreign_key Cascade "customer" Fields.customer_id
     ; string ~max_length:255 Fields.description
     ; timestamp ~default:Now Fields.created_at
     ; timestamp ~default:Now ~update:true Fields.updated_at

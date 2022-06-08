@@ -23,7 +23,7 @@ type t =
 
 let schema =
   Sihl.Model.
-    [ foreign_key "user" Fields.user_id
+    [ foreign_key Cascade "user" Fields.user_id
     ; enum tier_of_yojson tier_to_yojson Fields.tier
     ; string ~max_length:30 Fields.street
     ; enum city_of_yojson city_to_yojson Fields.city

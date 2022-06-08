@@ -30,7 +30,7 @@ let list
   | None, None -> failwith "handler_list needs either ~model or ~query"
   | _ ->
     let user : User.request_user = user_from_request request in
-    let%lwt model_list = Model.list_of_model model in
+    let%lwt model_list = Obj.magic () in
     let%lwt response_html = render user model_list request in
     response_html |> Format.asprintf "%a" (Tyxml.Html.pp ()) |> Dream.html
 ;;

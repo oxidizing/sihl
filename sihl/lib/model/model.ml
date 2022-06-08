@@ -13,13 +13,6 @@ module Ptime = struct
   ;;
 end
 
-type database =
-  | Postgresql
-  | Mariadb
-  | Sqlite
-
-let list_of_model = Obj.magic
-
 type ('perm, 'record, 'field) record_field =
   ('perm, 'record, 'field) Fieldslib.Field.t_with_perm
 
@@ -28,6 +21,11 @@ type 'a validator = 'a -> (unit, string) Result.t
 type timestamp_default =
   | Fn of (unit -> Ptime.t)
   | Now
+
+type fk_on_delete =
+  | Cascade
+  | Set_null
+  | Set_default
 
 type _ type_field =
   | Integer : { default : int option } -> int type_field
@@ -43,9 +41,16 @@ type _ type_field =
       ; update : bool
       }
       -> Ptime.t type_field
-  | Foreign_key : { model_name : string } -> int type_field
+  | Foreign_key :
+      { model_name : string
+      ; on_delete : fk_on_delete
+      }
+      -> int type_field
   | Enum :
-      ((Yojson.Safe.t -> ('a, string) Result.t) * ('a -> Yojson.Safe.t))
+      { of_yojson : Yojson.Safe.t -> ('a, string) Result.t
+      ; to_yojson : 'a -> Yojson.Safe.t
+      ; default : 'a option
+      }
       -> 'a type_field
 
 type field_meta =
@@ -116,10 +121,13 @@ let is_foreign_key = function
 let foreign_key
     ?(primary_key = false)
     ?(nullable = false)
+    (on_delete : fk_on_delete)
     (model_name : string)
     (record_field : ('perm, 'record, int) record_field)
   =
-  let field = { primary_key; nullable }, Foreign_key { model_name } in
+  let field =
+    { primary_key; nullable }, Foreign_key { model_name; on_delete }
+  in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
@@ -148,13 +156,16 @@ let bool
 
 let enum
     (type a)
+    ?default
     ?(primary_key = false)
     ?(nullable = false)
     (of_yojson : Yojson.Safe.t -> (a, string) Result.t)
     (to_yojson : a -> Yojson.Safe.t)
     (record_field : ('perm, 'record, 'a) record_field)
   =
-  let field = { primary_key; nullable }, Enum (of_yojson, to_yojson) in
+  let field =
+    { primary_key; nullable }, Enum { of_yojson; to_yojson; default }
+  in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
