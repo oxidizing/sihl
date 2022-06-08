@@ -55,6 +55,7 @@ let field_to_sql
         | Mariadb, true -> " ON UPDATE CURRENT_TIMESTAMP"
         | _ -> "")
     , []
+      (* TODO should we just take a on_update fn hook and call it in ocaml? *)
       (* (match db, update with *)
       (*       | Postgresql, true -> *)
       (*         [ Format.sprintf *)

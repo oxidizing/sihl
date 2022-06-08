@@ -41,7 +41,7 @@ module B = struct
   let t = Model.create to_yojson of_yojson "b_models" Fields.names schema
 end
 
-let%test_unit "generate create table migrations" =
+let%test_unit "create table migrations postgresql" =
   let open Test.Assert in
   let sql = Migration_sql.sql ~db:Config.Postgresql () in
   [%test_result: string]
@@ -52,6 +52,28 @@ let%test_unit "generate create table migrations" =
       \  bool BOOLEAN NOT NULL DEFAULT false,\n\
       \  string VARCHAR(80) NOT NULL,\n\
       \  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n\
+       );\n\n\
+       CREATE TABLE IF NOT EXISTS b_models (\n\
+      \  a_id INTEGER NOT NULL,\n\
+      \  variant VARCHAR(255) NOT NULL\n\
+       );\n\n\
+       ALTER TABLE b_models\n\
+      \  ADD CONSTRAINT fk_b_models_a_models FOREIGN KEY (a_id) REFERENCES \
+       a_models (id) ON DELETE CASCADE;"
+;;
+
+let%test_unit "create table migrations mariadb" =
+  let open Test.Assert in
+  let sql = Migration_sql.sql ~db:Config.Mariadb () in
+  [%test_result: string]
+    sql
+    ~expect:
+      "CREATE TABLE IF NOT EXISTS a_models (\n\
+      \  int INTEGER NOT NULL,\n\
+      \  bool BOOLEAN NOT NULL DEFAULT false,\n\
+      \  string VARCHAR(80) NOT NULL,\n\
+      \  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE \
+       CURRENT_TIMESTAMP\n\
        );\n\n\
        CREATE TABLE IF NOT EXISTS b_models (\n\
       \  a_id INTEGER NOT NULL,\n\
