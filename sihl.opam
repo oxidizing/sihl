@@ -13,6 +13,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "logs" {>= "0.7.0"}
   "uri" {>= "4.2.0"}
   "sexplib0" {>= "v0.15.0"}
   "ppx_inline_test" {>= "v0.15.0"}
