@@ -43,17 +43,19 @@ end
 
 let%test_unit "create table migrations postgresql" =
   let open Test.Assert in
-  let sql = Migration_sql.sql ~db:Config.Postgresql () in
+  let up, _ = Migration.sql ~db:Config.Postgresql () in
   [%test_result: string]
-    sql
+    up
     ~expect:
       "CREATE TABLE IF NOT EXISTS a_models (\n\
+      \  id SERIAL PRIMARY KEY,\n\
       \  int INTEGER NOT NULL,\n\
       \  bool BOOLEAN NOT NULL DEFAULT false,\n\
       \  string VARCHAR(80) NOT NULL,\n\
       \  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n\
        );\n\n\
        CREATE TABLE IF NOT EXISTS b_models (\n\
+      \  id SERIAL PRIMARY KEY,\n\
       \  a_id INTEGER NOT NULL,\n\
       \  variant VARCHAR(255) NOT NULL\n\
        );\n\n\
@@ -64,11 +66,12 @@ let%test_unit "create table migrations postgresql" =
 
 let%test_unit "create table migrations mariadb" =
   let open Test.Assert in
-  let sql = Migration_sql.sql ~db:Config.Mariadb () in
+  let up, _ = Migration.sql ~db:Config.Mariadb () in
   [%test_result: string]
-    sql
+    up
     ~expect:
       "CREATE TABLE IF NOT EXISTS a_models (\n\
+      \  id MEDIUMINT NOT NULL AUTO_INCREMENT,\n\
       \  int INTEGER NOT NULL,\n\
       \  bool BOOLEAN NOT NULL DEFAULT false,\n\
       \  string VARCHAR(80) NOT NULL,\n\
@@ -76,6 +79,7 @@ let%test_unit "create table migrations mariadb" =
        CURRENT_TIMESTAMP\n\
        );\n\n\
        CREATE TABLE IF NOT EXISTS b_models (\n\
+      \  id MEDIUMINT NOT NULL AUTO_INCREMENT,\n\
       \  a_id INTEGER NOT NULL,\n\
       \  variant VARCHAR(255) NOT NULL\n\
        );\n\n\

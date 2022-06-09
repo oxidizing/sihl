@@ -27,7 +27,7 @@ type database =
   | Sqlite
 
 let database () : database =
-  match Uri.host @@ database_url () with
+  match Uri.scheme @@ database_url () with
   | Some "postgresql" | Some "postgres" -> Postgresql
   | Some "mariadb" -> Mariadb
   | Some "mysql" ->
@@ -45,3 +45,8 @@ let database () : database =
 ;;
 
 let configure (module Config : CONFIG) = config := Some (module Config)
+
+let absolute_path (project_path : string) =
+  (* TODO implement *)
+  project_path
+;;

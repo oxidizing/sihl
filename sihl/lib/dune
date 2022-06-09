@@ -12,6 +12,8 @@
   sihl.config
   sihl.test
   sihl.model
+  sihl.user
+  sihl.query
   yojson
   fieldslib)
  (preprocess

@@ -6,10 +6,10 @@ let template _ = Obj.magic ()
 
 let user_from_request (_ : Dream.request) =
   User.AuthenticatedUser
-    { id = 0
-    ; email = "hello@example.org"
+    { email = "hello@example.org"
     ; short_name = "short"
     ; full_name = "full"
+    ; password = "foo123"
     ; role = User.Superuser
     ; created_at = Obj.magic ()
     ; updated_at = Obj.magic ()
@@ -18,7 +18,7 @@ let user_from_request (_ : Dream.request) =
 
 let list
     ?(model : 'a Model.t option)
-    ?(query : 'a Query.t option)
+    ?(query : 'a Query.read option)
     (render :
       User.request_user
       -> 'a list

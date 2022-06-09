@@ -23,7 +23,7 @@ type t =
 
 let schema =
   Sihl.Model.
-    [ foreign_key Cascade "user" Fields.user_id
+    [ foreign_key Cascade "users" Fields.user_id
     ; enum tier_of_yojson tier_to_yojson Fields.tier
     ; string ~max_length:30 Fields.street
     ; enum city_of_yojson city_to_yojson Fields.city
@@ -41,7 +41,13 @@ let validate (t : t) =
 ;;
 
 let t =
-  Sihl.Model.create ~validate to_yojson of_yojson "customer" Fields.names schema
+  Sihl.Model.create
+    ~validate
+    to_yojson
+    of_yojson
+    "customers"
+    Fields.names
+    schema
 ;;
 
 let pp = Sihl.Model.pp t [@@ocaml.toplevel_printer]

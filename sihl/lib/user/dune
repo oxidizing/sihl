@@ -1,0 +1,12 @@
+(library
+ (name user)
+ (public_name sihl.user)
+ (libraries sihl.model sihl.config lwt)
+(preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson)))

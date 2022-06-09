@@ -1,0 +1,4 @@
+(library
+ (name query)
+ (public_name sihl.query)
+ (libraries sihl.config sihl.model))

@@ -108,6 +108,15 @@ let model_to_create_table (db : Config.database) (model : Model.generic)
     : string * string list
   =
   let stmts = List.map (field_to_sql db model) model.fields in
+  let stmts =
+    List.cons
+      (match db, model.pk with
+      | Postgresql, Serial n -> Format.sprintf "%s SERIAL PRIMARY KEY" n, []
+      | Mariadb, Serial n ->
+        Format.sprintf "%s MEDIUMINT NOT NULL AUTO_INCREMENT" n, []
+      | Sqlite, _ -> failwith "todo sqlite", [])
+      stmts
+  in
   let create_table_stmt =
     stmts
     |> List.map fst
@@ -134,8 +143,10 @@ let models_to_create_tables (db : Config.database) (models : Model.generic list)
   List.concat [ create_table_stmts; other_stmts ]
 ;;
 
-let sql ?(db = Config.database ()) () =
+let sql ?(db = Config.database ()) () : string * string =
   let models = Model.models |> Hashtbl.to_seq |> Seq.map snd |> List.of_seq in
   let stmts = models_to_create_tables db models in
-  String.concat "\n\n" stmts
+  let up = String.concat "\n\n" stmts in
+  (* TODO implement down migrations *)
+  up, "todo"
 ;;

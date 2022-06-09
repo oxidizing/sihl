@@ -1,7 +1,16 @@
 (library
  (name migration)
  (public_name sihl.migration)
- (libraries lwt sihl.model sihl.test containers-data)
+ (libraries lwt sihl.model sihl.config containers-data omigrate pgx_lwt_unix)
+ (modules migration migration_dsl migration_sql driver_postgresql)
+ (preprocess
+  (pps
+   lwt_ppx)))
+
+(library
+ (name migration_test)
+ (libraries sihl.migration sihl.test)
+ (modules migration_test)
  (inline_tests)
  (preprocess
   (pps

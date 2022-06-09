@@ -61,10 +61,14 @@ type field_meta =
 type 'a field = field_meta * 'a type_field
 type any_field = AnyField : string * 'a field -> any_field
 
+type primary_key = (* TODO support UUID as well *)
+  | Serial of string
+
 type 'a t =
   { to_yojson : 'a -> Yojson.Safe.t
   ; of_yojson : Yojson.Safe.t -> ('a, string) Result.t
   ; name : string
+  ; pk : primary_key
   ; fields : any_field list
   ; field_names : string list
   ; validate : 'a -> string list
@@ -72,6 +76,7 @@ type 'a t =
 
 type generic =
   { name : string
+  ; pk : primary_key
   ; fields : any_field list
   }
 
@@ -205,7 +210,10 @@ let timestamp
   AnyField (name, field)
 ;;
 
-let generic (t : 'a t) : generic = { name = t.name; fields = t.fields }
+let generic (t : 'a t) : generic =
+  { name = t.name; pk = t.pk; fields = t.fields }
+;;
+
 let equal _ _ _ = true
 
 let validate_model (schema : 'a t) : 'a t =
@@ -224,6 +232,7 @@ let validate_model (schema : 'a t) : 'a t =
 ;;
 
 let create
+    ?(pk = Serial "id")
     ?(validate = fun _ -> [])
     to_yojson
     of_yojson
@@ -234,6 +243,7 @@ let create
   =
   let model =
     { name
+    ; pk
     ; fields = schema
     ; field_names = fields
     ; to_yojson

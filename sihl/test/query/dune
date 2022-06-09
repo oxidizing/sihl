@@ -5,7 +5,8 @@
   test_model
   test_config
   caqti-driver-postgresql
-  caqti-driver-mariadb)
+  caqti-driver-mariadb
+  )
  (inline_tests)
  (preprocess
   (pps ppx_inline_test ppx_assert lwt_ppx)))
