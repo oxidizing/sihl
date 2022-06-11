@@ -6,7 +6,7 @@ module Dynparam = struct
   let empty = Pack (Caqti_type.unit, ())
   let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
 
-  let to_model (type a) (model : a Model.t) (Pack (t, x)) : a =
+  let instance (model : 'a Model.t) (Pack (t, x)) : 'a =
     let rec loop
         : type a.
           a Caqti_type.t
@@ -16,16 +16,45 @@ module Dynparam = struct
           -> (string * Yojson.Safe.t) list
       =
      fun t x fields result ->
+      (* print_endline *)
+      (* @@ (CCList.head_opt fields *)
+      (*    |> Option.map Model.field_name *)
+      (*    |> Option.value ~default:""); *)
+      (* print_endline @@ Yojson.Safe.to_string (`Assoc result); *)
+      (* print_endline @@ Caqti_type.show t; *)
+      (* print_endline "\n\n\n"; *)
       match t, x, fields with
-      | Caqti_type.Unit, (), [] -> []
-      | Caqti_type.(Field String), v, [ AnyField (name, _) ] ->
+      | Caqti_type.Unit, (), [] -> result
+      | Caqti_type.(Field String), v, AnyField (name, (_, Email _)) :: _ ->
         List.cons (name, `String v) result
-      | Caqti_type.(Field Int), v, [ AnyField (name, _) ] ->
+      | Caqti_type.(Field String), v, AnyField (name, (_, String _)) :: _ ->
+        List.cons (name, `String v) result
+      | Caqti_type.(Field String), v, AnyField (name, (_, Enum _)) :: _ ->
+        List.cons (name, `List [ `String v ]) result
+      | Caqti_type.(Field Int), v, AnyField (name, _) :: _ ->
         List.cons (name, `Int v) result
-      | _ -> loop t x fields []
+      | Caqti_type.(Field Bool), v, AnyField (name, (_, Boolean _)) :: _ ->
+        List.cons (name, `Bool v) result
+      | Caqti_type.(Field Ptime), v, AnyField (name, (_, Timestamp _)) :: _ ->
+        List.cons (name, Model.Ptime.to_yojson v) result
+      | Caqti_type.(Tup2 (t2, t)), (vs, v), field :: fields ->
+        let result = loop t v [ field ] result in
+        loop t2 vs fields result
+      | type_, _, AnyField (name, _) :: _ ->
+        failwith
+        @@ Format.sprintf
+             "failed to parse field %s of type %s, fields left: %d"
+             name
+             (Caqti_type.show type_)
+             (List.length fields)
+      | _, _, [] -> result
     in
-    `Assoc (loop t x model.fields [])
+    let json = `Assoc (loop t x (List.rev model.fields) []) in
+    (* print_endline (Yojson.Safe.show json); *)
+    (* print_endline (json |> Yojson.Safe.to_string); *)
+    json
     |> model.of_yojson
+    |> Result.map_error @@ Format.sprintf "failed to decode dynparam %s"
     |> CCResult.get_or_failwith
   ;;
 end
@@ -115,8 +144,8 @@ let insert
             | AnyField (_, (_, Boolean _)), `Bool v -> Dynparam.add bool v a
             | AnyField (_, (_, Email _)), `String v
             | AnyField (_, (_, String _)), `String v -> Dynparam.add string v a
-            | AnyField (_, (_, Enum _)), `List [ v ] ->
-              Dynparam.add string (Yojson.Safe.to_string v) a
+            | AnyField (_, (_, Enum _)), `List [ `String v ] ->
+              Dynparam.add string v a
             | AnyField (_, (_, Timestamp _)), `String v ->
               (match Ptime.of_rfc3339 v with
               | Ok (v, _, _) -> Dynparam.add ptime v a
@@ -175,19 +204,40 @@ let find_opt
     | Some (P.Or filters) ->
       List.fold_left (fun a b -> where (Some b) a) dyn filters
   in
-  let dyn = where select.filter Dynparam.empty in
-  let (Dynparam.Pack (pt, pv)) = dyn in
-  let mt = pt in
-  let req = Caqti_request.Infix.(pt ->? mt) @@ stmt in
+  let dyn_params = where select.filter Dynparam.empty in
+  let (Dynparam.Pack (pt, pv)) = dyn_params in
+  let dyn_model : Dynparam.t =
+    List.fold_left
+      (fun a b ->
+        match b with
+        (* TODO use Dyntype to get rid of default value *)
+        | Model.AnyField (_, (_, Model.Integer _))
+        | Model.AnyField (_, (_, Model.Foreign_key _)) ->
+          Dynparam.add Caqti_type.int 0 a
+        | Model.AnyField (_, (_, Model.String _))
+        | Model.AnyField (_, (_, Model.Enum _))
+        | Model.AnyField (_, (_, Model.Email _)) ->
+          Dynparam.add Caqti_type.string "" a
+        | Model.AnyField (_, (_, Model.Timestamp _)) ->
+          Dynparam.add Caqti_type.ptime (Ptime_clock.now ()) a
+        | Model.AnyField (_, (_, Model.Boolean _)) ->
+          Dynparam.add Caqti_type.bool false a)
+      (Dynparam.Pack (Caqti_type.int, 0))
+      model.fields
+  in
+  let (Dynparam.Pack (pm, _)) = dyn_model in
+  (* print_endline @@ Caqti_type.show pm; *)
+  let req = Caqti_request.Infix.(pt ->? pm) @@ stmt in
   let%lwt res =
-    Db.find_opt req pv
+    Db.collect_list req pv
     |> Lwt_result.map_err Caqti_error.show
     |> Lwt.map CCResult.get_or_failwith
   in
   Lwt.return
   @@
   match res with
-  | Some res ->
-    Some (1, Dynparam.to_model model (Dynparam.add mt res Dynparam.empty))
-  | None -> None
+  | [ res ] ->
+    let v = Dynparam.instance model (Dynparam.Pack (pm, res)) in
+    Some (1, v)
+  | _ -> None
 ;;

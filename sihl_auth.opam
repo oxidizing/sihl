@@ -10,6 +10,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "ptime" {>= "1.0.0" & with-test}
   "ppx_inline_test" {>= "v0.15.0" & with-test}
   "ppx_fields_conv" {>= "v0.15.0" & with-test}
   "ppx_deriving_yojson" {>= "3.6.1" & with-test}

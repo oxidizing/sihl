@@ -4,12 +4,13 @@ module Ptime = struct
   let to_yojson ptime = `String (Ptime.to_rfc3339 ptime)
 
   let of_yojson json =
-    try
-      match Ptime.of_rfc3339 @@ Yojson.Safe.to_string json with
+    match json with
+    | `String string ->
+      (match Ptime.of_rfc3339 string with
       | Ok (ptime, _, _) -> Ok ptime
-      | Error _ -> Error "Invalid ptime provided"
-    with
-    | _ -> Error "Could not parse ptime"
+      | Error _ -> Error (Format.sprintf "Invalid ptime provided %s" string))
+    | json ->
+      Error (Format.sprintf "Invalid ptime provided %s" (Yojson.Safe.show json))
   ;;
 end
 

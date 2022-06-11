@@ -1,4 +1,11 @@
 (library
  (name model)
  (public_name sihl.model)
- (libraries ptime yojson fieldslib containers caqti-lwt containers-data))
+ (libraries
+  ptime
+  yojson
+  fieldslib
+  containers
+  caqti-lwt
+  containers-data
+  ptime.clock.os))

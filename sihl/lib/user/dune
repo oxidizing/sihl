@@ -2,7 +2,7 @@
  (name user)
  (public_name sihl.user)
  (libraries sihl.model sihl.config lwt)
-(preprocess
+ (preprocess
   (pps
    ppx_inline_test
    ppx_assert

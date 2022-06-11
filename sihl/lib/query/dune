@@ -4,8 +4,7 @@
  (modules query query_sql query_pure)
  (libraries sihl.config sihl.model)
  (preprocess
-  (pps
-   lwt_ppx)))
+  (pps lwt_ppx)))
 
 (library
  (name query_test)

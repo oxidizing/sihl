@@ -16,7 +16,7 @@ module A = struct
       ]
   ;;
 
-  let t = Model.create to_yojson of_yojson "a_models" Fields.names schema
+  let t = Model.create to_yojson of_yojson "query_models" Fields.names schema
 end
 
 let%test_unit "insert sql" =
@@ -28,14 +28,14 @@ let%test_unit "insert sql" =
   [%test_result: string]
     sql
     ~expect:
-      "INSERT INTO a_models (int, bool, string, timestamp) VALUES (?, ?, ?, ?) \
-       RETURNING id"
+      "INSERT INTO query_models (int, bool, string, timestamp) VALUES (?, ?, \
+       ?, ?) RETURNING id"
 ;;
 
 let%test_unit "select sql" =
   let open Test.Assert in
   let sql = Query.(show (all A.t |> where_int A.Fields.int eq 4)) in
-  [%test_result: string] sql ~expect:"SELECT * FROM a_models WHERE int = ?"
+  [%test_result: string] sql ~expect:"SELECT * FROM query_models WHERE int = ?"
 ;;
 
 let%test_unit "select nested filters sql" =
@@ -51,6 +51,6 @@ let%test_unit "select nested filters sql" =
   [%test_result: string]
     sql
     ~expect:
-      "SELECT * FROM a_models WHERE ((int = ? OR (int > ? AND int < ?)) AND \
-       int = ?)"
+      "SELECT * FROM query_models WHERE ((int = ? OR (int > ? AND int < ?)) \
+       AND int = ?)"
 ;;
