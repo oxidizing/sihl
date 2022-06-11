@@ -6,40 +6,42 @@ module Dynparam = struct
   let empty = Pack (Caqti_type.unit, ())
   let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
 
-  let instance (model : 'a Model.t) (Pack (t, x)) : 'a =
+  let instance (model : 'a Model.t) (Pack (t, x)) : int * 'a =
     let rec loop
         : type a.
           a Caqti_type.t
           -> a
           -> Model.any_field list
           -> (string * Yojson.Safe.t) list
-          -> (string * Yojson.Safe.t) list
+          -> int option
+          -> int option * (string * Yojson.Safe.t) list
       =
-     fun t x fields result ->
+     fun t x fields result id ->
+      (* print_endline @@ Caqti_type.show t; *)
       (* print_endline *)
       (* @@ (CCList.head_opt fields *)
       (*    |> Option.map Model.field_name *)
       (*    |> Option.value ~default:""); *)
       (* print_endline @@ Yojson.Safe.to_string (`Assoc result); *)
-      (* print_endline @@ Caqti_type.show t; *)
       (* print_endline "\n\n\n"; *)
       match t, x, fields with
-      | Caqti_type.Unit, (), [] -> result
+      | Caqti_type.Unit, (), [] -> id, result
+      | Caqti_type.Field Caqti_type.Int, v, [] -> Some v, result
       | Caqti_type.(Field String), v, AnyField (name, (_, Email _)) :: _ ->
-        List.cons (name, `String v) result
+        None, List.cons (name, `String v) result
       | Caqti_type.(Field String), v, AnyField (name, (_, String _)) :: _ ->
-        List.cons (name, `String v) result
+        None, List.cons (name, `String v) result
       | Caqti_type.(Field String), v, AnyField (name, (_, Enum _)) :: _ ->
-        List.cons (name, `List [ `String v ]) result
+        None, List.cons (name, `List [ `String v ]) result
       | Caqti_type.(Field Int), v, AnyField (name, _) :: _ ->
-        List.cons (name, `Int v) result
+        None, List.cons (name, `Int v) result
       | Caqti_type.(Field Bool), v, AnyField (name, (_, Boolean _)) :: _ ->
-        List.cons (name, `Bool v) result
+        None, List.cons (name, `Bool v) result
       | Caqti_type.(Field Ptime), v, AnyField (name, (_, Timestamp _)) :: _ ->
-        List.cons (name, Model.Ptime.to_yojson v) result
+        None, List.cons (name, Model.Ptime.to_yojson v) result
       | Caqti_type.(Tup2 (t2, t)), (vs, v), field :: fields ->
-        let result = loop t v [ field ] result in
-        loop t2 vs fields result
+        let id, result = loop t v [ field ] result id in
+        loop t2 vs fields result id
       | type_, _, AnyField (name, _) :: _ ->
         failwith
         @@ Format.sprintf
@@ -47,15 +49,22 @@ module Dynparam = struct
              name
              (Caqti_type.show type_)
              (List.length fields)
-      | _, _, [] -> result
+      | _, _, [] -> id, result
     in
-    let json = `Assoc (loop t x (List.rev model.fields) []) in
-    (* print_endline (Yojson.Safe.show json); *)
-    (* print_endline (json |> Yojson.Safe.to_string); *)
-    json
-    |> model.of_yojson
-    |> Result.map_error @@ Format.sprintf "failed to decode dynparam %s"
-    |> CCResult.get_or_failwith
+    let id, fields = loop t x (List.rev model.fields) [] None in
+    match id with
+    | None -> failwith @@ Format.sprintf "no id found for model %s" model.name
+    | Some id ->
+      let json = `Assoc fields in
+      (* print_endline (Yojson.Safe.show json); *)
+      (* print_endline (json |> Yojson.Safe.to_string); *)
+      let v =
+        json
+        |> model.of_yojson
+        |> Result.map_error @@ Format.sprintf "failed to decode dynparam %s"
+        |> CCResult.get_or_failwith
+      in
+      id, v
   ;;
 end
 
@@ -233,11 +242,8 @@ let find_opt
     |> Lwt_result.map_err Caqti_error.show
     |> Lwt.map CCResult.get_or_failwith
   in
-  Lwt.return
-  @@
   match res with
   | [ res ] ->
-    let v = Dynparam.instance model (Dynparam.Pack (pm, res)) in
-    Some (1, v)
-  | _ -> None
+    Lwt.return_some (Dynparam.instance model (Dynparam.Pack (pm, res)))
+  | _ -> Lwt.return_none
 ;;

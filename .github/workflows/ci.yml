@@ -6,11 +6,11 @@ jobs:
     name: Build and test
     services:
       postgres:
-        image: postgres:12.2
+        image: postgres:13
         env:
-          POSTGRES_USER: admin
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: dev
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
       mariadb:
