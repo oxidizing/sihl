@@ -1,4 +1,22 @@
 (library
  (name query)
  (public_name sihl.query)
- (libraries sihl.config sihl.model))
+ (modules query query_sql query_pure)
+ (libraries sihl.config sihl.model)
+ (preprocess
+  (pps
+   lwt_ppx)))
+
+(library
+ (name query_test)
+ (modules test_sql)
+ (libraries sihl.query sihl.test ptime ptime.clock.os)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson)))

@@ -29,7 +29,7 @@ module All () = struct
             ~created_at:(Ptime_clock.now ())
             ~updated_at:(Ptime_clock.now ())
         in
-        let%lwt user_id = insert User.t user conn in
+        let%lwt user_id = insert User.t user |> execute conn in
         let customer : Customer.t =
           Customer.make
             ~tier:Premium
@@ -39,10 +39,10 @@ module All () = struct
             ~created_at:(Ptime_clock.now ())
             ~updated_at:(Ptime_clock.now ())
         in
-        let%lwt pk = insert Customer.t customer conn in
+        let%lwt pk = insert Customer.t customer |> execute conn in
         let%lwt pk_queried, customer_queried =
           all Customer.t
-          |> and_where Customer.Fields.street eq "Some street 13"
+          |> where_string Customer.Fields.street eq "Some street 13"
           |> find conn
         in
         [%test_result: string] customer_queried.street ~expect:"Some street 13";

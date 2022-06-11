@@ -298,6 +298,17 @@ let field_data (schema : 'a t) (fields : (string * Yojson.Safe.t) list)
   loop schema.fields fields []
 ;;
 
+let fields (type a) (model : a t) (v : a) : (any_field * Yojson.Safe.t) list =
+  match model.to_yojson v with
+  | `Assoc actual_fields ->
+    (match field_data model actual_fields with
+    | Ok fields -> fields
+    | Error msg -> failwith msg)
+  | _ ->
+    failwith
+    @@ Format.sprintf "provided data for model %s is not a record" model.name
+;;
+
 let validate (type a) (schema : a t) (model : a) : model_validation =
   let model_errors = schema.validate model in
   match schema.to_yojson model with
