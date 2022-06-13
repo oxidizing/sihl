@@ -1,17 +1,14 @@
 (* TODO consider moving this to Sihl.Form *)
 type widget = TextArea
-type input_field = Model.any_field * widget option * string
-
-type input_field_validated =
-  Model.any_field * widget option * string * string list
-
-type 'a default = ('a, input_field) Model.record
+type input_field = Model.any_field * widget option * string option
+type input_field_errors = Model.any_field * widget option * string * string list
+type 'a unsafe = ('a, input_field) Model.record
 type 'a valid = 'a * ('a, input_field) Model.record
-type 'a invalid = 'a * ('a, input_field_validated) Model.record
+type 'a invalid = string * 'a * ('a, input_field_errors) Model.record
 type 'a validated = ('a valid, 'a invalid) Result.t
 
 type 'a t =
-  | Default of 'a default
+  | Unsafe of 'a unsafe
   | Validated of 'a validated
 
 type generic =
@@ -19,7 +16,7 @@ type generic =
   ; fields : input_field list
   }
 
-let generic (form : 'a default) : generic =
+let generic (form : 'a unsafe) : generic =
   { name = form.name; fields = form.fields }
 ;;
 
@@ -30,7 +27,7 @@ let int
     (record_field : ('perm, 'record, int) Model.record_field)
     : input_field
   =
-  Model.int ?default ?nullable record_field, widget, ""
+  Model.int ?default ?nullable record_field, widget, None
 ;;
 
 let timestamp
@@ -41,7 +38,7 @@ let timestamp
     (record_field : ('perm, 'record, Ptime.t) Model.record_field)
     : input_field
   =
-  Model.timestamp ?default ?nullable ?update record_field, widget, ""
+  Model.timestamp ?default ?nullable ?update record_field, widget, None
 ;;
 
 let string
@@ -51,10 +48,10 @@ let string
     (record_field : ('perm, 'record, string) Model.record_field)
     : input_field
   =
-  Model.string ?default ?nullable record_field, widget, ""
+  Model.string ?default ?nullable record_field, widget, None
 ;;
 
-let validate_form (form : 'a default) : 'a default =
+let validate_form (form : 'a unsafe) : 'a unsafe =
   let schema_field_names =
     List.map (fun (field, _, _) -> Model.field_name field) form.fields
   in
@@ -81,12 +78,12 @@ let create
     (name : string)
     (field_names : string list)
     (fields : input_field list)
-    : 'a default
+    : 'a unsafe
   =
-  let form : 'a default =
+  let form : 'a unsafe =
     { name; fields; field_names; to_yojson; of_yojson; validate }
   in
-  let form : 'a default = form |> validate_form in
+  let form : 'a unsafe = form |> validate_form in
   if Hashtbl.mem forms name
   then
     failwith
@@ -113,9 +110,9 @@ let of_model
                  String.equal (Fieldslib.Field.name record_field) name)
                widgets
              |> Option.map snd
-           , "" ))
+           , None ))
   in
-  let form : 'a default =
+  let form : 'a unsafe =
     { name = record.name ^ "_form"
     ; fields = input_fields
     ; field_names = record.field_names
@@ -128,7 +125,7 @@ let of_model
   form
 ;;
 
-let validate (_ : 'a default) (_ : (string * string) list) : 'a validated =
+let validate (_ : 'a unsafe) (_ : (string * string) list) : 'a validated =
   failwith "validate()"
 ;;
 

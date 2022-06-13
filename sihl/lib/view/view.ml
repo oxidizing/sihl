@@ -1,5 +1,3 @@
-(* TODO consider moving this to Sihl.View *)
-
 let html_to_string (html : Tyxml.Html.doc) : string =
   Format.asprintf "%a" (Tyxml.Html.pp ()) html
 ;;
@@ -10,14 +8,14 @@ let form
       fun _ _ -> Lwt.return ())
     (on_valid : Dream.request -> a -> unit Lwt.t)
     (success_url : Dream.request -> string Lwt.t)
-    (form : a Form.default)
+    (form : a Form.unsafe)
     (template : Dream.request -> a Form.t -> Tyxml.Html.doc)
     : string -> Dream.route
   =
  fun url ->
   let get =
     Dream.get url (fun request ->
-        Dream.html (html_to_string (template request (Default form))))
+        Dream.html (html_to_string (template request (Unsafe form))))
   in
   let post =
     Dream.post url (fun request ->
