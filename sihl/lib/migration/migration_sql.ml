@@ -1,7 +1,7 @@
 let field_to_sql
     (db : Config.database)
     (model : Model.generic)
-    (field : Model.any_field)
+    (field : Model.field)
     : string * string list
   =
   let open Model in

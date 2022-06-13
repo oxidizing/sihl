@@ -55,8 +55,8 @@ type _ type_field =
       -> 'a type_field
 
 type meta = { nullable : bool }
-type 'a field = meta * 'a type_field
-type any_field = AnyField : string * 'a field -> any_field
+type 'a model_field = meta * 'a type_field
+type field = AnyField : string * 'a model_field -> field
 
 type primary_key = (* TODO support UUID as well *)
   | Serial of string
@@ -71,12 +71,12 @@ type ('a, 'field) record =
   ; validate : 'a -> string list
   }
 
-type 'a t = primary_key * ('a, any_field) record
+type 'a t = primary_key * ('a, field) record
 
 type generic =
   { name : string
   ; pk : primary_key
-  ; fields : any_field list
+  ; fields : field list
   }
 
 type validation_error =
@@ -85,7 +85,7 @@ type validation_error =
   ; params : (string * string) list
   }
 
-type model_validation = string list * (string * validation_error list) list
+type invalid = string list * (string * validation_error list) list
 
 let models : (string, generic) Hashtbl.t = Hashtbl.create 100
 let field_name (AnyField (name, _)) = name
@@ -115,7 +115,7 @@ let is_foreign_key = function
 (* ;; *)
 
 (* let foo field = *)
-(*   match (field : any_field) with *)
+(*   match (field : field) with *)
 (*   | AnyField (name, field) -> *)
 (*     (match field with *)
 (*     | Integer -> () *)
@@ -228,7 +228,7 @@ let create
     of_yojson
     (name : string)
     (fields : string list)
-    (schema : any_field list)
+    (schema : field list)
     : 'a t
   =
   let model =
@@ -248,7 +248,7 @@ let create
   model
 ;;
 
-let validate_field (field : any_field * Yojson.Safe.t)
+let validate_field (field : field * Yojson.Safe.t)
     : (string * validation_error list) option
   =
   (* TODO finish implementing field validation *)
@@ -269,7 +269,7 @@ let validate_field (field : any_field * Yojson.Safe.t)
 ;;
 
 let field_data (model : 'a t) (fields : (string * Yojson.Safe.t) list)
-    : ((any_field * Yojson.Safe.t) list, string) Result.t
+    : ((field * Yojson.Safe.t) list, string) Result.t
   =
   let _, record = model in
   let rec loop s_fields a_fields result =
@@ -289,7 +289,7 @@ let field_data (model : 'a t) (fields : (string * Yojson.Safe.t) list)
   loop record.fields fields []
 ;;
 
-let fields (type a) (model : a t) (v : a) : (any_field * Yojson.Safe.t) list =
+let fields (type a) (model : a t) (v : a) : (field * Yojson.Safe.t) list =
   let _, record = model in
   match record.to_yojson v with
   | `Assoc actual_fields ->
@@ -301,7 +301,7 @@ let fields (type a) (model : a t) (v : a) : (any_field * Yojson.Safe.t) list =
     @@ Format.sprintf "provided data for model %s is not a record" record.name
 ;;
 
-let validate (type a) (model : a t) (v : a) : model_validation =
+let validate (type a) (model : a t) (v : a) : invalid =
   let _, record = model in
   let model_errors = record.validate v in
   match record.to_yojson v with

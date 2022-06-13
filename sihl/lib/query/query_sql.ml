@@ -12,7 +12,7 @@ module Dynparam = struct
         : type a.
           a Caqti_type.t
           -> a
-          -> Model.any_field list
+          -> Model.field list
           -> (string * Yojson.Safe.t) list
           -> int option
           -> int option * (string * Yojson.Safe.t) list
@@ -123,7 +123,7 @@ let insert_stmt (model : 'a Model.t) : string =
   let _, record = model in
   let cols_stmt, vals_stmt =
     record.fields
-    |> List.map (fun (AnyField (name, _) : Model.any_field) -> name, "?")
+    |> List.map (fun (AnyField (name, _) : Model.field) -> name, "?")
     |> List.split
   in
   let cols_stmt = String.concat ", " cols_stmt in
@@ -148,7 +148,7 @@ let insert
   let stmt = insert_stmt model in
   let dyn =
     List.fold_left
-      (fun a (b : Model.any_field * Yojson.Safe.t) ->
+      (fun a (b : Model.field * Yojson.Safe.t) ->
         Model.(
           Caqti_type.(
             match b with

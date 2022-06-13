@@ -2,7 +2,7 @@
  (name view)
  (public_name sihl.view)
  (modules view)
- (libraries sihl.config sihl.model sihl.form dream tyxml)
+ (libraries sihl.query sihl.config sihl.model sihl.form dream tyxml)
  (preprocess
   (pps lwt_ppx)))
 

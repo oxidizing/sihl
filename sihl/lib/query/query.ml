@@ -41,6 +41,16 @@ let gt : op = Gt
 let lt : op = Lt
 let like : op = Like
 
+let field_int (name : string) : ('perm, 'a, int) Model.record_field =
+  Fieldslib.Field.Field
+    { force_variance = (fun _ -> ())
+    ; name
+    ; setter = None
+    ; getter = (fun _ -> 0)
+    ; fset = (fun a _ -> a)
+    }
+;;
+
 let where_int
     ?(join : string list = [])
     (field : ('perm, 'a, int) Model.record_field)
@@ -140,7 +150,10 @@ let find
   | None -> failwith @@ Format.sprintf "no %s found" record.name
 ;;
 
-let model (name : string) =
-  name |> ignore;
-  failwith "model"
+let find_all (type a) (conn : Caqti_lwt.connection) (query : a read)
+    : a list Lwt.t
+  =
+  conn |> ignore;
+  query |> ignore;
+  failwith "find_all()"
 ;;

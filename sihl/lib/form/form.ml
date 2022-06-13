@@ -1,10 +1,16 @@
-(* TODO consider moving this to Sihl.Form *)
 type widget = TextArea
-type input_field = Model.any_field * widget option * string option
-type input_field_errors = Model.any_field * widget option * string * string list
-type 'a unsafe = ('a, input_field) Model.record
-type 'a valid = 'a * ('a, input_field) Model.record
-type 'a invalid = string * 'a * ('a, input_field_errors) Model.record
+
+type field =
+  { typ : Model.field
+  ; widget : widget option
+  ; value : string option
+  ; errors : string list
+  }
+
+(* TODO consider other names: dirty *)
+type 'a unsafe = ('a, field) Model.record
+type 'a valid = 'a * ('a, field) Model.record
+type 'a invalid = string * ('a, field) Model.record
 type 'a validated = ('a valid, 'a invalid) Result.t
 
 type 'a t =
@@ -13,7 +19,7 @@ type 'a t =
 
 type generic =
   { name : string
-  ; fields : input_field list
+  ; fields : field list
   }
 
 let generic (form : 'a unsafe) : generic =
@@ -25,9 +31,13 @@ let int
     ?default
     ?nullable
     (record_field : ('perm, 'record, int) Model.record_field)
-    : input_field
+    : field
   =
-  Model.int ?default ?nullable record_field, widget, None
+  { typ = Model.int ?default ?nullable record_field
+  ; widget
+  ; value = None
+  ; errors = []
+  }
 ;;
 
 let timestamp
@@ -36,9 +46,13 @@ let timestamp
     ?nullable
     ?update
     (record_field : ('perm, 'record, Ptime.t) Model.record_field)
-    : input_field
+    : field
   =
-  Model.timestamp ?default ?nullable ?update record_field, widget, None
+  { typ = Model.timestamp ?default ?nullable ?update record_field
+  ; widget
+  ; value = None
+  ; errors = []
+  }
 ;;
 
 let string
@@ -46,14 +60,18 @@ let string
     ?default
     ?nullable
     (record_field : ('perm, 'record, string) Model.record_field)
-    : input_field
+    : field
   =
-  Model.string ?default ?nullable record_field, widget, None
+  { typ = Model.string ?default ?nullable record_field
+  ; widget
+  ; value = None
+  ; errors = []
+  }
 ;;
 
 let validate_form (form : 'a unsafe) : 'a unsafe =
   let schema_field_names =
-    List.map (fun (field, _, _) -> Model.field_name field) form.fields
+    List.map (fun { typ; _ } -> Model.field_name typ) form.fields
   in
   let field_names = form.field_names in
   if CCList.equal
@@ -77,7 +95,7 @@ let create
     of_yojson
     (name : string)
     (field_names : string list)
-    (fields : input_field list)
+    (fields : field list)
     : 'a unsafe
   =
   let form : 'a unsafe =
@@ -101,16 +119,19 @@ let of_model
     (model : 'a Model.t)
   =
   let _, record = model in
-  let input_fields : input_field list =
+  let input_fields : field list =
     record.fields
-    |> List.map (fun (Model.AnyField (name, _) as any_field) ->
-           ( any_field
-           , List.find_opt
-               (fun (record_field, _) ->
-                 String.equal (Fieldslib.Field.name record_field) name)
-               widgets
-             |> Option.map snd
-           , None ))
+    |> List.map (fun (Model.AnyField (name, _) as field) ->
+           { typ = field
+           ; widget =
+               List.find_opt
+                 (fun (record_field, _) ->
+                   String.equal (Fieldslib.Field.name record_field) name)
+                 widgets
+               |> Option.map snd
+           ; value = None
+           ; errors = []
+           })
   in
   let form : 'a unsafe =
     { name = record.name ^ "_form"
