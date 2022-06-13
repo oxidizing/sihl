@@ -8,7 +8,7 @@
 
 (library
  (name web_test)
- (modules test_web test_model test_form)
+ (modules test_web test_model test_form test_template test_view test_url)
  (libraries sihl.query sihl.model sihl.web)
  (inline_tests)
  (preprocess
