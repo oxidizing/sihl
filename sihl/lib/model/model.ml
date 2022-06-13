@@ -328,3 +328,43 @@ let eq (type a) (model : a t) (a : a) (b : a) : bool =
   let _, record = model in
   Yojson.Safe.equal (record.to_yojson a) (record.to_yojson b)
 ;;
+
+let field_int (name : string) : ('perm, 'a, int) record_field =
+  Fieldslib.Field.Field
+    { force_variance = (fun _ -> ())
+    ; name
+    ; setter = None
+    ; getter = (fun _ -> 0)
+    ; fset = (fun a _ -> a)
+    }
+;;
+
+let field_bool (name : string) : ('perm, 'a, bool) record_field =
+  Fieldslib.Field.Field
+    { force_variance = (fun _ -> ())
+    ; name
+    ; setter = None
+    ; getter = (fun _ -> false)
+    ; fset = (fun a _ -> a)
+    }
+;;
+
+let field_string (name : string) : ('perm, 'a, string) record_field =
+  Fieldslib.Field.Field
+    { force_variance = (fun _ -> ())
+    ; name
+    ; setter = None
+    ; getter = (fun _ -> "")
+    ; fset = (fun a _ -> a)
+    }
+;;
+
+let field_ptime (name : string) : ('perm, 'a, Ptime.t) record_field =
+  Fieldslib.Field.Field
+    { force_variance = (fun _ -> ())
+    ; name
+    ; setter = None
+    ; getter = (fun _ -> Ptime_clock.now ())
+    ; fset = (fun a _ -> a)
+    }
+;;

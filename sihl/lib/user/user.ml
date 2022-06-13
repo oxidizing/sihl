@@ -32,6 +32,27 @@ let schema =
 
 let t = Model.create to_yojson of_yojson "users" Fields.names schema
 
-type request_user =
+type request =
   | AnonymousUser
   | AuthenticatedUser of t
+
+module View = struct
+  let login_required
+      ?(login_url : string = Config.login_url ())
+      (view : string -> Dream.route)
+      : string -> Dream.route
+    =
+   fun url ->
+    Dream.get "" (fun req ->
+        match Dream.session_field req "user" with
+        | None -> Dream.redirect req login_url
+        | Some user_id ->
+          let%lwt user =
+            Dream.sql req (fun conn ->
+                Query.find_by_id conn t (int_of_string user_id))
+          in
+          user |> ignore;
+          (* TODO how do we pas the user forward ? *)
+          Dream.router [ view url ] req)
+ ;;
+end

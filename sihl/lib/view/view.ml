@@ -2,32 +2,46 @@ let html_to_string (html : Tyxml.Html.doc) : string =
   Format.asprintf "%a" (Tyxml.Html.pp ()) html
 ;;
 
+let template
+    ?(context = fun _ -> Lwt.return None)
+    (template : 'a option -> Dream.request -> Tyxml.Html.doc Lwt.t)
+    : string -> Dream.route
+  =
+ fun url ->
+  Dream.get url (fun req ->
+      let%lwt ctx = context req in
+      let%lwt template = template ctx req in
+      Dream.html (html_to_string template))
+;;
+
 let form
-    (type a)
+    (type a b)
+    ?(context : Dream.request -> b option Lwt.t = fun _ -> Lwt.return None)
     ?(on_invalid : Dream.request -> a Form.invalid -> unit Lwt.t =
       fun _ _ -> Lwt.return ())
     (on_valid : Dream.request -> a -> unit Lwt.t)
     (success_url : Dream.request -> string Lwt.t)
     (form : a Form.unsafe)
-    (template : Dream.request -> a Form.t -> Tyxml.Html.doc)
+    (template : Dream.request -> b option -> a Form.t -> Tyxml.Html.doc)
     : string -> Dream.route
   =
  fun url ->
   let get =
-    Dream.get url (fun request ->
-        Dream.html (html_to_string (template request (Unsafe form))))
+    Dream.get url (fun req ->
+        let%lwt ctx = context req in
+        Dream.html (html_to_string (template req ctx (Unsafe form))))
   in
   let post =
-    Dream.post url (fun request ->
-        match%lwt Dream.form request with
+    Dream.post url (fun req ->
+        match%lwt Dream.form req with
         | `Ok form_data ->
           (match Form.validate form form_data with
           | Ok (a, _) ->
-            let%lwt () = on_valid request a in
-            let%lwt success_url = success_url request in
-            Dream.redirect request success_url
+            let%lwt () = on_valid req a in
+            let%lwt success_url = success_url req in
+            Dream.redirect req success_url
           | Error form ->
-            let%lwt () = on_invalid request form in
+            let%lwt () = on_invalid req form in
             Dream.empty `Bad_Request)
         | _ -> Dream.empty `Bad_Request)
   in
@@ -45,24 +59,26 @@ let create_on_valid_default
 ;;
 
 let create
-    (type a)
+    (type a b)
+    ?(context : (Dream.request -> b option Lwt.t) option)
     ?(on_valid : Dream.request -> a Model.t -> a -> unit Lwt.t =
       create_on_valid_default)
     (model : a Model.t)
     (success_url : Dream.request -> string Lwt.t)
-    (template : Dream.request -> a Form.t -> Tyxml.Html.doc)
+    (template : Dream.request -> b option -> a Form.t -> Tyxml.Html.doc)
     : string -> Dream.route
   =
   let on_valid req a = on_valid req model a in
   let model_form = Form.of_model model in
-  fun url -> form on_valid success_url model_form template url
+  fun url -> form ?context on_valid success_url model_form template url
 ;;
 
 let list
-    (type a)
+    (type a b)
+    ?(context : Dream.request -> b option Lwt.t = fun _ -> Lwt.return None)
     ?(model : a Model.t option)
     ?(query : a Query.read option)
-    (template : Dream.request -> a list -> Tyxml.Html.doc)
+    (template : Dream.request -> b option -> a list -> Tyxml.Html.doc)
     : string -> Dream.route
   =
  fun url ->
@@ -72,18 +88,19 @@ let list
             match model, query with
             | Some model, _ -> Query.(all model |> find_all conn)
             | None, Some query -> Query.find_all conn query
-            | None, None ->
-              failwith "Sihl.View.list needs either a model or a query")
+            | None, None -> failwith "list view needs either a model or a query")
       in
-      Dream.respond (html_to_string (template req a_list)))
+      let%lwt ctx = context req in
+      Dream.html (html_to_string (template req ctx a_list)))
 ;;
 
 let detail
-    (type a)
+    (type a b)
+    ?(context : Dream.request -> b option Lwt.t = fun _ -> Lwt.return None)
     ?(pk = "pk")
     ?(model : a Model.t option)
     ?(query : a Query.read option)
-    (template : Dream.request -> a -> Tyxml.Html.doc)
+    (template : Dream.request -> b option -> a -> Tyxml.Html.doc)
     : string -> Dream.route
   =
  fun url ->
@@ -93,12 +110,14 @@ let detail
         Dream.sql req (fun conn ->
             match model, query with
             | Some model, _ ->
-              Query.(all model |> where_int (field_int "id") eq pk |> find conn)
+              Query.(
+                all model |> where_int (Model.field_int "id") eq pk |> find conn)
             | None, Some query -> Query.find conn query
             | None, None ->
-              failwith "Sihl.View.list needs either a model or a query")
+              failwith "detail view needs either a model or a query")
       in
-      Dream.respond (html_to_string (template req a)))
+      let%lwt ctx = context req in
+      Dream.html (html_to_string (template req ctx a)))
 ;;
 
 let reverse ?(params : (string * string) list = []) (url : string) =

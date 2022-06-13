@@ -6,6 +6,7 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module type CONFIG = sig
   val database_url : string
+  val login_url : string
 end
 
 let config = ref None
@@ -50,3 +51,10 @@ let absolute_path (project_path : string) =
   (* TODO implement *)
   project_path
 ;;
+
+let login_url () : string =
+  let module Config = (val get_config () : CONFIG) in
+  Config.login_url
+;;
+
+module Default = Config_default

@@ -1,8 +1,8 @@
 open Tyxml;
 
-let order_dispatch = (request: Dream.request, form: Form.t(_)) =>
+let order_dispatch = (request: Dream.request, _, form: Form.t(_)) =>
   <html>
-    <head> <title> {Html.txt("Order dispatch")} </title> </head>
+    <head> <title> {Html.txt("Dispatch")} </title> </head>
     <body>
       <div>
         <form method=`Post>
@@ -14,9 +14,9 @@ let order_dispatch = (request: Dream.request, form: Form.t(_)) =>
     </body>
   </html>;
 
-let order_create = (request: Dream.request, form: Form.t(_)) =>
+let order_create = (request: Dream.request, _, form: Form.t(_)) =>
   <html>
-    <head> <title> {Html.txt("Order create")} </title> </head>
+    <head> <title> {Html.txt("Create")} </title> </head>
     <body>
       <div>
         <form method=`Post>
@@ -28,10 +28,22 @@ let order_create = (request: Dream.request, form: Form.t(_)) =>
     </body>
   </html>;
 
-let order_list = Obj.magic();
-
-let order_detail = (_: Dream.request, o: Test_model.Order.t) =>
+let order_list = (_, _, orders: list(Test_model.Order.t)) =>
   <html>
-    <head> <title> {Html.txt("Order detail")} </title> </head>
+    <head> <title> {Html.txt("Orders")} </title> </head>
+    <body>
+      <div>
+        ...{List.map(
+          (order: Test_model.Order.t) =>
+            <span> {Html.txt(order.description)} </span>,
+          orders,
+        )}
+      </div>
+    </body>
+  </html>;
+
+let order_detail = (_, _, o: Test_model.Order.t) =>
+  <html>
+    <head> <title> {Html.txt("Detail")} </title> </head>
     <body> <div> <div> {Html.txt(o.description)} </div> </div> </body>
   </html>;

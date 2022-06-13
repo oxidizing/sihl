@@ -1,12 +1,6 @@
 (library
  (name user)
  (public_name sihl.user)
- (libraries sihl.model sihl.config lwt)
+ (libraries sihl.query sihl.model sihl.config lwt dream)
  (preprocess
-  (pps
-   ppx_inline_test
-   ppx_assert
-   lwt_ppx
-   ppx_fields_conv
-   ppx_deriving.make
-   ppx_deriving_yojson)))
+  (pps lwt_ppx ppx_fields_conv ppx_deriving.make ppx_deriving_yojson)))
