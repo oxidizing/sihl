@@ -133,10 +133,11 @@ let find
     (`Select (model, select) : a read)
     : (int * a) Lwt.t
   =
+  let _, record = model in
   let%lwt v = Sql.find_opt conn model select in
   match v with
   | Some v -> Lwt.return v
-  | None -> failwith @@ Format.sprintf "no %s found" model.name
+  | None -> failwith @@ Format.sprintf "no %s found" record.name
 ;;
 
 let model (name : string) =

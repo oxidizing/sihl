@@ -7,6 +7,7 @@ module Dynparam = struct
   let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
 
   let instance (model : 'a Model.t) (Pack (t, x)) : int * 'a =
+    let _, record = model in
     let rec loop
         : type a.
           a Caqti_type.t
@@ -51,16 +52,16 @@ module Dynparam = struct
              (List.length fields)
       | _, _, [] -> id, result
     in
-    let id, fields = loop t x (List.rev model.fields) [] None in
+    let id, fields = loop t x (List.rev record.fields) [] None in
     match id with
-    | None -> failwith @@ Format.sprintf "no id found for model %s" model.name
+    | None -> failwith @@ Format.sprintf "no id found for model %s" record.name
     | Some id ->
       let json = `Assoc fields in
       (* print_endline (Yojson.Safe.show json); *)
       (* print_endline (json |> Yojson.Safe.to_string); *)
       let v =
         json
-        |> model.of_yojson
+        |> record.of_yojson
         |> Result.map_error @@ Format.sprintf "failed to decode dynparam %s"
         |> CCResult.get_or_failwith
       in
@@ -69,6 +70,7 @@ module Dynparam = struct
 end
 
 let select_stmt (model : 'a Model.t) (select : P.select) =
+  let _, record = model in
   let rec where (filter : P.filter) =
     match filter with
     (* TODO implement join *)
@@ -110,7 +112,7 @@ let select_stmt (model : 'a Model.t) (select : P.select) =
   in
   Format.sprintf
     "SELECT * FROM %s%s%s%s%s"
-    model.name
+    record.name
     where
     order_by
     limit
@@ -118,8 +120,9 @@ let select_stmt (model : 'a Model.t) (select : P.select) =
 ;;
 
 let insert_stmt (model : 'a Model.t) : string =
+  let _, record = model in
   let cols_stmt, vals_stmt =
-    model.fields
+    record.fields
     |> List.map (fun (AnyField (name, _) : Model.any_field) -> name, "?")
     |> List.split
   in
@@ -127,7 +130,7 @@ let insert_stmt (model : 'a Model.t) : string =
   let vals_stmt = String.concat ", " vals_stmt in
   Format.sprintf
     "INSERT INTO %s (%s) VALUES (%s) RETURNING id"
-    model.name
+    record.name
     cols_stmt
     vals_stmt
 ;;
@@ -141,6 +144,7 @@ let insert
     (v : a)
     : int Lwt.t
   =
+  let _, record = model in
   let stmt = insert_stmt model in
   let dyn =
     List.fold_left
@@ -160,7 +164,7 @@ let insert
               | Ok (v, _, _) -> Dynparam.add ptime v a
               | Error _ ->
                 failwith
-                @@ Format.sprintf "invalid ptime in model %s: %s" model.name v)
+                @@ Format.sprintf "invalid ptime in model %s: %s" record.name v)
             | AnyField (name, _), v ->
               failwith
               @@ Format.sprintf
@@ -168,7 +172,7 @@ let insert
                     inserting"
                    name
                    (Yojson.Safe.to_string v)
-                   model.name)))
+                   name)))
       Dynparam.empty
       (List.rev (Model.fields model v))
   in
@@ -198,6 +202,7 @@ let find_opt
     (select : P.select)
     : (int * a) option Lwt.t
   =
+  let _, record = model in
   let stmt = select_stmt model select in
   let rec where filter dyn =
     match filter with
@@ -232,7 +237,7 @@ let find_opt
         | Model.AnyField (_, (_, Model.Boolean _)) ->
           Dynparam.add Caqti_type.bool false a)
       (Dynparam.Pack (Caqti_type.int, 0))
-      model.fields
+      record.fields
   in
   let (Dynparam.Pack (pm, _)) = dyn_model in
   (* print_endline @@ Caqti_type.show pm; *)

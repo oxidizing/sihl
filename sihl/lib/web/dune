@@ -1,0 +1,21 @@
+(library
+ (name web)
+ (public_name sihl.web)
+ (modules web)
+ (libraries sihl.config sihl.model dream tyxml)
+ (preprocess
+  (pps lwt_ppx)))
+
+(library
+ (name web_test)
+ (modules test_web test_model test_form)
+ (libraries sihl.query sihl.model sihl.web)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson)))

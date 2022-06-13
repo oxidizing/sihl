@@ -54,26 +54,24 @@ type _ type_field =
       }
       -> 'a type_field
 
-type field_meta =
-  { primary_key : bool
-  ; nullable : bool
-  }
-
-type 'a field = field_meta * 'a type_field
+type meta = { nullable : bool }
+type 'a field = meta * 'a type_field
 type any_field = AnyField : string * 'a field -> any_field
 
 type primary_key = (* TODO support UUID as well *)
   | Serial of string
 
-type 'a t =
+type ('a, 'field) record =
   { to_yojson : 'a -> Yojson.Safe.t
   ; of_yojson : Yojson.Safe.t -> ('a, string) Result.t
   ; name : string
-  ; pk : primary_key
-  ; fields : any_field list
+  ; fields :
+      'field list (* TODO delete field_names, can be derived from fields *)
   ; field_names : string list
   ; validate : 'a -> string list
   }
+
+type 'a t = primary_key * ('a, any_field) record
 
 type generic =
   { name : string
@@ -125,37 +123,32 @@ let is_foreign_key = function
 (* ;; *)
 
 let foreign_key
-    ?(primary_key = false)
     ?(nullable = false)
     (on_delete : fk_on_delete)
     (model_name : string)
     (record_field : ('perm, 'record, int) record_field)
   =
-  let field =
-    { primary_key; nullable }, Foreign_key { model_name; on_delete }
-  in
+  let field = { nullable }, Foreign_key { model_name; on_delete } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
 
 let int
     ?default
-    ?(primary_key = false)
     ?(nullable = false)
     (record_field : ('perm, 'record, int) record_field)
   =
-  let field = { primary_key; nullable }, Integer { default } in
+  let field = { nullable }, Integer { default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
 
 let bool
     ?(default = false)
-    ?(primary_key = false)
     ?(nullable = false)
     (record_field : ('perm, 'record, bool) record_field)
   =
-  let field = { primary_key; nullable }, Boolean { default } in
+  let field = { nullable }, Boolean { default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
@@ -163,26 +156,22 @@ let bool
 let enum
     (type a)
     ?default
-    ?(primary_key = false)
     ?(nullable = false)
     (of_yojson : Yojson.Safe.t -> (a, string) Result.t)
     (to_yojson : a -> Yojson.Safe.t)
     (record_field : ('perm, 'record, 'a) record_field)
   =
-  let field =
-    { primary_key; nullable }, Enum { of_yojson; to_yojson; default }
-  in
+  let field = { nullable }, Enum { of_yojson; to_yojson; default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
 
 let email
     ?default
-    ?(primary_key = false)
     ?(nullable = false)
     (record_field : ('perm, 'record, 'a) record_field)
   =
-  let field = { primary_key; nullable }, Email { default } in
+  let field = { nullable }, Email { default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
@@ -190,46 +179,46 @@ let email
 let string
     ?default
     ?max_length
-    ?(primary_key = false)
     ?(nullable = false)
     (record_field : ('perm, 'record, 'a) record_field)
   =
-  let field = { primary_key; nullable }, String { max_length; default } in
+  let field = { nullable }, String { max_length; default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
 
 let timestamp
-    ?(primary_key = false)
     ?(nullable = false)
     ?default
     ?(update = false)
     (record_field : ('perm, 'record, 'a) record_field)
   =
-  let field = { primary_key; nullable }, Timestamp { default; update } in
+  let field = { nullable }, Timestamp { default; update } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;
 
 let generic (t : 'a t) : generic =
-  { name = t.name; pk = t.pk; fields = t.fields }
+  let pk, record = t in
+  { name = record.name; pk; fields = record.fields }
 ;;
 
 let equal _ _ _ = true
 
-let validate_model (schema : 'a t) : 'a t =
-  let schema_names = List.map field_name schema.fields in
-  let field_names = schema.field_names in
+let validate_model (model : 'a t) : 'a t =
+  let _, record = model in
+  let schema_names = List.map field_name record.fields in
+  let field_names = record.field_names in
   if CCList.equal
        String.equal
        (CCList.sort compare schema_names)
        (CCList.sort compare field_names)
-  then schema
+  then model
   else
     failwith
     @@ Format.sprintf
          "you did not list all fields of the model '%s' in the schema"
-         schema.name
+         record.name
 ;;
 
 let create
@@ -243,14 +232,14 @@ let create
     : 'a t
   =
   let model =
-    { name
-    ; pk
-    ; fields = schema
-    ; field_names = fields
-    ; to_yojson
-    ; of_yojson
-    ; validate
-    }
+    ( pk
+    , { name
+      ; fields = schema
+      ; field_names = fields
+      ; to_yojson
+      ; of_yojson
+      ; validate
+      } )
     |> validate_model
   in
   if Hashtbl.mem models name
@@ -279,9 +268,10 @@ let validate_field (field : any_field * Yojson.Safe.t)
   | _ -> None
 ;;
 
-let field_data (schema : 'a t) (fields : (string * Yojson.Safe.t) list)
+let field_data (model : 'a t) (fields : (string * Yojson.Safe.t) list)
     : ((any_field * Yojson.Safe.t) list, string) Result.t
   =
+  let _, record = model in
   let rec loop s_fields a_fields result =
     match s_fields, a_fields with
     | s :: _, [] -> Error (Format.sprintf "field %s not found" @@ field_name s)
@@ -296,25 +286,27 @@ let field_data (schema : 'a t) (fields : (string * Yojson.Safe.t) list)
       | None -> Error (Format.sprintf "field %s not found" @@ field_name s))
     | [], _ -> Ok result
   in
-  loop schema.fields fields []
+  loop record.fields fields []
 ;;
 
 let fields (type a) (model : a t) (v : a) : (any_field * Yojson.Safe.t) list =
-  match model.to_yojson v with
+  let _, record = model in
+  match record.to_yojson v with
   | `Assoc actual_fields ->
     (match field_data model actual_fields with
     | Ok fields -> fields
     | Error msg -> failwith msg)
   | _ ->
     failwith
-    @@ Format.sprintf "provided data for model %s is not a record" model.name
+    @@ Format.sprintf "provided data for model %s is not a record" record.name
 ;;
 
-let validate (type a) (schema : a t) (model : a) : model_validation =
-  let model_errors = schema.validate model in
-  match schema.to_yojson model with
+let validate (type a) (model : a t) (v : a) : model_validation =
+  let _, record = model in
+  let model_errors = record.validate v in
+  match record.to_yojson v with
   | `Assoc actual_fields ->
-    (match field_data schema actual_fields with
+    (match field_data model actual_fields with
     | Ok fields ->
       let field_errors =
         fields
@@ -327,11 +319,12 @@ let validate (type a) (schema : a t) (model : a) : model_validation =
   | _ -> [ "provided data is not a record" ], []
 ;;
 
-let pp (type a) (schema : a t) (formatter : Format.formatter) (model : a) : unit
-  =
-  model |> schema.to_yojson |> Yojson.Safe.pp formatter
+let pp (type a) (model : a t) (formatter : Format.formatter) (v : a) : unit =
+  let _, record = model in
+  v |> record.to_yojson |> Yojson.Safe.pp formatter
 ;;
 
-let eq (type a) (schema : a t) (a : a) (b : a) : bool =
-  Yojson.Safe.equal (schema.to_yojson a) (schema.to_yojson b)
+let eq (type a) (model : a t) (a : a) (b : a) : bool =
+  let _, record = model in
+  Yojson.Safe.equal (record.to_yojson a) (record.to_yojson b)
 ;;
