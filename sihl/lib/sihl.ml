@@ -3,7 +3,8 @@ module Config = Config
 module Model = Model
 module Test = Test
 module User = User
-module Web = Web
+module Form = Form
+module View = View
 module Query = Query
 module Migration = Migration
 

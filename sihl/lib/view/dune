@@ -1,0 +1,22 @@
+(library
+ (name view)
+ (public_name sihl.view)
+ (modules view)
+ (libraries sihl.config sihl.model sihl.form dream tyxml)
+ (preprocess
+  (pps lwt_ppx)))
+
+(library
+ (name web_test)
+ (modules test_route test_model test_form test_template test_view test_url)
+ (libraries sihl.query sihl.model sihl.form sihl.view)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   tyxml-jsx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson)))

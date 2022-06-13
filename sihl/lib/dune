@@ -14,7 +14,8 @@
   sihl.model
   sihl.user
   sihl.query
-  sihl.web
+  sihl.view
+  sihl.form
   yojson
   fieldslib)
  (preprocess

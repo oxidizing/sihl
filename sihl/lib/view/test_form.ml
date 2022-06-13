@@ -9,22 +9,18 @@ module Order_dispatch = struct
   [@@deriving yojson, fields]
 
   let schema =
-    Web.Form.
+    Form.
       [ int Fields.order_id
       ; timestamp Fields.dispatch_date
       ; string ~widget:TextArea Fields.description
       ]
   ;;
 
-  let t =
-    Web.Form.create to_yojson of_yojson "order_dispatch" Fields.names schema
-  ;;
+  let t = Form.create to_yojson of_yojson "order_dispatch" Fields.names schema
 end
 
 let order_dispatch = Order_dispatch.t
 
 let order =
-  Web.Form.of_model
-    ~widgets:[ Order.Fields.description, Web.Form.TextArea ]
-    Order.t
+  Form.of_model ~widgets:[ Order.Fields.description, Form.TextArea ] Order.t
 ;;
