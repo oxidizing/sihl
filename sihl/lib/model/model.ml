@@ -324,6 +324,11 @@ let pp (type a) (model : a t) (formatter : Format.formatter) (v : a) : unit =
   v |> record.to_yojson |> Yojson.Safe.pp formatter
 ;;
 
+let show (type a) (model : a t) (v : a) : string =
+  let _, record = model in
+  v |> record.to_yojson |> Yojson.Safe.show
+;;
+
 let eq (type a) (model : a t) (a : a) (b : a) : bool =
   let _, record = model in
   Yojson.Safe.equal (record.to_yojson a) (record.to_yojson b)

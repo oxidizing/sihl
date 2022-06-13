@@ -36,23 +36,28 @@ type request =
   | AnonymousUser
   | AuthenticatedUser of t
 
+let show = Model.show t
+let user_field = Dream.new_field ~name:"user" ~show_value:show ()
+
 module View = struct
   let login_required
       ?(login_url : string = Config.login_url ())
-      (view : string -> Dream.route)
-      : string -> Dream.route
+      (views : (Dream.method_ * Dream.handler) list)
+      : (Dream.method_ * Dream.handler) list
     =
-   fun url ->
-    Dream.get "" (fun req ->
-        match Dream.session_field req "user" with
-        | None -> Dream.redirect req login_url
-        | Some user_id ->
-          let%lwt user =
-            Dream.sql req (fun conn ->
-                Query.find_by_id conn t (int_of_string user_id))
-          in
-          user |> ignore;
-          (* TODO how do we pas the user forward ? *)
-          Dream.router [ view url ] req)
- ;;
+    List.map
+      (fun (meth_, handler) ->
+        ( meth_
+        , fun req ->
+            match Dream.session_field req "user" with
+            | None -> Dream.redirect req login_url
+            | Some user_id ->
+              let%lwt _, user =
+                Dream.sql req (fun conn ->
+                    Query.find_by_id conn t (int_of_string user_id))
+              in
+              Dream.set_field req user_field user;
+              handler req ))
+      views
+  ;;
 end
