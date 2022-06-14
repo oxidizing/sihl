@@ -6,6 +6,7 @@ let with_db (f : Caqti_lwt.connection -> 'a Lwt.t) : 'a =
            f conn |> Lwt.map Result.ok))
     |> Result.map_error Caqti_error.show
   with
+  (* TODO replace all failwith with raise *)
   | Error msg -> failwith msg
   | Ok v -> v
 ;;

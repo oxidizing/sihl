@@ -20,4 +20,5 @@ module Order = struct
   ;;
 
   let t = Model.create to_yojson of_yojson "web_orders" Fields.names schema
+  let is_owner (_ : User.t) : bool Lwt.t = Lwt.return true
 end

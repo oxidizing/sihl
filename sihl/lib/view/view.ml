@@ -1,3 +1,5 @@
+type t = (Dream.method_ * Dream.handler) list
+
 let html_to_string (html : Tyxml.Html.doc) : string =
   Format.asprintf "%a" (Tyxml.Html.pp ()) html
 ;;
@@ -23,7 +25,7 @@ let form
     (success_url : Dream.request -> string Lwt.t)
     (form : a Form.unsafe)
     (template : Dream.request -> b option -> a Form.t -> Tyxml.Html.doc)
-    : (Dream.method_ * Dream.handler) list
+    : t
   =
   let get req =
     let%lwt ctx = context req in
@@ -63,7 +65,7 @@ let create
     (model : a Model.t)
     (success_url : Dream.request -> string Lwt.t)
     (template : Dream.request -> b option -> a Form.t -> Tyxml.Html.doc)
-    : (Dream.method_ * Dream.handler) list
+    : t
   =
   let on_valid req a = on_valid req model a in
   let model_form = Form.of_model model in
@@ -76,7 +78,7 @@ let list
     ?(model : a Model.t option)
     ?(query : a Query.read option)
     (template : Dream.request -> b option -> a list -> Tyxml.Html.doc)
-    : (Dream.method_ * Dream.handler) list
+    : t
   =
   [ ( `GET
     , fun req ->
@@ -100,7 +102,7 @@ let detail
     ?(model : a Model.t option)
     ?(query : a Query.read option)
     (template : Dream.request -> b option -> a -> Tyxml.Html.doc)
-    : (Dream.method_ * Dream.handler) list
+    : t
   =
   [ ( `GET
     , fun req ->

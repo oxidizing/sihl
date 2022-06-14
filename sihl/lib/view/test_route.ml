@@ -1,6 +1,7 @@
 module Url = Test_url
 module View = Test_view
 
+(* TODO try to somehow make them Dream.route, so they can be composed nicely *)
 let routes =
   [ Url.order_dispatch, View.order_dispatch
   ; Url.order_create, View.order_create
