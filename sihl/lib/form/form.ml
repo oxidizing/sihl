@@ -150,4 +150,13 @@ let validate (_ : 'a unsafe) (_ : (string * string) list) : 'a validated =
   failwith "validate()"
 ;;
 
-let render (_ : 'a t) : _ Tyxml.Html.elt = failwith "render()"
+let render_field (_ : field) : _ Tyxml.Html.elt = failwith "todo"
+
+let render (form : 'a t) : _ Tyxml.Html.elt =
+  match form with
+  | Unsafe { fields; _ } -> Tyxml.Html.div @@ List.map render_field fields
+  | Validated (Ok (_, { fields; _ })) ->
+    Tyxml.Html.div @@ List.map render_field fields
+  | Validated (Error (_, { fields; _ })) ->
+    Tyxml.Html.div @@ List.map render_field fields
+;;

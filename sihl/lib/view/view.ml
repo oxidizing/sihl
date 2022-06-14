@@ -132,3 +132,23 @@ let message_success = "success"
 let message_danger = "danger"
 let message_warning = "warning"
 let message_info = "info"
+
+let route (url : string) (view : t) : Dream.route =
+  let routes =
+    List.map
+      (fun (meth_, handler) ->
+        match meth_, handler with
+        | `CONNECT, handler -> Dream.connect url handler
+        | `DELETE, handler -> Dream.delete url handler
+        | `GET, handler -> Dream.get url handler
+        | `HEAD, handler -> Dream.get url handler
+        | `OPTIONS, handler -> Dream.get url handler
+        | `PATCH, handler -> Dream.get url handler
+        | `POST, handler -> Dream.get url handler
+        | `PUT, handler -> Dream.get url handler
+        | `TRACE, handler -> Dream.get url handler
+        | `Method str, _ -> failwith @@ Format.sprintf "unknown method %s" str)
+      view
+  in
+  Dream.scope "/" [] routes
+;;
