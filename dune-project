@@ -15,15 +15,10 @@
  (description
   "\nSihl is a batteries-included web framework. Thanks to the modular architecture, included batteries can be swapped out easily. Statically typed functional programming with OCaml makes web development fun, fast and safe. Sihl supports PostgreSQL and MariaDB.\n")
  (depends
-  (tyxml-jsx (and (>= 4.5.0) :with-test))
   (pgx_lwt_unix (>= 2.0))
   (logs (>= 0.7.0))
   (uri (>= 4.2.0))
   (sexplib0 (>= v0.15.0))
-  (ppx_inline_test (>= v0.15.0))
-  (ppx_assert (>= v0.15.0))
-  (caqti-driver-postgresql (and (>= 1.8.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.8.0) :with-test))
   (yojson (>= 1.7.0))
   (tyxml (>= 4.5.0))
   (ptime (>= 1.0.0))
@@ -44,12 +39,22 @@
   ppx_deriving_yojson
   caqti-lwt
   fieldslib
-  dune-build-info))
+  dune-build-info
+  (ppx_inline_test (and :with-test (>= v0.15.0)))
+  (ppx_assert (and :with-test (>= v0.15.0)))
+  (caqti-driver-postgresql (and (>= 1.8.0) :with-test))
+  (caqti-driver-mariadb (and (>= 1.8.0) :with-test))
+  (tyxml-jsx (and (>= 4.5.0) :with-test))))
 (package
  (name sihl_auth)
  (synopsis "Todo")
  (description "Todo")
  (depends
+  ocaml
+  dune
+  tyxml
+  tyxml-jsx
+  sihl
   (ptime (and (>= 1.0.0) :with-test))
   (ppx_inline_test (and (>= v0.15.0) :with-test))
   (ppx_fields_conv (and (>= v0.15.0) :with-test))
@@ -58,9 +63,4 @@
   (ppx_assert (and (>= v0.15.0) :with-test))
   (lwt_ppx (and (>= 2.0.3) :with-test))
   (caqti-driver-postgresql (and (>= 1.8.0) :with-test))
-  (caqti-driver-mariadb (and (>= 1.8.0) :with-test))
-  ocaml
-  dune
-  tyxml
-  tyxml-jsx
-  sihl))
+  (caqti-driver-mariadb (and (>= 1.8.0) :with-test))))

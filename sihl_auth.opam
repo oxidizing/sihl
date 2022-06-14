@@ -10,6 +10,11 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "ocaml"
+  "dune" {>= "2.8"}
+  "tyxml"
+  "tyxml-jsx"
+  "sihl"
   "ptime" {>= "1.0.0" & with-test}
   "ppx_inline_test" {>= "v0.15.0" & with-test}
   "ppx_fields_conv" {>= "v0.15.0" & with-test}
@@ -19,11 +24,6 @@ depends: [
   "lwt_ppx" {>= "2.0.3" & with-test}
   "caqti-driver-postgresql" {>= "1.8.0" & with-test}
   "caqti-driver-mariadb" {>= "1.8.0" & with-test}
-  "ocaml"
-  "dune" {>= "2.8"}
-  "tyxml"
-  "tyxml-jsx"
-  "sihl"
   "odoc" {with-doc}
 ]
 build: [
