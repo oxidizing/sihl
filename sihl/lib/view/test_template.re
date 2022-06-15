@@ -23,6 +23,7 @@ let order_create = (request: Dream.request, _, form: Form.t(_)) =>
           {Html.Unsafe.data(Dream.csrf_tag(request))}
           {Form.render(form)}
           <button type_="submit"> {Html.txt("Create")} </button>
+          <input type_="email" name="email" required="" value="foo" />
         </form>
       </div>
     </body>

@@ -150,7 +150,32 @@ let validate (_ : 'a unsafe) (_ : (string * string) list) : 'a validated =
   failwith "validate()"
 ;;
 
-let render_field (_ : field) : _ Tyxml.Html.elt = failwith "todo"
+let render_field (field : field) : _ Tyxml.Html.elt =
+  let open Tyxml.Html in
+  let html =
+    match field with
+    | { typ = AnyField (name, (_, Model.Integer _))
+      ; widget = None
+      ; value
+      ; errors
+      } ->
+      let has_errors = List.length errors > 0 in
+      errors |> ignore;
+      [ label [ txt name ]
+      ; br ()
+      ; input
+          ~a:
+            [ a_input_type `Number
+            ; a_required ()
+            ; a_value (Option.value value ~default:"")
+            ; a_style (if has_errors then "border:red;" else "")
+            ]
+          ()
+      ]
+    | _ -> []
+  in
+  p html
+;;
 
 let render (form : 'a t) : _ Tyxml.Html.elt =
   match form with
