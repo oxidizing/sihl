@@ -1,0 +1,112 @@
+# dune exec --root . sihl/bin/sihl.exe
+# OCAMLPARAM: unset
+# Workspace root: /home/josef/03-src/sihl/example
+$ /run/current-system/sw/bin/nproc > /tmp/dune8ada2d.output 2> /dev/null
+# Auto-detected concurrency: 16
+# disable binary cache
+$ /home/josef/03-src/sihl/_opam/bin/ocamlc.opt -config > /tmp/duned8fede.output
+# Dune context:
+#  { name = "default"
+#  ; kind = "default"
+#  ; profile = Dyn
+#  ; merlin = true
+#  ; for_host = None
+#  ; fdo_target_exe = None
+#  ; build_dir = "default"
+#  ; toplevel_path = Some External "/home/josef/03-src/sihl/_opam/lib/toplevel"
+#  ; ocaml_bin = External "/home/josef/03-src/sihl/_opam/bin"
+#  ; ocaml = Ok External "/home/josef/03-src/sihl/_opam/bin/ocaml"
+#  ; ocamlc = External "/home/josef/03-src/sihl/_opam/bin/ocamlc.opt"
+#  ; ocamlopt = Ok External "/home/josef/03-src/sihl/_opam/bin/ocamlopt.opt"
+#  ; ocamldep = Ok External "/home/josef/03-src/sihl/_opam/bin/ocamldep.opt"
+#  ; ocamlmklib =
+#      Ok External "/home/josef/03-src/sihl/_opam/bin/ocamlmklib.opt"
+#  ; env =
+#      map
+#        { "DUNE_OCAML_HARDCODED" : "/home/josef/03-src/sihl/_opam/lib"
+#        ; "DUNE_OCAML_STDLIB" : "/home/josef/03-src/sihl/_opam/lib/ocaml"
+#        ; "DUNE_SOURCEROOT" : "/home/josef/03-src/sihl/example"
+#        ; "INSIDE_DUNE" : "/home/josef/03-src/sihl/example/_build/default"
+#        ; "OCAMLFIND_IGNORE_DUPS_IN" :
+#            "/home/josef/03-src/sihl/example/_build/install/default/lib"
+#        ; "OCAMLPATH" :
+#            "/home/josef/03-src/sihl/example/_build/install/default/lib"
+#        ; "OCAMLTOP_INCLUDE_PATH" :
+#            "/home/josef/03-src/sihl/example/_build/install/default/lib/toplevel"
+#        ; "OCAML_COLOR" : "always"
+#        ; "OPAMCOLOR" : "always"
+#        }
+#  ; findlib_path = [ External "/home/josef/03-src/sihl/_opam/lib" ]
+#  ; arch_sixtyfour = true
+#  ; natdynlink_supported = true
+#  ; supports_shared_libraries = true
+#  ; ocaml_config =
+#      { version = "4.12.0"
+#      ; standard_library_default = "/home/josef/03-src/sihl/_opam/lib/ocaml"
+#      ; standard_library = "/home/josef/03-src/sihl/_opam/lib/ocaml"
+#      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
+#      ; ccomp_type = "cc"
+#      ; c_compiler = "gcc"
+#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
+#      ; ocamlc_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
+#      ; ocamlopt_cflags =
+#          [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
+#      ; ocamlopt_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
+#      ; bytecomp_c_compiler =
+#          [ "gcc"
+#          ; "-O2"
+#          ; "-fno-strict-aliasing"
+#          ; "-fwrapv"
+#          ; "-fPIC"
+#          ; "-D_FILE_OFFSET_BITS=64"
+#          ; "-D_REENTRANT"
+#          ]
+#      ; bytecomp_c_libraries = [ "-lm"; "-lpthread" ]
+#      ; native_c_compiler =
+#          [ "gcc"
+#          ; "-O2"
+#          ; "-fno-strict-aliasing"
+#          ; "-fwrapv"
+#          ; "-fPIC"
+#          ; "-D_FILE_OFFSET_BITS=64"
+#          ; "-D_REENTRANT"
+#          ]
+#      ; native_c_libraries = [ "-lm" ]
+#      ; cc_profile = []
+#      ; architecture = "amd64"
+#      ; model = "default"
+#      ; int_size = 63
+#      ; word_size = 64
+#      ; system = "linux"
+#      ; asm = [ "as" ]
+#      ; asm_cfi_supported = true
+#      ; with_frame_pointers = false
+#      ; ext_exe = ""
+#      ; ext_obj = ".o"
+#      ; ext_asm = ".s"
+#      ; ext_lib = ".a"
+#      ; ext_dll = ".so"
+#      ; os_type = "Unix"
+#      ; default_executable_name = "a.out"
+#      ; systhread_supported = true
+#      ; host = "x86_64-pc-linux-gnu"
+#      ; target = "x86_64-pc-linux-gnu"
+#      ; profiling = false
+#      ; flambda = false
+#      ; spacetime = false
+#      ; safe_string = true
+#      ; exec_magic_number = "Caml1999X029"
+#      ; cmi_magic_number = "Caml1999I029"
+#      ; cmo_magic_number = "Caml1999O029"
+#      ; cma_magic_number = "Caml1999A029"
+#      ; cmx_magic_number = "Caml1999Y029"
+#      ; cmxa_magic_number = "Caml1999Z029"
+#      ; ast_impl_magic_number = "Caml1999M029"
+#      ; ast_intf_magic_number = "Caml1999N029"
+#      ; cmxs_magic_number = "Caml1999D029"
+#      ; cmt_magic_number = "Caml1999T029"
+#      ; natdynlink_supported = true
+#      ; supports_shared_libraries = true
+#      ; windows_unicode = false
+#      }
+#  }

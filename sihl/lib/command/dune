@@ -1,4 +1,4 @@
 (library
  (name command)
  (public_name sihl.command)
- (libraries minicli migration dune-build-info containers))
+ (libraries minicli sihl.migration dune-build-info containers))

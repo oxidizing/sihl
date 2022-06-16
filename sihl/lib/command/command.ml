@@ -1,83 +1,77 @@
-(* let main () = *)
-(*   let argc, args = Cli.init () in *)
-(*   if argc = 1 *)
-(*   then ( *)
-(*     printf *)
-(* "usage:\n\ *) (* %s {-i|--input} <file> {-o|--output} <file> -n <int> -x
-   <float> [-v] \ *) (* [--hi <string>]\n" *)
-(*       Sys.argv.(0); *)
-(*     exit 1); *)
-(*   let input_fn = Cli.get_string [ "-i"; "--input" ] args in *)
-(*   let output_fn = Cli.get_string [ "-o" ] args in *)
-(*   let n = Cli.get_int [ "-n" ] args in *)
-(*   let x = Cli.get_float [ "-x" ] args in *)
-(*   let verbose = Cli.get_set_bool [ "-v" ] args in *)
-(*   let maybe_say_hi = Cli.get_string_opt [ "--hi" ] args in *)
-(*   Cli.finalize (); *)
-(*   printf *)
-(*     "i: %s o: %s n: %d x: %f v: %s\n" *)
-(*     input_fn *)
-(*     output_fn *)
-(*     n *)
-(*     x *)
-(*     (string_of_bool verbose); *)
-(*   match maybe_say_hi with *)
-(*   | None -> () *)
-(*   | Some name -> printf "Hi %s!\n" name *)
-(* ;; *)
+open Printf
+module M = Minicli.CLI
+include Command_pure
 
-(* type t = Type.t *)
+let main () =
+  let argc, args = M.init () in
+  if argc = 1
+  then (
+    printf
+      "usage:\n\
+      \  %s {-i|--input} <file> {-o|--output} <file> -n <int> -x\n\
+      \  <float> [-v] [--hi <string>]\n"
+      Sys.argv.(0);
+    exit 1);
+  let input_fn = M.get_string [ "-i"; "--input" ] args in
+  let output_fn = M.get_string [ "-o" ] args in
+  let n = M.get_int [ "-n" ] args in
+  let x = M.get_float [ "-x" ] args in
+  let verbose = M.get_set_bool [ "-v" ] args in
+  let maybe_say_hi = M.get_string_opt [ "--hi" ] args in
+  M.finalize ();
+  printf
+    "i: %s o: %s n: %d x: %f v: %s\n"
+    input_fn
+    output_fn
+    n
+    x
+    (string_of_bool verbose);
+  match maybe_say_hi with
+  | None -> ()
+  | Some name -> printf "Hi %s!\n" name
+;;
 
-(* let registry : t list ref = ref [ Cmd_migrate.t ] *)
-(* let register (cmd : t) = registry := List.cons cmd !registry *)
+let commands : (string, t) Hashtbl.t = Hashtbl.create 20
+let register (cmd : t) = Hashtbl.add commands cmd.name cmd
 
-(* let version () = *)
-(*   match Build_info.V1.version () with *)
-(*   | None -> "%%VERSION%%" *)
-(*   | Some version -> Build_info.V1.Version.to_string version *)
-(* ;; *)
+let version () =
+  match Build_info.V1.version () with
+  | None -> "%%VERSION%%"
+  | Some version -> Build_info.V1.Version.to_string version
+;;
 
-(* let command_names () = *)
-(*   !registry *)
-(*   |> List.map (function *)
-(*          | Type.Command { name; _ } -> name *)
-(*          | Type.Group { name; _ } -> name) *)
-(*   |> String.concat "\n" *)
-(* ;; *)
+let command_names () =
+  commands |> Hashtbl.to_seq_keys |> List.of_seq |> String.concat "\n   "
+;;
 
-(* let print_help ?group () = *)
-(*   match group with *)
-(*   | Some group -> Printf.printf "%s" group.Type.name *)
-(*   | _ -> *)
-(*     Printf.printf *)
-(* "Sihl %s\n\ *) (* Run one of the following commands with the argument
-   --help\n\n\ *) (* %s" *)
-(*       (version ()) *)
-(*       (command_names ()) *)
-(* ;; *)
+let print_help () =
+  Printf.printf
+    "Sihl %s\nRun one of the following commands with the argument --help\n   %s"
+    (version ())
+    (command_names ())
+;;
 
-(* let run () = *)
-(*   let module Cli = Minicli.CLI in *)
-(*   let argc, args = Cli.init () in *)
-(*   if argc = 1 *)
-(*   then ( *)
-(*     print_help (); *)
-(*     exit 1) *)
-(*   else ( *)
-(*     let rec execute args (group : Type.group option) = *)
-(*       match args |> CCList.tail_opt with *)
-(*       | None -> print_help ?group () *)
-(*       | Some [] -> print_help ?group () *)
-(*       | Some (arg :: args) -> *)
-(*         (match group with *)
-(*         | Some group -> *)
-(*           List.find_opt *)
-(*             (function *)
-(*               | Type.Group group -> String.equal group.name arg) *)
-(*             group.commands *)
-(*             execute *)
-(*             args *)
-(*             group) *)
-(*     in *)
-(*     execute args None) *)
-(* ;; *)
+let run () =
+  let module M = Minicli.CLI in
+  let argc, args = M.init () in
+  if argc = 1
+  then (
+    print_help ();
+    exit 1)
+  else (
+    match args with
+    | _ :: command :: args ->
+      (match Hashtbl.find_opt commands command with
+      | None -> failwith @@ Format.sprintf "command %s unknown" command
+      | Some command ->
+        (try command.fn args with
+        | Invalid_usage -> print_endline command.usage))
+    | _ -> ())
+;;
+
+let () =
+  register Command_init.t;
+  register Command_init.t;
+  register Command_init.t;
+  register Command_init.t
+;;

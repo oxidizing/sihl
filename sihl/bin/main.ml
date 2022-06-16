@@ -1,4 +1,4 @@
-(* let () = *)
-(*   Printexc.record_backtrace true; *)
-(*   Sihl.Command.run () *)
-(* ;; *)
+let () =
+  Printexc.record_backtrace true;
+  Sihl.Command.run ()
+;;

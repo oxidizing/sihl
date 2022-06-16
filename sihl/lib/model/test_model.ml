@@ -43,7 +43,13 @@ module Customer = struct
   ;;
 
   let t =
-    Model.create ~validate to_yojson of_yojson "customers" Fields.names schema
+    Model.create
+      ~validate
+      to_yojson
+      of_yojson
+      "customers_model"
+      Fields.names
+      schema
   ;;
 
   let pp = Model.pp t [@@ocaml.toplevel_printer]
@@ -61,12 +67,12 @@ module Order = struct
 
   let schema =
     Model.
-      [ foreign_key Cascade "customers" Fields.customer_id
+      [ foreign_key Cascade "customers_model" Fields.customer_id
       ; string ~max_length:255 Fields.description
       ; timestamp ~default:Now Fields.created_at
       ; timestamp ~default:Now ~update:true Fields.updated_at
       ]
   ;;
 
-  let t = Model.create to_yojson of_yojson "orders" Fields.names schema
+  let t = Model.create to_yojson of_yojson "orders_model" Fields.names schema
 end
