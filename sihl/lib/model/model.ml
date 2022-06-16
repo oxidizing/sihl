@@ -50,6 +50,7 @@ type _ type_field =
   | Enum :
       { of_yojson : Yojson.Safe.t -> ('a, string) Result.t
       ; to_yojson : 'a -> Yojson.Safe.t
+      ; all : 'a list
       ; default : 'a option
       }
       -> 'a type_field
@@ -157,11 +158,12 @@ let enum
     (type a)
     ?default
     ?(nullable = false)
+    (all : a list)
     (of_yojson : Yojson.Safe.t -> (a, string) Result.t)
     (to_yojson : a -> Yojson.Safe.t)
     (record_field : ('perm, 'record, 'a) record_field)
   =
-  let field = { nullable }, Enum { of_yojson; to_yojson; default } in
+  let field = { nullable }, Enum { all; of_yojson; to_yojson; default } in
   let name = Fieldslib.Field.name record_field in
   AnyField (name, field)
 ;;

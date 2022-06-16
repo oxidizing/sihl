@@ -10,6 +10,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "ppx_enumerate" {>= "v0.15.0" & with-test}
   "ocaml"
   "dune" {>= "2.8"}
   "tyxml"

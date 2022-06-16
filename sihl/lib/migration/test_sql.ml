@@ -23,7 +23,7 @@ module B = struct
   type variant =
     | Foo
     | Bar
-  [@@deriving yojson]
+  [@@deriving yojson, enumerate]
 
   type t =
     { a_id : int
@@ -34,7 +34,7 @@ module B = struct
   let schema =
     Model.
       [ foreign_key Cascade "a_models" Fields.a_id
-      ; enum variant_of_yojson variant_to_yojson Fields.variant
+      ; enum all_of_variant variant_of_yojson variant_to_yojson Fields.variant
       ]
   ;;
 

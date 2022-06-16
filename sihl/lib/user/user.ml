@@ -5,7 +5,7 @@ type role =
   | User
   | Staff
   | Superuser
-[@@deriving yojson]
+[@@deriving yojson, enumerate]
 
 type t =
   { role : role
@@ -20,7 +20,7 @@ type t =
 
 let schema =
   Model.
-    [ enum role_of_yojson role_to_yojson Fields.role
+    [ enum all_of_role role_of_yojson role_to_yojson Fields.role
     ; email Fields.email
     ; string Fields.full_name
     ; string ~max_length:80 Fields.short_name

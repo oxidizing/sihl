@@ -2,11 +2,11 @@ module Order = struct
   type company =
     | Fedex
     | Ups
-  [@@deriving yojson]
+  [@@deriving yojson, enumerate]
 
   type t =
     { order_date : Model.Ptime.t
-    ; sipping_company : company
+    ; company : company
     ; description : string
     }
   [@@deriving yojson, fields]
@@ -14,7 +14,7 @@ module Order = struct
   let schema =
     Model.
       [ timestamp Fields.order_date
-      ; enum company_of_yojson company_to_yojson Fields.sipping_company
+      ; enum all_of_company company_of_yojson company_to_yojson Fields.company
       ; string Fields.description
       ]
   ;;

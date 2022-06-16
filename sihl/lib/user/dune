@@ -3,4 +3,9 @@
  (public_name sihl.user)
  (libraries sihl.view sihl.query sihl.model sihl.config lwt dream)
  (preprocess
-  (pps lwt_ppx ppx_fields_conv ppx_deriving.make ppx_deriving_yojson)))
+  (pps
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson
+   ppx_enumerate)))

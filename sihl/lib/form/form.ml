@@ -1,8 +1,18 @@
-type widget = TextArea
+type _ widget =
+  | TextArea : string widget
+  | Email : string widget
+  | InputField : string widget
+  | Date : Ptime.t widget
+  | NumberInt : int widget
+  | NumberFloat : float widget
+  | Checkbox : bool widget
+  | Select : { options : string list } -> string widget
+
+type widget_any = Any : 'a widget -> widget_any
 
 type field =
   { typ : Model.field
-  ; widget : widget option
+  ; widget : widget_any
   ; value : string option
   ; errors : string list
   }
@@ -22,26 +32,28 @@ type generic =
   ; fields : field list
   }
 
+let any (widget : 'a widget) : widget_any = Any widget
+
 let generic (form : 'a unsafe) : generic =
   { name = form.name; fields = form.fields }
 ;;
 
 let int
-    ?widget
+    ?(widget : int widget option)
     ?default
     ?nullable
     (record_field : ('perm, 'record, int) Model.record_field)
     : field
   =
   { typ = Model.int ?default ?nullable record_field
-  ; widget
+  ; widget = any (Option.value ~default:NumberInt widget)
   ; value = None
   ; errors = []
   }
 ;;
 
 let timestamp
-    ?widget
+    ?(widget : Ptime.t widget option)
     ?default
     ?nullable
     ?update
@@ -49,21 +61,92 @@ let timestamp
     : field
   =
   { typ = Model.timestamp ?default ?nullable ?update record_field
-  ; widget
+  ; widget = any (Option.value ~default:Date widget)
   ; value = None
   ; errors = []
   }
 ;;
 
-let string
-    ?widget
+let text_area (record_field : ('perm, 'record, string) Model.record_field)
+    : string * widget_any
+  =
+  Fieldslib.Field.name record_field, any TextArea
+;;
+
+let input_email
     ?default
     ?nullable
     (record_field : ('perm, 'record, string) Model.record_field)
     : field
   =
   { typ = Model.string ?default ?nullable record_field
-  ; widget
+  ; widget = any Email
+  ; value = None
+  ; errors = []
+  }
+;;
+
+let input
+    ?default
+    ?nullable
+    (record_field : ('perm, 'record, string) Model.record_field)
+    : field
+  =
+  { typ = Model.string ?default ?nullable record_field
+  ; widget = any InputField
+  ; value = None
+  ; errors = []
+  }
+;;
+
+let input_int
+    ?default
+    ?nullable
+    (record_field : ('perm, 'record, int) Model.record_field)
+    : field
+  =
+  { typ = Model.string ?default ?nullable record_field
+  ; widget = any NumberInt
+  ; value = None
+  ; errors = []
+  }
+;;
+
+let input_float
+    ?default
+    ?nullable
+    (record_field : ('perm, 'record, int) Model.record_field)
+    : field
+  =
+  { typ = Model.string ?default ?nullable record_field
+  ; widget = any NumberFloat
+  ; value = None
+  ; errors = []
+  }
+;;
+
+let string
+    ?(widget : string widget option)
+    ?default
+    ?nullable
+    (record_field : ('perm, 'record, string) Model.record_field)
+    : field
+  =
+  { typ = Model.string ?default ?nullable record_field
+  ; widget = any (Option.value ~default:InputField widget)
+  ; value = None
+  ; errors = []
+  }
+;;
+
+let input_date
+    ?default
+    ?nullable
+    (record_field : ('perm, 'record, Ptime.t) Model.record_field)
+    : field
+  =
+  { typ = Model.string ?default ?nullable record_field
+  ; widget = any Date
   ; value = None
   ; errors = []
   }
@@ -113,22 +196,35 @@ let create
   form
 ;;
 
-let of_model
-    ?(widgets : (('perm, 'record, string) Model.record_field * widget) list =
-      [])
-    (model : 'a Model.t)
-  =
+let widget_of_typ = function
+  | Model.AnyField (_, (_, Model.Integer _)) -> any NumberInt
+  | Model.AnyField (_, (_, Model.Email _))
+  | Model.AnyField (_, (_, Model.String _)) -> any InputField
+  | Model.AnyField (_, (_, Model.Timestamp _)) -> any Date
+  | Model.AnyField (_, (_, Model.Boolean _)) -> any Checkbox
+  | Model.AnyField (_, (_, Model.Enum { all; to_yojson; _ })) ->
+    (* consider https://github.com/janestreet/ppx_variants_conv *)
+    let options = List.map (fun a -> a |> to_yojson |> Yojson.Safe.show) all in
+    any (Select { options })
+  | Model.AnyField (_, (_, Model.Foreign_key _)) ->
+    failwith "widget for foreign key"
+;;
+
+let of_model ?(widgets : (string * widget_any) list = []) (model : 'a Model.t) =
   let _, record = model in
   let input_fields : field list =
     record.fields
     |> List.map (fun (Model.AnyField (name, _) as field) ->
            { typ = field
            ; widget =
-               List.find_opt
-                 (fun (record_field, _) ->
-                   String.equal (Fieldslib.Field.name record_field) name)
-                 widgets
-               |> Option.map snd
+               (match
+                  List.find_opt
+                    (fun (record_name, _) -> String.equal record_name name)
+                    widgets
+                  |> Option.map snd
+                with
+               | Some widget -> widget
+               | None -> widget_of_typ field)
            ; value = None
            ; errors = []
            })
@@ -155,7 +251,7 @@ let render_field (field : field) : _ Tyxml.Html.elt =
   let html =
     match field with
     | { typ = AnyField (name, (_, Model.Integer _))
-      ; widget = None
+      ; widget = Any NumberInt
       ; value
       ; errors
       } ->

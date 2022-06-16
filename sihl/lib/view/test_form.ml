@@ -22,5 +22,5 @@ end
 let order_dispatch = Order_dispatch.t
 
 let order =
-  Form.of_model ~widgets:[ Order.Fields.description, Form.TextArea ] Order.t
+  Form.of_model ~widgets:[ Form.text_area Order.Fields.description ] Order.t
 ;;

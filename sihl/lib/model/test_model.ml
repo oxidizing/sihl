@@ -3,14 +3,14 @@ module Customer = struct
     | Zurich
     | Bern
     | Basel
-  [@@deriving yojson]
+  [@@deriving yojson, enumerate]
 
   type tier =
     | Premium
     | Top
     | Business
     | Standard
-  [@@deriving yojson]
+  [@@deriving yojson, enumerate]
 
   type t =
     { user_id : int
@@ -25,9 +25,9 @@ module Customer = struct
   let schema =
     Model.
       [ foreign_key Cascade "users" Fields.user_id
-      ; enum tier_of_yojson tier_to_yojson Fields.tier
+      ; enum all_of_tier tier_of_yojson tier_to_yojson Fields.tier
       ; string ~max_length:30 Fields.street
-      ; enum city_of_yojson city_to_yojson Fields.city
+      ; enum all_of_city city_of_yojson city_to_yojson Fields.city
       ; timestamp ~default:Now Fields.created_at
       ; timestamp ~default:Now ~update:true Fields.updated_at
       ]

@@ -17,5 +17,6 @@
    ppx_assert
    lwt_ppx
    ppx_fields_conv
+   ppx_enumerate
    ppx_deriving.make
    ppx_deriving_yojson)))
