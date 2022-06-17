@@ -1,3 +1,5 @@
+module Test = Sihl_test.Test
+
 module A = struct
   type t =
     { int : int
@@ -18,6 +20,11 @@ module A = struct
 
   let t = Model.create to_yojson of_yojson "query_models" Fields.names schema
 end
+
+let%test_unit "1 + 1 = 2" =
+  let open Test.Assert in
+  [%test_result: int] (1 + 1) ~expect:2
+;;
 
 let%test_unit "insert sql" =
   let open Test.Assert in

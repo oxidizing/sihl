@@ -6,6 +6,7 @@ module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module type CONFIG = sig
   val database_url : string
+  val sihl_secret : string
   val login_url : string
 end
 
@@ -58,3 +59,17 @@ let login_url () : string =
 ;;
 
 module Default = Config_default
+
+let string ?default k =
+  match Sys.getenv_opt k, default with
+  | None, None -> failwith @@ Format.sprintf "env var %s not set" k
+  | None, Some v -> v
+  | Some v, _ -> v
+;;
+
+let bool ?default k =
+  match Option.bind (Sys.getenv_opt k) bool_of_string_opt, default with
+  | None, None -> failwith @@ Format.sprintf "env var %s not set" k
+  | None, Some v -> v
+  | Some v, _ -> v
+;;

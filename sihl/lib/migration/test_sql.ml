@@ -1,3 +1,5 @@
+module Test = Sihl_test.Test
+
 module A = struct
   type t =
     { int : int

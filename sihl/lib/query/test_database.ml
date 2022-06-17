@@ -1,3 +1,5 @@
+module Test = Sihl_test.Test
+
 module Customer = struct
   type city =
     | Zurich
