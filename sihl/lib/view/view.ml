@@ -1,3 +1,7 @@
+module Form = Sihl__form.Form
+module Model = Sihl__model.Model
+module Query = Sihl__query.Query
+
 type t = (Dream.method_ * Dream.handler) list
 
 let html_to_string (html : Tyxml.Html.doc) : string =

@@ -1,3 +1,4 @@
+module View = Sihl__view.View
 module Url = Test_url
 
 let routes =

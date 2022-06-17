@@ -1,4 +1,6 @@
 module Order = Test_model.Order
+module Model = Sihl__model.Model
+module Form = Sihl__form.Form
 
 module Order_dispatch = struct
   type t =

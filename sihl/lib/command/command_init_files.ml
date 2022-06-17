@@ -22,7 +22,7 @@ let dune_test =
    (preprocess (pps ppx_inline_test ppx_assert lwt_ppx tyxml-jsx)))|}
 ;;
 
-let bin = {|let () = Lib.run ();;|}
+let bin = {|let () = Lib.run ()|}
 
 let lib =
   {|module Config = (val !Settings.config : Settings.S)

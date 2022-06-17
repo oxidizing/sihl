@@ -1,4 +1,5 @@
 open Tyxml;
+module Form = Sihl__form.Form;
 
 let order_dispatch = (request: Dream.request, _, form: Form.t(_)) =>
   <html>

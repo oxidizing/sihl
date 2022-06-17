@@ -1,3 +1,5 @@
+module Model = Sihl__model.Model
+
 module Customer = struct
   type city =
     | Zurich

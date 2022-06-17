@@ -1,4 +1,6 @@
-module Test = Sihl_test.Test
+module Test = Sihl__test.Test
+module Model = Sihl__model.Model
+module Query = Sihl__query.Query
 
 module A = struct
   type t =

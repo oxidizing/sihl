@@ -1,5 +1,5 @@
 (library
- (name view)
+ (name sihl__view)
  (public_name sihl.view)
  (modules view)
  (libraries sihl.query sihl.config sihl.model sihl.form dream tyxml)

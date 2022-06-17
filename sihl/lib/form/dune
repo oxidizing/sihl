@@ -1,5 +1,5 @@
 (library
- (name form)
+ (name sihl__form)
  (public_name sihl.form)
  (modules form)
  (libraries sihl.config sihl.model dream tyxml)

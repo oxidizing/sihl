@@ -1,3 +1,5 @@
+module Config = Sihl__config.Config
+
 let () =
   Omigrate.Driver.register "postgres" (module Driver_postgresql.T);
   Omigrate.Driver.register "postgresql" (module Driver_postgresql.T)

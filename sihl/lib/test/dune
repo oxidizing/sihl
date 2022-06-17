@@ -1,5 +1,5 @@
 (library
- (name sihl_test)
+ (name sihl__test)
  (public_name sihl.test)
  (libraries sexplib0 caqti-lwt sihl.config omigrate sihl.migration)
  (preprocess

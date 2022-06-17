@@ -1,4 +1,7 @@
-module Test = Sihl_test.Test
+module Test = Sihl__test.Test
+module Model = Sihl__model.Model
+module Migration = Sihl__migration.Migration
+module Config = Sihl__config.Config
 
 module A = struct
   type t =

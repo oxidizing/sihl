@@ -1,5 +1,5 @@
 (library
- (name model)
+ (name sihl__model)
  (public_name sihl.model)
  (modules model)
  (libraries

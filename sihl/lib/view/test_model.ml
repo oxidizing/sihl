@@ -1,3 +1,6 @@
+module User = Sihl__user.User
+module Model = Sihl__model.Model
+
 module Order = struct
   type company =
     | Fedex

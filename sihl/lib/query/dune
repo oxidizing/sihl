@@ -1,5 +1,5 @@
 (library
- (name query)
+ (name sihl__query)
  (public_name sihl.query)
  (modules query query_sql query_pure)
  (libraries sihl.config sihl.model)

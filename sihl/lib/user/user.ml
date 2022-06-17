@@ -1,3 +1,8 @@
+module Model = Sihl__model.Model
+module View = Sihl__view.View
+module Config = Sihl__config.Config
+module Query = Sihl__query.Query
+
 let authentication_required = Obj.magic
 let configure _ = ()
 

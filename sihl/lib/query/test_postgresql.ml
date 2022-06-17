@@ -1,3 +1,5 @@
+module Config = Sihl__config.Config
+
 let () =
   Config.configure
     (module struct

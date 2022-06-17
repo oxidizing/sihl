@@ -1,12 +1,12 @@
-module Command = Command
-module Config = Config
-module Model = Model
-module User = User
-module Form = Form
-module View = View
-module Query = Query
-module Migration = Migration
-module Test = Sihl_test.Test
+module Command = Sihl__command.Command
+module Config = Sihl__config.Config
+module Model = Sihl__model.Model
+module User = Sihl__user.User
+module Form = Sihl__form.Form
+module View = Sihl__view.View
+module Query = Sihl__query.Query
+module Migration = Sihl__migration.Migration
+module Test = Sihl__test.Test
 
 let run (module Config : Config.CONFIG) = Obj.magic
 

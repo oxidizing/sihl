@@ -1,5 +1,5 @@
 (library
- (name user)
+ (name sihl__user)
  (public_name sihl.user)
  (libraries sihl.view sihl.query sihl.model sihl.config lwt dream)
  (preprocess

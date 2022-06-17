@@ -1,3 +1,7 @@
+module User = Sihl__user.User
+module View = Sihl__view.View
+module Query = Sihl__query.Query
+
 let order_dispatch =
   User.login_required ~login_url:Test_url.login
   @@ View.form

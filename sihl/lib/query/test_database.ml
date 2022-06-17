@@ -1,4 +1,9 @@
-module Test = Sihl_test.Test
+module Test = Sihl__test.Test
+module Model = Sihl__model.Model
+module Config = Sihl__config.Config
+module Migration = Sihl__migration.Migration
+module Query = Sihl__query.Query
+module User = Sihl__user.User
 
 module Customer = struct
   type city =

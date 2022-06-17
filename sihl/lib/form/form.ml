@@ -1,3 +1,5 @@
+module Model = Sihl__model.Model
+
 type _ widget =
   | TextArea : string widget
   | Email : string widget

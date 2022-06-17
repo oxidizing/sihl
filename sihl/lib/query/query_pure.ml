@@ -1,3 +1,5 @@
+module Model = Sihl__model.Model
+
 type op =
   | Eq
   | Gt

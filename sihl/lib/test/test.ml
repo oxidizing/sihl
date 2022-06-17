@@ -1,3 +1,6 @@
+module Config = Sihl__config.Config
+module Model = Sihl__model.Model
+
 let with_db (f : Caqti_lwt.connection -> 'a Lwt.t) : 'a =
   let database_uri = Config.database_url () in
   match

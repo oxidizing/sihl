@@ -1,4 +1,5 @@
 module P = Query_pure
+module Model = Sihl__model.Model
 
 module Dynparam = struct
   type t = Pack : 'a Caqti_type.t * 'a -> t

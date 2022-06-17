@@ -1,3 +1,6 @@
+module Config = Sihl__config.Config
+module Model = Sihl__model.Model
+
 let field_to_sql
     (db : Config.database)
     (model : Model.generic)
