@@ -1,4 +1,4 @@
 (library
  (name sihl__config)
  (public_name sihl.config)
- (libraries uri containers logs))
+ (libraries uri containers logs unix))

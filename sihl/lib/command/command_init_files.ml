@@ -53,49 +53,64 @@ let view =
    Consult Sihl.View for more info. *)"
 ;;
 
-let settings =
-  {|module type S = sig
-  include module type of Production
+let config =
+  {|module Base () = struct
+  let database_url = "postgresql://admin:password@127.0.0.1:5432/dev"
+  let middlewares = [ Dream.sql_pool database_url; Dream.logger ]
+  let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
+  let test = Sihl.Config.bool ~default:false "SIHL_TEST"
+
+  let sihl_secret =
+    "local_SBw74Pe8hYPReC57e9Ag8xd36y6R9yxhFX6MqE66XPxoAiTsyfayF3q5EfbWXbbV"
+  ;;
+
+  let email_default_subject = "Hello there 👋"
+  let login_url = "/login"
 end
 
-let config = ref (module Local: S)
+module Local () = struct
+  include Base ()
+end
 
-let () = match Sys.getenv "DEBUG", Sys.getenv "TEST" with
-  | "true", "false" -> config := (module Local)
-  | "false", "true" -> config := (module Test)
-  | _ -> config := (module Production)
-|}
+module Test () = struct
+  include Base ()
+
+  let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
+  let test = Sihl.Config.bool ~default:true "SIHL_TEST"
+end
+
+module Production () = struct
+  include Base ()
+
+  let database_url = Sys.getenv "DATABASE_URL"
+  let debug = false
+  let test = false
+  let sihl_secret = Sys.getenv "SIHL_SECRET"
+end|}
 ;;
 
-let settings_base =
-  {|let database_url = "postgresql://admin:password@127.0.0.1:5432/dev"
-let middlewares = [Dream.sql_pool database_url; Dream.logger]
+let settings =
+  {|module type S = sig
+  include module type of Config.Production ()
+end
 
-let debug = Sihl.Config.bool "SIHL_DEBUG"
-let test = Sihl.Config.bool "SIHL_TEST"
-let sihl_secret = "local_SBw74Pe8hYPReC57e9Ag8xd36y6R9yxhFX6MqE66XPxoAiTsyfayF3q5EfbWXbbV"
-let email_default_subject = "Hello there 👋"
-let login_url = "/login"|}
-;;
+let config = ref (module Config.Local () : S)
 
-let settings_local =
-  {|include Base
-let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
-let test = Sihl.Config.bool ~default:false "SIHL_TEST"|}
-;;
-
-let settings_test =
-  {|include Base
-let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
-let test = Sihl.Config.bool ~default:false "SIHL_TEST"|}
-;;
-
-let settings_production =
-  {|include Base
-let database_url = Sihl.Config.string "DATABASE_URL"
-let debug = false
-let test = false
-let sihl_secret = Sihl.Config.string "SIHL_SECRET"|}
+let () =
+  match
+    ( Sihl.Config.bool ~default:true "SIHL_DEBUG"
+    , Sihl.Config.bool ~default:false "SIHL_TEST" )
+  with
+  | true, false | true, true ->
+    print_endline "load configuration for env: local";
+    config := (module Config.Local ())
+  | false, true ->
+    print_endline "load configuration for env: test";
+    config := (module Config.Test ())
+  | false, false ->
+    print_endline "load configuration for env: production";
+    config := (module Config.Production ())
+;;|}
 ;;
 
 let test =

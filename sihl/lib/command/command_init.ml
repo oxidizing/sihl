@@ -51,10 +51,7 @@ let template name =
                 ( "settings"
                 , [ File ("dune", F.dune "settings" [ "sihl" ])
                   ; File ("settings.ml", F.settings)
-                  ; File ("base.ml", F.settings_base)
-                  ; File ("local.ml", F.settings_local)
-                  ; File ("production.ml", F.settings_production)
-                  ; File ("test.ml", F.settings_test)
+                  ; File ("config.ml", F.config)
                   ] )
             ] )
       ; Dir ("static", [ File (".gitkeep", "") ])
