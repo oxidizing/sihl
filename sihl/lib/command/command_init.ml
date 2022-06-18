@@ -70,6 +70,7 @@ let template name db =
       ; File (".env", "")
       ; File (".gitignore", F.gitignore)
       ; File ("dune-project", F.dune_project)
+      ; File ("app.opam", F.opam db)
       ] )
 ;;
 
@@ -93,29 +94,49 @@ let write_template path template =
   loop path template
 ;;
 
-let fn = function
+let print_next_steps path =
+  print_endline @@ Format.sprintf "Sihl project initialized at %s" path;
+  print_endline
+  @@ Format.sprintf
+       {|Install the dependencies in a local switch by running %s
+  opam switch create . 4.12.0 -y
+
+Then start the development server with
+  sihl dev|}
+       path;
+  ()
+;;
+
+let fn args =
+  let module M = Minicli.CLI in
+  match args with
   | name :: args ->
-    let path, db =
-      match args with
-      | path :: "postgresql" :: _ -> path, Config.Postgresql
-      | path :: "postgres" :: _ -> path, Config.Postgresql
-      | path :: "mariadb" :: _ -> path, Config.Mariadb
-      | path :: _ -> path, Config.Postgresql
-      | [] -> Sys.getcwd (), Config.Postgresql
+    let path =
+      M.get_string_opt [ "-d"; "--dir" ] args
+      |> Option.value ~default:(Sys.getcwd ())
     in
+    let db = M.get_string_opt [ "-b"; "--database" ] args in
+    let db =
+      match db with
+      | Some "postgresql" | Some "postgres" | Some "p" -> Config.Postgresql
+      | Some "mariadb" | Some "m" -> Config.Mariadb
+      | _ -> Config.Postgresql
+    in
+    M.finalize ();
     print_endline
     @@ Format.sprintf
          "create sihl project %s at %s"
          name
          (Filename.concat path name);
-    write_template path (template name db)
+    write_template path (template name db);
+    print_next_steps (Filename.concat path name)
   | _ -> raise P.Invalid_usage
 ;;
 
 let t : P.t =
   { name = "init"
-  ; description = "Creates an empty Sihl project"
-  ; usage = "sihl init <project_name> <directory> <postgres|mariadb>"
+  ; description = "Initializes an empty Sihl project"
+  ; usage = "sihl init <project_name> -d <directory> -b <postgres|mariadb>"
   ; fn
   }
 ;;

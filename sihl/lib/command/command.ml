@@ -1,35 +1,5 @@
-open Printf
 module M = Minicli.CLI
 include Command_pure
-
-let main () =
-  let argc, args = M.init () in
-  if argc = 1
-  then (
-    printf
-      "usage:\n\
-      \  %s {-i|--input} <file> {-o|--output} <file> -n <int> -x\n\
-      \  <float> [-v] [--hi <string>]\n"
-      Sys.argv.(0);
-    exit 1);
-  let input_fn = M.get_string [ "-i"; "--input" ] args in
-  let output_fn = M.get_string [ "-o" ] args in
-  let n = M.get_int [ "-n" ] args in
-  let x = M.get_float [ "-x" ] args in
-  let verbose = M.get_set_bool [ "-v" ] args in
-  let maybe_say_hi = M.get_string_opt [ "--hi" ] args in
-  M.finalize ();
-  printf
-    "i: %s o: %s n: %d x: %f v: %s\n"
-    input_fn
-    output_fn
-    n
-    x
-    (string_of_bool verbose);
-  match maybe_say_hi with
-  | None -> ()
-  | Some name -> printf "Hi %s!\n" name
-;;
 
 let commands : (string, t) Hashtbl.t = Hashtbl.create 20
 let register (cmd : t) = Hashtbl.add commands cmd.name cmd
@@ -71,7 +41,5 @@ let run () =
 
 let () =
   register Command_init.t;
-  register Command_init.t;
-  register Command_init.t;
-  register Command_init.t
+  register Command_dev.t
 ;;
