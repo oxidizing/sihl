@@ -1,3 +1,5 @@
+module Config = Sihl__config.Config
+
 let dune ?(ppx = []) name libs =
   let libs = String.concat " " libs in
   let ppx =
@@ -14,12 +16,19 @@ let dune ?(ppx = []) name libs =
     ppx
 ;;
 
-let dune_test =
-  {|(library
+let dune_test db =
+  let caqti_driver =
+    match db with
+    | Config.Postgresql -> "caqti-driver-postgresql"
+    | Config.Mariadb -> "caqti-driver-mariadb"
+  in
+  Format.sprintf
+    {|(library
    (name test)
-   (libraries sihl lib)
+   (libraries sihl lib %s)
    (inline_tests)
    (preprocess (pps ppx_inline_test ppx_assert lwt_ppx tyxml-jsx)))|}
+    caqti_driver
 ;;
 
 let bin = {|let () = Lib.run ()|}
@@ -53,18 +62,23 @@ let view =
    Consult Sihl.View for more info. *)"
 ;;
 
-let config =
-  {|module Base () = struct
-  let database_url = "postgresql://admin:password@127.0.0.1:5432/dev"
+let config db =
+  let database_url =
+    match db with
+    | Config.Postgresql -> "postgresql://admin:password@127.0.0.1:5432/dev"
+    | Config.Mariadb -> "mariadb://admin:password@127.0.0.1:3306/dev"
+  in
+  Format.sprintf
+    {|module Base () = struct
+  let database_url = "%s"
   let middlewares = [ Dream.sql_pool database_url; Dream.logger ]
   let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
   let test = Sihl.Config.bool ~default:false "SIHL_TEST"
 
   let sihl_secret =
-    "local_SBw74Pe8hYPReC57e9Ag8xd36y6R9yxhFX6MqE66XPxoAiTsyfayF3q5EfbWXbbV"
+    "local_%s"
   ;;
 
-  let email_default_subject = "Hello there 👋"
   let login_url = "/login"
 end
 
@@ -87,6 +101,8 @@ module Production () = struct
   let test = false
   let sihl_secret = Sys.getenv "SIHL_SECRET"
 end|}
+    (Dream.random 64 |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet)
+    database_url
 ;;
 
 let settings =
@@ -141,3 +157,8 @@ let dune_project =
   (caqti-driver-postgresql (>= 1.8.0))
   (caqti-driver-mariadb (>= 1.8.0))))|}
 ;;
+
+let gitignore = {|/_build/
+/_opam/
+.merlin
+.devcontainer/data|}

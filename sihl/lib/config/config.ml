@@ -24,7 +24,6 @@ let database_url () =
 type database =
   | Postgresql
   | Mariadb
-  | Sqlite
 
 let database () : database =
   match Uri.scheme @@ database_url () with
@@ -34,7 +33,6 @@ let database () : database =
     Logs.warn (fun m ->
         m "database MySQL not supported, falling back to MariaDB");
     Mariadb
-  | Some "sqlite" -> Sqlite
   | Some other ->
     failwith
     @@ Format.sprintf

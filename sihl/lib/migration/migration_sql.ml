@@ -116,8 +116,7 @@ let model_to_create_table (db : Config.database) (model : Model.generic)
       (match db, model.pk with
       | Postgresql, Serial n -> Format.sprintf "%s SERIAL PRIMARY KEY" n, []
       | Mariadb, Serial n ->
-        Format.sprintf "%s MEDIUMINT NOT NULL AUTO_INCREMENT" n, []
-      | Sqlite, _ -> failwith "todo sqlite", [])
+        Format.sprintf "%s MEDIUMINT NOT NULL AUTO_INCREMENT" n, [])
       stmts
   in
   let create_table_stmt =
