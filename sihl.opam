@@ -13,6 +13,7 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
+  "base64" {>= "3.5.0"}
   "ppx_enumerate" {>= "v0.15.0"}
   "pgx_lwt_unix" {>= "2.0"}
   "logs" {>= "0.7.0"}
