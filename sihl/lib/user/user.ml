@@ -58,7 +58,7 @@ let passes_test ~(test : t -> bool Lwt.t) (view : View.t) : View.t =
     view
 ;;
 
-let login_required ?(login_url : string = Config.login_url ()) (view : View.t)
+let login_required ?(login_path : string = Config.login_path ()) (view : View.t)
     : View.t
   =
   List.map
@@ -66,7 +66,7 @@ let login_required ?(login_url : string = Config.login_url ()) (view : View.t)
       ( meth_
       , fun req ->
           match Dream.session_field req "user" with
-          | None -> Dream.redirect req login_url
+          | None -> Dream.redirect req login_path
           | Some user_id ->
             let%lwt _, user =
               Dream.sql req (fun conn ->

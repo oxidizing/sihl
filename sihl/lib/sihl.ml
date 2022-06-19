@@ -8,9 +8,4 @@ module Query = Sihl__query.Query
 module Migration = Sihl__migration.Migration
 module Test = Sihl__test.Test
 
-let run (module App_config : Config.CONFIG) =
-  Config.load_env_file ();
-  Obj.magic ()
-;;
-
 let if_debug m h = if Config.debug () then m h else h

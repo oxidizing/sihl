@@ -1,54 +1,6 @@
-let log_src = Logs.Src.create "sihl.config"
-
-module Logs = (val Logs.src_log log_src : Logs.LOG)
-module Default = Config_default
-
-module type CONFIG = sig
-  val database_url : string
-  val sihl_secret : string
-  val login_url : string
-end
-
-let config = ref None
-
-let get_config () =
-  match !config with
-  | Some config -> config
-  | None -> failwith "config has not been initialized"
-;;
-
-let database_url () =
-  let module Config = (val get_config () : CONFIG) in
-  Uri.of_string Config.database_url
-;;
-
 type database =
   | Postgresql
   | Mariadb
-
-let database () : database =
-  match Uri.scheme @@ database_url () with
-  | Some "postgresql" | Some "postgres" -> Postgresql
-  | Some "mariadb" -> Mariadb
-  | Some "mysql" ->
-    Logs.warn (fun m ->
-        m "database MySQL not supported, falling back to MariaDB");
-    Mariadb
-  | Some other ->
-    failwith
-    @@ Format.sprintf
-         "database host '%s' not supported, use postgresql://, mariadb:// or \
-          sqlite:// instead"
-         other
-  | None -> failwith "no database configured"
-;;
-
-let configure (module Config : CONFIG) = config := Some (module Config)
-
-let login_url () : string =
-  let module Config = (val get_config () : CONFIG) in
-  Config.login_url
-;;
 
 let bool ?default k =
   match Sys.getenv_opt k, default with
@@ -72,13 +24,6 @@ let int ?default k =
   | None, None ->
     failwith
     @@ Format.sprintf "environment var %s was not set or it is not an integer" k
-;;
-
-let store data =
-  List.iter
-    (fun (key, value) ->
-      if String.equal "" value then () else Unix.putenv key value)
-    data
 ;;
 
 let envs_to_kv envs =
@@ -124,34 +69,65 @@ let absolute_path (relative_path : string) =
   Filename.concat (root_path ()) relative_path
 ;;
 
-let env_files_path () =
-  match Sys.getenv_opt "ENV_FILES_PATH" with
-  | None | Some "" -> root_path ()
-  | Some path -> path
-;;
+let env_files_dir () = string ~default:(root_path ()) "ENV_FILES_PATH"
 
-let read_env_file () =
-  let path = env_files_path () in
-  let filename = path ^ "/" ^ ".env" in
+let read_env_file filename =
+  let path = env_files_dir () in
+  let filename = Filename.concat path filename in
   let exists = CCIO.File.exists filename in
   if exists
   then (
-    Logs.info (fun m -> m "env file found at %s" filename);
+    print_endline @@ Format.sprintf "env file found at %s" filename;
     let envs = CCIO.read_lines_l (open_in filename) in
-    Some (envs_to_kv envs))
-  else None
+    envs_to_kv envs)
+  else []
 ;;
 
-let load_env_file () =
-  let file_configuration = read_env_file () in
-  store (Option.value file_configuration ~default:[])
+let configure data =
+  List.iter
+    (fun (key, value) ->
+      if String.equal "" value then () else Unix.putenv key value)
+    data
 ;;
 
-let environment_variables () =
-  load_env_file ();
-  Unix.environment () |> Array.to_list |> envs_to_kv
+let load_env_file_if_exists filename =
+  if CCIO.File.exists filename
+  then (
+    let file_configuration = read_env_file filename in
+    configure file_configuration)
 ;;
 
-let port () = 1234
-let host () = "localhost"
-let debug () = true
+let port () = int "PORT"
+let host () = string "HOST"
+let debug () = bool "SIHL_DEBUG"
+let database_url () = Uri.of_string @@ string "DATABASE_URL"
+let login_path () = string "LOGIN_PATH"
+
+let database () : database =
+  match Uri.scheme @@ database_url () with
+  | Some "postgresql" | Some "postgres" -> Postgresql
+  | Some "mariadb" -> Mariadb
+  | Some "mysql" ->
+    print_endline "database MySQL not supported, falling back to MariaDB";
+    Mariadb
+  | Some other ->
+    failwith
+    @@ Format.sprintf
+         "database host %s not supported, use postgresql:// or mariadb://"
+         other
+  | None -> failwith "no database configured"
+;;
+
+let () =
+  load_env_file_if_exists ".env.base";
+  match string "SIHL_ENV" with
+  | "local" -> load_env_file_if_exists ".env.local"
+  | "test" -> load_env_file_if_exists ".env.test"
+  | "production" -> load_env_file_if_exists ".env.production"
+  | env ->
+    failwith
+    @@ Format.sprintf
+         "invalid environment %s configured, valid options are local, test and \
+          production"
+         env
+;;
