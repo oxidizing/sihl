@@ -27,6 +27,7 @@ let dune_test db =
 
 let bin = {|let () = Lib.run ()|}
 
+(* Add a nice template with styling for a "You are all set" page *)
 let lib =
   {|module C = Sihl.Config
 
@@ -67,72 +68,31 @@ let view =
 (* TODO 1. Generate .env and .env.test 2. .env.test is based on .env 3. Make
    sure on production it's a mix of .env and ENV vars 4. Use model_schema for
    sihl config to display all configurations that are supported and needed. *)
-let config db =
+let env_base db =
   let database_url =
     match db with
     | Config.Postgresql -> "postgresql://admin:password@127.0.0.1:5432/dev"
     | Config.Mariadb -> "mariadb://admin:password@127.0.0.1:3306/dev"
   in
+  let random_secret =
+    Dream.random 64 |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet
+  in
   Format.sprintf
-    {|module Base () = struct
-  let database_url = "%s"
-  let middlewares = [ Dream.sql_pool database_url; Dream.logger ]
-  let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
-  let test = Sihl.Config.bool ~default:false "SIHL_TEST"
-
-  let sihl_secret =
-    "local_%s"
-  ;;
-
-  let login_url = "/login"
-end
-
-module Local () = struct
-  include Base ()
-end
-
-module Test () = struct
-  include Base ()
-
-  let debug = Sihl.Config.bool ~default:true "SIHL_DEBUG"
-  let test = Sihl.Config.bool ~default:true "SIHL_TEST"
-end
-
-module Production () = struct
-  include Base ()
-
-  let database_url = Sys.getenv "DATABASE_URL"
-  let debug = false
-  let test = false
-  let sihl_secret = Sys.getenv "SIHL_SECRET"
-end|}
-    (Dream.random 64 |> Base64.encode_string ~alphabet:Base64.uri_safe_alphabet)
+    {|DATABASE_URL=%s
+SIHL_DEBUG=false
+SIHL_SECRET=local_%s
+LOGIN_URL=/login
+|}
     database_url
+    random_secret
 ;;
 
-let settings =
-  {|module type S = sig
-  include module type of Config.Production ()
-end
+let env_local = {|SIHL_DEBUG=true|}
+let env_test = {|SIHL_DEBUG=true|}
 
-let config = ref (module Config.Local () : S)
-
-let () =
-  match
-    ( Sihl.Config.bool ~default:true "SIHL_DEBUG"
-    , Sihl.Config.bool ~default:false "SIHL_TEST" )
-  with
-  | true, false | true, true ->
-    print_endline "load configuration for env: local";
-    config := (module Config.Local ())
-  | false, true ->
-    print_endline "load configuration for env: test";
-    config := (module Config.Test ())
-  | false, false ->
-    print_endline "load configuration for env: production";
-    config := (module Config.Production ())
-;;|}
-;;
+let env_production = {|SIHL_DEBUG=false
+DATABASE_URL=
+SIHL_SECRET=|}
 
 let test =
   {|let%test_unit "1 + 1 = 2" =
