@@ -11,4 +11,5 @@
   dune-build-info
   containers
   inotify.lwt
+  utop
   spawn))
