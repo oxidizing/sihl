@@ -17,6 +17,7 @@ let fn _ =
       let%lwt inotify = Lwt_inotify.create () in
       let%lwt () = Lwt_unix.sleep 1.0 in
       let pid = Spawn.spawn ~prog:bin_path ~argv:[] () in
+      Unix.putenv "SIHL_ENV" "local";
       print_endline "watching for changes";
       let%lwt _ = Lwt_inotify.add_watch inotify bin_path [ Inotify.S_Attrib ] in
       let%lwt event = Lwt_inotify.read inotify in

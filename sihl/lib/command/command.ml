@@ -42,5 +42,6 @@ let run () =
 let () =
   register Command_init.t;
   register Command_dev.t;
-  register Command_shell.t
+  register Command_shell.t;
+  register Command_test.t
 ;;
