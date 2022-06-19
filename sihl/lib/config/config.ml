@@ -151,3 +151,7 @@ let environment_variables () =
   load_env_file ();
   Unix.environment () |> Array.to_list |> envs_to_kv
 ;;
+
+let port () = 1234
+let host () = "localhost"
+let debug () = true

@@ -13,6 +13,4 @@ let run (module App_config : Config.CONFIG) =
   Obj.magic ()
 ;;
 
-let middlewares middlewares req =
-  List.fold_left (fun a b -> b a) req middlewares
-;;
+let if_debug m h = if Config.debug () then m h else h

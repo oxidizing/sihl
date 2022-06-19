@@ -99,14 +99,14 @@ let write_template path template =
 let print_next_steps path =
   print_endline @@ Format.sprintf "Sihl project initialized at %s" path;
   print_endline
-  @@ Format.sprintf
-       {|Install the dependencies in a local switch by running %s
-  opam switch create . 4.12.0 -y
+    {|Install dependencies in a local switch by running
+  opam switch create . 4.14.0 -y --with-test
 
-Then start the development server with
+Install recommended dev tools
+  opam install ocamlformat-rpc ocaml-lsp-server
+
+Start the development server with
   sihl dev|}
-       path;
-  ()
 ;;
 
 let fn args =

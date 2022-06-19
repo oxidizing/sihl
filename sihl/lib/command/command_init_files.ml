@@ -28,11 +28,19 @@ let dune_test db =
 let bin = {|let () = Lib.run ()|}
 
 let lib =
-  {|module Config = (val !Settings.config : Settings.S)
+  {|module C = Sihl.Config
 
-   let run () =
-  Sihl.run (module Config)
-  @@ Dream.serve ~interface:"0.0.0.0"
+let routes = [ Dream.get "/" (fun _ -> Dream.html "Hello World!") ]
+
+let routes =
+  if C.debug () then routes @ [ Dream_livereload.route () ] else routes
+;;
+
+let run () =
+  Dream.run ~port:(C.port ()) ~interface:(C.host ())
+  @@ Dream.logger
+  @@ Sihl.if_debug (Dream_livereload.inject_script ())
+  @@ Dream.router routes
 ;;|}
 ;;
 
@@ -56,6 +64,9 @@ let view =
    Consult Sihl.View for more info. *)"
 ;;
 
+(* TODO 1. Generate .env and .env.test 2. .env.test is based on .env 3. Make
+   sure on production it's a mix of .env and ENV vars 4. Use model_schema for
+   sihl config to display all configurations that are supported and needed. *)
 let config db =
   let database_url =
     match db with
@@ -154,6 +165,7 @@ let dune_project db =
  (depends
   (sihl (>= 4.0.0))
   (tyxml-jsx (>= 4.5.0))
+  (dream-livereload (>= 0.2.0))
   (ppx_inline_test (and :with-test (>= v0.15.0)))
   (%s (>= 1.8.0))))|}
     caqti_driver
@@ -179,6 +191,7 @@ depends: [
   "dune" {>= "2.8"}
   "sihl" {>= "4.0.0"}
   "tyxml-jsx" {>= "4.5.0"}
+  "dream-livereload" {>= "0.2.0"}
   "%s" {>= "1.8.0"}
   "ppx_inline_test" {with-test & >= "v0.15.0"}
   "odoc" {with-doc}

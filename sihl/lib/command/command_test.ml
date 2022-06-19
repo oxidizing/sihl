@@ -10,6 +10,14 @@ let fn _ =
   ()
 ;;
 
+let cov : P.t =
+  { name = "test.cov"
+  ; description = "Run tests and display coverage"
+  ; usage = "sihl test.cov"
+  ; fn
+  }
+;;
+
 let t : P.t =
-  { name = "test"; description = "Runs tests"; usage = "sihl test"; fn }
+  { name = "test"; description = "Run tests"; usage = "sihl test"; fn }
 ;;

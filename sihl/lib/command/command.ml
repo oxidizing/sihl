@@ -11,7 +11,11 @@ let version () =
 ;;
 
 let command_names () =
-  commands |> Hashtbl.to_seq_keys |> List.of_seq |> String.concat "\n   "
+  commands
+  |> Hashtbl.to_seq_keys
+  |> List.of_seq
+  |> List.sort String.compare
+  |> String.concat "\n   "
 ;;
 
 let print_help () =
@@ -34,8 +38,14 @@ let run () =
       (match Hashtbl.find_opt commands command with
       | None -> failwith @@ Format.sprintf "command %s unknown" command
       | Some command ->
-        (try command.fn args with
-        | Invalid_usage -> print_endline command.usage))
+        let help = M.get_set_bool [ "--help" ] args in
+        if help
+        then (
+          print_endline command.description;
+          print_endline @@ Format.sprintf "  %s" command.usage)
+        else (
+          try command.fn args with
+          | Invalid_usage -> print_endline command.usage))
     | _ -> ())
 ;;
 
@@ -43,5 +53,9 @@ let () =
   register Command_init.t;
   register Command_dev.t;
   register Command_shell.t;
-  register Command_test.t
+  register Command_test.t;
+  register Command_test.cov;
+  register Command_migrate.t;
+  register Command_migrate.gen;
+  register Command_migrate.down
 ;;
