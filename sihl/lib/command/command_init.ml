@@ -11,7 +11,7 @@ let template name db =
     ( name
     , [ Dir
           ( "bin"
-          , [ File ("dune", F.dune ~typ:"bin" "bin" [ "lib" ])
+          , [ File ("dune", F.dune ~typ:"executable" "bin" [ "lib" ])
             ; File ("bin.ml", F.bin)
             ] )
       ; Dir
@@ -25,7 +25,6 @@ let template name db =
                     ; "model"
                     ; "template"
                     ; "view"
-                    ; "settings"
                     ; (match db with
                       | Config.Postgresql -> "caqti-driver-postgresql"
                       | Config.Mariadb -> "caqti-driver-mariadb")

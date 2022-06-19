@@ -120,14 +120,9 @@ let database () : database =
 
 let () =
   load_env_file_if_exists ".env.base";
-  match string "SIHL_ENV" with
+  match string ~default:"local" "SIHL_ENV" with
   | "local" -> load_env_file_if_exists ".env.local"
   | "test" -> load_env_file_if_exists ".env.test"
   | "production" -> load_env_file_if_exists ".env.production"
-  | env ->
-    failwith
-    @@ Format.sprintf
-         "invalid environment %s configured, valid options are local, test and \
-          production"
-         env
+  | _ -> load_env_file_if_exists ".env.local"
 ;;
