@@ -1,7 +1,7 @@
 (lang dune 2.8)
 (generate_opam_files true)
 (name sihl)
-(version 3.0.3)
+(version 4.0.0)
 (authors "Josef Erben" "Aron Erben" "Miko Nieminen")
 (source (github oxidizing/sihl))
 (license MIT)
@@ -15,6 +15,8 @@
  (description
   "\nSihl is a batteries-included web framework. Thanks to the modular architecture, included batteries can be swapped out easily. Statically typed functional programming with OCaml makes web development fun, fast and safe. Sihl supports PostgreSQL and MariaDB.\n")
  (depends
+  (spawn (>= v0.15.1))
+  (inotify (>= 2.4))
   (base64 (>= 3.5.0))
   (ppx_enumerate (>= v0.15.0))
   (pgx_lwt_unix (>= 2.0))

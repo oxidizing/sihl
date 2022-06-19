@@ -1,19 +1,13 @@
 module Config = Sihl__config.Config
 
-let dune ?(ppx = []) name libs =
+let dune ?(typ = "library") ?(ppx = []) name libs =
   let libs = String.concat " " libs in
   let ppx =
     if List.length ppx > 0
     then ppx |> String.concat " " |> Format.sprintf "\n (preprocess (pps %s))"
     else ""
   in
-  Format.sprintf
-    {|(library
-     (name %s)
-     (libraries %s)%s)|}
-    name
-    libs
-    ppx
+  Format.sprintf "(%s\n (name %s)\n (libraries %s)%s)" typ name libs ppx
 ;;
 
 let dune_test db =
@@ -143,8 +137,14 @@ let ocamlformat =
    margin = 80"
 ;;
 
-let dune_project =
-  {|(lang dune 2.8)
+let dune_project db =
+  let caqti_driver =
+    match db with
+    | Config.Postgresql -> "caqti-driver-postgresql"
+    | Config.Mariadb -> "caqti-driver-mariadb"
+  in
+  Format.sprintf
+    {|(lang dune 2.8)
 (generate_opam_files true)
 (package
  (name app)
@@ -154,8 +154,9 @@ let dune_project =
  (depends
   (sihl (>= 4.0.0))
   (tyxml-jsx (>= 4.5.0))
-  (caqti-driver-postgresql (>= 1.8.0))
-  (caqti-driver-mariadb (>= 1.8.0))))|}
+  (ppx_inline_test (and :with-test (>= v0.15.0)))
+  (%s (>= 1.8.0))))|}
+    caqti_driver
 ;;
 
 let gitignore = {|/_build/
@@ -179,6 +180,7 @@ depends: [
   "sihl" {>= "4.0.0"}
   "tyxml-jsx" {>= "4.5.0"}
   "%s" {>= "1.8.0"}
+  "ppx_inline_test" {with-test & >= "v0.15.0"}
   "odoc" {with-doc}
 ]
 build: [

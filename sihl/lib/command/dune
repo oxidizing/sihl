@@ -1,4 +1,14 @@
 (library
  (name sihl__command)
  (public_name sihl.command)
- (libraries sihl.migration dream base64 minicli dune-build-info containers))
+ (preprocess
+  (pps lwt_ppx))
+ (libraries
+  sihl.migration
+  dream
+  base64
+  minicli
+  dune-build-info
+  containers
+  inotify.lwt
+  spawn))

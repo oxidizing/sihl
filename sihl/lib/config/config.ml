@@ -1,6 +1,7 @@
 let log_src = Logs.Src.create "sihl.config"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
+module Default = Config_default
 
 module type CONFIG = sig
   val database_url : string
@@ -44,17 +45,10 @@ let database () : database =
 
 let configure (module Config : CONFIG) = config := Some (module Config)
 
-let absolute_path (project_path : string) =
-  (* TODO implement *)
-  project_path
-;;
-
 let login_url () : string =
   let module Config = (val get_config () : CONFIG) in
   Config.login_url
 ;;
-
-module Default = Config_default
 
 let bool ?default k =
   match Sys.getenv_opt k, default with
@@ -101,7 +95,9 @@ let envs_to_kv envs =
 let root_path () =
   match Sys.getenv_opt "ROOT_PATH" with
   | None | Some "" ->
-    let markers = [ ".root"; ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
+    let markers =
+      [ ".root"; ".git"; ".gitignore"; ".hg"; ".svn"; ".bzr"; "_darcs" ]
+    in
     let rec find_markers path_els =
       let path = String.concat "/" path_els in
       if List.exists
@@ -110,40 +106,40 @@ let root_path () =
       then (
         (* Path found => Write it into the env var to "memoize" it *)
         Unix.putenv "ROOT_PATH" path;
-        Some path)
+        path)
       else (
         match path_els with
-        | [] -> None
+        | [] ->
+          failwith
+            "could not determine root project path, please create a .git \
+             directory"
         | _ -> find_markers @@ CCList.take (List.length path_els - 1) path_els)
     in
     find_markers @@ String.split_on_char '/' (Unix.getcwd ())
-  | Some path -> Some path
+  | Some path -> path
+;;
+
+let absolute_path (relative_path : string) =
+  (* TODO implement *)
+  Filename.concat (root_path ()) relative_path
 ;;
 
 let env_files_path () =
   match Sys.getenv_opt "ENV_FILES_PATH" with
   | None | Some "" -> root_path ()
-  | Some path -> Some path
+  | Some path -> path
 ;;
 
 let read_env_file () =
-  match env_files_path () with
-  | Some path ->
-    let filename = path ^ "/" ^ ".env" in
-    let exists = CCIO.File.exists filename in
-    if exists
-    then (
-      Logs.info (fun m -> m "env file found at %s" filename);
-      let envs = CCIO.read_lines_l (open_in filename) in
-      Some (envs_to_kv envs))
-    else None
-  | None ->
-    Logs.debug (fun m ->
-        m
-          "no env files directory found, please provide your own directory \
-           path with environment variable ENV_FILES_PATH if you would like to \
-           use env files");
-    None
+  let path = env_files_path () in
+  let filename = path ^ "/" ^ ".env" in
+  let exists = CCIO.File.exists filename in
+  if exists
+  then (
+    Logs.info (fun m -> m "env file found at %s" filename);
+    let envs = CCIO.read_lines_l (open_in filename) in
+    Some (envs_to_kv envs))
+  else None
 ;;
 
 let load_env_file () =

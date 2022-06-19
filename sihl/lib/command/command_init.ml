@@ -11,7 +11,9 @@ let template name db =
     ( name
     , [ Dir
           ( "bin"
-          , [ File ("dune", F.dune "bin" [ "lib" ]); File ("bin.ml", F.bin) ] )
+          , [ File ("dune", F.dune ~typ:"bin" "bin" [ "lib" ])
+            ; File ("bin.ml", F.bin)
+            ] )
       ; Dir
           ( "lib"
           , [ File
@@ -69,7 +71,7 @@ let template name db =
       ; File (".ocamlformat", F.ocamlformat)
       ; File (".env", "")
       ; File (".gitignore", F.gitignore)
-      ; File ("dune-project", F.dune_project)
+      ; File ("dune-project", F.dune_project db)
       ; File ("app.opam", F.opam db)
       ] )
 ;;
