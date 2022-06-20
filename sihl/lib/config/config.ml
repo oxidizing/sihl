@@ -71,16 +71,9 @@ let absolute_path (relative_path : string) =
 
 let env_files_dir () = string ~default:(root_path ()) "ENV_FILES_PATH"
 
-let read_env_file filename =
-  let path = env_files_dir () in
-  let filename = Filename.concat path filename in
-  let exists = CCIO.File.exists filename in
-  if exists
-  then (
-    print_endline @@ Format.sprintf "env file found at %s" filename;
-    let envs = CCIO.read_lines_l (open_in filename) in
-    envs_to_kv envs)
-  else []
+let read_env_file path =
+  let envs = CCIO.read_lines_l (open_in path) in
+  envs_to_kv envs
 ;;
 
 let configure data =
@@ -91,9 +84,11 @@ let configure data =
 ;;
 
 let load_env_file_if_exists filename =
-  if CCIO.File.exists filename
+  let path = Filename.concat (env_files_dir ()) filename in
+  if CCIO.File.exists path
   then (
-    let file_configuration = read_env_file filename in
+    print_endline @@ Format.sprintf "env file found %s" filename;
+    let file_configuration = read_env_file path in
     configure file_configuration)
 ;;
 

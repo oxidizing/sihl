@@ -15,7 +15,6 @@
  (description
   "\nSihl is a batteries-included web framework. Thanks to the modular architecture, included batteries can be swapped out easily. Statically typed functional programming with OCaml makes web development fun, fast and safe. Sihl supports PostgreSQL and MariaDB.\n")
  (depends
-  (utop (>= 2.9.1))
   (spawn (>= v0.15.1))
   (inotify (>= 2.4))
   (base64 (>= 3.5.0))

@@ -21,6 +21,7 @@ let template name db =
                 , F.dune
                     "lib"
                     [ "sihl"
+                    ; "dream-livereload"
                     ; "form"
                     ; "model"
                     ; "template"
@@ -69,6 +70,7 @@ let template name db =
       ; File (".gitignore", F.gitignore)
       ; File ("dune-project", F.dune_project db)
       ; File ("app.opam", F.opam db)
+      ; File ("default.nix", F.default_nix db)
       ] )
 ;;
 
@@ -96,7 +98,7 @@ let print_next_steps path =
   print_endline @@ Format.sprintf "Sihl project initialized at %s" path;
   print_endline
     {|Install dependencies in a local switch by running
-  opam switch create . 4.14.0 -y --with-test
+  opam switch create . 4.14.0 -y
 
 Install recommended dev tools
   opam install ocamlformat-rpc ocaml-lsp-server

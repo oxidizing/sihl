@@ -18,10 +18,10 @@ let dune_test db =
   in
   Format.sprintf
     {|(library
-   (name test)
-   (libraries sihl lib %s)
-   (inline_tests)
-   (preprocess (pps ppx_inline_test ppx_assert lwt_ppx tyxml-jsx)))|}
+ (name test)
+ (libraries sihl lib %s)
+ (inline_tests)
+ (preprocess (pps ppx_inline_test ppx_assert lwt_ppx tyxml-jsx)))|}
     caqti_driver
 ;;
 
@@ -126,7 +126,7 @@ let dune_project db =
   (sihl (>= 4.0.0))
   (tyxml-jsx (>= 4.5.0))
   (dream-livereload (>= 0.2.0))
-  (ppx_inline_test (and :with-test (>= v0.15.0)))
+  (ppx_inline_test (>= v0.15.0))
   (%s (>= 1.8.0))))|}
     caqti_driver
 ;;
@@ -153,7 +153,7 @@ depends: [
   "tyxml-jsx" {>= "4.5.0"}
   "dream-livereload" {>= "0.2.0"}
   "%s" {>= "1.8.0"}
-  "ppx_inline_test" {with-test & >= "v0.15.0"}
+  "ppx_inline_test" {>= "v0.15.0"}
   "odoc" {with-doc}
 ]
 build: [
@@ -171,4 +171,23 @@ build: [
   ]
 ]|}
     caqti_driver
+;;
+
+let default_nix db =
+  match db with
+  | Config.Postgresql ->
+    {|with import <nixpkgs> { };
+
+mkShell {
+  buildInputs = [ openssl pkgconfig libev postgresql ];
+  shellHook = "eval $(opam env)";
+}|}
+  | Config.Mariadb ->
+    {|with import <nixpkgs> { };
+
+mkShell {
+  buildInputs = [ pkgconfig openssl libev mariadb-client mariadb-connector-c ];
+  LD_LIBRARY_PATH = "${mariadb-connector-c}/lib/mariadb";
+  shellHook = "eval $(opam env)";
+}|}
 ;;
