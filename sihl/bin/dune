@@ -2,4 +2,14 @@
  (name main)
  (public_name sihl)
  (package sihl)
- (libraries sihl))
+ (preprocess
+  (pps lwt_ppx))
+ (libraries
+  sihl
+  utop
+  base64
+  minicli
+  dune-build-info
+  containers
+  inotify.lwt
+  spawn))

@@ -1,13 +1,10 @@
-module P = Command_pure
-module Config = Sihl__config.Config
-
 let fn _ =
   let module M = Minicli.CLI in
   M.finalize ();
-  let bin_dir = Config.absolute_path "_build/default/bin/" in
+  let bin_dir = Sihl.Config.absolute_path "_build/default/bin/" in
   let bin_path = Filename.concat bin_dir "bin.exe" in
   print_endline @@ Format.sprintf "start development server";
-  let bin_dune = Config.absolute_path "/_opam/bin/dune" in
+  let bin_dune = Sihl.Config.absolute_path "/_opam/bin/dune" in
   let _ =
     Spawn.spawn ~prog:bin_dune ~argv:[ "dune"; "build"; "--root=."; "-w" ] ()
   in
@@ -39,7 +36,7 @@ let fn _ =
   Lwt_main.run (watch ())
 ;;
 
-let t : P.t =
+let t : Sihl.Command.t =
   { name = "dev"
   ; description = "Start a development web server"
   ; usage = "sihl dev"

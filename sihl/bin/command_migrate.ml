@@ -1,8 +1,6 @@
-module P = Command_pure
-
 let fn _ = failwith "migrate()"
 
-let down : P.t =
+let down : Sihl.Command.t =
   { name = "migrate.down"
   ; description = "Revert last migration"
   ; usage = "sihl migrate.down"
@@ -10,7 +8,7 @@ let down : P.t =
   }
 ;;
 
-let gen : P.t =
+let gen : Sihl.Command.t =
   { name = "migrate.gen"
   ; description = "Generate CREATE TABLE migrations from models"
   ; usage = "sihl migrate.gen"
@@ -18,7 +16,7 @@ let gen : P.t =
   }
 ;;
 
-let t : P.t =
+let t : Sihl.Command.t =
   { name = "migrate"
   ; description = "Run migrations"
   ; usage = "sihl migrate"

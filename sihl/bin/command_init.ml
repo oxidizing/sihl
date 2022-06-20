@@ -1,5 +1,3 @@
-module Config = Sihl__config.Config
-module P = Command_pure
 module F = Command_init_files
 
 type template =
@@ -27,8 +25,8 @@ let template name db =
                     ; "template"
                     ; "view"
                     ; (match db with
-                      | Config.Postgresql -> "caqti-driver-postgresql"
-                      | Config.Mariadb -> "caqti-driver-mariadb")
+                      | Sihl.Config.Postgresql -> "caqti-driver-postgresql"
+                      | Sihl.Config.Mariadb -> "caqti-driver-mariadb")
                     ] )
             ; File ("lib.ml", F.lib)
             ; Dir
@@ -118,9 +116,9 @@ let fn args =
     let db = M.get_string_opt [ "-b"; "--database" ] args in
     let db =
       match db with
-      | Some "postgresql" | Some "postgres" | Some "p" -> Config.Postgresql
-      | Some "mariadb" | Some "m" -> Config.Mariadb
-      | _ -> Config.Postgresql
+      | Some "postgresql" | Some "postgres" | Some "p" -> Sihl.Config.Postgresql
+      | Some "mariadb" | Some "m" -> Sihl.Config.Mariadb
+      | _ -> Sihl.Config.Postgresql
     in
     M.finalize ();
     print_endline
@@ -130,10 +128,10 @@ let fn args =
          (Filename.concat path name);
     write_template path (template name db);
     print_next_steps (Filename.concat path name)
-  | _ -> raise P.Invalid_usage
+  | _ -> raise Sihl.Command.Invalid_usage
 ;;
 
-let t : P.t =
+let t : Sihl.Command.t =
   { name = "init"
   ; description = "Initializes an empty Sihl project"
   ; usage = "sihl init <project_name> -d <directory> -b <postgres|mariadb>"
