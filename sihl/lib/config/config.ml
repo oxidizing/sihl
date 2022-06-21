@@ -87,7 +87,6 @@ let load_env_file_if_exists filename =
   let path = Filename.concat (env_files_dir ()) filename in
   if CCIO.File.exists path
   then (
-    print_endline @@ Format.sprintf "env file found %s" filename;
     let file_configuration = read_env_file path in
     configure file_configuration)
 ;;

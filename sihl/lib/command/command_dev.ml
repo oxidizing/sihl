@@ -4,7 +4,6 @@ module Config = Sihl__config.Config
 let fn _ =
   let module M = Minicli.CLI in
   M.finalize ();
-  (* TODO setup signal handlers and kill process *)
   let bin_dir = Config.absolute_path "_build/default/bin/" in
   let bin_path = Filename.concat bin_dir "bin.exe" in
   print_endline @@ Format.sprintf "start development server";
@@ -25,12 +24,11 @@ let fn _ =
         let pid = Spawn.spawn ~prog:bin_path ~argv:[ "bin.exe"; "start" ] () in
         Unix.putenv "SIHL_ENV" "local";
         print_endline "watching for changes";
-        let%lwt ((_, _, _, filename) as event) = Lwt_inotify.read inotify in
-        let%lwt () = Lwt_io.printl (Inotify.string_of_event event) in
+        let%lwt _, _, _, filename = Lwt_inotify.read inotify in
         (match filename with
         | Some "bin.exe" ->
           print_endline @@ Format.sprintf "restart server";
-          Unix.kill pid 9;
+          Unix.kill pid Sys.sigint;
           let%lwt () = Lwt_unix.sleep 0.1 in
           loop ()
         | _ -> loop ())

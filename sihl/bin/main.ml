@@ -27,7 +27,6 @@ let () =
   let _, args = M.init () in
   let bin_dune = Sihl.Config.bin_dune () in
   let bin_app_path = Sihl.Config.bin_app_path () in
-  print_endline @@ Format.sprintf "args: %s" (String.concat " " args);
   match args with
   | _ :: "init" :: args ->
     (* We know that the init command is available *)

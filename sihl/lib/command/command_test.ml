@@ -4,7 +4,6 @@ module Config = Sihl__config.Config
 let fn _ =
   let bin_dune = Config.absolute_path "/_opam/bin/dune" in
   Unix.putenv "SIHL_ENV" "test";
-  (* TODO setup signal handlers and kill process *)
   let _ =
     Spawn.spawn ~prog:bin_dune ~argv:[ "dune"; "runtest"; "--root=."; "-w" ] ()
   in
