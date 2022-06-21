@@ -4,12 +4,6 @@ module M = Minicli.CLI
 let commands : (string, t) Hashtbl.t = Hashtbl.create 20
 let register (cmd : t) = Hashtbl.add commands cmd.name cmd
 
-let version () =
-  match Build_info.V1.version () with
-  | None -> "%%VERSION%%"
-  | Some version -> Build_info.V1.Version.to_string version
-;;
-
 let command_names () =
   commands
   |> Hashtbl.to_seq_keys
@@ -20,8 +14,7 @@ let command_names () =
 
 let print_help () =
   Printf.printf
-    "Sihl %s\nRun one of the following commands with the argument --help\n   %s"
-    (version ())
+    "Run one of the following commands with the argument --help\n   %s"
     (command_names ())
 ;;
 

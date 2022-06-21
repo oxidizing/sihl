@@ -44,7 +44,6 @@
   ppx_deriving_yojson
   caqti-lwt
   fieldslib
-  dune-build-info
   (ppx_inline_test (and :with-test (>= v0.15.0)))
   (ppx_assert (and :with-test (>= v0.15.0)))
   (caqti-driver-postgresql (and (>= 1.8.0) :with-test))

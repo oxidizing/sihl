@@ -11,5 +11,4 @@
   minicli
   containers
   inotify.lwt
-  spawn
-  dune-build-info))
+  spawn))

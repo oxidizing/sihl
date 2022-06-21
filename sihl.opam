@@ -42,7 +42,6 @@ depends: [
   "ppx_deriving_yojson"
   "caqti-lwt"
   "fieldslib"
-  "dune-build-info"
   "ppx_inline_test" {with-test & >= "v0.15.0"}
   "ppx_assert" {with-test & >= "v0.15.0"}
   "caqti-driver-postgresql" {>= "1.8.0" & with-test}

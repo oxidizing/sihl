@@ -2,14 +2,13 @@ module M = Minicli.CLI
 
 let forward_command bin_app_path args =
   let command = Format.sprintf "%s %s" bin_app_path (String.concat " " args) in
-  print_endline @@ Format.sprintf "forwarding command %s" command;
   let _ = Unix.system command in
   ()
 ;;
 
 let run_init args =
   match Hashtbl.find_opt Sihl.Command.commands "init" with
-  | None -> failwith "could not find command init"
+  | None -> print_endline "could not find command init"
   | Some command ->
     let help = M.get_set_bool [ "--help" ] args in
     M.finalize ();
@@ -48,18 +47,16 @@ let () =
           if command.stateful
           then forward_command bin_app_path (List.cons name args)
           else Sihl.Command.run ())
-      else (
+      else
         print_endline
         @@ Format.sprintf
              "App not found at %s, did you change the binary name from bin.ml?\n\
              \  sihl init --help"
-             bin_app_path;
-        failwith "could not run app")
+             bin_app_path
     | _ ->
       print_endline
         "It seems like this is not a Sihl project, initialize one\n\
-        \  sihl init --help";
-      failwith "could not run app")
+        \  sihl init --help")
   | [ _ ] | [] ->
     if CCIO.File.exists bin_app_path
     then forward_command bin_app_path []
