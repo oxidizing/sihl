@@ -59,5 +59,7 @@ let () =
   register Command_test.cov;
   register Command_migrate.t;
   register Command_migrate.gen;
-  register Command_migrate.down
+  register Command_migrate.down;
+  register Command_static.t;
+  register Command_static.install
 ;;
