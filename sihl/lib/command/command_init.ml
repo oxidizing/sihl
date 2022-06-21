@@ -1,3 +1,5 @@
+open Command_pure
+module Config = Sihl__config.Config
 module F = Command_init_files
 
 type template =
@@ -25,8 +27,8 @@ let template name db =
                     ; "template"
                     ; "view"
                     ; (match db with
-                      | Sihl.Config.Postgresql -> "caqti-driver-postgresql"
-                      | Sihl.Config.Mariadb -> "caqti-driver-mariadb")
+                      | Config.Postgresql -> "caqti-driver-postgresql"
+                      | Config.Mariadb -> "caqti-driver-mariadb")
                     ] )
             ; File ("lib.ml", F.lib)
             ; Dir
@@ -36,9 +38,7 @@ let template name db =
                   ] )
             ; Dir
                 ( "model"
-                , [ File ("dune", F.dune "model" [ "sihl" ])
-                  ; File ("model.ml", F.model)
-                  ] )
+                , [ File ("dune", F.dune_model); File ("model.ml", F.model) ] )
             ; Dir
                 ( "template"
                 , [ File
@@ -59,7 +59,7 @@ let template name db =
             ] )
       ; Dir ("static", [ File (".gitkeep", "") ])
       ; Dir ("test", [ File ("dune", F.dune_test db); File ("test.ml", F.test) ])
-      ; Dir ("migration", [ File (".gitkeep", "") ])
+      ; Dir ("migrations", [ File (".gitkeep", "") ])
       ; File (".ocamlformat", F.ocamlformat)
       ; File (".env.base", F.env_base db)
       ; File (".env.local", F.env_local)
@@ -116,9 +116,9 @@ let fn args =
     let db = M.get_string_opt [ "-b"; "--database" ] args in
     let db =
       match db with
-      | Some "postgresql" | Some "postgres" | Some "p" -> Sihl.Config.Postgresql
-      | Some "mariadb" | Some "m" -> Sihl.Config.Mariadb
-      | _ -> Sihl.Config.Postgresql
+      | Some "postgresql" | Some "postgres" | Some "p" -> Config.Postgresql
+      | Some "mariadb" | Some "m" -> Config.Mariadb
+      | _ -> Config.Postgresql
     in
     M.finalize ();
     print_endline
@@ -128,13 +128,14 @@ let fn args =
          (Filename.concat path name);
     write_template path (template name db);
     print_next_steps (Filename.concat path name)
-  | _ -> raise Sihl.Command.Invalid_usage
+  | _ -> raise Invalid_usage
 ;;
 
-let t : Sihl.Command.t =
+let t : t =
   { name = "init"
   ; description = "Initializes an empty Sihl project"
   ; usage = "sihl init <project_name> -d <directory> -b <postgres|mariadb>"
   ; fn
+  ; stateful = false
   }
 ;;

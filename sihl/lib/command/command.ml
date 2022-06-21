@@ -1,13 +1,5 @@
+include Command_pure
 module M = Minicli.CLI
-
-type t =
-  { name : string
-  ; description : string
-  ; usage : string
-  ; fn : string list -> unit
-  }
-
-exception Invalid_usage
 
 let commands : (string, t) Hashtbl.t = Hashtbl.create 20
 let register (cmd : t) = Hashtbl.add commands cmd.name cmd
@@ -55,4 +47,24 @@ let run () =
           try command.fn args with
           | Invalid_usage -> print_endline command.usage))
     | _ -> ())
+;;
+
+let start_command fn =
+  { name = "start"
+  ; description = "Run the HTTP server"
+  ; usage = "sihl start"
+  ; fn = (fun _ -> fn ())
+  ; stateful = false
+  }
+;;
+
+let () =
+  register Command_init.t;
+  register Command_dev.t;
+  register Command_shell.t;
+  register Command_test.t;
+  register Command_test.cov;
+  register Command_migrate.t;
+  register Command_migrate.gen;
+  register Command_migrate.down
 ;;

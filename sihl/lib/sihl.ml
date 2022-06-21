@@ -9,3 +9,8 @@ module User = Sihl__user.User
 module View = Sihl__view.View
 
 let if_debug m h = if Config.debug () then m h else h
+
+let run f =
+  Command.register (Command.start_command f);
+  Command.run ()
+;;

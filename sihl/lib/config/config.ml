@@ -97,6 +97,8 @@ let host () = string "HOST"
 let debug () = bool "SIHL_DEBUG"
 let database_url () = Uri.of_string @@ string "DATABASE_URL"
 let login_path () = string "LOGIN_PATH"
+let bin_dune () = absolute_path "_opam/bin/dune"
+let bin_app_path () = absolute_path "_build/default/bin/bin.exe"
 
 let database () : database =
   match Uri.scheme @@ database_url () with
