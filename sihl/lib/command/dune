@@ -8,7 +8,9 @@
   sihl.migration
   dream
   base64
+  cohttp-lwt-unix
   minicli
   containers
   inotify.lwt
+  fileutils
   spawn))

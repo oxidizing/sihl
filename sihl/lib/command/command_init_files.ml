@@ -147,6 +147,8 @@ let dune_project db =
 let gitignore = {|/_build/
 /_opam/
 .merlin
+esbuild
+dist
 .devcontainer/data|}
 
 let opam db =

@@ -60,6 +60,5 @@ let () =
   register Command_migrate.t;
   register Command_migrate.gen;
   register Command_migrate.down;
-  register Command_static.t;
-  register Command_static.install
+  register Command_static.t
 ;;
