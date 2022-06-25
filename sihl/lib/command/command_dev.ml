@@ -93,6 +93,7 @@ let esbuild_path () =
       Lwt.return (Error msg))
 ;;
 
+(* Switch to portable https://github.com/mirage/irmin-watcher *)
 let fn _ =
   let module M = Minicli.CLI in
   M.finalize ();
