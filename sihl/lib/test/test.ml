@@ -37,7 +37,7 @@ let db_flush () : unit Lwt.t =
     database_uri
     (fun (module Db : Caqti_lwt.CONNECTION) ->
       Db.with_transaction (fun () -> Db.exec truncate ()))
-  |> Lwt_result.map_err Caqti_error.show
+  |> Lwt_result.map_error Caqti_error.show
   |> Lwt.map CCResult.get_or_failwith
 ;;
 
@@ -54,7 +54,7 @@ let tables_drop () : unit Lwt.t =
     database_uri
     (fun (module Db : Caqti_lwt.CONNECTION) ->
       Db.with_transaction (fun () -> Db.exec drop ()))
-  |> Lwt_result.map_err Caqti_error.show
+  |> Lwt_result.map_error Caqti_error.show
   |> Lwt.map CCResult.get_or_failwith
 ;;
 

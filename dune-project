@@ -31,7 +31,7 @@
   (tyxml (>= 4.5.0))
   (ptime (>= 1.0.0))
   (ppx_deriving (>= 5.2.1))
-  (lwt (>= 5.5.0))
+  (lwt (>= 5.6.0))
   (cmdliner (>= 1.1.1))
   (caqti (>= 1.8.0))
   dune

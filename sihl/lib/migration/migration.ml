@@ -39,7 +39,7 @@ let up ?(path = Config.absolute_path "migrations") () : unit Lwt.t =
   let%lwt () = generate path in
   let%lwt () =
     Omigrate.up ~source:path ~database
-    |> Lwt_result.map_err Omigrate.Error.to_string
+    |> Lwt_result.map_error Omigrate.Error.to_string
     |> Lwt.map CCResult.get_or_failwith
   in
   Lwt.return ()

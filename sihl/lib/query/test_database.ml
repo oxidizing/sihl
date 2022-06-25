@@ -85,7 +85,7 @@ module Cases () = struct
       (let%lwt () = Test.tables_drop () in
        let%lwt () =
          Omigrate.create ~database
-         |> Lwt_result.map_err Omigrate.Error.to_string
+         |> Lwt_result.map_error Omigrate.Error.to_string
          |> Lwt.map CCResult.get_or_failwith
        in
        Lwt_io.with_temp_dir (fun path ->

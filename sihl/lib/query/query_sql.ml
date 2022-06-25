@@ -180,7 +180,7 @@ let insert
   let (Dynparam.Pack (pt, pv)) = dyn in
   let req = Caqti_request.Infix.(pt ->! Caqti_type.int) @@ stmt in
   Db.find req pv
-  |> Lwt_result.map_err Caqti_error.show
+  |> Lwt_result.map_error Caqti_error.show
   |> Lwt.map CCResult.get_or_failwith
 ;;
 
@@ -245,7 +245,7 @@ let find_opt
   let req = Caqti_request.Infix.(pt ->? pm) @@ stmt in
   let%lwt res =
     Db.collect_list req pv
-    |> Lwt_result.map_err Caqti_error.show
+    |> Lwt_result.map_error Caqti_error.show
     |> Lwt.map CCResult.get_or_failwith
   in
   match res with
