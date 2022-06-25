@@ -16,6 +16,7 @@
   sihl.query
   sihl.view
   sihl.form
+  dream-livereload
   yojson
   fieldslib)
  (preprocess

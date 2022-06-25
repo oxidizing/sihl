@@ -53,6 +53,7 @@ let () =
              "App not found at %s, did you change the binary name from bin.ml?\n\
              \  sihl init --help"
              bin_app_path
+    | Unix.WEXITED _ -> ()
     | _ ->
       print_endline
         "It seems like this is not a Sihl project, initialize one\n\

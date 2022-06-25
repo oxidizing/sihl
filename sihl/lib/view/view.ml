@@ -1,6 +1,7 @@
 module Form = Sihl__form.Form
 module Model = Sihl__model.Model
 module Query = Sihl__query.Query
+module Config = Sihl__config.Config
 
 type t = (Dream.method_ * Dream.handler) list
 
@@ -11,13 +12,14 @@ let html_to_string (html : Tyxml.Html.doc) : string =
 let template
     ?(context = fun _ -> Lwt.return None)
     (template : 'a option -> Dream.request -> Tyxml.Html.doc Lwt.t)
-    : string -> Dream.route
+    : t
   =
- fun url ->
-  Dream.get url (fun req ->
-      let%lwt ctx = context req in
-      let%lwt template = template ctx req in
-      Dream.html (html_to_string template))
+  [ ( `GET
+    , fun req ->
+        let%lwt ctx = context req in
+        let%lwt template = template ctx req in
+        Dream.html (html_to_string template) )
+  ]
 ;;
 
 (* TODO consider adding form_process *)
@@ -157,3 +159,5 @@ let route (url : string) (view : t) : Dream.route =
   in
   Dream.scope "/" [] routes
 ;;
+
+let static url = Filename.concat (Config.static_url ()) url

@@ -54,11 +54,13 @@ let start_command fn =
 let () =
   register Command_init.t;
   register Command_dev.t;
+  register Command_dev.assets;
+  register Command_dev.build;
   register Command_shell.t;
   register Command_test.t;
   register Command_test.cov;
+  register Command_prod.t;
   register Command_migrate.t;
   register Command_migrate.gen;
-  register Command_migrate.down;
-  register Command_static.t
+  register Command_migrate.down
 ;;

@@ -98,6 +98,11 @@ let database_url () = Uri.of_string @@ string "DATABASE_URL"
 let login_path () = string "LOGIN_PATH"
 let bin_dune () = absolute_path "_opam/bin/dune"
 let bin_app_path () = absolute_path "_build/default/bin/bin.exe"
+let static_url () = string ~default:"/static" "STATIC_URL"
+
+let static_dir () =
+  Filename.concat (root_path ()) @@ string ~default:"static" "STATIC_DIR"
+;;
 
 let database () : database =
   match Uri.scheme @@ database_url () with
