@@ -93,7 +93,48 @@ let esbuild_path () =
       Lwt.return (Error msg))
 ;;
 
-(* Switch to portable https://github.com/mirage/irmin-watcher *)
+let debounce (d : int) (f : 'a -> unit)
+    : 'a -> unit (* let last_run : Mtime.t option ref = ref None in *)
+  =
+  let timeout = ref None in
+  fun a ->
+    match !timeout with
+    | None ->
+      let t = Lwt_timeout.create d (fun () -> f a) in
+      timeout := Some t;
+      Lwt_timeout.start t
+    | Some v ->
+      Lwt_timeout.stop v;
+      let t = Lwt_timeout.create d (fun () -> f a) in
+      timeout := Some t;
+      Lwt_timeout.start t
+;;
+
+let server_pid : int option ref = ref None
+
+let start_server bin_path =
+  server_pid
+    := Some (Spawn.spawn ~prog:bin_path ~argv:[ "bin.exe"; "start" ] ())
+;;
+
+let restart_server =
+  debounce 1 (fun path ->
+      if CCIO.File.exists path
+      then (
+        match !server_pid with
+        | Some pid ->
+          print_endline "restart server";
+          Unix.kill pid Sys.sigint;
+          print_endline "wait for server to shutdown";
+          Unix.waitpid [] pid |> ignore;
+          print_endline "start server";
+          start_server path
+        | None ->
+          print_endline "start server";
+          start_server path)
+      else ())
+;;
+
 let fn _ =
   let module M = Minicli.CLI in
   M.finalize ();
@@ -105,36 +146,23 @@ let fn _ =
   let watch () =
     Unix.putenv "SIHL_ENV" "local";
     print_endline "watching for changes";
-    let%lwt inotify = Lwt_inotify.create () in
-    let rec loop ?pid () =
-      match%lwt Lwt_unix.file_exists bin_path with
-      | false ->
-        print_endline "waiting for initial compile to finish";
-        let%lwt () = Lwt_unix.sleep 1.0 in
-        loop ?pid ()
-      | true ->
-        let pid =
-          match pid with
-          | Some pid -> pid
-          | None -> Spawn.spawn ~prog:bin_path ~argv:[ "bin.exe"; "start" ] ()
-        in
-        let%lwt ((_, kind, _, filename) as _event) = Lwt_inotify.read inotify in
-        (* print_endline (Inotify.string_of_event _event); *)
-        (match kind, filename with
-        | _, Some "bin.exe"
-        | [ Inotify.Close_write ], Some "app.js"
-        | [ Inotify.Close_write ], Some "app.css" ->
-          print_endline "restart server";
-          Unix.kill pid Sys.sigint;
-          print_endline "wait for server to shutdown";
-          Unix.waitpid [] pid |> ignore;
-          loop ()
-        | _ -> loop ~pid ())
+    if CCIO.File.exists bin_path
+    then start_server bin_path
+    else failwith "app was not compiled, file %s is missing";
+    let%lwt _ =
+      Irmin_watcher.hook 0 bin_dir (fun _ ->
+          Lwt.return @@ restart_server bin_path)
+    in
+    let%lwt _ =
+      Irmin_watcher.hook 0 assets_dir (fun _ ->
+          Lwt.return @@ restart_server bin_path)
+    in
+    let rec loop () =
+      let%lwt () = Lwt_unix.sleep 0.2 in
+      loop ()
     in
     Spawn.spawn ~prog:bin_dune ~argv:[ "dune"; "build"; "--root=."; "-w" ] ()
     |> ignore;
-    let%lwt _ = Lwt_inotify.add_watch inotify assets_dir [ Inotify.S_All ] in
-    let%lwt _ = Lwt_inotify.add_watch inotify bin_dir [ Inotify.S_Attrib ] in
     match%lwt esbuild_path () with
     | Ok esbuild ->
       let args = List.cons "esbuild" (Array.to_list esbuild_args) in

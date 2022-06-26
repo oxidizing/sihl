@@ -11,6 +11,6 @@
   cohttp-lwt-unix
   minicli
   containers
-  inotify.lwt
+  irmin-watcher
   fileutils
   spawn))
