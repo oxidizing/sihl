@@ -1,0 +1,659 @@
+{0 Sihl}
+
+{%html:
+<p align="center">
+  <a href="https://github.com/oxidizing/sihl">
+    <img style="display: block; margin: 0 auto;" src="https://github.com/oxidizing/sihl/blob/master/images/logo.png?raw=true" alt="Logo"/>
+  </a>
+</p>
+%}
+
+Sihl is a batteries-included web framework to quickly get OCaml web apps off the ground.
+
+{1 Sihl at a glance}
+
+You can also jump into the {!documentation}, get started with the {!tutorial} or read the {!api} API.
+
+{2 Design your model}
+
+Hooks allow you to customize the lifecycle of a model instance.
+
+[lib/models/users.ml]
+{[
+  type role =
+    | User
+    | Staff
+    | Superuser
+  [@@deriving yojson]
+
+  type t =
+    { id : int
+    ; role : role
+    ; email : string
+    ; short_name : string
+    ; full_name : string
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
+  [@@deriving fields, yojson]
+
+  (* 1.) Write your declarative model schema *)
+  let schema =
+    Model.
+      [ field Fields.id @@ int ~primary_key ()
+      ; field Fields.role @@ enum role_of_yojson role_to_yojson
+      ; field Fields.email @@ email ()
+      ; field Fields.full_name @@ string ()
+      ; field Fields.short_name @@ string ~max_length:80 ()
+      ; field Fields.created_at @@ timestamp ~default:Now ()
+      ; field Fields.updated_at @@ timestamp ~default:Now ~update:true ()
+      ]
+  ;;
+
+  (* 2.) Pass in optional hooks, pp, eq and the runtime type t *)
+  let t = Model.create ~to_yojson ~of_yojson "user" Fields.names schema
+]}
+
+[lib/models/customer.ml]
+{[
+type city =
+  | Zurich
+  | Bern
+  | Basel
+[@@deriving show, str_enum]
+
+type tier =
+  | Premium
+  | Top
+  | Business
+[@@deriving show, str_enum]
+
+type t =
+  { id : int [@pk]
+  ; user_id : string [@fk Sihl.User.t]
+  ; tier : tier
+  ; street : string [@max_length 80]
+  ; city : city
+  ; created_at : Ptime.t [@created_at]
+  ; updated_at : Ptime.t [@updated_at]
+  }
+[@@deriving show, eq, model]
+
+(* Customize the model by hooking into the lifecycle *)
+let before_save customer =
+  let%lwt user = user customer in
+  Sihl.Mail.send ~subject:"Welcome" ~text:"..." [ user ]
+;;
+
+let t = Sihl.Model.create ~before_save model
+
+let owns_order (user : Sihl.User.t) (order : Order.t) =
+  let%lwt customer = Order.customer order in
+  user.id == customer.user_id
+;;
+]}
+
+[lib/models/order.ml]
+{[
+(* Enforce business rule per field *)
+let validate_nr_of_items n =
+  if n > 10 then Error "Can not order more than 10 items" else Ok ()
+;;
+
+type t =
+  { id : int [@pk]
+  ; customer_id : int [@fk Customer.t]
+  ; nr_of_items : int [@validate validate_nr_of_items]
+  ; dispatched_at : Ptime.t option
+  ; paid_at : Ptime.t option
+  ; created_at : Ptime.t [@created_at]
+  ; updated_at : Ptime.t [@updated_at]
+  }
+[@@deriving show, eq, model]
+
+(* Enforce business rules across the whole model *)
+let validate (order : t) =
+  match order.dispatched_at, order.paid_at with
+  | Some _, None -> Error "Can not dispatch order before it was paid"
+  | _ -> Ok ()
+;;
+
+let t = Sihl.Model.create ~validate model
+]}
+
+{2 Migrate the database}
+
+Initial [CREATE TABLE] migrations are created automatically for the configured database.
+
+{v $ sihl migrate.generate v}
+{v $ sihl migrate.up v}
+
+{2 Query your models}
+
+The query API is powerful but not almighty. Use it for 95% and drop down to raw SQL for the other 5%. If you manage to avoid circular dependencies in your models, it is reasonably type-safe. Otherwise it falls back to stringly typed queries.
+
+{[
+open Customer
+open Sihl.Model
+
+let%lwt customer : Customer.t =
+  Customer.t
+  |> where [ User.t ] User.field_email @@ eq @@ string "hello@example.org"
+  |> or_
+       [ where_tier_in [ Business; Premium ]
+       ; where ~join:[ User.t ] User.field_fullname @@ contains @@ string "Rivia"
+       ; where ~join:[ table "orders" ] @@ field "dispatched_at" @@ is_null
+       ]
+  |> order_by [ Customer.field_created_at ]
+  |> get_or_404 conn
+;;
+
+let%lwt nr_of_customers =
+  Customer.t
+  |> where ~join:[ User.t ] User.field_email @@ eq @@ string "hello@example.org")
+  |> count conn
+;;
+
+let%lwt customer : Customer.t =
+  Customer.t |> update updated_customer |> execute conn
+;;
+
+let%lwt user_of_customer customer = Customer.user customer
+]}
+
+{2 Design your routes}
+
+[lib/app.ml]
+{[
+let routes =
+  [ Dream.get "/" Handlers.home
+  ; Dream.scope
+      "/orders"
+      [ Sihl.User.is_authenticated ]
+      [ Sihl.User.is_staff @@ Dream.get "/" Handlers.order_list
+      ; Sihl.Web.single_object ~pk:"id"
+        @@ Sihl.Web.passes_test Customer.owns_order
+        @@ Dream.get "/:id" Handlers.order_detail
+      ; Sihl.Web.single_object ~pk:"id"
+        @@ Sihl.Web.passes_test Customer.owns_order
+        @@ Dream.delete "/:id" Handlers.order_delete
+      ; Dream.scope "/create" Handlers.order_create
+      ]
+  ; Dream.scope
+      "/customers"
+      [ Sihl.User.is_authenticated; Sihl.User.is_superuser ]
+      [ Dream.get "/" Handlers.customer_list ]
+  ]
+;;
+]}
+
+{2 Build your handlers}
+
+Helpers eliminate tedious boilerplate and provide best-practices enforced on type level.
+
+{[
+open Template
+
+let customer_list = Sihl.Handler.list ~model:(module Customer) Customer_list.template
+
+let order_create =
+  Sihl.Handler.form
+    ~success_url:(fun request -> "/orders")
+    ~on_valid_form:(fun request form ->
+      let%lwt () = Order.create form.data in
+      Dream.add_flash_message request "success" "Order created";
+      request)
+    ~on_invalid_form:(fun request form ->
+      Dream.add_flash_message
+        request
+        "error"
+        "Please correct the input fields below";
+      request)
+    ~form:Form.order_create
+    Order_create.template
+;;
+
+let customer_create =
+  Sihl.Handler.create
+    ~success_url:(fun request -> "/customers")
+    ~model:(module Customer)
+    Customer_create.template
+;;
+
+let home =
+  Sihl.Handler.template
+    ~context:(fun request ->
+      request |> Sihl.context_add "custom_context_data" "hello")
+    Home.template
+;;
+]}
+
+{2 Design your templates}
+
+Thanks to ReasonML you can use type-safe JSX on the server.
+
+[lib/templates/customer_list.re]
+{[
+open Tyxml;
+open Sihl.Web;
+
+let template = (request, customers) => {
+  <html>
+    <head>
+      <title> {Html.txt(title)} </title>
+      <link rel="stylesheet" href={static("static/css/customer_list.css")} />
+    </head>
+    <body>
+      {message(request, "success", ~default:"")}
+      <form method=`POST>
+        {csrf(request)}
+        {form(request, "create_form")}
+        <button type_="submit"> Html.txt "Create" </button>
+      </form>
+      <CustomerList customers />
+    </body>
+  </html>;
+};
+]}
+
+{2 Start the Sihl app 🚀}
+[lib/app.ml]
+{[
+let run () =
+  Sihl.run (module Config)
+  @@ Dream.serve ~interface:"0.0.0.0"
+  @@ Config.middlewares
+  @@ Dream.router routes
+;;
+]}
+
+{1:getting_started Getting Started}
+
+If you want to jump into code, have a look at {{:https://github.com/oxidizing/sihl-demo} the demo project}. Otherwise keep reading and get started by creating your own app from scratch.
+
+{2 Prerequisites}
+
+All you need is {{:https://opam.ocaml.org/doc/Install.html} opam}. {{:https://ocaml.org/learn/tutorials/up_and_running.html} This guide} walks you through setting up a development environment.
+
+It is also recommended that you know OCaml's standard library and {{:https://github.com/ocsigen/lwt} Lwt}. This documentation explains a lot of concepts in terms of types, so you should be comfortable reading type signatures. If you are a beginner, check out the section {{!learn_ocaml} OCaml for web development in Sihl}..
+
+{2 First Steps}
+
+Install Sihl with
+
+{v opam install sihl v}
+
+and generate an app [my_app].
+
+{v sihl init my_app v}
+
+{2 Directory Structure}
+
+The default directory structure provides a good starting point to scale up the app. You should not remove directories, but feel free to organize your code within the existing structure.
+
+{v
+├── bin
+├── lib
+│   ├── app.ml
+│   ├── forms
+│   ├── handlers
+│   ├── models
+│   └── templates
+├── migrations
+├── settings
+├── static
+└── test
+v}
+
+{3 The Bin Directory}
+The [bin] directory contains is the entry point to your application. This is where the executable comes from.
+
+{3 The Lib Directory}
+The [lib] directory contains the actual web app. Sihl suggests a structure but in [lib] you are allowed to do whatever you want without breaking Sihl apps.
+
+The [app.ml] file is where everyting comes together. Consequently, [app.ml] is allowed to know everyone else in the [lib] directory.
+
+The [commands] directory contains custom CLI commands to extend the Sihl CLI.
+
+The [forms] directory contains form descriptions to parse and validate incoming user data.
+
+The [handlers] directory contains HTTP handlers. A handler return a response given a request and is connected to a route.
+
+The [middlewares] directory contains HTTP middlewares.
+
+The [models] directory contains types and combinators for those types.
+
+The [templates] directory contains HTML templates or JSON serializers.
+
+{3 The Settings Directory}
+The [settings] directory contains the app configuration.
+
+{3 The Migrations Directory}
+The [migrations] directory contains datatbase migration pairs. A migration pair comprises of an up and a down migration file, written in SQL.
+
+{3 The Static Directories}
+Sihl takes static assets in [static] such as JavaScript and CSS, compiles them and puts them into a directory that can be served to the world.
+
+{2 Running the web app}
+
+The CLI tool [sihl] provides a set of useful commands.
+
+{v $ sihl
+Sihl 4.0.0
+Type "sihl COMMAND --help" for more details, sihl help to see all commands"
+
+Commands:
+  build          Build a web app executable and bundle the static assets.
+  db.create      Set up the database at DATABASE_URL.
+  db.destroy     Delete the database at DATABASE_URL.
+  dev            Start the local web server in auto-reload mode.
+  email          Send an email.
+  gen.migration  Generate CREATE TABLE migrations for all registered models.
+  migrate        Run all pending database migrations.
+  migrate.down   Revert the last database migration.
+  models         Print all models.
+  routes         Print all HTTP routes.
+  test           Run all tests.
+  test.coverage  Run tests and show coverage report.
+  user.super     Create a user with superuser permissions.
+  user.staff     Create a user with staff permissions.
+v}
+
+Let's see what we can do with [dev]
+
+{v $ sihl dev --help
+Usage: sihl dev [-p|--port]
+Start the web server and the asset compilation process in watch mode.
+
+Examples:
+  sihl dev -p 3001
+v}
+
+Start the web app with
+
+{v $ sihl dev v}
+
+{1:documentation Documentation}
+
+{2 Settings}
+
+{!module:Sihl.Settings}
+One of the design goals of Sihl is safety. A Sihl app does not start if the required configurations are not present. In many cases, it does not even compile.
+
+Settings live in the root [settings] directory.
+
+{v
+└── settings
+    ├── base.ml
+    ├── production.ml
+    ├── local.ml
+    └── test.ml
+v}
+
+Settings that are shared among all environments go to [base.ml].
+
+The three other files [production.ml], [local.ml] and [test.ml] contain settings for the respecitive environment. They all include the base settings which they can override.
+
+[settings/base.ml]
+{[
+  let database_url = "postgresql://admin:password@127.0.0.1:5432/dev"
+  let debug = Sihl.Env.bool "SIHL_DEBUG"
+  let test = Sihl.Env.bool "SIHL_TEST"
+  let sihl_secret = "local_SBw74Pe8hYPReC57e9Ag8xd36y6R9yxhFX6MqE66XPxoAiTsyfayF3q5EfbWXbbV"
+  let email_default_subject = "Hello there 👋"
+]}
+
+[settings/local.ml]
+{[
+  include Base
+  let debug = Sihl.Env.bool ~default:true "SIHL_DEBUG"
+  let test = Sihl.Env.bool ~default:false "SIHL_TEST"
+]}
+
+[settings/production.ml]
+{[
+  include Base
+  let database_url = Sihl.Env.string "DATABASE_URL"
+  let debug = false
+  let test = false
+  let sihl_secret = Sihl.Env.string "SIHL_SECRET"
+]}
+
+Use {!module:Sihl.Env} to access values from environment variables. Sihl automatically loads values found in a [.env] file in the root of the project.
+
+{3 Reading Configuration}
+
+In order to read configuration use
+
+{[module Config = (val !Settings.config : Settings.S)]}
+
+just like
+
+{[
+module Config = (val !Settings.config : Settings.S)
+
+let recipients = [...] in
+let%lwt () = Sihl.Mail.send ~subject:Config.email_default_subject "This is the body" recipients
+]}
+
+{2 Web}
+
+Sihl is built on top of {{:https://github.com/aantron/dream} Dream} which takes care of almost everything HTTP related. The {{:https://aantron.github.io/dream/} documentation} is a great starting point and very well done.
+
+The routes are the HTTP entry points to your app. They describe what can be done in a declarative way.
+
+{2 Model}
+TODO
+
+{2 Database Migration}
+TODO using omigrate, simple up.sql and down.sql pairs, timestamped, single migration history per project
+
+{2 Database Queries}
+TODO document query language, show examples for pagination
+
+{2 Forms}
+[lib/forms/order.ml]
+{[
+open Sihl.Form
+
+let widgets = [text_area "order_note"]
+
+(* Create form from model and customize form *)
+let t = of_model ~widgets Order.t
+]}
+
+[lib/forms/customer.ml]
+{[
+(* Create form from type with custom validation *)
+type t =
+  { name : string option [@form.textarea]
+  ; email : string [@form.email]
+  ; age : int
+  }
+
+let validate (t : t) =
+  match t.name with
+  | Some _ ->
+    if t.age > 25
+    then Error "Age 25 and above should not provide a name"
+    else Ok ()
+  | None -> Ok ()
+;;
+
+let t = Sihl.Form.create ~validate form
+]}
+
+{3 Customize Form Rendering}
+TODO implement pattern match on [Sihl.Form.t]
+
+{2 Seeding}
+TODO
+
+{2 Testing}
+{[
+open Sihl.Test
+
+let%test "get_customer" =
+  let open Sihl.Model in
+  let open Customer in
+  database (fun conn ->
+      let%lwt customers = factory_customer ~n:10 conn in
+      let%lwt customer : Customer.t =
+        Customer.t
+        |> where [ User.t ] User.field_email @@ eq @@ string "hello@example.org"
+        |> or_
+             [ where_tier_in [ Business; Premium ]
+             ; where ~join:[ User.t ] User.field_fullname
+               @@ contains
+               @@ string "Rivia"
+             ; where ~join:[ table "orders" ]
+               @@ field "dispatched_at"
+               @@ is_null
+             ]
+        |> order_by [ field_created_at ]
+        |> get_or_404 conn
+      in
+      [%test_eq: Customer.t] ~equal:Customer.eq customer (List.hd customers)
+;;
+
+let%test "customer_list" =
+  let open Customer in
+  database (fun conn ->
+      let%lwt customers = factory_customer ~n:10 conn in
+      let%lwt user = factory_user conn in
+      let response = get ~user "/customers" in
+      let customer = List.hd customers in
+      [%test_eq: bool] @@ in_response response @@ customer.Customer.name)
+;;
+]}
+
+{2 Static Assets}
+Sihl bundles {{:https://esbuild.github.io/} esbuild}, a very fast JavaScript bundler that does not require node.
+
+{2 User Uploads}
+TODO
+
+{2 Custom Commands}
+TODO
+
+{2 JSON API}
+TODO
+
+{2 Admin UI}
+TODO
+
+{2 Sihl Shell}
+{[
+dune utop
+
+utop -init lib/shell.ml
+
+open Core_kernel.Std
+open Or_error
+
+let eval_exn str =
+  let lexbuf = Lexing.from_string str in
+  let phrase = !Toploop.parse_toplevel_phrase lexbuf in
+  Toploop.execute_phrase false Format.err_formatter phrase
+
+let eval str = try_with (fun () -> eval_exn str)
+
+let () = eval (sprintf "#install_printer %s;;" printer)
+
+val pp_hum : Format.formatter -> t -> unit [@@ocaml.toplevel_printer]
+]}
+
+{1:learn_ocaml OCaml for Web Developers}
+
+This section will not tell you all about OCaml but instead give some pointers on where to look things up and list some conventions in Sihl.
+
+{2 Basics}
+
+After studying the {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/basics/intro.html} basics}, you should learn about {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/data/intro.html} data} and {{:https://www.cs.cornell.edu/courses/cs3110/2019sp/textbook/hop/intro.html} higher-order programming} in order to manipulate data.
+
+Once you feel comfortable with these concepts, go ahead and read about the remaining Sihl-specific topics.
+
+{2 Error handling}
+
+A good primer can be found {{:https://ocaml.org/learn/tutorials/error_handling.html} here}.
+
+On top of the general error handling patterns in OCaml, there is a convention in Sihl services that you are going to use. Some services return [(unit, string) Result.t Lwt.t] while others return [unit Lwt.t] and raise an exception.
+
+{3 Exception and Option}
+
+Lets look at a function that returns a user given an email address.
+
+{[
+(** [find_by_email email] returns a [User.t] if there is a user with an [email]
+    address. Raises an [{!Exception}] if no user is found. *)
+val find_by_email : string -> t Lwt.t
+]}
+
+This function raises an exception if no user was found. But this function can also raise an exception if the connection to the database is broken.
+These two cases are different, but both raise exceptions.
+
+If you get the email address from the end user directly, you might want to use this function instead.
+
+{[
+(** [find_by_email_opt email] returns a [User.t] if there is a user with email
+    address [email]. *)
+val find_by_email_opt : string -> t option Lwt.t
+]}
+
+If there was no user found, you get [None] back and you can ask your user for the correct email address. This function still raises if the database connection breaks.
+The failing database connection is not the user's fault, it can not be recovered by the user doing something else. This is an issue with our infrastructure or our code. The best thing to do here is to let the service raise an exception and let the error middleware handle it with a nice [500] error page.
+
+Use exceptions for errors that are not the fault of a user. The variant [find_by_email] is included for convenient internal usage, when you want to send an email to a list of users in a bulk job for instance.
+
+{3 Result}
+
+Let's take a look at following function:
+
+{[
+(** [update_password user ~old new] sets the [new] password of the [user] if the current password matches [old]. *)
+val update_password : User.t -> ~old:string -> string -> (unit, string) Result.t Lwt.t
+]}
+
+In this case, the function returns an error with an error message if the provided password is wrong. Why can't we just return [unit option Lwt.t] and just act on [None] if something is wrong?
+
+We want to distinguish various invalid user inputs. The user might provide an old password that doesn't match the current one, but the user might also provide a password that is not long enough according to some password policy. In both cases, the user needs to fix the error so we show them the message.
+
+{2 Lwt}
+
+Sihl is built on top of the {{:https://ocsigen.org/tuto/6.4/manual/lwt} Lwt} library, which is similar to Promises in other languages. From the web module to the migration service, everything uses [Lwt] so it is crucial to understand the basic API and usage.
+
+Sihl uses [lwt_ppx] which makes it easy to deal with [Lwt.t] and it gives you better error messages.
+
+{[
+let add req =
+  match Sihl.Web.Form.find_all req with
+  | [ ("description", [ description ]) ] ->
+    let%lwt _ = Todo.create description in
+    let resp = Opium.Response.redirect_to "/" in
+    let resp = Sihl.Web.Flash.set_notice (Some "Successfully updated") resp in
+    Lwt.return resp
+  | _ ->
+    let resp = Opium.Response.redirect_to "/" in
+    let resp = Sihl.Web.Flash.set_alert (Some "Failed to update todo description") resp in
+    Lwt.return resp
+;;
+]}
+
+[Todo.create] creates a todo with a description and it returns [unit Lwt.t] on success. In order to keep the code simple, use [let%lwt]. If you use [let%lwt], you have to return ['a Lwt.t], so the last expression has to have an [Lwt].
+
+{2 Build system}
+
+Sihl uses {{:https://dune.build/} dune} as a build system. If you are using the {{:https://github.com/oxidizing/spin-sihl}Spin template}, the most common commands are listed in the [Makefile]. However, since you are in charge of your domain and its directory structure, you should become familiar with the basics of dune.
+
+The {{:https://dune.readthedocs.io/en/stable/quick-start.html} Quickstart} should cover most of it.
+
+{1:api API}
+
+{!modules:
+Sihl.Command
+Sihl.Config
+Sihl.Web
+Sihl.Model
+Sihl.User
+Sihl.Test
+}

@@ -1,9 +1,0 @@
-(library
- (name sihl_queue)
- (public_name sihl-queue)
- (libraries sihl)
- (preprocess
-  (pps tyxml-ppx lwt_ppx)))
-
-(documentation
- (package sihl-queue))

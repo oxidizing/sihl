@@ -1,0 +1,27 @@
+(library
+ (name sihl__model)
+ (public_name sihl.model)
+ (modules model)
+ (libraries
+  ptime
+  yojson
+  fieldslib
+  containers
+  caqti-lwt
+  containers-data
+  ptime.clock.os))
+
+(library
+ (name model_test)
+ (modules test_validate test_model)
+ (libraries sihl.user sihl.query sihl.test ptime)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_enumerate
+   ppx_deriving.make
+   ppx_deriving_yojson)))

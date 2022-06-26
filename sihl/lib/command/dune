@@ -1,0 +1,15 @@
+(library
+ (name sihl__command)
+ (public_name sihl.command)
+ (preprocess
+  (pps lwt_ppx))
+ (libraries
+  sihl.config
+  sihl.migration
+  dream
+  base64
+  cohttp-lwt-unix
+  minicli
+  containers
+  fileutils
+  spawn))

@@ -1,0 +1,5 @@
+(executable
+ (name main)
+ (public_name sihl)
+ (package sihl)
+ (libraries sihl))

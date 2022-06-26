@@ -1,0 +1,31 @@
+(library
+ (name sihl)
+ (public_name sihl)
+ (libraries
+  dream
+  ptime
+  caqti
+  containers
+  tyxml
+  cmdliner
+  sihl.command
+  sihl.config
+  sihl.test
+  sihl.model
+  sihl.user
+  sihl.query
+  sihl.view
+  sihl.form
+  dream-livereload
+  yojson
+  fieldslib)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_fields_conv
+   ppx_deriving_yojson
+   ppx_deriving.show
+   ppx_deriving.eq)))
+
+(documentation
+ (package sihl))

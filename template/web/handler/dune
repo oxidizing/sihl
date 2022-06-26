@@ -1,3 +1,0 @@
-(library
- (name handler)
- (libraries service sihl view))

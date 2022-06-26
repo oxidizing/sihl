@@ -1,0 +1,29 @@
+(library
+ (name sihl__query)
+ (public_name sihl.query)
+ (modules query query_sql query_pure)
+ (libraries sihl.config sihl.model)
+ (preprocess
+  (pps lwt_ppx)))
+
+(library
+ (name query_test)
+ (modules test_sql test_database test_postgresql test_mariadb)
+ (libraries
+  sihl.user
+  sihl.query
+  sihl.test
+  ptime
+  ptime.clock.os
+  caqti-driver-postgresql
+  caqti-driver-mariadb)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_enumerate
+   ppx_deriving.make
+   ppx_deriving_yojson)))

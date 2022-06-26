@@ -1,0 +1,22 @@
+(library
+ (name sihl__migration)
+ (public_name sihl.migration)
+ (modules migration migration_dsl migration_sql driver_postgresql)
+ (libraries lwt sihl.model sihl.config containers-data omigrate pgx_lwt_unix)
+ (preprocess
+  (pps lwt_ppx)))
+
+(library
+ (name migration_test)
+ (libraries sihl.migration sihl.test)
+ (modules test_sql)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   ppx_fields_conv
+   ppx_enumerate
+   ppx_deriving.make
+   ppx_deriving_yojson)))

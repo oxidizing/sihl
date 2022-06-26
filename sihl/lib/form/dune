@@ -1,0 +1,22 @@
+(library
+ (name sihl__form)
+ (public_name sihl.form)
+ (modules form)
+ (libraries sihl.config sihl.model dream tyxml)
+ (preprocess
+  (pps lwt_ppx)))
+
+(library
+ (name form_test)
+ (modules)
+ (libraries sihl.query sihl.model sihl.form)
+ (inline_tests)
+ (preprocess
+  (pps
+   ppx_inline_test
+   ppx_assert
+   lwt_ppx
+   tyxml-jsx
+   ppx_fields_conv
+   ppx_deriving.make
+   ppx_deriving_yojson)))

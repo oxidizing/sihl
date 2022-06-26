@@ -2,12 +2,11 @@ version: '3.1'
 
 services:
   postgres:
-    image: postgres:12.2
-    restart: always
+    image: postgres:13
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
       - 5432:5432
 
@@ -24,6 +23,5 @@ services:
 
   adminer:
     image: adminer:4-standalone
-    restart: always
     ports:
       - 8080:8080
