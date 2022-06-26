@@ -1,7 +1,12 @@
 module M = Minicli.CLI
 
-let forward_command bin_app_path args =
-  let command = Format.sprintf "%s %s" bin_app_path (String.concat " " args) in
+let forward_command path_dune args =
+  let command =
+    Format.sprintf
+      "%s exec bin/bin.exe -- %s"
+      path_dune
+      (String.concat " " args)
+  in
   let _ = Unix.system command in
   ()
 ;;
@@ -24,42 +29,37 @@ let run_init args =
 let () =
   Printexc.record_backtrace true;
   let _, args = M.init () in
-  let bin_dune = Sihl.Config.bin_dune () in
-  let bin_app_path = Sihl.Config.bin_app_path () in
-  match args with
-  | _ :: "init" :: args ->
-    (* We know that the init command is available *)
-    run_init args
-  | _ :: name :: args ->
-    (* Everything else we forward to the app binary by default, after
-       building *)
-    print_endline "compile app";
-    let s_build = Unix.system (bin_dune ^ " build") in
-    (match s_build with
-    | Unix.WEXITED 0 ->
-      if CCIO.File.exists bin_app_path
-      then (
-        match Hashtbl.find_opt Sihl.Command.commands name with
-        | None -> forward_command bin_app_path (List.cons name args)
-        | Some command ->
-          (* Stateful commands we have to forward, they depend on the state Sihl
-             builds up *)
-          if command.stateful
-          then forward_command bin_app_path (List.cons name args)
-          else Sihl.Command.run ())
-      else
-        print_endline
-        @@ Format.sprintf
-             "App not found at %s, did you change the binary name from bin.ml?\n\
-             \  sihl init --help"
-             bin_app_path
-    | Unix.WEXITED _ -> ()
+  let path_dune =
+    try Some (Sihl.Config.bin_dune ()) with
     | _ ->
-      print_endline
-        "It seems like this is not a Sihl project, initialize one\n\
-        \  sihl init --help")
-  | [ _ ] | [] ->
-    if CCIO.File.exists bin_app_path
-    then forward_command bin_app_path []
-    else Sihl.Command.print_help ()
+      (try Some (FileUtil.which "dune") with
+      | _ -> None)
+  in
+  let path_app =
+    try Some (Sihl.Config.bin_app_path ()) with
+    | _ -> None
+  in
+  match path_dune, path_app with
+  | _, None | None, _ -> run_init []
+  | Some path_dune, Some path_app ->
+    (match args with
+    | _ :: "init" :: args ->
+      (* We know that the init command is available *)
+      run_init args
+    | _ :: name :: args ->
+      (* Everything else we forward to the app binary by default, after
+         building *)
+      (match Hashtbl.find_opt Sihl.Command.commands name with
+      | None -> forward_command path_dune (List.cons name args)
+      | Some command ->
+        (* Stateful commands we have to forward, they depend on the state Sihl
+           builds up *)
+        if command.stateful
+        then forward_command path_dune (List.cons name args)
+        else Sihl.Command.run ())
+    | [ _ ] | [] ->
+      let _ = Unix.system (path_dune ^ " build") in
+      if CCIO.File.exists path_app
+      then forward_command path_dune []
+      else run_init [])
 ;;

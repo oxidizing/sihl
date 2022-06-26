@@ -93,6 +93,14 @@ let esbuild_path () =
       Lwt.return (Error msg))
 ;;
 
+(* TODO Consider using a simpler approach with
+   https://watchexec.github.io/downloads/ *)
+(* have app/server, app/app, app/.... *)
+(* watchexec -e re,ml,rei,mli -r -- esy dune exec ./main.exe *)
+(* 1. ./esbuild --bundle assets/js/app.js --outdir=static/assets --target=es2016
+   --sourcemap=inline --watch *)
+(* 2. watchexec -r -e .ml,.re,.js,.css,.png,.jpg,.ico,.json -i */assets/**/* --
+   dune exec bin/bin.exe start *)
 let fn _ =
   let module M = Minicli.CLI in
   M.finalize ();
@@ -101,7 +109,10 @@ let fn _ =
   let watch () =
     Unix.putenv "SIHL_ENV" "local";
     print_endline "watching for changes";
-    Spawn.spawn ~prog:bin_dune ~argv:[ "dune"; "build"; "-w"; "@run" ] ()
+    Spawn.spawn
+      ~prog:bin_dune
+      ~argv:[ "dune"; "build"; "-w"; "@run"; "--force"; "--no-buffer" ]
+      ()
     |> ignore;
     let rec loop () =
       let%lwt () = Lwt_unix.sleep 0.2 in

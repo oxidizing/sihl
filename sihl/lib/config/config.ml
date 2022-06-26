@@ -41,7 +41,15 @@ let root_path () =
   match Sys.getenv_opt "ROOT_PATH" with
   | None | Some "" ->
     let markers =
-      [ ".root"; ".git"; ".gitignore"; ".hg"; ".svn"; ".bzr"; "_darcs" ]
+      [ "dune-project"
+      ; ".root"
+      ; ".git"
+      ; ".gitignore"
+      ; ".hg"
+      ; ".svn"
+      ; ".bzr"
+      ; "_darcs"
+      ]
     in
     let rec find_markers path_els =
       let path = String.concat "/" path_els in
@@ -56,8 +64,8 @@ let root_path () =
         match path_els with
         | [] ->
           failwith
-            "could not determine root project path, please create a .git \
-             directory"
+            "could not determine root project path, please create a marker \
+             such as .git or dune-project or set ROOT_PATH"
         | _ -> find_markers @@ CCList.take (List.length path_els - 1) path_els)
     in
     find_markers @@ String.split_on_char '/' (Unix.getcwd ())
