@@ -11,6 +11,5 @@
   cohttp-lwt-unix
   minicli
   containers
-  irmin-watcher
   fileutils
   spawn))

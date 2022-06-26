@@ -93,85 +93,27 @@ let esbuild_path () =
       Lwt.return (Error msg))
 ;;
 
-let debounce (d : int) (f : 'a -> unit)
-    : 'a -> unit (* let last_run : Mtime.t option ref = ref None in *)
-  =
-  let timeout = ref None in
-  fun a ->
-    match !timeout with
-    | None ->
-      let t = Lwt_timeout.create d (fun () -> f a) in
-      timeout := Some t;
-      Lwt_timeout.start t
-    | Some v ->
-      Lwt_timeout.stop v;
-      let t = Lwt_timeout.create d (fun () -> f a) in
-      timeout := Some t;
-      Lwt_timeout.start t
-;;
-
-let server_pid : int option ref = ref None
-
-let start_server bin_path =
-  server_pid
-    := Some (Spawn.spawn ~prog:bin_path ~argv:[ "bin.exe"; "start" ] ())
-;;
-
-let restart_server =
-  debounce 1 (fun path ->
-      if CCIO.File.exists path
-      then (
-        match !server_pid with
-        | Some pid ->
-          print_endline "restart server";
-          Unix.kill pid Sys.sigint;
-          print_endline "wait for server to shutdown";
-          Unix.waitpid [] pid |> ignore;
-          print_endline "start server";
-          start_server path
-        | None ->
-          print_endline "start server";
-          start_server path)
-      else ())
-;;
-
 let fn _ =
   let module M = Minicli.CLI in
   M.finalize ();
-  let bin_dir = Config.absolute_path "_build/default/bin/" in
-  let bin_path = Filename.concat bin_dir "bin.exe" in
   print_endline @@ Format.sprintf "start development server";
-  let bin_dune = Config.absolute_path "/_opam/bin/dune" in
-  let assets_dir = Filename.concat (Config.static_dir ()) "assets/" in
+  let bin_dune = Config.bin_dune () in
   let watch () =
     Unix.putenv "SIHL_ENV" "local";
     print_endline "watching for changes";
-    if CCIO.File.exists bin_path
-    then start_server bin_path
-    else failwith "app was not compiled, file %s is missing";
-    let%lwt _ =
-      Irmin_watcher.hook 0 bin_dir (fun _ ->
-          Lwt.return @@ restart_server bin_path)
-    in
-    let%lwt _ =
-      Irmin_watcher.hook 0 assets_dir (fun _ ->
-          Lwt.return @@ restart_server bin_path)
-    in
+    Spawn.spawn ~prog:bin_dune ~argv:[ "dune"; "build"; "-w"; "@run" ] ()
+    |> ignore;
     let rec loop () =
       let%lwt () = Lwt_unix.sleep 0.2 in
       loop ()
     in
-    Spawn.spawn ~prog:bin_dune ~argv:[ "dune"; "build"; "--root=."; "-w" ] ()
-    |> ignore;
     match%lwt esbuild_path () with
     | Ok esbuild ->
       let args = List.cons "esbuild" (Array.to_list esbuild_args) in
       Spawn.spawn ~prog:esbuild ~argv:args () |> ignore;
-      let%lwt () = Lwt_unix.sleep 1.0 in
       loop ()
     | Error msg ->
       print_endline msg;
-      let%lwt () = Lwt_unix.sleep 1.0 in
       loop ()
   in
   Lwt_main.run (watch ())
@@ -181,6 +123,15 @@ let fn_asset _ =
   let run () =
     let%lwt esbuild_path = esbuild_path () in
     let _ = Unix.execv (Result.get_ok esbuild_path) esbuild_args in
+    Lwt.return ()
+  in
+  Lwt_main.run (run ())
+;;
+
+let fn_build _ =
+  let run () =
+    let bin_dune = Config.bin_dune () in
+    let _ = Unix.execv bin_dune [| "dune"; "build"; "-w"; "@run" |] in
     Lwt.return ()
   in
   Lwt_main.run (run ())
@@ -209,7 +160,7 @@ let build : t =
   ; description =
       "Build the Sihl project, start the HTTP server and watch for changes"
   ; usage = "sihl dev.build"
-  ; fn
+  ; fn = fn_build
   ; stateful = false
   }
 ;;
