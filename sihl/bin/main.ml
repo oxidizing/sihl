@@ -12,6 +12,7 @@ let forward_command path_dune args =
 ;;
 
 let run_init args =
+  (* TODO hard code command init here *)
   match Hashtbl.find_opt Sihl.Command.commands "init" with
   | None -> print_endline "could not find command init"
   | Some command ->
@@ -31,21 +32,23 @@ let () =
   let _, args = M.init () in
   let path_dune =
     try Some (Sihl.Config.bin_dune ()) with
-    | _ ->
+    | Failure _ ->
       (try Some (FileUtil.which "dune") with
-      | _ -> None)
+      | Failure _ -> None)
   in
-  let path_app =
-    try Some (Sihl.Config.bin_app_path ()) with
-    | _ -> None
-  in
-  match path_dune, path_app with
-  | _, None | None, _ -> run_init []
-  | Some path_dune, Some path_app ->
+  match path_dune with
+  | None -> run_init []
+  | Some path_dune ->
     (match args with
     | _ :: "init" :: args ->
       (* We know that the init command is available *)
       run_init args
+    | [ _ ] | [] ->
+      (try
+         Sihl.Config.root_path () |> ignore;
+         forward_command path_dune []
+       with
+      | _ -> run_init [])
     | _ :: name :: args ->
       (* Everything else we forward to the app binary by default, after
          building *)
@@ -56,10 +59,5 @@ let () =
            builds up *)
         if command.stateful
         then forward_command path_dune (List.cons name args)
-        else Sihl.Command.run ())
-    | [ _ ] | [] ->
-      let _ = Unix.system (path_dune ^ " build") in
-      if CCIO.File.exists path_app
-      then forward_command path_dune []
-      else run_init [])
+        else Sihl.Command.run ()))
 ;;

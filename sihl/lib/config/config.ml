@@ -73,7 +73,6 @@ let root_path () =
 ;;
 
 let absolute_path (relative_path : string) =
-  (* TODO implement *)
   Filename.concat (root_path ()) relative_path
 ;;
 
