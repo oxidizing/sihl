@@ -47,6 +47,8 @@ type t =
   }
 [@@deriving yojson, show]
 
+let equal u1 u2 = CCString.equal u1.id u2.id
+
 let show_name user =
   match user.given_name, user.name with
   | None, None -> None
