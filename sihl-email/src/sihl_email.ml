@@ -66,8 +66,8 @@ let intercept sender email =
 
 type smtp_config =
   { sender : string
-  ; username : string
-  ; password : string
+  ; username : string option
+  ; password : string option
   ; hostname : string
   ; port : int option
   ; start_tls : bool
@@ -103,8 +103,10 @@ let smtp_schema =
   let open Conformist in
   make
     [ string "SMTP_SENDER"
-    ; string "SMTP_USERNAME"
-    ; string "SMTP_PASSWORD"
+      (* TODO wrap as pair as described in
+         https://github.com/oxidizing/conformist/issues/11, once exists *)
+    ; optional (string "SMTP_USERNAME")
+    ; optional (string "SMTP_PASSWORD")
     ; string "SMTP_HOST"
     ; optional (int ~default:587 "SMTP_PORT")
     ; bool "SMTP_START_TLS"
