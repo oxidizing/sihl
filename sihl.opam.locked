@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "3.0.3"
+version: "3.0.4"
 synopsis: "The Sihl web framework"
 description: """
 
@@ -43,9 +43,9 @@ depends: [
   "cstruct-sexp" {= "6.0.1"}
   "digestif" {= "1.1.1"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.0.3"}
-  "dune-build-info" {= "3.0.3"}
-  "dune-configurator" {= "3.0.3"}
+  "dune" {= "3.0.4"}
+  "dune-build-info" {= "3.0.4"}
+  "dune-configurator" {= "3.0.4"}
   "duration" {= "0.2.0"}
   "easy-format" {= "1.3.2"}
   "either" {= "1.0.0"}

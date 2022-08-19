@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "3.0.3"
+version: "3.0.4"
 synopsis: "Email service implementations for Sihl"
 description: "Modules for sending emails using Lwt and SMTP or Sendgrid."
 maintainer: ["josef@oxidizing.io"]
@@ -43,8 +43,8 @@ depends: [
   "cstruct" {= "6.0.1"}
   "cstruct-sexp" {= "6.0.1"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.0.3"}
-  "dune-configurator" {= "3.0.3"}
+  "dune" {= "3.0.4"}
+  "dune-configurator" {= "3.0.4"}
   "duration" {= "0.2.0"}
   "emile" {= "1.1"}
   "eqaf" {= "0.8"}

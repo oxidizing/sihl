@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "3.0.3"
+version: "3.0.4"
 synopsis: "Storage service implementations for Sihl"
 description:
   "Modules for storing large binary blobs using either PostgreSQL or MariaDB."
@@ -13,7 +13,7 @@ depends: [
   "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "dune" {= "3.0.3"}
+  "dune" {= "3.0.4"}
   "ocaml" {= "4.12.1"}
   "ocaml-base-compiler" {= "4.12.1"}
 ]
