@@ -139,8 +139,8 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
     in
     let%lwt config = Config.fetch () in
     let sender = config.sender in
-    let username = config.username in
-    let password = config.password in
+    let username = config.username |> CCOption.get_or ~default:"" in
+    let password = config.password |> CCOption.get_or ~default:"" in
     let hostname = config.hostname in
     let port = config.port in
     let with_starttls = config.start_tls in
