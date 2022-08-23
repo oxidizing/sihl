@@ -1,3 +1,7 @@
+## [3.0.4] - 2022-08-23
+### Updated
+- Make SMTP credentials optional
+
 ## [3.0.3] - 2022-04-01
 ### Updated
 - Update SQL queries to use caqti infix notation
