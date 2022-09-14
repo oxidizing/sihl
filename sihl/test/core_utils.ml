@@ -1,6 +1,6 @@
 let ptime =
   Alcotest.of_pp (fun ppf ptime ->
-      Format.fprintf ppf "%s" (Ptime.to_rfc3339 ptime))
+    Format.fprintf ppf "%s" (Ptime.to_rfc3339 ptime))
 ;;
 
 let parse_ptime _ () =

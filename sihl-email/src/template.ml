@@ -23,10 +23,10 @@ struct
     match created with
     | None ->
       Logs.err (fun m ->
-          m
-            "Could not create template %a"
-            Sihl.Contract.Email_template.pp
-            template);
+        m
+          "Could not create template %a"
+          Sihl.Contract.Email_template.pp
+          template);
       raise (Sihl.Contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;
@@ -38,10 +38,10 @@ struct
     match created with
     | None ->
       Logs.err (fun m ->
-          m
-            "Could not update template %a"
-            Sihl.Contract.Email_template.pp
-            template);
+        m
+          "Could not update template %a"
+          Sihl.Contract.Email_template.pp
+          template);
       raise (Sihl.Contract.Email.Exception "Could not create email template")
     | Some created -> Lwt.return created
   ;;

@@ -28,7 +28,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
       match Base64.decode base64 with
       | Error (`Msg msg) ->
         Logs.err (fun m ->
-            m "Could not upload base64 content of file %a" pp_file file);
+          m "Could not upload base64 content of file %a" pp_file file);
         raise (Sihl.Contract.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
@@ -44,7 +44,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
       match Base64.decode base64 with
       | Error (`Msg msg) ->
         Logs.err (fun m ->
-            m "Could not upload base64 content of file %a" pp_stored file);
+          m "Could not upload base64 content of file %a" pp_stored file);
         raise (Sihl.Contract.Storage.Exception msg)
       | Ok blob -> Lwt.return blob
     in
@@ -59,7 +59,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
-          m "Could not get base64 content of file %a" pp_stored file);
+        m "Could not get base64 content of file %a" pp_stored file);
       raise (Sihl.Contract.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return @@ Some blob
     | None -> Lwt.return None
@@ -71,7 +71,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
     match Option.map Base64.encode blob with
     | Some (Error (`Msg msg)) ->
       Logs.err (fun m ->
-          m "Could not get base64 content of file %a" pp_stored file);
+        m "Could not get base64 content of file %a" pp_stored file);
       raise (Sihl.Contract.Storage.Exception msg)
     | Some (Ok blob) -> Lwt.return blob
     | None ->

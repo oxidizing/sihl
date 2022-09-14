@@ -65,7 +65,7 @@ let run commands args =
     | Some args -> args
     | None ->
       (try Sys.argv |> Array.to_list |> List.tl with
-      | _ -> [])
+       | _ -> [])
   in
   let command = find_command_by_args commands args in
   match command with
@@ -77,43 +77,43 @@ let run commands args =
       | _ -> []
     in
     (match rest_args with
-    | [ "help" ] -> Lwt.return @@ print_help command
-    | rest_args ->
-      let start = Mtime_clock.now () in
-      Lwt.catch
-        (fun () ->
-          let%lwt _ =
-            Lwt_list.iter_s (fun (lifecycle : Core_lifecycle.lifecycle) ->
-                lifecycle.start ())
-            @@ Core_lifecycle.top_sort_lifecycles command.dependencies
-          in
-          let%lwt result = command.fn rest_args in
-          match result with
-          | Some () ->
-            let stop = Mtime_clock.now () in
-            let span = Mtime.span start stop in
-            print_endline
-              (Format.asprintf
-                 "Command '%s' ran successfully in %a"
-                 command.name
-                 Mtime.Span.pp
-                 span);
-            Lwt.return ()
-          | None -> Lwt.return @@ print_help command)
-        (fun exn ->
-          let stop = Mtime_clock.now () in
-          let span = Mtime.span start stop in
-          let msg = Printexc.to_string exn in
-          let stack = Printexc.get_backtrace () in
-          print_endline
-            (Format.asprintf
-               "Command '%s' aborted after %a: '%s'"
-               command.name
-               Mtime.Span.pp
-               span
-               msg);
-          print_endline stack;
-          Lwt.return ()))
+     | [ "help" ] -> Lwt.return @@ print_help command
+     | rest_args ->
+       let start = Mtime_clock.now () in
+       Lwt.catch
+         (fun () ->
+           let%lwt _ =
+             Lwt_list.iter_s (fun (lifecycle : Core_lifecycle.lifecycle) ->
+               lifecycle.start ())
+             @@ Core_lifecycle.top_sort_lifecycles command.dependencies
+           in
+           let%lwt result = command.fn rest_args in
+           match result with
+           | Some () ->
+             let stop = Mtime_clock.now () in
+             let span = Mtime.span start stop in
+             print_endline
+               (Format.asprintf
+                  "Command '%s' ran successfully in %a"
+                  command.name
+                  Mtime.Span.pp
+                  span);
+             Lwt.return ()
+           | None -> Lwt.return @@ print_help command)
+         (fun exn ->
+           let stop = Mtime_clock.now () in
+           let span = Mtime.span start stop in
+           let msg = Printexc.to_string exn in
+           let stack = Printexc.get_backtrace () in
+           print_endline
+             (Format.asprintf
+                "Command '%s' aborted after %a: '%s'"
+                command.name
+                Mtime.Span.pp
+                span
+                msg);
+           print_endline stack;
+           Lwt.return ()))
   | None ->
     print_all commands;
     Lwt.return ()

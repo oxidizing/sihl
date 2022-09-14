@@ -2,13 +2,13 @@ open Alcotest_lwt
 
 let template_testable =
   Alcotest.testable Sihl.Contract.Email_template.pp (fun a b ->
-      let open Sihl.Contract.Email_template in
-      CCString.equal a.id b.id)
+    let open Sihl.Contract.Email_template in
+    CCString.equal a.id b.id)
 ;;
 
 module Make
-    (EmailService : Sihl.Contract.Email.Sig)
-    (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
+  (EmailService : Sihl.Contract.Email.Sig)
+  (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
 struct
   let create_template _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in

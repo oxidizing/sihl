@@ -15,8 +15,8 @@ end
 let print email =
   let open Sihl.Contract.Email in
   Logs.info (fun m ->
-      m
-        {|
+    m
+      {|
 -----------------------
 Email sent by: %s
 Recipient: %s
@@ -31,11 +31,11 @@ Html:
 %s
 -----------------------
 |}
-        email.sender
-        email.recipient
-        email.subject
-        email.text
-        (Option.value ~default:"<None>" email.html))
+      email.sender
+      email.recipient
+      email.subject
+      email.text
+      (Option.value ~default:"<None>" email.html))
 ;;
 
 let should_intercept () =
@@ -77,15 +77,15 @@ type smtp_config =
   }
 
 let smtp_config
-    sender
-    username
-    password
-    hostname
-    port
-    start_tls
-    ca_path
-    ca_cert
-    console
+  sender
+  username
+  password
+  hostname
+  port
+  start_tls
+  ca_path
+  ca_cert
+  console
   =
   { sender
   ; username
@@ -290,11 +290,10 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
     | _ ->
       let%lwt body = Cohttp_lwt.Body.to_string resp_body in
       Logs.err (fun m ->
-          m
-            "Sending email using sendgrid failed with http status %i and body \
-             %s"
-            status
-            body);
+        m
+          "Sending email using sendgrid failed with http status %i and body %s"
+          status
+          body);
       raise (Sihl.Contract.Email.Exception "Failed to send email")
   ;;
 
@@ -340,8 +339,8 @@ module SendGrid = MakeSendGrid (EnvSendGridConfig)
 (* This is useful if you need to answer a request quickly while sending the
    email in the background *)
 module Queued
-    (QueueService : Sihl.Contract.Queue.Sig)
-    (Email : Sihl.Contract.Email.Sig) : Sihl.Contract.Email.Sig = struct
+  (QueueService : Sihl.Contract.Queue.Sig)
+  (Email : Sihl.Contract.Email.Sig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   module Job = struct
@@ -354,15 +353,15 @@ module Queued
         try Ok (Yojson.Safe.from_string email) with
         | _ ->
           Logs.err (fun m ->
-              m
-                "Serialized email string was NULL, can not deserialize email. \
-                 Please fix the string manually and reset the job instance.");
+            m
+              "Serialized email string was NULL, can not deserialize email. \
+               Please fix the string manually and reset the job instance.");
           Error "Invalid serialized email string received"
       in
       Result.bind email (fun email ->
-          email
-          |> Sihl.Contract.Email.of_yojson
-          |> Option.to_result ~none:"Failed to deserialize email")
+        email
+        |> Sihl.Contract.Email.of_yojson
+        |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
     let handle email =
@@ -398,7 +397,7 @@ module Queued
       ~start
       ~stop
       ~dependencies:(fun () ->
-        [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
+      [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
   ;;
 
   let register () = Sihl.Container.Service.create lifecycle

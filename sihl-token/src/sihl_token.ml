@@ -53,13 +53,13 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
     | None -> Lwt.return None
     | Some token ->
       (match is_valid_token token, force with
-      | true, _ | false, Some () ->
-        (match
-           List.find_opt (fun (key, _) -> String.equal k key) token.data
-         with
-        | Some (_, value) -> Lwt.return (Some value)
-        | None -> Lwt.return None)
-      | false, None -> Lwt.return None)
+       | true, _ | false, Some () ->
+         (match
+            List.find_opt (fun (key, _) -> String.equal k key) token.data
+          with
+          | Some (_, value) -> Lwt.return (Some value)
+          | None -> Lwt.return None)
+       | false, None -> Lwt.return None)
   ;;
 
   let read_all ?ctx ?secret:_ ?force token =
@@ -112,9 +112,9 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
     | None -> Lwt.return false
     | Some token ->
       (match token.status with
-      | Status.Inactive -> Lwt.return false
-      | Status.Active ->
-        Lwt.return (Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())))
+       | Status.Inactive -> Lwt.return false
+       | Status.Active ->
+         Lwt.return (Ptime.is_later token.expires_at ~than:(Ptime_clock.now ())))
   ;;
 
   let start () =
@@ -157,10 +157,10 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
       match List.find_opt (fun (k, _) -> String.equal k "exp") data with
       | Some (_, v) ->
         (match int_of_string_opt v with
-        | Some _ -> data
-        | None ->
-          let exp = calculate_exp expires_in in
-          List.cons ("exp", exp) data)
+         | Some _ -> data
+         | None ->
+           let exp = calculate_exp expires_in in
+           List.cons ("exp", exp) data)
       | None ->
         let exp = calculate_exp expires_in in
         List.cons ("exp", exp) data
@@ -200,22 +200,22 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
            (fun (key, _) -> String.equal k key)
            (Jwto.get_payload token)
        with
-      | Some (_, value) -> Lwt.return (Some value)
-      | None -> Lwt.return None)
+       | Some (_, value) -> Lwt.return (Some value)
+       | None -> Lwt.return None)
     | Error msg, Some () ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
       (match Jwto.decode token_value with
-      | Error msg ->
-        Logs.warn (fun m -> m "Failed to decode token: %s" msg);
-        Lwt.return None
-      | Ok token ->
-        (match
-           List.find_opt
-             (fun (key, _) -> String.equal k key)
-             (Jwto.get_payload token)
-         with
-        | Some (_, value) -> Lwt.return (Some value)
-        | None -> Lwt.return None))
+       | Error msg ->
+         Logs.warn (fun m -> m "Failed to decode token: %s" msg);
+         Lwt.return None
+       | Ok token ->
+         (match
+            List.find_opt
+              (fun (key, _) -> String.equal k key)
+              (Jwto.get_payload token)
+          with
+          | Some (_, value) -> Lwt.return (Some value)
+          | None -> Lwt.return None))
   ;;
 
   let read_all ?ctx:_ ?secret ?force token_value =
@@ -235,10 +235,10 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
     | Error msg, Some () ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
       (match Jwto.decode token_value with
-      | Error msg ->
-        Logs.warn (fun m -> m "Failed to decode token: %s" msg);
-        Lwt.return None
-      | Ok token -> Lwt.return (Some (Jwto.get_payload token)))
+       | Error msg ->
+         Logs.warn (fun m -> m "Failed to decode token: %s" msg);
+         Lwt.return None
+       | Ok token -> Lwt.return (Some (Jwto.get_payload token)))
   ;;
 
   let verify ?ctx:_ ?secret token =
@@ -261,21 +261,21 @@ module MakeJwt (Repo : Blacklist_repo.Sig) : Sihl.Contract.Token.Sig = struct
            (fun (k, _) -> String.equal k "exp")
            (Jwto.get_payload token)
        with
-      | Some (_, exp) ->
-        let exp = exp |> int_of_string_opt |> Option.map float_of_int in
-        (match Option.bind exp Ptime.of_float_s with
-        | Some expiration_date ->
-          let is_expired =
-            Ptime.is_earlier expiration_date ~than:(Ptime_clock.now ())
-          in
-          Lwt.return is_expired
-        | None ->
-          raise
-          @@ Sihl.Contract.Token.Exception
-               (Format.sprintf
-                  "Invalid 'exp' claim found in token '%s'"
-                  token_value))
-      | None -> Lwt.return false)
+       | Some (_, exp) ->
+         let exp = exp |> int_of_string_opt |> Option.map float_of_int in
+         (match Option.bind exp Ptime.of_float_s with
+          | Some expiration_date ->
+            let is_expired =
+              Ptime.is_earlier expiration_date ~than:(Ptime_clock.now ())
+            in
+            Lwt.return is_expired
+          | None ->
+            raise
+            @@ Sihl.Contract.Token.Exception
+                 (Format.sprintf
+                    "Invalid 'exp' claim found in token '%s'"
+                    token_value))
+       | None -> Lwt.return false)
     | Error msg ->
       Logs.warn (fun m -> m "Failed to decode and verify token: %s" msg);
       Lwt.return true

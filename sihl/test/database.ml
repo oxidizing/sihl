@@ -54,10 +54,10 @@ let get_usernames connection =
 let query _ () =
   let%lwt usernames =
     Sihl.Database.query (fun connection ->
-        let%lwt () = drop_table_if_exists connection in
-        let%lwt () = create_table_if_not_exists connection in
-        let%lwt () = insert_username connection "foobar pool" in
-        get_usernames connection)
+      let%lwt () = drop_table_if_exists connection in
+      let%lwt () = create_table_if_not_exists connection in
+      let%lwt () = insert_username connection "foobar pool" in
+      get_usernames connection)
   in
   let username = List.hd usernames in
   Alcotest.(check string "has username" "foobar pool" username);
@@ -67,11 +67,11 @@ let query _ () =
 let query_with_transaction _ () =
   let%lwt usernames =
     Sihl.Database.query (fun connection ->
-        let%lwt () = drop_table_if_exists connection in
-        let%lwt () = create_table_if_not_exists connection in
-        Sihl.Database.transaction (fun connection ->
-            let%lwt () = insert_username connection "foobar trx" in
-            get_usernames connection))
+      let%lwt () = drop_table_if_exists connection in
+      let%lwt () = create_table_if_not_exists connection in
+      Sihl.Database.transaction (fun connection ->
+        let%lwt () = insert_username connection "foobar trx" in
+        get_usernames connection))
   in
   let username = List.find (String.equal "foobar trx") usernames in
   Alcotest.(check string "has username" "foobar trx" username);
@@ -81,17 +81,17 @@ let query_with_transaction _ () =
 let transaction_rolls_back _ () =
   let%lwt usernames =
     Sihl.Database.query (fun connection ->
-        let%lwt () = drop_table_if_exists connection in
-        let%lwt () = create_table_if_not_exists connection in
-        let%lwt () =
-          Lwt.catch
-            (fun () ->
-              Sihl.Database.transaction (fun connection ->
-                  let%lwt () = insert_username connection "foobar trx" in
-                  failwith "Oh no, something went wrong during the transaction!"))
-            (fun _ -> Lwt.return ())
-        in
-        get_usernames connection)
+      let%lwt () = drop_table_if_exists connection in
+      let%lwt () = create_table_if_not_exists connection in
+      let%lwt () =
+        Lwt.catch
+          (fun () ->
+            Sihl.Database.transaction (fun connection ->
+              let%lwt () = insert_username connection "foobar trx" in
+              failwith "Oh no, something went wrong during the transaction!"))
+          (fun _ -> Lwt.return ())
+      in
+      get_usernames connection)
   in
   let username = List.find_opt (String.equal "foobar trx") usernames in
   Alcotest.(check (option string) "has no username" None username);
@@ -152,10 +152,10 @@ let choose_database_pool _ () =
   let ctx = [ "pool", "foo" ] in
   let%lwt usernames =
     Sihl.Database.query ~ctx (fun connection ->
-        let%lwt () = drop_table_if_exists connection in
-        let%lwt () = create_table_if_not_exists connection in
-        let%lwt () = insert_username connection "some username" in
-        get_usernames connection)
+      let%lwt () = drop_table_if_exists connection in
+      let%lwt () = create_table_if_not_exists connection in
+      let%lwt () = insert_username connection "some username" in
+      get_usernames connection)
   in
   let username = List.hd usernames in
   Alcotest.(check string "has username" "some username" username);

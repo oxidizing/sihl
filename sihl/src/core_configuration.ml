@@ -64,10 +64,10 @@ let envs_to_kv envs =
   envs
   |> List.map (String.split_on_char '=')
   |> List.map (function
-         | [] -> "", ""
-         | [ key ] -> key, ""
-         | [ key; value ] -> key, value
-         | key :: values -> key, String.concat "" values)
+       | [] -> "", ""
+       | [ key ] -> key, ""
+       | [ key; value ] -> key, value
+       | key :: values -> key, String.concat "" values)
 ;;
 
 (* .env file handling *)
@@ -116,14 +116,14 @@ let read_env_file () =
       Some (envs_to_kv envs))
     else (
       Logs.info (fun m ->
-          m "Env file not found: %s. Continuing without it." filename);
+        m "Env file not found: %s. Continuing without it." filename);
       None)
   | None ->
     Logs.debug (fun m ->
-        m
-          "No env files directory found, please provide your own directory \
-           path with environment variable ENV_FILES_PATH if you would like to \
-           use env files");
+      m
+        "No env files directory found, please provide your own directory path \
+         with environment variable ENV_FILES_PATH if you would like to use env \
+         files");
     None
 ;;
 
@@ -179,9 +179,9 @@ let load () =
   match read_string "SIHL_ENV" with
   | None ->
     Logs.info (fun m ->
-        m
-          "SIHL_ENV not found. Set it to one of the following values: \
-           development, production, test");
+      m
+        "SIHL_ENV not found. Set it to one of the following values: \
+         development, production, test");
     failwith "SIHL_ENV not found"
   | Some env -> Logs.info (fun m -> m "SIHL_ENV: %s" env)
 ;;
@@ -241,21 +241,21 @@ let require schema = read schema |> ignore
 let configuration_to_string (configurations : t) : string =
   configurations
   |> List.map (fun { name; description; type_; default } ->
-         match default with
-         | Some default ->
-           Format.sprintf
-             {|
+       match default with
+       | Some default ->
+         Format.sprintf
+           {|
 %s
 %s
 Type: %s
 Default: %s
 |}
-             name
-             description
-             type_
-             default
-         | None ->
-           Format.sprintf {|
+           name
+           description
+           type_
+           default
+       | None ->
+         Format.sprintf {|
 %s
 %s
 Type: %s
@@ -269,20 +269,20 @@ let print_cmd (configurations : t list) : Core_command.t =
     ~name:"config"
     ~description:"Prints a list of configurations that are known to Sihl."
     (fun _ ->
-      configurations
-      |> List.filter (fun configuration -> List.length configuration > 0)
-      |> List.concat
-      |> List.sort (fun c1 c2 ->
-             (* We want to show required configurations first. *)
-             match c1.default, c2.default with
-             | Some _, Some _ -> 0
-             | Some _, None -> 1
-             | None, Some _ -> -1
-             | None, None -> 0)
-      |> configuration_to_string
-      |> print_endline
-      |> Option.some
-      |> Lwt.return)
+    configurations
+    |> List.filter (fun configuration -> List.length configuration > 0)
+    |> List.concat
+    |> List.sort (fun c1 c2 ->
+         (* We want to show required configurations first. *)
+         match c1.default, c2.default with
+         | Some _, Some _ -> 0
+         | Some _, None -> 1
+         | None, Some _ -> -1
+         | None, None -> 0)
+    |> configuration_to_string
+    |> print_endline
+    |> Option.some
+    |> Lwt.return)
 ;;
 
 let commands configurations = [ print_cmd configurations ]

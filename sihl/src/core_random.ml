@@ -22,11 +22,11 @@ let random_cmd =
       "Generates a random string with the given length in bytes. The string is \
        base64 encoded. Use the generated value for SIHL_SECRET."
     (function
-      | [ n ] ->
-        (match int_of_string_opt n with
-        | Some n ->
-          print_endline @@ base64 n;
-          Lwt.return @@ Some ()
-        | None -> failwith "Invalid number of bytes provided")
-      | _ -> Lwt.return None)
+    | [ n ] ->
+      (match int_of_string_opt n with
+       | Some n ->
+         print_endline @@ base64 n;
+         Lwt.return @@ Some ()
+       | None -> failwith "Invalid number of bytes provided")
+    | _ -> Lwt.return None)
 ;;

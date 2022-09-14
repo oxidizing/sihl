@@ -129,8 +129,8 @@ let read_env_file switch () =
   let values = [ "church"; "mathematician"; "92" ] in
   let%lwt () =
     Lwt_io.with_file ~mode:Lwt_io.Output filename (fun ch ->
-        let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
-        Lwt_list.iter_s (Lwt_io.write_line ch) envs)
+      let envs = List.map2 (fun k v -> k ^ "=" ^ v) keys values in
+      Lwt_list.iter_s (Lwt_io.write_line ch) envs)
   in
   let data = Sihl.Configuration.read_env_file () in
   let data = Option.value data ~default:[] in

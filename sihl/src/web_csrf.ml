@@ -185,12 +185,12 @@ let default_not_allowed_handler _ =
 ;;
 
 let middleware
-    ?(not_allowed_handler = default_not_allowed_handler)
-    ?(key = "_csrf")
-    ?(session_key = "_session")
-    ?(input_name = "_csrf")
-    ?(secret = Core_configuration.read_secret ())
-    ()
+  ?(not_allowed_handler = default_not_allowed_handler)
+  ?(key = "_csrf")
+  ?(session_key = "_session")
+  ?(input_name = "_csrf")
+  ?(secret = Core_configuration.read_secret ())
+  ()
   =
   let open Crypto in
   let block_secret = Secret.make secret in
@@ -266,33 +266,33 @@ let middleware
       (* Request is unsafe and token provided -> Check if tokens match *)
       | Some received_encrypted_token, false ->
         (match stored_encrypted_token with
-        | None ->
-          Logs.err (fun m ->
-              m
-                "No token stored in session for received CSRF token '%s'"
-                (Encrypted_token.to_uri_safe_string received_encrypted_token));
-          construct_response not_allowed_handler
-        | Some stored_encrypted_token ->
-          let stored_token =
-            Decrypted_token.from_encrypted
-              ~with_secret:block_secret
-              stored_encrypted_token
-          in
-          let received_token =
-            Decrypted_token.from_encrypted_random
-              ~with_secret:block_secret
-              received_encrypted_token
-          in
-          if Decrypted_token.equal stored_token received_token
-          then construct_response handler
-          else (
-            Logs.err (fun m ->
-                m
-                  "Encrypted stored token '%s' does not match with the \
-                   received encrypted token '%s'"
-                  (Encrypted_token.to_uri_safe_string stored_encrypted_token)
-                  (Encrypted_token.to_uri_safe_string received_encrypted_token));
-            construct_response not_allowed_handler))
+         | None ->
+           Logs.err (fun m ->
+             m
+               "No token stored in session for received CSRF token '%s'"
+               (Encrypted_token.to_uri_safe_string received_encrypted_token));
+           construct_response not_allowed_handler
+         | Some stored_encrypted_token ->
+           let stored_token =
+             Decrypted_token.from_encrypted
+               ~with_secret:block_secret
+               stored_encrypted_token
+           in
+           let received_token =
+             Decrypted_token.from_encrypted_random
+               ~with_secret:block_secret
+               received_encrypted_token
+           in
+           if Decrypted_token.equal stored_token received_token
+           then construct_response handler
+           else (
+             Logs.err (fun m ->
+               m
+                 "Encrypted stored token '%s' does not match with the received \
+                  encrypted token '%s'"
+                 (Encrypted_token.to_uri_safe_string stored_encrypted_token)
+                 (Encrypted_token.to_uri_safe_string received_encrypted_token));
+             construct_response not_allowed_handler))
   in
   Rock.Middleware.create ~name:"csrf" ~filter
 ;;

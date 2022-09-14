@@ -41,9 +41,9 @@ type t =
   ; admin : bool
   ; confirmed : bool
   ; created_at : Ptime.t
-        [@to_yojson ptime_to_yojson] [@of_yojson ptime_of_yojson]
+       [@to_yojson ptime_to_yojson] [@of_yojson ptime_of_yojson]
   ; updated_at : Ptime.t
-        [@to_yojson ptime_to_yojson] [@of_yojson ptime_of_yojson]
+       [@to_yojson ptime_to_yojson] [@of_yojson ptime_of_yojson]
   }
 [@@deriving yojson, show]
 
@@ -259,18 +259,18 @@ module type Sig = sig
 end
 
 let to_sexp
-    { id
-    ; email
-    ; username
-    ; name
-    ; given_name
-    ; status
-    ; admin
-    ; confirmed
-    ; created_at
-    ; updated_at
-    ; _
-    }
+  { id
+  ; email
+  ; username
+  ; name
+  ; given_name
+  ; status
+  ; admin
+  ; confirmed
+  ; created_at
+  ; updated_at
+  ; _
+  }
   =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
@@ -340,11 +340,11 @@ let validate_new_password ~password ~password_confirmation ~password_policy =
 ;;
 
 let validate_change_password
-    user
-    ~old_password
-    ~new_password
-    ~new_password_confirmation
-    ~password_policy
+  user
+  ~old_password
+  ~new_password
+  ~new_password_confirmation
+  ~password_policy
   =
   let matches_old_password =
     match matches_password old_password user with

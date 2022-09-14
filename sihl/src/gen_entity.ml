@@ -30,7 +30,7 @@ let[@warning "-45"] schema
 let entity_type (schema : Gen_core.schema) =
   schema
   |> List.map (fun (name, type_) ->
-         Format.sprintf "%s: %s" name (Gen_core.ocaml_type_of_gen_type type_))
+       Format.sprintf "%s: %s" name (Gen_core.ocaml_type_of_gen_type type_))
   |> String.concat ";"
   |> Format.sprintf ";%s"
 ;;
@@ -53,10 +53,10 @@ let created_value (schema : Gen_core.schema) =
 let conformist_fields (schema : Gen_core.schema) =
   schema
   |> List.map (fun (name, type_) ->
-         Format.sprintf
-           {|%s "%s"|}
-           (Gen_core.conformist_type_of_gen_type type_)
-           name)
+       Format.sprintf
+         {|%s "%s"|}
+         (Gen_core.conformist_type_of_gen_type type_)
+         name)
   |> String.concat "; "
 ;;
 

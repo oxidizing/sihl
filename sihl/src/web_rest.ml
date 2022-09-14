@@ -9,10 +9,10 @@ module Form = struct
   [@@deriving yojson, show]
 
   let set
-      ?(key = "_form")
-      (errors : Conformist.error list)
-      (urlencoded : (string * string list) list)
-      resp
+    ?(key = "_form")
+    (errors : Conformist.error list)
+    (urlencoded : (string * string list) list)
+    resp
     =
     let t =
       List.map
@@ -20,7 +20,7 @@ module Form = struct
           errors
           |> List.find_opt (fun (field, _, _) -> String.equal field k)
           |> Option.map (fun (field, input, value) ->
-                 field, CCList.head_opt input, Some value)
+               field, CCList.head_opt input, Some value)
           |> Option.value ~default:(k, CCList.head_opt v, None))
         urlencoded
     in
@@ -37,11 +37,11 @@ module Form = struct
         | _ -> None
       in
       (match yojson with
-      | Some yojson ->
-        (match of_yojson yojson with
-        | Error _ -> []
-        | Ok form -> form)
-      | None -> [])
+       | Some yojson ->
+         (match of_yojson yojson with
+          | Error _ -> []
+          | Ok form -> form)
+       | None -> [])
   ;;
 
   let find (k : string) (form : t) : string option * string option =
@@ -236,7 +236,7 @@ struct
     match Web_csrf.find req with
     | None ->
       Logs.err (fun m ->
-          m "CSRF middleware not installed for resource '%s'" name);
+        m "CSRF middleware not installed for resource '%s'" name);
       failwith "CSRF middleware not installed"
     | Some token -> token
   ;;
@@ -268,16 +268,16 @@ struct
     | Ok thing ->
       let%lwt thing = Service.insert thing in
       (match thing with
-      | Ok _ ->
-        Opium.Response.redirect_to (Format.sprintf "/%s" name)
-        |> Web_flash.set_notice
-             (Format.sprintf "Successfully added %s" (singularize name))
-        |> Lwt.return
-      | Error msg ->
-        Opium.Response.redirect_to (Format.sprintf "/%s/new" name)
-        |> Form.set [] urlencoded
-        |> Web_flash.set_alert msg
-        |> Lwt.return)
+       | Ok _ ->
+         Opium.Response.redirect_to (Format.sprintf "/%s" name)
+         |> Web_flash.set_notice
+              (Format.sprintf "Successfully added %s" (singularize name))
+         |> Lwt.return
+       | Error msg ->
+         Opium.Response.redirect_to (Format.sprintf "/%s/new" name)
+         |> Form.set [] urlencoded
+         |> Web_flash.set_alert msg
+         |> Lwt.return)
     | Error errors ->
       Opium.Response.redirect_to (Format.sprintf "/%s/new" name)
       |> Web_flash.set_alert "Some of the input is invalid"
@@ -329,16 +329,16 @@ struct
     | Ok thing ->
       let%lwt updated = Service.update id thing in
       (match updated with
-      | Ok _ ->
-        Opium.Response.redirect_to (Format.sprintf "/%s/%s" name id)
-        |> Web_flash.set_notice
-             (Format.sprintf "Successfully updated %s" (singularize name))
-        |> Lwt.return
-      | Error msg ->
-        Opium.Response.redirect_to (Format.sprintf "/%s/%s/edit" name id)
-        |> Web_flash.set_alert msg
-        |> Form.set [] urlencoded
-        |> Lwt.return)
+       | Ok _ ->
+         Opium.Response.redirect_to (Format.sprintf "/%s/%s" name id)
+         |> Web_flash.set_notice
+              (Format.sprintf "Successfully updated %s" (singularize name))
+         |> Lwt.return
+       | Error msg ->
+         Opium.Response.redirect_to (Format.sprintf "/%s/%s/edit" name id)
+         |> Web_flash.set_alert msg
+         |> Form.set [] urlencoded
+         |> Lwt.return)
     | Error errors ->
       Opium.Response.redirect_to (Format.sprintf "/%s/%s/edit" name id)
       |> Web_flash.set_alert "Some of the input is invalid"
@@ -365,19 +365,22 @@ struct
     | Some thing ->
       let%lwt result = Service.delete thing in
       (match result with
-      | Ok () ->
-        Opium.Response.redirect_to target_uri
-        |> Web_flash.set_notice
-             (Format.sprintf
-                "Successfully deleted %s '%s'"
-                (singularize name)
-                id)
-        |> Lwt.return
-      | Error msg ->
-        Opium.Response.redirect_to target_uri
-        |> Web_flash.set_notice
-             (Format.sprintf "Failed to delete %s: '%s'" (singularize name) msg)
-        |> Lwt.return)
+       | Ok () ->
+         Opium.Response.redirect_to target_uri
+         |> Web_flash.set_notice
+              (Format.sprintf
+                 "Successfully deleted %s '%s'"
+                 (singularize name)
+                 id)
+         |> Lwt.return
+       | Error msg ->
+         Opium.Response.redirect_to target_uri
+         |> Web_flash.set_notice
+              (Format.sprintf
+                 "Failed to delete %s: '%s'"
+                 (singularize name)
+                 msg)
+         |> Lwt.return)
   ;;
 end
 
@@ -392,11 +395,11 @@ type action =
   ]
 
 let router_of_action
-    (type a)
-    (module Controller : CONTROLLER with type t = a)
-    name
-    schema
-    (action : action)
+  (type a)
+  (module Controller : CONTROLLER with type t = a)
+  name
+  schema
+  (action : action)
   =
   match action with
   | `Index -> Web.get (Format.sprintf "/%s" name) (Controller.index name)
@@ -412,21 +415,21 @@ let router_of_action
 ;;
 
 let routers_of_actions
-    (type a)
-    name
-    schema
-    (module Controller : CONTROLLER with type t = a)
-    (actions : action list)
+  (type a)
+  name
+  schema
+  (module Controller : CONTROLLER with type t = a)
+  (actions : action list)
   =
   List.map (router_of_action (module Controller) name schema) actions
 ;;
 
 let resource_of_controller
-    (type a)
-    ?only
-    name
-    schema
-    (module Controller : CONTROLLER with type t = a)
+  (type a)
+  ?only
+  name
+  schema
+  (module Controller : CONTROLLER with type t = a)
   =
   match only with
   | None ->
@@ -439,12 +442,12 @@ let resource_of_controller
 ;;
 
 let resource_of_service
-    (type a)
-    ?only
-    name
-    schema
-    ~view:(module View : VIEW with type t = a)
-    (module Service : SERVICE with type t = a)
+  (type a)
+  ?only
+  name
+  schema
+  ~view:(module View : VIEW with type t = a)
+  (module Service : SERVICE with type t = a)
   =
   let module Controller = MakeController (Service) (View) in
   resource_of_controller ?only name schema (module Controller)

@@ -78,7 +78,7 @@ struct
     match found with
     | Some _ ->
       Logs.debug (fun m ->
-          m "Found duplicate migration '%s', ignoring it" label)
+        m "Found duplicate migration '%s', ignoring it" label)
     | None ->
       registered_migrations
         := Map.add label (snd migration) !registered_migrations
@@ -93,16 +93,16 @@ struct
 
   let with_disabled_fk_check ?ctx f =
     Database.query ?ctx (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        let%lwt () =
-          Connection.exec set_fk_check_request false
-          |> Lwt.map Database.raise_error
-        in
-        Lwt.finalize
-          (fun () -> f connection)
-          (fun () ->
-            Connection.exec set_fk_check_request true
-            |> Lwt.map Database.raise_error))
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      let%lwt () =
+        Connection.exec set_fk_check_request false
+        |> Lwt.map Database.raise_error
+      in
+      Lwt.finalize
+        (fun () -> f connection)
+        (fun () ->
+          Connection.exec set_fk_check_request true
+          |> Lwt.map Database.raise_error))
   ;;
 
   let execute_steps ?ctx migration =
@@ -124,14 +124,12 @@ struct
       | { label; statement; check_fk = false } :: steps ->
         let%lwt () =
           with_disabled_fk_check ?ctx (fun connection ->
-              Logs.debug (fun m -> m "Running %s without fk checks" label);
-              let query (module Connection : Caqti_lwt.CONNECTION) =
-                let req =
-                  statement |> Caqti_type.(unit ->. unit) ~oneshot:true
-                in
-                Connection.exec req () |> Lwt.map Database.raise_error
-              in
-              query connection)
+            Logs.debug (fun m -> m "Running %s without fk checks" label);
+            let query (module Connection : Caqti_lwt.CONNECTION) =
+              let req = statement |> Caqti_type.(unit ->. unit) ~oneshot:true in
+              Connection.exec req () |> Lwt.map Database.raise_error
+            in
+            query connection)
         in
         Logs.debug (fun m -> m "Ran %s" label);
         let%lwt _ = increment ?ctx namespace in
@@ -156,13 +154,13 @@ struct
         if Repo.Migration.dirty state
         then (
           Logs.err (fun m ->
-              m
-                "Dirty migration found for %s, this has to be fixed manually"
-                namespace);
+            m
+              "Dirty migration found for %s, this has to be fixed manually"
+              namespace);
           Logs.info (fun m ->
-              m
-                "Set the column 'dirty' from 1/true to 0/false after you have \
-                 fixed the database state.");
+            m
+              "Set the column 'dirty' from 1/true to 0/false after you have \
+               fixed the database state.");
           raise Contract_migration.Dirty_migration)
         else mark_dirty ?ctx namespace)
       else (
@@ -176,10 +174,10 @@ struct
     if n_migrations > 0
     then
       Logs.info (fun m ->
-          m
-            "Executing %d migrations for '%s'..."
-            (List.length (snd migration_to_apply))
-            namespace)
+        m
+          "Executing %d migrations for '%s'..."
+          (List.length (snd migration_to_apply))
+          namespace)
     else Logs.info (fun m -> m "No migrations to execute for '%s'" namespace);
     let%lwt () =
       Lwt.catch
@@ -187,7 +185,7 @@ struct
         (fun exn ->
           let err = Printexc.to_string exn in
           Logs.err (fun m ->
-              m "Error while running migration '%a': %s" pp migration err);
+            m "Error while running migration '%a': %s" pp migration err);
           raise (Contract_migration.Exception err))
     in
     let%lwt _ = mark_clean ?ctx namespace in
@@ -225,7 +223,7 @@ struct
     let migration_states_namespaces =
       migrations_states
       |> List.map (fun migration_state ->
-             migration_state.Database_migration_repo.Migration.namespace)
+           migration_state.Database_migration_repo.Migration.namespace)
     in
     let registered_migrations_namespaces =
       Map.to_seq migrations_to_check |> List.of_seq |> List.map fst
@@ -285,33 +283,32 @@ struct
         match count with
         | None ->
           Logs.warn (fun m ->
-              m
-                "Could not find registered migrations for namespace '%s'. This \
-                 implies you removed all migrations of that namespace. \
-                 Migrations should be append-only. If you intended to remove \
-                 those migrations, make sure to remove the migration state in \
-                 your database/other persistence layer."
-                namespace)
+            m
+              "Could not find registered migrations for namespace '%s'. This \
+               implies you removed all migrations of that namespace. \
+               Migrations should be append-only. If you intended to remove \
+               those migrations, make sure to remove the migration state in \
+               your database/other persistence layer."
+              namespace)
         | Some count ->
           if count > 0
           then
             Logs.info (fun m ->
-                m
-                  "Unapplied migrations for namespace '%s' detected. Found %s \
-                   unapplied migrations, run command 'migrate'."
-                  namespace
-                  (Int.to_string count))
+              m
+                "Unapplied migrations for namespace '%s' detected. Found %s \
+                 unapplied migrations, run command 'migrate'."
+                namespace
+                (Int.to_string count))
           else if count < 0
           then
             Logs.warn (fun m ->
-                m
-                  "Fewer registered migrations found than migration state \
-                   indicates for namespace '%s'. Current migration state \
-                   version is ahead of registered migrations by %s. This \
-                   implies you removed migrations, which should be \
-                   append-only."
-                  namespace
-                  (Int.to_string @@ Int.abs count))
+              m
+                "Fewer registered migrations found than migration state \
+                 indicates for namespace '%s'. Current migration state version \
+                 is ahead of registered migrations by %s. This implies you \
+                 removed migrations, which should be append-only."
+                namespace
+                (Int.to_string @@ Int.abs count))
           else ())
       unapplied;
     Lwt.return ()
@@ -337,9 +334,9 @@ struct
       ~name:"migrate"
       ~description:"Runs all pending migrations."
       (fun _ ->
-        let%lwt () = Database.start () in
-        let%lwt () = start () in
-        run_all () |> Lwt.map Option.some)
+      let%lwt () = Database.start () in
+      let%lwt () = start () in
+      run_all () |> Lwt.map Option.some)
   ;;
 
   let lifecycle =

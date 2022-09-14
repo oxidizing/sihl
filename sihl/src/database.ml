@@ -5,13 +5,13 @@ let log_src = Logs.Src.create "sihl.service.database"
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 let main_pool_ref
-    : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
+  : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t option ref
   =
   ref None
 ;;
 
 let pools
-    : (string, (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t) Hashtbl.t
+  : (string, (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t) Hashtbl.t
   =
   Hashtbl.create 100
 ;;
@@ -32,12 +32,12 @@ let prepare_requests _ _ _ = failwith "prepare_requests deprecated"
 let default_format_filter keyword = "%" ^ keyword ^ "%"
 
 let prepare_search_request
-    ~search_query
-    ~filter_fragment
-    ?(sort_by_field = "id")
-    ?(format_filter = default_format_filter)
-    output_type
-    : 'a prepared_search_request
+  ~search_query
+  ~filter_fragment
+  ?(sort_by_field = "id")
+  ?(format_filter = default_format_filter)
+  output_type
+  : 'a prepared_search_request
   =
   let open Caqti_request.Infix in
   let output_type = Caqti_type.(tup2 int output_type) in
@@ -170,9 +170,9 @@ let fetch_pool ?(ctx = []) () =
          ~default:false
     then
       Logs.warn (fun m ->
-          m
-            "DATABASE_SKIP_DEFAULT_POOL_CREATION was set to true, but no pool \
-             was defined for querying.");
+        m
+          "DATABASE_SKIP_DEFAULT_POOL_CREATION was set to true, but no pool \
+           was defined for querying.");
     let pool_size =
       Option.value (Core_configuration.read schema).pool_size ~default:10
     in
@@ -228,7 +228,7 @@ let transaction ?ctx f =
         match start_result with
         | Error msg ->
           Logs.debug (fun m ->
-              m "Failed to start transaction: %s" (Caqti_error.show msg));
+            m "Failed to start transaction: %s" (Caqti_error.show msg));
           Lwt.return @@ Error msg
         | Ok () ->
           Logs.debug (fun m -> m "Started transaction");
@@ -242,9 +242,7 @@ let transaction ?ctx f =
                 Lwt.return @@ Ok result
               | Error error ->
                 Logs.err (fun m ->
-                    m
-                      "Failed to commit transaction: %s"
-                      (Caqti_error.show error));
+                  m "Failed to commit transaction: %s" (Caqti_error.show error));
                 Lwt.fail
                 @@ Contract_database.Exception "Failed to commit transaction")
             (fun e ->
@@ -255,9 +253,9 @@ let transaction ?ctx f =
                 Lwt.fail e
               | Error error ->
                 Logs.err (fun m ->
-                    m
-                      "Failed to rollback transaction: %s"
-                      (Caqti_error.show error));
+                  m
+                    "Failed to rollback transaction: %s"
+                    (Caqti_error.show error));
                 Lwt.fail
                 @@ Contract_database.Exception "Failed to rollback transaction"))
       pool
@@ -273,36 +271,36 @@ let transaction ?ctx f =
 let transaction' ?ctx f = transaction ?ctx f |> Lwt.map raise_error
 
 let run_search_request
-    ?ctx
-    (r : 'a prepared_search_request)
-    (sort : [ `Asc | `Desc ])
-    (filter : string option)
-    ~(limit : int)
-    ~(offset : int)
+  ?ctx
+  (r : 'a prepared_search_request)
+  (sort : [ `Asc | `Desc ])
+  (filter : string option)
+  ~(limit : int)
+  ~(offset : int)
   =
   transaction' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      let%lwt result =
-        match sort, filter with
-        | `Asc, None -> Connection.collect_list r.asc_request (limit, offset)
-        | `Desc, None -> Connection.collect_list r.desc_request (limit, offset)
-        | `Asc, Some filter ->
-          Connection.collect_list
-            r.filter_asc_request
-            (r.format_filter filter, limit, offset)
-        | `Desc, Some filter ->
-          Connection.collect_list
-            r.filter_desc_request
-            (r.format_filter filter, limit, offset)
-      in
-      let things = Result.map (List.map snd) result in
-      let total =
-        Result.map
-          (fun e ->
-            e |> List.map fst |> CCList.head_opt |> Option.value ~default:0)
-          result
-      in
-      CCResult.both things total |> Lwt.return)
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    let%lwt result =
+      match sort, filter with
+      | `Asc, None -> Connection.collect_list r.asc_request (limit, offset)
+      | `Desc, None -> Connection.collect_list r.desc_request (limit, offset)
+      | `Asc, Some filter ->
+        Connection.collect_list
+          r.filter_asc_request
+          (r.format_filter filter, limit, offset)
+      | `Desc, Some filter ->
+        Connection.collect_list
+          r.filter_desc_request
+          (r.format_filter filter, limit, offset)
+    in
+    let things = Result.map (List.map snd) result in
+    let total =
+      Result.map
+        (fun e ->
+          e |> List.map fst |> CCList.head_opt |> Option.value ~default:0)
+        result
+    in
+    CCResult.both things total |> Lwt.return)
 ;;
 
 let query ?ctx f =
@@ -327,26 +325,26 @@ let query' ?ctx f = query ?ctx f |> Lwt.map raise_error
 
 let find_opt ?ctx request input =
   query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find_opt request input)
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    Connection.find_opt request input)
 ;;
 
 let find ?ctx request input =
   query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find request input)
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    Connection.find request input)
 ;;
 
 let collect ?ctx request input =
   query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.collect_list request input)
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    Connection.collect_list request input)
 ;;
 
 let exec ?ctx request input =
   query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec request input)
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    Connection.exec request input)
 ;;
 
 let used_database () =

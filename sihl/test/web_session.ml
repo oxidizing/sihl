@@ -177,14 +177,14 @@ let update_value _ () =
     |> Session.update_or_set_value
          ~key:(fst target1)
          (function
-           | None -> Alcotest.fail "value should be found"
-           | Some v -> Some (con ^ v))
+          | None -> Alcotest.fail "value should be found"
+          | Some v -> Some (con ^ v))
          req
     |> Session.update_or_set_value
          ~key:(fst target2)
          (function
-           | None -> Some (snd target2)
-           | Some _ -> Alcotest.fail "value should not be found")
+          | None -> Some (snd target2)
+          | Some _ -> Alcotest.fail "value should not be found")
          req
     |> Lwt.return
   in
@@ -213,14 +213,14 @@ let delete_value _ () =
     |> Session.update_or_set_value
          ~key:(fst target1)
          (function
-           | None -> Alcotest.fail "value should be found"
-           | Some _ -> None)
+          | None -> Alcotest.fail "value should be found"
+          | Some _ -> None)
          req
     |> Session.update_or_set_value
          ~key:(fst target2)
          (function
-           | None -> None
-           | Some _ -> Alcotest.fail "value should not be found")
+          | None -> None
+          | Some _ -> Alcotest.fail "value should not be found")
          req
     |> Lwt.return
   in

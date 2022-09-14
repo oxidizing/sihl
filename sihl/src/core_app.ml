@@ -40,35 +40,32 @@ let start_cmd services =
       "Starts the Sihl app including all registered services and the HTTP \
        server."
     (fun _ ->
-      let normal_services =
-        List.filter
-          (fun service -> not (Core_container.Service.server service))
-          services
-      in
-      let server_services =
-        List.filter Core_container.Service.server services
-      in
-      match server_services with
-      | [ server ] ->
-        let%lwt _ = Core_container.start_services normal_services in
-        let%lwt () = Core_container.Service.start server in
-        run_forever ()
-      | [] ->
-        Logger.err (fun m ->
-            m
-              "No 'server' service registered. Make sure that you have one \
-               server service registered in your 'run.ml' such as a HTTP \
-               service");
-        raise (Exception "No server service registered")
-      | servers ->
-        let names = List.map Core_container.Service.name servers in
-        let names = String.concat ", " names in
-        Logger.err (fun m ->
-            m
-              "Multiple server services registered: '%s', you can only have \
-               one service registered that is a 'server' service."
-              names);
-        raise (Exception "Multiple server services registered"))
+    let normal_services =
+      List.filter
+        (fun service -> not (Core_container.Service.server service))
+        services
+    in
+    let server_services = List.filter Core_container.Service.server services in
+    match server_services with
+    | [ server ] ->
+      let%lwt _ = Core_container.start_services normal_services in
+      let%lwt () = Core_container.Service.start server in
+      run_forever ()
+    | [] ->
+      Logger.err (fun m ->
+        m
+          "No 'server' service registered. Make sure that you have one server \
+           service registered in your 'run.ml' such as a HTTP service");
+      raise (Exception "No server service registered")
+    | servers ->
+      let names = List.map Core_container.Service.name servers in
+      let names = String.concat ", " names in
+      Logger.err (fun m ->
+        m
+          "Multiple server services registered: '%s', you can only have one \
+           service registered that is a 'server' service."
+          names);
+      raise (Exception "Multiple server services registered"))
 ;;
 
 let run' ?(commands = []) ?(log_reporter = Core_log.default_reporter) ?args app =

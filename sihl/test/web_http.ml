@@ -41,21 +41,21 @@ let combine_routers_calls_middlewares _ () =
   reset_assert_state ();
   let middleware_root =
     Rock.Middleware.create ~name:"root" ~filter:(fun hander req ->
-        root_middleware_was_called := true;
-        hander req)
+      root_middleware_was_called := true;
+      hander req)
   in
   let middleware_sub =
     Rock.Middleware.create ~name:"sub" ~filter:(fun hander req ->
-        sub_middleware_was_called := true;
-        hander req)
+      sub_middleware_was_called := true;
+      hander req)
   in
   let middleware_foo =
     Rock.Middleware.create ~name:"foo" ~filter:(fun _ _ ->
-        Lwt.return @@ Sihl.Web.Response.of_plain_text "foo middleware")
+      Lwt.return @@ Sihl.Web.Response.of_plain_text "foo middleware")
   in
   let middleware_bar =
     Rock.Middleware.create ~name:"bar" ~filter:(fun _ _ ->
-        Lwt.return @@ Sihl.Web.Response.of_plain_text "bar middleware")
+      Lwt.return @@ Sihl.Web.Response.of_plain_text "bar middleware")
   in
   let router =
     Sihl.Web.(
@@ -66,17 +66,17 @@ let combine_routers_calls_middlewares _ () =
             ~middlewares:[ middleware_sub ]
             ~scope:"/sub"
             [ get "/" (fun _ ->
-                  index_was_called := true;
-                  Lwt.return (Opium.Response.of_plain_text "/"))
+                index_was_called := true;
+                Lwt.return (Opium.Response.of_plain_text "/"))
             ; get ~middlewares:[ middleware_foo ] "/foo" (fun _ ->
-                  foo_was_called := true;
-                  Lwt.return (Opium.Response.of_plain_text "/foo"))
+                foo_was_called := true;
+                Lwt.return (Opium.Response.of_plain_text "/foo"))
             ; get "/fooz" (fun _ ->
-                  Lwt.return (Opium.Response.of_plain_text "/fooz"))
+                Lwt.return (Opium.Response.of_plain_text "/fooz"))
             ]
         ; get "/bar" ~middlewares:[ middleware_bar ] (fun _ ->
-              bar_was_called := true;
-              Lwt.return (Opium.Response.of_plain_text "/bar"))
+            bar_was_called := true;
+            Lwt.return (Opium.Response.of_plain_text "/bar"))
         ])
   in
   let service = Sihl.Web.Http.register router in

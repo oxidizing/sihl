@@ -9,15 +9,15 @@ let service =
       "Generates a model consisting of a service, an entityt, a repository, \
        tests and migrations."
     (function
-      | database :: model_name :: schema ->
-        (match Gen_core.schema_of_string schema with
-        | Ok schema ->
-          Gen_model.generate database model_name schema;
-          Lwt.return @@ Some ()
-        | Error msg ->
-          print_endline msg;
-          raise @@ Core_command.Exception "")
-      | _ -> Lwt.return None)
+    | database :: model_name :: schema ->
+      (match Gen_core.schema_of_string schema with
+       | Ok schema ->
+         Gen_model.generate database model_name schema;
+         Lwt.return @@ Some ()
+       | Error msg ->
+         print_endline msg;
+         raise @@ Core_command.Exception "")
+    | _ -> Lwt.return None)
 ;;
 
 let view =
@@ -30,15 +30,15 @@ let view =
       "Generates an HTML view that contains a form to create and update a \
        resource."
     (function
-      | name :: schema ->
-        (match Gen_core.schema_of_string schema with
-        | Ok schema ->
-          Gen_view.generate name schema;
-          Lwt.return @@ Some ()
-        | Error msg ->
-          print_endline msg;
-          raise @@ Core_command.Exception "")
-      | [] -> Lwt.return None)
+    | name :: schema ->
+      (match Gen_core.schema_of_string schema with
+       | Ok schema ->
+         Gen_view.generate name schema;
+         Lwt.return @@ Some ()
+       | Error msg ->
+         print_endline msg;
+         raise @@ Core_command.Exception "")
+    | [] -> Lwt.return None)
 ;;
 
 let html_help model_name module_name =
@@ -100,18 +100,18 @@ let html =
        an HTML resource. This generator is a combination of gen.service and \
        gen.view."
     (function
-      | database :: model_name :: schema ->
-        (match Gen_core.schema_of_string schema with
-        | Ok schema ->
-          let module_name = String.capitalize_ascii model_name in
-          Gen_model.generate database model_name schema;
-          Gen_view.generate model_name schema;
-          print_endline @@ html_help model_name module_name;
-          Lwt.return @@ Some ()
-        | Error msg ->
-          print_endline msg;
-          raise @@ Core_command.Exception "")
-      | _ -> Lwt.return None)
+    | database :: model_name :: schema ->
+      (match Gen_core.schema_of_string schema with
+       | Ok schema ->
+         let module_name = String.capitalize_ascii model_name in
+         Gen_model.generate database model_name schema;
+         Gen_view.generate model_name schema;
+         print_endline @@ html_help model_name module_name;
+         Lwt.return @@ Some ()
+       | Error msg ->
+         print_endline msg;
+         raise @@ Core_command.Exception "")
+    | _ -> Lwt.return None)
 ;;
 
 let commands = [ service; view; html ]

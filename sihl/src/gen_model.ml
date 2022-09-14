@@ -98,7 +98,7 @@ let dune_file_template database =
 ;;
 
 let generate (database : string) (name : string) (schema : Gen_core.schema)
-    : unit
+  : unit
   =
   let database = Gen_core.database_of_string database in
   if String.contains name ':'

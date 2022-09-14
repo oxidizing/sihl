@@ -7,21 +7,21 @@ let decode_session cookie_key cookie_value =
   | None -> Ok None
   | Some cookie_value ->
     (match Session.of_json cookie_value with
-    | None ->
-      let err_msg =
-        Format.asprintf
-          "Failed to parse value found in session cookie '%s': '%s'"
-          cookie_key
-          cookie_value
-      in
-      Logs.err (fun m -> m "%s" err_msg);
-      Logs.info (fun m ->
-          m
-            "Maybe the cookie key '%s' collides with a cookie issued by \
-             someone else. Try to change the cookie key."
-            cookie_key);
-      Error err_msg
-    | Some session -> Ok (Some session))
+     | None ->
+       let err_msg =
+         Format.asprintf
+           "Failed to parse value found in session cookie '%s': '%s'"
+           cookie_key
+           cookie_value
+       in
+       Logs.err (fun m -> m "%s" err_msg);
+       Logs.info (fun m ->
+         m
+           "Maybe the cookie key '%s' collides with a cookie issued by someone \
+            else. Try to change the cookie key."
+           cookie_key);
+       Error err_msg
+     | Some session -> Ok (Some session))
 ;;
 
 let decode_session_req cookie_key signed_with req =
@@ -35,10 +35,10 @@ let decode_session_resp cookie_key signed_with resp =
 ;;
 
 let find
-    ?(cookie_key = "_session")
-    ?(secret = Core_configuration.read_secret ())
-    key
-    req
+  ?(cookie_key = "_session")
+  ?(secret = Core_configuration.read_secret ())
+  key
+  req
   =
   let signed_with = Opium.Cookie.Signer.make secret in
   let session =
@@ -48,9 +48,9 @@ let find
 ;;
 
 let get_all
-    ?(cookie_key = "_session")
-    ?(secret = Core_configuration.read_secret ())
-    req
+  ?(cookie_key = "_session")
+  ?(secret = Core_configuration.read_secret ())
+  req
   =
   let open CCOption.Infix in
   let signed_with = Opium.Cookie.Signer.make secret in
@@ -61,10 +61,10 @@ let get_all
 ;;
 
 let set
-    ?(cookie_key = "_session")
-    ?(secret = Core_configuration.read_secret ())
-    session
-    resp
+  ?(cookie_key = "_session")
+  ?(secret = Core_configuration.read_secret ())
+  session
+  resp
   =
   let signed_with = Opium.Cookie.Signer.make secret in
   let session = session |> List.to_seq |> Session.StrMap.of_seq in
@@ -78,12 +78,12 @@ let set
 ;;
 
 let update_or_set_value
-    ?(cookie_key = "_session")
-    ?(secret = Core_configuration.read_secret ())
-    ~key
-    f
-    req
-    resp
+  ?(cookie_key = "_session")
+  ?(secret = Core_configuration.read_secret ())
+  ~key
+  f
+  req
+  resp
   =
   let signed_with = Opium.Cookie.Signer.make secret in
   let mreq =
@@ -111,12 +111,12 @@ let update_or_set_value
 
 (* TODO improve API, don't take req maybe *)
 let set_value
-    ?(cookie_key = "_session")
-    ?(secret = Core_configuration.read_secret ())
-    ~key
-    value
-    req
-    resp
+  ?(cookie_key = "_session")
+  ?(secret = Core_configuration.read_secret ())
+  ~key
+  value
+  req
+  resp
   =
   update_or_set_value
     ~cookie_key

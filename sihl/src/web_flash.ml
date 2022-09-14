@@ -38,9 +38,9 @@ let find_notice req = Option.bind (find' req) (fun flash -> flash.notice)
 
 let find key req =
   Option.bind (find' req) (fun flash ->
-      flash.custom
-      |> List.find_opt (fun (k, _) -> String.equal key k)
-      |> Option.map snd)
+    flash.custom
+    |> List.find_opt (fun (k, _) -> String.equal key k)
+    |> Option.map snd)
 ;;
 
 let set_alert alert resp =
@@ -89,19 +89,19 @@ let decode_flash cookie_key req =
   | None -> No_cookie_found
   | Some cookie_value ->
     (match Flash.of_json cookie_value with
-    | None ->
-      Logs.err (fun m ->
-          m
-            "Failed to parse value found in flash cookie '%s': '%s'"
-            cookie_key
-            cookie_value);
-      Logs.info (fun m ->
-          m
-            "Maybe the cookie key '%s' collides with a cookie issued by \
-             someone else. Try to change the cookie key."
-            cookie_key);
-      Parse_error
-    | Some flash -> Found flash)
+     | None ->
+       Logs.err (fun m ->
+         m
+           "Failed to parse value found in flash cookie '%s': '%s'"
+           cookie_key
+           cookie_value);
+       Logs.info (fun m ->
+         m
+           "Maybe the cookie key '%s' collides with a cookie issued by someone \
+            else. Try to change the cookie key."
+           cookie_key);
+       Parse_error
+     | Some flash -> Found flash)
 ;;
 
 let persist_flash ?old_flash ?(delete_if_not_set = false) cookie_key resp =
@@ -121,32 +121,32 @@ let persist_flash ?old_flash ?(delete_if_not_set = false) cookie_key resp =
   (* Flash was set in handler *)
   | Some flash ->
     (match old_flash with
-    | Some old_flash ->
-      if Flash.equals old_flash flash
-      then (* Same flash value, don't set cookie *)
-        resp
-      else (
-        (* Flash was changed and is different than old flash, set cookie *)
-        let cookie_value = Flash.to_json flash in
-        let cookie = cookie_key, cookie_value in
-        let resp =
-          Opium.Response.add_cookie_or_replace
-            ~scope:(Uri.of_string "/")
-            cookie
-            resp
-        in
-        resp)
-    | None ->
-      (* Flash was changed and old flash is empty, set cookie *)
-      let cookie_value = Flash.to_json flash in
-      let cookie = cookie_key, cookie_value in
-      let resp =
-        Opium.Response.add_cookie_or_replace
-          ~scope:(Uri.of_string "/")
-          cookie
-          resp
-      in
-      resp)
+     | Some old_flash ->
+       if Flash.equals old_flash flash
+       then (* Same flash value, don't set cookie *)
+         resp
+       else (
+         (* Flash was changed and is different than old flash, set cookie *)
+         let cookie_value = Flash.to_json flash in
+         let cookie = cookie_key, cookie_value in
+         let resp =
+           Opium.Response.add_cookie_or_replace
+             ~scope:(Uri.of_string "/")
+             cookie
+             resp
+         in
+         resp)
+     | None ->
+       (* Flash was changed and old flash is empty, set cookie *)
+       let cookie_value = Flash.to_json flash in
+       let cookie = cookie_key, cookie_value in
+       let resp =
+         Opium.Response.add_cookie_or_replace
+           ~scope:(Uri.of_string "/")
+           cookie
+           resp
+       in
+       resp)
 ;;
 
 let middleware ?(cookie_key = "_flash") () =

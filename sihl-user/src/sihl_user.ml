@@ -39,16 +39,16 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
         email = Option.value ~default:user.email email
       ; username =
           (match username with
-          | Some username -> Some username
-          | None -> user.username)
+           | Some username -> Some username
+           | None -> user.username)
       ; name =
           (match name with
-          | Some name -> Some name
-          | None -> user.name)
+           | Some name -> Some name
+           | None -> user.name)
       ; given_name =
           (match given_name with
-          | Some given_name -> Some given_name
-          | None -> user.given_name)
+           | Some given_name -> Some given_name
+           | None -> user.given_name)
       ; status = Option.value ~default:user.status status
       }
     in
@@ -57,12 +57,12 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let update_password
-      ?ctx
-      ?(password_policy = default_password_policy)
-      user
-      ~old_password
-      ~new_password
-      ~new_password_confirmation
+    ?ctx
+    ?(password_policy = default_password_policy)
+    user
+    ~old_password
+    ~new_password
+    ~new_password_confirmation
     =
     match
       validate_change_password
@@ -78,7 +78,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
         | Ok user -> user
         | Error msg ->
           Logs.err (fun m ->
-              m "Can not update password of user '%s': %s" user.email msg);
+            m "Can not update password of user '%s': %s" user.email msg);
           raise (Sihl.Contract.User.Exception msg)
       in
       let%lwt () = Repo.update ?ctx updated_user in
@@ -87,11 +87,11 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let set_password
-      ?ctx
-      ?(password_policy = default_password_policy)
-      user
-      ~password
-      ~password_confirmation
+    ?ctx
+    ?(password_policy = default_password_policy)
+    user
+    ~password
+    ~password_confirmation
     =
     let%lwt result =
       validate_new_password ~password ~password_confirmation ~password_policy
@@ -112,7 +112,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
         | Ok user -> user
         | Error msg ->
           Logs.err (fun m ->
-              m "Can not set password of user %s: %s" user.email msg);
+            m "Can not set password of user %s: %s" user.email msg);
           raise (Sihl.Contract.User.Exception msg)
       in
       let%lwt () = Repo.update ?ctx updated_user in
@@ -120,15 +120,15 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let create
-      ?ctx
-      ?id
-      ~email
-      ~password
-      ~username
-      ~name
-      ~given_name
-      ~admin
-      confirmed
+    ?ctx
+    ?id
+    ~email
+    ~password
+    ~username
+    ~name
+    ~given_name
+    ~admin
+    confirmed
     =
     let user =
       make ?id ~email ~password ~username ~name ~given_name ~admin confirmed
@@ -165,7 +165,7 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       match user with
       | Some _ ->
         Logs.err (fun m ->
-            m "Can not create admin '%s' since the email is already taken" email);
+          m "Can not create admin '%s' since the email is already taken" email);
         raise (Sihl.Contract.User.Exception "Email already taken")
       | None -> Lwt.return ()
     in
@@ -189,15 +189,15 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let register_user
-      ?ctx
-      ?id
-      ?(password_policy = default_password_policy)
-      ?username
-      ?name
-      ?given_name
-      email
-      ~password
-      ~password_confirmation
+    ?ctx
+    ?id
+    ?(password_policy = default_password_policy)
+    ?username
+    ?name
+    ?given_name
+    email
+    ~password
+    ~password_confirmation
     =
     match
       validate_new_password ~password ~password_confirmation ~password_policy
@@ -206,10 +206,10 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
     | Ok () ->
       let%lwt user = find_by_email_opt ?ctx email in
       (match user with
-      | None ->
-        create_user ?ctx ?id ?username ?name ?given_name ~password email
-        |> Lwt.map Result.ok
-      | Some _ -> Lwt_result.fail `Already_registered)
+       | None ->
+         create_user ?ctx ?id ?username ?name ?given_name ~password email
+         |> Lwt.map Result.ok
+       | Some _ -> Lwt_result.fail `Already_registered)
   ;;
 
   let login ?ctx email ~password =
@@ -232,11 +232,11 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       ~help:"<email> <password>"
       ~description:"Creates a user with admin privileges."
       (fun args ->
-        match args with
-        | [ email; password ] ->
-          let%lwt () = start () in
-          create_admin ~password email |> Lwt.map ignore |> Lwt.map Option.some
-        | _ -> Lwt.return None)
+      match args with
+      | [ email; password ] ->
+        let%lwt () = start () in
+        create_admin ~password email |> Lwt.map ignore |> Lwt.map Option.some
+      | _ -> Lwt.return None)
   ;;
 
   let lifecycle =

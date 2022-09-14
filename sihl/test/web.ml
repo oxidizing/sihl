@@ -85,7 +85,7 @@ let choose_nested_routers_builds_paths _ () =
             [ get "" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
             ; get "foo" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "")
             ; get "fooz" (fun _ ->
-                  Lwt.return @@ Opium.Response.of_plain_text "")
+                Lwt.return @@ Opium.Response.of_plain_text "")
             ]
         ; get "bar" (fun _ -> Lwt.return @@ Opium.Response.of_plain_text "bar")
         ])

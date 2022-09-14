@@ -355,7 +355,7 @@ let stringify name module_name (field_name, type_) =
 let table_rows name module_name (schema : Gen_core.schema) =
   schema
   |> List.map (fun field ->
-         Format.sprintf "\"<td>\"%s\"</td>\"" (stringify name module_name field))
+       Format.sprintf "\"<td>\"%s\"</td>\"" (stringify name module_name field))
   |> String.concat "\n"
 ;;
 
@@ -363,11 +363,11 @@ let form_values schema =
   schema
   |> List.map fst
   |> List.map (fun name ->
-         Format.sprintf
-           "let old_%s, %s_error = Sihl.Web.Rest.find_form \"%s\" form in"
-           name
-           name
-           name)
+       Format.sprintf
+         "let old_%s, %s_error = Sihl.Web.Rest.find_form \"%s\" form in"
+         name
+         name
+         name)
   |> String.concat "\n"
 ;;
 
@@ -411,8 +411,8 @@ let checkbox field_name field_type =
 let default_values name module_name schema =
   schema
   |> List.map (fun (field_name, field_type) ->
-         Format.sprintf
-           {|
+       Format.sprintf
+         {|
   let current_%s =
     %s
     |> Option.map (fun (%s : %s.t) -> %s.%s.%s)
@@ -420,15 +420,15 @@ let default_values name module_name schema =
   in
   %s
 |}
-           field_name
-           name
-           name
-           module_name
-           name
-           module_name
-           field_name
-           (default_value field_type)
-           (checkbox field_name field_type))
+         field_name
+         name
+         name
+         module_name
+         name
+         module_name
+         field_name
+         (default_value field_type)
+         (checkbox field_name field_type))
   |> String.concat "\n"
 ;;
 
@@ -490,17 +490,17 @@ let alert (field_name, _) =
 let form_elements schema =
   schema
   |> List.map (fun field ->
-         Format.sprintf
-           {|
+       Format.sprintf
+         {|
     <div>
       <label>%s</label>
       %s
     </div>
     %s
 |}
-           (String.capitalize_ascii (fst field))
-           (form_input field)
-           (alert field))
+         (String.capitalize_ascii (fst field))
+         (form_input field)
+         (alert field))
   |> String.concat "\n"
   |> unescape_template
 ;;
@@ -508,10 +508,10 @@ let form_elements schema =
 let show name module_name (schema : Gen_core.schema) =
   schema
   |> List.map (fun field ->
-         Format.sprintf
-           {|"<div><span>%s: </span><span>" %s "</span></div>"|}
-           (fst field)
-           (stringify name module_name field))
+       Format.sprintf
+         {|"<div><span>%s: </span><span>" %s "</span></div>"|}
+         (fst field)
+         (stringify name module_name field))
   |> String.concat "\n"
   |> fun fields ->
   Format.sprintf
@@ -526,8 +526,8 @@ let has_datetime schema =
   schema
   |> List.map snd
   |> List.find_opt (function
-         | Datetime -> true
-         | Int | Float | String | Bool -> false)
+       | Datetime -> true
+       | Int | Float | String | Bool -> false)
   |> Option.map (fun _ -> true)
   |> Option.value ~default:false
 ;;

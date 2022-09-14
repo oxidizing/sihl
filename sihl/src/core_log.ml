@@ -91,36 +91,36 @@ let pp_header ~pp_h ppf (l, h) =
   match l with
   | Logs.App ->
     (match h with
-    | None -> ()
-    | Some h -> Fmt.pf ppf "[%a] " Fmt.(styled app_style string) h)
+     | None -> ()
+     | Some h -> Fmt.pf ppf "[%a] " Fmt.(styled app_style string) h)
   | Logs.Error ->
     pp_h
       ppf
       err_style
       (match h with
-      | None -> "ERROR"
-      | Some h -> h)
+       | None -> "ERROR"
+       | Some h -> h)
   | Logs.Warning ->
     pp_h
       ppf
       warn_style
       (match h with
-      | None -> "WARNING"
-      | Some h -> h)
+       | None -> "WARNING"
+       | Some h -> h)
   | Logs.Info ->
     pp_h
       ppf
       info_style
       (match h with
-      | None -> "INFO"
-      | Some h -> h)
+       | None -> "INFO"
+       | Some h -> h)
   | Logs.Debug ->
     pp_h
       ppf
       debug_style
       (match h with
-      | None -> "DEBUG"
-      | Some h -> h)
+       | None -> "DEBUG"
+       | Some h -> h)
 ;;
 
 let pp_source = Fmt.(styled source_style string)
@@ -135,10 +135,10 @@ let pp_exec_header src =
 ;;
 
 let format_reporter
-    ?(pp_header = pp_exec_header)
-    ?(app = Format.std_formatter)
-    ?(dst = Format.err_formatter)
-    ()
+  ?(pp_header = pp_exec_header)
+  ?(app = Format.std_formatter)
+  ?(dst = Format.err_formatter)
+  ()
   =
   let report src level ~over k msgf =
     let k _ =

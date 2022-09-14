@@ -21,7 +21,7 @@ module InMemory : Sig = struct
 
   let register_cleaner () =
     Sihl.Cleaner.register_cleaner (fun ?ctx:_ () ->
-        Lwt.return (Hashtbl.clear store))
+      Lwt.return (Hashtbl.clear store))
   ;;
 
   let register_migration () = ()

@@ -18,11 +18,11 @@ type lifecycle =
 let counter = ref 0
 
 let create_lifecycle
-    ?(dependencies = fun () -> [])
-    ?(start = fun () -> Lwt.return ())
-    ?(stop = fun () -> Lwt.return ())
-    ?implementation_name
-    type_name
+  ?(dependencies = fun () -> [])
+  ?(start = fun () -> Lwt.return ())
+  ?(stop = fun () -> Lwt.return ())
+  ?implementation_name
+  type_name
   =
   (* Give all lifecycles unique names *)
   counter := !counter + 1;
@@ -64,20 +64,20 @@ let top_sort_lifecycles lifecycles =
     |> Map.to_seq
     |> List.of_seq
     |> List.map (fun (id, lifecycle) ->
-           let dependencies =
-             lifecycle.dependencies () |> List.map (fun dep -> dep.id)
-           in
-           id, dependencies)
+         let dependencies =
+           lifecycle.dependencies () |> List.map (fun dep -> dep.id)
+         in
+         id, dependencies)
   in
   match Tsort.sort lifecycle_graph with
   | Tsort.Sorted sorted ->
     sorted
     |> List.map (fun id ->
-           match Map.find_opt id lifecycles with
-           | Some l -> l
-           | None ->
-             Logs.err (fun m -> m "Failed to sort lifecycles.");
-             raise Exception)
+         match Map.find_opt id lifecycles with
+         | Some l -> l
+         | None ->
+           Logs.err (fun m -> m "Failed to sort lifecycles.");
+           raise Exception)
   | Tsort.ErrorCycle remaining_ids ->
     let remaining_names =
       List.map

@@ -18,7 +18,7 @@ module ServiceB : Sihl.Container.Service.Sig = struct
 
   let lifecycle =
     Sihl.Container.create_lifecycle "b" ~start ~stop ~dependencies:(fun () ->
-        [ ServiceA.lifecycle ])
+      [ ServiceA.lifecycle ])
   ;;
 end
 
@@ -32,7 +32,7 @@ module ServiceC : Sihl.Container.Service.Sig = struct
 
   let lifecycle =
     Sihl.Container.create_lifecycle "c" ~start ~stop ~dependencies:(fun () ->
-        [ ServiceB.lifecycle ])
+      [ ServiceB.lifecycle ])
   ;;
 end
 
@@ -46,7 +46,7 @@ module ServiceD : Sihl.Container.Service.Sig = struct
 
   let lifecycle =
     Sihl.Container.create_lifecycle "d" ~start ~stop ~dependencies:(fun () ->
-        [ ServiceB.lifecycle; ServiceC.lifecycle ])
+      [ ServiceB.lifecycle; ServiceC.lifecycle ])
   ;;
 end
 
@@ -124,7 +124,7 @@ let order_multi_type_name_dependencies () =
       expected_impl_name
       (actual
       |> List.map (fun lifecycle ->
-             lifecycle.Sihl.Container.implementation_name)))
+           lifecycle.Sihl.Container.implementation_name)))
 ;;
 
 let suite =

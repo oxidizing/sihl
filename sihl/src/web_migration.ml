@@ -10,9 +10,9 @@ let middleware pending_migrations =
     if List.length migrations > 0
     then (
       Logs.err (fun m ->
-          m "There are %d pending migrations" (List.length migrations));
+        m "There are %d pending migrations" (List.length migrations));
       Logs.info (fun m ->
-          m "Run 'sihl migrate' to apply the pending migrations");
+        m "Run 'sihl migrate' to apply the pending migrations");
       if Core_configuration.is_production ()
          (* We try to make it work, even if the application makes wrong
             assumptions about the database schema. *)

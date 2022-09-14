@@ -1,5 +1,5 @@
 let registered_cleaners
-    : (?ctx:(string * string) list -> unit -> unit Lwt.t) list ref
+  : (?ctx:(string * string) list -> unit -> unit Lwt.t) list ref
   =
   ref []
 ;;

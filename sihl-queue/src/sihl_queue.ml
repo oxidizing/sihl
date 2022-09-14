@@ -94,18 +94,18 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         match inputs with
         | input :: inputs ->
           Lwt.bind (job.handle input) (function
-              | Ok () -> loop inputs
-              | Error msg ->
-                Logs.err (fun m ->
-                    m "Error while processing job '%s': %s" job.name msg);
-                loop inputs)
+            | Ok () -> loop inputs
+            | Error msg ->
+              Logs.err (fun m ->
+                m "Error while processing job '%s': %s" job.name msg);
+              loop inputs)
         | [] -> Lwt.return ()
       in
       loop inputs)
   ;;
 
   let run_job (input : string) (job : job') (job_instance : instance)
-      : (unit, string) Result.t Lwt.t
+    : (unit, string) Result.t Lwt.t
     =
     let job_instance_id = job_instance.id in
     let%lwt result =
@@ -114,21 +114,21 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         (fun exn ->
           let exn_string = Printexc.to_string exn in
           Logs.err (fun m ->
-              m
-                "Exception caught while running job, this is a bug in your job \
-                 handler. Don't throw exceptions there, use Result.t instead. \
-                 '%s'"
-                exn_string);
+            m
+              "Exception caught while running job, this is a bug in your job \
+               handler. Don't throw exceptions there, use Result.t instead. \
+               '%s'"
+              exn_string);
           Lwt.return @@ Error exn_string)
     in
     match result with
     | Error msg ->
       Logs.err (fun m ->
-          m
-            "Failure while running job instance %a %s"
-            pp_instance
-            job_instance
-            msg);
+        m
+          "Failure while running job instance %a %s"
+          pp_instance
+          job_instance
+          msg);
       Lwt.catch
         (fun () ->
           let%lwt () = job.failed msg job_instance in
@@ -136,15 +136,15 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         (fun exn ->
           let exn_string = Printexc.to_string exn in
           Logs.err (fun m ->
-              m
-                "Exception caught while cleaning up job, this is a bug in your \
-                 job failure handler, make sure to not throw exceptions there \
-                 '%s"
-                exn_string);
+            m
+              "Exception caught while cleaning up job, this is a bug in your \
+               job failure handler, make sure to not throw exceptions there \
+               '%s"
+              exn_string);
           Lwt.return @@ Error exn_string)
     | Ok () ->
       Logs.debug (fun m ->
-          m "Successfully ran job instance '%s'" job_instance_id);
+        m "Successfully ran job instance '%s'" job_instance_id);
       Lwt.return @@ Ok ()
   ;;
 
@@ -179,7 +179,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       update ~job_instance)
     else (
       Logs.debug (fun m ->
-          m "Not going to run job instance %a" pp_instance job_instance);
+        m "Not going to run job instance %a" pp_instance job_instance);
       Lwt.return ())
   ;;
 
@@ -189,9 +189,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     if n_job_instances > 0
     then (
       Logs.debug (fun m ->
-          m
-            "Start working queue of length %d"
-            (List.length pending_job_instances));
+        m "Start working queue of length %d" (List.length pending_job_instances));
       let rec loop job_instances jobs =
         match job_instances with
         | [] -> Lwt.return ()
@@ -202,8 +200,8 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
               jobs
           in
           (match job with
-          | None -> loop job_instances jobs
-          | Some job -> work_job job job_instance)
+           | None -> loop job_instances jobs
+           | Some job -> work_job job job_instance)
       in
       let%lwt () = loop pending_job_instances jobs in
       Logs.debug (fun m -> m "Finish working queue");
@@ -228,7 +226,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
           jobs |> List.map (fun job -> job.name) |> String.concat ", "
         in
         Logs.debug (fun m ->
-            m "Run job queue with registered jobs: %s" job_strings);
+          m "Run job queue with registered jobs: %s" job_strings);
         work_queue ~jobs)
       else (
         Logs.debug (fun m -> m "No jobs found to run, trying again later");

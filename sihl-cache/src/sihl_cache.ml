@@ -9,14 +9,14 @@ module MakeSql (Repo : Repo_sql.Sig) : Sihl.Contract.Cache.Sig = struct
     match v with
     | Some v ->
       (match%lwt find k with
-      | Some _ -> Repo.update ?ctx (k, v)
-      | None -> Repo.insert ?ctx (k, v))
+       | Some _ -> Repo.update ?ctx (k, v)
+       | None -> Repo.insert ?ctx (k, v))
     | None ->
       (match%lwt find k with
-      | Some _ -> Repo.delete ?ctx k
-      | None ->
-        (* nothing to do *)
-        Lwt.return ())
+       | Some _ -> Repo.delete ?ctx k
+       | None ->
+         (* nothing to do *)
+         Lwt.return ())
   ;;
 
   (* Lifecycle *)

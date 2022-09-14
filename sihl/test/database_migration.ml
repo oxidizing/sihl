@@ -3,21 +3,21 @@ module Map = Map.Make (String)
 let clean_state () =
   (* Clean database state, all tests create either of these tables *)
   Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-      let open Lwt_result.Syntax in
-      let open Caqti_request.Infix in
-      let* () =
-        "DROP TABLE IF EXISTS test_core_migration_state"
-        |> Caqti_type.(unit ->. unit)
-        |> CCFun.flip Connection.exec ()
-      in
-      let* () =
-        "DROP TABLE IF EXISTS professions"
-        |> Caqti_type.(unit ->. unit)
-        |> CCFun.flip Connection.exec ()
-      in
-      "DROP TABLE IF EXISTS orders"
+    let open Lwt_result.Syntax in
+    let open Caqti_request.Infix in
+    let* () =
+      "DROP TABLE IF EXISTS test_core_migration_state"
       |> Caqti_type.(unit ->. unit)
-      |> CCFun.flip Connection.exec ())
+      |> CCFun.flip Connection.exec ()
+    in
+    let* () =
+      "DROP TABLE IF EXISTS professions"
+      |> Caqti_type.(unit ->. unit)
+      |> CCFun.flip Connection.exec ()
+    in
+    "DROP TABLE IF EXISTS orders"
+    |> Caqti_type.(unit ->. unit)
+    |> CCFun.flip Connection.exec ())
   |> Lwt.map Sihl.Database.raise_error
 ;;
 
@@ -41,9 +41,9 @@ module Make (MigrationService : Sihl.Contract.Migration.Sig) = struct
     let%lwt _ =
       (* If this doesn't fail, test is ok *)
       Sihl.Database.query (fun (module Connection : Caqti_lwt.CONNECTION) ->
-          "SELECT salary FROM professions"
-          |> Caqti_type.(unit ->? int)
-          |> CCFun.flip Connection.find_opt ())
+        "SELECT salary FROM professions"
+        |> Caqti_type.(unit ->? int)
+        |> CCFun.flip Connection.find_opt ())
       |> Lwt.map Sihl.Database.raise_error
     in
     Lwt.return ()

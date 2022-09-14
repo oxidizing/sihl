@@ -74,22 +74,22 @@ let default_retry_delay = Core_time.Span.minutes 1
 let default_error_handler msg (instance : instance) =
   Lwt.return
   @@ Logs.err (fun m ->
-         m
-           "Job with id '%s' and name '%s' failed for input '%s': %s"
-           instance.id
-           instance.name
-           instance.input
-           msg)
+       m
+         "Job with id '%s' and name '%s' failed for input '%s': %s"
+         instance.id
+         instance.name
+         instance.input
+         msg)
 ;;
 
 let create_job
-    handle
-    ?(max_tries = default_tries)
-    ?(retry_delay = default_retry_delay)
-    ?(failed = default_error_handler)
-    encode
-    decode
-    name
+  handle
+  ?(max_tries = default_tries)
+  ?(retry_delay = default_retry_delay)
+  ?(failed = default_error_handler)
+  encode
+  decode
+  name
   =
   { name; handle; failed; max_tries; retry_delay; encode; decode }
 ;;

@@ -23,8 +23,8 @@ let create_instance input delay now (job : 'a Sihl_queue.job) =
 ;;
 
 let update_next_run_at
-    (retry_delay : Ptime.Span.t)
-    (job_instance : Sihl_queue.instance)
+  (retry_delay : Ptime.Span.t)
+  (job_instance : Sihl_queue.instance)
   =
   let open Sihl_queue in
   let next_run_at =

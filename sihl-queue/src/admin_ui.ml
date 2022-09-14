@@ -364,45 +364,45 @@ let page ?back ?theme body =
 
 let index ?prefix ?back ?theme scope find_jobs =
   Sihl.Web.get "" (fun req ->
-      let csrf =
-        match Sihl.Web.Csrf.find req with
-        | Some csrf -> csrf
-        | None -> failwith "No CSRF token found"
-      in
-      let%lwt jobs = find_jobs () in
-      Lwt.return
-      @@ Sihl.Web.Response.of_html
-           (page ?back ?theme [ table ?prefix scope csrf jobs ]))
+    let csrf =
+      match Sihl.Web.Csrf.find req with
+      | Some csrf -> csrf
+      | None -> failwith "No CSRF token found"
+    in
+    let%lwt jobs = find_jobs () in
+    Lwt.return
+    @@ Sihl.Web.Response.of_html
+         (page ?back ?theme [ table ?prefix scope csrf jobs ]))
 ;;
 
 let html_index scope find_jobs =
   Sihl.Web.get "/html/index" (fun req ->
-      let csrf =
-        match Sihl.Web.Csrf.find req with
-        | Some csrf -> csrf
-        | None -> failwith "No CSRF token found"
-      in
-      let%lwt jobs = find_jobs () in
-      let html =
-        Format.asprintf "%a" Tyxml.Html._pp_elt (table scope csrf jobs)
-      in
-      Lwt.return @@ Sihl.Web.Response.of_plain_text html)
+    let csrf =
+      match Sihl.Web.Csrf.find req with
+      | Some csrf -> csrf
+      | None -> failwith "No CSRF token found"
+    in
+    let%lwt jobs = find_jobs () in
+    let html =
+      Format.asprintf "%a" Tyxml.Html._pp_elt (table scope csrf jobs)
+    in
+    Lwt.return @@ Sihl.Web.Response.of_plain_text html)
 ;;
 
 let cancel scope find_job cancel_job =
   Sihl.Web.post "/:id/cancel" (fun req ->
-      let id = Sihl.Web.Router.param req "id" in
-      let%lwt job = find_job id in
-      let%lwt _ = cancel_job job in
-      Lwt.return @@ Sihl.Web.Response.redirect_to scope)
+    let id = Sihl.Web.Router.param req "id" in
+    let%lwt job = find_job id in
+    let%lwt _ = cancel_job job in
+    Lwt.return @@ Sihl.Web.Response.redirect_to scope)
 ;;
 
 let requeue scope find_job requeue_job =
   Sihl.Web.post "/:id/requeue" (fun req ->
-      let id = Sihl.Web.Router.param req "id" in
-      let%lwt job = find_job id in
-      let%lwt _ = requeue_job job in
-      Lwt.return @@ Sihl.Web.Response.redirect_to scope)
+    let id = Sihl.Web.Router.param req "id" in
+    let%lwt job = find_job id in
+    let%lwt _ = requeue_job job in
+    Lwt.return @@ Sihl.Web.Response.redirect_to scope)
 ;;
 
 let middlewares =
@@ -414,14 +414,14 @@ let middlewares =
 ;;
 
 let router
-    search_jobs
-    find_job
-    cancel_job
-    requeue_job
-    ?back
-    ?theme
-    ?prefix
-    scope
+  search_jobs
+  find_job
+  cancel_job
+  requeue_job
+  ?back
+  ?theme
+  ?prefix
+  scope
   =
   Sihl.Web.choose
     ~middlewares

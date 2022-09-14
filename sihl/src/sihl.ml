@@ -19,7 +19,7 @@ module Web = struct
       match Opium.Request.header "authorization" req with
       | Some authorization ->
         (try Some (Scanf.sscanf authorization "Bearer %s" (fun b -> b)) with
-        | _ -> None)
+         | _ -> None)
       | None -> None
     ;;
   end

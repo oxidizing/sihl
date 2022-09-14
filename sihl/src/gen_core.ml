@@ -53,20 +53,18 @@ let schema_of_string (s : string list) : (schema, string) result =
   s
   |> List.map (String.split_on_char ':')
   |> List.map (fun s ->
-         match s with
-         | [ name; type_ ] -> Ok (name, type_)
-         | _ ->
-           Error
-             (Format.sprintf
-                "Invalid input provided '%s'"
-                (String.concat ":" s)))
+       match s with
+       | [ name; type_ ] -> Ok (name, type_)
+       | _ ->
+         Error
+           (Format.sprintf "Invalid input provided '%s'" (String.concat ":" s)))
   |> List.fold_left
        (fun schema next ->
          match schema, next with
          | Ok schema, Ok (name, type_) ->
            (match gen_type_of_string type_ with
-           | Ok gen_type -> Ok (List.cons (name, gen_type) schema)
-           | Error msg -> Error msg)
+            | Ok gen_type -> Ok (List.cons (name, gen_type) schema)
+            | Error msg -> Error msg)
          | Error msg, _ -> Error msg
          | Ok _, Error msg -> Error msg)
        (Result.ok [])

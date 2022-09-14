@@ -34,12 +34,12 @@ let job =
           ) ) )
   in
   let decode
-      ( id
-      , ( name
-        , ( input
-          , ( tries
-            , (next_run_at, (max_tries, (status, (last_error, last_error_at))))
-            ) ) ) )
+    ( id
+    , ( name
+      , ( input
+        , ( tries
+          , (next_run_at, (max_tries, (status, (last_error, last_error_at)))) )
+        ) ) )
     =
     Ok
       { id
@@ -112,34 +112,34 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
   let populatable job_instances =
     job_instances
     |> List.map (fun j ->
-           Sihl.Contract.Queue.
-             { j with
-               id =
-                 (match j.id |> Uuidm.of_string with
-                 | Some uuid -> Uuidm.to_bytes uuid
-                 | None -> failwith "Invalid uuid provided")
-             })
+         Sihl.Contract.Queue.
+           { j with
+             id =
+               (match j.id |> Uuidm.of_string with
+                | Some uuid -> Uuidm.to_bytes uuid
+                | None -> failwith "Invalid uuid provided")
+           })
   ;;
 
   let enqueue_all ?ctx job_instances =
     Sihl.Database.transaction' ?ctx (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.populate
-          ~table:"queue_jobs"
-          ~columns:
-            [ "uuid"
-            ; "name"
-            ; "input"
-            ; "tries"
-            ; "next_run_at"
-            ; "max_tries"
-            ; "status"
-            ; "last_error"
-            ; "last_error_at"
-            ]
-          job
-          (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
-        |> Lwt.map Caqti_error.uncongested)
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.populate
+        ~table:"queue_jobs"
+        ~columns:
+          [ "uuid"
+          ; "name"
+          ; "input"
+          ; "tries"
+          ; "next_run_at"
+          ; "max_tries"
+          ; "status"
+          ; "last_error"
+          ; "last_error_at"
+          ]
+        job
+        (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
+      |> Lwt.map Caqti_error.uncongested)
   ;;
 
   let update_request =
@@ -382,23 +382,23 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
 
   let enqueue_all ?ctx job_instances =
     Sihl.Database.transaction' ?ctx (fun connection ->
-        let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-        Connection.populate
-          ~table:"queue_jobs"
-          ~columns:
-            [ "uuid"
-            ; "name"
-            ; "input"
-            ; "tries"
-            ; "next_run_at"
-            ; "max_tries"
-            ; "status"
-            ; "last_error"
-            ; "last_error_at"
-            ]
-          job
-          (Caqti_lwt.Stream.of_list (List.rev job_instances))
-        |> Lwt.map Caqti_error.uncongested)
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.populate
+        ~table:"queue_jobs"
+        ~columns:
+          [ "uuid"
+          ; "name"
+          ; "input"
+          ; "tries"
+          ; "next_run_at"
+          ; "max_tries"
+          ; "status"
+          ; "last_error"
+          ; "last_error_at"
+          ]
+        job
+        (Caqti_lwt.Stream.of_list (List.rev job_instances))
+      |> Lwt.map Caqti_error.uncongested)
   ;;
 
   let update_request =
