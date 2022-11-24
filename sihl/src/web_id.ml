@@ -10,12 +10,12 @@ let set id req =
   { req with env }
 ;;
 
-let middleware () =
+let middleware ?(id = (fun () -> Core_random.base64 64)) () =
   let filter handler req =
     match Opium.Request.header "x-request-id" req with
     | Some request_id -> handler (set request_id req)
     | None ->
-      let request_id = Core_random.base64 64 in
+      let request_id = id () in
       handler (set request_id req)
   in
   Rock.Middleware.create ~name:"id" ~filter
