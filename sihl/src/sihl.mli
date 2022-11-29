@@ -896,7 +896,7 @@ module Web : sig
         string. There is no uniqueness guarantee among ids of pending requests.
         However, generating two identical ids in a short period of time is
         highly unlikely. *)
-    val id : unit -> Rock.Middleware.t
+    val id : ?id:(unit -> string) -> unit -> Rock.Middleware.t
 
     (** [migration fetch_pending_migrations] returns a middleware that shows a
         warning page in case there are pending migrations. The middleware shows

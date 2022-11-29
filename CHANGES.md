@@ -1,3 +1,7 @@
+## [3.0.5] - 2022-11-24
+### Updated
+- Make id generating function for id middleware configurable
+
 ## [3.0.4] - 2022-08-23
 ### Updated
 - Make SMTP credentials optional
