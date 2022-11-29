@@ -36,7 +36,7 @@ type t =
   ; username : string option
   ; name : string option
   ; given_name : string option
-  ; password : string
+  ; password : string [@opaque]
   ; status : status
   ; admin : bool
   ; confirmed : bool
