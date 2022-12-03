@@ -113,7 +113,7 @@ let run commands args =
                 span
                 msg);
            print_endline stack;
-           Lwt.return ()))
+           exit 1))
   | None ->
     print_all commands;
     Lwt.return ()
