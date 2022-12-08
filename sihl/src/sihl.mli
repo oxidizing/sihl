@@ -869,7 +869,7 @@ module Web : sig
         callback. Use the reporter to implement custom error reporting. *)
     val error
       :  ?email_config:string * string * (Contract_email.t -> unit Lwt.t)
-      -> ?reporter:(Request.t -> string -> unit Lwt.t)
+      -> ?reporter:(Request.t -> Web_error.report -> unit Lwt.t)
       -> ?error_handler:(Request.t -> Response.t Lwt.t)
       -> unit
       -> Rock.Middleware.t
