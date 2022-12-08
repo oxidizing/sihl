@@ -66,17 +66,28 @@ let json_error_handler req =
   |> Lwt.return
 ;;
 
-let exn_to_string exn req =
-  let msg = Printexc.to_string exn
-  and stack = Printexc.get_backtrace () in
-  let request_id = Web_id.find req |> Option.value ~default:"-" in
-  let req_str = Format.asprintf "%a" Opium.Request.pp_hum req in
+type report =
+  { exn : string
+  ; stack : string
+  ; req_id : string
+  ; req : string
+  }
+
+let report exn req =
+  let stack = Printexc.get_backtrace () in
+  let req_id = Web_id.find req |> Option.value ~default:"-" in
+  let req = Format.asprintf "%a" Opium.Request.pp_hum req in
+  let exn = Printexc.to_string exn in
+  { exn; stack; req_id; req }
+;;
+
+let exn_to_string exn =
   Format.asprintf
     "Request id %s: %s\nError: %s\nStacktrace: %s"
-    request_id
-    req_str
-    msg
-    stack
+    exn.req_id
+    exn.req
+    exn.exn
+    exn.stack
 ;;
 
 let create_error_email (sender, recipient) error =
@@ -84,18 +95,19 @@ let create_error_email (sender, recipient) error =
 ;;
 
 let middleware
-  ?email_config
-  ?(reporter = fun _ _ -> Lwt.return ())
-  ?error_handler
-  ()
+    ?email_config
+    ?(reporter = fun _ _ -> Lwt.return ())
+    ?error_handler
+    ()
   =
   let filter handler req =
     Lwt.catch
       (fun () -> handler req)
       (fun exn ->
+        let report = report exn req in
         (* Make sure to Lwt.catch everything that might go wrong. *)
         (* Log the error *)
-        let error = exn_to_string exn req in
+        let error = exn_to_string report in
         Logs.err (fun m -> m "%s" error);
         (* Report error via email, don't wait for it.*)
         let _ =
@@ -113,11 +125,11 @@ let middleware
         (* Use custom reporter to catch error, don't wait for it. *)
         let _ =
           Lwt.catch
-            (fun () -> reporter req error)
+            (fun () -> reporter req report)
             (fun exn ->
               let msg = Printexc.to_string exn in
               Logs.err (fun m ->
-                m "Failed to run custom error reporter: %s" msg);
+                  m "Failed to run custom error reporter: %s" msg);
               Lwt.return ())
         in
         let content_type =
@@ -133,9 +145,9 @@ let middleware
         | Some error_handler -> error_handler req
         | None ->
           (match content_type with
-           | Some "application/json" -> json_error_handler req
-           (* Default to text/html *)
-           | _ -> site_error_handler req))
+          | Some "application/json" -> json_error_handler req
+          (* Default to text/html *)
+          | _ -> site_error_handler req))
   in
   (* In a production setting we don't want to use the built in debugger
      middleware of opium. It is useful for development but it exposed too much
