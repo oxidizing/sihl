@@ -40,7 +40,7 @@ jobs:
           dune-cache: true
 
       - name: Install system dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libmariadbclient-dev
+        run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
 
       - name: Install dependencies
         run: make deps
