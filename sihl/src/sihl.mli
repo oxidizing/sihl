@@ -865,8 +865,9 @@ module Web : sig
         provide your own [send_function].
 
         An optional custom reporter [reporter] can be defined. The middleware
-        passes the request and the stringified exception to the reporter
-        callback. Use the reporter to implement custom error reporting. *)
+        passes the request and the stringified exception, the trace stack and
+        the request id to the reporter callback. Use the reporter to implement
+        custom error reporting. *)
     val error
       :  ?email_config:string * string * (Contract_email.t -> unit Lwt.t)
       -> ?reporter:(Request.t -> Web_error.report -> unit Lwt.t)

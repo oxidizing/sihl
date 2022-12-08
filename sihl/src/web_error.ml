@@ -95,10 +95,10 @@ let create_error_email (sender, recipient) error =
 ;;
 
 let middleware
-    ?email_config
-    ?(reporter = fun _ _ -> Lwt.return ())
-    ?error_handler
-    ()
+  ?email_config
+  ?(reporter = fun _ _ -> Lwt.return ())
+  ?error_handler
+  ()
   =
   let filter handler req =
     Lwt.catch
@@ -129,7 +129,7 @@ let middleware
             (fun exn ->
               let msg = Printexc.to_string exn in
               Logs.err (fun m ->
-                  m "Failed to run custom error reporter: %s" msg);
+                m "Failed to run custom error reporter: %s" msg);
               Lwt.return ())
         in
         let content_type =
@@ -145,9 +145,9 @@ let middleware
         | Some error_handler -> error_handler req
         | None ->
           (match content_type with
-          | Some "application/json" -> json_error_handler req
-          (* Default to text/html *)
-          | _ -> site_error_handler req))
+           | Some "application/json" -> json_error_handler req
+           (* Default to text/html *)
+           | _ -> site_error_handler req))
   in
   (* In a production setting we don't want to use the built in debugger
      middleware of opium. It is useful for development but it exposed too much
