@@ -127,6 +127,14 @@ module Web = struct
 
   module Middleware = struct
     let csrf = Web_csrf.middleware
+
+    type report = Web_error.report =
+      { exn : string
+      ; stack : string
+      ; req_id : string
+      ; req : string
+      }
+
     let error = Web_error.middleware
     let error_log_src = Web_error.log_src
     let flash = Web_flash.middleware

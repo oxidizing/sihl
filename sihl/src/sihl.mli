@@ -848,6 +848,13 @@ module Web : sig
       -> unit
       -> Rock.Middleware.t
 
+    type report = Web_error.report =
+      { exn : string
+      ; stack : string
+      ; req_id : string
+      ; req : string
+      }
+
     (** [error ?email_config ?reporter ?handler ()] returns a middleware that
         catches all exceptions and shows them.
 
@@ -865,12 +872,12 @@ module Web : sig
         provide your own [send_function].
 
         An optional custom reporter [reporter] can be defined. The middleware
-        passes the request and the stringified exception, the trace stack and
-        the request id to the reporter callback. Use the reporter to implement
-        custom error reporting. *)
+        passes the request and a report containing the stringified exception,
+        the trace, the request id and the stringified request to the reporter
+        callback. Use the reporter to implement custom error reporting. *)
     val error
       :  ?email_config:string * string * (Contract_email.t -> unit Lwt.t)
-      -> ?reporter:(Request.t -> Web_error.report -> unit Lwt.t)
+      -> ?reporter:(Request.t -> report -> unit Lwt.t)
       -> ?error_handler:(Request.t -> Response.t Lwt.t)
       -> unit
       -> Rock.Middleware.t
