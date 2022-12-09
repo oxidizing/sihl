@@ -2,11 +2,12 @@ type t =
   { sender : string
   ; recipient : string
   ; subject : string
-  ; text : string
-  ; html : string option
+  ; text : string [@opaque]
+  ; html : string option [@opaque]
   ; cc : string list
   ; bcc : string list
   }
+[@@deriving eq, show]
 
 let name = "email"
 

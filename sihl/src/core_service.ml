@@ -8,6 +8,7 @@ type t =
   ; commands : Core_command.t list
   ; server : bool
   }
+[@@deriving show]
 
 let commands (service : t) = service.commands
 let configuration service = service.configuration

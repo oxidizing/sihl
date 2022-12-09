@@ -4,7 +4,7 @@ module Migration = struct
     ; version : int
     ; dirty : bool
     }
-  [@@deriving fields]
+  [@@deriving fields, eq, show]
 
   let create ~namespace = { namespace; version = 0; dirty = true }
   let mark_dirty state = { state with dirty = true }

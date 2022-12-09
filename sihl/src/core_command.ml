@@ -8,9 +8,10 @@ type t =
   { name : string
   ; usage : string option
   ; description : string
-  ; dependencies : Core_lifecycle.lifecycle list
-  ; fn : string list -> unit option Lwt.t
+  ; dependencies : Core_lifecycle.lifecycle list [@opaque]
+  ; fn : string list -> unit option Lwt.t [@opaque]
   }
+[@@deriving show]
 
 let make ~name ?help ~description ?(dependencies = []) fn =
   { name; usage = help; description; dependencies; fn }

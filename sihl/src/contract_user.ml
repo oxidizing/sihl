@@ -17,7 +17,7 @@ let ptime_of_yojson json =
 type status =
   | Active
   | Inactive
-[@@deriving yojson, show]
+[@@deriving yojson, show, eq]
 
 let status_of_string = function
   | "active" -> Ok Active

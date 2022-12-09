@@ -7,6 +7,7 @@ type t =
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
+[@@deriving eq, show]
 
 let name = "email.template"
 

@@ -6,7 +6,7 @@ let capitalize = CCString.capitalize_ascii
 
 module Form = struct
   type t = (string * string option * string option) list
-  [@@deriving yojson, show]
+  [@@deriving yojson, show, eq]
 
   let set
     ?(key = "_form")
@@ -75,6 +75,7 @@ module Query = struct
     [ `Desc
     | `Asc
     ]
+  [@@deriving show, eq]
 
   type t =
     { filter : string option
@@ -82,6 +83,7 @@ module Query = struct
     ; offset : int option
     ; sort : sort option
     }
+  [@@deriving show, eq]
 
   let default_limit = 50
 
