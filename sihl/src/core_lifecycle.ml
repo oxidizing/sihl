@@ -14,6 +14,7 @@ type lifecycle =
   ; start : unit -> unit Lwt.t
   ; stop : unit -> unit Lwt.t
   }
+[@@deriving show]
 
 let counter = ref 0
 

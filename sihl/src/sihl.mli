@@ -29,6 +29,9 @@ module Command : sig
     ; fn : string list -> unit option Lwt.t
     }
 
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+
   val make
     :  name:string
     -> ?help:string
@@ -75,7 +78,15 @@ module Configuration : sig
     ; default : string option
     }
 
+  val pp_config : Format.formatter -> config -> unit
+  val show_config : config -> string
+  val equal_config : config -> config -> bool
+
   type t = Core_configuration.t
+
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val equal : t -> t -> bool
 
   (** [make schema data] returns a configuration containing the configuration
       [schema] and the configuration [data]. *)
@@ -981,6 +992,8 @@ module Container : sig
       ; server : bool
       }
 
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
     val commands : t -> Command.t list
     val configuration : t -> Configuration.t
 

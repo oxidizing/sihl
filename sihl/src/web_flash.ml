@@ -10,7 +10,7 @@ module Flash = struct
     ; notice : string option
     ; custom : (string * string) list
     }
-  [@@deriving yojson, sexp]
+  [@@deriving yojson, sexp, eq]
 
   let equals f1 f2 =
     Option.equal String.equal f1.alert f2.alert

@@ -13,8 +13,9 @@ type config =
   ; type_ : string
   ; default : string option
   }
+[@@deriving show, eq]
 
-type t = config list
+type t = config list [@@deriving eq, show]
 
 let make ?schema () =
   match schema with

@@ -3,8 +3,9 @@ type scheduled_time = Every of Core_time.duration [@@deriving eq, show]
 type t =
   { label : string
   ; scheduled_time : scheduled_time
-  ; fn : unit -> unit Lwt.t
+  ; fn : unit -> unit Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
+[@@deriving eq, show]
 
 type stop_schedule = unit -> unit
 

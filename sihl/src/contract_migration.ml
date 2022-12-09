@@ -3,9 +3,10 @@ type step =
   ; statement : string
   ; check_fk : bool
   }
+[@@deriving eq, show]
 
-type steps = step list
-type t = string * steps
+type steps = step list [@@deriving eq, show]
+type t = string * steps [@@deriving eq, show]
 
 let name = "migration"
 
