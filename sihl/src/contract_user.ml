@@ -1,23 +1,9 @@
-let ptime_to_yojson ptime = `String (Ptime.to_rfc3339 ptime)
-
-let ptime_of_yojson json =
-  let open Yojson.Safe.Util in
-  try
-    match json |> to_string |> Ptime.of_rfc3339 with
-    | Ok (ptime, _, _) -> Ok ptime
-    | Error _ ->
-      Error
-        (Format.sprintf "Failed to parse date %s" (Yojson.Safe.to_string json))
-  with
-  | _ ->
-    Error
-      (Format.sprintf "Failed to parse date %s" (Yojson.Safe.to_string json))
-;;
+open Sexplib.Conv
 
 type status =
   | Active
   | Inactive
-[@@deriving yojson, show, eq]
+[@@deriving yojson, show, eq, sexp]
 
 let status_of_string = function
   | "active" -> Ok Active
@@ -30,22 +16,62 @@ let status_to_string = function
   | Inactive -> "inactive"
 ;;
 
+module CustomPtime : sig
+  include module type of Ptime with type t = Ptime.t
+
+  val sexp_of_t : t -> Sexplib.Sexp.t
+  val t_of_sexp : Sexplib.Sexp.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_yojson : Yojson.Safe.t -> (t, string) Result.t
+end = struct
+  include Ptime
+
+  let sexp_of_t t = sexp_of_string (Ptime.to_rfc3339 t)
+
+  let t_of_sexp s =
+    match
+      (try Some (string_of_sexp s) with
+       | _ -> None)
+      |> Option.map Ptime.of_rfc3339
+    with
+    | Some (Ok (ptime, _, _)) -> ptime
+    | Some (Error _) -> failwith "foo"
+    | None -> failwith "foo"
+  ;;
+
+  let to_yojson t = `String (Ptime.to_rfc3339 t)
+
+  let of_yojson json =
+    let open Yojson.Safe.Util in
+    try
+      match json |> to_string |> Ptime.of_rfc3339 with
+      | Ok (ptime, _, _) -> Ok ptime
+      | Error _ ->
+        Error
+          (Format.sprintf
+             "Failed to parse date %s"
+             (Yojson.Safe.to_string json))
+    with
+    | _ ->
+      Error
+        (Format.sprintf "Failed to parse date %s" (Yojson.Safe.to_string json))
+  ;;
+end
+
 type t =
   { id : string
   ; email : string
   ; username : string option
   ; name : string option
   ; given_name : string option
-  ; password : string [@opaque]
+  ; password : string [@opaque] [@sexp.opaque]
   ; status : status
   ; admin : bool
   ; confirmed : bool
-  ; created_at : Ptime.t
-       [@to_yojson ptime_to_yojson] [@of_yojson ptime_of_yojson]
-  ; updated_at : Ptime.t
-       [@to_yojson ptime_to_yojson] [@of_yojson ptime_of_yojson]
+  ; created_at : CustomPtime.t
+  ; updated_at : CustomPtime.t
   }
-[@@deriving yojson, show]
+[@@deriving yojson, show, sexp]
 
 let equal u1 u2 = CCString.equal u1.id u2.id
 
