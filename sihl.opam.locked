@@ -30,7 +30,6 @@ depends: [
   "cmdliner" {= "1.0.4"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
-  "conf-libev" {= "4-12"}
   "conf-libssl" {= "3"}
   "conf-pkg-config" {= "2"}
   "conformist" {= "0.8.0"}

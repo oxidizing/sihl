@@ -29,18 +29,17 @@ COPY --from=builder /home/opam/opam-repository/app/.env .env
 RUN mkdir logs
 
 RUN apt-get update -y && apt-get install -qq -yy sudo && \
-    sudo apt-get update -y && \
-    sudo apt-get install -qq -yy \
-    # Add the run-time dependencies here, as defined by "opam depext -ln"
-    libev-dev \
-    libgmp-dev \
-    libpq-dev \
-    libssl-dev \
-    m4 \
-    perl \
-    pkg-config \
-    zlib1g-dev \
-    libpq-dev
+  sudo apt-get update -y && \
+  sudo apt-get install -qq -yy \
+  # Add the run-time dependencies here, as defined by "opam depext -ln"
+  libgmp-dev \
+  libpq-dev \
+  libssl-dev \
+  m4 \
+  perl \
+  pkg-config \
+  zlib1g-dev \
+  libpq-dev
 
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
 RUN sudo bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services'

@@ -25,7 +25,6 @@ RUN apt-get update -q \
   emacs-nox \
   git \
   inotify-tools \
-  libev-dev \
   libffi-dev \
   libfontconfig \
   libgmp-dev \

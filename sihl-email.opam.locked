@@ -35,7 +35,6 @@ depends: [
   "conduit-lwt-unix" {= "5.1.0"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
-  "conf-libev" {= "4-12"}
   "conf-libssl" {= "3"}
   "conf-pkg-config" {= "2"}
   "cppo" {= "1.6.8"}
