@@ -10,11 +10,11 @@ type lifecycle =
   { type_name : string
   ; implementation_name : string
   ; id : int
-  ; dependencies : unit -> lifecycle list
-  ; start : unit -> unit Lwt.t
-  ; stop : unit -> unit Lwt.t
+  ; dependencies : unit -> lifecycle list [@equal fun _ _ -> true]
+  ; start : unit -> unit Lwt.t [@equal fun _ _ -> true]
+  ; stop : unit -> unit Lwt.t [@equal fun _ _ -> true]
   }
-[@@deriving show]
+[@@deriving eq, show]
 
 let counter = ref 0
 

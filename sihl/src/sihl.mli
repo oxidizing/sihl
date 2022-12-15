@@ -31,6 +31,7 @@ module Command : sig
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val equal : t -> t -> bool
 
   val make
     :  name:string
