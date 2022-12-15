@@ -9,9 +9,9 @@ type t =
   ; usage : string option
   ; description : string
   ; dependencies : Core_lifecycle.lifecycle list [@opaque]
-  ; fn : string list -> unit option Lwt.t [@opaque]
+  ; fn : string list -> unit option Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
-[@@deriving show]
+[@@deriving eq, show]
 
 let make ~name ?help ~description ?(dependencies = []) fn =
   { name; usage = help; description; dependencies; fn }
