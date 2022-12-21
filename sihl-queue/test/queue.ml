@@ -19,6 +19,7 @@ let create_instance input delay now (job : 'a Sihl_queue.job) =
   ; status = Pending
   ; last_error = None
   ; last_error_at = None
+  ; tag = None
   }
 ;;
 
@@ -45,7 +46,7 @@ let should_run_job _ () =
   let now = Ptime_clock.now () in
   let job =
     Sihl_queue.create_job
-      (fun _ -> Lwt_result.return ())
+      (fun ?ctx:_ _ -> Lwt_result.return ())
       ~max_tries:3
       ~retry_delay:(Sihl.Time.Span.minutes 1)
       (fun () -> "")
@@ -98,6 +99,42 @@ let should_run_job _ () =
 ;;
 
 module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
+  let search _ () =
+    Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
+    let%lwt () = Sihl.Container.stop_services [ QueueService.register () ] in
+    let%lwt () = Sihl.Cleaner.clean_all () in
+    let handle ?ctx:_ _ = Lwt_result.return () in
+    let to_string () = "" in
+    let of_string _ = Ok () in
+    let job1 =
+      Sihl_queue.create_job ~tag:"search123" handle to_string of_string "job1"
+    in
+    let job2 =
+      Sihl_queue.create_job ~tag:"search567" handle to_string of_string "job2"
+    in
+    let job3 = Sihl_queue.create_job handle to_string of_string "job3" in
+    let service =
+      QueueService.register
+        ~jobs:
+          [ Sihl_queue.hide job1; Sihl_queue.hide job2; Sihl_queue.hide job3 ]
+        ()
+    in
+    let%lwt (_ : Sihl.Container.lifecycle list) =
+      Sihl.Container.start_services [ service ]
+    in
+    let%lwt () = QueueService.dispatch () job1 in
+    let%lwt () = QueueService.dispatch () job2 in
+    let%lwt () = QueueService.dispatch () job3 in
+    let%lwt jobs = QueueService.search ~filter:"arch12" () in
+    let%lwt () = Sihl.Container.stop_services [ service ] in
+    match jobs with
+    | [ _ ], n ->
+      Alcotest.(check int) "there is exactly one match" 1 n;
+      Lwt.return ()
+    | res, _ ->
+      failwith (Format.sprintf "found %d jobs instead of 1" (List.length res))
+  ;;
+
   let dispatched_job_gets_processed _ () =
     Sihl.Configuration.store [ "QUEUE_FORCE_ASYNC", "true" ];
     let has_ran_job = ref false in
@@ -107,12 +144,21 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
       Sihl_queue.create_job
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
-        (fun _ -> Lwt_result.return (has_ran_job := true))
+        (fun ?(ctx = []) _ ->
+          (match ctx with
+           | [ ("pool", "test") ] -> ()
+           | _ -> failwith "ctx is not passed to job correctly");
+          Lwt_result.return (has_ran_job := true))
         (fun () -> "")
         (fun _ -> Ok ())
         "foo"
     in
-    let service = QueueService.register ~jobs:[ Sihl_queue.hide job ] () in
+    let service =
+      QueueService.register
+        ~ctx:[ "pool", "test" ]
+        ~jobs:[ Sihl_queue.hide job ]
+        ()
+    in
     let%lwt _ = Sihl.Container.start_services [ service ] in
     let%lwt () = QueueService.dispatch () job in
     let%lwt () = Lwt_unix.sleep 2.0 in
@@ -130,7 +176,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
       Sihl_queue.create_job
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
-        (fun input ->
+        (fun ?ctx:_ input ->
           Lwt_result.return
             (processed_inputs := List.cons input !processed_inputs))
         (fun str -> str)
@@ -163,7 +209,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
       Sihl_queue.create_job
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
-        (fun _ -> Lwt_result.return (has_ran_job1 := true))
+        (fun ?ctx:_ _ -> Lwt_result.return (has_ran_job1 := true))
         (fun () -> "")
         (fun _ -> Ok ())
         "foo1"
@@ -172,7 +218,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
       Sihl_queue.create_job
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
-        (fun _ -> Lwt_result.return (has_ran_job2 := true))
+        (fun ?ctx:_ _ -> Lwt_result.return (has_ran_job2 := true))
         (fun () -> "")
         (fun _ -> Ok ())
         "foo2"
@@ -201,8 +247,8 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
       Sihl_queue.create_job
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
-        (fun _ -> Lwt_result.fail "didn't work")
-        ~failed:(fun _ _ -> Lwt.return (has_cleaned_up_job := true))
+        (fun ?ctx:_ _ -> Lwt_result.fail "didn't work")
+        ~failed:(fun ?ctx:_ _ _ -> Lwt.return (has_cleaned_up_job := true))
         (fun () -> "")
         (fun _ -> Ok ())
         "foo"
@@ -225,10 +271,10 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
     let%lwt () = Sihl.Cleaner.clean_all () in
     let job =
       Sihl_queue.create_job
-        (fun _ -> failwith "didn't work")
+        (fun ?ctx:_ _ -> failwith "didn't work")
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
-        ~failed:(fun _ _ -> Lwt.return (has_cleaned_up_job := true))
+        ~failed:(fun ?ctx:_ _ _ -> Lwt.return (has_cleaned_up_job := true))
         (fun () -> "")
         (fun _ -> Ok ())
         "foo"
@@ -246,7 +292,8 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
 
   let suite =
     [ ( "queue"
-      , [ test_case "should job run" `Quick should_run_job
+      , [ test_case "search jobs with tag" `Quick search
+        ; test_case "should job run" `Quick should_run_job
         ; test_case
             "all dispatched jobs get processed"
             `Quick

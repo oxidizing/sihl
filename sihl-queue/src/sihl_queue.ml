@@ -22,6 +22,7 @@ let create_instance input delay now (job : 'a job) =
   ; status = Pending
   ; last_error = None
   ; last_error_at = None
+  ; tag = job.tag
   }
 ;;
 
@@ -71,7 +72,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       Repo.enqueue ?ctx job_instance)
     else (
       Logs.info (fun m -> m "Skipping queue in development environment");
-      match%lwt job.handle input with
+      match%lwt job.handle ?ctx input with
       | Ok () -> Lwt.return ()
       | Error msg ->
         Logs.err (fun m -> m "Error while processing job '%s': %s" name msg);
@@ -93,7 +94,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       let rec loop inputs =
         match inputs with
         | input :: inputs ->
-          Lwt.bind (job.handle input) (function
+          Lwt.bind (job.handle ?ctx input) (function
             | Ok () -> loop inputs
             | Error msg ->
               Logs.err (fun m ->
@@ -104,13 +105,13 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       loop inputs)
   ;;
 
-  let run_job (input : string) (job : job') (job_instance : instance)
+  let run_job ?ctx (input : string) (job : job') (job_instance : instance)
     : (unit, string) Result.t Lwt.t
     =
     let job_instance_id = job_instance.id in
     let%lwt result =
       Lwt.catch
-        (fun () -> job.handle input)
+        (fun () -> job.handle ?ctx input)
         (fun exn ->
           let exn_string = Printexc.to_string exn in
           Logs.err (fun m ->
@@ -131,7 +132,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
           msg);
       Lwt.catch
         (fun () ->
-          let%lwt () = job.failed msg job_instance in
+          let%lwt () = job.failed ?ctx msg job_instance in
           Lwt.return @@ Error msg)
         (fun exn ->
           let exn_string = Printexc.to_string exn in
@@ -148,14 +149,14 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       Lwt.return @@ Ok ()
   ;;
 
-  let update ~job_instance = Repo.update job_instance
+  let update ?ctx job_instance = Repo.update ?ctx job_instance
 
-  let work_job (job : job') (job_instance : instance) =
+  let work_job ?ctx (job : job') (job_instance : instance) =
     let now = Ptime_clock.now () in
     if should_run job_instance now
     then (
       let input_string = job_instance.input in
-      let%lwt job_run_status = run_job input_string job job_instance in
+      let%lwt job_run_status = run_job ?ctx input_string job job_instance in
       let job_instance =
         job_instance |> incr_tries |> update_next_run_at job.retry_delay
       in
@@ -176,15 +177,15 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
             }
         | Ok () -> { job_instance with status = Succeeded }
       in
-      update ~job_instance)
+      update ?ctx job_instance)
     else (
       Logs.debug (fun m ->
         m "Not going to run job instance %a" pp_instance job_instance);
       Lwt.return ())
   ;;
 
-  let work_queue ~jobs =
-    let%lwt pending_job_instances = Repo.find_workable () in
+  let work_queue ?ctx jobs =
+    let%lwt pending_job_instances = Repo.find_workable ?ctx () in
     let n_job_instances = List.length pending_job_instances in
     if n_job_instances > 0
     then (
@@ -201,7 +202,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
           in
           (match job with
            | None -> loop job_instances jobs
-           | Some job -> work_job job job_instance)
+           | Some job -> work_job ?ctx job job_instance)
       in
       let%lwt () = loop pending_job_instances jobs in
       Logs.debug (fun m -> m "Finish working queue");
@@ -214,7 +215,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Lwt.return ()
   ;;
 
-  let start_queue () =
+  let start_queue ?ctx () =
     Logs.debug (fun m -> m "Start job queue");
     (* This function runs every second, the request context gets created here
        with each tick *)
@@ -227,7 +228,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         in
         Logs.debug (fun m ->
           m "Run job queue with registered jobs: %s" job_strings);
-        work_queue ~jobs)
+        work_queue ?ctx jobs)
       else (
         Logs.debug (fun m -> m "No jobs found to run, trying again later");
         Lwt.return ())
@@ -242,9 +243,9 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Lwt.return ()
   ;;
 
-  let start () =
+  let start ?ctx () =
     Sihl.Configuration.require schema;
-    start_queue ()
+    start_queue ?ctx ()
   ;;
 
   let stop () =
@@ -258,21 +259,21 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       Lwt.return ()
   ;;
 
-  let lifecycle =
+  let lifecycle ?ctx () =
     Sihl.Container.create_lifecycle
       Sihl.Contract.Queue.name
       ~dependencies:(fun () ->
         List.cons Sihl.Schedule.lifecycle Repo.lifecycles)
-      ~start
+      ~start:(fun () -> start ?ctx ())
       ~stop
   ;;
 
-  let register ?(jobs = []) () =
+  let register ?(ctx = []) ?(jobs = []) () =
     Repo.register_migration ();
     Repo.register_cleaner ();
     registered_jobs := List.concat [ !registered_jobs; jobs ];
     let configuration = Sihl.Configuration.make ~schema () in
-    Sihl.Container.Service.create ~configuration lifecycle
+    Sihl.Container.Service.create ~configuration (lifecycle ~ctx ())
   ;;
 
   let query () : instance list Lwt.t = Repo.query ()
@@ -309,6 +310,10 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
 
   let router ?back ?theme scope =
     Admin_ui.router query find cancel requeue ?back ?theme scope
+  ;;
+
+  let search ?ctx ?(sort = `Desc) ?filter ?(limit = 50) ?(offset = 0) () =
+    Repo.search ?ctx sort filter ~limit ~offset
   ;;
 end
 

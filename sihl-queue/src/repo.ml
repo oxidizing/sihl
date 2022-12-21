@@ -30,6 +30,14 @@ module type Sig = sig
     -> unit
     -> Sihl.Contract.Queue.instance list Lwt.t
 
+  val search
+    :  ?ctx:(string * string) list
+    -> [ `Desc | `Asc ]
+    -> string option
+    -> limit:int
+    -> offset:int
+    -> (Sihl.Contract.Queue.instance list * int) Lwt.t
+
   val update
     :  ?ctx:(string * string) list
     -> Sihl.Contract.Queue.instance

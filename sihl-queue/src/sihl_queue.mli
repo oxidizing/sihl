@@ -16,6 +16,7 @@ type instance = Sihl.Contract.Queue.instance =
   ; status : instance_status
   ; last_error : string option
   ; last_error_at : Ptime.t option
+  ; tag : string option
   }
 
 (** ['a job] is a job that can be dispatched where ['a] is the type of the
@@ -24,18 +25,20 @@ type 'a job = 'a Sihl.Contract.Queue.job =
   { name : string
   ; encode : 'a -> string
   ; decode : string -> ('a, string) Result.t
-  ; handle : 'a -> (unit, string) Result.t Lwt.t
-  ; failed : string -> instance -> unit Lwt.t
+  ; handle : ?ctx:(string * string) list -> 'a -> (unit, string) Result.t Lwt.t
+  ; failed : ?ctx:(string * string) list -> string -> instance -> unit Lwt.t
   ; max_tries : int
   ; retry_delay : Ptime.Span.t
+  ; tag : string option
   }
 
 (** [job'] is a helper type that is used to remove the input type from [job].
     Use [job'] to register jobs. *)
 type job' = Sihl.Contract.Queue.job' =
   { name : string
-  ; handle : string -> (unit, string) Result.t Lwt.t
-  ; failed : string -> instance -> unit Lwt.t
+  ; handle :
+      ?ctx:(string * string) list -> string -> (unit, string) Result.t Lwt.t
+  ; failed : ?ctx:(string * string) list -> string -> instance -> unit Lwt.t
   ; max_tries : int
   ; retry_delay : Ptime.Span.t
   }
@@ -45,9 +48,12 @@ type job' = Sihl.Contract.Queue.job' =
     dispatched. *)
 val hide : 'a job -> job'
 
-(** [create_job ?max_tries ?retry_delay ?failed handle encode decode name]
+(** [create_job handle ?max_tries ?retry_delay ?failed handle encode decode name]
     returns a job that can be placed on the queue (dispatched) for later
     processing.
+
+    [handle] is the function that is called with the input when processing the
+    job. If an exception is raised, the exception is turned into [Error].
 
     [max_tries] is the maximum times a job can fail. If a job fails [max_tries]
     number of times, the status of the job becomes [Failed]. By default, a job
@@ -61,8 +67,8 @@ val hide : 'a job -> job'
     to clean up resources or raise some error in a monitoring system in case a
     job fails.
 
-    [handle] is the function that is called with the input when processing the
-    job. If an exception is raised, the exception is turned into [Error].
+    [tag] is a string that can be used to search job instances on the queue. It
+    does not have to be unique.
 
     [encode] is called right after dispatching a job. The provided input data is
     encoded as string which is used for persisting the queue.
@@ -73,10 +79,11 @@ val hide : 'a job -> job'
     [name] is the name of the job, it has to be unique among all registered
     jobs. *)
 val create_job
-  :  ('a -> (unit, string) result Lwt.t)
+  :  (?ctx:(string * string) list -> 'a -> (unit, string) result Lwt.t)
   -> ?max_tries:int
   -> ?retry_delay:Ptime.span
-  -> ?failed:(string -> instance -> unit Lwt.t)
+  -> ?failed:(?ctx:(string * string) list -> string -> instance -> unit Lwt.t)
+  -> ?tag:string
   -> ('a -> string)
   -> (string -> ('a, string) Result.t)
   -> string
