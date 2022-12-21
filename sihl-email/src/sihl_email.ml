@@ -364,9 +364,9 @@ module Queued
         |> Option.to_result ~none:"Failed to deserialize email")
     ;;
 
-    let handle email =
+    let handle ?ctx email =
       Lwt.catch
-        (fun () -> Email.send email |> Lwt.map Result.ok)
+        (fun () -> Email.send ?ctx email |> Lwt.map Result.ok)
         (fun exn ->
           let exn_string = Printexc.to_string exn in
           Lwt.return @@ Error exn_string)
@@ -397,7 +397,7 @@ module Queued
       ~start
       ~stop
       ~dependencies:(fun () ->
-      [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
+      [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle () ])
   ;;
 
   let register () = Sihl.Container.Service.create lifecycle

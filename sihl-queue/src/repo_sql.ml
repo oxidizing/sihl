@@ -30,16 +30,18 @@ let job =
         , ( m.input
           , ( m.tries
             , ( m.next_run_at
-              , (m.max_tries, (m.status, (m.last_error, m.last_error_at))) ) )
-          ) ) )
+              , ( m.max_tries
+                , (m.status, (m.last_error, (m.last_error_at, m.tag))) ) ) ) )
+        ) )
   in
   let decode
     ( id
     , ( name
       , ( input
         , ( tries
-          , (next_run_at, (max_tries, (status, (last_error, last_error_at)))) )
-        ) ) )
+          , ( next_run_at
+            , (max_tries, (status, (last_error, (last_error_at, tag)))) ) ) ) )
+    )
     =
     Ok
       { id
@@ -51,6 +53,7 @@ let job =
       ; status
       ; last_error
       ; last_error_at
+      ; tag
       }
   in
   Caqti_type.(
@@ -69,7 +72,11 @@ let job =
                      ptime
                      (tup2
                         int
-                        (tup2 status (tup2 (option string) (option ptime))))))))))
+                        (tup2
+                           status
+                           (tup2
+                              (option string)
+                              (tup2 (option ptime) (option string)))))))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
@@ -87,7 +94,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         $2,
@@ -97,7 +105,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         $6,
         $7,
         $8,
-        $9
+        $9,
+        $10
       )
     |sql}
     |> job ->. Caqti_type.unit
@@ -136,6 +145,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
           ; "status"
           ; "last_error"
           ; "last_error_at"
+          ; "tag"
           ]
         job
         (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
@@ -154,7 +164,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries = $6,
         status = $7,
         last_error = $8,
-        last_error_at = $9
+        last_error_at = $9,
+        tag = $10
       WHERE
         queue_jobs.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -183,7 +194,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       FROM queue_jobs
       WHERE
         status = "pending"
@@ -216,7 +228,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       FROM queue_jobs
       ORDER BY next_run_at DESC
       LIMIT 100
@@ -244,7 +257,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       FROM queue_jobs
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
@@ -272,6 +286,46 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
   ;;
 
   let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
+
+  let filter_fragment = {sql|
+      WHERE queue_jobs.tag LIKE $1
+    |sql}
+
+  let search_query =
+    {sql|
+      SELECT
+        COUNT(*) OVER() as total,
+        LOWER(CONCAT(
+          SUBSTR(HEX(uuid), 1, 8), '-',
+          SUBSTR(HEX(uuid), 9, 4), '-',
+          SUBSTR(HEX(uuid), 13, 4), '-',
+          SUBSTR(HEX(uuid), 17, 4), '-',
+          SUBSTR(HEX(uuid), 21)
+          )),
+        name,
+        input,
+        tries,
+        next_run_at,
+        max_tries,
+        status,
+        last_error,
+        last_error_at,
+        tag
+      FROM queue_jobs
+    |sql}
+  ;;
+
+  let request =
+    Sihl.Database.prepare_search_request
+      ~search_query
+      ~filter_fragment
+      ~sort_by_field:"id"
+      job
+  ;;
+
+  let search ?ctx sort filter ~limit ~offset =
+    Sihl.Database.run_search_request ?ctx request sort filter ~limit ~offset
+  ;;
 
   module Migration = struct
     let fix_collation =
@@ -327,6 +381,15 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
     ;;
 
+    let add_tag_column =
+      Sihl.Database.Migration.create_step
+        ~label:"add tag column"
+        {sql|
+          ALTER TABLE queue_jobs
+            ADD COLUMN tag TEXT NULL
+        |sql}
+    ;;
+
     let migration =
       Sihl.Database.Migration.(
         empty "queue"
@@ -334,7 +397,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |> add_step create_jobs_table
         |> add_step set_null_input_to_empty_string
         |> add_step set_input_not_null
-        |> add_step add_error_columns)
+        |> add_step add_error_columns
+        |> add_step add_tag_column)
     ;;
   end
 
@@ -360,7 +424,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       ) VALUES (
         $1::uuid,
         $2,
@@ -370,7 +435,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         $6,
         $7,
         $8,
-        $9 AT TIME ZONE 'UTC'
+        $9 AT TIME ZONE 'UTC',
+        $10
       )
     |sql}
     |> job ->. Caqti_type.unit
@@ -395,6 +461,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
           ; "status"
           ; "last_error"
           ; "last_error_at"
+          ; "tag"
           ]
         job
         (Caqti_lwt.Stream.of_list (List.rev job_instances))
@@ -413,7 +480,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries = $6,
         status = $7,
         last_error = $8,
-        last_error_at = $9 AT TIME ZONE 'UTC'
+        last_error_at = $9 AT TIME ZONE 'UTC',
+        tag = $10
       WHERE
         queue_jobs.uuid = $1::uuid
     |sql}
@@ -436,7 +504,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       FROM queue_jobs
       WHERE
         status = 'pending'
@@ -463,7 +532,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       FROM queue_jobs
       ORDER BY next_run_at DESC
     |sql}
@@ -484,7 +554,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         max_tries,
         status,
         last_error,
-        last_error_at
+        last_error_at,
+        tag
       FROM queue_jobs
       WHERE uuid = $1::uuid
     |sql}
@@ -512,6 +583,40 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
   ;;
 
   let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
+
+  let filter_fragment = {sql|
+      WHERE queue_jobs.tag LIKE $1
+    |sql}
+
+  let search_query =
+    {sql|
+      SELECT
+        COUNT(*) OVER() as total,
+        uuid,
+        name,
+        input,
+        tries,
+        next_run_at,
+        max_tries,
+        status,
+        last_error,
+        last_error_at,
+        tag
+      FROM queue_jobs
+    |sql}
+  ;;
+
+  let request =
+    Sihl.Database.prepare_search_request
+      ~search_query
+      ~filter_fragment
+      ~sort_by_field:"id"
+      job
+  ;;
+
+  let search ?ctx sort filter ~limit ~offset =
+    Sihl.Database.run_search_request ?ctx request sort filter ~limit ~offset
+  ;;
 
   module Migration = struct
     let create_jobs_table =
@@ -571,6 +676,15 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
     ;;
 
+    let add_tag_column =
+      Sihl.Database.Migration.create_step
+        ~label:"add tag column"
+        {sql|
+          ALTER TABLE queue_jobs
+            ADD COLUMN tag TEXT NULL
+        |sql}
+    ;;
+
     let migration =
       Sihl.Database.Migration.(
         empty "queue"
@@ -578,7 +692,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |> add_step set_null_input_to_empty_string
         |> add_step set_input_not_null
         |> add_step add_error_columns
-        |> add_step remove_timezone)
+        |> add_step remove_timezone
+        |> add_step add_tag_column)
     ;;
   end
 

@@ -64,3 +64,24 @@ let delete ?ctx:_ (job : Sihl.Contract.Queue.instance) =
   state := Map.remove job.id !state;
   Lwt.return ()
 ;;
+
+let search ?ctx:_ (sort : [ `Desc | `Asc ]) filter ~limit ~offset =
+  let filtered =
+    Map.filter
+      (fun _ (job : Sihl.Contract.Queue.instance) ->
+        Option.equal (fun t f -> CCString.find ~sub:f t > -1) job.tag filter)
+      !state
+    |> Map.to_seq
+    |> List.of_seq
+    |> List.map snd
+    |> CCList.drop offset
+    |> CCList.take limit
+    |> CCList.sort
+         (fun
+           (j1 : Sihl.Contract.Queue.instance)
+           (j2 : Sihl.Contract.Queue.instance)
+         -> Option.compare String.compare j1.tag j2.tag)
+    |> fun l -> if sort == `Desc then l else List.rev l
+  in
+  Lwt.return @@ (filtered, List.length filtered)
+;;

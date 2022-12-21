@@ -17,6 +17,7 @@ type instance =
   ; status : instance_status
   ; last_error : string option
   ; last_error_at : Ptime.t option
+  ; tag : string option
   }
 [@@deriving show]
 
@@ -24,26 +25,28 @@ type 'a job =
   { name : string
   ; encode : 'a -> string
   ; decode : string -> ('a, string) Result.t
-  ; handle : 'a -> (unit, string) Result.t Lwt.t
-  ; failed : string -> instance -> unit Lwt.t
+  ; handle : ?ctx:(string * string) list -> 'a -> (unit, string) Result.t Lwt.t
+  ; failed : ?ctx:(string * string) list -> string -> instance -> unit Lwt.t
   ; max_tries : int
   ; retry_delay : Ptime.Span.t
+  ; tag : string option
   }
 [@@deriving show]
 
 type job' =
   { name : string
-  ; handle : string -> (unit, string) Result.t Lwt.t
-  ; failed : string -> instance -> unit Lwt.t
+  ; handle :
+      ?ctx:(string * string) list -> string -> (unit, string) Result.t Lwt.t
+  ; failed : ?ctx:(string * string) list -> string -> instance -> unit Lwt.t
   ; max_tries : int
   ; retry_delay : Ptime.Span.t
   }
 [@@deriving show]
 
 let hide (job : 'a job) : job' =
-  let handle input =
+  let handle ?ctx input =
     match job.decode input with
-    | Ok decoded -> job.handle decoded
+    | Ok decoded -> job.handle ?ctx decoded
     | Error msg -> Lwt.return @@ Error msg
   in
   { name = job.name
@@ -71,11 +74,15 @@ let should_run (job_instance : instance) now =
 let default_tries = 5
 let default_retry_delay = Core_time.Span.minutes 1
 
-let default_error_handler msg (instance : instance) =
+let default_error_handler ?(ctx = []) msg (instance : instance) =
+  let ctx =
+    Format.asprintf " (ctx: %s)" ([%show: (string * string) list] ctx)
+  in
   Lwt.return
   @@ Logs.err (fun m ->
        m
-         "Job with id '%s' and name '%s' failed for input '%s': %s"
+         "%s Job with id '%s' and name '%s' failed for input '%s': %s"
+         ctx
          instance.id
          instance.name
          instance.input
@@ -87,11 +94,12 @@ let create_job
   ?(max_tries = default_tries)
   ?(retry_delay = default_retry_delay)
   ?(failed = default_error_handler)
+  ?tag
   encode
   decode
   name
   =
-  { name; handle; failed; max_tries; retry_delay; encode; decode }
+  { name; handle; failed; max_tries; retry_delay; encode; decode; tag }
 ;;
 
 (* Service signature *)
@@ -158,13 +166,43 @@ module type Sig = sig
     -> 'a job
     -> unit Lwt.t
 
+  (** [search ?ctx ?sort ?filter ?limit ?offset ()] returns a list of job
+      instances that match the search parameters.
+
+      The [filter] has exactly match or be part of the search tag of the job
+      instance.
+
+      A tuple is returned, where the second value describes the total number of
+      rows found, ignoring [limit]. This is useful to implement pagination. *)
+  val search
+    :  ?ctx:(string * string) list
+    -> ?sort:[ `Desc | `Asc ]
+    -> ?filter:string
+    -> ?limit:int
+    -> ?offset:int
+    -> unit
+    -> (instance list * int) Lwt.t
+
   (** [register_jobs jobs] registers jobs that can be dispatched later on.
 
       Only registered jobs can be dispatched. Dispatching a job that was not
       registered does nothing. *)
   val register_jobs : job' list -> unit Lwt.t
 
-  val register : ?jobs:job' list -> unit -> Core_container.Service.t
+  val register
+    :  ?ctx:(string * string) list
+    -> ?jobs:job' list
+    -> unit
+    -> Core_container.Service.t
 
   include Core_container.Service.Sig
+
+  (** [start ?ctx ()] starts the service with the [ctx]. The [ctx] is applied to
+      the job handlers whenever a job is dispatched. *)
+  val start : ?ctx:(string * string) list -> unit -> unit Lwt.t
+
+  val lifecycle
+    :  ?ctx:(string * string) list
+    -> unit
+    -> Core_container.lifecycle
 end
