@@ -279,7 +279,10 @@ module type Sig = sig
     -> password:string
     -> (t, [ `Does_not_exist | `Incorrect_password ]) Result.t Lwt.t
 
-  val register : unit -> Core_container.Service.t
+  val register
+    :  ?commands:Core_command.t list
+    -> unit
+    -> Core_container.Service.t
 
   include Core_container.Service.Sig
 end
