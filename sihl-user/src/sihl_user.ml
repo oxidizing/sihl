@@ -247,10 +247,10 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       ~stop
   ;;
 
-  let register () =
+  let register ?(commands = [ create_admin_cmd ]) () =
     Repo.register_migration ();
     Repo.register_cleaner ();
-    Sihl.Container.Service.create ~commands:[ create_admin_cmd ] lifecycle
+    Sihl.Container.Service.create ~commands lifecycle
   ;;
 
   module Web = struct
