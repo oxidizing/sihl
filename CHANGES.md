@@ -1,5 +1,10 @@
 ## [4.0.0] - 2022-12-29
-- TODO
+### Updated
+- Email service takes optional `ctx` argument, queued emails receive `ctx` from queue service
+- Jobs can be created with optional `tag` field
+- Queue service has `search` API to filter for `tag`s
+- Queue service start and lifecycle functions take optional `ctx` argument when creating lifecycle, enabling multi-tenant queues
+- Job handlers and error handlers take optional `ctx` argument
 
 ## [3.0.5] - 2022-11-24
 
