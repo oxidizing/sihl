@@ -35,8 +35,8 @@ end = struct
       |> Option.map Ptime.of_rfc3339
     with
     | Some (Ok (ptime, _, _)) -> ptime
-    | Some (Error _) -> failwith "foo"
-    | None -> failwith "foo"
+    | Some (Error _) -> failwith "failed to convert sexp to ptime"
+    | None -> failwith "failed to convert sexp to ptime"
   ;;
 
   let to_yojson t = `String (Ptime.to_rfc3339 t)
