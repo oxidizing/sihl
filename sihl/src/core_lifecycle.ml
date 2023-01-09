@@ -39,6 +39,10 @@ let human_name lifecycle =
 
 module Map = Map.Make (Int)
 
+let pp_map ppf (m : lifecycle Map.t) =
+  Map.iter (fun k v -> Format.fprintf ppf "%d -> %a@\n" k pp_lifecycle v) m
+;;
+
 let collect_all_lifecycles lifecycles =
   let rec collect_lifecycles lifecycle =
     match lifecycle.dependencies () with
@@ -70,6 +74,11 @@ let top_sort_lifecycles lifecycles =
          in
          id, dependencies)
   in
+  Logs.debug (fun m ->
+    m
+      "Lifecycle graph to sort topilogically: %a"
+      [%show: (int * int list) list]
+      lifecycle_graph);
   match Tsort.sort lifecycle_graph with
   | Tsort.Sorted sorted ->
     sorted
@@ -77,7 +86,17 @@ let top_sort_lifecycles lifecycles =
          match Map.find_opt id lifecycles with
          | Some l -> l
          | None ->
-           Logs.err (fun m -> m "Failed to sort lifecycles.");
+           Logs.err (fun m ->
+             m
+               "Failed to sort lifecycles. Lifecyce id %d not found in \
+                registered lifecycles: %a"
+               id
+               pp_map
+               lifecycles);
+           Logs.info (fun m ->
+             m
+               "It looks like a service or command is depending on a service \
+                that has not lifecycle registered.");
            raise Exception)
   | Tsort.ErrorCycle remaining_ids ->
     let remaining_names =
