@@ -76,9 +76,8 @@ let top_sort_lifecycles lifecycles =
   in
   Logs.debug (fun m ->
     m
-      "Lifecycle graph to sort topilogically: %a"
-      [%show: (int * int list) list]
-      lifecycle_graph);
+      "Lifecycle graph to sort topilogically: %s"
+      ([%show: (int * int list) list] lifecycle_graph));
   match Tsort.sort lifecycle_graph with
   | Tsort.Sorted sorted ->
     sorted
