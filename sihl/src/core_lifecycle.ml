@@ -80,6 +80,8 @@ let top_sort_lifecycles lifecycles =
       ([%show: (int * int list) list] lifecycle_graph));
   match Tsort.sort lifecycle_graph with
   | Tsort.Sorted sorted ->
+    Logs.debug (fun m ->
+      m "Pre sorted lifecycle graph: %s" ([%show: int list] sorted));
     sorted
     |> List.map (fun id ->
          match Map.find_opt id lifecycles with
@@ -87,7 +89,7 @@ let top_sort_lifecycles lifecycles =
          | None ->
            Logs.err (fun m ->
              m
-               "Failed to sort lifecycles. Lifecyce id %d not found in \
+               "Failed to sort lifecycles. Lifecycce id %d not found in \
                 registered lifecycles: %a"
                id
                pp_map
