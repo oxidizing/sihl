@@ -4,7 +4,7 @@ let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.Queue.name)
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-let create_instance input delay now (job : 'a job) =
+let create_instance ?(ctx = []) input delay now (job : 'a job) =
   let input = job.encode input in
   let name = job.name in
   let next_run_at =
@@ -23,6 +23,7 @@ let create_instance input delay now (job : 'a job) =
   ; last_error = None
   ; last_error_at = None
   ; tag = job.tag
+  ; ctx
   }
 ;;
 
@@ -85,8 +86,10 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     if Sihl.Configuration.is_production () || force_async
     then (
       let now = Ptime_clock.now () in
+      (* At some point we might want to have a different ctx for the job
+         dispatch and the actual job handling. *)
       let job_instances =
-        List.map (fun input -> create_instance input delay now job) inputs
+        List.map (fun input -> create_instance ?ctx input delay now job) inputs
       in
       Repo.enqueue_all ?ctx job_instances)
     else (
@@ -111,7 +114,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     let job_instance_id = job_instance.id in
     let%lwt result =
       Lwt.catch
-        (fun () -> job.handle ?ctx input)
+        (fun () -> job.handle ~ctx:job_instance.ctx input)
         (fun exn ->
           let exn_string = Printexc.to_string exn in
           Logs.err (fun m ->
@@ -215,7 +218,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Lwt.return ()
   ;;
 
-  let start_queue ?ctx () =
+  let start_queue () =
     Logs.debug (fun m -> m "Start job queue");
     (* This function runs every second, the request context gets created here
        with each tick *)
@@ -228,7 +231,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         in
         Logs.debug (fun m ->
           m "Run job queue with registered jobs: %s" job_strings);
-        work_queue ?ctx jobs)
+        work_queue jobs)
       else (
         Logs.debug (fun m -> m "No jobs found to run, trying again later");
         Lwt.return ())
@@ -243,9 +246,9 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     Lwt.return ()
   ;;
 
-  let start ?ctx () =
+  let start () =
     Sihl.Configuration.require schema;
-    start_queue ?ctx ()
+    start_queue ()
   ;;
 
   let stop () =
@@ -259,21 +262,21 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       Lwt.return ()
   ;;
 
-  let lifecycle ?ctx () =
+  let lifecycle =
     Sihl.Container.create_lifecycle
       Sihl.Contract.Queue.name
       ~dependencies:(fun () ->
         List.cons Sihl.Schedule.lifecycle Repo.lifecycles)
-      ~start:(fun () -> start ?ctx ())
+      ~start
       ~stop
   ;;
 
-  let register ?(ctx = []) ?(jobs = []) () =
+  let register ?(jobs = []) () =
     Repo.register_migration ();
     Repo.register_cleaner ();
     registered_jobs := List.concat [ !registered_jobs; jobs ];
     let configuration = Sihl.Configuration.make ~schema () in
-    Sihl.Container.Service.create ~configuration (lifecycle ~ctx ())
+    Sihl.Container.Service.create ~configuration lifecycle
   ;;
 
   let query () : instance list Lwt.t = Repo.query ()

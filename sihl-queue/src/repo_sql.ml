@@ -21,6 +21,19 @@ let status =
   Caqti_type.(custom ~encode ~decode string)
 ;;
 
+type ctx = (string * string) list [@@deriving yojson]
+
+let ctx =
+  let to_string m = m |> ctx_to_yojson |> Yojson.Safe.to_string in
+  let of_string m =
+    try Yojson.Safe.from_string m |> ctx_of_yojson with
+    | _ -> Error (Format.sprintf "failed to decode ctx %s" m)
+  in
+  let encode m = Ok (to_string m) in
+  let decode = of_string in
+  Caqti_type.(custom ~encode ~decode Caqti_type.string)
+;;
+
 let job =
   let open Sihl.Contract.Queue in
   let encode m =
@@ -31,8 +44,9 @@ let job =
           , ( m.tries
             , ( m.next_run_at
               , ( m.max_tries
-                , (m.status, (m.last_error, (m.last_error_at, m.tag))) ) ) ) )
-        ) )
+                , ( m.status
+                  , (m.last_error, (m.last_error_at, (m.tag, Some m.ctx))) ) )
+              ) ) ) ) )
   in
   let decode
     ( id
@@ -40,8 +54,8 @@ let job =
       , ( input
         , ( tries
           , ( next_run_at
-            , (max_tries, (status, (last_error, (last_error_at, tag)))) ) ) ) )
-    )
+            , (max_tries, (status, (last_error, (last_error_at, (tag, ctx)))))
+            ) ) ) ) )
     =
     Ok
       { id
@@ -54,6 +68,7 @@ let job =
       ; last_error
       ; last_error_at
       ; tag
+      ; ctx = Option.value ~default:[] ctx
       }
   in
   Caqti_type.(
@@ -76,7 +91,9 @@ let job =
                            status
                            (tup2
                               (option string)
-                              (tup2 (option ptime) (option string)))))))))))
+                              (tup2
+                                 (option ptime)
+                                 (tup2 (option string) (option ctx))))))))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
@@ -95,7 +112,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         $2,
@@ -106,7 +124,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         $7,
         $8,
         $9,
-        $10
+        $10,
+        $11
       )
     |sql}
     |> job ->. Caqti_type.unit
@@ -146,6 +165,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
           ; "last_error"
           ; "last_error_at"
           ; "tag"
+          ; "ctx"
           ]
         job
         (job_instances |> populatable |> List.rev |> Caqti_lwt.Stream.of_list)
@@ -165,7 +185,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status = $7,
         last_error = $8,
         last_error_at = $9,
-        tag = $10
+        tag = $10,
+        ctx = $11
       WHERE
         queue_jobs.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -195,7 +216,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
       WHERE
         status = "pending"
@@ -229,7 +251,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
       ORDER BY next_run_at DESC
       LIMIT 100
@@ -258,7 +281,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
@@ -310,7 +334,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
     |sql}
   ;;
@@ -390,6 +415,15 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
     ;;
 
+    let add_ctx_column =
+      Sihl.Database.Migration.create_step
+        ~label:"add ctx column"
+        {sql|
+      ALTER TABLE queue_jobs 
+       ADD COLUMN ctx TEXT NULL
+      |sql}
+    ;;
+
     let migration =
       Sihl.Database.Migration.(
         empty "queue"
@@ -398,7 +432,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |> add_step set_null_input_to_empty_string
         |> add_step set_input_not_null
         |> add_step add_error_columns
-        |> add_step add_tag_column)
+        |> add_step add_tag_column
+        |> add_step add_ctx_column)
     ;;
   end
 
@@ -425,7 +460,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       ) VALUES (
         $1::uuid,
         $2,
@@ -436,7 +472,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         $7,
         $8,
         $9 AT TIME ZONE 'UTC',
-        $10
+        $10,
+        $11
       )
     |sql}
     |> job ->. Caqti_type.unit
@@ -462,6 +499,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
           ; "last_error"
           ; "last_error_at"
           ; "tag"
+          ; "ctx"
           ]
         job
         (Caqti_lwt.Stream.of_list (List.rev job_instances))
@@ -481,7 +519,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status = $7,
         last_error = $8,
         last_error_at = $9 AT TIME ZONE 'UTC',
-        tag = $10
+        tag = $10,
+        ctx = $11
       WHERE
         queue_jobs.uuid = $1::uuid
     |sql}
@@ -505,7 +544,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
       WHERE
         status = 'pending'
@@ -533,7 +573,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
       ORDER BY next_run_at DESC
     |sql}
@@ -555,7 +596,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
       WHERE uuid = $1::uuid
     |sql}
@@ -601,7 +643,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         status,
         last_error,
         last_error_at,
-        tag
+        tag,
+        ctx
       FROM queue_jobs
     |sql}
   ;;
@@ -685,6 +728,15 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |sql}
     ;;
 
+    let add_ctx_column =
+      Sihl.Database.Migration.create_step
+        ~label:"add ctx column"
+        {sql|
+      ALTER TABLE queue_jobs 
+       ADD COLUMN ctx TEXT NULL
+      |sql}
+    ;;
+
     let migration =
       Sihl.Database.Migration.(
         empty "queue"
@@ -693,7 +745,8 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
         |> add_step set_input_not_null
         |> add_step add_error_columns
         |> add_step remove_timezone
-        |> add_step add_tag_column)
+        |> add_step add_tag_column
+        |> add_step add_ctx_column)
     ;;
   end
 
