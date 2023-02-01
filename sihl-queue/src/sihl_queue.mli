@@ -17,6 +17,7 @@ type instance = Sihl.Contract.Queue.instance =
   ; last_error : string option
   ; last_error_at : Ptime.t option
   ; tag : string option
+  ; ctx : (string * string) list
   }
 
 (** ['a job] is a job that can be dispatched where ['a] is the type of the

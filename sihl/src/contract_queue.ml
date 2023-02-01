@@ -18,6 +18,7 @@ type instance =
   ; last_error : string option
   ; last_error_at : Ptime.t option
   ; tag : string option
+  ; ctx : (string * string) list
   }
 [@@deriving show]
 
@@ -189,20 +190,7 @@ module type Sig = sig
       registered does nothing. *)
   val register_jobs : job' list -> unit Lwt.t
 
-  val register
-    :  ?ctx:(string * string) list
-    -> ?jobs:job' list
-    -> unit
-    -> Core_container.Service.t
+  val register : ?jobs:job' list -> unit -> Core_container.Service.t
 
   include Core_container.Service.Sig
-
-  (** [start ?ctx ()] starts the service with the [ctx]. The [ctx] is applied to
-      the job handlers whenever a job is dispatched. *)
-  val start : ?ctx:(string * string) list -> unit -> unit Lwt.t
-
-  val lifecycle
-    :  ?ctx:(string * string) list
-    -> unit
-    -> Core_container.lifecycle
 end

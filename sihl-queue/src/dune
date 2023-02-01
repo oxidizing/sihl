@@ -1,9 +1,9 @@
 (library
  (name sihl_queue)
  (public_name sihl-queue)
- (libraries sihl)
+ (libraries sihl yojson ppx_deriving_yojson.runtime)
  (preprocess
-  (pps tyxml-ppx lwt_ppx)))
+  (pps tyxml-ppx lwt_ppx ppx_deriving.show ppx_deriving_yojson)))
 
 (documentation
  (package sihl-queue))

@@ -382,12 +382,12 @@ module Queued
         "send_email"
     ;;
 
-    let dispatch email = QueueService.dispatch email job
-    let dispatch_all emails = QueueService.dispatch_all emails job
+    let dispatch ?ctx email = QueueService.dispatch ?ctx email job
+    let dispatch_all ?ctx emails = QueueService.dispatch_all ?ctx emails job
   end
 
-  let send ?ctx:_ email = Job.dispatch email
-  let bulk_send ?ctx:_ emails = Job.dispatch_all emails
+  let send ?ctx email = Job.dispatch ?ctx email
+  let bulk_send ?ctx emails = Job.dispatch_all ?ctx emails
   let start () = QueueService.register_jobs [ Sihl.Contract.Queue.hide Job.job ]
   let stop () = Lwt.return ()
 
@@ -397,7 +397,7 @@ module Queued
       ~start
       ~stop
       ~dependencies:(fun () ->
-      [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle () ])
+      [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
   ;;
 
   let register () = Sihl.Container.Service.create lifecycle
