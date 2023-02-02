@@ -148,6 +148,7 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         (fun ?(ctx = []) _ ->
           (match ctx with
            | [ ("pool", "test") ] -> ()
+           | [] -> failwith "an empty ctx was provided, expected non-emtpy ctx"
            | _ -> failwith "ctx is not passed to job correctly");
           Lwt_result.return (has_ran_job := true))
         (fun () -> "")
