@@ -69,7 +69,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       let name = job.name in
       Logs.debug (fun m -> m "Dispatching job %s" name);
       let now = Ptime_clock.now () in
-      let job_instance = create_instance input delay now job in
+      let job_instance = create_instance ?ctx input delay now job in
       Repo.enqueue ?ctx job_instance)
     else (
       Logs.info (fun m -> m "Skipping queue in development environment");
