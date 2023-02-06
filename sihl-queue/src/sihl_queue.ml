@@ -56,7 +56,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
              ~meta:"If set to true, the queue is used even in development."
              ~default:false
              "QUEUE_FORCE_ASYNC")
-      ; optional (bool ~meta:"" ~default:true "QUEUE_PROCESS")
+      ; optional (bool ~meta:"If set to false, jobs can be dispatched but won't be handled." ~default:true "QUEUE_PROCESS")
       ]
       config
   ;;
