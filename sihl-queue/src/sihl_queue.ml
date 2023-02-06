@@ -41,9 +41,12 @@ let incr_tries job_instance =
 ;;
 
 module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
-  type config = { force_async : bool option }
+  type config =
+    { force_async : bool option
+    ; process_queue : bool
+    }
 
-  let config force_async = { force_async }
+  let config force_async process_queue = { force_async; process_queue }
 
   let schema =
     let open Conformist in
@@ -53,6 +56,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
              ~meta:"If set to true, the queue is used even in development."
              ~default:false
              "QUEUE_FORCE_ASYNC")
+      ; bool ~meta:"" ~default:true "QUEUE_PROCESS"
       ]
       config
   ;;
@@ -247,8 +251,15 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   ;;
 
   let start () =
-    Sihl.Configuration.require schema;
-    start_queue ()
+    let config = Sihl.Configuration.read schema in
+    if config.process_queue
+    then start_queue ()
+    else
+      Lwt.return
+      @@ Logs.info (fun m ->
+           m
+             "QUEUE_PROCESS is false, jobs can be dispatched but they won't be \
+              handled within this queue process")
   ;;
 
   let stop () =
