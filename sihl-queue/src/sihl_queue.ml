@@ -43,7 +43,7 @@ let incr_tries job_instance =
 module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   type config =
     { force_async : bool option
-    ; process_queue : bool
+    ; process_queue : bool option
     }
 
   let config force_async process_queue = { force_async; process_queue }
@@ -56,7 +56,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
              ~meta:"If set to true, the queue is used even in development."
              ~default:false
              "QUEUE_FORCE_ASYNC")
-      ; bool ~meta:"" ~default:true "QUEUE_PROCESS"
+      ; optional (bool ~meta:"" ~default:true "QUEUE_PROCESS")
       ]
       config
   ;;
@@ -252,7 +252,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
 
   let start () =
     let config = Sihl.Configuration.read schema in
-    if config.process_queue
+    if Option.value ~default:true config.process_queue
     then start_queue ()
     else
       Lwt.return
