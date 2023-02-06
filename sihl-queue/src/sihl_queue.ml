@@ -42,8 +42,8 @@ let incr_tries job_instance =
 
 module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   type config =
-    { force_async : bool option
-    ; process_queue : bool option
+    { force_async : bool
+    ; process_queue : bool
     }
 
   let config force_async process_queue = { force_async; process_queue }
@@ -51,12 +51,14 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let schema =
     let open Conformist in
     make
-      [ optional
-          (bool
-             ~meta:"If set to true, the queue is used even in development."
-             ~default:false
-             "QUEUE_FORCE_ASYNC")
-      ; optional (bool ~meta:"If set to false, jobs can be dispatched but won't be handled." ~default:true "QUEUE_PROCESS")
+      [ bool
+          ~meta:"If set to true, the queue is used even in development."
+          ~default:false
+          "QUEUE_FORCE_ASYNC"
+      ; bool
+          ~meta:"If set to false, jobs can be dispatched but won't be handled."
+          ~default:true
+          "QUEUE_PROCESS"
       ]
       config
   ;;
@@ -67,7 +69,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let dispatch ?ctx ?delay input (job : 'a job) =
     let open Sihl.Contract.Queue in
     let config = Sihl.Configuration.read schema in
-    let force_async = Option.value ~default:false config.force_async in
+    let force_async = config.force_async in
     if Sihl.Configuration.is_production () || force_async
     then (
       let name = job.name in
@@ -86,7 +88,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
 
   let dispatch_all ?ctx ?delay inputs job =
     let config = Sihl.Configuration.read schema in
-    let force_async = Option.value ~default:false config.force_async in
+    let force_async = config.force_async in
     if Sihl.Configuration.is_production () || force_async
     then (
       let now = Ptime_clock.now () in
@@ -252,7 +254,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
 
   let start () =
     let config = Sihl.Configuration.read schema in
-    if Option.value ~default:true config.process_queue
+    if config.process_queue
     then start_queue ()
     else
       Lwt.return
