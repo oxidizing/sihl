@@ -190,6 +190,7 @@ let middleware
   ?(session_key = "_session")
   ?(input_name = "_csrf")
   ?(secret = Core_configuration.read_secret ())
+  ?(expires : Opium.Cookie.expires option)
   ()
   =
   let open Crypto in
@@ -244,11 +245,12 @@ let middleware
            @@ fun resp ->
            (* Try to add csrf to session, if it does not exist, make a new
               session *)
-           (* Token expires when session expires *)
+           (* If expires is not set, token expires when session expires *)
            Web_session.set_value
              ~cookie_key:session_key
              ~secret
              ~key
+             ?expires
              tkn
              req
              resp

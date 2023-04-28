@@ -20,9 +20,9 @@ let of_json json =
 let to_yojson session =
   `Assoc
     (session
-    |> StrMap.to_seq
-    |> List.of_seq
-    |> List.map (fun (k, v) -> k, `String v))
+     |> StrMap.to_seq
+     |> List.of_seq
+     |> List.map (fun (k, v) -> k, `String v))
 ;;
 
 let to_json session = session |> to_yojson |> Yojson.Safe.to_string

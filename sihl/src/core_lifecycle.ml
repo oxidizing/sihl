@@ -51,8 +51,8 @@ let collect_all_lifecycles lifecycles =
       List.cons
         lifecycle
         (lifecycles
-        |> List.map (fun lifecycle -> collect_lifecycles lifecycle)
-        |> List.concat)
+         |> List.map (fun lifecycle -> collect_lifecycles lifecycle)
+         |> List.concat)
   in
   lifecycles
   |> List.map collect_lifecycles
