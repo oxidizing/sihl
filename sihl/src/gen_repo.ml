@@ -318,8 +318,8 @@ let non_linear_parameters (schema : Gen_core.schema) =
     |> List.map (Format.asprintf "$%i AT TIME ZONE 'UTC'")
   in
   (schema
-  (* We start with $2 because $1 is the id *)
-  |> List.mapi (fun idx _ -> idx + 2 |> Format.asprintf "$%d"))
+   (* We start with $2 because $1 is the id *)
+   |> List.mapi (fun idx _ -> idx + 2 |> Format.asprintf "$%d"))
   @ created_updated
   |> String.concat ",\n"
 ;;

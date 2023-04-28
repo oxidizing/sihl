@@ -80,6 +80,7 @@ let set
 let update_or_set_value
   ?(cookie_key = "_session")
   ?(secret = Core_configuration.read_secret ())
+  ?(expires : Opium.Cookie.expires option)
   ~key
   f
   req
@@ -105,6 +106,7 @@ let update_or_set_value
   Opium.Response.add_cookie_or_replace
     ~scope:(Uri.of_string "/")
     ~sign_with:signed_with
+    ?expires
     cookie
     resp
 ;;
@@ -113,6 +115,7 @@ let update_or_set_value
 let set_value
   ?(cookie_key = "_session")
   ?(secret = Core_configuration.read_secret ())
+  ?expires
   ~key
   value
   req
@@ -121,6 +124,7 @@ let set_value
   update_or_set_value
     ~cookie_key
     ~secret
+    ?expires
     ~key
     (CCFun.const @@ Some value)
     req

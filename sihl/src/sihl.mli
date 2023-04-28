@@ -790,10 +790,14 @@ module Web : sig
         returned.
 
         [secret] is the secret used to sign the session cookie. By default,
-        [SIHL_SECRET] is used. *)
+        [SIHL_SECRET] is used.
+
+        [expires] is the session expiration date or max age. By default, nothing
+        is set. *)
     val set_value
       :  ?cookie_key:string
       -> ?secret:string
+      -> ?expires:Cookie.expires
       -> key:string
       -> string
       -> Request.t
@@ -813,10 +817,14 @@ module Web : sig
         [f None] is added to the session.
 
         [secret] is the secret used to sign the session cookie. By default,
-        [SIHL_SECRET] is used. *)
+        [SIHL_SECRET] is used.
+
+        [expires] is the session expiration date or max age. By default, nothing
+        is set. *)
     val update_or_set_value
       :  ?cookie_key:string
       -> ?secret:string
+      -> ?expires:Cookie.expires
       -> key:string
       -> (string option -> string option)
       -> Request.t
@@ -850,6 +858,9 @@ module Web : sig
         [secret] is the secret used to encrypt the CSRF cookie value with. By
         default, [SIHL_SECRET] is used.
 
+        [expires] is the session expiration date or max age. By default, nothing
+        is set.
+
         For security purposes, AES is used for encryption. *)
     val csrf
       :  ?not_allowed_handler:(Request.t -> Response.t Lwt.t)
@@ -857,6 +868,7 @@ module Web : sig
       -> ?session_key:string
       -> ?input_name:string
       -> ?secret:string
+      -> ?expires:Cookie.expires
       -> unit
       -> Rock.Middleware.t
 
