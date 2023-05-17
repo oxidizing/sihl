@@ -210,6 +210,17 @@ let add_pool ?(pool_size = 10) name database_url =
     raise (Contract_database.Exception ("Failed to create pool: " ^ msg))
 ;;
 
+let drop_pool name =
+  match Hashtbl.find_opt pools name with
+  | None ->
+    Logs.warn (fun m -> m "Connection pool with name '%s' doesn't exist" name);
+    Lwt.return_unit
+  | Some connection ->
+    let%lwt () = Caqti_lwt.Pool.drain connection in
+    let () = Hashtbl.remove pools name in
+    Lwt.return_unit
+;;
+
 let raise_error err =
   match err with
   | Error err -> raise @@ Contract_database.Exception (Caqti_error.show err)
