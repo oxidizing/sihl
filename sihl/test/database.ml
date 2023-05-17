@@ -162,6 +162,35 @@ let choose_database_pool _ () =
   Lwt.return ()
 ;;
 
+let drop_database_pool _ () =
+  let open Sihl.Database in
+  let%lwt () = fetch_pool () |> Caqti_lwt.Pool.drain in
+  let database_url =
+    Option.value
+      ~default:"not found"
+      (Sihl.Configuration.read_string "DATABASE_URL")
+  in
+  let label = "foo" in
+  let ctx = [ "pool", label ] in
+  let%lwt check_connection =
+    try
+      (* Best indicator in Sihl at the moment is to check if "Database already
+         exists" is raised when "drop_pool" didn't work. An unknown pool name
+         results in running the query on the main database. *)
+      let%lwt () = drop_pool label in
+      let () = add_pool label database_url in
+      let%lwt () = query ~ctx drop_table_if_exists in
+      let%lwt () = drop_pool label in
+      let () = add_pool label database_url in
+      query ~ctx drop_table_if_exists |> Lwt_result.ok
+    with
+    | msg -> Printexc.to_string msg |> Lwt.return_error
+  in
+  Alcotest.(
+    check (result unit string) "dropping table worked" (Ok ()) check_connection);
+  Lwt.return_unit
+;;
+
 let suite =
   Alcotest_lwt.
     [ ( "database"
@@ -178,6 +207,7 @@ let suite =
             `Quick
             transaction_does_not_exhaust_pool
         ; test_case "choose database pool" `Quick choose_database_pool
+        ; test_case "drop database pool" `Quick drop_database_pool
         ] )
     ]
 ;;

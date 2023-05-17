@@ -122,6 +122,13 @@ module type Sig = sig
       should be kept open. The default is 10. *)
   val add_pool : ?pool_size:int -> string -> string -> unit
 
+  (** [drop_pool name] closes all resources for the pool.
+
+      The pool can be referenced with its [name]. The service context can
+      contain the pool name under the key `pool` to force the usage of a certain
+      pool. *)
+  val drop_pool : string -> unit Lwt.t
+
   (** [find_opt ?ctx request input] runs a caqti [request] where [input] is the
       input of the caqti request and returns one row or [None]. Returns [None]
       if no rows are found.
