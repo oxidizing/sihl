@@ -56,7 +56,7 @@ let get_request table =
        WHERE namespace = ?
     |sql}
     table
-  |> Caqti_type.(string ->? tup3 string int bool)
+  |> Caqti_type.(string ->? t3 string int bool)
 ;;
 
 let get ?ctx table ~namespace =
@@ -75,7 +75,7 @@ let get_all_request table =
        FROM %s
     |sql}
     table
-  |> Caqti_type.(unit ->* tup3 string int bool)
+  |> Caqti_type.(unit ->* t3 string int bool)
 ;;
 
 let get_all ?ctx table =
@@ -125,7 +125,7 @@ module MariaDb : Sig = struct
           dirty = VALUES(dirty)
       |sql}
       table
-    |> Caqti_type.(tup3 string int bool ->. unit)
+    |> Caqti_type.(t3 string int bool ->. unit)
   ;;
 
   let upsert ?ctx table state =
@@ -174,7 +174,7 @@ module PostgreSql : Sig = struct
           dirty = EXCLUDED.dirty
       |sql}
       table
-    |> Caqti_type.(tup3 string int bool ->. unit)
+    |> Caqti_type.(t3 string int bool ->. unit)
   ;;
 
   let upsert ?ctx table state =

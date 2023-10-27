@@ -1,8 +1,8 @@
 open Alcotest_lwt
 
 module Make
-  (UserService : Sihl.Contract.User.Sig)
-  (PasswordResetService : Sihl.Contract.Password_reset.Sig) =
+    (UserService : Sihl.Contract.User.Sig)
+    (PasswordResetService : Sihl.Contract.Password_reset.Sig) =
 struct
   let reset_password_suceeds _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in

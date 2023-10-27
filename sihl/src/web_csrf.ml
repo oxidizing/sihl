@@ -212,8 +212,8 @@ let middleware
         multipart
         >>= List.assoc_opt input_name
         |> (function
-             | None -> Opium.Request.urlencoded input_name req
-             | tkn -> Lwt.return tkn)
+              | None -> Opium.Request.urlencoded input_name req
+              | tkn -> Lwt.return tkn)
         |> Lwt.map (CCOption.flat_map Encrypted_token.of_uri_safe_string)
       in
       let stored_encrypted_token =

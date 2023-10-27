@@ -75,19 +75,19 @@ let user =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          string
-         (tup2
+         (t2
             string
-            (tup2
+            (t2
                (option string)
-               (tup2
+               (t2
                   (option string)
-                  (tup2
+                  (t2
                      (option string)
-                     (tup2
+                     (t2
                         string
-                        (tup2 status (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
+                        (t2 status (t2 bool (t2 bool (t2 ptime ptime)))))))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =

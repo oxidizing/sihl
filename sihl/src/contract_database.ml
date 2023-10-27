@@ -13,8 +13,8 @@ module type Sig = sig
   type 'a prepared_search_request
 
   val prepare_requests : string -> string -> string -> string
-    (* Deprecated in 0.6.0 *)
-    [@@deprecated "Use prepare_search_request instead"]
+  (* Deprecated in 0.6.0 *)
+  [@@deprecated "Use prepare_search_request instead"]
 
   (** [prepare_search_request ~search_query ~count_query ~filter_fragment
       ?sort_by_field type]
@@ -59,8 +59,8 @@ module type Sig = sig
     -> 'c option
     -> 'a
     -> ('b list * int) Lwt.t
-    (* Deprecated in 0.6.0 *)
-    [@@deprecated "Use run_search_request instead"]
+  (* Deprecated in 0.6.0 *)
+  [@@deprecated "Use run_search_request instead"]
 
   (** [run_search_request ?ctx prepared_request sort filter ~limit ~offset] runs
       the [prepared_request] and returns a partial result of the whole stored
@@ -107,7 +107,7 @@ module type Sig = sig
   val fetch_pool
     :  ?ctx:(string * string) list
     -> unit
-    -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t
+    -> (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt_unix.Pool.t
 
   (** [add_pool ~pool_size name database_url] creates a connection pool with a
       unique [name]. Creation fails if a pool with the same name was already

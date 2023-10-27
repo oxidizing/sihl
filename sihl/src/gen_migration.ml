@@ -73,14 +73,14 @@ let type_of_gen_type_mariadb (t : Gen_core.gen_type) : string =
 let migration_schema_postgresql (schema : Gen_core.schema) =
   schema
   |> List.map (fun (name, type_) ->
-       Format.sprintf "%s %s" name (type_of_gen_type_postgresql type_))
+    Format.sprintf "%s %s" name (type_of_gen_type_postgresql type_))
   |> String.concat ",\n  "
 ;;
 
 let migration_schema_mariadb (schema : Gen_core.schema) =
   schema
   |> List.map (fun (name, type_) ->
-       Format.sprintf "%s %s" name (type_of_gen_type_mariadb type_))
+    Format.sprintf "%s %s" name (type_of_gen_type_mariadb type_))
   |> String.concat ",\n  "
 ;;
 

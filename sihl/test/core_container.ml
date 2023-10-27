@@ -124,7 +124,7 @@ let order_multi_type_name_dependencies () =
       expected_impl_name
       (actual
        |> List.map (fun lifecycle ->
-            lifecycle.Sihl.Container.implementation_name)))
+         lifecycle.Sihl.Container.implementation_name)))
 ;;
 
 let suite =

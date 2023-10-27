@@ -1,1 +1,6 @@
+(env
+ (dev
+  (flags
+   (:standard -w -70 -warn-error -70))))
+
 (data_only_dirs node_modules .devcontainer .git)

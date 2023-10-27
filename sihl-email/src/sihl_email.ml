@@ -68,6 +68,7 @@ type smtp_config =
   { sender : string
   ; username : string option
   ; password : string option
+  ; mechanism : string option
   ; hostname : string
   ; port : int option
   ; start_tls : bool
@@ -80,6 +81,7 @@ let smtp_config
   sender
   username
   password
+  mechanism
   hostname
   port
   start_tls
@@ -90,6 +92,7 @@ let smtp_config
   { sender
   ; username
   ; password
+  ; mechanism
   ; hostname
   ; port
   ; start_tls
@@ -107,6 +110,7 @@ let smtp_schema =
          https://github.com/oxidizing/conformist/issues/11, once exists *)
     ; optional (string "SMTP_USERNAME")
     ; optional (string "SMTP_PASSWORD")
+    ; optional (string "SMTP_MECHANISM")
     ; string "SMTP_HOST"
     ; optional (int ~default:587 "SMTP_PORT")
     ; bool "SMTP_START_TLS"
@@ -146,8 +150,24 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
     let with_starttls = config.start_tls in
     let ca_path = config.ca_path in
     let ca_cert = config.ca_cert in
+    let mechanism =
+      CCOption.bind
+        config.mechanism
+        CCFun.(
+          CCString.lowercase_ascii
+          %> function
+          | "login" -> Some Sendmail.LOGIN
+          | "plain" -> Some Sendmail.PLAIN
+          | _ -> None)
+    in
     let config =
-      Letters.Config.make ~username ~password ~hostname ~with_starttls
+      Letters.Config.create
+        ?mechanism
+        ~username
+        ~password
+        ~hostname
+        ~with_starttls
+        ()
       |> Letters.Config.set_port port
       |> fun conf ->
       match ca_cert, ca_path with
@@ -155,11 +175,12 @@ module MakeSmtp (Config : SmtpConfig) : Sihl.Contract.Email.Sig = struct
       | None, Some path -> Letters.Config.set_ca_path path conf
       | None, None -> conf
     in
-    Letters.build_email
+    Letters.create_email
       ~from:email.sender
       ~recipients
       ~subject:email.subject
       ~body
+      ()
     |> function
     | Ok message -> Letters.send ~config ~sender ~recipients ~message
     | Error msg -> raise (Sihl.Contract.Email.Exception msg)
@@ -259,7 +280,7 @@ module MakeSendGrid (Config : SendGridConfig) : Sihl.Contract.Email.Sig = struct
     "https://api.sendgrid.com/v3/mail/send" |> Uri.of_string
   ;;
 
-  let send' email =
+  let send' (email : Sihl.Contract.Email.t) =
     let open Sihl.Contract.Email in
     let%lwt config = Config.fetch () in
     let token = config.api_key in
@@ -339,8 +360,8 @@ module SendGrid = MakeSendGrid (EnvSendGridConfig)
 (* This is useful if you need to answer a request quickly while sending the
    email in the background *)
 module Queued
-  (QueueService : Sihl.Contract.Queue.Sig)
-  (Email : Sihl.Contract.Email.Sig) : Sihl.Contract.Email.Sig = struct
+    (QueueService : Sihl.Contract.Queue.Sig)
+    (Email : Sihl.Contract.Email.Sig) : Sihl.Contract.Email.Sig = struct
   include DevInbox
 
   module Job = struct
@@ -397,7 +418,7 @@ module Queued
       ~start
       ~stop
       ~dependencies:(fun () ->
-      [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
+        [ Email.lifecycle; Sihl.Database.lifecycle; QueueService.lifecycle ])
   ;;
 
   let register () = Sihl.Container.Service.create lifecycle

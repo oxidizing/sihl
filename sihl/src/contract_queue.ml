@@ -81,13 +81,13 @@ let default_error_handler ?(ctx = []) msg (instance : instance) =
   in
   Lwt.return
   @@ Logs.err (fun m ->
-       m
-         "%s Job with id '%s' and name '%s' failed for input '%s': %s"
-         ctx
-         instance.id
-         instance.name
-         instance.input
-         msg)
+    m
+      "%s Job with id '%s' and name '%s' failed for input '%s': %s"
+      ctx
+      instance.id
+      instance.name
+      instance.input
+      msg)
 ;;
 
 let create_job

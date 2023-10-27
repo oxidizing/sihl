@@ -220,10 +220,10 @@ let caqti_type (schema : Gen_core.schema) =
     | [ el1; el2 ] ->
       let el1 = Gen_core.caqti_type_of_gen_type el1 in
       let el2 = Gen_core.caqti_type_of_gen_type el2 in
-      Format.sprintf "(tup2 %s %s)" el1 el2
+      Format.sprintf "(t2 %s %s)" el1 el2
     | el1 :: rest ->
       let el1 = Gen_core.caqti_type_of_gen_type el1 in
-      Format.sprintf "(tup2 %s %s)" el1 (loop rest)
+      Format.sprintf "(t2 %s %s)" el1 (loop rest)
     | [] -> failwith "Empty schema provided"
   in
   let types =
@@ -238,10 +238,10 @@ let caqti_type_update (schema : Gen_core.schema) =
     | [ el1; el2 ] ->
       let el1 = Gen_core.caqti_type_of_gen_type el1 in
       let el2 = Gen_core.caqti_type_of_gen_type el2 in
-      Format.sprintf "(tup2 %s %s)" el1 el2
+      Format.sprintf "(t2 %s %s)" el1 el2
     | el1 :: rest ->
       let el1 = Gen_core.caqti_type_of_gen_type el1 in
-      Format.sprintf "(tup2 %s %s)" el1 (loop rest)
+      Format.sprintf "(t2 %s %s)" el1 (loop rest)
     | [] -> failwith "Empty schema provided"
   in
   let types = List.cons Gen_core.String (List.map snd schema) in

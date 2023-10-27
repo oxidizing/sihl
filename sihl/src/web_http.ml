@@ -17,12 +17,12 @@ let routers_to_opium_builders routers =
   let open Web in
   routers
   |> List.map (fun router ->
-       let routes = routes_of_router router in
-       routes
-       |> List.map (fun (meth, route, handler) ->
-            meth, Web.externalize_path route, handler)
-       |> List.map to_opium_builder
-       |> List.rev)
+    let routes = routes_of_router router in
+    routes
+    |> List.map (fun (meth, route, handler) ->
+      meth, Web.externalize_path route, handler)
+    |> List.map to_opium_builder
+    |> List.rev)
   |> List.concat
 ;;
 
@@ -87,13 +87,13 @@ let routes_cmd =
     ~name:"routes"
     ~description:"Prints all HTTP routes"
     (fun _ ->
-    !registered_router
-    |> Option.map Web.routes_of_router
-    |> Option.map
-       @@ List.map (fun (meth, route, handler) ->
+       !registered_router
+       |> Option.map Web.routes_of_router
+       |> Option.map
+          @@ List.map (fun (meth, route, handler) ->
             meth, Web.externalize_path route, handler)
-    |> Option.value ~default:[]
-    |> List.map (fun (meth, path, _) ->
+       |> Option.value ~default:[]
+       |> List.map (fun (meth, path, _) ->
          let meth =
            Web.(
              match meth with
@@ -107,10 +107,10 @@ let routes_cmd =
              | Any -> "ANY")
          in
          Format.sprintf "%s %s" meth path)
-    |> String.concat "\n"
-    |> print_endline
-    |> Option.some
-    |> Lwt.return)
+       |> String.concat "\n"
+       |> print_endline
+       |> Option.some
+       |> Lwt.return)
 ;;
 
 (* Lifecycle *)
