@@ -10,27 +10,25 @@ homepage: "https://github.com/oxidizing/sihl"
 doc: "https://oxidizing.github.io/sihl/"
 bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
-  "base-bigarray" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "cmdliner" {= "1.0.4"}
-  "dune" {= "3.0.3"}
+  "cmdliner" {= "1.2.0"}
+  "dune" {= "3.11.1"}
   "markup" {= "1.0.3"}
-  "ocaml" {= "4.12.1"}
-  "ocaml-base-compiler" {= "4.12.1"}
+  "ocaml" {= "4.14.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
-  "ocamlbuild" {= "0.14.1"}
-  "ocamlfind" {= "1.9.3"}
+  "ocamlbuild" {= "0.14.2"}
+  "ocamlfind" {= "1.9.6"}
   "ppx_derivers" {= "1.2.1"}
-  "ppxlib" {= "0.25.0"}
-  "re" {= "1.10.3"}
+  "ppxlib" {= "0.31.0"}
+  "re" {= "1.11.0"}
   "seq" {= "base"}
-  "sexplib0" {= "v0.14.0"}
+  "sexplib0" {= "v0.16.0"}
   "stdlib-shims" {= "0.3.0"}
-  "topkg" {= "1.0.5"}
-  "tyxml" {= "4.5.0"}
-  "tyxml-ppx" {= "4.5.0"}
-  "tyxml-syntax" {= "4.5.0"}
+  "topkg" {= "1.0.7"}
+  "tyxml" {= "4.6.0"}
+  "tyxml-ppx" {= "4.6.0"}
+  "tyxml-syntax" {= "4.6.0"}
   "uchar" {= "0.0.2"}
   "uutf" {= "1.0.3"}
 ]
@@ -50,7 +48,3 @@ build: [
 ]
 dev-repo: "git+https://github.com/oxidizing/sihl.git"
 name: "sihl-queue"
-pin-depends: [
-  "ocaml-base-compiler.4.12.1"
-  "https://github.com/ocaml/ocaml/archive/4.12.1.tar.gz"
-]

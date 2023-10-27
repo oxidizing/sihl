@@ -15,31 +15,34 @@
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
-  "settings": {
-    "terminal.integrated.profiles.linux": {
-      "zsh": {
-        "path": "/bin/zsh"
-      }
-    },
-    "terminal.integrated.defaultProfile.linux": "zsh",
-    "editor.formatOnSave": true,
-    "files.associations": {
-      "*.ml": "ocaml",
-      "*.mli": "ocaml"
-    },
-    "ocaml.sandbox": {
-      "kind": "global",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "editor.formatOnSave": true,
+        "files.associations": {
+          "*.ml": "ocaml",
+          "*.mli": "ocaml"
+        },
+        "ocaml.sandbox": {
+          "kind": "global"
+        }
+      },
+      // Add the IDs of extensions you want installed when the container is created in the array below.
+      "extensions": [
+        "donjayamanne.githistory",
+        "eamodio.gitlens",
+        "exiasr.hadolint",
+        "irongeek.vscode-env",
+        "ocamllabs.ocaml-platform",
+        "DavidAnson.vscode-markdownlint",
+        "ms-vscode.makefile-tools"
+      ]
     }
-  },
-  // Add the IDs of extensions you want installed when the container is created in the array below.
-  "extensions": [
-    // general useful extensions
-    "donjayamanne.githistory",
-    "eamodio.gitlens",
-    "editorconfig.editorconfig",
-    "exiasr.hadolint",
-    "ms-azuretools.vscode-docker",
-    // project extensions
-    "ocamllabs.ocaml-platform"
-  ]
+  }
 }

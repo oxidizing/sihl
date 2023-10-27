@@ -31,7 +31,7 @@
   (ocaml
    (>= 4.12.0))
   (conformist
-   (>= 0.6.0))
+   (>= 0.8.1))
   (dune-build-info
    (>= 2.8.4))
   (tsort
@@ -54,16 +54,14 @@
    (>= 0.11.1))
   (ssl
    (>= 0.5.9))
-  (uuidm
-   (>= 0.9.7))
   (lwt_ssl
    (>= 1.1.3))
   (lwt_ppx
    (>= 2.0.1))
   (caqti
-   (>= 1.8.0))
+   (>= 2.0.1))
   (caqti-lwt
-   (>= 1.3.0))
+   (>= 2.0.1))
   (safepass
    (>= 3.0))
   (jwto
@@ -88,13 +86,15 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))
 
 (package
@@ -116,13 +116,15 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))
 
 (package
@@ -139,13 +141,15 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))
 
 (package
@@ -163,13 +167,15 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))
 
 (package
@@ -187,13 +193,15 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))
 
 (package
@@ -214,13 +222,15 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))
 
 (package
@@ -240,11 +250,13 @@
    (and
     (>= 1.4.0)
     :with-test))
+  (mariadb
+   (>= 1.1.6))
   (caqti-driver-postgresql
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 1.8.0)
+    (>= 2.0.1)
     :with-test))))

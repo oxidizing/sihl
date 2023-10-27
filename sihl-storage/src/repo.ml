@@ -53,7 +53,7 @@ struct
       custom
         ~encode
         ~decode
-        Caqti_type.(tup2 string (tup2 string (tup2 int (tup2 string string)))))
+        Caqti_type.(t2 string (t2 string (t2 int (t2 string string)))))
   ;;
 
   let insert_request =
@@ -158,7 +158,7 @@ struct
         ?
       )
     |sql}
-    |> Caqti_type.(tup2 string string ->. unit)
+    |> Caqti_type.(t2 string string ->. unit)
   ;;
 
   let insert_blob ?ctx ~id blob =
@@ -173,7 +173,7 @@ struct
       WHERE
         storage_blobs.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 string string ->. unit)
+    |> Caqti_type.(t2 string string ->. unit)
   ;;
 
   let update_blob ?ctx ~id blob =

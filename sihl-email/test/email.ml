@@ -7,8 +7,8 @@ let template_testable =
 ;;
 
 module Make
-  (EmailService : Sihl.Contract.Email.Sig)
-  (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
+    (EmailService : Sihl.Contract.Email.Sig)
+    (EmailTemplateService : Sihl.Contract.Email_template.Sig) =
 struct
   let create_template _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in

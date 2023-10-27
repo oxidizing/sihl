@@ -5,8 +5,8 @@ let log_src =
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
 module Make
-  (UserService : Sihl.Contract.User.Sig)
-  (TokenService : Sihl.Contract.Token.Sig) =
+    (UserService : Sihl.Contract.User.Sig)
+    (TokenService : Sihl.Contract.Token.Sig) =
 struct
   let create_reset_token ?ctx email =
     let%lwt user = UserService.find_by_email_opt ?ctx email in
@@ -44,7 +44,7 @@ struct
       ~start
       ~stop
       ~dependencies:(fun () ->
-      [ TokenService.lifecycle; UserService.lifecycle ])
+        [ TokenService.lifecycle; UserService.lifecycle ])
   ;;
 
   let register () = Sihl.Container.Service.create lifecycle

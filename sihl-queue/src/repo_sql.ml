@@ -75,25 +75,25 @@ let job =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          string
-         (tup2
+         (t2
             string
-            (tup2
+            (t2
                string
-               (tup2
+               (t2
                   int
-                  (tup2
+                  (t2
                      ptime
-                     (tup2
+                     (t2
                         int
-                        (tup2
+                        (t2
                            status
-                           (tup2
+                           (t2
                               (option string)
-                              (tup2
+                              (t2
                                  (option ptime)
-                                 (tup2 (option string) (option ctx))))))))))))
+                                 (t2 (option string) (option ctx))))))))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
@@ -140,13 +140,13 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
   let populatable job_instances =
     job_instances
     |> List.map (fun j ->
-         Sihl.Contract.Queue.
-           { j with
-             id =
-               (match j.id |> Uuidm.of_string with
-                | Some uuid -> Uuidm.to_bytes uuid
-                | None -> failwith "Invalid uuid provided")
-           })
+      Sihl.Contract.Queue.
+        { j with
+          id =
+            (match j.id |> Uuidm.of_string with
+             | Some uuid -> Uuidm.to_bytes uuid
+             | None -> failwith "Invalid uuid provided")
+        })
   ;;
 
   let enqueue_all ?ctx job_instances =
@@ -419,7 +419,7 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
       Sihl.Database.Migration.create_step
         ~label:"add ctx column"
         {sql|
-      ALTER TABLE queue_jobs 
+      ALTER TABLE queue_jobs
        ADD COLUMN ctx TEXT NULL
       |sql}
     ;;
@@ -732,7 +732,7 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
       Sihl.Database.Migration.create_step
         ~label:"add ctx column"
         {sql|
-      ALTER TABLE queue_jobs 
+      ALTER TABLE queue_jobs
        ADD COLUMN ctx TEXT NULL
       |sql}
     ;;

@@ -69,10 +69,10 @@ let top_sort_lifecycles lifecycles =
     |> Map.to_seq
     |> List.of_seq
     |> List.map (fun (id, lifecycle) ->
-         let dependencies =
-           lifecycle.dependencies () |> List.map (fun dep -> dep.id)
-         in
-         id, dependencies)
+      let dependencies =
+        lifecycle.dependencies () |> List.map (fun dep -> dep.id)
+      in
+      id, dependencies)
   in
   Logs.debug (fun m ->
     m
@@ -84,21 +84,21 @@ let top_sort_lifecycles lifecycles =
       m "Pre sorted lifecycle graph: %s" ([%show: int list] sorted));
     sorted
     |> List.map (fun id ->
-         match Map.find_opt id lifecycles with
-         | Some l -> l
-         | None ->
-           Logs.err (fun m ->
-             m
-               "Failed to sort lifecycles. Lifecycce id %d not found in \
-                registered lifecycles: %a"
-               id
-               pp_map
-               lifecycles);
-           Logs.info (fun m ->
-             m
-               "It looks like a service or command is depending on a service \
-                that has not lifecycle registered.");
-           raise Exception)
+      match Map.find_opt id lifecycles with
+      | Some l -> l
+      | None ->
+        Logs.err (fun m ->
+          m
+            "Failed to sort lifecycles. Lifecycce id %d not found in \
+             registered lifecycles: %a"
+            id
+            pp_map
+            lifecycles);
+        Logs.info (fun m ->
+          m
+            "It looks like a service or command is depending on a service that \
+             has not lifecycle registered.");
+        raise Exception)
   | Tsort.ErrorCycle remaining_ids ->
     let remaining_names =
       List.map

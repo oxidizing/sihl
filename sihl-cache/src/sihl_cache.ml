@@ -1,7 +1,5 @@
 let log_src = Logs.Src.create ("sihl.service." ^ Sihl.Contract.Cache.name)
 
-module Logs = (val Logs.src_log log_src : Logs.LOG)
-
 module MakeSql (Repo : Repo_sql.Sig) : Sihl.Contract.Cache.Sig = struct
   let find = Repo.find
 

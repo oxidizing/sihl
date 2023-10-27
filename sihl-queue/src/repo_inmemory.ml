@@ -78,9 +78,9 @@ let search ?ctx:_ (sort : [ `Desc | `Asc ]) filter ~limit ~offset =
     |> CCList.take limit
     |> CCList.sort
          (fun
-           (j1 : Sihl.Contract.Queue.instance)
-           (j2 : Sihl.Contract.Queue.instance)
-         -> Option.compare String.compare j1.tag j2.tag)
+             (j1 : Sihl.Contract.Queue.instance)
+             (j2 : Sihl.Contract.Queue.instance)
+           -> Option.compare String.compare j1.tag j2.tag)
     |> fun l -> if sort == `Desc then l else List.rev l
   in
   Lwt.return @@ (filtered, List.length filtered)

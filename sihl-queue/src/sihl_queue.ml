@@ -206,7 +206,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         | (job_instance : instance) :: job_instances ->
           let job =
             List.find_opt
-              (fun job -> job.name |> String.equal job_instance.name)
+              (fun (job : job') -> job.name |> String.equal job_instance.name)
               jobs
           in
           (match job with
@@ -233,7 +233,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       if List.length jobs > 0
       then (
         let job_strings =
-          jobs |> List.map (fun job -> job.name) |> String.concat ", "
+          jobs |> List.map (fun (job : job') -> job.name) |> String.concat ", "
         in
         Logs.debug (fun m ->
           m "Run job queue with registered jobs: %s" job_strings);
@@ -259,9 +259,9 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
     else
       Lwt.return
       @@ Logs.info (fun m ->
-           m
-             "QUEUE_PROCESS is false, jobs can be dispatched but they won't be \
-              handled within this queue process")
+        m
+          "QUEUE_PROCESS is false, jobs can be dispatched but they won't be \
+           handled within this queue process")
   ;;
 
   let stop () =

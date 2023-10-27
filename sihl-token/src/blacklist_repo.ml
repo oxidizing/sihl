@@ -43,7 +43,7 @@ module MariaDb : Sig = struct
         $2
       )
     |sql}
-    |> Caqti_type.(tup2 string ptime ->. unit)
+    |> Caqti_type.(t2 string ptime ->. unit)
   ;;
 
   let insert ?ctx token =
@@ -60,7 +60,7 @@ module MariaDb : Sig = struct
       FROM token_blacklist
       WHERE token_blacklist.token_value = ?
     |sql}
-    |> Caqti_type.(string ->? tup2 string ptime)
+    |> Caqti_type.(string ->? t2 string ptime)
   ;;
 
   let find_opt ?ctx token = Sihl.Database.find_opt ?ctx find_request_opt token
@@ -134,7 +134,7 @@ module PostgreSql : Sig = struct
         $2 AT TIME ZONE 'UTC'
       )
     |sql}
-    |> Caqti_type.(tup2 string ptime ->. unit)
+    |> Caqti_type.(t2 string ptime ->. unit)
   ;;
 
   let insert ?ctx token =
@@ -151,7 +151,7 @@ module PostgreSql : Sig = struct
       FROM token_blacklist
       WHERE token_blacklist.token_value = ?
     |sql}
-    |> Caqti_type.(string ->? tup2 string ptime)
+    |> Caqti_type.(string ->? t2 string ptime)
   ;;
 
   let find_opt ?ctx token = Sihl.Database.find_opt ?ctx find_request_opt token

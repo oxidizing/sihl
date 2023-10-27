@@ -232,11 +232,11 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
       ~help:"<email> <password>"
       ~description:"Creates a user with admin privileges."
       (fun args ->
-      match args with
-      | [ email; password ] ->
-        let%lwt () = start () in
-        create_admin ~password email |> Lwt.map ignore |> Lwt.map Option.some
-      | _ -> Lwt.return None)
+         match args with
+         | [ email; password ] ->
+           let%lwt () = start () in
+           create_admin ~password email |> Lwt.map ignore |> Lwt.map Option.some
+         | _ -> Lwt.return None)
   ;;
 
   let lifecycle =

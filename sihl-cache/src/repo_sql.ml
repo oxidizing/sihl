@@ -34,7 +34,7 @@ let insert_request =
       ?
     )
   |sql}
-  |> Caqti_type.(tup2 string string ->. unit)
+  |> Caqti_type.(t2 string string ->. unit)
 ;;
 
 let insert ?ctx key_value = Sihl.Database.exec ?ctx insert_request key_value
@@ -46,7 +46,7 @@ let update_request =
       cache_value = $2
     WHERE cache_key = $1
   |sql}
-  |> Caqti_type.(tup2 string string ->. unit)
+  |> Caqti_type.(t2 string string ->. unit)
 ;;
 
 let update ?ctx key_value = Sihl.Database.exec ?ctx update_request key_value

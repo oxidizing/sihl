@@ -203,7 +203,7 @@ module type Sig = sig
     -> email:string
     -> username:string option
     -> t Lwt.t
-    [@@deprecated "Use update() instead"]
+  [@@deprecated "Use update() instead"]
 
   (** [set_password ?ctx ?policy user ~password ~password_confirmation]
       overrides the current password of a [user] and returns that user.
@@ -267,9 +267,9 @@ module type Sig = sig
     -> password:string
     -> password_confirmation:string
     -> ( t
-       , [ `Already_registered | `Invalid_password_provided of string ] )
-       Result.t
-       Lwt.t
+         , [ `Already_registered | `Invalid_password_provided of string ] )
+         Result.t
+         Lwt.t
 
   (** [login ?ctx email ~password] returns the user associated with [email] if
       [password] matches the current password. *)

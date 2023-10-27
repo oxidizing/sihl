@@ -81,7 +81,7 @@ struct
         m "Found duplicate migration '%s', ignoring it" label)
     | None ->
       registered_migrations
-        := Map.add label (snd migration) !registered_migrations
+      := Map.add label (snd migration) !registered_migrations
   ;;
 
   let register_migrations migrations = List.iter register_migration migrations
@@ -223,7 +223,7 @@ struct
     let migration_states_namespaces =
       migrations_states
       |> List.map (fun migration_state ->
-           migration_state.Database_migration_repo.Migration.namespace)
+        migration_state.Database_migration_repo.Migration.namespace)
     in
     let registered_migrations_namespaces =
       Map.to_seq migrations_to_check |> List.of_seq |> List.map fst
@@ -334,9 +334,9 @@ struct
       ~name:"migrate"
       ~description:"Runs all pending migrations."
       (fun _ ->
-      let%lwt () = Database.start () in
-      let%lwt () = start () in
-      run_all () |> Lwt.map Option.some)
+         let%lwt () = Database.start () in
+         let%lwt () = start () in
+         run_all () |> Lwt.map Option.some)
   ;;
 
   let lifecycle =

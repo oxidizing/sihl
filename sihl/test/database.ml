@@ -141,7 +141,7 @@ let transaction_does_not_exhaust_pool _ () =
 let choose_database_pool _ () =
   let default_pool = Sihl.Database.fetch_pool () in
   (* make sure there is no default database pool *)
-  let%lwt () = Caqti_lwt.Pool.drain default_pool in
+  let%lwt () = Caqti_lwt_unix.Pool.drain default_pool in
   let database_url =
     Option.value
       ~default:"not found"
@@ -164,7 +164,7 @@ let choose_database_pool _ () =
 
 let drop_database_pool _ () =
   let open Sihl.Database in
-  let%lwt () = fetch_pool () |> Caqti_lwt.Pool.drain in
+  let%lwt () = fetch_pool () |> Caqti_lwt_unix.Pool.drain in
   let database_url =
     Option.value
       ~default:"not found"

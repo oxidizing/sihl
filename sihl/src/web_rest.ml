@@ -20,7 +20,7 @@ module Form = struct
           errors
           |> List.find_opt (fun (field, _, _) -> String.equal field k)
           |> Option.map (fun (field, input, value) ->
-               field, CCList.head_opt input, Some value)
+            field, CCList.head_opt input, Some value)
           |> Option.value ~default:(k, CCList.head_opt v, None))
         urlencoded
     in

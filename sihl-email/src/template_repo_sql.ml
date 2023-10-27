@@ -41,13 +41,13 @@ let template =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          string
-         (tup2
+         (t2
             string
-            (tup2
+            (t2
                (option string)
-               (tup2 string (tup2 (option string) (tup2 ptime ptime)))))))
+               (t2 string (t2 (option string) (t2 ptime ptime)))))))
 ;;
 
 module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) : Sig =
@@ -55,8 +55,6 @@ struct
   let lifecycles = [ Sihl.Database.lifecycle; MigrationService.lifecycle ]
 
   module Sql = struct
-    module Model = Sihl.Contract.Email_template
-
     let get_request =
       let open Caqti_request.Infix in
       {sql|
@@ -123,7 +121,7 @@ struct
           ?ctx
           (get_by_label_request
              ~with_language:true
-             Caqti_type.(tup2 string string))
+             Caqti_type.(t2 string string))
           (label, language)
     ;;
 
@@ -289,8 +287,6 @@ struct
   let lifecycles = [ Sihl.Database.lifecycle; MigrationService.lifecycle ]
 
   module Sql = struct
-    module Model = Sihl.Contract.Email_template
-
     let get_request =
       let open Caqti_request.Infix in
       {sql|
@@ -345,7 +341,7 @@ struct
           ?ctx
           (get_by_label_request
              ~with_language:true
-             Caqti_type.(tup2 string string))
+             Caqti_type.(t2 string string))
           (label, language)
     ;;
 
