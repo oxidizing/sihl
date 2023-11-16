@@ -2,3 +2,4 @@
 /_opam/
 .merlin
 .devcontainer/data
+*.install

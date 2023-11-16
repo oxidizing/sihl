@@ -72,8 +72,10 @@
    (>= v0.13.0))
   (ppx_sexp_conv
    (>= v0.13.0))
-  (nocrypto
-   (>= 0.5.4-2))
+  (mirage-crypto
+    (>= 0.11.2))
+  (mirage-crypto-rng
+    (>= 0.11.2))
   (cstruct
    (>= 6.0.1))
   (opium

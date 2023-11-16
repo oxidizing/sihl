@@ -33,7 +33,6 @@ let set token req =
  *)
 
 module Crypto = struct
-  let () = Nocrypto_entropy_unix.initialize ()
   let block_size = 16
 
   (** [token_length] is the amount of bytes used in the unencrypted CSRF tokens. *)
@@ -52,7 +51,10 @@ module Crypto = struct
   end = struct
     type t = Cstruct.t
 
-    let make secret = secret |> Cstruct.of_string |> Nocrypto.Hash.SHA256.digest
+    let make secret =
+      secret |> Cstruct.of_string |> Mirage_crypto.Hash.SHA256.digest
+    ;;
+
     let to_raw = CCFun.id
   end
 
@@ -105,15 +107,15 @@ module Crypto = struct
     let to_struct = CCFun.id
 
     let from_struct ~with_secret value =
-      let open Nocrypto.Cipher_block.AES.ECB in
+      let open Mirage_crypto.Cipher_block.AES.ECB in
       let key = with_secret |> Secret.to_raw |> of_secret in
       encrypt ~key value
     ;;
 
     let from_struct_random ~with_secret value =
-      let open Nocrypto.Cipher_block.AES.CBC in
+      let open Mirage_crypto.Cipher_block.AES.CBC in
       let key = with_secret |> Secret.to_raw |> of_secret in
-      let iv = Nocrypto.Rng.generate block_size in
+      let iv = Mirage_crypto_rng.generate block_size in
       Cstruct.append iv @@ encrypt ~key ~iv value
     ;;
   end
@@ -157,13 +159,13 @@ module Crypto = struct
     let equal_struct = equal
 
     let from_encrypted ~with_secret value =
-      let open Nocrypto.Cipher_block.AES.ECB in
+      let open Mirage_crypto.Cipher_block.AES.ECB in
       let key = with_secret |> Secret.to_raw |> of_secret in
       decrypt ~key (Encrypted_token.to_struct value)
     ;;
 
     let from_encrypted_random ~with_secret value =
-      let open Nocrypto.Cipher_block.AES.CBC in
+      let open Mirage_crypto.Cipher_block.AES.CBC in
       let key = with_secret |> Secret.to_raw |> of_secret in
       let iv, value =
         value
@@ -229,7 +231,7 @@ let middleware
               ~with_secret:block_secret
               tkn )
         | None ->
-          let value = Nocrypto.Rng.generate token_length in
+          let value = Mirage_crypto_rng.generate token_length in
           ( Encrypted_token.from_struct ~with_secret:block_secret value
           , Encrypted_token.from_struct_random ~with_secret:block_secret value )
       in
