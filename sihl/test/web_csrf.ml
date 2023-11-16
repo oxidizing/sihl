@@ -4,7 +4,7 @@ open Sihl.Web
 let can_parse_uri_safe _ () =
   let open Csrf.Crypto in
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
-  let value = Nocrypto.Rng.generate token_length in
+  let value = Mirage_crypto_rng.generate token_length in
   let enc = Encrypted_token.from_struct ~with_secret value in
   let parsed =
     enc
@@ -21,7 +21,7 @@ let can_parse_uri_safe _ () =
 let crypto_undo_helper encrypt decrypt =
   let open Csrf.Crypto in
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
-  let value = Nocrypto.Rng.generate token_length in
+  let value = Mirage_crypto_rng.generate token_length in
   let dec = encrypt ~with_secret value |> decrypt ~with_secret in
   let open Alcotest in
   check bool "Same decrypted CSRF tokens" true
@@ -45,7 +45,7 @@ let csrf_simulation _ () =
   let open Csrf.Crypto in
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
   (* GET request generates value *)
-  let value = Nocrypto.Rng.generate token_length in
+  let value = Mirage_crypto_rng.generate token_length in
   (* Encrypt value for cookie token *)
   let enc = Encrypted_token.from_struct ~with_secret value in
   (* Encrypt value with randomness for body token (take already encrypted cookie
@@ -331,7 +331,7 @@ let post_request_with_nonmatching_token_fails _ () =
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
   (* Generate a random encrypted token *)
   let tkn =
-    Nocrypto.Rng.generate token_length
+    Mirage_crypto_rng.generate token_length
     |> Encrypted_token.from_struct_random ~with_secret
     |> Encrypted_token.to_uri_safe_string
   in
@@ -361,7 +361,7 @@ let post_request_with_nonmatching_cookie_fails _ () =
   (* Generate a random encrypted token *)
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
   let tkn =
-    Nocrypto.Rng.generate token_length
+    Mirage_crypto_rng.generate token_length
     |> Encrypted_token.from_struct ~with_secret
     |> Encrypted_token.to_uri_safe_string
   in
