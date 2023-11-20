@@ -33,6 +33,7 @@ let set token req =
  *)
 
 module Crypto = struct
+  let () = Mirage_crypto_rng_unix.initialize (module Mirage_crypto_rng.Fortuna)
   let block_size = 16
 
   (** [token_length] is the amount of bytes used in the unencrypted CSRF tokens. *)
