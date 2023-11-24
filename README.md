@@ -91,7 +91,7 @@ Yes, because all other frameworks have not been invented here!
 On a more serious note, originally we wanted to collect a set of services, libraries, best practices and architecture to quickly and sustainably spin-off our own tools and products. 
 An evaluation of languages and tools lead us to build the 5th iteration of what became Sihl with OCaml. We believe OCaml is a phenomenal place to build web apps.
 
-Thanks to OCaml Sihl is ...
+Thanks to OCaml, Sihl ...
 
 * ... runs fast 
 * ... compiles fast 
@@ -116,7 +116,7 @@ Check out the [Contributing guidelines](/oxidizing/sihl/blob/master/docs/CONTRIB
 
 ## License
 
-Copyright (c) 2020 [Oxidizing Systems](https://oxidizing.io/)
+Copyright (c) 2020 Oxidizing Systems
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
