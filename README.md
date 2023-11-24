@@ -112,7 +112,7 @@ Our main goal is to stabilize the service APIs, so updating Sihl in the future b
 
 ## Contributing
 
-Check out the [Contributing guidelines](/oxidizing/sihl/blob/master/docs/CONTRIBUTING.md).
+Check out the [Contributing guidelines](/CONTRIBUTING.md).
 
 ## License
 
