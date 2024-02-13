@@ -133,6 +133,9 @@ module type Sig = sig
   (** [dispatch ?ctx ?delay input job] queues [job] for later processing and
       returns [unit Lwt.t] once the job has been queued.
 
+      An optional [callback] function that will be called after the job has been
+      enqueued.
+
       An optional [delay] determines the amount of time from now (when dispatch
       is called) up until the job can be run. If no delay is specified, the job
       is processed as soon as possible.
@@ -140,7 +143,8 @@ module type Sig = sig
       [input] is the input of the [handle] function which is used for job
       processing. *)
   val dispatch
-    :  ?ctx:(string * string) list
+    :  ?callback:(instance -> unit Lwt.t)
+    -> ?ctx:(string * string) list
     -> ?delay:Ptime.span
     -> 'a
     -> 'a job
@@ -154,6 +158,9 @@ module type Sig = sig
       If the queue backend supports transactions, [dispatch_all] guarantees that
       either none or all jobs are queued.
 
+      An optional [callback] function that will be called after the jobs have been
+      enqueued.
+
       An optional [delay] determines the amount of time from now (when dispatch
       is called) up until the jobs can be run. If no delay is specified, the
       jobs are processed as soon as possible.
@@ -161,7 +168,8 @@ module type Sig = sig
       [inputs] is the input of the [handle] function. It is a list of ['a], one
       for each ['a job] instance. *)
   val dispatch_all
-    :  ?ctx:(string * string) list
+    :  ?callback:(instance -> unit Lwt.t)
+    -> ?ctx:(string * string) list
     -> ?delay:Ptime.span
     -> 'a list
     -> 'a job

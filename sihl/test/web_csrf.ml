@@ -245,7 +245,7 @@ let post_request_both_invalid_tokens_fails _ () =
     [ CCFun.id; Sihl.Test.Session.set_value_req [ csrf_name, "garbage" ] ]
   in
   (* Cartesian product 4 requests, invalid/empty cookie and request *)
-  let reqs = CCList.product CCFun.( @@ ) add_cookie requests in
+  let reqs = CCList.product ( @@ ) add_cookie requests in
   let allowed = ref 0 in
   let handler _ =
     allowed := !allowed + 1;

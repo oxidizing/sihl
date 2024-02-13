@@ -66,7 +66,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
   let registered_jobs : job' list ref = ref []
   let stop_schedule : (unit -> unit) option ref = ref None
 
-  let dispatch ?ctx ?delay input (job : 'a job) =
+  let dispatch ?callback ?ctx ?delay input (job : 'a job) =
     let open Sihl.Contract.Queue in
     let config = Sihl.Configuration.read schema in
     let force_async = config.force_async in
@@ -76,7 +76,10 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       Logs.debug (fun m -> m "Dispatching job %s" name);
       let now = Ptime_clock.now () in
       let job_instance = create_instance ?ctx input delay now job in
-      Repo.enqueue ?ctx job_instance)
+      let%lwt () = Repo.enqueue ?ctx job_instance in
+      match callback with
+      | None -> Lwt.return ()
+      | Some callback -> callback job_instance)
     else (
       Logs.info (fun m -> m "Skipping queue in development environment");
       match%lwt job.handle ?ctx input with
@@ -86,7 +89,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
         Lwt.return ())
   ;;
 
-  let dispatch_all ?ctx ?delay inputs job =
+  let dispatch_all ?callback ?ctx ?delay inputs job =
     let config = Sihl.Configuration.read schema in
     let force_async = config.force_async in
     if Sihl.Configuration.is_production () || force_async
@@ -97,7 +100,10 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       let job_instances =
         List.map (fun input -> create_instance ?ctx input delay now job) inputs
       in
-      Repo.enqueue_all ?ctx job_instances)
+      let%lwt () = Repo.enqueue_all ?ctx job_instances in
+      match callback with
+      | None -> Lwt.return ()
+      | Some callback -> Lwt_list.iter_s callback job_instances)
     else (
       Logs.info (fun m -> m "Skipping queue in development environment");
       let rec loop inputs =
