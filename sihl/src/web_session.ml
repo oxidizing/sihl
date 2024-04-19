@@ -63,6 +63,11 @@ let get_all
 let set
   ?(cookie_key = "_session")
   ?(secret = Core_configuration.read_secret ())
+  ?(expires = `Session)
+  ?(scope = Uri.of_string "/")
+  ?(same_site = `Lax)
+  ?(secure = false)
+  ?(http_only = false)
   session
   resp
   =
@@ -71,7 +76,11 @@ let set
   let cookie_value = Session.to_json session in
   let cookie = cookie_key, cookie_value in
   Opium.Response.add_cookie_or_replace
-    ~scope:(Uri.of_string "/")
+    ~expires:expires
+    ~scope:scope
+    ~same_site:same_site
+    ~secure:secure
+    ~http_only:http_only
     ~sign_with:signed_with
     cookie
     resp
