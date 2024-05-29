@@ -5,7 +5,7 @@ let log_src = Logs.Src.create ("sihl.service." ^ Contract_migration.name)
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Map = Map.Make (String)
 
-let registered_migrations : Contract_migration.steps Map.t ref = ref Map.empty
+let registered_migrations = ref []
 
 module Make (Repo : Database_migration_repo.Sig) : Contract_migration.Sig =
 struct
@@ -74,14 +74,12 @@ struct
 
   let register_migration migration =
     let label, _ = migration in
-    let found = Map.find_opt label !registered_migrations in
+    let found = List.assoc_opt label !registered_migrations in
     match found with
     | Some _ ->
       Logs.debug (fun m ->
         m "Found duplicate migration '%s', ignoring it" label)
-    | None ->
-      registered_migrations
-      := Map.add label (snd migration) !registered_migrations
+    | None -> registered_migrations := !registered_migrations @ [ migration ]
   ;;
 
   let register_migrations migrations = List.iter register_migration migrations
@@ -208,15 +206,12 @@ struct
     run migrations
   ;;
 
-  let run_all ?ctx () =
-    let steps = !registered_migrations |> Map.to_seq |> List.of_seq in
-    execute ?ctx steps
-  ;;
+  let run_all ?ctx () = execute ?ctx !registered_migrations
 
   let migrations_status ?ctx ?migrations () =
     let migrations_to_check =
       match migrations with
-      | Some migrations -> migrations |> List.to_seq |> Map.of_seq
+      | Some migrations -> migrations
       | None -> !registered_migrations
     in
     let%lwt migrations_states = Repo.get_all ?ctx (table ()) in
@@ -226,7 +221,7 @@ struct
         migration_state.Database_migration_repo.Migration.namespace)
     in
     let registered_migrations_namespaces =
-      Map.to_seq migrations_to_check |> List.of_seq |> List.map fst
+      migrations_to_check |> List.map fst
     in
     let namespaces_to_check =
       List.concat
@@ -236,7 +231,7 @@ struct
     Lwt.return
     @@ List.map
          (fun namespace ->
-           let migrations = Map.find_opt namespace migrations_to_check in
+           let migrations = List.assoc_opt namespace migrations_to_check in
            let migration_state =
              List.find_opt
                (fun migration_state ->
