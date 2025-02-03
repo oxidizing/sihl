@@ -10,7 +10,7 @@ type t =
 
 let create {{create_args}} =
   let now = Ptime_clock.now () in
-  let id = Uuidm.v `V4 |> Uuidm.to_string in
+  let id = Sihl.Random.Uuid.create () in
   { id; {{created_value}} created_at = now; updated_at = now }
 ;;
 

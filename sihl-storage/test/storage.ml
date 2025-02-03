@@ -11,7 +11,7 @@ let alco_file = Alcotest.testable Sihl_storage.pp_file file_equal
 module Make (StorageService : Sihl.Contract.Storage.Sig) = struct
   let fetch_uploaded_file _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
-    let file_id = Uuidm.v `V4 |> Uuidm.to_string in
+    let file_id = Sihl.Random.Uuid.create () in
     let file =
       Sihl.Contract.Storage.
         { id = file_id
@@ -31,7 +31,7 @@ module Make (StorageService : Sihl.Contract.Storage.Sig) = struct
 
   let update_uploaded_file _ () =
     let%lwt () = Sihl.Cleaner.clean_all () in
-    let file_id = Uuidm.v `V4 |> Uuidm.to_string in
+    let file_id = Sihl.Random.Uuid.create () in
     let file =
       Sihl.Contract.Storage.
         { id = file_id

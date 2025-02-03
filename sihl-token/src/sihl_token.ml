@@ -37,7 +37,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Token.Sig = struct
 
   let create ?ctx ?secret:_ ?expires_in data =
     let open Repo.Model in
-    let id = Uuidm.v `V4 |> Uuidm.to_string in
+    let id = Sihl.Random.Uuid.create () in
     let length =
       Option.value ~default:30 (Sihl.Configuration.read schema).token_length
     in

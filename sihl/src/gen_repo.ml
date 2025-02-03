@@ -334,9 +334,9 @@ let filter_fragment (schema : Gen_core.schema) =
 ;;
 
 let file
-  (database : Gen_core.database)
-  (name : string)
-  (schema : Gen_core.schema)
+      (database : Gen_core.database)
+      (name : string)
+      (schema : Gen_core.schema)
   =
   let open Gen_core in
   let params =

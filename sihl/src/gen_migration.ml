@@ -85,9 +85,9 @@ let migration_schema_mariadb (schema : Gen_core.schema) =
 ;;
 
 let write_migration_file
-  (database : Gen_core.database)
-  (name : string)
-  (schema : Gen_core.schema)
+      (database : Gen_core.database)
+      (name : string)
+      (schema : Gen_core.schema)
   =
   let open Gen_core in
   let file =

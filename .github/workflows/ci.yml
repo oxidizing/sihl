@@ -29,21 +29,35 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - 4.12.x
+          - 4.14
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Retrieve opam cache
+        uses: actions/cache@v4
+        if: runner.os != 'Windows'
+        id: cache-opam
+        with:
+          path: ~/.opam
+          key: v1-${{ runner.os }}-opam-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam.locked') }}
+
       - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          dune-cache: true
 
       - name: Install system dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
 
       - name: Install dependencies
         run: make deps
+
+      - name: Recover from an Opam broken state
+        if: steps.cache-opam.outputs.cache-hit == 'true'
+        run: |
+          opam install -y dune
+          opam upgrade --fixup
 
       - name: Build
         run: make build

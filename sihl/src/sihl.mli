@@ -71,7 +71,8 @@ module Configuration : sig
       like SMTP_HOST and a value. *)
   type data = (string * string) list
 
-  (** The configuration contains configuration data and a configuration schema. *)
+  (** The configuration contains configuration data and a configuration schema.
+  *)
   type config = Core_configuration.config =
     { name : string
     ; description : string
@@ -136,14 +137,16 @@ module Configuration : sig
       [None] is returned.
 
       If you just want to access configuration values, use the read functions
-      instead. Every time you call [read_env_file] the file is read from disk. *)
+      instead. Every time you call [read_env_file] the file is read from disk.
+  *)
   val read_env_file : unit -> data option
 
   (** [load_env_file ()] reads an [.env] file using {!read_env_file} and stores
       its contents into the environment variables. *)
   val load_env_file : unit -> unit
 
-  (** [load ()] calls {!load_env_file} and makes sure that [SIHL_ENV] was set. *)
+  (** [load ()] calls {!load_env_file} and makes sure that [SIHL_ENV] was set.
+  *)
   val load : unit -> unit
 
   (** [read schema] returns the decoded, statically typed version of
@@ -376,7 +379,8 @@ module Web : sig
       ]
 
     (** A [query] describes the search terms of an [`Index] action and it
-        represents a partial view on a collection that is sorted and filtered. *)
+        represents a partial view on a collection that is sorted and filtered.
+    *)
     type query = Web_rest.Query.t =
       { filter : string option
       ; limit : int option
@@ -917,7 +921,8 @@ module Web : sig
 
         The flash data is stored in a separate flash cookie. The usual
         limitations apply such as a maximum of 4KB. Note that the cookie is not
-        signed, don't put any data into the flash cookie that you have to trust. *)
+        signed, don't put any data into the flash cookie that you have to trust.
+    *)
     val flash : ?cookie_key:string -> unit -> Rock.Middleware.t
 
     (** [id ()] returns a middleware that reads the [X-Request-ID] headers and
@@ -1088,6 +1093,14 @@ module Random : sig
       cases you want to use {!base64} to get a string that can be used safely in
       most web contexts.*)
   val bytes : int -> string
+
+  module Uuid : sig
+    type t
+
+    val create : unit -> string
+    val of_string : ?pos:int -> string -> t option
+    val to_binary_string : t -> string
+  end
 end
 
 (** This module contains various test utilities and can be used to test more

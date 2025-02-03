@@ -14,10 +14,10 @@ let commands (service : t) = service.commands
 let configuration service = service.configuration
 
 let create
-  ?(commands = [])
-  ?(configuration = Core_configuration.empty)
-  ?(server = false)
-  lifecycle
+      ?(commands = [])
+      ?(configuration = Core_configuration.empty)
+      ?(server = false)
+      lifecycle
   =
   { lifecycle; configuration; commands; server }
 ;;
@@ -35,9 +35,9 @@ let start_services services =
   let%lwt () =
     Lwt_list.iter_s
       (fun (lifecycle : Core_lifecycle.lifecycle) ->
-        Logs.debug (fun m ->
-          m "Starting service: %s" @@ Core_lifecycle.human_name lifecycle);
-        lifecycle.start ())
+         Logs.debug (fun m ->
+           m "Starting service: %s" @@ Core_lifecycle.human_name lifecycle);
+         lifecycle.start ())
       lifecycles
   in
   Logs.info (fun m -> m "All services started.");
@@ -51,9 +51,9 @@ let stop_services services =
   let%lwt () =
     Lwt_list.iter_s
       (fun (lifecycle : Core_lifecycle.lifecycle) ->
-        Logs.debug (fun m ->
-          m "Stopping service: %s" @@ Core_lifecycle.human_name lifecycle);
-        lifecycle.stop ())
+         Logs.debug (fun m ->
+           m "Stopping service: %s" @@ Core_lifecycle.human_name lifecycle);
+         lifecycle.stop ())
       lifecycles
   in
   Logs.info (fun m -> m "Stopped, Good Bye!");

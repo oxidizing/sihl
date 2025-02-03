@@ -9,19 +9,19 @@ module Form = struct
   [@@deriving yojson, show, eq]
 
   let set
-    ?(key = "_form")
-    (errors : Conformist.error list)
-    (urlencoded : (string * string list) list)
-    resp
+        ?(key = "_form")
+        (errors : Conformist.error list)
+        (urlencoded : (string * string list) list)
+        resp
     =
     let t =
       List.map
         (fun (k, v) ->
-          errors
-          |> List.find_opt (fun (field, _, _) -> String.equal field k)
-          |> Option.map (fun (field, input, value) ->
-            field, CCList.head_opt input, Some value)
-          |> Option.value ~default:(k, CCList.head_opt v, None))
+           errors
+           |> List.find_opt (fun (field, _, _) -> String.equal field k)
+           |> Option.map (fun (field, input, value) ->
+             field, CCList.head_opt input, Some value)
+           |> Option.value ~default:(k, CCList.head_opt v, None))
         urlencoded
     in
     let json = t |> to_yojson |> Yojson.Safe.to_string in
@@ -126,23 +126,21 @@ module Query = struct
   let to_query_string (query : t) : string =
     Uri.empty
     |> (fun uri ->
-         match query.filter with
-         | Some filter -> Uri.add_query_param uri ("filter", [ filter ])
-         | None -> uri)
+    match query.filter with
+    | Some filter -> Uri.add_query_param uri ("filter", [ filter ])
+    | None -> uri)
     |> (fun uri ->
-         match query.limit with
-         | Some limit ->
-           Uri.add_query_param uri ("limit", [ string_of_int limit ])
-         | None -> uri)
+    match query.limit with
+    | Some limit -> Uri.add_query_param uri ("limit", [ string_of_int limit ])
+    | None -> uri)
     |> (fun uri ->
-         match query.offset with
-         | Some offset ->
-           Uri.add_query_param uri ("offset", [ string_of_int offset ])
-         | None -> uri)
+    match query.offset with
+    | Some offset -> Uri.add_query_param uri ("offset", [ string_of_int offset ])
+    | None -> uri)
     |> (fun uri ->
-         match query.sort with
-         | Some sort -> Uri.add_query_param uri ("sort", [ string_of_sort sort ])
-         | None -> uri)
+    match query.sort with
+    | Some sort -> Uri.add_query_param uri ("sort", [ string_of_sort sort ])
+    | None -> uri)
     |> Uri.to_string
   ;;
 
@@ -397,11 +395,11 @@ type action =
   ]
 
 let router_of_action
-  (type a)
-  (module Controller : CONTROLLER with type t = a)
-  name
-  schema
-  (action : action)
+      (type a)
+      (module Controller : CONTROLLER with type t = a)
+      name
+      schema
+      (action : action)
   =
   match action with
   | `Index -> Web.get (Format.sprintf "/%s" name) (Controller.index name)
@@ -417,21 +415,21 @@ let router_of_action
 ;;
 
 let routers_of_actions
-  (type a)
-  name
-  schema
-  (module Controller : CONTROLLER with type t = a)
-  (actions : action list)
+      (type a)
+      name
+      schema
+      (module Controller : CONTROLLER with type t = a)
+      (actions : action list)
   =
   List.map (router_of_action (module Controller) name schema) actions
 ;;
 
 let resource_of_controller
-  (type a)
-  ?only
-  name
-  schema
-  (module Controller : CONTROLLER with type t = a)
+      (type a)
+      ?only
+      name
+      schema
+      (module Controller : CONTROLLER with type t = a)
   =
   match only with
   | None ->
@@ -444,12 +442,12 @@ let resource_of_controller
 ;;
 
 let resource_of_service
-  (type a)
-  ?only
-  name
-  schema
-  ~view:(module View : VIEW with type t = a)
-  (module Service : SERVICE with type t = a)
+      (type a)
+      ?only
+      name
+      schema
+      ~view:(module View : VIEW with type t = a)
+      (module Service : SERVICE with type t = a)
   =
   let module Controller = MakeController (Service) (View) in
   resource_of_controller ?only name schema (module Controller)

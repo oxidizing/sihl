@@ -10,7 +10,7 @@ let create_instance input delay now (job : 'a Sihl_queue.job) =
     | None -> now
   in
   let max_tries = job.max_tries in
-  { id = Uuidm.v `V4 |> Uuidm.to_string
+  { id = Sihl.Random.Uuid.create ()
   ; name
   ; input
   ; tries = 0
@@ -25,8 +25,8 @@ let create_instance input delay now (job : 'a Sihl_queue.job) =
 ;;
 
 let update_next_run_at
-  (retry_delay : Ptime.Span.t)
-  (job_instance : Sihl_queue.instance)
+      (retry_delay : Ptime.Span.t)
+      (job_instance : Sihl_queue.instance)
   =
   let open Sihl_queue in
   let next_run_at =
@@ -146,11 +146,11 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
         (fun ?(ctx = []) _ ->
-          (match ctx with
-           | [ ("pool", "test") ] -> ()
-           | [] -> failwith "an empty ctx was provided, expected non-emtpy ctx"
-           | _ -> failwith "ctx is not passed to job correctly");
-          Lwt_result.return (has_ran_job := true))
+           (match ctx with
+            | [ ("pool", "test") ] -> ()
+            | [] -> failwith "an empty ctx was provided, expected non-emtpy ctx"
+            | _ -> failwith "ctx is not passed to job correctly");
+           Lwt_result.return (has_ran_job := true))
         (fun () -> "")
         (fun _ -> Ok ())
         "foo"
@@ -174,8 +174,8 @@ module Make (QueueService : Sihl.Contract.Queue.Sig) = struct
         ~max_tries:3
         ~retry_delay:(Sihl.Time.Span.minutes 1)
         (fun ?ctx:_ input ->
-          Lwt_result.return
-            (processed_inputs := List.cons input !processed_inputs))
+           Lwt_result.return
+             (processed_inputs := List.cons input !processed_inputs))
         (fun str -> str)
         (fun str -> Ok str)
         "foo"

@@ -34,11 +34,11 @@ let prepare_requests _ _ _ = failwith "prepare_requests deprecated"
 let default_format_filter keyword = "%" ^ keyword ^ "%"
 
 let prepare_search_request
-  ~search_query
-  ~filter_fragment
-  ?(sort_by_field = "id")
-  ?(format_filter = default_format_filter)
-  output_type
+      ~search_query
+      ~filter_fragment
+      ?(sort_by_field = "id")
+      ?(format_filter = default_format_filter)
+      output_type
   : 'a prepared_search_request
   =
   let open Caqti_request.Infix in
@@ -167,9 +167,10 @@ let fetch_pool ?(ctx = []) () =
     Logs.debug (fun m -> m "Skipping pool creation, re-using existing pool");
     pool
   | None, None ->
-    if Option.value
-         (Core_configuration.read schema).skip_default_pool_creation
-         ~default:false
+    if
+      Option.value
+        (Core_configuration.read schema).skip_default_pool_creation
+        ~default:false
     then
       Logs.warn (fun m ->
         m
@@ -237,42 +238,45 @@ let transaction ?ctx f =
   let%lwt result =
     Caqti_lwt_unix.Pool.use
       (fun connection ->
-        Logs.debug (fun m -> m "Fetched connection from pool");
-        let (module Connection : Caqti_lwt.CONNECTION) = connection in
-        let%lwt start_result = Connection.start () in
-        match start_result with
-        | Error msg ->
-          Logs.debug (fun m ->
-            m "Failed to start transaction: %s" (Caqti_error.show msg));
-          Lwt.return @@ Error msg
-        | Ok () ->
-          Logs.debug (fun m -> m "Started transaction");
-          Lwt.catch
-            (fun () ->
-              let%lwt result = f connection in
-              let%lwt commit_result = Connection.commit () in
-              match commit_result with
-              | Ok () ->
-                Logs.debug (fun m -> m "Successfully committed transaction");
-                Lwt.return @@ Ok result
-              | Error error ->
-                Logs.err (fun m ->
-                  m "Failed to commit transaction: %s" (Caqti_error.show error));
-                Lwt.fail
-                @@ Contract_database.Exception "Failed to commit transaction")
-            (fun e ->
-              let%lwt rollback_result = Connection.rollback () in
-              match rollback_result with
-              | Ok () ->
-                Logs.debug (fun m -> m "Successfully rolled back transaction");
-                Lwt.fail e
-              | Error error ->
-                Logs.err (fun m ->
-                  m
-                    "Failed to rollback transaction: %s"
-                    (Caqti_error.show error));
-                Lwt.fail
-                @@ Contract_database.Exception "Failed to rollback transaction"))
+         Logs.debug (fun m -> m "Fetched connection from pool");
+         let (module Connection : Caqti_lwt.CONNECTION) = connection in
+         let%lwt start_result = Connection.start () in
+         match start_result with
+         | Error msg ->
+           Logs.debug (fun m ->
+             m "Failed to start transaction: %s" (Caqti_error.show msg));
+           Lwt.return @@ Error msg
+         | Ok () ->
+           Logs.debug (fun m -> m "Started transaction");
+           Lwt.catch
+             (fun () ->
+                let%lwt result = f connection in
+                let%lwt commit_result = Connection.commit () in
+                match commit_result with
+                | Ok () ->
+                  Logs.debug (fun m -> m "Successfully committed transaction");
+                  Lwt.return @@ Ok result
+                | Error error ->
+                  Logs.err (fun m ->
+                    m
+                      "Failed to commit transaction: %s"
+                      (Caqti_error.show error));
+                  Lwt.fail
+                  @@ Contract_database.Exception "Failed to commit transaction")
+             (fun e ->
+                let%lwt rollback_result = Connection.rollback () in
+                match rollback_result with
+                | Ok () ->
+                  Logs.debug (fun m -> m "Successfully rolled back transaction");
+                  Lwt.fail e
+                | Error error ->
+                  Logs.err (fun m ->
+                    m
+                      "Failed to rollback transaction: %s"
+                      (Caqti_error.show error));
+                  Lwt.fail
+                  @@ Contract_database.Exception
+                       "Failed to rollback transaction"))
       pool
   in
   match result with
@@ -286,12 +290,12 @@ let transaction ?ctx f =
 let transaction' ?ctx f = transaction ?ctx f |> Lwt.map raise_error
 
 let run_search_request
-  ?ctx
-  (r : 'a prepared_search_request)
-  (sort : [ `Asc | `Desc ])
-  (filter : string option)
-  ~(limit : int)
-  ~(offset : int)
+      ?ctx
+      (r : 'a prepared_search_request)
+      (sort : [ `Asc | `Desc ])
+      (filter : string option)
+      ~(limit : int)
+      ~(offset : int)
   =
   transaction' ?ctx (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -312,7 +316,7 @@ let run_search_request
     let total =
       Result.map
         (fun e ->
-          e |> List.map fst |> CCList.head_opt |> Option.value ~default:0)
+           e |> List.map fst |> CCList.head_opt |> Option.value ~default:0)
         result
     in
     CCResult.both things total |> Lwt.return)

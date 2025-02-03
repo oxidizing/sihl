@@ -1,5 +1,4 @@
 FROM node:lts AS node
-FROM hadolint/hadolint:latest-alpine AS hadolint
 FROM ocaml/opam:debian-10-ocaml-4.14
 
 USER root
@@ -15,7 +14,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
 
 # copy hadolint
-COPY --from=hadolint /bin/hadolint /bin/hadolint
+COPY --from=hadolint/hadolint:latest-alpine /bin/hadolint /bin/hadolint
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND noninteractive
@@ -50,6 +49,9 @@ RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
 RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
   && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
+
+# link opam version
+RUN ln -fs /usr/bin/opam-2.2 /usr/bin/opam
 
 USER opam
 

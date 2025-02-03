@@ -42,12 +42,12 @@ let schedule schedule =
       Lwt.catch
         (fun () -> scheduled_function ())
         (fun exn ->
-          Logs.err (fun m ->
-            m
-              "Exception caught while running schedule, this is a bug in your \
-               scheduled function. %s"
-              (Printexc.to_string exn));
-          Lwt.return ())
+           Logs.err (fun m ->
+             m
+               "Exception caught while running schedule, this is a bug in your \
+                scheduled function. %s"
+               (Printexc.to_string exn));
+           Lwt.return ())
     in
     let%lwt () = Lwt_unix.sleep duration in
     if !should_stop

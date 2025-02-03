@@ -47,8 +47,8 @@ let prefix prefix ((meth, path, handler) : route) =
 ;;
 
 let apply_middleware_stack
-  (middleware_stack : Rock.Middleware.t list)
-  ((meth, path, handler) : route)
+      (middleware_stack : Rock.Middleware.t list)
+      ((meth, path, handler) : route)
   =
   (* The request goes through the middleware stack from top to bottom, so we
      have to reverse the middleware stack *)

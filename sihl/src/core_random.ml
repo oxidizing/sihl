@@ -1,5 +1,18 @@
 let () = Stdlib.Random.self_init ()
 
+module Uuid : sig
+  type t
+
+  val create : unit -> string
+  val of_string : ?pos:int -> string -> t option
+  val to_binary_string : t -> string
+end = struct
+  include Uuidm
+
+  let random_state = Random.State.make_self_init ()
+  let create () = Uuidm.v4_gen random_state () |> Uuidm.to_string
+end
+
 let rec chars result n =
   if n > 0
   then chars (List.cons (Char.chr (Stdlib.Random.int 255)) result) (n - 1)

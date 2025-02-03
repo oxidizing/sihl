@@ -91,14 +91,14 @@ let default_error_handler ?(ctx = []) msg (instance : instance) =
 ;;
 
 let create_job
-  handle
-  ?(max_tries = default_tries)
-  ?(retry_delay = default_retry_delay)
-  ?(failed = default_error_handler)
-  ?tag
-  encode
-  decode
-  name
+      handle
+      ?(max_tries = default_tries)
+      ?(retry_delay = default_retry_delay)
+      ?(failed = default_error_handler)
+      ?tag
+      encode
+      decode
+      name
   =
   { name; handle; failed; max_tries; retry_delay; encode; decode; tag }
 ;;

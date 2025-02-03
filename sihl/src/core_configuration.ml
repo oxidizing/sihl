@@ -53,11 +53,11 @@ let memoize f arg =
 let store data =
   List.iter
     (fun (key, value) ->
-      if String.equal "" value
-      then ()
-      else (
-        Hashtbl.replace cache key (Some value);
-        Unix.putenv key value))
+       if String.equal "" value
+       then ()
+       else (
+         Hashtbl.replace cache key (Some value);
+         Unix.putenv key value))
     data
 ;;
 
@@ -78,9 +78,10 @@ let root_path () =
     let markers = [ ".git"; ".hg"; ".svn"; ".bzr"; "_darcs" ] in
     let rec find_markers path_els =
       let path = String.concat "/" path_els in
-      if List.exists
-           (fun marker -> Sys.file_exists (path ^ "/" ^ marker))
-           markers
+      if
+        List.exists
+          (fun marker -> Sys.file_exists (path ^ "/" ^ marker))
+          markers
       then (
         (* Path found => Write it into the env var to "memoize" it *)
         Unix.putenv "ROOT_PATH" path;
@@ -153,15 +154,15 @@ let read schema =
     let errors =
       List.map
         (fun (field, input, msg) ->
-          match CCList.head_opt input with
-          | None ->
-            Format.sprintf "Failed to read configuration '%s': %s" field msg
-          | Some input ->
-            Format.sprintf
-              "Failed to read configuration '%s' for '%s': %s"
-              input
-              field
-              msg)
+           match CCList.head_opt input with
+           | None ->
+             Format.sprintf "Failed to read configuration '%s': %s" field msg
+           | Some input ->
+             Format.sprintf
+               "Failed to read configuration '%s' for '%s': %s"
+               input
+               field
+               msg)
         errors
     in
     List.iter (fun error -> Logs.err (fun m -> m "%s" error)) errors;
@@ -256,12 +257,16 @@ Default: %s
         type_
         default
     | None ->
-      Format.sprintf {|
+      Format.sprintf
+        {|
 %s
 %s
 Type: %s
 Required
-|} name description type_)
+|}
+        name
+        description
+        type_)
   |> String.concat ""
 ;;
 

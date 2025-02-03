@@ -83,38 +83,38 @@ let run commands args =
        let start = Mtime_clock.now () in
        Lwt.catch
          (fun () ->
-           let%lwt _ =
-             Lwt_list.iter_s (fun (lifecycle : Core_lifecycle.lifecycle) ->
-               lifecycle.start ())
-             @@ Core_lifecycle.top_sort_lifecycles command.dependencies
-           in
-           let%lwt result = command.fn rest_args in
-           match result with
-           | Some () ->
-             let stop = Mtime_clock.now () in
-             let span = Mtime.span start stop in
-             print_endline
-               (Format.asprintf
-                  "Command '%s' ran successfully in %a"
-                  command.name
-                  Mtime.Span.pp
-                  span);
-             Lwt.return ()
-           | None -> Lwt.return @@ print_help command)
+            let%lwt _ =
+              Lwt_list.iter_s (fun (lifecycle : Core_lifecycle.lifecycle) ->
+                lifecycle.start ())
+              @@ Core_lifecycle.top_sort_lifecycles command.dependencies
+            in
+            let%lwt result = command.fn rest_args in
+            match result with
+            | Some () ->
+              let stop = Mtime_clock.now () in
+              let span = Mtime.span start stop in
+              print_endline
+                (Format.asprintf
+                   "Command '%s' ran successfully in %a"
+                   command.name
+                   Mtime.Span.pp
+                   span);
+              Lwt.return ()
+            | None -> Lwt.return @@ print_help command)
          (fun exn ->
-           let stop = Mtime_clock.now () in
-           let span = Mtime.span start stop in
-           let msg = Printexc.to_string exn in
-           let stack = Printexc.get_backtrace () in
-           print_endline
-             (Format.asprintf
-                "Command '%s' aborted after %a: '%s'"
-                command.name
-                Mtime.Span.pp
-                span
-                msg);
-           print_endline stack;
-           exit 1))
+            let stop = Mtime_clock.now () in
+            let span = Mtime.span start stop in
+            let msg = Printexc.to_string exn in
+            let stack = Printexc.get_backtrace () in
+            print_endline
+              (Format.asprintf
+                 "Command '%s' aborted after %a: '%s'"
+                 command.name
+                 Mtime.Span.pp
+                 span
+                 msg);
+            print_endline stack;
+            exit 1))
   | None ->
     print_all commands;
     Lwt.return ()

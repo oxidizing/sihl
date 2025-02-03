@@ -139,13 +139,13 @@ let email_of_template ?template (email : Contract_email.t) data =
 (* [@@deprecated "Use Sihl_email.Template.render_email() instead"] *)
 
 let create_email_of_template
-  ?(cc = [])
-  ?(bcc = [])
-  ~sender
-  ~recipient
-  ~subject
-  template
-  data
+      ?(cc = [])
+      ?(bcc = [])
+      ~sender
+      ~recipient
+      ~subject
+      template
+      data
   =
   (* Create an empty mail, the content is rendered *)
   let email = Contract_email.create ~cc ~bcc ~sender ~recipient ~subject "" in

@@ -414,14 +414,14 @@ let middlewares =
 ;;
 
 let router
-  search_jobs
-  find_job
-  cancel_job
-  requeue_job
-  ?back
-  ?theme
-  ?prefix
-  scope
+      search_jobs
+      find_job
+      cancel_job
+      requeue_job
+      ?back
+      ?theme
+      ?prefix
+      scope
   =
   Sihl.Web.choose
     ~middlewares

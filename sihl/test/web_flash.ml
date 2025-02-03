@@ -56,10 +56,10 @@ let flash_is_cleared_after_request _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun _ ->
-        let res =
-          Opium.Response.of_plain_text "" |> Sihl.Web.Flash.set_alert "foobar"
-        in
-        Lwt.return res)
+         let res =
+           Opium.Response.of_plain_text "" |> Sihl.Web.Flash.set_alert "foobar"
+         in
+         Lwt.return res)
       req
   in
   (* Simulate the browser sending the last Set-Cookie *)
@@ -71,9 +71,9 @@ let flash_is_cleared_after_request _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
-        let alert = Sihl.Web.Flash.find_alert req in
-        Alcotest.(check (option string) "has alert" (Some "foobar") alert);
-        Lwt.return @@ Opium.Response.of_plain_text "")
+         let alert = Sihl.Web.Flash.find_alert req in
+         Alcotest.(check (option string) "has alert" (Some "foobar") alert);
+         Lwt.return @@ Opium.Response.of_plain_text "")
       req
   in
   (* Simulate the browser sending the last Set-Cookie *)
@@ -85,9 +85,9 @@ let flash_is_cleared_after_request _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
-        let alert = Sihl.Web.Flash.find_alert req in
-        Alcotest.(check (option string) "alert was cleared" None alert);
-        Lwt.return @@ Opium.Response.of_plain_text "")
+         let alert = Sihl.Web.Flash.find_alert req in
+         Alcotest.(check (option string) "alert was cleared" None alert);
+         Lwt.return @@ Opium.Response.of_plain_text "")
       req
   in
   assert_delete_cookie cookie;
@@ -100,13 +100,13 @@ let set_and_read_flash_message _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
-        let alert = Sihl.Web.Flash.find_alert req in
-        let notice = Sihl.Web.Flash.find_notice req in
-        Alcotest.(check (option string) "has no alert" None alert);
-        Alcotest.(check (option string) "has no notice" None notice);
-        let res = Opium.Response.of_plain_text "" in
-        let res = Sihl.Web.Flash.set_alert "foobar" res in
-        Lwt.return res)
+         let alert = Sihl.Web.Flash.find_alert req in
+         let notice = Sihl.Web.Flash.find_notice req in
+         Alcotest.(check (option string) "has no alert" None alert);
+         Alcotest.(check (option string) "has no notice" None notice);
+         let res = Opium.Response.of_plain_text "" in
+         let res = Sihl.Web.Flash.set_alert "foobar" res in
+         Lwt.return res)
       req
   in
   (* Simulate the browser sending the last Set-Cookie *)
@@ -118,14 +118,14 @@ let set_and_read_flash_message _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
-        let alert = Sihl.Web.Flash.find_alert req in
-        let notice = Sihl.Web.Flash.find_notice req in
-        Alcotest.(check (option string) "has alert" (Some "foobar") alert);
-        Alcotest.(check (option string) "has no notice" None notice);
-        let res = Opium.Response.of_plain_text "" in
-        let res = Sihl.Web.Flash.set_alert "nextfoo" res in
-        let res = Sihl.Web.Flash.set [ "hello", "other" ] res in
-        Lwt.return res)
+         let alert = Sihl.Web.Flash.find_alert req in
+         let notice = Sihl.Web.Flash.find_notice req in
+         Alcotest.(check (option string) "has alert" (Some "foobar") alert);
+         Alcotest.(check (option string) "has no notice" None notice);
+         let res = Opium.Response.of_plain_text "" in
+         let res = Sihl.Web.Flash.set_alert "nextfoo" res in
+         let res = Sihl.Web.Flash.set [ "hello", "other" ] res in
+         Lwt.return res)
       req
   in
   (* Simulate the browser sending the last Set-Cookie *)
@@ -136,12 +136,12 @@ let set_and_read_flash_message _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
-        let alert = Sihl.Web.Flash.find_alert req in
-        let custom = Sihl.Web.Flash.find "hello" req in
-        Alcotest.(check (option string) "has alert" (Some "nextfoo") alert);
-        Alcotest.(check (option string) "has custom" (Some "other") custom);
-        let res = Opium.Response.of_plain_text "" in
-        Lwt.return res)
+         let alert = Sihl.Web.Flash.find_alert req in
+         let custom = Sihl.Web.Flash.find "hello" req in
+         Alcotest.(check (option string) "has alert" (Some "nextfoo") alert);
+         Alcotest.(check (option string) "has custom" (Some "other") custom);
+         let res = Opium.Response.of_plain_text "" in
+         Lwt.return res)
       req
   in
   (* Simulate the browser sending the last Set-Cookie *)
@@ -153,10 +153,10 @@ let set_and_read_flash_message _ () =
     Rock.Middleware.apply
       (Sihl.Web.Middleware.flash ())
       (fun req ->
-        let flash = Sihl.Web.Flash.find_alert req in
-        Alcotest.(check (option string) "has no alert" None flash);
-        let res = Opium.Response.of_plain_text "" in
-        Lwt.return res)
+         let flash = Sihl.Web.Flash.find_alert req in
+         Alcotest.(check (option string) "has no alert" None flash);
+         let res = Opium.Response.of_plain_text "" in
+         Lwt.return res)
       req
   in
   let cookie = Opium.Response.cookie "_flash" resp |> Option.get in

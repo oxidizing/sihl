@@ -12,7 +12,7 @@ bug-reports: "https://github.com/oxidizing/sihl/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08.0"}
-  "letters" {>= "0.2.1"}
+  "letters" {>= "0.4.0"}
   "sihl" {= version}
   "cohttp-lwt-unix" {>= "2.5.4"}
   "alcotest-lwt" {>= "1.4.0" & with-test}

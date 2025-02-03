@@ -51,7 +51,7 @@
   (ppx_deriving_yojson
    (>= 3.5.2))
   (tls
-   (>= 0.11.1))
+   (>= 1.0.4))
   (ssl
    (>= 0.5.9))
   (lwt_ssl
@@ -67,15 +67,15 @@
   (jwto
    (>= 0.3.0))
   (uuidm
-   (>= 0.9.7))
+   (>= 0.9.9))
   (ppx_fields_conv
    (>= v0.13.0))
   (ppx_sexp_conv
    (>= v0.13.0))
   (mirage-crypto
-    (>= 0.11.2))
+   (>= 1.1.0))
   (mirage-crypto-rng
-    (>= 0.11.2))
+   (>= 1.2.0))
   (cstruct
    (>= 6.0.1))
   (opium
@@ -215,7 +215,7 @@
   (ocaml
    (>= 4.08.0))
   (letters
-   (>= 0.2.1))
+   (>= 0.4.0))
   (sihl
    (= :version))
   (cohttp-lwt-unix

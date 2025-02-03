@@ -3,3 +3,5 @@
 .merlin
 .devcontainer/data
 *.install
+opium
+.DS_Store

@@ -49,13 +49,14 @@ let job =
               ) ) ) ) )
   in
   let decode
-    ( id
-    , ( name
-      , ( input
-        , ( tries
-          , ( next_run_at
-            , (max_tries, (status, (last_error, (last_error_at, (tag, ctx)))))
-            ) ) ) ) )
+        ( id
+        , ( name
+          , ( input
+            , ( tries
+              , ( next_run_at
+                , ( max_tries
+                  , (status, (last_error, (last_error_at, (tag, ctx)))) ) ) ) )
+          ) )
     =
     Ok
       { id
@@ -143,8 +144,8 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
       Sihl.Contract.Queue.
         { j with
           id =
-            (match j.id |> Uuidm.of_string with
-             | Some uuid -> Uuidm.to_bytes uuid
+            (match j.id |> Sihl.Random.Uuid.of_string with
+             | Some uuid -> Sihl.Random.Uuid.to_binary_string uuid
              | None -> failwith "Invalid uuid provided")
         })
   ;;
@@ -311,9 +312,11 @@ module MakeMariaDb (MigrationService : Sihl.Contract.Migration.Sig) = struct
 
   let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
 
-  let filter_fragment = {sql|
+  let filter_fragment =
+    {sql|
       WHERE queue_jobs.tag LIKE $1
     |sql}
+  ;;
 
   let search_query =
     {sql|
@@ -626,9 +629,11 @@ module MakePostgreSql (MigrationService : Sihl.Contract.Migration.Sig) = struct
 
   let clean ?ctx () = Sihl.Database.exec ?ctx clean_request ()
 
-  let filter_fragment = {sql|
+  let filter_fragment =
+    {sql|
       WHERE queue_jobs.tag LIKE $1
     |sql}
+  ;;
 
   let search_query =
     {sql|

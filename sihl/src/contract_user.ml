@@ -168,8 +168,7 @@ module type Sig = sig
     -> string
     -> t option Lwt.t
 
-  (** [update_password ?ctx ?password_policy user ~old_password ~new_password
-      ~new_password_confirmation]
+  (** [update_password ?ctx ?password_policy user ~old_password ~new_password ~new_password_confirmation]
       updates the password of a [user] to [new_password] and returns the user.
       The [old_password] is the current password that the user has to enter.
       [new_password] has to equal [new_password_confirmation].
@@ -249,8 +248,7 @@ module type Sig = sig
     -> string
     -> t Lwt.t
 
-  (** [register_user ?ctx ?id ?password_policy ?username ?name ?given_name email password
-      password_confirmation]
+  (** [register_user ?ctx ?id ?password_policy ?username ?name ?given_name email password password_confirmation]
       creates a new user if the password is valid and if the email address was
       not already registered.
 
@@ -288,18 +286,18 @@ module type Sig = sig
 end
 
 let to_sexp
-  { id
-  ; email
-  ; username
-  ; name
-  ; given_name
-  ; status
-  ; admin
-  ; confirmed
-  ; created_at
-  ; updated_at
-  ; _
-  }
+      { id
+      ; email
+      ; username
+      ; name
+      ; given_name
+      ; status
+      ; admin
+      ; confirmed
+      ; created_at
+      ; updated_at
+      ; _
+      }
   =
   let open Sexplib0.Sexp_conv in
   let open Sexplib0.Sexp in
@@ -369,11 +367,11 @@ let validate_new_password ~password ~password_confirmation ~password_policy =
 ;;
 
 let validate_change_password
-  user
-  ~old_password
-  ~new_password
-  ~new_password_confirmation
-  ~password_policy
+      user
+      ~old_password
+      ~new_password
+      ~new_password_confirmation
+      ~password_policy
   =
   let matches_old_password =
     match matches_password old_password user with
@@ -397,17 +395,17 @@ let make ?id ~email ~password ~name ~given_name ~username ~admin confirmed =
   let now = Ptime_clock.now () in
   Result.map
     (fun hash ->
-      { id = Option.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string)
-      ; email
-      ; password = hash
-      ; username
-      ; name
-      ; given_name
-      ; admin
-      ; confirmed
-      ; status = Active
-      ; created_at = now
-      ; updated_at = now
-      })
+       { id = Option.value id ~default:(Core_random.Uuid.create ())
+       ; email
+       ; password = hash
+       ; username
+       ; name
+       ; given_name
+       ; admin
+       ; confirmed
+       ; status = Active
+       ; created_at = now
+       ; updated_at = now
+       })
     hash
 ;;

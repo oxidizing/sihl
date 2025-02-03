@@ -135,10 +135,10 @@ let pp_exec_header src =
 ;;
 
 let format_reporter
-  ?(pp_header = pp_exec_header)
-  ?(app = Format.std_formatter)
-  ?(dst = Format.err_formatter)
-  ()
+      ?(pp_header = pp_exec_header)
+      ?(app = Format.std_formatter)
+      ?(dst = Format.err_formatter)
+      ()
   =
   let report src level ~over k msgf =
     let k _ =

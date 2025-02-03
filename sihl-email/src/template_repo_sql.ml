@@ -101,11 +101,11 @@ struct
         WHERE email_templates.label = ?
       |sql}
       |> (fun sql ->
-           if with_language
-           then
-             {sql| AND email_templates.language = ? |sql}
-             |> Format.asprintf "%s\n%s" sql
-           else sql)
+      if with_language
+      then
+        {sql| AND email_templates.language = ? |sql}
+        |> Format.asprintf "%s\n%s" sql
+      else sql)
       |> ctype ->? template
     ;;
 
@@ -321,11 +321,11 @@ struct
         WHERE email_templates.label = ?
       |sql}
       |> (fun sql ->
-           if with_language
-           then
-             {sql| AND email_templates.language = ? |sql}
-             |> Format.asprintf "%s\n%s" sql
-           else sql)
+      if with_language
+      then
+        {sql| AND email_templates.language = ? |sql}
+        |> Format.asprintf "%s\n%s" sql
+      else sql)
       |> ctype ->? template
     ;;
 

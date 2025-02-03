@@ -101,8 +101,8 @@ struct
       Lwt.finalize
         (fun () -> f connection)
         (fun () ->
-          Connection.exec set_fk_check_request true
-          |> Lwt.map Database.raise_error))
+           Connection.exec set_fk_check_request true
+           |> Lwt.map Database.raise_error))
   ;;
 
   let execute_steps ?ctx migration =
@@ -183,10 +183,10 @@ struct
       Lwt.catch
         (fun () -> execute_steps ?ctx migration_to_apply)
         (fun exn ->
-          let err = Printexc.to_string exn in
-          Logs.err (fun m ->
-            m "Error while running migration '%a': %s" pp migration err);
-          raise (Contract_migration.Exception err))
+           let err = Printexc.to_string exn in
+           Logs.err (fun m ->
+             m "Error while running migration '%a': %s" pp migration err);
+           raise (Contract_migration.Exception err))
     in
     let%lwt _ = mark_clean ?ctx namespace in
     Lwt.return ()
@@ -236,28 +236,28 @@ struct
     Lwt.return
     @@ List.map
          (fun namespace ->
-           let migrations = Map.find_opt namespace migrations_to_check in
-           let migration_state =
-             List.find_opt
-               (fun migration_state ->
-                 String.equal
-                   migration_state.Database_migration_repo.Migration.namespace
-                   namespace)
-               migrations_states
-           in
-           match migrations, migration_state with
-           | None, None -> namespace, None
-           | None, Some migration_state ->
-             ( namespace
-             , Some (-migration_state.Database_migration_repo.Migration.version)
-             )
-           | Some migrations, Some migration_state ->
-             let unapplied_migrations_count =
-               List.length migrations
-               - migration_state.Database_migration_repo.Migration.version
-             in
-             namespace, Some unapplied_migrations_count
-           | Some migrations, None -> namespace, Some (List.length migrations))
+            let migrations = Map.find_opt namespace migrations_to_check in
+            let migration_state =
+              List.find_opt
+                (fun migration_state ->
+                   String.equal
+                     migration_state.Database_migration_repo.Migration.namespace
+                     namespace)
+                migrations_states
+            in
+            match migrations, migration_state with
+            | None, None -> namespace, None
+            | None, Some migration_state ->
+              ( namespace
+              , Some
+                  (-migration_state.Database_migration_repo.Migration.version) )
+            | Some migrations, Some migration_state ->
+              let unapplied_migrations_count =
+                List.length migrations
+                - migration_state.Database_migration_repo.Migration.version
+              in
+              namespace, Some unapplied_migrations_count
+            | Some migrations, None -> namespace, Some (List.length migrations))
          namespaces_to_check
   ;;
 
@@ -280,36 +280,36 @@ struct
     let%lwt unapplied = migrations_status ?ctx ?migrations () in
     List.iter
       (fun (namespace, count) ->
-        match count with
-        | None ->
-          Logs.warn (fun m ->
-            m
-              "Could not find registered migrations for namespace '%s'. This \
-               implies you removed all migrations of that namespace. \
-               Migrations should be append-only. If you intended to remove \
-               those migrations, make sure to remove the migration state in \
-               your database/other persistence layer."
-              namespace)
-        | Some count ->
-          if count > 0
-          then
-            Logs.info (fun m ->
-              m
-                "Unapplied migrations for namespace '%s' detected. Found %s \
-                 unapplied migrations, run command 'migrate'."
-                namespace
-                (Int.to_string count))
-          else if count < 0
-          then
-            Logs.warn (fun m ->
-              m
-                "Fewer registered migrations found than migration state \
-                 indicates for namespace '%s'. Current migration state version \
-                 is ahead of registered migrations by %s. This implies you \
-                 removed migrations, which should be append-only."
-                namespace
-                (Int.to_string @@ Int.abs count))
-          else ())
+         match count with
+         | None ->
+           Logs.warn (fun m ->
+             m
+               "Could not find registered migrations for namespace '%s'. This \
+                implies you removed all migrations of that namespace. \
+                Migrations should be append-only. If you intended to remove \
+                those migrations, make sure to remove the migration state in \
+                your database/other persistence layer."
+               namespace)
+         | Some count ->
+           if count > 0
+           then
+             Logs.info (fun m ->
+               m
+                 "Unapplied migrations for namespace '%s' detected. Found %s \
+                  unapplied migrations, run command 'migrate'."
+                 namespace
+                 (Int.to_string count))
+           else if count < 0
+           then
+             Logs.warn (fun m ->
+               m
+                 "Fewer registered migrations found than migration state \
+                  indicates for namespace '%s'. Current migration state \
+                  version is ahead of registered migrations by %s. This \
+                  implies you removed migrations, which should be append-only."
+                 namespace
+                 (Int.to_string @@ Int.abs count))
+           else ())
       unapplied;
     Lwt.return ()
   ;;

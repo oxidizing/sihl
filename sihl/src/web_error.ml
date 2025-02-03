@@ -95,59 +95,60 @@ let create_error_email (sender, recipient) error =
 ;;
 
 let middleware
-  ?email_config
-  ?(reporter = fun _ _ -> Lwt.return ())
-  ?error_handler
-  ()
+      ?email_config
+      ?(reporter = fun _ _ -> Lwt.return ())
+      ?error_handler
+      ()
   =
   let filter handler req =
     Lwt.catch
       (fun () -> handler req)
       (fun exn ->
-        let report = report exn req in
-        (* Make sure to Lwt.catch everything that might go wrong. *)
-        (* Log the error *)
-        let error = exn_to_string report in
-        Logs.err (fun m -> m "%s" error);
-        (* Report error via email, don't wait for it.*)
-        let _ =
-          match email_config with
-          | Some (sender, recipient, send_fn) ->
-            let email = create_error_email (sender, recipient) error in
-            Lwt.catch
-              (fun () -> send_fn email)
-              (fun exn ->
+         let report = report exn req in
+         (* Make sure to Lwt.catch everything that might go wrong. *)
+         (* Log the error *)
+         let error = exn_to_string report in
+         Logs.err (fun m -> m "%s" error);
+         (* Report error via email, don't wait for it.*)
+         let _ =
+           match email_config with
+           | Some (sender, recipient, send_fn) ->
+             let email = create_error_email (sender, recipient) error in
+             Lwt.catch
+               (fun () -> send_fn email)
+               (fun exn ->
+                  let msg = Printexc.to_string exn in
+                  Logs.err (fun m ->
+                    m "Failed to report error per email: %s" msg);
+                  Lwt.return ())
+           | _ -> Lwt.return ()
+         in
+         (* Use custom reporter to catch error, don't wait for it. *)
+         let _ =
+           Lwt.catch
+             (fun () -> reporter req report)
+             (fun exn ->
                 let msg = Printexc.to_string exn in
-                Logs.err (fun m -> m "Failed to report error per email: %s" msg);
+                Logs.err (fun m ->
+                  m "Failed to run custom error reporter: %s" msg);
                 Lwt.return ())
-          | _ -> Lwt.return ()
-        in
-        (* Use custom reporter to catch error, don't wait for it. *)
-        let _ =
-          Lwt.catch
-            (fun () -> reporter req report)
-            (fun exn ->
-              let msg = Printexc.to_string exn in
-              Logs.err (fun m ->
-                m "Failed to run custom error reporter: %s" msg);
-              Lwt.return ())
-        in
-        let content_type =
-          try
-            req
-            |> Opium.Request.header "Content-Type"
-            |> Option.map (String.split_on_char ';')
-            |> Option.map List.hd
-          with
-          | _ -> None
-        in
-        match error_handler with
-        | Some error_handler -> error_handler req
-        | None ->
-          (match content_type with
-           | Some "application/json" -> json_error_handler req
-           (* Default to text/html *)
-           | _ -> site_error_handler req))
+         in
+         let content_type =
+           try
+             req
+             |> Opium.Request.header "Content-Type"
+             |> Option.map (String.split_on_char ';')
+             |> Option.map List.hd
+           with
+           | _ -> None
+         in
+         match error_handler with
+         | Some error_handler -> error_handler req
+         | None ->
+           (match content_type with
+            | Some "application/json" -> json_error_handler req
+            (* Default to text/html *)
+            | _ -> site_error_handler req))
   in
   (* In a production setting we don't want to use the built in debugger
      middleware of opium. It is useful for development but it exposed too much

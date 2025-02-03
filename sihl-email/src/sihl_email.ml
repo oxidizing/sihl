@@ -78,16 +78,16 @@ type smtp_config =
   }
 
 let smtp_config
-  sender
-  username
-  password
-  mechanism
-  hostname
-  port
-  start_tls
-  ca_path
-  ca_cert
-  console
+      sender
+      username
+      password
+      mechanism
+      hostname
+      port
+      start_tls
+      ca_path
+      ca_cert
+      console
   =
   { sender
   ; username
@@ -389,8 +389,8 @@ module Queued
       Lwt.catch
         (fun () -> Email.send ?ctx email |> Lwt.map Result.ok)
         (fun exn ->
-          let exn_string = Printexc.to_string exn in
-          Lwt.return @@ Error exn_string)
+           let exn_string = Printexc.to_string exn in
+           Lwt.return @@ Error exn_string)
     ;;
 
     let job =

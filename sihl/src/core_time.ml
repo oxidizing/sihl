@@ -57,9 +57,9 @@ let ptime_of_date_string date =
                date are ints")
     |> List.fold_left
          (fun result item ->
-           match item with
-           | Ok item -> Result.map (List.cons item) result
-           | Error msg -> Error msg)
+            match item with
+            | Ok item -> Result.map (List.cons item) result
+            | Error msg -> Error msg)
          (Ok [])
     |> Result.map List.rev
   in

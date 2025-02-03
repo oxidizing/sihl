@@ -69,7 +69,7 @@ let search ?ctx:_ (sort : [ `Desc | `Asc ]) filter ~limit ~offset =
   let filtered =
     Map.filter
       (fun _ (job : Sihl.Contract.Queue.instance) ->
-        Option.equal (fun t f -> CCString.find ~sub:f t > -1) job.tag filter)
+         Option.equal (fun t f -> CCString.find ~sub:f t > -1) job.tag filter)
       !state
     |> Map.to_seq
     |> List.of_seq
@@ -79,8 +79,8 @@ let search ?ctx:_ (sort : [ `Desc | `Asc ]) filter ~limit ~offset =
     |> CCList.sort
          (fun
              (j1 : Sihl.Contract.Queue.instance)
-             (j2 : Sihl.Contract.Queue.instance)
-           -> Option.compare String.compare j1.tag j2.tag)
+              (j2 : Sihl.Contract.Queue.instance)
+            -> Option.compare String.compare j1.tag j2.tag)
     |> fun l -> if sort == `Desc then l else List.rev l
   in
   Lwt.return @@ (filtered, List.length filtered)

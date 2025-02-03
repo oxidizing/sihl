@@ -14,7 +14,7 @@ struct
   let create ?ctx ?id ?html ?language ~label text =
     let open Sihl.Contract.Email_template in
     let now = Ptime_clock.now () in
-    let id = Option.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string) in
+    let id = Option.value id ~default:(Sihl.Random.Uuid.create ()) in
     let template =
       { id; label; language; html; text; created_at = now; updated_at = now }
     in

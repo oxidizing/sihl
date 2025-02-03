@@ -26,17 +26,18 @@ let set token req =
 
 (* TODO (https://docs.djangoproject.com/en/3.0/ref/csrf/#how-it-works) Check other Django
    specifics namely:
- * Testing views with custom HTTP client
- * Allow Sihl user to make views exempt
- * Enable subdomain
- * HTML caching token handling
- *)
+   * Testing views with custom HTTP client
+   * Allow Sihl user to make views exempt
+   * Enable subdomain
+   * HTML caching token handling
+*)
 
 module Crypto = struct
-  let () = Mirage_crypto_rng_unix.initialize (module Mirage_crypto_rng.Fortuna)
+  let () = Mirage_crypto_rng_unix.use_default ()
   let block_size = 16
 
-  (** [token_length] is the amount of bytes used in the unencrypted CSRF tokens. *)
+  (** [token_length] is the amount of bytes used in the unencrypted CSRF tokens.
+  *)
   let token_length = 4 * block_size
 
   module Secret : sig
@@ -53,7 +54,10 @@ module Crypto = struct
     type t = Cstruct.t
 
     let make secret =
-      secret |> Cstruct.of_string |> Mirage_crypto.Hash.SHA256.digest
+      secret
+      |> Digestif.SHA256.digest_string
+      |> Digestif.SHA256.to_raw_string
+      |> Cstruct.of_string
     ;;
 
     let to_raw = CCFun.id
@@ -108,16 +112,18 @@ module Crypto = struct
     let to_struct = CCFun.id
 
     let from_struct ~with_secret value =
-      let open Mirage_crypto.Cipher_block.AES.ECB in
-      let key = with_secret |> Secret.to_raw |> of_secret in
-      encrypt ~key value
+      let open Cstruct in
+      let open Mirage_crypto.AES.ECB in
+      let key = with_secret |> Secret.to_raw |> to_string |> of_secret in
+      encrypt ~key (to_string value) |> of_string
     ;;
 
     let from_struct_random ~with_secret value =
-      let open Mirage_crypto.Cipher_block.AES.CBC in
-      let key = with_secret |> Secret.to_raw |> of_secret in
+      let open Cstruct in
+      let open Mirage_crypto.AES.CBC in
+      let key = with_secret |> Secret.to_raw |> to_string |> of_secret in
       let iv = Mirage_crypto_rng.generate block_size in
-      Cstruct.append iv @@ encrypt ~key ~iv value
+      append (of_string iv) @@ (encrypt ~key ~iv (to_string value) |> of_string)
     ;;
   end
 
@@ -159,21 +165,25 @@ module Crypto = struct
     let equal = Cstruct.equal
     let equal_struct = equal
 
-    let from_encrypted ~with_secret value =
-      let open Mirage_crypto.Cipher_block.AES.ECB in
-      let key = with_secret |> Secret.to_raw |> of_secret in
-      decrypt ~key (Encrypted_token.to_struct value)
+    let from_encrypted ~with_secret (value : Encrypted_token.t) : Cstruct.t =
+      let open Cstruct in
+      let open Mirage_crypto.AES.ECB in
+      let key = with_secret |> Secret.to_raw |> to_string |> of_secret in
+      decrypt ~key (Encrypted_token.to_struct value |> to_string) |> of_string
     ;;
 
-    let from_encrypted_random ~with_secret value =
-      let open Mirage_crypto.Cipher_block.AES.CBC in
-      let key = with_secret |> Secret.to_raw |> of_secret in
+    let from_encrypted_random ~with_secret (value : Encrypted_token.t)
+      : Cstruct.t
+      =
+      let open Cstruct in
+      let open Mirage_crypto.AES.CBC in
+      let key = with_secret |> Secret.to_raw |> to_string |> of_secret in
       let iv, value =
         value
         |> Encrypted_token.to_struct
         |> CCFun.flip Cstruct.split block_size
       in
-      decrypt ~key ~iv value
+      decrypt ~key ~iv:(to_string iv) (to_string value) |> of_string
     ;;
 
     let from_encrypted_to_encrypted_random ~with_secret value =
@@ -188,13 +198,13 @@ let default_not_allowed_handler _ =
 ;;
 
 let middleware
-  ?(not_allowed_handler = default_not_allowed_handler)
-  ?(key = "_csrf")
-  ?(session_key = "_session")
-  ?(input_name = "_csrf")
-  ?(secret = Core_configuration.read_secret ())
-  ?(expires : Opium.Cookie.expires option)
-  ()
+      ?(not_allowed_handler = default_not_allowed_handler)
+      ?(key = "_csrf")
+      ?(session_key = "_session")
+      ?(input_name = "_csrf")
+      ?(secret = Core_configuration.read_secret ())
+      ?(expires : Opium.Cookie.expires option)
+      ()
   =
   let open Crypto in
   let block_secret = Secret.make secret in
@@ -208,15 +218,17 @@ let middleware
       (* Set fake token since CSRF is disabled *)
       handler (set "development" req)
     else
-      let (* CSRF token might come from a multipart form *)
-      open CCOption.Infix in
+      let
+      (* CSRF token might come from a multipart form *)
+      open
+        CCOption.Infix in
       let%lwt multipart = Opium.Request.to_multipart_form_data req in
       let%lwt received_encrypted_token =
         multipart
         >>= List.assoc_opt input_name
         |> (function
-              | None -> Opium.Request.urlencoded input_name req
-              | tkn -> Lwt.return tkn)
+         | None -> Opium.Request.urlencoded input_name req
+         | tkn -> Lwt.return tkn)
         |> Lwt.map (CCOption.flat_map Encrypted_token.of_uri_safe_string)
       in
       let stored_encrypted_token =
@@ -232,7 +244,9 @@ let middleware
               ~with_secret:block_secret
               tkn )
         | None ->
-          let value = Mirage_crypto_rng.generate token_length in
+          let value =
+            Mirage_crypto_rng.generate token_length |> Cstruct.of_string
+          in
           ( Encrypted_token.from_struct ~with_secret:block_secret value
           , Encrypted_token.from_struct_random ~with_secret:block_secret value )
       in

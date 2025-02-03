@@ -23,7 +23,7 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Storage.Sig = struct
   ;;
 
   let upload_base64 ?ctx ?id file base64 =
-    let blob_id = Option.value id ~default:(Uuidm.v `V4 |> Uuidm.to_string) in
+    let blob_id = Option.value id ~default:(Sihl.Random.Uuid.create ()) in
     let%lwt blob =
       match Base64.decode base64 with
       | Error (`Msg msg) ->

@@ -12,8 +12,12 @@ opam init -a --shell=zsh
 opam remote remove --all default
 opam remote add default https://opam.ocaml.org
 
-opam pin add . --yes --no-action
-opam depext sihl sihl-user sihl-storage sihl-email sihl-queue sihl-cache sihl-token --yes --with-doc --with-test
+# TODO: remove pins when the packages are released
+opam pin add -yn opium https://github.com/mabiede/opium.git#upgrade-packages
+opam pin add -yn rock https://github.com/mabiede/opium.git#upgrade-packages
+
+# install dev dependencies
+opam install --yes --with-doc --with-test --deps-only --working-dir .
 
 eval $(opam env)
 

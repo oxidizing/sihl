@@ -19,11 +19,11 @@ type lifecycle =
 let counter = ref 0
 
 let create_lifecycle
-  ?(dependencies = fun () -> [])
-  ?(start = fun () -> Lwt.return ())
-  ?(stop = fun () -> Lwt.return ())
-  ?implementation_name
-  type_name
+      ?(dependencies = fun () -> [])
+      ?(start = fun () -> Lwt.return ())
+      ?(stop = fun () -> Lwt.return ())
+      ?implementation_name
+      type_name
   =
   (* Give all lifecycles unique names *)
   counter := !counter + 1;
@@ -110,10 +110,10 @@ let top_sort_lifecycles lifecycles =
     let remaining_msg =
       Option.map
         (fun r ->
-          Format.asprintf
-            "%s These are the lifecycles after the cycle: %s"
-            msg
-            (String.concat ", " r))
+           Format.asprintf
+             "%s These are the lifecycles after the cycle: %s"
+             msg
+             (String.concat ", " r))
         remaining_names
     in
     Logs.err (fun m -> m "%s" @@ Option.value remaining_msg ~default:msg);

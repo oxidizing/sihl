@@ -81,11 +81,11 @@ let to_sexp (namespace, steps) =
   let steps =
     List.map
       (fun { label; statement; check_fk } ->
-        List
-          [ List [ Atom "label"; sexp_of_string label ]
-          ; List [ Atom "statement"; sexp_of_string statement ]
-          ; List [ Atom "check_fk"; sexp_of_bool check_fk ]
-          ])
+         List
+           [ List [ Atom "label"; sexp_of_string label ]
+           ; List [ Atom "statement"; sexp_of_string statement ]
+           ; List [ Atom "check_fk"; sexp_of_bool check_fk ]
+           ])
       steps
   in
   List (List.cons (List [ Atom "namespace"; sexp_of_string namespace ]) steps)

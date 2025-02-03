@@ -52,7 +52,7 @@ let invalid_session_cookie_value _ () =
     Opium.Request.get ""
     (* default empty session with default test secret *)
     |> Opium.Request.add_cookie
-         ("_session", "foobar.jE75kXj9sbZp6tP7oJLhrp9c/+w=")
+         ("_session", "foobar.AMemANOgnmTyWt8YIGmvZQ9GgZM=")
   in
   let handler req =
     let value = Sihl.Web.Session.find "foo" req in
@@ -76,7 +76,7 @@ let cookie_set _ () =
     check
       (pair string string)
       "persists session values"
-      ("_session", {|{"foo":"bar"}.jE75kXj9sbZp6tP7oJLhrp9c/+w=|})
+      ("_session", {|{"foo":"bar"}.AMemANOgnmTyWt8YIGmvZQ9GgZM=|})
       cookie_value);
   Lwt.return ()
 ;;
@@ -97,7 +97,7 @@ let session_persisted_across_requests _ () =
     check
       (pair string string)
       "persists session values"
-      ("_session", {|{"foo":"bar"}.jE75kXj9sbZp6tP7oJLhrp9c/+w=|})
+      ("_session", {|{"foo":"bar"}.AMemANOgnmTyWt8YIGmvZQ9GgZM=|})
       cookie_value);
   let req =
     Opium.Request.get "" |> Opium.Request.add_cookie cookie.Opium.Cookie.value
@@ -122,7 +122,7 @@ let session_persisted_across_requests _ () =
     check
       (pair string string)
       "persists session values"
-      ("_session", {|{"fooz":"other"}.VRJU0/vmwzPLrDU0zulQ7MojZUU=|})
+      ("_session", {|{"fooz":"other"}.r96wRxmM2BrUBv3jOIovTWtu3aU=|})
       cookie_value);
   let req =
     Opium.Request.get "" |> Opium.Request.add_cookie cookie.Opium.Cookie.value

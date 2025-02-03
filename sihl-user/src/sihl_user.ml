@@ -57,12 +57,12 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let update_password
-    ?ctx
-    ?(password_policy = default_password_policy)
-    user
-    ~old_password
-    ~new_password
-    ~new_password_confirmation
+        ?ctx
+        ?(password_policy = default_password_policy)
+        user
+        ~old_password
+        ~new_password
+        ~new_password_confirmation
     =
     match
       validate_change_password
@@ -87,11 +87,11 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let set_password
-    ?ctx
-    ?(password_policy = default_password_policy)
-    user
-    ~password
-    ~password_confirmation
+        ?ctx
+        ?(password_policy = default_password_policy)
+        user
+        ~password
+        ~password_confirmation
     =
     let%lwt result =
       validate_new_password ~password ~password_confirmation ~password_policy
@@ -120,15 +120,15 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let create
-    ?ctx
-    ?id
-    ~email
-    ~password
-    ~username
-    ~name
-    ~given_name
-    ~admin
-    confirmed
+        ?ctx
+        ?id
+        ~email
+        ~password
+        ~username
+        ~name
+        ~given_name
+        ~admin
+        confirmed
     =
     let user =
       make ?id ~email ~password ~username ~name ~given_name ~admin confirmed
@@ -189,15 +189,15 @@ module Make (Repo : User_repo.Sig) : Sihl.Contract.User.Sig = struct
   ;;
 
   let register_user
-    ?ctx
-    ?id
-    ?(password_policy = default_password_policy)
-    ?username
-    ?name
-    ?given_name
-    email
-    ~password
-    ~password_confirmation
+        ?ctx
+        ?id
+        ?(password_policy = default_password_policy)
+        ?username
+        ?name
+        ?given_name
+        email
+        ~password
+        ~password_confirmation
     =
     match
       validate_new_password ~password ~password_confirmation ~password_policy

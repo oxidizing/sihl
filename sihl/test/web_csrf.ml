@@ -4,7 +4,7 @@ open Sihl.Web
 let can_parse_uri_safe _ () =
   let open Csrf.Crypto in
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
-  let value = Mirage_crypto_rng.generate token_length in
+  let value = Mirage_crypto_rng.generate token_length |> Cstruct.of_string in
   let enc = Encrypted_token.from_struct ~with_secret value in
   let parsed =
     enc
@@ -21,7 +21,7 @@ let can_parse_uri_safe _ () =
 let crypto_undo_helper encrypt decrypt =
   let open Csrf.Crypto in
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
-  let value = Mirage_crypto_rng.generate token_length in
+  let value = Mirage_crypto_rng.generate token_length |> Cstruct.of_string in
   let dec = encrypt ~with_secret value |> decrypt ~with_secret in
   let open Alcotest in
   check bool "Same decrypted CSRF tokens" true
@@ -45,7 +45,7 @@ let csrf_simulation _ () =
   let open Csrf.Crypto in
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
   (* GET request generates value *)
-  let value = Mirage_crypto_rng.generate token_length in
+  let value = Mirage_crypto_rng.generate token_length |> Cstruct.of_string in
   (* Encrypt value for cookie token *)
   let enc = Encrypted_token.from_struct ~with_secret value in
   (* Encrypt value with randomness for body token (take already encrypted cookie
@@ -296,8 +296,8 @@ let post_request_cookie_invalid_token_fails _ () =
   let reqs (token, _) =
     CCList.map
       (fun add_cookie ->
-        Request.of_urlencoded ~body:[ csrf_name, [ token ] ] route `POST
-        |> add_cookie)
+         Request.of_urlencoded ~body:[ csrf_name, [ token ] ] route `POST
+         |> add_cookie)
       [ CCFun.id; Sihl.Test.Session.set_value_req [ csrf_name, "garbage" ] ]
   in
   cookie_invalid_helper reqs
@@ -308,8 +308,8 @@ let post_request_request_invalid_token_fails _ () =
   let reqs (_, cookie) =
     CCList.map
       (fun body ->
-        Request.of_urlencoded ~body route `POST
-        |> Request.add_cookie cookie.Cookie.value)
+         Request.of_urlencoded ~body route `POST
+         |> Request.add_cookie cookie.Cookie.value)
       [ []; [ csrf_name, [ "garbage" ] ] ]
   in
   cookie_invalid_helper reqs
@@ -332,6 +332,7 @@ let post_request_with_nonmatching_token_fails _ () =
   (* Generate a random encrypted token *)
   let tkn =
     Mirage_crypto_rng.generate token_length
+    |> Cstruct.of_string
     |> Encrypted_token.from_struct_random ~with_secret
     |> Encrypted_token.to_uri_safe_string
   in
@@ -362,6 +363,7 @@ let post_request_with_nonmatching_cookie_fails _ () =
   let with_secret = Sihl.Configuration.read_secret () |> Secret.make in
   let tkn =
     Mirage_crypto_rng.generate token_length
+    |> Cstruct.of_string
     |> Encrypted_token.from_struct ~with_secret
     |> Encrypted_token.to_uri_safe_string
   in
@@ -452,7 +454,7 @@ let two_post_requests_succeed _ () =
     [ !token1; !token2; !token3 ];
   CCList.iter
     (fun (tkn1, tkn2) ->
-      check bool "Different CSRF tokens" false (String.equal tkn1 tkn2))
+       check bool "Different CSRF tokens" false (String.equal tkn1 tkn2))
     [ !token1, !token2; !token1, !token3; !token2, !token3 ];
   Lwt.return ()
 ;;

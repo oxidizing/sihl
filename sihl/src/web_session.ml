@@ -35,10 +35,10 @@ let decode_session_resp cookie_key signed_with resp =
 ;;
 
 let find
-  ?(cookie_key = "_session")
-  ?(secret = Core_configuration.read_secret ())
-  key
-  req
+      ?(cookie_key = "_session")
+      ?(secret = Core_configuration.read_secret ())
+      key
+      req
   =
   let signed_with = Opium.Cookie.Signer.make secret in
   let session =
@@ -48,9 +48,9 @@ let find
 ;;
 
 let get_all
-  ?(cookie_key = "_session")
-  ?(secret = Core_configuration.read_secret ())
-  req
+      ?(cookie_key = "_session")
+      ?(secret = Core_configuration.read_secret ())
+      req
   =
   let open CCOption.Infix in
   let signed_with = Opium.Cookie.Signer.make secret in
@@ -61,10 +61,10 @@ let get_all
 ;;
 
 let set
-  ?(cookie_key = "_session")
-  ?(secret = Core_configuration.read_secret ())
-  session
-  resp
+      ?(cookie_key = "_session")
+      ?(secret = Core_configuration.read_secret ())
+      session
+      resp
   =
   let signed_with = Opium.Cookie.Signer.make secret in
   let session = session |> List.to_seq |> Session.StrMap.of_seq in
@@ -78,13 +78,13 @@ let set
 ;;
 
 let update_or_set_value
-  ?(cookie_key = "_session")
-  ?(secret = Core_configuration.read_secret ())
-  ?(expires : Opium.Cookie.expires option)
-  ~key
-  f
-  req
-  resp
+      ?(cookie_key = "_session")
+      ?(secret = Core_configuration.read_secret ())
+      ?(expires : Opium.Cookie.expires option)
+      ~key
+      f
+      req
+      resp
   =
   let signed_with = Opium.Cookie.Signer.make secret in
   let mreq =
@@ -113,13 +113,13 @@ let update_or_set_value
 
 (* TODO improve API, don't take req maybe *)
 let set_value
-  ?(cookie_key = "_session")
-  ?(secret = Core_configuration.read_secret ())
-  ?expires
-  ~key
-  value
-  req
-  resp
+      ?(cookie_key = "_session")
+      ?(secret = Core_configuration.read_secret ())
+      ?expires
+      ~key
+      value
+      req
+      resp
   =
   update_or_set_value
     ~cookie_key

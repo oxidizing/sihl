@@ -13,7 +13,7 @@ let create_instance ?(ctx = []) input delay now (job : 'a job) =
     | None -> now
   in
   let max_tries = job.max_tries in
-  { id = Uuidm.v `V4 |> Uuidm.to_string
+  { id = Sihl.Random.Uuid.create ()
   ; name
   ; input
   ; tries = 0
@@ -128,14 +128,14 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
       Lwt.catch
         (fun () -> job.handle ~ctx:job_instance.ctx input)
         (fun exn ->
-          let exn_string = Printexc.to_string exn in
-          Logs.err (fun m ->
-            m
-              "Exception caught while running job, this is a bug in your job \
-               handler. Don't throw exceptions there, use Result.t instead. \
-               '%s'"
-              exn_string);
-          Lwt.return @@ Error exn_string)
+           let exn_string = Printexc.to_string exn in
+           Logs.err (fun m ->
+             m
+               "Exception caught while running job, this is a bug in your job \
+                handler. Don't throw exceptions there, use Result.t instead. \
+                '%s'"
+               exn_string);
+           Lwt.return @@ Error exn_string)
     in
     match result with
     | Error msg ->
@@ -147,17 +147,17 @@ module Make (Repo : Repo.Sig) : Sihl.Contract.Queue.Sig = struct
           msg);
       Lwt.catch
         (fun () ->
-          let%lwt () = job.failed ?ctx msg job_instance in
-          Lwt.return @@ Error msg)
+           let%lwt () = job.failed ?ctx msg job_instance in
+           Lwt.return @@ Error msg)
         (fun exn ->
-          let exn_string = Printexc.to_string exn in
-          Logs.err (fun m ->
-            m
-              "Exception caught while cleaning up job, this is a bug in your \
-               job failure handler, make sure to not throw exceptions there \
-               '%s"
-              exn_string);
-          Lwt.return @@ Error exn_string)
+           let exn_string = Printexc.to_string exn in
+           Logs.err (fun m ->
+             m
+               "Exception caught while cleaning up job, this is a bug in your \
+                job failure handler, make sure to not throw exceptions there \
+                '%s"
+               exn_string);
+           Lwt.return @@ Error exn_string)
     | Ok () ->
       Logs.debug (fun m ->
         m "Successfully ran job instance '%s'" job_instance_id);

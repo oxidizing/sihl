@@ -86,9 +86,9 @@ let transaction_rolls_back _ () =
       let%lwt () =
         Lwt.catch
           (fun () ->
-            Sihl.Database.transaction (fun connection ->
-              let%lwt () = insert_username connection "foobar trx" in
-              failwith "Oh no, something went wrong during the transaction!"))
+             Sihl.Database.transaction (fun connection ->
+               let%lwt () = insert_username connection "foobar trx" in
+               failwith "Oh no, something went wrong during the transaction!"))
           (fun _ -> Lwt.return ())
       in
       get_usernames connection)
@@ -106,10 +106,10 @@ let invalid_request =
 let failing_query connection =
   Lwt.catch
     (fun () ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec invalid_request () |> Lwt.map Sihl.Database.raise_error)
+       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+       Connection.exec invalid_request () |> Lwt.map Sihl.Database.raise_error)
     (* eat the exception silently *)
-      (fun _ -> Lwt.return ())
+    (fun _ -> Lwt.return ())
 ;;
 
 let query_does_not_exhaust_pool _ () =

@@ -119,6 +119,7 @@ module MariaDb : sig
 end
 
 module PostgreSql : sig
-  (** The PostgreSQL queue backend supports fully persistent queues and locking. *)
+  (** The PostgreSQL queue backend supports fully persistent queues and locking.
+  *)
   include Sihl.Contract.Queue.Sig
 end
