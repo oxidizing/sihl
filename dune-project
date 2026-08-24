@@ -4,7 +4,7 @@
 
 (name sihl)
 
-(version 4.0.0)
+(version 4.0.1)
 
 (authors "Josef Erben" "Aron Erben" "Miko Nieminen")
 
@@ -35,17 +35,17 @@
   (bos
    (>= 0.2.0))
   (caqti
-   (>= 2.0.1))
+   (>= 2.3.2))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-lwt
-   (>= 2.0.1))
+   (>= 2.3.2))
   (cohttp-lwt-unix
    (and
     (>= 2.5.4)
@@ -114,11 +114,11 @@
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (mariadb
    (>= 1.1.6))
@@ -145,11 +145,11 @@
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (mariadb
    (>= 1.1.6))
@@ -173,11 +173,11 @@
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (mariadb
    (>= 1.1.6))
@@ -201,11 +201,11 @@
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (mariadb
    (>= 1.1.6))
@@ -228,11 +228,11 @@
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (cohttp-lwt-unix
    (>= 2.5.4))
@@ -260,11 +260,11 @@
     :with-test))
   (caqti-driver-mariadb
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (caqti-driver-postgresql
    (and
-    (>= 2.0.1)
+    (>= 2.3.2)
     :with-test))
   (mariadb
    (>= 1.1.6))

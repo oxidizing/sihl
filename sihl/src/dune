@@ -4,6 +4,7 @@
  (libraries
   base64
   bos
+  caqti.classic
   caqti-lwt
   caqti-lwt.unix
   conformist
