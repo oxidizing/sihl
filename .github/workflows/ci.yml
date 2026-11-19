@@ -53,7 +53,7 @@ jobs:
         run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
 
       - name: Install dependencies
-        run: make deps
+        run: make deps-ci
 
       - name: Recover from an Opam broken state
         if: steps.cache-opam.outputs.cache-hit == 'true'

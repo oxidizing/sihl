@@ -13,6 +13,11 @@ deps:
 	opam install --yes --with-doc --with-test --with-dev-setup --working-dir --update-invariant .
 	eval $(opam env)
 
+.PHONY: deps-ci
+deps-ci: ## Install dependencies for CI (ocamlformat only, no other dev tools like ocaml-lsp-server)
+	opam install --yes --with-doc --with-test --working-dir --update-invariant .
+	opam install --yes ocamlformat
+
 .PHONY: create_switch
 create_switch:
 	opam switch create . 4.14.1 --no-install --locked
