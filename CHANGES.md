@@ -1,15 +1,21 @@
 ## [4.1.0] - 2026-11-19
+
 ### Added
+
 - `Sihl.Database.use_external_pool` lets an application supply its own connection pool (`use`, `start`, `stop`). While it is set, `query`, `query'`, `transaction`, `transaction'`, `find`, `find_opt`, `collect`, `exec` and `run_search_request` run through `use`, and the statement's own result reaches `use` unchanged. `Sihl.Database.start`/`stop` call the hook's `start`/`stop` and no Sihl pool is created. `fetch_pool` and `add_pool` raise, and the `pool` key in `ctx` is ignored.
 - With the external pool, a transaction whose body returns `Error` is rolled back, and the error is passed to `use`.
 
 ## [4.0.1] - 2026-08-24
+
 ### Added
+
 - `Sihl.Database.drop_pool` closes a named connection pool and removes it
 - Queue `dispatch` and `dispatch_all` take an optional `callback` that is called after the job has been enqueued
 - `QUEUE_PROCESS` (default `true`): set it to `false` to dispatch jobs from a process without handling them there
 - Session middleware and session functions take an optional `expires` argument for the session cookie
+
 ### Updated
+
 - Job instances persist their `ctx`, and `ctx` is passed when a job instance is created
 - Replace `nocrypto` with `mirage-crypto` / `mirage-crypto-rng` (RNG is initialized), use `digestif` for SHA hashes, remove `cstruct`
 - More context in log output when sorting lifecycles
@@ -17,7 +23,9 @@
 - Remove opam lock files from the libraries
 
 ## [4.0.0] - 2022-12-29
+
 ### Updated
+
 - Email service takes optional `ctx` argument, queued emails receive `ctx` from queue service
 - Jobs can be created with optional `tag` field
 - Queue service has `search` API to filter for `tag`s
