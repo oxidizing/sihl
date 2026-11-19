@@ -10,5 +10,5 @@ let suite =
 
 let () =
   Unix.putenv "SIHL_ENV" "test";
-  Alcotest.(run "unit" suite)
+  Alcotest.run "unit" suite
 ;;

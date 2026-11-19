@@ -13,6 +13,11 @@ deps:
 	opam install --yes --with-doc --with-test --with-dev-setup --working-dir --update-invariant .
 	eval $(opam env)
 
+.PHONY: deps-ci
+deps-ci: ## Install dependencies for CI (ocamlformat only, no other dev tools like ocaml-lsp-server)
+	opam install --yes --with-doc --with-test --working-dir --update-invariant .
+	opam install --yes ocamlformat
+
 .PHONY: create_switch
 create_switch:
 	opam switch create . 4.14.1 --no-install --locked
@@ -55,6 +60,7 @@ test: build	## Run unit tests with dune and then all sihl tests
 	SIHL_ENV=test ./_build/default/sihl/test/core_configuration.exe
 	SIHL_ENV=test ./_build/default/sihl/test/core_container.exe
 	SIHL_ENV=test ./_build/default/sihl/test/core_utils.exe
+	SIHL_ENV=test ./_build/default/sihl/test/database_external_pool.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_flash.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_id.exe

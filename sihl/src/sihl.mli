@@ -1058,6 +1058,15 @@ end
 module Database : sig
   include Contract_database.Sig
 
+  type external_pool = Contract_database.external_pool =
+    { use :
+        'a.
+        (Caqti_lwt.connection -> ('a, Caqti_error.t) result Lwt.t)
+        -> ('a, Caqti_error.t) result Lwt.t
+    ; start : unit -> unit Lwt.t
+    ; stop : unit -> unit Lwt.t
+    }
+
   type database =
     | MariaDb
     | PostgreSql

@@ -7,6 +7,22 @@ let name = "database"
 
 exception Exception of string
 
+(** [external_pool] lets an application own the connection pool. When one is
+    installed with [use_external_pool], every statement Sihl runs goes through
+    [use], [start] replaces Sihl's own pool creation and [stop] is called when
+    the database service stops.
+
+    [use f] must hand [f] a connection and return the result of [f] unchanged,
+    so the pool can inspect errors (for example to notice a lost connection). *)
+type external_pool =
+  { use :
+      'a.
+      (Caqti_lwt.connection -> ('a, Caqti_error.t) result Lwt.t)
+      -> ('a, Caqti_error.t) result Lwt.t
+  ; start : unit -> unit Lwt.t
+  ; stop : unit -> unit Lwt.t
+  }
+
 module type Sig = sig
   (** ['a prepared_search_request] is a prepared SQL statement that can be used
       to sort, filter and paginate (= search) a collection. *)
@@ -238,6 +254,23 @@ module type Sig = sig
     :  ?ctx:(string * string) list
     -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Result.t Lwt.t)
     -> 'a Lwt.t
+
+  (** [use_external_pool pool] routes every statement Sihl runs ([query],
+      [query'], [transaction], [transaction'], [find], [find_opt], [collect],
+      [exec] and [run_search_request]) through [pool.use] instead of Sihl's own
+      Caqti pools. The database service's [start] calls [pool.start] instead of
+      creating a pool, and [stop] calls [pool.stop], so install the hook before
+      the services are started.
+
+      While the hook is set, the ["pool"] key in [ctx] and
+      [DATABASE_CHOOSE_POOL] are ignored, and {!fetch_pool} and {!add_pool}
+      raise [Exception].
+
+      Transactions run Sihl's own start/commit/rollback on the connection that
+      [pool.use] provides. If the transaction body returns [Error], the
+      transaction is rolled back and the error is returned to [pool.use]
+      unchanged. *)
+  val use_external_pool : external_pool -> unit
 
   val register : unit -> Core_container.Service.t
 
