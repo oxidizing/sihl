@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   dev:
     build:
@@ -8,40 +6,32 @@ services:
     volumes:
       # default user is "opam"
       - ..:/workspace:cached
-      - opam:/home/opam/.opam:cached
       - build:/workspace/_build:cached
-      - ${HOME}${USERPROFILE}/.ssh:/home/opam/.ssh
-      - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
-      - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
+      - opam-5.5.2-2.6:/home/opam/.opam:cached
+      - ${HOME}/.claude:/home/opam/.claude
+    env_file: [.env]
+    # the test binaries read these directly, so they're set here and not in the Makefile
     environment:
-      - DATABASE_URL=postgres://admin:password@postgres:5432/dev
-      - DATABASE_URL_TEST_MARIADB=mariadb://admin:password@mariadb:3306/dev
-      - DATABASE_URL_TEST_POSTGRESQL=postgres://admin:password@postgres:5432/dev
+      - DATABASE_URL=postgres://admin:password@database-postgres:5432/dev
+      - DATABASE_URL_TEST_MARIADB=mariadb://admin:password@database-mariadb:3306/dev
+      - DATABASE_URL_TEST_POSTGRESQL=postgres://admin:password@database-postgres:5432/dev
       - DATABASE_POOL_SIZE=10
       - OPAMSOLVERTIMEOUT=180
       - SIHL_SECRET=secret
       - VERSION=dev
     depends_on:
-      - mariadb
-      - postgres
+      database-mariadb:
+        condition: service_healthy
+      database-postgres:
+        condition: service_healthy
     ports: [ 3000:3000 ]
-    command: /bin/sh -c "while sleep 1000; do :; done"
+    command: sleep infinity
 
-  postgres:
-    image: postgres:12.2
-    ports: [ 5432:5432 ]
-    environment:
-      TZ: Europe/Zurich
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: dev
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-
-  mariadb:
+  database-mariadb:
     image: mariadb:10.6
+    restart: unless-stopped
     command: --max_allowed_packet=629145600
-    ports: [ 3306:3306 ]
+    ports: [ 3346:3306 ]
     environment:
       TZ: Europe/Zurich
       MYSQL_USER: admin
@@ -49,16 +39,43 @@ services:
       MYSQL_DATABASE: dev
       MYSQL_ROOT_PASSWORD: password
     volumes:
-      - ./data/mariadb:/var/lib/mysql
+      - db-mariadb:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uadmin", "-ppassword" ]
+      interval: 2s
+      timeout: 5s
+      retries: 60
 
+  database-postgres:
+    image: postgres:18
+    restart: unless-stopped
+    ports: [ 3347:5432 ]
+    environment:
+      TZ: Europe/Zurich
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev
+    volumes:
+      - db-postgres:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "127.0.0.1", "-U", "admin", "-d", "dev" ]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  # optional, enable it in devcontainer.json under runServices
   adminer:
     image: adminer:4-standalone
-    restart: always
+    restart: unless-stopped
     ports: [ 8080:8080 ]
     depends_on:
-      - mariadb
-      - postgres
+      database-mariadb:
+        condition: service_healthy
+      database-postgres:
+        condition: service_healthy
 
 volumes:
-  opam:
   build:
+  opam-5.5.2-2.6:
+  db-mariadb:
+  db-postgres:

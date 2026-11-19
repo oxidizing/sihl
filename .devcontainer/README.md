@@ -1,31 +1,38 @@
 # Development with DevContainer (VS Code)
 
-This project is setup to run in a DevContainer. DevContainers are based on Docker images. This setup uses cached volumes (`/home/opam/.opam`, `/workspace/_build`, and `/workspace/node_modules`) to speed up build time. When you are expecting problems and you want to clear everything, don not forget to delete them too. This DevContainer is configured to run with Postgres, change `DATABASE_URL` to run with MariaDB (setup is prepared).
+This project is set up to run in a DevContainer. DevContainers are based on Docker images. The image is the pool tool's build image (RHEL 9, OCaml 5.5.2, opam 2.6). This setup uses named volumes (`opam-5.5.2-2.6` for `/home/opam/.opam`, `build` for `/workspace/_build`, and `db-postgres` and `db-mariadb` for the database data) to speed up build time and keep data across rebuilds. When you are expecting problems and you want to clear everything, do not forget to delete them too. The `DATABASE_URL` points to PostgreSQL; change it in `.devcontainer/docker-compose.yml` to run with MariaDB (setup is prepared).
 
 ## Requirements
 
 1. Ensure requirements are installed:
    1. Docker
    1. [Visual Studio Code](https://code.visualstudio.com/) (VS Code)
-   1. VS Code Extension [Remote Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-1. Your SSH folder and Git config gets mapped to the container. You should be able to use SSH and Git inside the container. Please ensure `~/.gitconfig` doesn't contain absolute paths (you may use the `~` profile prefix, i.e. `excludesfile = ~/.gitignore_global`). **Sourcetree note:** You probably have to update Sourcetree settings. In its settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial and Git configuration files".
+   1. VS Code Extension [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+1. Copy `.devcontainer/.env.example` to `.devcontainer/.env` and fill in your Git name and email, your GitHub username and a [fine-grained personal access token](https://github.com/settings/personal-access-tokens) for `uzh/sihl` with "Contents: Read and write". The `.env` file is gitignored. Inside the container, Git uses this token over HTTPS (also for `git@github.com:` remotes); your SSH keys and Git config are not mounted and the host's SSH agent is not forwarded.
 
 ## Start
 
-Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`. If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
+Click on the icon similar to "><" in the bottom left corner and select `Dev Containers: Reopen in Container`. If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Dev Containers: Rebuild Container`).
+
+`make` inside the container is aliased to `.devcontainer/Makefile`, which forwards every target to the root `Makefile`, so it works from any directory.
 
 ## Customization
 
-Use the `.env.sample` file to further customize your installation. `DATABASE_URL`, `DATABASE_POOL_SIZE`, and `SIHL_SECRET` is already set by `.devcontainer/docker-compose.yml`.
+`DATABASE_URL`, `DATABASE_URL_TEST_MARIADB`, `DATABASE_URL_TEST_POSTGRESQL`, `DATABASE_POOL_SIZE`, and `SIHL_SECRET` are set by `.devcontainer/docker-compose.yml`. The tests use the `dev` database as `admin` for both drivers.
+
+## Databases from the host
+
+The databases are exposed on ports that don't clash with local installations:
+
+| Database   | Host port | User / password    | Database |
+| ---------- | --------- | ------------------ | -------- |
+| PostgreSQL | 3347      | `admin`/`password` | `dev`    |
+| MariaDB    | 3346      | `admin`/`password` | `dev`    |
 
 ## Database View
 
 There is an `Adminer` container added to the development package. To be able to use it, follow these few steps:
 
 1. Uncomment its line in the `.devcontainer/devcontainer.json` under `runServices`
-1. Use `Remote-Containers: Rebuild Container` that it will also create and startup the `Adminer` container
+1. Use `Dev Containers: Rebuild Container` that it will also create and startup the `Adminer` container
 1. Open your web browser and open `localhost:8080`
-
-## NOTE
-
-Installation of packages will downgrade `ocaml-compiler` to version `5.3.0` as of `ppxlib` used by `tyxml-ppx` has currently it's upper bound to `< 5.4.0` (PR in progress: <https://github.com/ocaml-ppx/ppxlib/pull/607>)

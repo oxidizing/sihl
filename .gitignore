@@ -1,7 +1,7 @@
 /_build/
 /_opam/
 .merlin
-.devcontainer/data
+.devcontainer/.env
 *.install
 opium
 .DS_Store

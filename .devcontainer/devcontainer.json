@@ -7,12 +7,28 @@
   "service": "dev",
   "runServices": [
     "dev",
-    "postgres",
-    "mariadb"
+    "database-postgres",
+    "database-mariadb"
     // "adminer" // uncomment if adminer should run to see the database
   ],
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "remoteUser": "opam",
+  // NOTE: Dev Containers forwards the host's SSH agent into every terminal and extension,
+  // clear it so remote access only works with the scoped PAT from .env (see postCreate.sh)
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": ""
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "opam",
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "installOhMyZshConfig": true,
+      "upgradePackages": false
+    }
+  },
+  "postCreateCommand": "/bin/sh .devcontainer/postCreate.sh",
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "customizations": {
@@ -28,22 +44,23 @@
         "files.insertFinalNewline": true,
         "files.associations": {
           "*.ml": "ocaml",
-          "*.mli": "ocaml"
+          "*.mli": "ocaml",
+          ".env*": "dotenv"
         },
         "ocaml.sandbox": {
           "kind": "opam",
-          "switch": "5.4.0"
+          "switch": "5.5.2"
         }
       },
       // Add the IDs of extensions you want installed when the container is created in the array below.
       "extensions": [
+        "Anthropic.claude-code",
+        "DavidAnson.vscode-markdownlint",
         "donjayamanne.githistory",
-        "eamodio.gitlens",
         "exiasr.hadolint",
         "irongeek.vscode-env",
-        "ocamllabs.ocaml-platform",
-        "DavidAnson.vscode-markdownlint",
-        "ms-vscode.makefile-tools"
+        "ms-vscode.makefile-tools",
+        "ocamllabs.ocaml-platform"
       ]
     }
   }

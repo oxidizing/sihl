@@ -1,57 +1,33 @@
-FROM ocaml/opam:debian-12-ocaml-5.4
-
-USER root
-
-# copy hadolint
+# Same base image as the pool tool's devcontainer (RHEL 9 UBI, OCaml 5.5.2, opam 2.6),
+# see https://github.com/uzh/z-pool-tool/blob/main/docker/Dockerfile.build
+FROM ghcr.io/uzh/z-pool-tool/ocaml:9-5.5-2.6
 COPY --from=hadolint/hadolint:latest-alpine /bin/hadolint /bin/hadolint
 
-# Avoid warnings by switching to noninteractive
-ENV DEBIAN_FRONTEND noninteractive
-ENV SIHL_ENV development
+# hadolint ignore=DL3066
+USER root
 
-# install packages
-# hadolint ignore=DL3008
-RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
-  # development dependencies
-  inotify-tools \
-  zsh \
-  m4 \
-  wget \
-  #
-  # build dependencies (would also be installed by opam depext)
-  gcc \
-  libev-dev \
-  libgmp-dev \
-  libmariadb-dev \
-  libpq-dev \
-  libssl-dev \
-  pkg-config \
-  #
-  # cleanup installations
-  && apt-get autoremove -y \
-  && apt-get clean all \
-  && rm -rf /var/lib/apt/lists/*
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV SIHL_ENV=development
+
+# The base image only ships the MariaDB client library; caqti-driver-postgresql needs libpq.
+# hadolint ignore=DL3041
+RUN dnf install -y libpq-devel && dnf clean all
+
+# NOTE: Pre-create volume folders for the correct ownership.
+RUN mkdir -p /workspace/_build /home/opam/.cache \
+  && chown -R opam:opam /workspace/_build /home/opam/.cache
 
 # add timezone
 RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
-RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
-  && bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
+# (only needed if the image's /etc/services lacks the http entries)
+RUN grep -qw http /etc/services \
+  || printf 'http\t\t80/tcp\twww\t\t# WorldWideWeb HTTP\nhttps\t\t443/tcp\t\t\t# http protocol over TLS/SSL\n' >> /etc/services
 
-# link opam version
-RUN ln -fs /usr/bin/opam-2.3 /usr/bin/opam
-
+# hadolint ignore=DL3066
 USER opam
 
-# install oh-my-zsh
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -q -O - | zsh \
-  && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
-  && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc \
-  #
-  # link make to devcontainer makefile
-  && echo 'alias make="make -f /workspace/.devcontainer/Makefile"' >> ~/.zshrc
-
-# Switch back to dialog for any ad-hoc use of apt-get
-ENV DEBIAN_FRONTEND=dialog
+# GitButler CLI (`but`), installed to ~/.local/bin (the installer verifies the binary's signature)
+RUN curl -fsSL https://gitbutler.com/install.sh | sh > /dev/null
