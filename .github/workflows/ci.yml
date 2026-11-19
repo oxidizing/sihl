@@ -7,15 +7,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     services:
       postgres:
-        image: postgres:12.2
+        image: postgres:18
         env:
           POSTGRES_USER: admin
           POSTGRES_PASSWORD: password
           POSTGRES_DB: dev
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin -d dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
       mariadb:
-        image: mariadb:10.3
+        image: mariadb:10.6
         env:
           MYSQL_USER: admin
           MYSQL_PASSWORD: password
@@ -23,6 +28,11 @@ jobs:
           MYSQL_RANDOM_ROOT_PASSWORD: "yes"
         ports:
           - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     strategy:
       fail-fast: false
       matrix:
@@ -30,21 +40,21 @@ jobs:
           - ubuntu-latest
         ocaml-compiler:
           - 4.14
-          - 5.3
           - 5.4
+          - 5.5
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Retrieve opam cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         if: runner.os != 'Windows'
         id: cache-opam
         with:
           path: ~/.opam
-          key: v1-${{ runner.os }}-opam-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam.locked') }}
+          key: v2-${{ runner.os }}-opam-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}
 
-      - name: Use OCaml ${{ matrix.ocaml-version }}
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
