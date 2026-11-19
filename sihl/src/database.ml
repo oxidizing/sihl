@@ -18,6 +18,23 @@ let pools
   Hashtbl.create 100
 ;;
 
+let external_pool_ref : Contract_database.external_pool option ref = ref None
+let use_external_pool pool = external_pool_ref := Some pool
+
+let fail_if_external_pool fn_name =
+  match !external_pool_ref with
+  | None -> ()
+  | Some _ ->
+    let msg =
+      Format.sprintf
+        "%s is not available while an external pool is in use \
+         (use_external_pool)"
+        fn_name
+    in
+    Logs.err (fun m -> m "%s" msg);
+    raise (Contract_database.Exception msg)
+;;
+
 type 'a prepared_search_request =
   { asc_request :
       (int * int, int * 'a, [ `Many | `One | `Zero ]) Caqti_request.t
@@ -152,6 +169,7 @@ let print_pool_usage pool =
 ;;
 
 let fetch_pool ?(ctx = []) () =
+  fail_if_external_pool "fetch_pool";
   let chosen_pool_name_ctx = CCList.assoc_opt ~eq:String.equal "pool" ctx in
   let chosen_pool_name_env = (Core_configuration.read schema).choose_pool in
   let chosen_pool_name =
@@ -195,6 +213,7 @@ let fetch_pool ?(ctx = []) () =
 ;;
 
 let add_pool ?(pool_size = 10) name database_url =
+  fail_if_external_pool "add_pool";
   database_url
   |> Uri.of_string
   |> Caqti_lwt_unix.connect_pool
@@ -232,7 +251,71 @@ let raise_error err =
   | Ok result -> result
 ;;
 
-let transaction ?ctx f =
+let fail_on_error = function
+  | Ok result -> Lwt.return result
+  | Error error ->
+    let msg = Caqti_error.show error in
+    Logs.err (fun m -> m "%s" msg);
+    Lwt.fail (Contract_database.Exception msg)
+;;
+
+(* Runs [f] in a transaction on a connection handed out by an external pool.
+   Every Caqti error (start, commit, rollback and the statement's own) is
+   returned as [Error] so that it reaches the external pool's [use]
+   unchanged. *)
+let transaction_on_connection
+      (connection : Caqti_lwt.connection)
+      (f : Caqti_lwt.connection -> ('a, Caqti_error.t) result Lwt.t)
+  : ('a, Caqti_error.t) result Lwt.t
+  =
+  let (module Connection : Caqti_lwt.CONNECTION) = connection in
+  let rollback () =
+    let%lwt result = Connection.rollback () in
+    (match result with
+     | Ok () -> Logs.debug (fun m -> m "Successfully rolled back transaction")
+     | Error error ->
+       Logs.err (fun m ->
+         m "Failed to rollback transaction: %s" (Caqti_error.show error)));
+    Lwt.return result
+  in
+  match%lwt Connection.start () with
+  | Error error ->
+    Logs.debug (fun m ->
+      m "Failed to start transaction: %s" (Caqti_error.show error));
+    Lwt.return_error error
+  | Ok () ->
+    Logs.debug (fun m -> m "Started transaction");
+    let%lwt outcome =
+      Lwt.catch
+        (fun () -> f connection |> Lwt.map Result.ok)
+        (fun exn -> Lwt.return_error exn)
+    in
+    (match outcome with
+     | Ok (Ok result) ->
+       (match%lwt Connection.commit () with
+        | Ok () ->
+          Logs.debug (fun m -> m "Successfully committed transaction");
+          Lwt.return_ok result
+        | Error error ->
+          Logs.err (fun m ->
+            m "Failed to commit transaction: %s" (Caqti_error.show error));
+          let%lwt (_ : (unit, Caqti_error.t) result) = rollback () in
+          Lwt.return_error error)
+     | Ok (Error error) ->
+       let%lwt (_ : (unit, Caqti_error.t) result) = rollback () in
+       Lwt.return_error error
+     | Error exn ->
+       (match%lwt rollback () with
+        | Ok () -> Lwt.fail exn
+        | Error error ->
+          Logs.err (fun m ->
+            m
+              "Transaction raised %s and could not be rolled back"
+              (Printexc.to_string exn));
+          Lwt.return_error error))
+;;
+
+let transaction_pool ?ctx f =
   let pool = fetch_pool ?ctx () in
   print_pool_usage pool;
   let%lwt result =
@@ -287,7 +370,27 @@ let transaction ?ctx f =
     Lwt.fail (Contract_database.Exception msg)
 ;;
 
-let transaction' ?ctx f = transaction ?ctx f |> Lwt.map raise_error
+let transaction ?ctx f =
+  match !external_pool_ref with
+  | Some pool ->
+    let%lwt result =
+      pool.use (fun connection ->
+        transaction_on_connection connection (fun connection ->
+          f connection |> Lwt.map Result.ok))
+    in
+    fail_on_error result
+  | None -> transaction_pool ?ctx f
+;;
+
+let transaction' ?ctx f =
+  match !external_pool_ref with
+  | Some pool ->
+    let%lwt result =
+      pool.use (fun connection -> transaction_on_connection connection f)
+    in
+    fail_on_error result
+  | None -> transaction_pool ?ctx f |> Lwt.map raise_error
+;;
 
 let run_search_request
       ?ctx
@@ -322,7 +425,7 @@ let run_search_request
     CCResult.both things total |> Lwt.return)
 ;;
 
-let query ?ctx f =
+let query_pool ?ctx f =
   let pool = fetch_pool ?ctx () in
   print_pool_usage pool;
   let%lwt result =
@@ -338,7 +441,24 @@ let query ?ctx f =
     Lwt.fail (Contract_database.Exception msg)
 ;;
 
-let query' ?ctx f = query ?ctx f |> Lwt.map raise_error
+let query ?ctx f =
+  match !external_pool_ref with
+  | Some pool ->
+    let%lwt result =
+      pool.use (fun connection -> f connection |> Lwt.map Result.ok)
+    in
+    fail_on_error result
+  | None -> query_pool ?ctx f
+;;
+
+let query' ?ctx f =
+  match !external_pool_ref with
+  | Some pool ->
+    (* The statement's own result is handed to [use] as is. *)
+    let%lwt result = pool.use f in
+    fail_on_error result
+  | None -> query_pool ?ctx f |> Lwt.map raise_error
+;;
 
 let find_opt ?ctx request input =
   query' ?ctx (fun connection ->
@@ -382,20 +502,27 @@ let used_database () =
 (* Service lifecycle *)
 
 let start () =
-  let skip_default_pool_creation =
-    Option.value
-      (Core_configuration.read schema).skip_default_pool_creation
-      ~default:false
-  in
-  if skip_default_pool_creation
-  then Lwt.return ()
-  else (
-    (* Make sure the default database is online when starting service. *)
-    let _ = fetch_pool () in
-    Lwt.return ())
+  match !external_pool_ref with
+  | Some pool -> pool.start ()
+  | None ->
+    let skip_default_pool_creation =
+      Option.value
+        (Core_configuration.read schema).skip_default_pool_creation
+        ~default:false
+    in
+    if skip_default_pool_creation
+    then Lwt.return ()
+    else (
+      (* Make sure the default database is online when starting service. *)
+      let _ = fetch_pool () in
+      Lwt.return ())
 ;;
 
-let stop () = Lwt.return ()
+let stop () =
+  match !external_pool_ref with
+  | Some pool -> pool.stop ()
+  | None -> Lwt.return ()
+;;
 
 let lifecycle =
   Core_container.create_lifecycle Contract_database.name ~start ~stop

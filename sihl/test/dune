@@ -17,6 +17,7 @@
   core_configuration
   core_container
   core_utils
+  database_external_pool
   database_mariadb
   database_migration_mariadb
   database_migration_postgresql
@@ -33,6 +34,7 @@
   core_configuration
   core_container
   core_utils
+  database_external_pool
   database_mariadb
   database_migration_mariadb
   database_migration_postgresql

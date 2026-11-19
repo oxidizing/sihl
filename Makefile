@@ -55,6 +55,7 @@ test: build	## Run unit tests with dune and then all sihl tests
 	SIHL_ENV=test ./_build/default/sihl/test/core_configuration.exe
 	SIHL_ENV=test ./_build/default/sihl/test/core_container.exe
 	SIHL_ENV=test ./_build/default/sihl/test/core_utils.exe
+	SIHL_ENV=test ./_build/default/sihl/test/database_external_pool.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_flash.exe
 	SIHL_ENV=test ./_build/default/sihl/test/web_id.exe
